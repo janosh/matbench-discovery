@@ -186,9 +186,9 @@ metrics:
       κ_SRME: 0.4123
       pred_file:
         name: models/mace/mace-mpa-0/2024-11-25-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/52134875
-        size: 7418356
-        md5: 786e9518f4b2f6c051a7054dad20980a
+        url: https://figshare.com/files/68221369
+        size: 7418320
+        md5: 1e303d57fa6895286325c5df3c9c2593
       κ_SRE: 0.2048
       κ_SRD: -0.1101
       κ_failure_rate: 0.0

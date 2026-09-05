@@ -42,6 +42,7 @@ def make_harmonic_record(
         "material_id": material_id,
         "schema_version": 1,
         "frequency_unit": "THz",
+        "errors": {},
         "primitive": {
             "lattice": np.eye(3) * 3.123456789,
             "symbols": ["Na", "Cl", "K", "Br"][:n_atoms],

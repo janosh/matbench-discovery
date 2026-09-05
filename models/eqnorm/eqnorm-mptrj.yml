@@ -218,9 +218,9 @@ metrics:
       κ_SRME: 0.4079
       pred_file:
         name: models/eqnorm/eqnorm-mptrj/2025-06-16-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/55429706
-        size: 9278859
-        md5: 7baf53a0a70f3efaa94eb84c3489fbbf
+        url: https://figshare.com/files/68221318
+        size: 8402074
+        md5: 59b1548f6300a4b00675f5e079416316
       κ_SRE: 0.2722
       κ_SRD: -0.2165
       κ_failure_rate: 0.0097

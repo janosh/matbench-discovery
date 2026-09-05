@@ -9,9 +9,7 @@ from matminer.featurizers.base import MultipleFeaturizer
 composition_features = [
     # Ward+Wolverton' Magpie https://rdcu.be/c3jug
     fc.ElementProperty.from_preset("magpie"),
-    # Ionic property attributes. Similar to ElementProperty.
     fc.IonProperty(fast=True),
-    # Calculate norms of stoichiometric attributes.
     fc.Stoichiometry(),
     # Attributes of valence orbital shells
     fc.ValenceOrbital(props=["frac"]),
@@ -19,7 +17,6 @@ composition_features = [
 structure_features = [
     # How much the ordering of species in the structure differs from random
     fs.ChemicalOrdering(),
-    # Maximum possible packing efficiency of this structure
     fs.MaximumPackingEfficiency(),
     # Differences in elemental properties between site and its neighboring sites
     fs.SiteStatsFingerprint.from_preset("LocalPropertyDifference_ward-prb-2017"),
@@ -33,10 +30,8 @@ featurizer = MultipleFeaturizer(
 )
 
 
-# multiprocessing seems to be the cause of OOM errors on large structures even when
-# taking only small slice of the data and launching slurm jobs with --mem 100G
-# Alex Dunn has been aware of this problem for a while. presumed cause: chunk of data
-# (eg 50 structures) is sent to a single process, but sometimes one of those structures
-# might be huge causing that process to stall. Other processes in pool can't synchronize
-# at the end, effectively freezing the job
+# multiprocessing OOMs on large structures even on small data slices with --mem 100G
+# (long known to Alex Dunn). Presumed cause: a chunk (eg 50 structures) goes to one
+# process, but a single huge structure stalls it, so the pool never synchronizes at the
+# end and the job freezes.
 featurizer.set_n_jobs(1)

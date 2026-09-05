@@ -327,8 +327,12 @@ def publish_parity_assets(checks: Checklist) -> None:
             manifest = json.load(file)
         entries = [
             manifest["base"],
-            *manifest["model_assets"].values(),
-            *manifest.get("mode_assets", {}).values(),
+            # each model maps asset kind (parity/modes) to its metadata
+            *(
+                asset
+                for kinds in manifest["model_assets"].values()
+                for asset in kinds.values()
+            ),
             *manifest.get("structure_bundles", ()),
         ]
         pending: list[str] = []

@@ -56,12 +56,7 @@ def df_mixed() -> pd.DataFrame:
 
 @pytest.fixture
 def pred_ref_diatomic_curves() -> tuple[DiatomicCurves, DiatomicCurves]:
-    """Create test data for diatomic curves.
-
-    Returns:
-        TestCurves: Reference and predicted curves for each element.
-    """
-    # Simple test case: H2 molecule with slightly different curves
+    """Reference and predicted diatomic curves for H and He."""
     distances = np.logspace(1, -1, 40)
     # Reference: Simple Morse potential
     e_h_ref = 5 * (1 - np.exp(-2 * (distances - 1.5))) ** 2 - 5

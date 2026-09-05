@@ -14,7 +14,7 @@
     GEO_OPT_SYMMETRY_METRICS,
     METADATA_COLS,
     scatter_axis_label,
-    scatter_options_by_key,
+    scatter_option_keys,
   } from '$lib/labels'
   import { UrlModelSelection } from '$lib/model-selection.svelte'
   import { make_table_filters } from '$lib/models.svelte'
@@ -24,8 +24,8 @@
     bind_url_params,
     sort_from_query,
     sort_url_entries,
-    valid_query_param,
   } from '$lib/url-state.svelte'
+  import { valid_query_param } from 'svelte-widgets/url-params'
   import { min } from 'd3-array'
   import { format_num, pick_contrast_color } from 'matterviz'
   import { BarPlot, Sankey, sankey_from_links, ScatterPlot } from 'matterviz/plot'
@@ -103,8 +103,8 @@
     model_selection.read(params)
     filters.read(params)
     table_sort = sort_from_query(params, default_table_sort)
-    scatter_x = valid_query_param(params, `x`, default_scatter_x, scatter_options_by_key)
-    scatter_y = valid_query_param(params, `y`, default_scatter_y, scatter_options_by_key)
+    scatter_x = valid_query_param(params, `x`, default_scatter_x, scatter_option_keys)
+    scatter_y = valid_query_param(params, `y`, default_scatter_y, scatter_option_keys)
   }
   bind_url_params(read_url_params, () => [
     model_selection.url_entry,

@@ -19,9 +19,7 @@ from matbench_discovery.enums import Model
 
 
 def test_load_calculator(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Emt loads with no extra deps; dtype is ignored by models that don't declare it;
-    unknown keys raise a helpful error.
-    """
+    """EMT loads with no deps, undeclared dtype is ignored, unknown keys raise."""
     # emt has no model YAML: must stay an eager CalcSpec, not _runtime_calc_spec.
     assert isinstance(CALCULATORS._data["emt"], calculators.CalcSpec)  # noqa: SLF001
     assert isinstance(load_calculator("emt"), EMT)
@@ -427,29 +425,54 @@ def test_atomic_command_output_recovers_after_timeout(
     assert "X" not in os.environ
 
 
+@pytest.mark.parametrize(
+    ("url", "resolved_url"),
+    [
+        ("https://example.com/model.ckpt", "https://example.com/model.ckpt"),
+        (
+            "https://huggingface.co/org/model/blob/main/model.ckpt",
+            "https://huggingface.co/org/model/resolve/main/model.ckpt",
+        ),
+        (
+            "https://huggingface.co.example.org/blob/model.ckpt",
+            "https://huggingface.co.example.org/blob/model.ckpt",
+        ),
+        (
+            "https://github.com/org/model/blob/main/model.ckpt",
+            "https://github.com/org/model/raw/main/model.ckpt",
+        ),
+        (
+            "https://uni.sciebo.de/s/token?key=abc",
+            "https://uni.sciebo.de/s/token/download?key=abc",
+        ),
+    ],
+)
 def test_download_checkpoint_replaces_zero_byte_cache(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    url: str,
+    resolved_url: str,
 ) -> None:
     """download_checkpoint redownloads zero-byte cached checkpoint files."""
     from matbench_discovery.remote import fetch
 
-    url = "https://example.com/model.ckpt"
+    monkeypatch.setenv("HF_TOKEN", "hf_test")
     monkeypatch.setattr(calculators, "CHECKPOINT_DIR", f"{tmp_path}")
     from_ref_mock = classmethod(
         lambda _model_cls, _model_key: SimpleNamespace(metadata={"checkpoint_url": url})
     )
     monkeypatch.setattr(Model, "from_ref", from_ref_mock)
 
-    download_file_mock = (  # noqa: E731
-        lambda destination_path, _url, **_kwargs: Path(destination_path).write_bytes(
-            b"checkpoint"
-        )
-    )
+    def download_file_mock(destination_path: str, download_url: str) -> None:
+        """Verify normalized URLs; the shared downloader owns authentication."""
+        assert download_url == resolved_url
+        Path(destination_path).write_bytes(b"checkpoint")
+
     monkeypatch.setattr(fetch, "download_file", download_file_mock)
-    url_hash = hashlib.sha256(url.encode()).hexdigest()[:12]
+    url_hash = hashlib.sha256(resolved_url.encode()).hexdigest()[:12]
     dest = tmp_path / f"fake-{url_hash}.ckpt"
     dest.write_bytes(b"")
 
-    actual_path = os.path.normpath(calculators.download_checkpoint("fake"))
+    actual_path = os.path.normpath(calculators.download_checkpoint("fake", ext=".ckpt"))
     assert actual_path == os.path.normpath(f"{dest}")
     assert dest.read_bytes() == b"checkpoint"

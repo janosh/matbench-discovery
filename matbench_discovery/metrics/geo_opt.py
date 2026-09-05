@@ -37,10 +37,8 @@ def write_metrics_to_yaml(
         dict[str, object]: Geometric optimization metrics for this model and
             symmetry precision.
     """
-    # Convert absolute path to relative path if needed
     analysis_file_path = repo_relative_path(analysis_file_path)
 
-    # Get metrics for this model
     metrics_for_symprec = {
         str(Key.rmsd): round(
             float(df_geo_opt[MbdKey.structure_rmsd_vs_dft].iloc[0]), 4
@@ -105,27 +103,21 @@ def calc_geo_opt_metrics(df_model_analysis: pd.DataFrame) -> dict[str, float]:
         - NaN RMSD values are filled with 1.0 (the stol value set in StructureMatcher)
         - symmetry metrics are calculated only on structures with valid symmetry data
     """
-    # Get relevant columns
     spg_diff = df_model_analysis[MbdKey.spg_num_diff]
     n_sym_ops_diff = df_model_analysis[MbdKey.n_sym_ops_diff]
     rmsd_vals = df_model_analysis[MbdKey.structure_rmsd_vs_dft]
 
-    # For symmetry metrics, we only use structures with valid symmetry results
-    # in rare cases, symmetry detection may fail because of the symmetry finder
-    # algorithm rather than something being wrong with the model-relaxed structure so
-    # not clear how to assign blame for missing results between model and symmetry algo
+    # symmetry metrics use only structures with valid symmetry results: detection can
+    # fail in the symmetry finder itself, leaving model vs algo blame unassignable
     valid_sym_mask = spg_diff.notna()
     n_valid_sym = valid_sym_mask.sum()
 
     # Fill NaN values with 1.0 (the stol value we set in StructureMatcher)
     mean_rmsd = pd.to_numeric(rmsd_vals, errors="coerce").fillna(1.0).mean()
 
-    # Calculate symmetry metrics only on valid symmetry data
     sym_ops_mae = n_sym_ops_diff[valid_sym_mask].abs().mean()
 
-    # Count cases where spacegroup changed
     changed_mask = (spg_diff != 0) & valid_sym_mask
-    # Among changed cases, count whether symmetry increased or decreased
     sym_decreased = (n_sym_ops_diff < 0) & changed_mask
     sym_increased = (n_sym_ops_diff > 0) & changed_mask
     sym_matched = ~changed_mask & valid_sym_mask

@@ -39,7 +39,7 @@
     return { ...col, ...overrides, better, description, label }
   }
 
-  // Define grouped columns: [source_cols, group_name, extra_overrides]
+  // [source_cols, group_name, extra_overrides]
   const grouped_defs: [Label[], string, Partial<Label>][] = [
     [Object.values(GEO_OPT_SYMMETRY_METRICS), `Symmetry`, { visible: true }],
     [

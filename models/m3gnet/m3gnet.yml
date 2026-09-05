@@ -143,9 +143,9 @@ metrics:
       κ_SRME: 1.4094
       pred_file:
         name: models/m3gnet/m3gnet/2024-11-09-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/52134866
-        size: 18034939
-        md5: 5bf90c8e0e755132b88a2875ff111f12
+        url: https://figshare.com/files/68221363
+        size: 18035177
+        md5: 015e0f09f8fe1f57009c9a9133363ef8
       κ_SRE: 1.3404
       κ_SRD: -1.2855
       κ_failure_rate: 0.068

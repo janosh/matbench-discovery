@@ -4,5 +4,12 @@
     "strict": true,
     "resolveJsonModule": true,
     "skipLibCheck": true
-  }
+  },
+  "include": [
+    "src/**/*",
+    "tests/**/*",
+    "scripts/**/*.ts",
+    "vite.config.ts",
+    ".svelte-kit/**/*.d.ts"
+  ]
 }

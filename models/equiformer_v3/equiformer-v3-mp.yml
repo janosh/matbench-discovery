@@ -173,9 +173,9 @@ metrics:
     kappa_103:
       pred_file:
         name: models/equiformer_v3/equiformer-v3-mp/2026-04-07-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/63515175
-        size: 8211874
-        md5: 429bd0f8d4c58c99ab46555366866f5b
+        url: https://figshare.com/files/68221327
+        size: 8211923
+        md5: 75b68ea353eec6450afef1ae388c65c7
       κ_SRME: 0.2753
       κ_SRE: 0.1136
       κ_SRD: 0.0276

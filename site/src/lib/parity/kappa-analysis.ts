@@ -4,13 +4,13 @@ export type KappaAnalysis = typeof kappa_analysis_data
 
 let analysis_promise: Promise<KappaAnalysis> | undefined
 
-/** Lazily load and cache the shared κ-103 per-material analysis payload. */
+// Lazily load and cache the shared κ-103 per-material analysis payload.
 export const load_kappa_analysis = (): Promise<KappaAnalysis> =>
   (analysis_promise ??= import(`$figs/kappa-103-analysis.jsonl`).then(
     (module) => module.default,
   ))
 
-/** Map material IDs to one model's per-material κ_SRME values. */
+// Map material IDs to one model's per-material κ_SRME values.
 export async function load_kappa_srme_map(
   model_key: string,
 ): Promise<Map<string, number | null> | undefined> {

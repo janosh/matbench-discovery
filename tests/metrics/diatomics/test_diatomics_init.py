@@ -293,7 +293,6 @@ def test_diatomic_curve_metrics(
     with pytest.raises(ValueError, match="distance and force counts differ"):
         DiatomicCurves.from_dict(raw_dict)
 
-    # Test with custom parameters
     custom_metrics: dict[str, dict[str, object]] = {
         MbdKey.pbe_wall_dist_mae: {"thresholds_ev": (1.0,)},
     }
@@ -303,8 +302,6 @@ def test_diatomic_curve_metrics(
     assert set(custom_results["H"]) == set(custom_metrics)
     assert custom_results["H"][MbdKey.pbe_wall_dist_mae] >= 0
 
-    # Test with interpolation parameter
-    # Create a copy of ref_curves with slightly different distances
     modified_dists = ref_dists.copy() * 1.001  # 0.1% difference
     modified_ref_curves = DiatomicCurves(
         distances=modified_dists,
@@ -317,7 +314,6 @@ def test_diatomic_curve_metrics(
         hetero_nuclear=ref_curves.hetero_nuclear,
     )
 
-    # This should raise an error without interpolation
     with pytest.raises(
         ValueError,
         match="Reference and predicted distances must be same when interpolate=False",
@@ -332,7 +328,6 @@ def test_diatomic_curve_metrics(
         )
         assert "H" in interp_results
 
-    # Test with invalid metric name
     with pytest.raises(
         ValueError,
         match=re.escape(
@@ -444,8 +439,7 @@ def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
     assert "max_rss_gb: 4.2" in yaml_content
     assert "max_gpu_mem_gb: 11.5" in yaml_content
 
-    # a recompute with current empty exclusions clears stale exclusions while preserving
-    # the other existing run metadata
+    # empty current exclusions clear stale ones but preserve other run metadata
     model.__dict__.pop("metadata", None)
     recomputed = diatomics.write_metrics_to_yaml(
         model, metrics_by_element, run_metadata={"excluded_formula_reasons": {}}

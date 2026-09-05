@@ -452,9 +452,8 @@ def make_cosine_velocities(
 
 
 def test_calc_vdos_spectrum() -> None:
-    """VDOS must peak at each atom's oscillation frequency, and per-DOF
-    normalization (equipartition) must give a quiet atom's peak the same
-    integrated weight as a 10x louder atom's peak.
+    """VDOS peaks at each atom's oscillation frequency and per-DOF (equipartition)
+    normalization gives a quiet atom's peak the same weight as a 10x louder one.
     """
     velocities = make_cosine_velocities((5.0, 1.0), (12.5, 0.1))  # loud + quiet atom
     freqs, vdos = md_metrics.calc_vdos(velocities, time_step_fs=2.0)
@@ -595,8 +594,8 @@ def test_calc_vdos_error_grid_sampling_invariant() -> None:
 
 
 def test_get_trajectory_pressures() -> None:
-    """Per-frame pressures read from attached stress, averaging the full 3D trace (not a
-    2D slab formula): the anisotropic frame gives 3 GPa, not 1.5.
+    """Pressures average the full 3D stress trace, not a 2D slab formula, so the
+    anisotropic frame gives 3 GPa, not 1.5.
     """
     pressures = [0.5, -1.0, 2.0]
     frames = [
@@ -629,17 +628,13 @@ def test_get_trajectory_pressures() -> None:
 def test_calc_pressure_metrics_mae(
     p_ref: np.ndarray, p_pred: np.ndarray, expected_mae: float
 ) -> None:
-    """Pressure MAE is the mean-pressure bias |mean(ref) - mean(pred)|: it compares the
-    separately-averaged trajectory pressures, independent of frame order and length.
-    """
+    """Pressure MAE = |mean(ref) - mean(pred)|, independent of order and length."""
     metrics = md_metrics.calc_pressure_metrics(p_ref, p_pred)
     assert metrics["pressure_mae"] == pytest.approx(expected_mae)
 
 
 def test_calc_pressure_metrics_wasserstein_and_validation() -> None:
-    """W1 distance equals the mean offset and is frame-order independent (compares full
-    distributions); empty pressure arrays raise. MAE rows live in the parametrized test.
-    """
+    """W1 equals the mean offset and is frame-order independent; empty arrays raise."""
     p_ref = np.array([0.0, 1.0, 2.0, 3.0])
     p_shifted = p_ref + 0.5
 

@@ -41,7 +41,11 @@ jobs:
 
       - name: Install dependencies
         # use the project's pinned pnpm (packageManager field) via corepack
-        run: corepack enable && pnpm install
+        run: |
+          corepack enable
+          # Git dependencies generate dist/ during prepare; keep their allowlist CI-only.
+          printf 'allowBuilds:\n  matterviz: true\n  svelte-widgets: true\n' > pnpm-workspace.yaml
+          pnpm install --config.strict-dep-builds=false
 
       - name: Download parity assets
         env:
@@ -54,7 +58,7 @@ jobs:
             asset_prefix=$(jq -er '.asset_prefix | select(type == "string" and test("^[A-Za-z0-9._-]+$"))' "$manifest")
             assets_file="$RUNNER_TEMP/$kind-parity-assets"
             jq -er --arg prefix "$asset_prefix" \
-              '[.base.asset, .model_assets[].asset, ((.mode_assets // {})[] | .asset), ((.structure_bundles // [])[] | .asset)]
+              '[.base.asset, (.model_assets[] | .[].asset), ((.structure_bundles // [])[] | .asset)]
               | if all(.[]; type == "string" and startswith($prefix + "-")
                 and test("^[A-Za-z0-9._-]+-[0-9a-f]{16}\\.json\\.gz$"))
                 then .[] else error("invalid parity asset manifest") end' \
@@ -114,7 +118,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           manifest_assets() {
-            jq -er '.base.asset, .model_assets[].asset, ((.mode_assets // {})[] | .asset), ((.structure_bundles // [])[] | .asset)'
+            jq -er '.base.asset, (.model_assets[] | .[].asset), ((.structure_bundles // [])[] | .asset)'
           }
           protected=$(mktemp)
           for manifest in site/src/lib/parity/{energy,kappa}-parity-manifest.json; do

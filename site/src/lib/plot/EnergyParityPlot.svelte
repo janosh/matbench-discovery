@@ -19,7 +19,7 @@
   import { get_error_message, type LoadStatus } from '$lib/asset-loader'
   import type { ModelData } from '$lib/types'
   import { compact_formula, format_num, sanitize_compact_formula } from 'matterviz'
-  import { Spinner } from 'matterviz/feedback'
+  import { Spinner } from 'svelte-widgets'
   import type { AnyStructure } from 'matterviz/structure'
   import { BinnedScatterPlot } from 'matterviz/plot'
   import type {

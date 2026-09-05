@@ -34,6 +34,7 @@ from matbench_discovery.phonons.pipeline import (
     atomic_write_gzip_json,
     calculate_kappa_for_structure,
     checkpoint_digest,
+    kappa_source_paths,
     merge_kappa_shards,
     read_kappa_record,
     record_path,
@@ -508,10 +509,12 @@ def test_conductivity_gates_require_dynamically_stable_relaxation(
         ((0.0, 0.0, 0.0, 1.0), False),  # dynamically stable -> full flow
     ],
 )
+@pytest.mark.parametrize("harmonic_failure", [False, True])
 def test_calculate_kappa_for_structure_runs_shared_physics_flow(
     monkeypatch: pytest.MonkeyPatch,
     fc2_frequencies: tuple[float, ...],
     expected_skipped: bool,
+    harmonic_failure: bool,
 ) -> None:
     """The shared flow executes FC2, gates FC3, and retains separate force sets."""
     from matbench_discovery.phonons import thermal_conductivity
@@ -533,6 +536,13 @@ def test_calculate_kappa_for_structure_runs_shared_physics_flow(
     atoms = Atoms("H", cell=np.eye(3), positions=[[0, 0, 0]], pbc=True)
     atoms.info[Key.mat_id] = "mp-core"
     adapter = PipelineAdapterStub(fc2_frequencies=fc2_frequencies)
+    if harmonic_failure:
+
+        def fail_harmonic(*_args: object) -> dict[str, Any]:
+            """Simulate a harmonic export failure after successful FC2."""
+            raise RuntimeError("harmonic export failed")
+
+        monkeypatch.setattr(adapter, "harmonic_phonons", fail_harmonic)
     computation = calculate_kappa_for_structure(
         atoms=atoms,
         calculator=cast("Calculator", object()),
@@ -547,22 +557,53 @@ def test_calculate_kappa_for_structure_runs_shared_physics_flow(
     assert computation.error is None
     assert adapter.n_fc3_calls == int(not expected_skipped)
     assert computation.result.get("conductivity_skipped", False) is expected_skipped
+    assert computation.result["errors"] == []
+    if not expected_skipped:
+        np.testing.assert_array_equal(
+            computation.result[MbdKey.kappa_tot_rta], np.eye(3)
+        )
     assert computation.forces is not None
     assert np.asarray(computation.forces["fc2_set"]).shape == (1, 1, 3)
     assert np.asarray(computation.forces["fc3_set"]).size == adapter.n_fc3_calls * 3
     # harmonic data is recorded for every material with an FC2, imaginary modes or not
-    assert adapter.n_harmonic_calls == 1
-    assert computation.phonons is not None
-    assert computation.phonons["band_path"]["segments"][0]["start_label"] == "GAMMA"
+    if harmonic_failure:
+        assert computation.phonons is None
+        assert computation.result["phonon_errors"]["harmonic"]["message"] == (
+            "RuntimeError: harmonic export failed"
+        )
+    else:
+        assert adapter.n_harmonic_calls == 1
+        assert computation.phonons is not None
+        assert computation.phonons["band_path"]["segments"][0]["start_label"] == "GAMMA"
+
+    # A later FC3 failure must retain FC2 forces and independent harmonic data.
+    if not expected_skipped:
+
+        def fail_fc3(*_args: object, **_kwargs: object) -> np.ndarray:
+            """Fail after the successful FC2 stage."""
+            raise RuntimeError("fc3 failed")
+
+        monkeypatch.setattr(adapter, "calculate_fc3", fail_fc3)
+        failed = calculate_kappa_for_structure(
+            atoms=atoms,
+            calculator=cast("Calculator", object()),
+            settings=KappaSettings(relaxation_mode="none", save_forces=True),
+            adapter=adapter,
+        )
+        assert failed.error == "ForceConstantError: RuntimeError: fc3 failed"
+        assert failed.forces is not None
+        np.testing.assert_array_equal(failed.forces["fc2_set"], np.ones((1, 1, 3)))
+        assert failed.forces["fc3_set"] == []
+        assert (failed.phonons is None) is harmonic_failure
 
 
-def test_normalize_kappa_schema_aliases_and_voigt() -> None:
-    """Legacy aliases and Voigt tensors become one canonical schema."""
+def test_normalize_kappa_schema_and_voigt() -> None:
+    """Canonical records normalize tensors and retain failure/symmetry semantics."""
     result = normalize_kappa_result(
         {
-            "mp_id": "mp-1",
-            str(Key.spg_num): 225,
-            "relaxed_space_group_number": 221,
+            str(Key.mat_id): "mp-1",
+            str(Key.init_spg_num): 225,
+            str(Key.final_spg_num): 221,
             str(MbdKey.kappa_tot_rta): [1, 2, 3, 4, 5, 6],
         }
     )
@@ -577,65 +618,65 @@ def test_normalize_kappa_schema_aliases_and_voigt() -> None:
     ]
     for missing_spg in (np.nan, pd.NA):
         missing_result = normalize_kappa_result(
-            {str(Key.init_spg_num): missing_spg, str(Key.final_spg_num): 225}
+            {
+                str(Key.mat_id): "mp-1",
+                str(Key.init_spg_num): missing_spg,
+                str(Key.final_spg_num): 225,
+            }
         )
         assert missing_result["broken_symmetry"] is False
     failed_result = normalize_kappa_result(
         {
+            str(Key.mat_id): "mp-1",
             "errors": ["failed after partial conductivity output"],
             str(MbdKey.kappa_tot_rta): [1, 2, 3, 4, 5, 6],
         }
     )
     assert np.isnan(failed_result[str(MbdKey.kappa_tot_rta)])
     assert voigt_6_to_full_3x3([1, 2, 3]) == [1, 2, 3]
-    canonical_freqs = [[1.0, 2.0]]
-    frequency_result = normalize_kappa_result(
-        {
-            str(Key.ph_freqs): canonical_freqs,
-            "frequencies": [[3.0, 4.0], [5.0, 6.0]],
-        }
-    )
-    assert frequency_result[str(Key.ph_freqs)] == canonical_freqs
-    assert "frequencies" not in frequency_result
-    with pytest.raises(ValueError, match="Conflicting aliases"):
-        normalize_kappa_result(
-            {
-                "frequencies": [[1.0, 2.0]],
-                "phonon_frequencies": [[3.0, 4.0]],
-            }
-        )
-    with pytest.raises(ValueError, match="Conflicting aliases"):
-        normalize_kappa_result({str(Key.mat_id): "mp-1", "mp_id": "different-material"})
-    bool_alias = normalize_kappa_result(
-        {str(Key.has_imag_ph_modes): False, "imaginary_freqs": 0}
-    )
-    assert bool_alias[str(Key.has_imag_ph_modes)] is False
+
+
+@pytest.mark.parametrize(
+    "legacy_field",
+    [
+        "mp_id",
+        "spg_num",
+        "initial_space_group_number",
+        "initial_spg_num",
+        "init_space_group_number",
+        "relaxed_space_group_number",
+        "final_space_group_number",
+        "relaxed_spg_num",
+        "imaginary_freqs",
+        "has_imaginary_freqs",
+        "has_imaginary_modes",
+        "frequencies",
+        "phonon_frequencies",
+    ],
+)
+def test_normalize_kappa_rejects_legacy_fields(legacy_field: str) -> None:
+    """Legacy fields fail even alongside a valid canonical material ID."""
+    with pytest.raises(ValueError, match="Non-canonical kappa fields"):
+        normalize_kappa_result({str(Key.mat_id): "mp-1", legacy_field: []})
 
 
 def test_normalize_kappa_dataframe_preserves_order() -> None:
-    """Dataframe normalization retains row order while removing aliases."""
-    import pandas as pd
-
-    df_legacy = pd.DataFrame(
+    """Dataframe normalization preserves canonical IDs and row order."""
+    df_input = pd.DataFrame(
         {
-            "mp_id": ["mp-2", "mp-1"],
-            "initial_spg_num": [225, 221],
+            str(Key.mat_id): ["mp-2", "mp-1"],
+            str(Key.init_spg_num): [225, 221],
             str(MbdKey.kappa_tot_rta): [[1, 2, 3, 4, 5, 6]] * 2,
             "errors": [np.nan, []],
         }
     )
-    df_normalized: pd.DataFrame = normalize_kappa_dataframe(df_legacy)
+    df_normalized: pd.DataFrame = normalize_kappa_dataframe(df_input)
     assert list(df_normalized[str(Key.mat_id)]) == ["mp-2", "mp-1"]
     assert "mp_id" not in df_normalized
     assert np.asarray(df_normalized[str(MbdKey.kappa_tot_rta)].iloc[0]).shape == (
         3,
         3,
     )
-    df_mixed = pd.DataFrame([{str(Key.mat_id): "mp-1"}, {"mp_id": "mp-2"}])
-    assert list(normalize_kappa_dataframe(df_mixed)[str(Key.mat_id)]) == [
-        "mp-1",
-        "mp-2",
-    ]
 
 
 @pytest.mark.parametrize(
@@ -772,6 +813,40 @@ def test_resumable_shards_strict_merge_and_artifacts(
         merge_kappa_shards(shard_dir, model_key="test_model")
 
 
+@pytest.mark.parametrize("partial_sidecar", [False, True])
+def test_harmonic_failure_resume_and_merge(
+    shard_env: SimpleNamespace,
+    partial_sidecar: bool,
+) -> None:
+    """Harmonic failures merge without censoring kappa and retry only when requested."""
+    settings = KappaSettings(relaxation_mode="none", save_forces=True)
+    records = shard_env.run(settings=settings)
+    record = records[0]
+    path = record_path(shard_env.shard_dir, record.material_id)
+    failed = replace(
+        record,
+        result={**record.result, "phonon_errors": {"band_path": {"message": "failed"}}},
+        phonon_file=record.phonon_file if partial_sidecar else None,
+    )
+    atomic_write_gzip_json(path, asdict(failed))
+    n_calls = len(shard_env.computation.material_ids)
+    shard_env.run(settings=settings)
+    assert len(shard_env.computation.material_ids) == n_calls
+    merged = merge_kappa_shards(shard_env.shard_dir, model_key="test_model")
+    assert merged.run_metadata["n_failed"] == 0
+    assert merged.run_metadata["n_phonon_failed"] == 1
+    np.testing.assert_array_equal(
+        merged.records[0].result[MbdKey.kappa_tot_rta],
+        record.result[MbdKey.kappa_tot_rta],
+    )
+    shard_env.run(settings=settings, retry_failures=True)
+    assert len(shard_env.computation.material_ids) == n_calls + 1
+    retried = read_kappa_record(path)
+    assert not retried.result.get("phonon_errors")
+    assert retried.run_metadata["retry_count"] == 1
+    assert retried.run_metadata["run_time_sec"] >= record.run_metadata["run_time_sec"]
+
+
 def test_manifest_rejects_changed_settings(shard_env: SimpleNamespace) -> None:
     """A resumed run cannot silently change its scientific protocol."""
     settings = KappaSettings(relaxation_mode="none", max_steps=0)
@@ -793,3 +868,20 @@ def test_merge_preserves_manifest_checkpoint_identity(
     merged_run = merge_kappa_shards(shard_env.shard_dir, model_key="test_model")
     assert len(merged_run.records) == len(shard_env.atoms_by_id)
     assert merged_run.manifest.checkpoint_hash == checkpoint_digest(checkpoint)
+
+
+def test_kappa_source_paths_covers_every_output_defining_module() -> None:
+    """Modules that shape kappa outputs are hashed, so an edit invalidates a resume."""
+    basenames = {
+        os.path.basename(path)
+        for path in kappa_source_paths(StandardKappaAdapter(), "mace-mp-0")
+    }
+    # harmonic.py is imported inside harmonic_phonons, so the adapter-MRO sweep never
+    # reaches it; omitting it let a band-path change keep the digest and reuse sidecars
+    assert {
+        "harmonic.py",
+        "pipeline.py",
+        "schema.py",
+        "thermal_conductivity.py",
+        "run_kappa.py",
+    } <= basenames, f"unhashed kappa source modules; got {sorted(basenames)}"

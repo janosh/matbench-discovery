@@ -72,9 +72,8 @@ def test_load_candidate_points_skips_malformed_points(tmp_path: Path) -> None:
     ("candidate_map", "expected_skipped", "expected_quality"),
     [
         ({}, {}, []),
-        # a pair merging to <2 points (H has one valid point) is counted as skipped
-        # and logged in the quality report instead of silently vanishing from the
-        # bundled reference
+        # a pair merging to <2 points (H has one valid point) counts as skipped and is
+        # logged in the quality report instead of vanishing from the bundled reference
         (
             {"H": [0]},
             {"PBE": 1, "r2SCAN": 1},

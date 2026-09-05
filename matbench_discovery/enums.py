@@ -234,9 +234,7 @@ class Files(StrEnum, metaclass=MetaFiles):
     """Enum of data files with associated file directories and URLs."""
 
     def __new__(cls, val: str, file_path: str) -> Self:
-        """Create a new member of the FileUrls enum with a given URL where to load the
-        file from and directory where to save it to.
-        """
+        """Create a member identified by ``val`` and holding its relative file path."""
         # pass val to str.__new__ so the member's underlying string content is its
         # value. Without it, every member is the empty string "", so str.__eq__ and
         # str.__hash__ (inherited, not overridden) make all members compare equal and
@@ -475,9 +473,8 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     @classmethod
     def _missing_(cls, value: object) -> Self | None:
         """Normalize casing and punctuation before matching enum values.
-        If no match is found, return None.
 
-        This allows CLI arguments like --models mace-mp-0 to be recognized as mace_mp_0.
+        Lets CLI arguments like --models mace-mp-0 resolve to mace_mp_0.
         """
         if isinstance(value, str):
             converted_value = re.sub(r"[^a-z0-9]+", "_", value.casefold()).strip("_")

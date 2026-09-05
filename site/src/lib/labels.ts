@@ -13,8 +13,7 @@ import type {
 
 export const RMSD_BASELINE = 0.15 // Baseline for poor performance given worst performing model at time of writing is M3GNet at 0.1117
 
-// Helper function to format scientific notation with superscript
-// Used e.g. for symprec in geo_opt metrics
+// Format scientific notation with superscript, e.g. for symprec in geo_opt metrics
 export const format_power_ten = (text: string): string =>
   text
     .replaceAll(
@@ -25,13 +24,11 @@ export const format_power_ten = (text: string): string =>
     .replaceAll(/(?<![\d.])1×10/g, `10`)
 
 // Vendored from matterviz <0.6 (src/lib/time.ts), which dropped format_relative_time.
-// Parse and validate date, returns null if invalid.
-// Strings without timezone are treated as UTC (append Z if missing).
+// Returns null if invalid. Strings without timezone are treated as UTC (Z appended).
 const parse_date = (date?: Date | string): Date | null => {
   if (!date) return null
   if (typeof date === `string`) {
-    // If string lacks timezone indicator, treat as UTC by appending Z
-    // Matches ISO format without timezone: 2024-01-15T14:30:00 or 2024-01-15 14:30:00
+    // ISO without timezone: 2024-01-15T14:30:00 or 2024-01-15 14:30:00
     const has_tz = /Z$|[+-]\d{2}:\d{2}$|[+-]\d{4}$/.test(date)
     const normalized = has_tz ? date : `${date.replace(` `, `T`)}Z`
     const parsed = new Date(normalized)
@@ -693,7 +690,6 @@ export const DIATOMICS_METRICS: Record<DiatomicsMetricKey, Label> = {
   },
 }
 
-// Phonon metrics
 export const PHONON_METRICS = {
   κ_SRME: {
     key: `κ_SRME`,
@@ -761,7 +757,6 @@ type AllMetrics = DiscoveryMetricsLabels &
   }
 
 export const ALL_METRICS: AllMetrics = {
-  // Dynamic metrics
   CPS: {
     key: `CPS`,
     label: `CPS`,
@@ -772,7 +767,6 @@ export const ALL_METRICS: AllMetrics = {
   },
   ...DISCOVERY_METRICS,
   ...PHONON_METRICS,
-  // Geometry optimization metrics
   RMSD: {
     key: `rmsd`,
     path: `metrics.geo_opt.symprec=1e-2`,
@@ -850,6 +844,8 @@ export const scatter_options_by_key = Object.fromEntries(
   scatter_options.map((option) => [option.key, option]),
 )
 
+export const scatter_option_keys = new Set(scatter_options.map((option) => option.key))
+
 // Labels may contain HTML such as <sub>.
 export const scatter_axis_label = (key: string): string =>
   scatter_options_by_key[key]?.label ?? key
@@ -861,9 +857,8 @@ const PROPERTY_LABELS = Object.fromEntries(
   ]),
 )
 
-// Formats a property path for display in UI components
+// Format a property path for display in UI components
 export function format_property_path(path: string): string {
-  // Split path into components
   let parts = path
     .split(`.`)
     .filter((part) => ![`metrics`, `kappa_103`].includes(part) && part)
@@ -873,7 +868,6 @@ export function format_property_path(path: string): string {
     parts = parts.filter((part) => !part.includes(`symprec`))
   }
 
-  // Default formatting for other dotted paths
   return parts
     .map((part) => {
       const pretty_label = CATEGORY_LABELS[part] ?? PROPERTY_LABELS[part]
@@ -888,7 +882,6 @@ const CATEGORY_LABELS = Object.fromEntries(
     ([key, task]) => [key, task.label],
   ),
 )
-// Add explicit mapping for hyperparams.
 CATEGORY_LABELS.hyperparams = `Hyperparams`
 
 const to_title = (str: string) => str.charAt(0).toUpperCase() + str.slice(1)

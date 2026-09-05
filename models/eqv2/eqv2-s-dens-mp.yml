@@ -208,9 +208,9 @@ metrics:
       κ_SRME: 1.6763 # eqV2 S without denoising (no DeNS) achieves slightly worse κ_SRME=1.772
       pred_file:
         name: models/eqv2/eqv2-s-dens-mp/2024-11-08-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/65718186
-        size: 9575311
-        md5: 704f9eb3a394b48ee925391ef697c917
+        url: https://figshare.com/files/68221336
+        size: 7377596
+        md5: 6fe9e96e4c09b9380819f0824603a672
       κ_SRE: 1.3866
       κ_SRD: 0.1419
       κ_failure_rate: 0.0194

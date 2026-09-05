@@ -1,17 +1,5 @@
-import {
-  generate_csv,
-  generate_excel,
-  generate_png,
-  generate_svg,
-  handle_export,
-} from '$lib/table-export'
-import { toPng, toSvg } from 'html-to-image'
+import { generate_csv } from '$lib/table-export'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-vi.mock(`html-to-image`, () => ({
-  toSvg: vi.fn(),
-  toPng: vi.fn(),
-}))
 
 const today = () => new Date().toISOString().split(`T`)[0]
 
@@ -72,8 +60,6 @@ describe(`Table Export Functionality`, () => {
   beforeEach(() => {
     mount_table()
 
-    vi.mocked(toSvg).mockResolvedValue(`data:image/svg+xml;base64,test`)
-    vi.mocked(toPng).mockResolvedValue(`data:image/png;base64,test`)
     click_spy = vi
       .spyOn(HTMLAnchorElement.prototype, `click`)
       .mockImplementation(() => {})
@@ -91,56 +77,17 @@ describe(`Table Export Functionality`, () => {
     return blob as Blob
   }
 
-  it.each([
-    [`SVG`, generate_svg, toSvg, `.svg`],
-    [`PNG`, generate_png, toPng, `.png`],
-  ] as const)(
-    `generates %s export with a cleaned table clone`,
-    async (_format, generator, encoder, extension) => {
-      let captured_container: HTMLElement | undefined
-      vi.mocked(encoder).mockImplementation((container) => {
-        captured_container = container
-        return Promise.resolve(`data:image/${extension.slice(1)};base64,test`)
-      })
-
-      const result = await generator({ discovery_set: `unique_prototypes` })
-
-      if (!result) throw new Error(`${_format} export returned null`)
-      if (!captured_container) throw new Error(`${_format} export did not call encoder`)
-
-      expect(result.filename).toBe(
-        `matbench-unique-prototypes-2models-${today()}${extension}`,
-      )
-      expect(result.url).toBe(
-        extension === `.svg` ? `mock-url` : `data:image/png;base64,test`,
-      )
-      expect(click_spy).toHaveBeenCalled()
-      expect(captured_container.querySelectorAll(`svg, a[href]`)).toHaveLength(0)
-      expect(captured_container.querySelectorAll(`sub, sup`)).toHaveLength(1)
-      // the structural rank (#) column is stripped from image exports
-      expect(captured_container.querySelector(`.row-num-col`)).toBeNull()
-    },
-  )
-
-  it.each([
-    [`SVG`, generate_svg],
-    [`PNG`, generate_png],
-    [`CSV`, generate_csv],
-    [`Excel`, generate_excel],
-  ] as const)(
-    `returns null when table is missing for %s export`,
-    async (_format, generator) => {
-      document.body.innerHTML = ``
-      const console_spy = vi.spyOn(console, `error`).mockImplementation(() => {})
-
-      await expect(
-        Promise.resolve(generator({ discovery_set: `test` })),
-      ).resolves.toBeNull()
-      expect(console_spy).toHaveBeenCalled()
-    },
-  )
+  it(`returns null when the table is missing`, () => {
+    document.body.innerHTML = ``
+    const console_spy = vi.spyOn(console, `error`).mockImplementation(() => {})
+    expect(generate_csv({ discovery_set: `test` })).toBeNull()
+    expect(console_spy).toHaveBeenCalled()
+  })
 
   it(`generates CSV with formatted data and excludes icon columns`, async () => {
+    const model_cell = document.querySelector<HTMLElement>(`tbody td:nth-child(2)`)
+    if (!model_cell) throw new Error(`missing model cell`)
+    model_cell.dataset.sortValue = `Model A, revised`
     const result = generate_csv({ discovery_set: `unique_prototypes` })
 
     if (!result) throw new Error(`CSV export returned null`)
@@ -154,7 +101,7 @@ describe(`Table Export Functionality`, () => {
     expect(csv_content).not.toContain(`Org`)
     expect(csv_content).not.toContain(`Links`)
     expect(csv_content).not.toContain(`#`) // rank column excluded
-    expect(csv_content).toContain(`Model A`)
+    expect(csv_content).toContain(`"Model A, revised"`)
     expect(csv_content).toContain(`"Model ""Special"""`)
     // HTML-string cells carry their raw value on an inner span, not the <td>: export the
     // unformatted number (rendered per the Params '~s' spec) rather than the display text
@@ -184,48 +131,5 @@ describe(`Table Export Functionality`, () => {
     expect(csv_content).toContain(`spaced out text`)
     // double-encoded entities (&amp;lt; -> &lt; -> <) are decoded back to literals
     expect(csv_content).toContain(`<tag> & more`)
-  })
-
-  it(`generates Excel with the expected MIME type`, async () => {
-    const result = await generate_excel({ discovery_set: `test_set` })
-
-    if (!result) throw new Error(`Excel export returned null`)
-
-    expect(result.filename).toBe(`matbench-test-set-2models-${today()}.xlsx`)
-    expect(result.url).toBe(`mock-url`)
-    expect(click_spy).toHaveBeenCalled()
-
-    expect(exported_blob().type).toBe(
-      `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`,
-    )
-  })
-
-  describe(`handle_export Function`, () => {
-    it.each([
-      [`success`, { filename: `test.fmt`, url: `some-url` }, null],
-      [`null return`, null, `Failed to generate fmt. The export function returned null.`],
-      [`error`, new Error(`Generator failed`), `Error exporting fmt: Generator failed`],
-      [
-        `string error`,
-        `Something went wrong`,
-        `Error exporting fmt: Something went wrong`,
-      ],
-    ])(
-      `handles %s case correctly`,
-      async (_test_name, generator_result, expected_error) => {
-        const generator_spy = vi.fn()
-        const opts = { discovery_set: `test` }
-
-        if (generator_result instanceof Error || typeof generator_result === `string`) {
-          generator_spy.mockRejectedValue(generator_result)
-        } else {
-          generator_spy.mockResolvedValue(generator_result)
-        }
-
-        vi.spyOn(console, `error`).mockImplementation(() => {})
-        expect(await handle_export(generator_spy, `fmt`, opts)).toBe(expected_error)
-        expect(generator_spy).toHaveBeenCalledWith(opts)
-      },
-    )
   })
 })

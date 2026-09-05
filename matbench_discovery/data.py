@@ -15,7 +15,9 @@ import hashlib
 import io
 import os
 import re
+import stat
 import sys
+import tempfile
 import zipfile
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from datetime import date
@@ -377,7 +379,7 @@ def ase_atoms_from_zip(
                     io.StringIO(content), format="extxyz", index=slice(None)
                 )  # reads multiple Atoms objects as frames if file contains trajectory
                 if isinstance(atoms, Atoms):
-                    atoms = [atoms]  # Wrap single Atoms object in a list
+                    atoms = [atoms]
                 if filename_to_info:
                     for atom in atoms:
                         atom.info["filename"] = filename
@@ -456,7 +458,6 @@ def load_df_wbm_with_preds(
                     f"e_form_per_atom column not found in {pred_path}"
                 ) from exc
             if max_error_threshold is not None:
-                # Apply centralized model prediction cleaning criterion (see doc string)
                 bad_mask = (
                     abs(df_out[model_key] - df_out[MbdKey.e_form_dft])
                     > max_error_threshold
@@ -507,8 +508,7 @@ def update_yaml_file(
 ) -> dict[str, Any]:
     """Update a YAML file at a specific dotted path with new data.
 
-    Uses file locking to prevent race conditions when multiple processes
-    try to update the same file simultaneously.
+    File-locked and atomically replaced so failed writes preserve the original file.
 
     Args:
         file_path (str | Path): Path to YAML file to update
@@ -533,6 +533,7 @@ def update_yaml_file(
     # raise on repeated or trailing dots in dotted path
     if not re.match(r"^[a-zA-Z0-9-+=_]+(\.[a-zA-Z0-9-+=_]+)*$", dotted_path):
         raise ValueError(f"Invalid {dotted_path=}")
+    file_path = os.path.realpath(file_path)
 
     # Lock outside the repo, since filelock never removes its lock file and locking a
     # tracked YAML in place litters the repo with .yml.lock. Not tempfile.gettempdir():
@@ -545,19 +546,16 @@ def update_yaml_file(
         with open(file_path, encoding="utf-8") as file:
             yaml_data = round_trip_yaml.load(file)
 
-        # Navigate to the correct nested level
         current = yaml_data
         *parts, last = dotted_path.split(".")
 
         for part in parts:
             current = current.setdefault(part, {})
 
-        # Update the data at the final level. By default, preserve existing keys when
-        # replacing a dict section. Pass preserve_existing=False to fully replace the
-        # section, so a recompute drops keys that are no longer emitted.
         previous = current.get(last)
-        # Callables own the merge (they receive a copy of the prior section). Plain
-        # dict updates optionally keep unspecified prior keys via preserve_existing.
+        # Callables own the merge (they receive a copy of the prior section). Plain dict
+        # updates keep unspecified prior keys unless preserve_existing=False, which lets
+        # a recompute drop keys that are no longer emitted.
         if isinstance(data, dict):
             updated_data = data.copy()
             if preserve_existing and isinstance(previous, dict):
@@ -567,8 +565,24 @@ def update_yaml_file(
             updated_data = data(dict(previous) if isinstance(previous, dict) else {})
         current[last] = updated_data
 
-        # Write back to file
-        with open(file_path, mode="w", encoding="utf-8") as file:
-            round_trip_yaml.dump(yaml_data, file)
+        temporary_file = tempfile.NamedTemporaryFile(  # noqa: SIM115 - closed before replace
+            mode="w",
+            encoding="utf-8",
+            dir=os.path.dirname(file_path),
+            prefix=f".{os.path.basename(file_path)}.",
+            suffix=".tmp",
+            delete=False,
+        )
+        temporary_path = temporary_file.name
+        try:
+            with temporary_file as file:
+                round_trip_yaml.dump(yaml_data, file)
+                file.flush()
+                os.fsync(file.fileno())
+                os.chmod(temporary_path, stat.S_IMODE(os.stat(file_path).st_mode))
+            os.replace(temporary_path, file_path)
+        finally:
+            if os.path.isfile(temporary_path):
+                os.remove(temporary_path)
 
         return yaml_data

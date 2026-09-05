@@ -392,9 +392,7 @@ def _calc_kappa_srme_dataframes(
         relaxed_spg = row_pred.get(Key.final_spg_num)
         if not censored and not pd.isna(relaxed_spg) and relaxed_spg:
             initial_spg = row_pred.get(Key.init_spg_num)
-            # normalize_kappa_result canonicalizes the reference's spg_num alias
-            # into init_spg_num, so check both keys for the DFT spacegroup
-            reference_spg = row_true.get(Key.init_spg_num, row_true.get(Key.spg_num))
+            reference_spg = row_true.get(Key.init_spg_num)
             expected_spg = reference_spg if pd.isna(initial_spg) else initial_spg
             censored = not pd.isna(expected_spg) and relaxed_spg != expected_spg
         valid = not censored and result.size == 1 and np.isfinite(result[0])

@@ -15,11 +15,9 @@ describe(`Datasets Page`, () => {
     const thead = doc_query(`thead`, table)
     const tbody = doc_query(`tbody`, table)
 
-    // Check header columns
     const header_cols = thead.querySelectorAll(`th`)
     expect(header_cols).toHaveLength(10)
 
-    // Verify expected column headers are present
     const column_headers = [...header_cols].map(
       (col) => col.textContent?.trim().replaceAll(/[↑↓]/g, ``) ?? ``,
     )
@@ -50,8 +48,7 @@ describe(`Datasets Page`, () => {
     let resource_link_count = 0
     rows.forEach((row) => {
       const cells = row.querySelectorAll(`td`)
-      const links_cell = cells[9] // Updated Links column index
-      // Ensure the cell was found before querying links
+      const links_cell = cells[9]
       if (!links_cell) return
 
       const resource_links = [...links_cell.querySelectorAll(`a`)].filter(
@@ -59,7 +56,6 @@ describe(`Datasets Page`, () => {
       )
       resource_link_count += resource_links.length
 
-      // Each link should have target="_blank"
       resource_links.forEach((link) => {
         expect(link.getAttribute(`target`)).toBe(`_blank`)
         expect(link.getAttribute(`rel`)).toContain(`noopener`)
@@ -70,7 +66,6 @@ describe(`Datasets Page`, () => {
       })
     })
 
-    // There should be multiple resource links
     expect(resource_link_count).toBeGreaterThan(10)
   })
 
@@ -115,13 +110,12 @@ describe(`Datasets Page`, () => {
     const tbody = document.querySelector(`.${heatmap_class} tbody`)
     const rows = tbody?.querySelectorAll(`tr`) ?? []
 
-    // Get cells from second column (Structures)
     const structures_cells = [...rows].map((row) => {
       const cells = row.querySelectorAll(`td`)
-      return cells[1] // Second column (index 1)
+      return cells[1]
     })
 
-    // Check that at least some cells have formatted numbers (K/M for thousands/millions)
+    // K/M suffixes for thousands/millions
     const has_formatted_number = structures_cells.some((cell) => {
       const cell_text = cell?.textContent?.trim() ?? ``
       return cell_text !== `n/a` && /\d+(?:\.\d+)?[KM]/.test(cell_text)
@@ -135,26 +129,21 @@ describe(`Datasets Page`, () => {
     const tbody = document.querySelector(`.${heatmap_class} tbody`)
     const rows = tbody?.querySelectorAll(`tr`) ?? []
 
-    // Get cells from the Method column
     const method_cells = [...rows].map((row) => {
       const cells = row.querySelectorAll(`td`)
-      return cells[7] // Keep Method column index at 7
+      return cells[7]
     })
 
-    // At least some cells should have method information (not all n/a)
     const method_count = method_cells.filter(
       (cell) => cell?.textContent?.trim() !== `n/a`,
     ).length
 
-    // There should be at least several datasets with method information
     expect(method_count).toBeGreaterThan(3)
 
-    // Check for common methods like DFT or ML in the column
     const all_methods_text = method_cells
       .map((cell) => cell?.textContent?.trim())
       .join(` `)
 
-    // Should find at least one of these common methods
     expect(/DFT|ML|experiment|GW|DMFT|MD/.test(all_methods_text)).toBe(true)
   })
 })

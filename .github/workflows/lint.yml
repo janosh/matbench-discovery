@@ -25,7 +25,11 @@ jobs:
 
       - name: Install site dependencies
         # use the project's pinned pnpm (packageManager field) via corepack
-        run: corepack enable && pnpm install
+        run: |
+          corepack enable
+          # Git dependencies generate dist/ during prepare; keep their allowlist CI-only.
+          printf 'allowBuilds:\n  matterviz: true\n  svelte-widgets: true\n' > pnpm-workspace.yaml
+          pnpm install --config.strict-dep-builds=false
         working-directory: site
 
       - name: Run prek

@@ -166,9 +166,9 @@ metrics:
       κ_SRME: 0.5255 # https://github.com/MPA2suite/k_SRME/pull/11/files
       pred_file:
         name: models/grace/grace-2l-mptrj/2024-11-20-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/52134896
-        size: 7401327
-        md5: 987ee030191b3524d874dd3af5bde5a7
+        url: https://figshare.com/files/68221348
+        size: 7401366
+        md5: 37e2574f49242b939f69bcbd5e398be6
       κ_SRE: 0.3186
       κ_SRD: -0.1198
       κ_failure_rate: 0.0291

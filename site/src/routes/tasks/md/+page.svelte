@@ -4,7 +4,7 @@
     MD_METRICS,
     METADATA_COLS,
     scatter_axis_label,
-    scatter_options_by_key,
+    scatter_option_keys,
     task_page_visible_cols,
   } from '$lib/labels'
   import type { SortState } from '$lib/url-state.svelte'
@@ -20,9 +20,9 @@
     bind_url_params,
     sort_from_query,
     sort_url_entries,
-    valid_query_param,
     weights_to_param,
   } from '$lib/url-state.svelte'
+  import { valid_query_param } from 'svelte-widgets/url-params'
   import MdNote from './md-note.md'
 
   // show only MD metrics and metadata columns
@@ -48,8 +48,8 @@
   const filters = make_table_filters()
 
   const read_url_params = (params: URLSearchParams) => {
-    scatter_x = valid_query_param(params, `x`, default_scatter_x, scatter_options_by_key)
-    scatter_y = valid_query_param(params, `y`, default_scatter_y, scatter_options_by_key)
+    scatter_x = valid_query_param(params, `x`, default_scatter_x, scatter_option_keys)
+    scatter_y = valid_query_param(params, `y`, default_scatter_y, scatter_option_keys)
     sort = sort_from_query(params, default_sort)
     filters.read(params)
     apply_weights_param(params.get(`weights`), CMDS_CONFIG, DEFAULT_CMDS_CONFIG)

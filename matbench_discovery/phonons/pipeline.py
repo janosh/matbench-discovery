@@ -14,11 +14,11 @@ import sys
 import tempfile
 import time
 import traceback
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, replace
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, Literal
+from typing import IO, TYPE_CHECKING, Any, Literal
 from urllib.parse import quote
 
 import numpy as np
@@ -46,8 +46,8 @@ if TYPE_CHECKING:
     from ase import Atoms
     from ase.calculators.calculator import Calculator
 
-# v2: every successful record carries a harmonic phonon sidecar (phonon_file)
-KAPPA_RECORD_SCHEMA_VERSION = 2
+# v3: harmonic analysis failures are separate from conductivity failures
+KAPPA_RECORD_SCHEMA_VERSION = 3
 # v4: removed the per-model ignore_imaginary_freqs leniency from KappaSettings
 KAPPA_MANIFEST_SCHEMA_VERSION = 4
 PHONONDB_N_STRUCTURES = 103
@@ -308,7 +308,7 @@ class KappaComputation:
     forces: dict[str, Any] | None
     error: str | None
     # harmonic band path, eigenvectors, DOS and thermal properties from FC2
-    # (see matbench_discovery.phonons.harmonic); None only when FC2 failed
+    # (see matbench_discovery.phonons.harmonic); None when FC2 or its export failed
     phonons: dict[str, Any] | None = None
 
 
@@ -426,15 +426,24 @@ def checkpoint_digest(checkpoint: str | None) -> str | None:
     return hashlib.sha256(checkpoint.encode()).hexdigest()
 
 
-def kappa_source_digest(adapter: StandardKappaAdapter, model_key: str) -> str:
-    """Hash shared runner, pipeline, calculator, schema, and adapter source files."""
+def kappa_source_paths(adapter: StandardKappaAdapter, model_key: str) -> set[str]:
+    """Resolve every source file whose bytes define a kappa run's outputs.
+
+    Any module that shapes predictions or sidecars belongs here: one that is missing
+    leaves the digest unmoved across an edit, so a resume keeps stale outputs written
+    by the previous code version.
+    """
     from matbench_discovery import ase_relax, calculators, hpc, phonons
-    from matbench_discovery.phonons import schema, thermal_conductivity
+    from matbench_discovery.phonons import harmonic, schema, thermal_conductivity
 
     source_paths = {
         os.path.realpath(ase_relax.__file__),
         os.path.realpath(__file__),
         os.path.realpath(calculators.__file__),
+        # harmonic is imported inside harmonic_phonons, so the adapter MRO loop below
+        # never sees it; without this a band-path change would leave the hash unmoved
+        # and a resume would keep sidecars written by the previous convention
+        os.path.realpath(harmonic.__file__),
         os.path.realpath(hpc.__file__),
         os.path.realpath(phonons.__file__),
         os.path.realpath(schema.__file__),
@@ -448,9 +457,13 @@ def kappa_source_digest(adapter: StandardKappaAdapter, model_key: str) -> str:
             module_file := getattr(module, "__file__", None)
         ):
             source_paths.add(os.path.realpath(module_file))
+    return source_paths
 
+
+def kappa_source_digest(adapter: StandardKappaAdapter, model_key: str) -> str:
+    """Hash shared runner, pipeline, calculator, schema, and adapter source files."""
     source_hasher = hashlib.sha256()
-    for source_path in sorted(source_paths):
+    for source_path in sorted(kappa_source_paths(adapter, model_key)):
         if not os.path.isfile(source_path):
             raise FileNotFoundError(f"Kappa source file not found: {source_path}")
         source_hasher.update(os.path.basename(source_path).encode())
@@ -656,17 +669,25 @@ def calculate_kappa_for_structure(
             str(Key.has_imag_ph_modes): has_imaginary_modes,
             str(Key.ph_freqs): frequencies,
         }
-        # the harmonic sidecar (band path + eigenvectors + DOS + thermal properties) is
-        # recorded for every material with an FC2, including those with imaginary modes
-        error_stage = "Harmonic"
-        phonons = adapter.harmonic_phonons(phono3py, settings)
-        error_stage = "ForceConstant"
+        if settings.save_forces:
+            forces = {"fc2_set": fc2_set, "fc3_set": []}
+        # Harmonic analysis owns its failures: normalization treats result.errors as
+        # conductivity failures, so placing a sidecar error there destroys valid kappa.
+        try:
+            phonons = adapter.harmonic_phonons(phono3py, settings)
+            result["phonon_errors"] = phonons["errors"]
+        except Exception as exc:  # noqa: BLE001 - sidecar is optional, kappa is not
+            result["phonon_errors"] = {
+                "harmonic": {
+                    "message": f"{type(exc).__name__}: {exc}",
+                    "traceback": traceback.format_exc(),
+                }
+            }
         should_calculate_conductivity_value = should_calculate_conductivity(
             has_imaginary_modes=has_imaginary_modes,
             broken_symmetry=bool(result["broken_symmetry"]),
             settings=settings,
         )
-        fc3_set: np.ndarray | list[Any] = []
         if should_calculate_conductivity_value:
             fc3_set = adapter.calculate_fc3(
                 phono3py,
@@ -674,10 +695,10 @@ def calculate_kappa_for_structure(
                 settings,
                 max_evaluations=max_fc3_evaluations,
             )
+            if forces is not None:
+                forces["fc3_set"] = fc3_set
             phono3py.forces = np.asarray(fc3_set)
             phono3py.produce_fc3(symmetrize_fc3r=True)
-        if settings.save_forces:
-            forces = {"fc2_set": fc2_set, "fc3_set": fc3_set}
         if should_calculate_conductivity_value:
             error_stage = "Conductivity"
             from matbench_discovery.phonons import thermal_conductivity as ltc
@@ -774,15 +795,15 @@ def run_kappa_shard(
                     existing_record.phonon_file is not None
                     and os.path.isfile(f"{shard_dir}/{existing_record.phonon_file}")
                 )
+                failed = existing_record.error is not None or bool(
+                    existing_record.result.get("phonon_errors")
+                )
+                complete = phonon_exists and (not settings.save_forces or force_exists)
+                if not failed and complete:
+                    continue
+                if failed and not retry_failures:
+                    continue
                 if (
-                    existing_record.error is None
-                    and phonon_exists
-                    and (not settings.save_forces or force_exists)
-                ):
-                    continue
-                if existing_record.error is not None and not retry_failures:
-                    continue
-                if existing_record.error is not None and (
                     existing_record.run_metadata.get("hardware") != hardware
                     or existing_record.run_metadata.get("versions") != versions
                 ):
@@ -814,7 +835,7 @@ def run_kappa_shard(
                 shard_index=shard_index,
                 previous_metadata=(
                     existing_record.run_metadata
-                    if existing_record is not None and existing_record.error is not None
+                    if existing_record is not None
                     else None
                 ),
             )
@@ -877,6 +898,8 @@ def _validate_sidecars(
     for record in records:
         relative_path: str | None = getattr(record, attribute)
         if record.error is None and relative_path is None:
+            if attribute == "phonon_file" and record.result.get("phonon_errors"):
+                continue
             raise ValueError(
                 f"Successful record {record.material_id!r} is missing {attribute}"
             )
@@ -963,6 +986,9 @@ def merge_kappa_shards(
         "n_shards": manifest.n_shards,
         "n_structures": len(records),
         "n_failed": sum(record.error is not None for record in records),
+        "n_phonon_failed": sum(
+            bool(record.result.get("phonon_errors")) for record in records
+        ),
         "dataset_path": manifest.dataset_path,
         "settings": asdict(manifest.settings),
         "adapter": manifest.adapter_name,
@@ -1061,6 +1087,24 @@ def _atomic_output_path(path: str) -> Iterator[str]:
             os.remove(temporary_path)
 
 
+def write_json_records(
+    output_file: IO[str], records: Iterable[Mapping[str, Any]]
+) -> None:
+    """Write a JSON array holding one record per line.
+
+    Streaming keeps the writer from holding every record at once (a merged harmonic
+    sidecar is ~30 MB unzipped). The one-record-per-line layout is a readability and
+    diff convenience only: the output is ordinary JSON and readers must parse it as
+    such, never by assuming the framing.
+    """
+    output_file.write("[\n")
+    for n_written, record in enumerate(records):
+        if n_written:
+            output_file.write(",\n")
+        json.dump(json_ready(record), output_file, sort_keys=True, allow_nan=False)
+    output_file.write("\n]")
+
+
 def stream_sidecar_artifact(
     path: str,
     *,
@@ -1074,32 +1118,28 @@ def stream_sidecar_artifact(
     array may hold fewer entries than the prediction file; each entry carries its
     material ID.
     """
-    with _atomic_output_path(path) as temporary_path:
-        n_written = 0
-        with gzip.open(temporary_path, mode="wt", encoding="utf-8") as output_file:
-            output_file.write("[")
-            for record in records:
-                relative_path: str | None = getattr(record, attribute)
-                if relative_path is None:
-                    continue
-                source_path = f"{shard_dir}/{relative_path}"
-                with gzip.open(source_path, mode="rt", encoding="utf-8") as source_file:
-                    sidecar_data = json.load(source_file)
-                if not isinstance(sidecar_data, dict):
-                    raise TypeError(
-                        f"{attribute} sidecar for {record.material_id} must be a dict"
-                    )
-                if n_written:
-                    output_file.write(",")
-                json.dump(
-                    # the record's ID is authoritative over any ID inside the sidecar
-                    json_ready({**sidecar_data, str(Key.mat_id): record.material_id}),
-                    output_file,
-                    sort_keys=True,
-                    allow_nan=False,
+
+    def sidecar_payloads() -> Iterator[dict[str, Any]]:
+        """Read each record's sidecar, stamped with the record's authoritative ID."""
+        for record in records:
+            relative_path: str | None = getattr(record, attribute)
+            if relative_path is None:
+                continue
+            with gzip.open(
+                f"{shard_dir}/{relative_path}", mode="rt", encoding="utf-8"
+            ) as source_file:
+                sidecar_data = json.load(source_file)
+            if not isinstance(sidecar_data, dict):
+                raise TypeError(
+                    f"{attribute} sidecar for {record.material_id} must be a dict"
                 )
-                n_written += 1
-            output_file.write("]")
+            yield {**sidecar_data, str(Key.mat_id): record.material_id}
+
+    with (
+        _atomic_output_path(path) as temporary_path,
+        gzip.open(temporary_path, mode="wt", encoding="utf-8") as output_file,
+    ):
+        write_json_records(output_file, sidecar_payloads())
 
 
 def package_versions(model_key: str | None = None) -> dict[str, str]:
@@ -1117,6 +1157,8 @@ def package_versions(model_key: str | None = None) -> dict[str, str]:
         "phono3py",
         "phonopy",
         "scipy",
+        # seekpath alone determines the band path, labels and q-point sampling
+        "seekpath",
         "spglib",
         "tensorflow",
         "torch",

@@ -509,7 +509,8 @@ def calc_pressure_metrics(
     noise rather than model bias. W1 and E_P compare the full pressure distributions,
     capturing both the mean offset and fluctuation-width differences.
     """
-    pressures_ref, pressures_pred = map(np.asarray, (pressures_ref, pressures_pred))
+    pressures_ref = np.asarray(pressures_ref)
+    pressures_pred = np.asarray(pressures_pred)
     if len(pressures_ref) == 0 or len(pressures_pred) == 0:
         raise ValueError("Cannot compute pressure metrics of empty pressure arrays")
 

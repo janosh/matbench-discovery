@@ -208,9 +208,9 @@ metrics:
     kappa_103:
       pred_file:
         name: models/nequip/nequip-oam-xl-0.1/2025-11-30-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/60007844
-        size: 9623030
-        md5: 1b774ff0c1841e7772430eb0c5580b7b
+        url: https://figshare.com/files/68221384
+        size: 9623128
+        md5: 85448133b5926f605acbd351e586ee02
       κ_SRME: 0.1252
       κ_SRE: 0.0537
       κ_SRD: -0.0214

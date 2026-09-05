@@ -1,10 +1,8 @@
 // Per-model harmonic phonon "modes" assets for the kappa task page: the seekpath band
-// path per phononDB material with frequencies at every q-point and mass-weighted
-// eigenvectors at the labeled endpoints, converted into matterviz's PhononModeData for
-// the PhononModeExplorer. Only models whose kappa run stored the harmonic sidecar
-// (`phonon_file` in the model YAML) appear in the manifest's `mode_assets`. Shapes are
-// validated once by the asset generator (site/scripts/generate-kappa-parity-assets.py),
-// so the client trusts the content-addressed JSON like the other parity assets.
+// path per phononDB material, converted into matterviz PhononModeData for the
+// PhononModeExplorer. Only models whose kappa run stored the harmonic sidecar
+// (`phonon_file` in the model YAML) get one. site/scripts/generate-kappa-parity-assets.py
+// validates the shapes, so the client trusts the JSON without rechecking.
 import type { Matrix3x3, Vec3 } from 'matterviz/math'
 import type { Complex, PhononModeData, PhononPathSegment } from 'matterviz/spectral'
 import { load_json_asset, parity_asset_resolver } from '../asset-loader'
@@ -36,11 +34,9 @@ const {
   has_model: has_kappa_modes,
 } = parity_asset_resolver(
   `kappa modes`,
-  {
-    local_asset_base_url: kappa_parity_manifest.local_asset_base_url,
-    model_assets: kappa_parity_manifest.mode_assets,
-  },
+  kappa_parity_manifest,
   import.meta.env.VITE_KAPPA_PARITY_ASSET_BASE_URL,
+  `modes`,
 )
 export { has_kappa_modes }
 

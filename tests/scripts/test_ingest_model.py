@@ -259,12 +259,17 @@ def test_publish_parity_assets_once(
         "asset": "asset.json.gz",
         "sha256": hashlib.sha256(asset_bytes).hexdigest(),
     }
+    parity_entry = entry | {"asset": "parity.json.gz"}
     modes_entry = entry | {"asset": "modes.json.gz"}
+    # base, a model's parity asset and its modes asset all have distinct stems
     manifest = {
         "base": entry,
-        "model_assets": {},
-        "mode_assets": {"model-key": modes_entry},
+        "model_assets": {"model-key": {"parity": parity_entry, "modes": modes_entry}},
     }
+    # publish_parity_assets uploads sorted(pending), not manifest order
+    asset_names = tuple(
+        sorted((entry["asset"], parity_entry["asset"], modes_entry["asset"]))
+    )
     asset_paths = []
     for parity_type in ("energy", "kappa"):
         manifest_path = (
@@ -272,7 +277,7 @@ def test_publish_parity_assets_once(
         )
         manifest_path.parent.mkdir(parents=True, exist_ok=True)
         manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
-        for name in (entry["asset"], modes_entry["asset"]):
+        for name in asset_names:
             asset_path = tmp_path / f"site/static/{parity_type}-parity/assets/{name}"
             asset_path.parent.mkdir(parents=True, exist_ok=True)
             asset_path.write_bytes(asset_bytes)
@@ -285,8 +290,7 @@ def test_publish_parity_assets_once(
         command[:4] == ("gh", "release", "upload", "v1.0.0")
         and command[4:]
         == tuple(
-            f"site/static/{parity_type}-parity/assets/{name}"
-            for name in (entry["asset"], modes_entry["asset"])
+            f"site/static/{parity_type}-parity/assets/{name}" for name in asset_names
         )
         for command, parity_type in zip(run_cmd_calls, ("energy", "kappa"), strict=True)
     )
@@ -298,9 +302,7 @@ def test_publish_parity_assets_once(
     assert ingest.main(["--publish-parity"]) == 1
     assert not run_cmd_calls
 
-    published = dict.fromkeys(
-        (entry["asset"], modes_entry["asset"]), f"sha256:{entry['sha256']}"
-    )
+    published = dict.fromkeys(asset_names, f"sha256:{entry['sha256']}")
     monkeypatch.setattr(ingest, "release_asset_digests", lambda: published)
     run_cmd_calls.clear()
     assert ingest.main(["--publish-parity"]) == 0

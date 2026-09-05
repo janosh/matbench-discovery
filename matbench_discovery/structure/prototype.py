@@ -77,7 +77,6 @@ def canonicalize_wyckoffs(element_wyckoffs: str, spg_num: int) -> str:
             letters = [char for char in groups if char.isalpha()]
             counts = [char for char in groups if char.isnumeric()]
 
-            # Sort by Wyckoff letter and build string
             sorted_pairs = sorted(
                 zip(counts, letters, strict=False), key=lambda x: x[1]
             )
@@ -131,7 +130,6 @@ def get_protostructure_label(
     symmetry_data = moyopy.MoyoDataset(moyo_cell, symprec=symprec)
     spg_num = symmetry_data.number
 
-    # Group sites by orbit
     orbit_groups: dict[int, list[int]] = {}
 
     for idx, orbit_id in enumerate(symmetry_data.orbits):
@@ -139,7 +137,6 @@ def get_protostructure_label(
             orbit_groups[orbit_id] = []
         orbit_groups[orbit_id].append(idx)
 
-    # Create equivalent_wyckoff_labels from orbit groups
     element_dict: dict[str, int] = {}
     element_wyckoffs: list[str] = []
 
@@ -174,7 +171,6 @@ def get_protostructure_label(
 
     all_wyckoffs = canonicalize_wyckoffs("_".join(element_wyckoffs), spg_num)
 
-    # Build prototype label
     prototype_label = (
         f"{get_prototype_formula(pmg_struct.composition)}_"
         f"{symmetry_data.pearson_symbol}_"

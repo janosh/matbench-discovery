@@ -712,8 +712,8 @@ def run_md_benchmark(
                 progress_label=progress_label,
             )
         else:
-            # reuse only a complete, consistent rollout; else recompute (a truncated
-            # file would silently evaluate as a shorter trajectory)
+            # reuse only a complete, consistent rollout; a truncated file would
+            # otherwise silently evaluate as a shorter trajectory
             pred_frames = None
             if os.path.isfile(pred_traj_path):
                 pred_frames = validate_pred_trajectory(

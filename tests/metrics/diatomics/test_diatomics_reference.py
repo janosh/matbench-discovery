@@ -101,10 +101,9 @@ def test_replaces_drop_between_different_neighbor_spin_branches() -> None:
 def test_keeps_low_gain_spin_branch_islands() -> None:
     """Near-degenerate branch flicker is kept: it IS the adiabatic minimum.
 
-    An earlier pipeline substituted <=0.2 eV spin islands with the surrounding branch
-    for cosmetic smoothness. That step was removed as unphysical hand-curation: the
-    per-distance minimum is reported as computed, and the published per-point magmoms
-    + spin_candidates make any remaining branch flicker visible instead of hidden.
+    Substituting <=0.2 eV spin islands with the surrounding branch was removed as
+    unphysical hand-curation: the per-distance minimum is reported as computed and the
+    published per-point magmoms + spin_candidates make branch flicker visible.
     """
     candidate_points: CandidatePoints = {
         2: [

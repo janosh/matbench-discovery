@@ -95,10 +95,11 @@ describe(`kappa modes assets`, () => {
   it(`reports mode assets only for models listed in the manifest`, () => {
     expect(has_kappa_modes(undefined)).toBe(false)
     expect(has_kappa_modes(`missing-model`)).toBe(false)
-    for (const model_key of Object.keys(kappa_parity_manifest.mode_assets)) {
-      expect(has_kappa_modes(model_key)).toBe(true)
-      // every model with modes also has the parity asset the page loads first
-      expect(model_key in kappa_parity_manifest.model_assets).toBe(true)
+    // a modes asset always sits alongside the parity asset the page loads first,
+    // which the nested manifest shape makes structural rather than a convention
+    for (const [model_key, kinds] of Object.entries(kappa_parity_manifest.model_assets)) {
+      expect(has_kappa_modes(model_key)).toBe(`modes` in kinds)
+      expect(`parity` in kinds).toBe(true)
     }
   })
 
@@ -115,11 +116,15 @@ describe(`kappa modes assets`, () => {
     // no shipped model carries modes yet, so register one in the (mutable) manifest
     // object; the resolver reads it at call time
     const model_key = `modes-test-model`
-    const mode_assets: Record<string, { asset: string; sha256: string } | undefined> =
-      kappa_parity_manifest.mode_assets
-    mode_assets[model_key] = {
-      asset: `${kappa_parity_manifest.asset_prefix}-modes-${model_key}-${`0`.repeat(16)}.json.gz`,
-      sha256: `a`.repeat(64),
+    const model_assets: Record<
+      string,
+      Record<string, { asset: string; sha256: string }> | undefined
+    > = kappa_parity_manifest.model_assets
+    const asset_name = (kind: string) =>
+      `${kappa_parity_manifest.asset_prefix}-${kind}-${model_key}-${`0`.repeat(16)}.json.gz`
+    model_assets[model_key] = {
+      parity: { asset: asset_name(`model`), sha256: `b`.repeat(64) },
+      modes: { asset: asset_name(`modes`), sha256: `a`.repeat(64) },
     }
     try {
       expect(has_kappa_modes(model_key)).toBe(true)
@@ -131,7 +136,7 @@ describe(`kappa modes assets`, () => {
       vi.stubGlobal(`fetch`, fetch_mock)
       await expect(load_kappa_modes(model_key)).resolves.toEqual(payload)
       expect(fetch_mock).toHaveBeenCalledWith(
-        `/kappa-parity/assets/${mode_assets[model_key]?.asset}`,
+        `/kappa-parity/assets/${model_assets[model_key]?.modes?.asset}`,
       )
       clear_asset_cache()
       vi.stubGlobal(
@@ -144,7 +149,7 @@ describe(`kappa modes assets`, () => {
         `expected ${model_key}, got other-model`,
       )
     } finally {
-      delete mode_assets[model_key]
+      Reflect.deleteProperty(model_assets, model_key)
     }
   })
 })

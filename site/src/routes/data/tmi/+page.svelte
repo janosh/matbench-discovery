@@ -6,13 +6,12 @@
   import { ColorScaleSelect } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
   import { BarPlot } from 'matterviz/plot'
+  import { bind_url_params, url_color_scale } from '$lib/url-state.svelte'
   import {
-    bind_url_params,
     bool_from_param,
     bool_url_entry,
-    url_color_scale,
     valid_query_param,
-  } from '$lib/url-state.svelte'
+  } from 'svelte-widgets/url-params'
 
   const raw_counts = import.meta.glob<Record<ElementSymbol, number>>(
     `../wbm-element-counts-*=*.json`,

@@ -106,8 +106,7 @@ def package_versions(package_names: Iterable[str]) -> dict[str, str]:
     return versions
 
 
-# taken from https://slurm.schedmd.com/job_array.html#env_vars, lower-cased and
-# and removed the SLURM_ prefix
+# from https://slurm.schedmd.com/job_array.html#env_vars, lower-cased sans SLURM_ prefix
 SLURM_KEYS: Final[tuple[str, ...]] = (
     "job_id",
     "array_job_id",
@@ -219,14 +218,7 @@ def partition_material_ids(
 
 
 def _get_calling_file_path(frame: int = 1) -> str:
-    """Return calling file's path.
-
-    Args:
-        frame (int, optional): How many function call's up? Defaults to 1.
-
-    Returns:
-        str: Calling function's file path n frames up the stack.
-    """
+    """Return the absolute path of the file ``frame`` levels up the call stack."""
     caller_path = sys._getframe(frame).f_code.co_filename  # noqa: SLF001
     return os.path.abspath(caller_path)
 
@@ -282,14 +274,12 @@ def slurm_submit(
 
     os.makedirs(out_dir, exist_ok=True)  # slurm fails if out_dir is missing
 
-    # Copy the file to a temporary directory if submit_as_temp_file is True
     if submit_as_temp_file and SLURM_SUBMIT_KEY in sys.argv:
         temp_dir = tempfile.mkdtemp(prefix="slurm_job_")
         temp_file_path = f"{temp_dir}/{os.path.basename(py_file_path)}"
         shutil.copy2(py_file_path, temp_file_path)
         py_file_path = temp_file_path
 
-    # ensure pre_cmd ends with a semicolon
     if pre_cmd and not pre_cmd.strip().endswith(";"):
         pre_cmd += ";"
 
@@ -319,8 +309,7 @@ def slurm_submit(
     if pre_cmd not in ("", None):
         slurm_vars["pre_cmd"] = pre_cmd
 
-    # print sbatch command into slurm log file and at job submission time
-    # but not into terminal or Jupyter
+    # print sbatch cmd into slurm log and at submission time, not to terminal/Jupyter
     if (is_slurm_job and is_log_file) or SLURM_SUBMIT_KEY in sys.argv:
         print(f"\n{' '.join(cmd)}\n".replace(" --", "\n  --"))
     if is_slurm_job and is_log_file:
@@ -332,7 +321,6 @@ def slurm_submit(
 
     result = subprocess.run(cmd, check=True)
 
-    # after sbatch submission, exit with slurm exit code
     raise SystemExit(result.returncode)
 
 

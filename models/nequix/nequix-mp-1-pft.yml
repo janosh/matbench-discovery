@@ -236,9 +236,9 @@ metrics:
     kappa_103:
       pred_file:
         name: models/nequix/nequix-mp-1-pft/2026-01-12-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/61019518
-        size: 8156601
-        md5: 5ac260ddcdd16f201de2cf45d7a1f646
+        url: https://figshare.com/files/68221390
+        size: 8156583
+        md5: d69aee7058ba61bd11a7f1f1060d67ae
       κ_SRME: 0.3066
       κ_SRE: 0.1689
       κ_SRD: -0.0962

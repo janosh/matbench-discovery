@@ -178,7 +178,7 @@
   routes={[`/`, ...ordered_routes, [pkg.paper, `Paper`]]}
   style="margin-block: 1em 0"
   menu_props={{ style: `inset-inline: 0.5rem; max-width: none` }}
-  labels={{
+  route_labels={{
     '/': `Home`,
     '/api': `API`,
     '/data/sets': `Datasets`,
@@ -278,7 +278,7 @@
     padding-inline-end: 0 !important;
   }
   /* Same shim: the widget offsets the open burger's two strokes by a hardcoded 0.4rem, but
-     under `space-around` adjacent bar centres are height/3 apart, so the X read lopsided. */
+     under `space-around` adjacent bar centers are height/3 apart, so the X read lopsided. */
   :global(nav .burger[aria-expanded='true'] span:first-child) {
     transform: translateY(calc(1.4rem / 3)) rotate(45deg) !important;
   }

@@ -9,7 +9,9 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
 import re
+import tempfile
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypeGuard
 
@@ -23,6 +25,8 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
 
 CONTENT_HASH_LENGTH = 16
+# v3: per-model assets nest by kind (parity/modes) instead of a sibling mode_assets
+PARITY_MANIFEST_SCHEMA_VERSION = 3
 
 
 def content_addressed_name(stem: str, content_sha256: str) -> str:
@@ -67,18 +71,38 @@ def json_content_sha256(data: Mapping[str, object]) -> str:
     ).hexdigest()
 
 
+# per-model asset kinds, mapping the manifest sub-key to the asset-name infix. Every
+# model has a "parity" asset; only kappa models whose run stored the harmonic sidecar
+# also have "modes"
+ASSET_KINDS: dict[str, str] = {"parity": "model", "modes": "modes"}
+# one manifest entry: {"asset": <content-addressed name>, "sha256": <digest>}
+AssetMeta = dict[str, str]
+# per-model assets keyed by model, then by kind
+ModelAssets = dict[str, dict[str, AssetMeta]]
+
+
+def model_asset_stem(asset_prefix: str, kind: str, model_key: str) -> str:
+    """Return the content-addressed stem for one model's asset of a given kind."""
+    return f"{asset_prefix}-{ASSET_KINDS[kind]}-{model_key}"
+
+
 def retained_parity_assets(
     manifest: dict[str, Any] | None,
     target_keys: Iterable[str],
     base: Mapping[str, object],
     asset_prefix: str,
-) -> tuple[dict[str, str], dict[str, dict[str, str]]]:
-    """Retain the immutable base and peer models from a compatible manifest."""
+) -> tuple[AssetMeta, ModelAssets]:
+    """Retain the immutable base and peer models from a compatible manifest.
+
+    Each retained model maps asset kind (see ``ASSET_KINDS``) to its metadata, so a
+    model's parity and modes assets cannot drift apart. Targeted and inactive models
+    are dropped so the caller regenerates or prunes them.
+    """
     if manifest is None:
         raise FileNotFoundError("Targeted parity refresh requires an existing manifest")
-    if manifest.get("schema_version") != 2:
+    if manifest.get("schema_version") != PARITY_MANIFEST_SCHEMA_VERSION:
         raise ValueError(
-            "Parity manifest predates content-addressed assets; run a full refresh"
+            "Parity manifest predates per-model asset kinds; run a full refresh"
         )
     if manifest.get("asset_prefix") != asset_prefix:
         raise ValueError("Parity asset prefix changed; run a full refresh")
@@ -90,57 +114,58 @@ def retained_parity_assets(
     )
     if base_asset["asset"] != expected_base_name:
         raise ValueError("Parity base content changed; run a full refresh")
-    model_assets = retained_keyed_assets(
-        manifest, target_keys, asset_prefix, section="model_assets", infix="model"
-    )
-    return dict(base_asset), model_assets
 
-
-def retained_keyed_assets(
-    manifest: Mapping[str, Any],
-    target_keys: Iterable[str],
-    asset_prefix: str,
-    *,
-    section: str,
-    infix: str,
-) -> dict[str, dict[str, str]]:
-    """Retain one manifest section of per-model assets named ``{prefix}-{infix}-{key}``.
-
-    Peer models keep their entries; targeted and inactive models are dropped so the
-    caller regenerates or prunes them. A missing section counts as empty.
-    """
-    keyed_assets = manifest.get(section, {})
-    if not isinstance(keyed_assets, dict):
-        raise TypeError(f"Parity manifest {section} must be an object")
-    for model_key, asset in keyed_assets.items():
-        if not isinstance(model_key, str):
-            raise TypeError(f"Parity {section} must map string keys to objects")
-        if not is_asset_metadata(asset, f"{asset_prefix}-{infix}-{model_key}"):
-            raise ValueError(
-                f"Parity {infix} asset metadata is invalid; run a full refresh"
-            )
+    # absent (not empty) means a manifest written by a different shape; treating it as
+    # empty would let a targeted refresh rewrite the manifest with only its own model
+    model_assets = manifest.get("model_assets")
+    if not isinstance(model_assets, dict):
+        raise TypeError("Parity manifest model_assets must be an object")
     active_keys = {model.key for model in Model.active()} - set(target_keys)
-    return {
-        model_key: dict(asset)
-        for model_key, asset in keyed_assets.items()
-        if model_key in active_keys
-    }
+    retained: ModelAssets = {}
+    for model_key, kinds in model_assets.items():
+        if not isinstance(model_key, str) or not isinstance(kinds, dict):
+            raise TypeError("Parity model assets must map string keys to objects")
+        if unknown := set(kinds) - set(ASSET_KINDS):
+            raise ValueError(f"Unknown parity asset kinds {sorted(unknown)}")
+        if "parity" not in kinds:
+            raise ValueError(f"Parity model {model_key} has no parity asset")
+        for kind, asset in kinds.items():
+            if not is_asset_metadata(
+                asset, model_asset_stem(asset_prefix, kind, model_key)
+            ):
+                raise ValueError(
+                    f"Parity {kind} asset metadata is invalid; run a full refresh"
+                )
+        if model_key in active_keys:
+            retained[model_key] = {kind: dict(asset) for kind, asset in kinds.items()}
+    return dict(base_asset), retained
 
 
-def remove_model_assets(
-    asset_dir: Path, asset_prefix: str, model_keys: Iterable[str]
-) -> None:
-    """Remove per-model `model`/`modes` assets replaced by a targeted model refresh.
+def prune_unreferenced_assets(
+    asset_dir: Path, asset_prefix: str, manifest: Mapping[str, Any]
+) -> list[str]:
+    """Delete generated assets the freshly built manifest no longer references.
 
-    Matches the exact content-hash suffix so a key never over-matches a peer model
-    whose key extends it (`orb-v2` vs `orb-v2-mptrj`).
+    Pruning after the new manifest is committed keeps every referenced asset available
+    if a refresh fails. It also
+    collects assets a targeted refresh cannot name, such as a model deactivated since
+    the last run.
     """
-    hash_glob = "[0-9a-f]" * CONTENT_HASH_LENGTH
-    for model_key in model_keys:
-        for infix in ("model", "modes"):
-            pattern = f"{asset_prefix}-{infix}-{model_key}-{hash_glob}.json.gz"
-            for path in asset_dir.glob(pattern):
-                path.unlink()
+    keep = {
+        str(manifest["base"]["asset"]),
+        *(
+            str(asset["asset"])
+            for kinds in manifest["model_assets"].values()
+            for asset in kinds.values()
+        ),
+        *(str(bundle["asset"]) for bundle in manifest.get("structure_bundles", ())),
+    }
+    removed: list[str] = []
+    for path in sorted(asset_dir.glob(f"{asset_prefix}-*.json.gz")):
+        if path.name not in keep:
+            path.unlink()
+            removed.append(path.name)
+    return removed
 
 
 def clean_float(value: float | np.floating, decimals: int = 6) -> float | None:
@@ -177,10 +202,19 @@ def write_json_gz(path: Path, data: Mapping[str, object]) -> dict[str, str]:
 
 
 def write_manifest(path: Path, manifest: Mapping[str, object]) -> None:
-    """Write the single JSON manifest consumed by Python and TypeScript."""
+    """Atomically replace the manifest consumed by Python and TypeScript."""
     manifest_json = json.dumps(manifest, indent=2, sort_keys=True)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(f"{manifest_json}\n", encoding="utf-8")
+    temporary = tempfile.NamedTemporaryFile(  # noqa: SIM115 - closed before replace
+        mode="w", encoding="utf-8", dir=path.parent, delete=False
+    )
+    try:
+        with temporary as file:
+            file.write(f"{manifest_json}\n")
+        os.replace(temporary.name, path)
+    finally:
+        if os.path.isfile(temporary.name):
+            os.remove(temporary.name)
     print(f"Wrote {path}")
 
 

@@ -229,6 +229,6 @@ metrics:
       spectrum_w1: 0.1729
       pred_file:
         name: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-04-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/65469372
-        size: 10138365
-        md5: 432e494c3a4185c057c4484ad68cc286
+        url: https://figshare.com/files/68221303
+        size: 10138308
+        md5: 644ff7c87bea3eac4a215e3a59368df4

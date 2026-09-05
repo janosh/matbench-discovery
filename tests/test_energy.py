@@ -103,15 +103,12 @@ def test_calc_energy_from_e_refs_error_cases(
     ref_energies: dict[str, float],
 ) -> None:
     """Test error handling."""
-    # Missing total_energy
     with pytest.raises(ValueError, match="total_energy can't be None"):
         calc_energy_from_e_refs(dummy_struct, ref_energies)
 
-    # Missing reference energy
     with pytest.raises(ValueError, match="Missing reference energies"):
         calc_energy_from_e_refs(dummy_struct, {"Fe": -1.0}, total_energy=-5.0)
 
-    # Invalid input type
     with pytest.raises(TypeError, match="Expected Entry, Structure"):
         calc_energy_from_e_refs([1, 2, 3], ref_energies, total_energy=-5.0)
 

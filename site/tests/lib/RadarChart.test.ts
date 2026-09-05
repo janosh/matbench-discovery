@@ -13,7 +13,7 @@ import { flushSync } from 'svelte'
 import { describe, expect, it, vi } from 'vitest'
 import { doc_query, mount } from '../index'
 
-// Mock the update_models_cps function to avoid side effects
+// stub update_models_cps to avoid side effects on shared module state
 vi.mock(`$lib/models.svelte`, async () => {
   const actual = await vi.importActual(`$lib/models.svelte`)
   return { ...actual, update_models_cps: vi.fn() }
@@ -23,28 +23,24 @@ describe(`RadarChart`, () => {
   it(`renders with default props`, () => {
     mount(RadarChart, { target: document.body })
 
-    // Check that the component rendered with an SVG element
     const svg = document.querySelector(`svg[aria-label^="Radar chart"]`)
     if (!(svg instanceof SVGSVGElement)) throw new Error(`Radar chart SVG not found`)
     expect(svg.getAttribute(`viewBox`)).toBe(`0 0 200 200`)
     expect(svg.getAttribute(`aria-label`)).toContain(`adjusting metric weights`)
 
-    // Check that all three axis lines are rendered (for F1, kappa, RMSD)
+    // one axis line per metric: F1, kappa, RMSD
     const axis_lines = svg.querySelectorAll(`line`)
     expect(axis_lines).toHaveLength(3)
-    // Verify stroke properties for each axis line
     axis_lines.forEach((line) => {
       expect(line.getAttribute(`stroke`)).toBe(`var(--border)`)
       expect(line.getAttribute(`stroke-width`)).toBe(`1`)
     })
 
-    // Check that the triangle area is rendered
     const triangle_area = svg.querySelector(`path[fill="var(--nav-bg)"]`)
     if (!(triangle_area instanceof SVGPathElement))
       throw new Error(`Triangle path not found`)
     expect(triangle_area.getAttribute(`stroke`)).toBe(`var(--border)`)
 
-    // Check that the draggable point is rendered
     expect(svg.querySelectorAll(`circle[aria-hidden="true"]`)).toHaveLength(2)
 
     // Info icon is part of the metric-name tooltip
@@ -52,17 +48,13 @@ describe(`RadarChart`, () => {
     expect(metric_name.textContent?.trim()).toContain(ALL_METRICS.CPS.key)
     expect(metric_name.querySelector(`svg`)).toBeInstanceOf(SVGSVGElement)
 
-    // Check for the triangle path
     expect(document.querySelector(`path[d^="M"][d$="Z"]`)).toBeInstanceOf(SVGPathElement)
 
-    // Check for the colored metric areas (should be 3 paths)
     const colored_areas = document.querySelectorAll(`path[fill^="rgb"][opacity="0.5"]`)
     expect(colored_areas).toHaveLength(3)
 
-    // Check for the grid circles
     const grid_circles = document.querySelectorAll(`circle[fill="none"]`)
-    expect(grid_circles).toHaveLength(4) // Should be 4 grid circles
-    // Verify stroke properties for each grid circle
+    expect(grid_circles).toHaveLength(4)
     grid_circles.forEach((circle) => {
       expect(circle.getAttribute(`stroke`)).toBe(`var(--border)`)
     })
@@ -79,8 +71,7 @@ describe(`RadarChart`, () => {
     expect(svg.getAttribute(`width`)).toBe(String(custom_size))
     expect(svg.getAttribute(`height`)).toBe(String(custom_size))
 
-    // Verify that at least one circle is rendered, which indirectly confirms
-    // that the component initialized properly with the size prop
+    // rendered circles indirectly confirm the component initialized with the size prop
     expect(svg.querySelectorAll(`circle`)).toHaveLength(6)
   })
 
@@ -103,12 +94,10 @@ describe(`RadarChart`, () => {
     reset_button.click()
     flushSync()
 
-    // Check that weights were reset to default values
     expect(CPS_CONFIG.F1.weight).toBe(DEFAULT_CPS_CONFIG.F1.weight)
     expect(CPS_CONFIG.κ_SRME.weight).toBe(DEFAULT_CPS_CONFIG.κ_SRME.weight)
     expect(CPS_CONFIG.RMSD.weight).toBe(DEFAULT_CPS_CONFIG.RMSD.weight)
 
-    // Check that update_models_cps was called
     expect(update_models_cps).toHaveBeenCalledWith(MODELS, CPS_CONFIG)
     expect(document.querySelector(`.reset-button`)).toBeNull()
     expect(document.activeElement).toBe(doc_query(`.metric-name`))
@@ -117,14 +106,11 @@ describe(`RadarChart`, () => {
   it(`renders axis labels with correct content`, () => {
     mount(RadarChart, { target: document.body })
 
-    // Check that axis labels are rendered using foreignObject
+    // axis labels render inside foreignObject, each as "<metric> <percentage>"
     const foreign_objects = document.querySelectorAll(`svg foreignObject`)
     expect(foreign_objects).toHaveLength(3)
 
-    // Get the text content from foreignObject elements
     const label_texts = [...foreign_objects].map((el) => el.textContent?.trim())
-
-    // Verify that each label contains the respective metric name and percentage
     expect(label_texts).toStrictEqual([`F1 50%`, `κSRME 40%`, `RMSD 10%`])
   })
 

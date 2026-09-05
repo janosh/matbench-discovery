@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Icon } from 'svelte-widgets'
+  import { Icon, Spinner } from 'svelte-widgets'
   import { Cross } from 'svelte-widgets/icons'
   import { load_kappa_srme_map } from '$lib/parity/kappa-analysis'
   import {
@@ -11,6 +11,7 @@
     as_phonon_dos,
     build_kappa_parity_series,
     dos_per_atom,
+    has_imaginary_modes,
     has_kappa_parity_model,
     kappa_structure,
     load_kappa_parity_base,
@@ -28,10 +29,8 @@
   import { get_nested_number, is_finite_num } from '$lib/metrics'
   import type { ModelData } from '$lib/types'
   import { Dos, format_num, sanitize_compact_formula, sanitize_html } from 'matterviz'
-  import { Spinner } from 'matterviz/feedback'
   import { ScatterPlot } from 'matterviz/plot'
   import type { DataSeries, RefLine } from 'matterviz/plot'
-  import { PhononModeExplorer, PhononThermalPlot } from 'matterviz/spectral'
   import { type CrystalSystem, spacegroup_to_crystal_sys } from 'matterviz/symmetry'
   import { untrack } from 'svelte'
   import type { HTMLAttributes } from 'svelte/elements'
@@ -65,9 +64,8 @@
     const values = [...parity.x, ...parity.y]
     return [Math.min(...values) / 1.3, Math.max(...values) * 1.3]
   })
-  // colorbar metric: per-material κ_SRME (default) or κ_SRE, switchable via the
-  // colorbar's property dropdown. SRE derives from the parity points themselves;
-  // SRME comes from the kappa-103 analysis payload and may be missing per material
+  // SRE comes from the parity points themselves, SRME from the kappa-103 analysis
+  // payload, so only SRE is guaranteed present for every material
   const color_metric_labels = { srme: `κ<sub>SRME</sub>`, sre: `κ<sub>SRE</sub>` }
   let color_values = $derived(
     (parity?.points ?? []).map((point) =>
@@ -123,14 +121,21 @@
     if (ml) phonon_dos[model.model_name] = ml
     return phonon_dos
   })
-  // ML phonon modes (band path + eigenvectors) exist only for models whose kappa run
-  // stored the harmonic sidecar; the asset is several MB so it loads on first selection.
-  // The loader caches per URL and the promise only depends on whether anything is
-  // selected (not which point) so it isn't re-created on every click.
+  let dos_entries = $derived(Object.entries(doses))
   let has_selection = $derived(selected !== null)
+  // matterviz/spectral is a barrel whose PhononThermalPlot and PhononModeExplorer drag
+  // in the three.js stack, so it loads on first selection like the structure viewer above
+  const load_spectral = () => import(`matterviz/spectral`)
+  let spectral_promise = $derived(has_selection ? load_spectral() : null)
+  // several-MB asset, so it loads on first selection; the promise tracks only whether
+  // anything is selected (not which point) so clicking between points doesn't refetch.
+  // Keyed on the loaded parity model rather than the model prop: on a model switch the
+  // prop changes a render earlier than the asset, which would otherwise pair one
+  // model's modes with another's points. The spectral chunk is awaited alongside the
+  // asset so the "no modes" branch means missing data, never a chunk still in flight.
   let modes_promise = $derived(
-    has_selection && has_kappa_modes(model.model_key)
-      ? load_kappa_modes(model.model_key)
+    has_selection && parity_model && has_kappa_modes(parity_model.model_key)
+      ? Promise.all([load_spectral(), load_kappa_modes(parity_model.model_key)])
       : null,
   )
   async function load_data(model_key: string) {
@@ -271,46 +276,67 @@
           {@const style = 'height: 100%; min-height: 360px'}
           <Structure structure={selected_structure} {style} />
         {/if}
-        {#if Object.keys(doses).length}
+        {#if dos_entries.length}
           <Dos {doses} style="height: 360px" padding={{ t: 20, b: 65, r: 10 }} />
           <!-- thermal properties integrate each DOS, so one plot per source (DFT/ML)
             keeps the curves comparable side by side; matterviz spans 0-1000 K -->
-          {#each Object.entries(doses) as [label, dos], plot_idx (label)}
-            <div class="thermal">
-              <h4>{label} harmonic thermal properties (per atom)</h4>
-              <!-- both plots share series/colors so only the last one shows a legend, pinned
-                inside the plot (top-left is empty: F and U start near zero) so the plot area
-                stays the same height as its legend-less sibling -->
-              <PhononThermalPlot
-                dos={dos_per_atom(dos)}
-                style="height: 340px"
-                padding={{ t: 10, b: 60, l: 70, r: 70 }}
-                legend={plot_idx === Object.keys(doses).length - 1
-                  ? { style: `top: 14px; left: 76px; font-size: 0.85em` }
-                  : null}
-              >
-                {#snippet tooltip(hp)}
-                  <!-- series order F, U (kJ/mol) then S, Cv (J/(K·mol)) follows matterviz's
-                    PhononThermalPlot; its labels carry <sub> markup -->
-                  {@const unit = hp.series_idx < 2 ? `kJ/mol` : `J/(K·mol)`}
-                  <strong>{@html sanitize_html(hp.label)}</strong><br />
-                  T: {hp.x_formatted} <small>K</small><br />
-                  {hp.y_formatted} <small>{unit}</small>
-                {/snippet}
-              </PhononThermalPlot>
-            </div>
-          {/each}
+          {#await spectral_promise then spectral}
+            {#if spectral}
+              {@const PhononThermalPlot = spectral.PhononThermalPlot}
+              {#each dos_entries as [label, dos], plot_idx (label)}
+                <div class="thermal">
+                  <p class="caption">
+                    {label} harmonic thermal properties (per atom)
+                    {#if has_imaginary_modes(dos)}
+                      <br /><small class="unstable">
+                        imaginary modes present &mdash; these modes are excluded, so the
+                        curves fall below the 3k<sub>B</sub>/atom classical limit
+                      </small>
+                    {/if}
+                  </p>
+                  <!-- both plots share series/colors, so only the last shows a legend; it sits
+                  inside the plot (top-left is empty: F and U start near zero) to keep both
+                  plot areas the same height -->
+                  <PhononThermalPlot
+                    dos={dos_per_atom(dos)}
+                    style="height: 340px"
+                    padding={{ t: 10, b: 60, l: 70, r: 70 }}
+                    legend={plot_idx === dos_entries.length - 1
+                      ? { style: `top: 14px; left: 76px; font-size: 0.85em` }
+                      : null}
+                  >
+                    {#snippet tooltip(thermal_point)}
+                      <!-- series order F, U (kJ/mol) then S, Cv (J/(K·mol)) follows matterviz's
+                      PhononThermalPlot; its labels carry <sub> markup -->
+                      {@const unit =
+                        thermal_point.series_idx < 2 ? `kJ/mol` : `J/(K·mol)`}
+                      <strong>{@html sanitize_html(thermal_point.label)}</strong><br />
+                      T: {thermal_point.x_formatted} <small>K</small><br />
+                      {thermal_point.y_formatted} <small>{unit}</small>
+                    {/snippet}
+                  </PhononThermalPlot>
+                </div>
+              {/each}
+            {/if}
+          {:catch error}
+            <p class="plot-state" role="alert">
+              Failed to load thermal plots: {get_error_message(error)}
+            </p>
+          {/await}
         {:else}
           <p class="plot-state">No phonon DOS available for this material.</p>
         {/if}
         {#if modes_promise}
           <div class="modes">
-            <h4>{model.model_name} phonon modes along the high-symmetry path</h4>
+            <p class="caption">
+              {model.model_name} phonon modes along the high-symmetry path
+            </p>
             {#await modes_promise}
               <div class="plot-state"><Spinner text="Loading phonon modes..." /></div>
-            {:then modes_model}
+            {:then [spectral, modes_model]}
               {@const material = modes_model.materials[selected.material_id]}
               {#if material}
+                {@const PhononModeExplorer = spectral.PhononModeExplorer}
                 <PhononModeExplorer
                   dataset={{
                     modes: build_phonon_mode_data(material),
@@ -383,7 +409,10 @@
   .detail-panel .modes {
     grid-column: 1 / -1;
   }
-  .detail-panel h4 {
+  .detail-panel .caption .unstable {
+    color: var(--warning-text-color, orange);
+  }
+  .detail-panel .caption {
     margin: 0.6em 0 0;
     text-align: center;
     font-weight: normal;

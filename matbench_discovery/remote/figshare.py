@@ -134,7 +134,6 @@ def upload_file(article_id: int, file_path: str, file_name: str = "") -> int:
     Returns:
         int: The ID of the uploaded file.
     """
-    # Initiate new upload
     md5, size = get_file_hash_and_size(file_path)
     file_name = file_name or _repo_relative_name(file_path)
     data = dict(name=file_name, md5=md5, size=size)
@@ -142,7 +141,6 @@ def upload_file(article_id: int, file_path: str, file_name: str = "") -> int:
     result = make_request("POST", endpoint, data=data)
     file_info = make_request("GET", result["location"])
 
-    # Upload parts with nested progress bar showing bytes and percent
     parts_info = make_request("GET", file_info["upload_url"])
     with (
         open(file_path, mode="rb") as file,
@@ -157,7 +155,6 @@ def upload_file(article_id: int, file_path: str, file_name: str = "") -> int:
         ) as pbar,
     ):
         for part in parts_info["parts"]:
-            # Upload part
             part_url = f"{file_info['upload_url']}/{part['partNo']}"
             file.seek(part["startOffset"])
             chunk_len = part["endOffset"] - part["startOffset"] + 1
@@ -327,7 +324,6 @@ def find_similar_files(
     for existing_name, file_data in existing_files.items():
         existing_parts = existing_name.split("/")
 
-        # Skip if not enough parts or different model family/subfolder
         if (
             len(existing_parts) < 3
             or existing_parts[1] != model_family
@@ -338,11 +334,9 @@ def find_similar_files(
         existing_basename = existing_parts[-1]
         existing_task_type = _extract_task_type(existing_basename)
 
-        # Skip if different task types
         if task_type and existing_task_type and task_type != existing_task_type:
             continue
 
-        # Check similarity
         similarity = difflib.SequenceMatcher(
             None, base_filename, existing_basename
         ).ratio()
@@ -411,7 +405,6 @@ def upload_file_if_needed(
     if file_hash is None:
         file_hash, _ = get_file_hash_and_size(file_path)
 
-    # Check if file already exists with same hash
     exists, file_id = file_exists_with_same_hash(
         article_id, file_name, file_hash, existing_files=existing_files
     )

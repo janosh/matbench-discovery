@@ -204,9 +204,9 @@ metrics:
       κ_SRME: 1.7707
       pred_file:
         name: models/eqv2/eqv2-m-omat-salex-mp/2024-11-09-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/52134893
-        size: 8906650
-        md5: 3706a97220b7c4814d7cf6190b09592d
+        url: https://figshare.com/files/68221333
+        size: 8906926
+        md5: f690e14913fbfabd5748affd3962046c
       κ_SRE: 1.4827
       κ_SRD: -0.1591
       κ_failure_rate: 0.0583

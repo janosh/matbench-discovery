@@ -17,10 +17,6 @@
     "fmt": "vp fmt --write",
     "fetch:github-activity": "node --experimental-strip-types scripts/fetch-mlip-repos-github-activity.ts"
   },
-  "dependencies": {
-    "html-to-image": "^1.11.13",
-    "xlsx": "^0.18.5"
-  },
   "devDependencies": {
     "@sveltejs/adapter-static": "^3.0.10",
     "@sveltejs/kit": "^2.70.3",
@@ -28,6 +24,7 @@
     "@types/d3-array": "^3.2.2",
     "@types/d3-scale-chromatic": "^3.1.0",
     "@types/json-schema": "^7.0.15",
+    "@types/node": "^26.4.0",
     "@wooorm/starry-night": "^3.10.0",
     "d3-array": "^3.2.4",
     "d3-scale-chromatic": "^3.1.0",
@@ -35,14 +32,14 @@
     "js-yaml": "^5.4.1",
     "json-schema-to-typescript": "^16.0.0",
     "katex": "^0.18.4",
-    "matterviz": "0.7.0",
+    "matterviz": "github:janosh/matterviz#main",
     "mdsvex": "^0.12.8",
     "rehype-stringify": "^10.0.1",
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.1.2",
     "svelte": "^5.57.0",
     "svelte-check-rs": "0.11.0",
-    "svelte-widgets": "^1.6.1",
+    "svelte-widgets": "github:janosh/svelte-widgets#main",
     "typescript": "^6.0.3",
     "unified": "^11.0.5",
     "vite": "^8.2.2",
