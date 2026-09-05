@@ -14,7 +14,6 @@ import type { DiscoverySet, Label, ModelData } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import { escape_html, format_num, type CellVal } from 'matterviz'
 
-// Model target type descriptions
 export const targets_tooltips: Record<TargetType, string> = {
   E: `Energy`,
   EF_G: `Energy with gradient-based forces`,
@@ -55,23 +54,20 @@ export const discovery_task_tooltips: Record<
   'IS2RE-SR': `initial structure to relaxed energy with structure relaxation`,
 } as const
 
-// Access (possibly deeply) nested metrics and parameters from ModelData objects
 export function get_nested_value(model: ModelData, dotted_path: string): unknown {
-  const keys = dotted_path.split(`.`).filter(Boolean) // Remove empty parts
-  if (keys.length === 0) return undefined // Empty path returns undefined, not the whole model
+  const keys = dotted_path.split(`.`).filter(Boolean)
+  if (keys.length === 0) return undefined // empty path returns undefined, not the whole model
   let value: unknown = model
 
   for (const key of keys) {
-    // Check if value is an object and has the key
     if (typeof value === `object` && value && key in value) {
       value = Reflect.get(value, key) // dynamic lookup without weakening the surrounding type
-    } else return undefined // Can't go deeper/property doesn't exist
+    } else return undefined
   }
 
   return value
 }
 
-// Type-safe wrapper around get_nested_value that returns number | undefined
 export function get_nested_number(
   model: ModelData,
   dotted_path: string,
@@ -80,7 +76,6 @@ export function get_nested_number(
   return typeof value === `number` ? value : undefined
 }
 
-// Type guard for finite numbers (excludes NaN, Infinity, and non-number values)
 export const is_finite_num = (value: unknown): value is number =>
   typeof value === `number` && Number.isFinite(value)
 
@@ -117,7 +112,6 @@ export function metric_better_as(metric: string): `higher` | `lower` | null {
   return all_lower_better_metrics.has(metric) ? `lower` : null
 }
 
-// Format training set information for display in the metrics table
 export function format_train_set(model_train_sets: string[], model: ModelData): string {
   const { n_training_structures = 0, n_training_materials = 0 } = model
 
@@ -181,7 +175,6 @@ type MetricsRowData = Pick<ModelData, `org_logos` | `authors`> & {
   [key: string]: CellVal | ModelData[`org_logos` | `authors`]
 }
 
-// Calculate table data for the metrics table with combined scores
 export function assemble_row_data(
   discovery_set: DiscoverySet,
   model_filter: (model: ModelData) => boolean,
@@ -234,7 +227,6 @@ export function assemble_row_data(
     const targets = model.targets.replaceAll(/_(?<char>.)/g, `<sub>$<char></sub>`)
     const targets_str = `<span title="${targets_tooltips[model.targets]}">${targets}</span>`
 
-    // Add model links
     const code_license = license?.code
       ? license_str(license.code, license.code_url)
       : `n/a`
@@ -245,7 +237,6 @@ export function assemble_row_data(
     const r_cut = model.hyperparams?.architecture?.graph_construction_radius
     const r_cut_str = r_cut ? `<span data-sort-value="${r_cut}">${r_cut} Å</span>` : `n/a`
 
-    // Get geometry optimization hyperparams
     const { ase_optimizer, max_steps, max_force, cell_filter } =
       model.hyperparams?.evaluation ?? {}
     const { n_layers } = model.hyperparams?.architecture ?? {}
@@ -333,7 +324,7 @@ export function assemble_row_data(
   return all_metrics.toSorted((row1, row2) => {
     const score1 = row1.CPS ?? Number.NaN
     const score2 = row2.CPS ?? Number.NaN
-    // Handle missing or NaN values (they should be sorted to the bottom)
+    // NaN scores sort to the bottom
     if (Number.isNaN(score1)) return Number.isNaN(score2) ? 0 : 1
     return Number.isNaN(score2) ? -1 : score2 - score1
   })
@@ -350,11 +341,10 @@ export const sort_models =
       return sort_factor * model_1.model_name.localeCompare(model_2.model_name)
     }
 
-    // Get values using the helper function for other metrics
     const val_1 = get_nested_value(model_1, sort_by)
     const val_2 = get_nested_value(model_2, sort_by)
 
-    // Handle null, undefined, or NaN values by sorting last
+    // null/undefined/NaN sort last
     const sorts_last = (val: unknown) =>
       val == null || (typeof val === `number` && Number.isNaN(val))
     if (sorts_last(val_1) && sorts_last(val_2)) return 0

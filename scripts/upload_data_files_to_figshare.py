@@ -35,7 +35,6 @@ def main(
     """
     article_is_new = False
     if article_id is not None:
-        # Check if article exists and is accessible
         if figshare.article_exists(article_id):
             article_url = f"{figshare.ARTICLE_URL_PREFIX}/{article_id}"
             print(f"\nFound existing article at {article_url}")
@@ -78,23 +77,20 @@ def main(
     article_url = f"{figshare.ARTICLE_URL_PREFIX}/{article_id}"
 
     try:
-        # Load existing YAML data if available
         existing_yaml: dict[str, dict[str, str]] = {}
         if os.path.isfile(yaml_path):
             with open(yaml_path) as file:
                 existing_yaml = round_trip_yaml.load(file)
 
-        # Get existing files from Figshare to avoid re-uploading unchanged files
+        # remote listing lets us skip re-uploading unchanged files
         existing_files = figshare.list_article_files(article_id)
         print(f"Found {len(existing_files)} existing files on Figshare")
-
-        # Create lookup dict for faster file checks
         files_by_name = {file["name"]: file for file in existing_files}
 
-        # copy existing_data to preserve all existing entries
+        # copy so entries for files not touched by this run survive
         files_in_article: dict[str, dict[str, str]] = existing_yaml.copy()
-        updated_files: dict[str, str] = {}  # files that were re-uploaded
-        new_files: dict[str, str] = {}  # files that didn't exist before
+        updated_files: dict[str, str] = {}  # re-uploaded
+        new_files: dict[str, str] = {}  # didn't exist before
 
         for data_file in (pbar := tqdm(files)):
             pbar.set_description(f"Processing {data_file.name}")
@@ -104,10 +100,8 @@ def main(
                 print(f"Warning: {file_path} does not exist, skipping...")
                 continue
 
-            # Get existing data or create new entry (make copy to not modify original)
+            # copy so we don't mutate existing_yaml
             file_data = existing_yaml.get(data_file.name, {}).copy()
-
-            # Set defaults for new entries
             file_data.setdefault("path", data_file.rel_path)
             file_data.setdefault("description", "Description needed")
 
@@ -157,7 +151,7 @@ def main(
                 for idx, (data_file, url) in enumerate(updated_files.items(), start=1):
                     print(f"{idx}. {data_file}: {url}")
 
-            # Publish the article if any new files were added and it's not newly created
+            # newly created articles need manual review before their first publish
             if article_is_new:
                 print(
                     "\n⚠️ Article was newly created. Please review it at "
@@ -171,7 +165,6 @@ def main(
         else:
             print("\nNo files were added or updated.")
 
-        # Write updated YAML file
         with open(yaml_path, mode="w") as file:
             round_trip_yaml.dump(files_in_article, file)
 
@@ -200,7 +193,7 @@ if __name__ == "__main__":
     with open(f"{ROOT}/pyproject.toml", mode="rb") as toml_file:
         pyproject = tomllib.load(toml_file)["project"]
 
-    main(  # upload/update data files on figshare
+    main(
         yaml_path=f"{PKG_DIR}/data-files.yml",
         article_id=figshare.ARTICLE_IDS["data_files"],
         pyproject=pyproject,

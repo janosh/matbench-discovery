@@ -4,50 +4,25 @@ import type { AfterNavigate } from '@sveltejs/kit'
 import * as d3_sc from 'd3-scale-chromatic'
 import type { D3InterpolateName } from 'matterviz/colors'
 import type { SortDir } from './types'
+import {
+  bool_from_param,
+  bool_url_entry,
+  valid_query_param,
+  sync_url_params as sync_params,
+  type UrlParamEntry,
+  type ValidQueryValues,
+} from 'svelte-widgets/url-params'
 
 type PageState = Parameters<typeof replaceState>[1]
 export type SortState = { column: string; dir: SortDir }
-export type UrlParamEntry = [key: string, value: string, default_value?: string]
-type ValidValues<T extends string> = ReadonlySet<T> | Record<string, unknown>
 const sort_dirs = new Set<SortDir>([`asc`, `desc`])
-
-// Boolean flag params: default-true flags encode "off" as `0` (any other value = on),
-// default-false flags encode "on" as `1` (any other value = off). At their default,
-// flags are omitted from the URL.
-export const bool_from_param = (
-  params: URLSearchParams,
-  key: string,
-  fallback = false,
-): boolean => (fallback ? params.get(key) !== `0` : params.get(key) === `1`)
-
-export const bool_url_entry = (
-  key: string,
-  value: boolean,
-  fallback = false,
-): UrlParamEntry => [key, value === fallback ? `` : value ? `1` : `0`]
-
-export function valid_query_param<T extends string>(
-  params: URLSearchParams,
-  key: string,
-  fallback: T,
-  valid_values: ValidValues<T>,
-): T {
-  const value = params.get(key)
-  if (!value) return fallback
-
-  const is_valid =
-    valid_values instanceof Set
-      ? valid_values.has(value)
-      : Object.hasOwn(valid_values, value)
-  return is_valid ? (value as T) : fallback
-}
 
 // valid_columns is optional: the sortable-column set lives inside the table component
 // (unknown columns are a harmless no-op there); pass it where known to reject garbage
 export const sort_from_query = (
   params: URLSearchParams,
   default_sort: SortState,
-  valid_columns?: ValidValues<string>,
+  valid_columns?: ValidQueryValues<string>,
 ): SortState => ({
   column: valid_columns
     ? valid_query_param(params, `sort`, default_sort.column, valid_columns)
@@ -105,6 +80,7 @@ export function apply_weights_param(
     if (
       values.length === keys.length &&
       values.every((val) => Number.isFinite(val) && val >= 0) &&
+      Number.isFinite(total) &&
       total > 0
     ) {
       for (const [idx, key] of keys.entries()) config[key].weight = values[idx] / total
@@ -366,20 +342,7 @@ export class UrlTableFilters {
 }
 
 export function sync_url_params(entries: UrlParamEntry[], state: PageState): void {
-  const params = new URLSearchParams(location.search)
-  for (const [key, value, default_value = ``] of entries) {
-    if (value === default_value) params.delete(key)
-    else params.set(key, value)
-  }
-
-  // keep commas human-readable: they're legal in query strings (RFC 3986 sub-delims)
-  // but URLSearchParams percent-encodes them, turning ?weights=0.5,0.4,0.1 into
-  // ?weights=0.5%2C0.4%2C0.1. Decoding is value-preserving since URLSearchParams
-  // parses literal and encoded commas identically
-  const query = params.toString().replaceAll(`%2C`, `,`)
-  const next_url = `${query ? `${location.pathname}?${query}` : location.pathname}${location.hash}`
-  if (next_url !== `${location.pathname}${location.search}${location.hash}`)
-    replaceState(next_url, state)
+  sync_params(entries, location, (url) => replaceState(url, state))
 }
 
 // Two-way URL query-param binding shared by all task pages. Reads state from the URL in

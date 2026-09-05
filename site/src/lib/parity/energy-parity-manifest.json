@@ -8,216 +8,320 @@
   "material_ids_sha256": "ab4c269920f7e42a7743719183b041380c5bdd7b929cacb36eca718c5ba3bd64",
   "model_assets": {
     "alchembert": {
-      "asset": "energy-parity-wbm-v1-model-alchembert-c6fce5fe85609f9c.json.gz",
-      "sha256": "d0a2f0abc142446ed59fb069a4317f82df153fde33a114b28fb35d212ddbfc3b"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-alchembert-c6fce5fe85609f9c.json.gz",
+        "sha256": "d0a2f0abc142446ed59fb069a4317f82df153fde33a114b28fb35d212ddbfc3b"
+      }
     },
     "alignn": {
-      "asset": "energy-parity-wbm-v1-model-alignn-01d8aa27f6f210cc.json.gz",
-      "sha256": "b22c71ebf642b125c68d3c77d66a8a00bb534bb6cfc4549dc74239a256311202"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-alignn-01d8aa27f6f210cc.json.gz",
+        "sha256": "b22c71ebf642b125c68d3c77d66a8a00bb534bb6cfc4549dc74239a256311202"
+      }
     },
     "allegro-mp-l-0.1": {
-      "asset": "energy-parity-wbm-v1-model-allegro-mp-l-0.1-6d39c4ad196b3b1c.json.gz",
-      "sha256": "3b7e849cffd3e80d3b1fa11d64c22a15d986eb8f7fb3902405f7863e053f57a1"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-allegro-mp-l-0.1-6d39c4ad196b3b1c.json.gz",
+        "sha256": "3b7e849cffd3e80d3b1fa11d64c22a15d986eb8f7fb3902405f7863e053f57a1"
+      }
     },
     "allegro-oam-l-0.1": {
-      "asset": "energy-parity-wbm-v1-model-allegro-oam-l-0.1-6c72ba2eca6eef80.json.gz",
-      "sha256": "21748febf44021da6420ac4f85d5d855b8bd6e9ed6e75f53673324f1a261069c"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-allegro-oam-l-0.1-6c72ba2eca6eef80.json.gz",
+        "sha256": "21748febf44021da6420ac4f85d5d855b8bd6e9ed6e75f53673324f1a261069c"
+      }
     },
     "alphanet-v1-oam": {
-      "asset": "energy-parity-wbm-v1-model-alphanet-v1-oam-2572aa4459c24534.json.gz",
-      "sha256": "b0587f375e9497e9c8d5125f753e1ed72e5f99a6b564a9c13033e13b5c2dbe91"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-alphanet-v1-oam-2572aa4459c24534.json.gz",
+        "sha256": "b0587f375e9497e9c8d5125f753e1ed72e5f99a6b564a9c13033e13b5c2dbe91"
+      }
     },
     "bam-mp-core": {
-      "asset": "energy-parity-wbm-v1-model-bam-mp-core-06550fdb3d568975.json.gz",
-      "sha256": "3a1375e751751574794b5699ba56291be19c0b632a382646fef514fbe29e54f9"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-bam-mp-core-06550fdb3d568975.json.gz",
+        "sha256": "3a1375e751751574794b5699ba56291be19c0b632a382646fef514fbe29e54f9"
+      }
     },
     "bowsr": {
-      "asset": "energy-parity-wbm-v1-model-bowsr-51fc0f4827f33d81.json.gz",
-      "sha256": "d3d93c9fd03cdcd1e85c078db8b40d8eafa388351f698b71c0e203978fc22c82"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-bowsr-51fc0f4827f33d81.json.gz",
+        "sha256": "d3d93c9fd03cdcd1e85c078db8b40d8eafa388351f698b71c0e203978fc22c82"
+      }
     },
     "cgcnn": {
-      "asset": "energy-parity-wbm-v1-model-cgcnn-9ba419221e5cbc17.json.gz",
-      "sha256": "deb9b762262d32e7a5b8126e813687d7f7083ed7c5f8277808394ead6e436b06"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-cgcnn-9ba419221e5cbc17.json.gz",
+        "sha256": "deb9b762262d32e7a5b8126e813687d7f7083ed7c5f8277808394ead6e436b06"
+      }
     },
     "cgcnn-p": {
-      "asset": "energy-parity-wbm-v1-model-cgcnn-p-954208bb3e5e2742.json.gz",
-      "sha256": "5026b33c3a8e34641944bd98c0484f32802b75a7ba681f4fc460333eeebd67ce"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-cgcnn-p-954208bb3e5e2742.json.gz",
+        "sha256": "5026b33c3a8e34641944bd98c0484f32802b75a7ba681f4fc460333eeebd67ce"
+      }
     },
     "chgnet-0.3.0": {
-      "asset": "energy-parity-wbm-v1-model-chgnet-0.3.0-8acad078fec7d61d.json.gz",
-      "sha256": "8420c14a0b760e90e2bd1fc257d1159e375b0cc0d79e3e7e252936f7109698e0"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-chgnet-0.3.0-8acad078fec7d61d.json.gz",
+        "sha256": "8420c14a0b760e90e2bd1fc257d1159e375b0cc0d79e3e7e252936f7109698e0"
+      }
     },
     "dpa-3.1-3m-ft": {
-      "asset": "energy-parity-wbm-v1-model-dpa-3.1-3m-ft-1e4cfb9e883e5bf7.json.gz",
-      "sha256": "3a1dae4a29549b4531b5826f27de50e357710b9650b71e017aff7f39fbc802d1"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-dpa-3.1-3m-ft-1e4cfb9e883e5bf7.json.gz",
+        "sha256": "3a1dae4a29549b4531b5826f27de50e357710b9650b71e017aff7f39fbc802d1"
+      }
     },
     "dpa-4.0.1-pro-mptrj": {
-      "asset": "energy-parity-wbm-v1-model-dpa-4.0.1-pro-mptrj-708e6ee5f7f8909e.json.gz",
-      "sha256": "ed9b679e7e21b3b9196b16a3a042de8a0c6f366ddebdbede522e0ea1baab68bc"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-dpa-4.0.1-pro-mptrj-708e6ee5f7f8909e.json.gz",
+        "sha256": "ed9b679e7e21b3b9196b16a3a042de8a0c6f366ddebdbede522e0ea1baab68bc"
+      }
     },
     "ema-gnn": {
-      "asset": "energy-parity-wbm-v1-model-ema-gnn-f711f195d1273285.json.gz",
-      "sha256": "57c591863932eedb4ddc8a5e4224c732f34e891f5689c56408e4c59ff9773707"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-ema-gnn-f711f195d1273285.json.gz",
+        "sha256": "57c591863932eedb4ddc8a5e4224c732f34e891f5689c56408e4c59ff9773707"
+      }
     },
     "eqnorm-mptrj": {
-      "asset": "energy-parity-wbm-v1-model-eqnorm-mptrj-d61f790381ab8337.json.gz",
-      "sha256": "fed4437df834a5ff24ae7b7d829e63bcd5c2dd40562df6eb45029e1f27bbd0c9"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-eqnorm-mptrj-d61f790381ab8337.json.gz",
+        "sha256": "fed4437df834a5ff24ae7b7d829e63bcd5c2dd40562df6eb45029e1f27bbd0c9"
+      }
     },
     "equflash-29m-oam": {
-      "asset": "energy-parity-wbm-v1-model-equflash-29m-oam-fee61cf5e59725b8.json.gz",
-      "sha256": "3185e0127b81251991aa7018582ad41399921ebf7567b97aab8ad30955328786"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-equflash-29m-oam-fee61cf5e59725b8.json.gz",
+        "sha256": "3185e0127b81251991aa7018582ad41399921ebf7567b97aab8ad30955328786"
+      }
     },
     "equflashv2-45m-oam": {
-      "asset": "energy-parity-wbm-v1-model-equflashv2-45m-oam-43d66589874c4540.json.gz",
-      "sha256": "a797a4776741af025e64fca40fe01eb0076fe798b1cd978580faf696373ea20d"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-equflashv2-45m-oam-43d66589874c4540.json.gz",
+        "sha256": "a797a4776741af025e64fca40fe01eb0076fe798b1cd978580faf696373ea20d"
+      }
     },
     "equiformer-v3-mp": {
-      "asset": "energy-parity-wbm-v1-model-equiformer-v3-mp-e258d38bbf5e7b72.json.gz",
-      "sha256": "bc13206df7cf112ca939914fbf023ddf53d449f197ede1b7f13161ba96fd2f34"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-equiformer-v3-mp-e258d38bbf5e7b72.json.gz",
+        "sha256": "bc13206df7cf112ca939914fbf023ddf53d449f197ede1b7f13161ba96fd2f34"
+      }
     },
     "equiformer-v3-oam": {
-      "asset": "energy-parity-wbm-v1-model-equiformer-v3-oam-b85782553341c285.json.gz",
-      "sha256": "a9fcfff67782c5963efcacd46b9370ed3b048d514eba7d8bb9b1d4a726c79590"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-equiformer-v3-oam-b85782553341c285.json.gz",
+        "sha256": "a9fcfff67782c5963efcacd46b9370ed3b048d514eba7d8bb9b1d4a726c79590"
+      }
     },
     "eqv2-m-omat-salex-mp": {
-      "asset": "energy-parity-wbm-v1-model-eqv2-m-omat-salex-mp-09a93bf0dbcd2be7.json.gz",
-      "sha256": "f7c4927504a0c4e6efcd72fb9fdf00de07d356c6ee5d635ea5bc9f2784aa915e"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-eqv2-m-omat-salex-mp-09a93bf0dbcd2be7.json.gz",
+        "sha256": "f7c4927504a0c4e6efcd72fb9fdf00de07d356c6ee5d635ea5bc9f2784aa915e"
+      }
     },
     "eqv2-s-dens-mp": {
-      "asset": "energy-parity-wbm-v1-model-eqv2-s-dens-mp-ffefca07765d80f7.json.gz",
-      "sha256": "ab6b002289e0732222644712a1faebf37ffff92fd9dee4a696da310584ca4938"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-eqv2-s-dens-mp-ffefca07765d80f7.json.gz",
+        "sha256": "ab6b002289e0732222644712a1faebf37ffff92fd9dee4a696da310584ca4938"
+      }
     },
     "esen-30m-mp": {
-      "asset": "energy-parity-wbm-v1-model-esen-30m-mp-6d991924ff391e33.json.gz",
-      "sha256": "ccc14fb1cd9d9a5b3a7827dcf75c7b6324b65a4deb53ee110692fc01e3363dbf"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-esen-30m-mp-6d991924ff391e33.json.gz",
+        "sha256": "ccc14fb1cd9d9a5b3a7827dcf75c7b6324b65a4deb53ee110692fc01e3363dbf"
+      }
     },
     "esen-30m-oam": {
-      "asset": "energy-parity-wbm-v1-model-esen-30m-oam-72b8ba248b4bb5ab.json.gz",
-      "sha256": "75e45024ed73a306c157790a3c1e66dafe8ac17f7a6f19706bd7575864220f08"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-esen-30m-oam-72b8ba248b4bb5ab.json.gz",
+        "sha256": "75e45024ed73a306c157790a3c1e66dafe8ac17f7a6f19706bd7575864220f08"
+      }
     },
     "esnet": {
-      "asset": "energy-parity-wbm-v1-model-esnet-d31016e410a4a1cb.json.gz",
-      "sha256": "bf586018d49bc8c5cee4200dbad68f4b6c3936883c7411b4204d8039d4ff7075"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-esnet-d31016e410a4a1cb.json.gz",
+        "sha256": "bf586018d49bc8c5cee4200dbad68f4b6c3936883c7411b4204d8039d4ff7075"
+      }
     },
     "gnome": {
-      "asset": "energy-parity-wbm-v1-model-gnome-5e03a9d354f2ab46.json.gz",
-      "sha256": "bc96d24f3b365fe0491541e7e001965d56e8f01be795026de60e8ecfea844793"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-gnome-5e03a9d354f2ab46.json.gz",
+        "sha256": "bc96d24f3b365fe0491541e7e001965d56e8f01be795026de60e8ecfea844793"
+      }
     },
     "grace-1l-oam": {
-      "asset": "energy-parity-wbm-v1-model-grace-1l-oam-ba47beb16f27222f.json.gz",
-      "sha256": "6f439842ecb4618f68321780ffed070457d2468d2ba8c389a2ce21895468be1b"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-grace-1l-oam-ba47beb16f27222f.json.gz",
+        "sha256": "6f439842ecb4618f68321780ffed070457d2468d2ba8c389a2ce21895468be1b"
+      }
     },
     "grace-2l-mptrj": {
-      "asset": "energy-parity-wbm-v1-model-grace-2l-mptrj-ba66d6176e570d01.json.gz",
-      "sha256": "d6823fdc8a2bee8d99ef29fde01060620ff7a9bc47c66bfbde453273cff96a2b"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-grace-2l-mptrj-ba66d6176e570d01.json.gz",
+        "sha256": "d6823fdc8a2bee8d99ef29fde01060620ff7a9bc47c66bfbde453273cff96a2b"
+      }
     },
     "grace-2l-oam": {
-      "asset": "energy-parity-wbm-v1-model-grace-2l-oam-85dc0606309f9aab.json.gz",
-      "sha256": "a49e07100900434538dd0d94fb436962e3a421b7df1d61813b56229b0eaa5657"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-grace-2l-oam-85dc0606309f9aab.json.gz",
+        "sha256": "a49e07100900434538dd0d94fb436962e3a421b7df1d61813b56229b0eaa5657"
+      }
     },
     "grace-2l-oam-l": {
-      "asset": "energy-parity-wbm-v1-model-grace-2l-oam-l-08c7cba8003604f4.json.gz",
-      "sha256": "dbc268294677bd557f09b86130e22edc7cebeee792c3428a388c2e8b054ece16"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-grace-2l-oam-l-08c7cba8003604f4.json.gz",
+        "sha256": "dbc268294677bd557f09b86130e22edc7cebeee792c3428a388c2e8b054ece16"
+      }
     },
     "grace-3l-oam-l": {
-      "asset": "energy-parity-wbm-v1-model-grace-3l-oam-l-fed97a81c176ab8e.json.gz",
-      "sha256": "0ed539fd5467ed2608cdf2f84eefeaaf43acf8a0e16e3cc15f93289eefa34575"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-grace-3l-oam-l-fed97a81c176ab8e.json.gz",
+        "sha256": "0ed539fd5467ed2608cdf2f84eefeaaf43acf8a0e16e3cc15f93289eefa34575"
+      }
     },
     "hienet": {
-      "asset": "energy-parity-wbm-v1-model-hienet-23d2b7c73c708ca2.json.gz",
-      "sha256": "65c9d87c47f697e656e575fa00ca8a4062c3a876becfc89db2eb3745e1ea395c"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-hienet-23d2b7c73c708ca2.json.gz",
+        "sha256": "65c9d87c47f697e656e575fa00ca8a4062c3a876becfc89db2eb3745e1ea395c"
+      }
     },
     "m3gnet": {
-      "asset": "energy-parity-wbm-v1-model-m3gnet-c672659f97ece106.json.gz",
-      "sha256": "f7fcbbb9ca9ac5dc9cc9b91b3d7718e5eefba5d1fefa3d2a2078aa4681680bc4"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-m3gnet-c672659f97ece106.json.gz",
+        "sha256": "f7fcbbb9ca9ac5dc9cc9b91b3d7718e5eefba5d1fefa3d2a2078aa4681680bc4"
+      }
     },
     "mace-mp-0": {
-      "asset": "energy-parity-wbm-v1-model-mace-mp-0-ab1ccb65d3f652f9.json.gz",
-      "sha256": "472449d8629d6da73de0e41882e59568ccbeb63947592488071775780cfe632f"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-mace-mp-0-ab1ccb65d3f652f9.json.gz",
+        "sha256": "472449d8629d6da73de0e41882e59568ccbeb63947592488071775780cfe632f"
+      }
     },
     "mace-mpa-0": {
-      "asset": "energy-parity-wbm-v1-model-mace-mpa-0-ba21986473210f32.json.gz",
-      "sha256": "dd1c5b3df0d4d7e708d7e44a88f796a4d7f64252afc59878dd67cb92f9059b2b"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-mace-mpa-0-ba21986473210f32.json.gz",
+        "sha256": "dd1c5b3df0d4d7e708d7e44a88f796a4d7f64252afc59878dd67cb92f9059b2b"
+      }
     },
     "matris-10m-mp": {
-      "asset": "energy-parity-wbm-v1-model-matris-10m-mp-77551a9f7f481ca9.json.gz",
-      "sha256": "8325d45ef8d361570243be6c2adc02f84e4d96d06bb2b189def8ffadf443d199"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-matris-10m-mp-77551a9f7f481ca9.json.gz",
+        "sha256": "8325d45ef8d361570243be6c2adc02f84e4d96d06bb2b189def8ffadf443d199"
+      }
     },
     "matris-10m-oam": {
-      "asset": "energy-parity-wbm-v1-model-matris-10m-oam-eb91231e60c1e011.json.gz",
-      "sha256": "d79ce3aa7d42a989fff72f5544867154e7160bdf8b1bf20ad8635d192ac5d18b"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-matris-10m-oam-eb91231e60c1e011.json.gz",
+        "sha256": "d79ce3aa7d42a989fff72f5544867154e7160bdf8b1bf20ad8635d192ac5d18b"
+      }
     },
     "mattersim-v1-5m": {
-      "asset": "energy-parity-wbm-v1-model-mattersim-v1-5m-4805ff85b2ba62fa.json.gz",
-      "sha256": "9ce2ca7fc7d690ad3717884843296e8823fb6c1bb66bb44e5fc17408a8c091a6"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-mattersim-v1-5m-4805ff85b2ba62fa.json.gz",
+        "sha256": "9ce2ca7fc7d690ad3717884843296e8823fb6c1bb66bb44e5fc17408a8c091a6"
+      }
     },
     "megnet": {
-      "asset": "energy-parity-wbm-v1-model-megnet-1c75c120e25f537c.json.gz",
-      "sha256": "bb97c875f6e44870b8afd8462e50519fe10f644516aee8f68915d66ded4de4d8"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-megnet-1c75c120e25f537c.json.gz",
+        "sha256": "bb97c875f6e44870b8afd8462e50519fe10f644516aee8f68915d66ded4de4d8"
+      }
     },
     "nequip-mp-l-0.1": {
-      "asset": "energy-parity-wbm-v1-model-nequip-mp-l-0.1-2d384123caa2b308.json.gz",
-      "sha256": "130ed6a2607ed6b51e4835b9a4705a648aa69891b9a5ed3e7fe5441cdd4916fd"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-nequip-mp-l-0.1-2d384123caa2b308.json.gz",
+        "sha256": "130ed6a2607ed6b51e4835b9a4705a648aa69891b9a5ed3e7fe5441cdd4916fd"
+      }
     },
     "nequip-oam-l-0.1": {
-      "asset": "energy-parity-wbm-v1-model-nequip-oam-l-0.1-f842b34009cb18a4.json.gz",
-      "sha256": "df78c3fd19e8b95bbee22066fdf296bcb740b5eb8fefed61b8756e8cc770e9c3"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-nequip-oam-l-0.1-f842b34009cb18a4.json.gz",
+        "sha256": "df78c3fd19e8b95bbee22066fdf296bcb740b5eb8fefed61b8756e8cc770e9c3"
+      }
     },
     "nequip-oam-xl-0.1": {
-      "asset": "energy-parity-wbm-v1-model-nequip-oam-xl-0.1-16e7abdfdaa2b872.json.gz",
-      "sha256": "ca852881a645b00a21133e0d1a67d3de593241ba48ab26f8e99ac9df1296a259"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-nequip-oam-xl-0.1-16e7abdfdaa2b872.json.gz",
+        "sha256": "ca852881a645b00a21133e0d1a67d3de593241ba48ab26f8e99ac9df1296a259"
+      }
     },
     "nequix-mp-1": {
-      "asset": "energy-parity-wbm-v1-model-nequix-mp-1-7f848efca55ed5c1.json.gz",
-      "sha256": "679ae1c56b253b24864724527bfa9ee102a127b7a4becb9ce51bd84f8afb635b"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-nequix-mp-1-7f848efca55ed5c1.json.gz",
+        "sha256": "679ae1c56b253b24864724527bfa9ee102a127b7a4becb9ce51bd84f8afb635b"
+      }
     },
     "nequix-mp-1-pft": {
-      "asset": "energy-parity-wbm-v1-model-nequix-mp-1-pft-8f3637d584e3a6bf.json.gz",
-      "sha256": "79c44ac15a191514536f81bdb9c2d7481e6db60c23c2ab0c336733a37d7f6824"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-nequix-mp-1-pft-8f3637d584e3a6bf.json.gz",
+        "sha256": "79c44ac15a191514536f81bdb9c2d7481e6db60c23c2ab0c336733a37d7f6824"
+      }
     },
     "orb-v2": {
-      "asset": "energy-parity-wbm-v1-model-orb-v2-923d7a56069c22b7.json.gz",
-      "sha256": "5580cd281abe3372eca035c0e57f1fa7fe83b521b1fda1d5e6d306735c642b38"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-orb-v2-923d7a56069c22b7.json.gz",
+        "sha256": "5580cd281abe3372eca035c0e57f1fa7fe83b521b1fda1d5e6d306735c642b38"
+      }
     },
     "orb-v2-mptrj": {
-      "asset": "energy-parity-wbm-v1-model-orb-v2-mptrj-bbcfe41d536c1913.json.gz",
-      "sha256": "cff009505ea842d7d06bbfa0820e98f0f152d1e42a81ae5d6ab74ac2c3112d54"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-orb-v2-mptrj-bbcfe41d536c1913.json.gz",
+        "sha256": "cff009505ea842d7d06bbfa0820e98f0f152d1e42a81ae5d6ab74ac2c3112d54"
+      }
     },
     "orb-v3": {
-      "asset": "energy-parity-wbm-v1-model-orb-v3-f2c463ac5808ca5d.json.gz",
-      "sha256": "08d2f443b9df22d459a87fb451b7d16ec33c71f8160f2e095625cc84e407ecbe"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-orb-v3-f2c463ac5808ca5d.json.gz",
+        "sha256": "08d2f443b9df22d459a87fb451b7d16ec33c71f8160f2e095625cc84e407ecbe"
+      }
     },
     "pet-oam-xl-1.0.0": {
-      "asset": "energy-parity-wbm-v1-model-pet-oam-xl-1.0.0-1e39aacf485b439b.json.gz",
-      "sha256": "119b23eda000d66b00ff5c3c337a794d527cc991641fe3553cd76d3d2f6d57bb"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-pet-oam-xl-1.0.0-1e39aacf485b439b.json.gz",
+        "sha256": "119b23eda000d66b00ff5c3c337a794d527cc991641fe3553cd76d3d2f6d57bb"
+      }
     },
     "sevennet-l3i5": {
-      "asset": "energy-parity-wbm-v1-model-sevennet-l3i5-566d407f1f8a6679.json.gz",
-      "sha256": "2351f6b879cff34d0a4469b2470ee873f107cccf7d73ece3f1dc92a23b8591df"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-sevennet-l3i5-566d407f1f8a6679.json.gz",
+        "sha256": "2351f6b879cff34d0a4469b2470ee873f107cccf7d73ece3f1dc92a23b8591df"
+      }
     },
     "sevennet-omni-i12": {
-      "asset": "energy-parity-wbm-v1-model-sevennet-omni-i12-58a42602bf35f996.json.gz",
-      "sha256": "5b8ae053c10d0958a679aec1b8e462106ceb14dc1f396bdb374faf8ef81f13c1"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-sevennet-omni-i12-58a42602bf35f996.json.gz",
+        "sha256": "5b8ae053c10d0958a679aec1b8e462106ceb14dc1f396bdb374faf8ef81f13c1"
+      }
     },
     "tace-oam-l": {
-      "asset": "energy-parity-wbm-v1-model-tace-oam-l-589881dc7f7dd363.json.gz",
-      "sha256": "9c8864612e897b0ad48d79565b57bc871967e203b412d5baadbbcb5b06ed2cce"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-tace-oam-l-589881dc7f7dd363.json.gz",
+        "sha256": "9c8864612e897b0ad48d79565b57bc871967e203b412d5baadbbcb5b06ed2cce"
+      }
     },
     "tece-oam-rra-1.0": {
-      "asset": "energy-parity-wbm-v1-model-tece-oam-rra-1.0-c1525e3f374cd06d.json.gz",
-      "sha256": "6c76f710168dbdb1c6e06608315d3b6b36744ceb87b8202807fb5b4d0f88805d"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-tece-oam-rra-1.0-c1525e3f374cd06d.json.gz",
+        "sha256": "6c76f710168dbdb1c6e06608315d3b6b36744ceb87b8202807fb5b4d0f88805d"
+      }
     },
     "voronoi-rf": {
-      "asset": "energy-parity-wbm-v1-model-voronoi-rf-10304904d39edb78.json.gz",
-      "sha256": "7010649a24f383f4fe1fe00fde7b90b35e77d9c69268ae36b1420347e4c8d00a"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-voronoi-rf-10304904d39edb78.json.gz",
+        "sha256": "7010649a24f383f4fe1fe00fde7b90b35e77d9c69268ae36b1420347e4c8d00a"
+      }
     },
     "wrenformer": {
-      "asset": "energy-parity-wbm-v1-model-wrenformer-641d8ebf5fb13fb6.json.gz",
-      "sha256": "9a8e2d78f34a9c619f1e33906c84e9952045d0193a4e5aeb15d45f74b6f1f393"
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-wrenformer-641d8ebf5fb13fb6.json.gz",
+        "sha256": "9a8e2d78f34a9c619f1e33906c84e9952045d0193a4e5aeb15d45f74b6f1f393"
+      }
     }
   },
   "row_count": 256963,
-  "schema_version": 2,
+  "schema_version": 3,
   "structure_bundle_size": 50,
   "structure_bundles": [
     {

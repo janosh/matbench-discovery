@@ -1,5 +1,8 @@
 """Tests for thermal conductivity calculation module."""
 
+import itertools
+import json
+
 import numpy as np
 import pytest
 from ase import Atoms
@@ -8,6 +11,7 @@ from ase.calculators.calculator import Calculator
 from ase.calculators.emt import EMT
 from phono3py.api_phono3py import Phono3py
 from phono3py.conductivity.calculators import RTACalculator
+from phonopy import Phonopy
 from phonopy.structure.atoms import PhonopyAtoms
 from pymatviz.enums import Key
 
@@ -243,23 +247,7 @@ def build_ph3_with_fc2(
     return ph3_local
 
 
-def test_calculate_fc2_set_forces() -> None:
-    """FC2 evaluation preserves the calculator forces and displacement shape."""
-    atoms = make_si2_phonopy_atoms()
-    ph3 = build_ph3_with_fc2(atoms, np.eye(3, dtype=int), distance=0.03)
-    expected_forces = np.hstack((0.1 * np.eye(3), -0.1 * np.eye(3)))[0].reshape(2, 3)
-    calc = MockCalculator(expected_forces)
-    force_set = calculate_fc2_set(ph3, calc, pbar_kwargs={"disable": True})
-    assert force_set.shape == (
-        len(ph3.phonon_supercells_with_displacements),
-        len(ph3.phonon_supercell),
-        3,
-    )
-    np.testing.assert_allclose(
-        force_set, np.broadcast_to(expected_forces, force_set.shape)
-    )
-
-
+@pytest.mark.parametrize("distance, force_scale", [(0.02, 0.0), (0.03, 0.1)])
 @pytest.mark.parametrize(
     "fc2_matrix, expected_det",
     [
@@ -270,26 +258,26 @@ def test_calculate_fc2_set_forces() -> None:
     ],
 )
 def test_calculate_fc2_set_with_various_supercells(
-    fc2_matrix: np.ndarray, expected_det: int
+    fc2_matrix: np.ndarray, expected_det: int, distance: float, force_scale: float
 ) -> None:
-    """Check fc2 forces shape across varied phonon supercells."""
+    """FC2 preserves forces and displacement shape across varied supercells."""
     atoms = make_si2_phonopy_atoms()
-    ph3 = build_ph3_with_fc2(atoms, fc2_matrix)
-
-    # Calculator returns zeros with correct per-supercell shape
-    calc = MockCalculator(np.zeros((len(ph3.phonon_supercell), 3)))
-    force_set = calculate_fc2_set(ph3, calc, pbar_kwargs={"disable": True})
-
-    # Expected atoms in phonon supercell is n_atoms * det(fc2_matrix)
-    n_atoms = len(atoms)
-    assert len(ph3.phonon_supercell) == n_atoms * expected_det
-
-    expected_shape = (
+    ph3 = build_ph3_with_fc2(atoms, fc2_matrix, distance=distance)
+    expected_forces = np.tile(
+        [[force_scale, 0, 0], [-force_scale, 0, 0]], (expected_det, 1)
+    )
+    force_set = calculate_fc2_set(
+        ph3, MockCalculator(expected_forces), pbar_kwargs={"disable": True}
+    )
+    assert len(ph3.phonon_supercell) == len(atoms) * expected_det
+    assert force_set.shape == (
         len(ph3.phonon_supercells_with_displacements),
         len(ph3.phonon_supercell),
         3,
     )
-    assert force_set.shape == expected_shape
+    np.testing.assert_array_equal(
+        force_set, np.broadcast_to(expected_forces, force_set.shape)
+    )
 
 
 def test_calculate_fc2_set_requires_phonon_supercell() -> None:
@@ -301,3 +289,306 @@ def test_calculate_fc2_set_requires_phonon_supercell() -> None:
     calc = MockCalculator(np.zeros((len(ph3.supercell), 3)))
     with pytest.raises(RuntimeError):
         _ = calculate_fc2_set(ph3, calc, pbar_kwargs={"disable": True})
+
+
+def test_harmonic_data_from_phono3py(test_ph3: Phono3py, test_calculator: EMT) -> None:
+    """FC2 yields a seekpath band structure with normalized eigenvectors, DOS and Cv."""
+    from matbench_discovery.phonons import harmonic
+
+    ph3, _fc2_set, mesh_freqs = ltc.get_fc2_and_freqs(
+        test_ph3, test_calculator, pbar_kwargs={"disable": True}
+    )
+    data = harmonic.harmonic_data_from_phono3py(ph3)
+    assert data["errors"] == {}
+    mesh = data["mesh"]
+    assert np.asarray(mesh["weights"]).sum() == np.prod(mesh["numbers"])
+    assert mesh["frequencies"].shape[0] == len(mesh["q_points"]) == len(mesh["weights"])
+    # stable Cu: gamma acoustic modes land a few 1e-8 THz below zero on denser meshes,
+    # which phonopy drops but which must not be reported as imaginary
+    assert data["thermal_properties"]["n_imaginary_modes_excluded"] == 0
+    n_atoms = len(ph3.primitive)  # Cu FCC primitive has 1 atom
+    assert n_atoms == 1
+    band_path = data["band_path"]
+    n_q = len(band_path["q_points"])
+    segments = band_path["segments"]
+    # seekpath's FCC path is GAMMA-X-U|K-GAMMA-L-W-X: connected segments share their
+    # endpoint q-point while the U|K break advances by one
+    labels = [(seg["start_label"], seg["end_label"]) for seg in segments]
+    assert labels == [
+        ("GAMMA", "X"),
+        ("X", "U"),
+        ("K", "GAMMA"),
+        ("GAMMA", "L"),
+        ("L", "W"),
+        ("W", "X"),
+    ]
+    assert segments[0]["start_index"] == 0
+    assert segments[-1]["end_index"] == n_q - 1
+    for previous, current in itertools.pairwise(segments):
+        shared = previous["end_label"] == current["start_label"]
+        assert current["start_index"] == previous["end_index"] + (not shared)
+    # q-points are spaced by (just over) the reference distance along each segment
+    distances = band_path["distances"]
+    start, end = segments[0]["start_index"], segments[0]["end_index"]
+    spacing = (distances[end] - distances[start]) / (end - start)
+    assert 1 <= spacing / harmonic.BAND_PATH_REFERENCE_DISTANCE <= 1.05
+    assert band_path["q_points"].shape == (n_q, 3)
+    assert band_path["distances"].shape == (n_q,)
+    assert band_path["frequencies"].shape == (n_q, 3 * n_atoms)
+    assert band_path["group_velocities"].shape == (n_q, 3 * n_atoms, 3)
+    eigenvectors = band_path["eigenvectors"]
+    assert eigenvectors.shape == (n_q, 3 * n_atoms, n_atoms, 3, 2)
+    # stored to EIGENVECTOR_DECIMALS: rounding each of the n = 6 * n_atoms components
+    # by at most 0.5 * 10^-d shifts |e|^2 by at most 2 * 0.5 * 10^-d * sum|e_i|
+    # <= sqrt(n) * 10^-d (Cauchy-Schwarz with |e| = 1)
+    np.testing.assert_array_equal(
+        eigenvectors, np.round(eigenvectors, harmonic.EIGENVECTOR_DECIMALS)
+    )
+    np.testing.assert_allclose(
+        eigenvectors.reshape(n_q, 3 * n_atoms, -1).__pow__(2).sum(axis=-1),
+        1,
+        rtol=0,
+        atol=np.sqrt(6 * n_atoms) * 10**-harmonic.EIGENVECTOR_DECIMALS,
+    )
+    # Gamma point: acoustic modes at zero frequency, zero distance
+    np.testing.assert_allclose(band_path["q_points"][0], 0, atol=0)
+    assert band_path["distances"][0] == 0
+    np.testing.assert_allclose(band_path["frequencies"][0], 0, rtol=0, atol=1e-6)
+    # band frequencies live in the same window as the phono3py mesh frequencies
+    assert band_path["frequencies"].max() == pytest.approx(mesh_freqs.max(), rel=0.05)
+    dos = data["dos"]
+    assert dos["mesh"] == [2, 2, 2]
+    assert len(dos["frequencies"]) == len(dos["densities"])
+    # the coarse fixture mesh under-resolves the tetrahedron DOS (2.25 states); on a
+    # converged mesh the DOS integrates to 3N states per primitive cell
+    dense_dos = harmonic.harmonic_phonon_data(
+        harmonic.phonopy_from_phono3py(ph3), mesh=(12, 12, 12)
+    )["dos"]
+    n_states = np.trapezoid(dense_dos["densities"], dense_dos["frequencies"])
+    assert n_states == pytest.approx(3 * n_atoms, rel=1e-3)
+    thermal = data["thermal_properties"]
+    assert thermal["temperatures"][0] == 0
+    assert thermal["temperatures"][-1] == harmonic.THERMAL_T_MAX
+    assert thermal["heat_capacity"][0] == 0
+    # high-T heat capacity approaches the classical 3N k_B = 24.94 J/K/mol per atom
+    assert thermal["heat_capacity"][-1] == pytest.approx(3 * n_atoms * 8.314, rel=0.02)
+    primitive = data["primitive"]
+    assert primitive["symbols"] == ["Cu"]
+    assert primitive["lattice"].shape == (3, 3)
+    assert primitive["frac_coords"].shape == (n_atoms, 3)
+    assert data["frequency_unit"] == "THz"
+
+
+@pytest.mark.parametrize(("compact_fc2", "with_nac"), [(False, False), (True, True)])
+def test_harmonic_fc2_round_trip(compact_fc2: bool, with_nac: bool) -> None:
+    """FC2 round-trips arbitrary-q frequencies, including compact FC2 and NAC."""
+    from matbench_discovery.phonons import harmonic
+    from matbench_discovery.phonons.pipeline import json_ready
+
+    cell = PhonopyAtoms(
+        symbols=["Na", "Cl"],
+        cell=np.eye(3) * 5.6,
+        scaled_positions=[[0, 0, 0], [0.5, 0.5, 0.5]],
+        masses=[23.5, 36.0],
+    )
+    phonon = Phonopy(cell, supercell_matrix=[2, 2, 2], symprec=2e-4)
+    rng = np.random.default_rng(seed=0)
+    n_supercell = len(phonon.supercell)
+    force_constants = rng.normal(size=(n_supercell, n_supercell, 3, 3))
+    force_constants += force_constants.transpose(1, 0, 3, 2)
+    if compact_fc2:
+        force_constants = force_constants[phonon.primitive.p2s_map]
+    phonon.force_constants = force_constants
+    phonon.unit_conversion_factor = 12.3
+    if with_nac:
+        phonon.nac_params = {
+            "born": np.array([np.eye(3), -np.eye(3)]),
+            "dielectric": np.eye(3) * 2,
+            "factor": 14.4,
+        }
+    data = harmonic.harmonic_phonon_data(phonon, mesh=(2, 2, 2))
+    restored = harmonic.phonopy_from_harmonic_data(
+        json.loads(json.dumps(json_ready(data)))
+    )
+    np.testing.assert_array_equal(restored.force_constants, phonon.force_constants)
+    np.testing.assert_array_equal(restored.primitive.cell, phonon.primitive.cell)
+    np.testing.assert_array_equal(restored.primitive.masses, phonon.primitive.masses)
+    assert restored.symmetry.tolerance == 2e-4
+    assert restored.unit_conversion_factor == 12.3
+    q_points = np.vstack(([0, 0, 0], [0.5, 0, 0], rng.uniform(-0.5, 0.5, (7, 3))))
+    phonon.run_qpoints(q_points)
+    restored.run_qpoints(q_points)
+    original_freqs = phonon.get_qpoints_dict()["frequencies"]
+    restored_freqs = restored.get_qpoints_dict()["frequencies"]
+    np.testing.assert_array_equal(restored_freqs, original_freqs)
+    difference = np.abs(restored_freqs - original_freqs)
+    relative = difference / np.maximum(np.abs(original_freqs), np.finfo(float).tiny)
+    print(
+        f"{compact_fc2=}, {with_nac=}: max |a-b|={difference.max()}, "
+        f"max relative error={relative.max()}"
+    )
+    with pytest.raises(ValueError, match="Unsupported harmonic schema"):
+        harmonic.phonopy_from_harmonic_data({**data, "schema_version": -1})
+
+
+@pytest.mark.parametrize(
+    ("method", "section"),
+    [
+        ("run_qpoints", "band_path"),
+        ("run_mesh", "mesh"),
+        ("run_total_dos", "dos"),
+        ("run_thermal_properties", "thermal_properties"),
+    ],
+)
+def test_harmonic_analysis_failures_are_independent(
+    test_ph3: Phono3py,
+    test_calculator: EMT,
+    monkeypatch: pytest.MonkeyPatch,
+    method: str,
+    section: str,
+) -> None:
+    """An analysis failure retains FC2 and every independent successful analysis."""
+    from matbench_discovery.phonons import harmonic
+
+    ph3, *_ = ltc.get_fc2_and_freqs(
+        test_ph3, test_calculator, pbar_kwargs={"disable": True}
+    )
+    phonon = harmonic.phonopy_from_phono3py(ph3)
+
+    def fail(*_args: object, **_kwargs: object) -> None:
+        """Inject a failure in one analysis only."""
+        raise RuntimeError(f"failed {section}")
+
+    monkeypatch.setattr(phonon, method, fail)
+    data = harmonic.harmonic_phonon_data(phonon, mesh=(2, 2, 2))
+    assert set(data["errors"]) == {section}
+    assert data["errors"][section]["message"] == f"RuntimeError: failed {section}"
+    assert "Traceback" in data["errors"][section]["traceback"]
+    assert "fc2" in data
+    sections = {"band_path", "mesh", "dos", "thermal_properties"}
+    absent = {section, "dos", "thermal_properties"} if section == "mesh" else {section}
+    assert sections & data.keys() == sections - absent
+
+
+def test_seekpath_band_path_transfers_q_points_to_phonopy_basis(
+    test_atoms: Atoms, test_ph3: Phono3py, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Path q-points land on the intended Cartesian k even when seekpath re-bases."""
+    import seekpath
+
+    from matbench_discovery.phonons import harmonic
+
+    def emt_phonon(atoms: Atoms) -> Phonopy:
+        ph3 = ltc.init_phono3py(
+            atoms,
+            fc2_supercell=test_atoms.info["fc2_supercell"],
+            fc3_supercell=test_atoms.info["fc3_supercell"],
+            q_point_mesh=test_atoms.info["q_point_mesh"],
+        )
+        return harmonic.phonopy_from_phono3py(
+            ltc.get_fc2_and_freqs(ph3, EMT(), pbar_kwargs={"disable": True})[0]
+        )
+
+    pristine = harmonic.phonopy_from_phono3py(
+        ltc.get_fc2_and_freqs(test_ph3, EMT(), pbar_kwargs={"disable": True})[0]
+    )
+    assert len(harmonic.seekpath_band_path(pristine)["explicit_segments"]) == 6
+
+    # a 0.3 % xy shear breaks FCC down to C2/m: seekpath's standardized primitive is
+    # then a different basis from phonopy's, so the naive fractional transfer would
+    # sample the wrong k-points (several THz off), while the Cartesian round trip
+    # stays within the strain-induced shift of the pristine cell's frequencies
+    sheared_atoms = test_atoms.copy()
+    shear = np.eye(3)
+    shear[0, 1] = 0.003
+    sheared_atoms.set_cell(np.asarray(test_atoms.cell) @ shear, scale_atoms=True)
+    sheared = emt_phonon(sheared_atoms)
+    path = harmonic.seekpath_band_path(sheared)
+    assert path["spacegroup_international"] == "C2/m"
+    sheared.run_qpoints(path["explicit_kpoints_rel"])
+    sheared_freqs = sheared.get_qpoints_dict()["frequencies"]
+    k_cart = path["explicit_kpoints_rel"] @ np.linalg.inv(sheared.primitive.cell).T
+    pristine.run_qpoints(k_cart @ np.asarray(pristine.primitive.cell).T)
+    pristine_freqs = pristine.get_qpoints_dict()["frequencies"]
+    np.testing.assert_allclose(sheared_freqs, pristine_freqs, rtol=0, atol=0.1)
+    naive_q = seekpath.get_explicit_k_path(
+        sheared.primitive.totuple(),
+        reference_distance=harmonic.BAND_PATH_REFERENCE_DISTANCE,
+    )["explicit_kpoints_rel"]
+    sheared.run_qpoints(naive_q)
+    assert np.abs(sheared.get_qpoints_dict()["frequencies"] - pristine_freqs).max() > 1
+
+    # a seekpath primitive that is not the same lattice at all still aborts
+    real_get_path = seekpath.get_explicit_k_path
+
+    def stretched_get_path(*args: object, **kwargs: object) -> dict[str, object]:
+        path = dict(real_get_path(*args, **kwargs))
+        path["primitive_lattice"] = np.asarray(path["primitive_lattice"]) * 1.01
+        return path
+
+    monkeypatch.setattr(seekpath, "get_explicit_k_path", stretched_get_path)
+    with pytest.raises(ValueError, match="not a re-based phonopy primitive"):
+        harmonic.seekpath_band_path(pristine)
+
+
+def test_harmonic_eigenvectors_are_dynamical_matrix_eigenvectors() -> None:
+    """Stored [band][atom][xyz] eigenvectors solve D e = w^2 e for a 2-atom cell."""
+    from matbench_discovery.phonons import harmonic
+
+    atoms = bulk("CuAu", "cesiumchloride", a=3.0)
+    ph3 = ltc.init_phono3py(
+        atoms,
+        fc2_supercell=2 * np.eye(3),
+        fc3_supercell=np.eye(3),
+        q_point_mesh=(2, 2, 2),
+    )
+    phonon = harmonic.phonopy_from_phono3py(
+        ltc.get_fc2_and_freqs(ph3, EMT(), pbar_kwargs={"disable": True})[0]
+    )
+    band_path = harmonic.harmonic_phonon_data(phonon, mesh=(2, 2, 2))["band_path"]
+    n_atoms = len(phonon.primitive)
+    assert n_atoms == 2
+    # a transposed (wrong) layout would still pass the normalization check because
+    # the eigenvector matrix is unitary, so verify the eigen-equation directly
+    for q_idx in range(0, len(band_path["q_points"]), 20):
+        phonon.dynamical_matrix.run(band_path["q_points"][q_idx])
+        dyn_mat = phonon.dynamical_matrix.dynamical_matrix
+        stored = band_path["eigenvectors"][q_idx]
+        eig_vecs = (stored[..., 0] + 1j * stored[..., 1]).reshape(3 * n_atoms, -1)
+        freqs = band_path["frequencies"][q_idx]
+        eig_vals = np.sign(freqs) * (freqs / phonon.unit_conversion_factor) ** 2
+        for band_idx, eig_vec in enumerate(eig_vecs):
+            np.testing.assert_allclose(
+                dyn_mat @ eig_vec, eig_vals[band_idx] * eig_vec, rtol=0, atol=1e-4
+            )
+    # at Gamma the acoustic displacement is uniform: |e_atom| scales with sqrt(mass)
+    gamma_acoustic = band_path["eigenvectors"][0, :3]
+    per_atom_norm = np.sqrt((gamma_acoustic**2).sum(axis=(2, 3)))  # (3 bands, 2 atoms)
+    displacement = per_atom_norm / np.sqrt(np.asarray(phonon.primitive.masses))
+    np.testing.assert_allclose(displacement[:, 1], displacement[:, 0], rtol=1e-3)
+
+
+def test_harmonic_thermal_properties_report_excluded_imaginary_modes() -> None:
+    """Thermal properties count the modes phonopy silently drops below 0 THz."""
+    cell = PhonopyAtoms(
+        symbols=["Na", "Cl"],
+        cell=np.eye(3) * 4.0,
+        scaled_positions=[[0, 0, 0], [0.5, 0.5, 0.5]],
+    )
+    phonon = Phonopy(cell, supercell_matrix=[1, 1, 1], primitive_matrix="auto")
+    rng = np.random.default_rng(seed=0)
+    n_supercell = len(phonon.supercell)
+    force_constants = rng.normal(scale=0.5, size=(n_supercell, n_supercell, 3, 3))
+    # symmetric FC2 -> real eigenvalues, a mix of stable and imaginary branches
+    phonon.force_constants = force_constants + force_constants.transpose(1, 0, 3, 2)
+
+    from matbench_discovery.phonons import harmonic
+
+    data = harmonic.harmonic_phonon_data(phonon, mesh=(4, 4, 4))
+    thermal = data["thermal_properties"]
+    n_excluded = thermal["n_imaginary_modes_excluded"]
+    assert 0 < n_excluded <= thermal["n_mesh_modes"]
+    # without the count nothing marks this: Cv falls short of the classical limit
+    # 3*N*k_B purely because the dropped modes never contribute
+    classical_limit = 3 * len(phonon.primitive) * 8.314
+    assert np.asarray(thermal["heat_capacity"])[-1] < classical_limit

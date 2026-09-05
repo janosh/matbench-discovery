@@ -117,12 +117,10 @@ def test_analyze_symmetry_with_ase_atoms(cubic_struct: Structure) -> None:
     from ase import Atoms
     from ase.spacegroup import crystal
 
-    # Create an ASE Atoms object (simple cubic Cu)
     a = 3.6
     atoms = crystal("Cu", [(0, 0, 0)], spacegroup=225, cellpar=[a, a, a, 90, 90, 90])
     assert isinstance(atoms, Atoms)
 
-    # Test with both Structure and Atoms
     df_ase = symmetry.get_sym_info_from_structs({"ase": atoms})
 
     assert len(df_ase) == 1
@@ -130,7 +128,6 @@ def test_analyze_symmetry_with_ase_atoms(cubic_struct: Structure) -> None:
     assert isinstance(df_ase[Key.spg_num].iloc[0], int)
     assert isinstance(df_ase[Key.n_sym_ops].iloc[0], int)
 
-    # Test mixed dictionary of Structure and Atoms
     df_mixed = symmetry.get_sym_info_from_structs({"pmg": cubic_struct, "ase": atoms})
     assert len(df_mixed) == 2
     assert df_mixed.index.tolist() == ["pmg", "ase"]

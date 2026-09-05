@@ -31,7 +31,6 @@ describe(`metric_better_as`, () => {
 })
 
 describe(`format_train_set`, () => {
-  // Get actual keys from DATASETS to use in tests
   const dataset_keys = Object.keys(DATASETS)
   const mp2022_key = dataset_keys.find((key) => key.includes(`MP 2022`))
   if (!mp2022_key) throw new Error(`No MP 2022 key found in DATASETS`)
@@ -47,7 +46,6 @@ describe(`format_train_set`, () => {
     }
     const result = format_train_set([mp2022_key], mock_model as ModelData)
 
-    // Check that the result contains key information without hardcoding values
     expect(result).toContain(
       `data-sort-value="${mp2022.n_materials ?? mp2022.n_structures}"`,
     )
@@ -76,7 +74,6 @@ describe(`format_train_set`, () => {
   })
 
   it(`shows materials and structures when they differ`, () => {
-    // Find a dataset with both n_materials and n_structures
     const dataset_with_both = Object.entries(DATASETS).find(
       ([, dataset]) =>
         dataset.n_materials &&
@@ -95,7 +92,6 @@ describe(`format_train_set`, () => {
     }
     const result = format_train_set([key], mock_model as ModelData)
 
-    // Check that the result shows both materials and structures
     expect(result).toContain(`<small>(`)
     expect(result).toContain(`materials in training set (`)
     expect(result).toContain(`structures`)
@@ -113,7 +109,6 @@ describe(`format_train_set`, () => {
   })
 
   it(`formats training sets without n_materials correctly using n_structures`, () => {
-    // Create a copy of a dataset and remove its n_materials property
     const mptrj = { ...DATASETS[mptrj_key] }
     const n_structures = mptrj.n_structures
     const { slug } = mptrj
@@ -124,7 +119,6 @@ describe(`format_train_set`, () => {
       // No n_training_materials explicitly set
     }
 
-    // Replace the DATASETS object with our modified version
     Object.defineProperty(DATASETS, `Modified_MPtrj`, {
       value: mptrj,
       configurable: true,
@@ -136,13 +130,10 @@ describe(`format_train_set`, () => {
         mock_model_struct_only as ModelData,
       )
 
-      // Should use n_structures as data-sort-value
+      // falls back to n_structures as data-sort-value
       expect(result).toContain(`data-sort-value="${n_structures}"`)
-
-      // Should include internal link to dataset slug page
       expect(result).toContain(`<a href="/data/${slug}"`)
     } finally {
-      // Clean up by restoring original DATASETS
       delete DATASETS.Modified_MPtrj
     }
   })
@@ -305,7 +296,6 @@ describe(`assemble_row_data`, () => {
 })
 
 describe(`Model Sorting Logic`, () => {
-  // Create a set of test models that can be reused across multiple test cases
   const create_test_models = () =>
     [
       {
@@ -348,7 +338,6 @@ describe(`Model Sorting Logic`, () => {
       },
     ] as unknown as ModelData[]
 
-  // Create test models with edge cases
   const create_edge_case_models = () =>
     [
       // Model with completely missing metrics
@@ -514,14 +503,13 @@ describe(`Model Sorting Logic`, () => {
       }),
     ) as unknown as ModelData[]
 
-    // Test ascending sort (runtime 0 should be last)
+    // ascending: runtime 0 sorts last
     const sorted_asc = models.toSorted(sort_models(`Run Time`, `asc`))
-    // Check the non-zero values are sorted correctly first
     expect(sorted_asc.slice(0, 2).map((model) => model.model_key)).toStrictEqual([
       `model_c`,
       `model_a`,
     ])
-    // Check the zero values are at the end (order between them is not guaranteed)
+    // order among the zeroes is not guaranteed
     expect(
       sorted_asc
         .slice(2)
@@ -529,16 +517,14 @@ describe(`Model Sorting Logic`, () => {
         .toSorted((key_1, key_2) => (key_1 ?? ``).localeCompare(key_2 ?? ``)),
     ).toStrictEqual([`model_b`, `model_d`])
 
-    // Test descending sort (runtime 0 should be first)
+    // descending: runtime 0 sorts first
     const sorted_desc = models.toSorted(sort_models(`Run Time`, `desc`))
-    // Check the zero values are at the beginning (order between them is not guaranteed)
     expect(
       sorted_desc
         .slice(0, 2)
         .map((model) => model.model_key)
         .toSorted((key_1, key_2) => (key_1 ?? ``).localeCompare(key_2 ?? ``)),
     ).toStrictEqual([`model_b`, `model_d`])
-    // Check the non-zero values are sorted correctly after
     expect(sorted_desc.slice(2).map((model) => model.model_key)).toStrictEqual([
       `model_a`,
       `model_c`,

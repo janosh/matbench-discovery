@@ -28,15 +28,7 @@ from matbench_discovery.enums import (
 )
 from matbench_discovery.remote import figshare
 from matbench_discovery.remote.fetch import maybe_auto_download_file
-
-
-def make_mock_response(content: bytes) -> requests.Response:
-    """Create a successful streaming response with fixed byte content."""
-    response = requests.Response()
-    response.status_code = 200
-    response._content = content  # noqa: SLF001
-    response.iter_content = lambda chunk_size=8192: [content]  # ty: ignore[invalid-assignment] # noqa: ARG005
-    return response
+from tests.utils import make_mock_response
 
 
 @pytest.mark.parametrize("enum_cls", [ArchitectureType, MbdKey, Open, Task, TestSubset])
@@ -96,7 +88,6 @@ def test_files_enum() -> None:
     """Test error handling in Files enum."""
     assert Files.base_dir == DATA_DIR
 
-    # Test custom base_dir
     class SubFiles(Files, base_dir="foo"):
         test_file = auto(), "test/file.txt"
 
@@ -112,7 +103,6 @@ def test_files_enum() -> None:
 
     assert SubFiles.base_dir == "foo"
 
-    # Test __repr__ and __str__ methods
     test_file = SubFiles.test_file
     assert repr(test_file) == "SubFiles.test_file"
     assert str(test_file) == "test_file"
@@ -139,17 +129,14 @@ def test_files_members_are_distinct(enum_cls: type[Files]) -> None:
 
 def test_data_files_enum() -> None:
     """Test DataFiles enum functionality."""
-    # Test __repr__ and __str__ for DataFiles
     assert repr(DataFiles.mp_energies) == "DataFiles.mp_energies"
     assert str(DataFiles.mp_energies) == "mp_energies"
 
-    # Test that paths are constructed correctly
     assert DataFiles.mp_energies.rel_path == "mp/2025-02-01-mp-energies.csv.gz"
     assert DataFiles.mp_patched_phase_diagram.rel_path == "mp/2023-02-07-ppd-mp.pkl.gz"
     assert DataFiles.mp_energies.name == "mp_energies"
     assert DataFiles.mp_energies.url.startswith("https://figshare.com/files/")
 
-    # Test that multiple files exist and have correct attributes
     assert DataFiles.wbm_summary.rel_path == "wbm/2023-12-13-wbm-summary.csv.gz"
     assert DataFiles.wbm_summary.path == f"{DATA_DIR}/wbm/2023-12-13-wbm-summary.csv.gz"
     assert DataFiles.wbm_summary.url.startswith("https://figshare.com/files/")
@@ -165,7 +152,7 @@ def test_data_files_members_match_yaml_registry() -> None:
 
 
 def test_data_files_path_raises_when_md5_download_fails(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """DataFiles.path surfaces failed checksum verification to callers."""
     data_file = DataFiles.mp_energies
@@ -187,13 +174,10 @@ def test_data_files_path_raises_when_md5_download_fails(
 
     with (
         patch("requests.get", return_value=make_mock_response(b"bad data")),
-        pytest.raises(FileNotFoundError, match="Failed to resolve"),
+        pytest.raises(ValueError, match=f"MD5 mismatch.*expected {expected_md5}"),
     ):
         _ = data_file.path
 
-    stdout, stderr = capsys.readouterr()
-    assert f"expected {expected_md5}" in stdout
-    assert stderr == ""
     assert not os.path.isfile(f"{tmp_path}/{data_file.rel_path}")
 
 
@@ -320,7 +304,6 @@ def test_files_enum_auto_download(
 ) -> None:
     """Test auto-download behavior in Files class."""
 
-    # Create a test Files class with our temp directory
     class TestFiles(Files, base_dir=str(tmp_path)):
         test_file = auto(), "test/file.txt"
 
@@ -367,26 +350,21 @@ def test_files_enum_auto_download(
 
 def test_model_enum() -> None:
     """Test Model enum functionality."""
-    # Test basic model attributes
     assert Model.alignn.name == "alignn"
     assert Model.alignn.rel_path == "alignn/alignn.yml"
     assert Model.alignn.pr_url == "https://github.com/janosh/matbench-discovery/pull/85"
     assert Model.alignn.label == "ALIGNN"
 
-    # Test __repr__ and __str__ for Model
     assert repr(Model.alignn) == "Model.alignn"
     assert str(Model.alignn) == "alignn"
 
-    # Test metadata property
     assert isinstance(Model.alignn.metadata, dict)
 
-    # Test yaml_path property
     assert Model.alignn.yaml_path.endswith("alignn/alignn.yml")
     grace_kappa_path = Model.grace_2l_mptrj.kappa_103_path
     assert isinstance(grace_kappa_path, str)
     assert grace_kappa_path.endswith("2024-11-20-phonons-kappa-103.json.gz")
 
-    # Test Model metrics property
     metrics = Model.alignn.metrics
     assert isinstance(metrics, dict)
     assert metrics.keys() == {"discovery"}
@@ -500,9 +478,7 @@ VALID_URL_STATUSES = {200, 202, 403, 429}
 
 @pytest.fixture(scope="session")
 def url_session() -> requests.Session:
-    """HTTP session that retries transient errors (429, 5xx) with backoff, so a
-    momentary server hiccup doesn't fail URL-validation tests.
-    """
+    """HTTP session retrying transient 429/5xx errors so hiccups don't fail tests."""
     session = requests.Session()
     session.headers["User-Agent"] = "unit test"
     n_pool = 2 * (os.cpu_count() or 4)
@@ -523,9 +499,7 @@ def url_session() -> requests.Session:
 
 
 def check_url(session: requests.Session, url: str) -> None:
-    """Assert a model URL resolves. The session adapter retries transient errors
-    (connection failures, 429, 5xx), so only persistently bad links (e.g. 404) fail.
-    """
+    """Assert a URL resolves - the adapter retries transients, so only 404s fail."""
     # 200: OK, 202: figshare async, 403: restricted, 429: rate limited after retries
     status = session.head(url, allow_redirects=True, timeout=TIMEOUT).status_code
     assert status in VALID_URL_STATUSES, f"unexpected {status=} for {url}"

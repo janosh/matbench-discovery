@@ -165,7 +165,6 @@ def test_upload_file_to_figshare_variants(
         if method == "GET" and url == "upload_url":
             return {"parts": file_parts}
         if method == "POST" and isinstance(data := kwargs.get("data"), dict):
-            # Verify the file name in the POST request
             assert data["name"] == (file_name or test_file.name)
         return mock_responses[method]
 
@@ -212,7 +211,7 @@ DUMMY_FILES = [
 ]
 
 
-@pytest.mark.parametrize("files", [[], DUMMY_FILES])  # Empty and non-empty
+@pytest.mark.parametrize("files", [[], DUMMY_FILES])
 def test_list_article_files(files: list[dict[str, Any]]) -> None:
     """Test list_article_files with various file configurations."""
     with patch(
@@ -363,7 +362,6 @@ def test_upload_file_if_needed(
             existing_files=existing_files,
         )
 
-        # Verify expected behavior
         assert mock_delete.called == expected_delete
         assert mock_upload.called == expected_upload
         assert was_uploaded == expected_upload

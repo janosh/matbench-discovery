@@ -54,7 +54,7 @@ os.makedirs(args.out_dir, exist_ok=True)
 # discover (system, model) pairs from nvt_<model>.extxyz files in pred-dir
 rows_by_model: dict[str, list[dict[str, float | str]]] = {}
 pred_files = sorted(glob(f"{args.pred_dir}/*/nvt_*.extxyz*"))
-# cache: each ref (trajectory, dt_fs) reused by ~15 models; keep at most one in memory
+# each ref (trajectory, dt_fs) is reused by ~15 models
 ref_cache: dict[str, tuple[Trajectory, float]] = {}
 
 for pred_file in (pbar := tqdm(pred_files, desc="MD trajectory pairs")):

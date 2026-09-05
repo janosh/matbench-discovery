@@ -2,20 +2,14 @@
   "extends": "./.svelte-kit/tsconfig.json",
   "compilerOptions": {
     "strict": true,
-    "module": "esnext",
-    "target": "esnext",
-    "moduleResolution": "bundler",
-
-    // To have warnings/errors of the Svelte compiler at the correct position,
-    // enable source maps by default.
-    "sourceMap": true,
-
-    "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true,
-
-    // Skip type checking of declaration files in node_modules
     "skipLibCheck": true
   },
-  "exclude": ["node_modules/*", ".svelte-kit/*", "build/*", "dist/*"]
+  "include": [
+    "src/**/*",
+    "tests/**/*",
+    "scripts/**/*.ts",
+    "vite.config.ts",
+    ".svelte-kit/**/*.d.ts"
+  ]
 }

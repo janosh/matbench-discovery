@@ -180,9 +180,9 @@ metrics:
       κ_SRME: 0.1704
       pred_file:
         name: models/esen/esen-30m-oam/2025-03-18-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/53090591
-        size: 8173059
-        md5: e252cf3cdefc1e959f3bbdb0cdec3e5c
+        url: https://figshare.com/files/68221342
+        size: 8173024
+        md5: 950435d22aa30aaed610d0308c0f59d6
       κ_SRE: 0.0858
       κ_SRD: -0.0515
       κ_failure_rate: 0.0097

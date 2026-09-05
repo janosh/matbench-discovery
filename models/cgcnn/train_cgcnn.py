@@ -57,8 +57,7 @@ def perturb_structure(struct: Structure, gamma: float = 1.5) -> Structure:
 epochs = 300
 target_col = Key.formation_energy_per_atom
 input_col = Key.structure
-# 0 for no perturbation, n>1 means train on n perturbations of each crystal
-# in the training set all assigned the same original target energy
+# 0 = no perturbation; n>1 trains on n perturbed copies per crystal, same target energy
 n_perturb = 0
 model_name = f"cgcnn-robust-{n_perturb}"
 job_name = f"{today}-train-{model_name}"

@@ -7,170 +7,252 @@
   "local_asset_base_url": "/kappa-parity/assets",
   "model_assets": {
     "allegro-mp-l-0.1": {
-      "asset": "kappa-parity-phonondb-v1-model-allegro-mp-l-0.1-c93000e44a9004f1.json.gz",
-      "sha256": "18209d5bed9a71a018b27e5538751cd04892569f57c74a35a21aa211d3465630"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-allegro-mp-l-0.1-c93000e44a9004f1.json.gz",
+        "sha256": "18209d5bed9a71a018b27e5538751cd04892569f57c74a35a21aa211d3465630"
+      }
     },
     "allegro-oam-l-0.1": {
-      "asset": "kappa-parity-phonondb-v1-model-allegro-oam-l-0.1-9b98a57d3bc6d953.json.gz",
-      "sha256": "f7c7ee31cf43257ce8a83068f8c2d0fea96b1f587a35d47ce7bd831cc9b2ccf2"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-allegro-oam-l-0.1-9b98a57d3bc6d953.json.gz",
+        "sha256": "f7c7ee31cf43257ce8a83068f8c2d0fea96b1f587a35d47ce7bd831cc9b2ccf2"
+      }
     },
     "alphanet-v1-oam": {
-      "asset": "kappa-parity-phonondb-v1-model-alphanet-v1-oam-934528938814e7dc.json.gz",
-      "sha256": "5914dd57a0733585b5b01bce5ed431a90e7b02cb67a286c21169566d61bf2af3"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-alphanet-v1-oam-934528938814e7dc.json.gz",
+        "sha256": "5914dd57a0733585b5b01bce5ed431a90e7b02cb67a286c21169566d61bf2af3"
+      }
     },
     "bam-mp-core": {
-      "asset": "kappa-parity-phonondb-v1-model-bam-mp-core-d43194d88930969f.json.gz",
-      "sha256": "0e003fec247f89a59c1c3950bc753ad85d8e3f18c2fb38925b4864d8b150b5f7"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-bam-mp-core-d43194d88930969f.json.gz",
+        "sha256": "0e003fec247f89a59c1c3950bc753ad85d8e3f18c2fb38925b4864d8b150b5f7"
+      }
     },
     "chgnet-0.3.0": {
-      "asset": "kappa-parity-phonondb-v1-model-chgnet-0.3.0-e4ff98145a73082a.json.gz",
-      "sha256": "6761630260bf9e100f78d25afd6c846cc5f2d74e948b1cef969c0e6fbbc63239"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-chgnet-0.3.0-e4ff98145a73082a.json.gz",
+        "sha256": "6761630260bf9e100f78d25afd6c846cc5f2d74e948b1cef969c0e6fbbc63239"
+      }
     },
     "dpa-3.1-3m-ft": {
-      "asset": "kappa-parity-phonondb-v1-model-dpa-3.1-3m-ft-94176522847b2381.json.gz",
-      "sha256": "d1db05390caf820e17de26ffdb4dafc6fc2dfe2d56614e6774637cee820a0f7c"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-dpa-3.1-3m-ft-94176522847b2381.json.gz",
+        "sha256": "d1db05390caf820e17de26ffdb4dafc6fc2dfe2d56614e6774637cee820a0f7c"
+      }
     },
     "dpa-4.0.1-pro-mptrj": {
-      "asset": "kappa-parity-phonondb-v1-model-dpa-4.0.1-pro-mptrj-b3bd6993603e125e.json.gz",
-      "sha256": "12a0fa2468dc70b70d9a8d2eb5514ea955e9afb0a4126d6c16336d7cfb1ddce6"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-dpa-4.0.1-pro-mptrj-b3bd6993603e125e.json.gz",
+        "sha256": "12a0fa2468dc70b70d9a8d2eb5514ea955e9afb0a4126d6c16336d7cfb1ddce6"
+      }
     },
     "eqnorm-mptrj": {
-      "asset": "kappa-parity-phonondb-v1-model-eqnorm-mptrj-794aea2b9b19bfaf.json.gz",
-      "sha256": "f920876f2598c2b1b9d96cedc2bff9f3eff852c231d42c36ff6f3aca712b9ac1"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-eqnorm-mptrj-794aea2b9b19bfaf.json.gz",
+        "sha256": "f920876f2598c2b1b9d96cedc2bff9f3eff852c231d42c36ff6f3aca712b9ac1"
+      }
     },
     "equflash-29m-oam": {
-      "asset": "kappa-parity-phonondb-v1-model-equflash-29m-oam-51b8c393bc31c804.json.gz",
-      "sha256": "b0d1a773d82d1ce1b411e04a6947935ef1e7890a6b75af536976f81ba0a8fa32"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-equflash-29m-oam-51b8c393bc31c804.json.gz",
+        "sha256": "b0d1a773d82d1ce1b411e04a6947935ef1e7890a6b75af536976f81ba0a8fa32"
+      }
     },
     "equflashv2-45m-oam": {
-      "asset": "kappa-parity-phonondb-v1-model-equflashv2-45m-oam-5df432dfd6a8b262.json.gz",
-      "sha256": "eecca3cb48691efa2f2144d7f292448fbaaa7dff136af4f4a1bcc2591afe317b"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-equflashv2-45m-oam-5df432dfd6a8b262.json.gz",
+        "sha256": "eecca3cb48691efa2f2144d7f292448fbaaa7dff136af4f4a1bcc2591afe317b"
+      }
     },
     "equiformer-v3-mp": {
-      "asset": "kappa-parity-phonondb-v1-model-equiformer-v3-mp-6c839e74dcd40436.json.gz",
-      "sha256": "3444efedaa215686338105b0ba21d7b2eedb35db6a5556b751b93d7176f2de97"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-equiformer-v3-mp-6c839e74dcd40436.json.gz",
+        "sha256": "3444efedaa215686338105b0ba21d7b2eedb35db6a5556b751b93d7176f2de97"
+      }
     },
     "equiformer-v3-oam": {
-      "asset": "kappa-parity-phonondb-v1-model-equiformer-v3-oam-5ab72663c638fe7d.json.gz",
-      "sha256": "57789022dd8ff9f508243b427bc472505e1eda89fe8664edc7630eb1a6f8ee52"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-equiformer-v3-oam-5ab72663c638fe7d.json.gz",
+        "sha256": "57789022dd8ff9f508243b427bc472505e1eda89fe8664edc7630eb1a6f8ee52"
+      }
     },
     "eqv2-m-omat-salex-mp": {
-      "asset": "kappa-parity-phonondb-v1-model-eqv2-m-omat-salex-mp-8b00f076876e647d.json.gz",
-      "sha256": "c5422101fa6aef4760feb0b9d15eed35f83bebc7e83cfc613eef8c175569928c"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-eqv2-m-omat-salex-mp-8b00f076876e647d.json.gz",
+        "sha256": "c5422101fa6aef4760feb0b9d15eed35f83bebc7e83cfc613eef8c175569928c"
+      }
     },
     "eqv2-s-dens-mp": {
-      "asset": "kappa-parity-phonondb-v1-model-eqv2-s-dens-mp-f514cb067a891a3f.json.gz",
-      "sha256": "1a2c992e9827d54c81c9def6956074375da43e7e852cb4d63fcabf3957b0b96c"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-eqv2-s-dens-mp-f514cb067a891a3f.json.gz",
+        "sha256": "1a2c992e9827d54c81c9def6956074375da43e7e852cb4d63fcabf3957b0b96c"
+      }
     },
     "esen-30m-mp": {
-      "asset": "kappa-parity-phonondb-v1-model-esen-30m-mp-21921aa5135807cb.json.gz",
-      "sha256": "48bd26f65b23ba49ee8a929e9635a1cc70b471fcac3b9c7f4bbbf9e214907fda"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-esen-30m-mp-21921aa5135807cb.json.gz",
+        "sha256": "48bd26f65b23ba49ee8a929e9635a1cc70b471fcac3b9c7f4bbbf9e214907fda"
+      }
     },
     "esen-30m-oam": {
-      "asset": "kappa-parity-phonondb-v1-model-esen-30m-oam-07881905b109d698.json.gz",
-      "sha256": "192a881b6d1b87b31f786cf90a744e06353e45fca6648a1d7772456b4e5eebfb"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-esen-30m-oam-07881905b109d698.json.gz",
+        "sha256": "192a881b6d1b87b31f786cf90a744e06353e45fca6648a1d7772456b4e5eebfb"
+      }
     },
     "grace-1l-oam": {
-      "asset": "kappa-parity-phonondb-v1-model-grace-1l-oam-dffb53b73959e56a.json.gz",
-      "sha256": "df1919ce704ccfa4aa10592e5733d17f55136c97c9e226885c2ae91ab7a314b6"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-grace-1l-oam-dffb53b73959e56a.json.gz",
+        "sha256": "df1919ce704ccfa4aa10592e5733d17f55136c97c9e226885c2ae91ab7a314b6"
+      }
     },
     "grace-2l-mptrj": {
-      "asset": "kappa-parity-phonondb-v1-model-grace-2l-mptrj-8f53016d81f6e320.json.gz",
-      "sha256": "0b09478a16f0273913a54d4be6be49dc167caa2ef306a9824813bed8e5cf54dd"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-grace-2l-mptrj-8f53016d81f6e320.json.gz",
+        "sha256": "0b09478a16f0273913a54d4be6be49dc167caa2ef306a9824813bed8e5cf54dd"
+      }
     },
     "grace-2l-oam": {
-      "asset": "kappa-parity-phonondb-v1-model-grace-2l-oam-84d754d34beff17d.json.gz",
-      "sha256": "42a4b474e19b7fa6ceaf25ad5b648a11e1610abd5b84932509eb3ba50b213ba5"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-grace-2l-oam-84d754d34beff17d.json.gz",
+        "sha256": "42a4b474e19b7fa6ceaf25ad5b648a11e1610abd5b84932509eb3ba50b213ba5"
+      }
     },
     "grace-2l-oam-l": {
-      "asset": "kappa-parity-phonondb-v1-model-grace-2l-oam-l-4b71613bda3b947c.json.gz",
-      "sha256": "336d6523bf2239a7b495eef1a7ee5f3b8302342a3fc0e830a5465844982ccd11"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-grace-2l-oam-l-4b71613bda3b947c.json.gz",
+        "sha256": "336d6523bf2239a7b495eef1a7ee5f3b8302342a3fc0e830a5465844982ccd11"
+      }
     },
     "grace-3l-oam-l": {
-      "asset": "kappa-parity-phonondb-v1-model-grace-3l-oam-l-43a02f0df341be22.json.gz",
-      "sha256": "c6ebcb5f122fd58cceaa08bbc1aac8635c993930f3e88bece3bc3698136e57bd"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-grace-3l-oam-l-43a02f0df341be22.json.gz",
+        "sha256": "c6ebcb5f122fd58cceaa08bbc1aac8635c993930f3e88bece3bc3698136e57bd"
+      }
     },
     "hienet": {
-      "asset": "kappa-parity-phonondb-v1-model-hienet-149d0ddee46b97bb.json.gz",
-      "sha256": "007cbd566192064a0e5967f77824d28defcc8170ba472ed0f9e67776a813385f"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-hienet-149d0ddee46b97bb.json.gz",
+        "sha256": "007cbd566192064a0e5967f77824d28defcc8170ba472ed0f9e67776a813385f"
+      }
     },
     "m3gnet": {
-      "asset": "kappa-parity-phonondb-v1-model-m3gnet-2d5c8ba7b5221fb0.json.gz",
-      "sha256": "9a6196dedad0931bf1c9ff595611cf6f0ae6574d2aa5ccea8d5d31bcdb5726ae"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-m3gnet-2d5c8ba7b5221fb0.json.gz",
+        "sha256": "9a6196dedad0931bf1c9ff595611cf6f0ae6574d2aa5ccea8d5d31bcdb5726ae"
+      }
     },
     "mace-mp-0": {
-      "asset": "kappa-parity-phonondb-v1-model-mace-mp-0-3492c1df2e296273.json.gz",
-      "sha256": "aa5b1ac4639d29c19d51afee08a5d0d11f0af525dfe48dafbb05df85c04e24a3"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-mace-mp-0-3492c1df2e296273.json.gz",
+        "sha256": "aa5b1ac4639d29c19d51afee08a5d0d11f0af525dfe48dafbb05df85c04e24a3"
+      }
     },
     "mace-mpa-0": {
-      "asset": "kappa-parity-phonondb-v1-model-mace-mpa-0-8534a9692932837d.json.gz",
-      "sha256": "de52ebfd27e23a409183683a3aa8ee18ae3ee3b4c196e4ed044c251c3f5e0f43"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-mace-mpa-0-8534a9692932837d.json.gz",
+        "sha256": "de52ebfd27e23a409183683a3aa8ee18ae3ee3b4c196e4ed044c251c3f5e0f43"
+      }
     },
     "matris-10m-mp": {
-      "asset": "kappa-parity-phonondb-v1-model-matris-10m-mp-c09a2dffd8efcd32.json.gz",
-      "sha256": "ab890b1287281d05ffae7736c4f604c6188624fca196379fe073d731bd9818be"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-matris-10m-mp-c09a2dffd8efcd32.json.gz",
+        "sha256": "ab890b1287281d05ffae7736c4f604c6188624fca196379fe073d731bd9818be"
+      }
     },
     "matris-10m-oam": {
-      "asset": "kappa-parity-phonondb-v1-model-matris-10m-oam-62d3af2a4078e94a.json.gz",
-      "sha256": "a889c91cd6f0f9c6f6e30da85ac38a1307a10c006cc8b96e087bd5659ea55f3f"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-matris-10m-oam-62d3af2a4078e94a.json.gz",
+        "sha256": "a889c91cd6f0f9c6f6e30da85ac38a1307a10c006cc8b96e087bd5659ea55f3f"
+      }
     },
     "mattersim-v1-5m": {
-      "asset": "kappa-parity-phonondb-v1-model-mattersim-v1-5m-5494f35da650dd01.json.gz",
-      "sha256": "6c11f504bd68d4ae1e16eaf36e267ac30c543e31dd6fa3b185c14859fd7bff41"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-mattersim-v1-5m-5494f35da650dd01.json.gz",
+        "sha256": "6c11f504bd68d4ae1e16eaf36e267ac30c543e31dd6fa3b185c14859fd7bff41"
+      }
     },
     "nequip-mp-l-0.1": {
-      "asset": "kappa-parity-phonondb-v1-model-nequip-mp-l-0.1-9f81d968f3d1d5b1.json.gz",
-      "sha256": "5a628bc7ad0c80dae697ed1061cae28800ea9ab09a2f27ddcb34d36395b6ac4f"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-nequip-mp-l-0.1-9f81d968f3d1d5b1.json.gz",
+        "sha256": "5a628bc7ad0c80dae697ed1061cae28800ea9ab09a2f27ddcb34d36395b6ac4f"
+      }
     },
     "nequip-oam-l-0.1": {
-      "asset": "kappa-parity-phonondb-v1-model-nequip-oam-l-0.1-df4ec019f179c805.json.gz",
-      "sha256": "cb00bda4fb129a4daa105fe127298dd33e62878aa96bc7f3e7af3fc32f3a99cc"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-nequip-oam-l-0.1-df4ec019f179c805.json.gz",
+        "sha256": "cb00bda4fb129a4daa105fe127298dd33e62878aa96bc7f3e7af3fc32f3a99cc"
+      }
     },
     "nequip-oam-xl-0.1": {
-      "asset": "kappa-parity-phonondb-v1-model-nequip-oam-xl-0.1-e8e9ce64a6f60703.json.gz",
-      "sha256": "247fe94d12a5b4aac2820cb999279a0872e6b47d6a38c2ebc9d1f844f913a2d5"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-nequip-oam-xl-0.1-e8e9ce64a6f60703.json.gz",
+        "sha256": "247fe94d12a5b4aac2820cb999279a0872e6b47d6a38c2ebc9d1f844f913a2d5"
+      }
     },
     "nequix-mp-1": {
-      "asset": "kappa-parity-phonondb-v1-model-nequix-mp-1-1be83695756fcbea.json.gz",
-      "sha256": "434ec57fc16980cedaee9e3dbf6e7a662dd9c0c5564eb671d1407d5341d6c4b5"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-nequix-mp-1-1be83695756fcbea.json.gz",
+        "sha256": "434ec57fc16980cedaee9e3dbf6e7a662dd9c0c5564eb671d1407d5341d6c4b5"
+      }
     },
     "nequix-mp-1-pft": {
-      "asset": "kappa-parity-phonondb-v1-model-nequix-mp-1-pft-6f0448cdb92a51dd.json.gz",
-      "sha256": "8ba0773c8e583058530555e565ddede33c490f906d4554ead1bbf3e4157406bc"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-nequix-mp-1-pft-6f0448cdb92a51dd.json.gz",
+        "sha256": "8ba0773c8e583058530555e565ddede33c490f906d4554ead1bbf3e4157406bc"
+      }
     },
     "orb-v2": {
-      "asset": "kappa-parity-phonondb-v1-model-orb-v2-476a7902f410add5.json.gz",
-      "sha256": "5244698a39c8be0c33f7ed087e135ab9d6cd67c57438d1f118ee82faffcf0706"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-orb-v2-476a7902f410add5.json.gz",
+        "sha256": "5244698a39c8be0c33f7ed087e135ab9d6cd67c57438d1f118ee82faffcf0706"
+      }
     },
     "orb-v2-mptrj": {
-      "asset": "kappa-parity-phonondb-v1-model-orb-v2-mptrj-0992e7896be96429.json.gz",
-      "sha256": "4cc3ccd3d321b36d8e8597e3e946bfedc56036e9e51dce1baad2c917d253f8ff"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-orb-v2-mptrj-0992e7896be96429.json.gz",
+        "sha256": "4cc3ccd3d321b36d8e8597e3e946bfedc56036e9e51dce1baad2c917d253f8ff"
+      }
     },
     "orb-v3": {
-      "asset": "kappa-parity-phonondb-v1-model-orb-v3-bbbfea50f265c2bc.json.gz",
-      "sha256": "b1f3eba086f21acc25f21ea41ce4cefbac5c6eeb6a99df13e25bb60d8b610ed6"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-orb-v3-bbbfea50f265c2bc.json.gz",
+        "sha256": "b1f3eba086f21acc25f21ea41ce4cefbac5c6eeb6a99df13e25bb60d8b610ed6"
+      }
     },
     "pet-oam-xl-1.0.0": {
-      "asset": "kappa-parity-phonondb-v1-model-pet-oam-xl-1.0.0-1df2f2a38df671bf.json.gz",
-      "sha256": "a224be986fd6fb449e59e0d189dd9e0dcb32ad5048efe5c3404fccd797a7659a"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-pet-oam-xl-1.0.0-1df2f2a38df671bf.json.gz",
+        "sha256": "a224be986fd6fb449e59e0d189dd9e0dcb32ad5048efe5c3404fccd797a7659a"
+      }
     },
     "sevennet-l3i5": {
-      "asset": "kappa-parity-phonondb-v1-model-sevennet-l3i5-0f8c60ee6fb86480.json.gz",
-      "sha256": "b53ddb8b54d352c2cf5af29e650913f2c8961669254bba915f9c72b5436b2540"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-sevennet-l3i5-0f8c60ee6fb86480.json.gz",
+        "sha256": "b53ddb8b54d352c2cf5af29e650913f2c8961669254bba915f9c72b5436b2540"
+      }
     },
     "sevennet-omni-i12": {
-      "asset": "kappa-parity-phonondb-v1-model-sevennet-omni-i12-5c4da5e187ddf390.json.gz",
-      "sha256": "85e962bfe0388f4092cc6cb80342648dc4e0709dd3ab95685ff0e8e58b4cd466"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-sevennet-omni-i12-5c4da5e187ddf390.json.gz",
+        "sha256": "85e962bfe0388f4092cc6cb80342648dc4e0709dd3ab95685ff0e8e58b4cd466"
+      }
     },
     "tace-oam-l": {
-      "asset": "kappa-parity-phonondb-v1-model-tace-oam-l-e08266e9036f345f.json.gz",
-      "sha256": "a9c1bb88d3a30da6dc63d4cc0c48c9a769dc167e77455820e14f66f795bcce98"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-tace-oam-l-e08266e9036f345f.json.gz",
+        "sha256": "a9c1bb88d3a30da6dc63d4cc0c48c9a769dc167e77455820e14f66f795bcce98"
+      }
     },
     "tece-oam-rra-1.0": {
-      "asset": "kappa-parity-phonondb-v1-model-tece-oam-rra-1.0-c207c93ba325de94.json.gz",
-      "sha256": "9a139809dee16e935cd4744d6cb0b6280f7b7c3c2ff8d18f8a430eeedaa37af1"
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-tece-oam-rra-1.0-c207c93ba325de94.json.gz",
+        "sha256": "9a139809dee16e935cd4744d6cb0b6280f7b7c3c2ff8d18f8a430eeedaa37af1"
+      }
     }
   },
   "row_count": 103,
-  "schema_version": 2
+  "schema_version": 3
 }

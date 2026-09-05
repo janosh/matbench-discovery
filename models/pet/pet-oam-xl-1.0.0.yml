@@ -172,9 +172,9 @@ metrics:
     kappa_103:
       pred_file:
         name: models/pet/pet-oam-xl-1.0.0/2026-01-10-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/60934819
-        size: 8175344
-        md5: ba6c867a4d0bae1df9c5c478b5bc8ddb
+        url: https://figshare.com/files/68221399
+        size: 8175326
+        md5: 961875bead3e948a020f620c69024125
       κ_SRME: 0.1192
       κ_SRE: 0.0603
       κ_SRD: -0.0306

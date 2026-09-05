@@ -1,9 +1,8 @@
 """Upload model prediction files for different modeling tasks and different models to
 Figshare articles via API.
 
-This script creates/updates a Figshare article containing model predictions from all
-models in the Matbench Discovery benchmark. This includes both energy predictions,
-ML-relaxed structures, and symmetry analysis files.
+Creates/updates one Figshare article per task holding energy predictions, ML-relaxed
+structures and symmetry analysis files for all Matbench Discovery models.
 """
 
 import os
@@ -28,8 +27,7 @@ def process_exclusion_prefixes(items: list[str], all_items: list[str]) -> list[s
     """Apply ``!`` exclusions to explicit items or the complete item list."""
     include_items = [item for item in items if not item.startswith("!")]
     excluded_items = {item[1:] for item in items if item.startswith("!")}
-    # If there are explicit inclusions, use those
-    # Otherwise, start with all items and remove exclusions
+    # explicit inclusions win; otherwise start from all items minus the exclusions
     return [item for item in include_items or all_items if item not in excluded_items]
 
 
@@ -112,7 +110,6 @@ def update_one_modeling_task_article(
     article_id = figshare.ARTICLE_IDS[f"model_preds_{task}"]
     article_is_new = False
 
-    # Check if article exists and is accessible
     if article_id is not None and figshare.article_exists(article_id):
         print(f"\nFound existing article for {task=} with ID {article_id}")
     elif article_id is not None:
@@ -142,11 +139,11 @@ def update_one_modeling_task_article(
     for idx, (file_name, file_data) in enumerate(existing_files.items(), start=1):
         print(f"{idx}. {file_name}: {file_data.get('id')}")
 
-    # files that were skipped because they already exist
-    skipped_files: dict[str, tuple[str, Model]] = {}  # filename -> (url, model)
-    updated_files: dict[str, tuple[str, Model]] = {}  # files that were re-uploaded
-    new_files: dict[str, tuple[str, Model]] = {}  # files that didn't exist before
-    deleted_files: dict[str, int] = {}  # filename -> id (files that were deleted)
+    # all keyed by filename; values are (url, model) except deleted_files -> file id
+    skipped_files: dict[str, tuple[str, Model]] = {}  # already uploaded, same hash
+    updated_files: dict[str, tuple[str, Model]] = {}  # re-uploaded
+    new_files: dict[str, tuple[str, Model]] = {}  # didn't exist before
+    deleted_files: dict[str, int] = {}
 
     for model in tqdm(models):
         if not os.path.isfile(model.yaml_path):
@@ -184,7 +181,6 @@ def update_one_modeling_task_article(
             if not (dry_run and force_reupload):
                 file_hash, file_size = figshare.get_file_hash_and_size(file_path)
 
-            # First check if the exact same file already exists
             if not force_reupload and file_hash is not None and file_size is not None:
                 exists, file_id = figshare.file_exists_with_same_hash(
                     article_id,
@@ -205,7 +201,6 @@ def update_one_modeling_task_article(
                     )
                     continue
 
-            # Check for similar files that should be deleted
             similar_files = figshare.find_similar_files(filename, existing_files)
             if similar_files and not dry_run:
                 print(f"\nFound similar files for {filename}:")
@@ -214,7 +209,6 @@ def update_one_modeling_task_article(
                 ):
                     print(f"{idx}. {similar_name} (ID: {similar_id})")
 
-                # Ask for user confirmation to delete similar files
                 if not interactive:
                     print("Skipping deletion of similar files (non-interactive mode)")
                 elif (
@@ -229,7 +223,6 @@ def update_one_modeling_task_article(
                             existing_files.pop(similar_name, None)
                             print(f"Deleted similar file: {similar_name}")
 
-            # Upload file if it doesn't exist or force_reupload is True
             if not dry_run:
                 if file_hash is None or file_size is None:
                     raise RuntimeError(f"Missing hash/size for {file_path}")
@@ -247,7 +240,6 @@ def update_one_modeling_task_article(
                 target_files = updated_files if file_existed else new_files
                 target_files[filename] = (file_url, model)
 
-                # Update model metadata with URL
                 set_file_ref_url(
                     metric_data,
                     key_parts,
@@ -256,12 +248,10 @@ def update_one_modeling_task_article(
                     md5=file_hash,
                 )
 
-        # Save updated model metadata if changed
-        if not dry_run:
+        if not dry_run:  # persist the URLs written back into model_data
             with open(model.yaml_path, mode="w") as file:
                 round_trip_yaml.dump(model_data, file)
 
-    # Extract unique models from the file dictionaries
     new_models = {model.name for _, model in new_files.values()}
     updated_models = {model.name for _, model in updated_files.values()}
 
@@ -286,8 +276,7 @@ def update_one_modeling_task_article(
                 for idx, (filename, (url, model)) in enumerate(files.items(), start=1):
                     print(f"{idx}. {model.name} {filename}: {url}")
 
-        # Publish the article if any new files were added, it's not a dry run,
-        # and the article wasn't newly created
+        # newly created articles need manual review before their first publish
         if (new_files or updated_files) and not dry_run and not article_is_new:
             print(f"\nFiles were added or updated. Publishing article {article_url}")
             figshare.publish_article(article_id)
@@ -304,11 +293,9 @@ def main(raw_args: Sequence[str] | None = None) -> int:
     """Upload selected model prediction artifacts to Figshare."""
     with open(f"{PKG_DIR}/modeling-tasks.yml", encoding="utf-8") as file:
         modeling_tasks = yaml.safe_load(file)
-    # remove 'cps' task as it's a dynamic metric with changing weights
-    # no point in uploading to figshare
+    # 'cps' is a dynamic metric with changing weights, nothing to archive
     modeling_tasks.pop("cps", None)
 
-    # Add figshare-specific arguments to the central CLI parser
     figshare_group = cli_parser.add_argument_group(
         "figshare", "Arguments for Figshare upload functionality"
     )
@@ -344,10 +331,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
     models_arg.default = [model.name for model in Model.active()]
     args, _unknown = cli_parser.parse_known_args(raw_args)
 
-    # Process exclusion prefixes for tasks
     args.tasks = process_exclusion_prefixes(args.tasks, list(modeling_tasks))
-
-    # Process exclusion prefixes for models
     processed_models = process_exclusion_prefixes(
         args.models, [model.name for model in Model]
     )

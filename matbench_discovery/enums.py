@@ -234,9 +234,7 @@ class Files(StrEnum, metaclass=MetaFiles):
     """Enum of data files with associated file directories and URLs."""
 
     def __new__(cls, val: str, file_path: str) -> Self:
-        """Create a new member of the FileUrls enum with a given URL where to load the
-        file from and directory where to save it to.
-        """
+        """Create a member identified by ``val`` and holding its relative file path."""
         # pass val to str.__new__ so the member's underlying string content is its
         # value. Without it, every member is the empty string "", so str.__eq__ and
         # str.__hash__ (inherited, not overridden) make all members compare equal and
@@ -398,18 +396,19 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         *,
         nested_key: str | None = None,
         required: bool = False,
+        file_key: str = "pred_file",
     ) -> str | None:
-        """Resolve metrics pred_file to a local path, downloading when a URL is set."""
+        """Resolve a metrics file ref to a local path, downloading when a URL is set."""
         from matbench_discovery.data import file_ref_name, file_ref_url
 
         section = self.metrics.get(metrics_key) or {}
         if nested_key is not None:
             section = section.get(nested_key) or {}
-        pred_file = section.get("pred_file") or {}
+        pred_file = section.get(file_key) or {}
         if not (rel_path := file_ref_name(pred_file)):
             if required:
                 raise ValueError(
-                    f"metrics.{metrics_key}.pred_file not found in {self.rel_path!r}"
+                    f"metrics.{metrics_key}.{file_key} not found in {self.rel_path!r}"
                 )
             return None
         abs_path = f"{ROOT}/{rel_path}"
@@ -434,6 +433,13 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     def kappa_103_path(self) -> str | None:
         """Phonon kappa_103 prediction path, downloading when a URL is present."""
         return self._metric_pred_path("phonons", nested_key="kappa_103")
+
+    @property
+    def kappa_103_phonon_path(self) -> str | None:
+        """Harmonic phonon sidecar (band path, eigenvectors, DOS) for the kappa run."""
+        return self._metric_pred_path(
+            "phonons", nested_key="kappa_103", file_key="phonon_file"
+        )
 
     @property
     def md_path(self) -> str | None:
@@ -467,9 +473,8 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     @classmethod
     def _missing_(cls, value: object) -> Self | None:
         """Normalize casing and punctuation before matching enum values.
-        If no match is found, return None.
 
-        This allows CLI arguments like --models mace-mp-0 to be recognized as mace_mp_0.
+        Lets CLI arguments like --models mace-mp-0 resolve to mace_mp_0.
         """
         if isinstance(value, str):
             converted_value = re.sub(r"[^a-z0-9]+", "_", value.casefold()).strip("_")

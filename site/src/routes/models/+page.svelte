@@ -5,12 +5,12 @@
   import { ALL_METRICS, MD_METRICS, METADATA_COLS } from '$lib/labels'
   import { get_nested_value, label_data_path, sort_models } from '$lib/metrics'
   import { MODELS } from '$lib/models.svelte'
+  import { bind_url_params } from '$lib/url-state.svelte'
   import {
-    bind_url_params,
     bool_from_param,
     bool_url_entry,
     valid_query_param,
-  } from '$lib/url-state.svelte'
+  } from 'svelte-widgets/url-params'
   import { interpolateRdBu } from 'd3-scale-chromatic'
   import { ColorBar, pick_contrast_color } from 'matterviz'
   import { untrack } from 'svelte'
@@ -24,7 +24,7 @@
   let show_details = $state(false)
   let order: `asc` | `desc` = $state(`desc`)
   const min_models = 2
-  // Enforce minimum and maximum when initializing from prop (intentionally captures initial value only)
+  // untracked on purpose: captures the initial prop value only
   const initial_n_best = untrack(() =>
     Math.min(MODELS.length, Math.max(min_models, initial_show_n_best ?? MODELS.length)),
   )

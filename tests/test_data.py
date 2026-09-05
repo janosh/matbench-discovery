@@ -244,13 +244,11 @@ def test_load_df_wbm_with_preds(
     for model_name in models:
         model = Model[model_name]
         if max_error_threshold is not None:
-            # Check if predictions exceeding the threshold are filtered out
             error = abs(
                 df_wbm_with_preds[model.key] - df_wbm_with_preds[MbdKey.e_form_dft]
             )
             assert np.all(error[~error.isna()] <= max_error_threshold)
         else:
-            # If no threshold is set, all predictions should be present
             assert df_wbm_with_preds[model.key].isna().sum() == 0
 
 
@@ -293,17 +291,14 @@ def test_load_df_wbm_max_error_threshold() -> None:
 
 def test_load_df_wbm_with_preds_errors(df_float: pd.DataFrame) -> None:
     """Test error handling in load_df_wbm_with_preds function."""
-    # Test invalid model name
     with pytest.raises(ValueError, match="not found in Model"):
         load_df_wbm_with_preds(models=["InvalidModel"])
 
-    # Test negative error threshold
     with pytest.raises(
         ValueError, match="max_error_threshold=-1 must be a positive number"
     ):
         load_df_wbm_with_preds(max_error_threshold=-1)
 
-    # Test missing canonical prediction column
     with (
         # Make glob return a non-empty list to skip the mock data loading path
         patch("matbench_discovery.data.glob", return_value=["dummy_file.csv"]),
@@ -509,6 +504,52 @@ def test_update_yaml_file_lock_survives_differing_tmpdir(
 
     assert lock_paths[0] == lock_paths[1]
     assert tmp_path.as_posix() not in lock_paths[0]  # never beside the target
+
+
+@pytest.mark.parametrize("use_symlink", [False, True])
+@pytest.mark.parametrize("failure_stage", ["dump", "replace"])
+def test_update_yaml_file_preserves_original_on_write_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    use_symlink: bool,
+    failure_stage: str,
+) -> None:
+    """Failed YAML writes preserve original bytes, symlinks, and file permissions."""
+    target = tmp_path / "model.yml"
+    original = "metrics:\n  discovery: {mae: 0.1}\n"
+    target.write_text(original)
+    target.chmod(0o640)
+    original_mode = target.stat().st_mode & 0o777
+    path = target
+    if use_symlink:
+        path = tmp_path / "link.yml"
+        path.symlink_to(target)
+    expected_files = set(tmp_path.iterdir())
+
+    def fail_dump(_data: object, stream: io.TextIOBase) -> None:
+        """Simulate a partially written serialization failure."""
+        stream.write("partial YAML")
+        raise OSError("dump failed")
+
+    def fail_replace(_source: str, _destination: str) -> None:
+        """Simulate an unsuccessful atomic replacement."""
+        raise OSError("replace failed")
+
+    with monkeypatch.context() as patch_context:
+        if failure_stage == "dump":
+            patch_context.setattr(round_trip_yaml, "dump", fail_dump)
+        else:
+            patch_context.setattr(data_module.os, "replace", fail_replace)
+        with pytest.raises(OSError, match=f"{failure_stage} failed"):
+            update_yaml_file(path, "metrics.discovery", {"mae": 0.2})
+    assert target.read_text() == original
+    assert path.is_symlink() is use_symlink
+    assert set(tmp_path.iterdir()) == expected_files
+    update_yaml_file(path, "metrics.discovery", {"mae": 0.3})
+    assert round_trip_yaml.load(target)["metrics"]["discovery"]["mae"] == 0.3
+    assert target.stat().st_mode & 0o777 == original_mode
+    assert path.is_symlink() is use_symlink
+    assert set(tmp_path.iterdir()) == expected_files
 
 
 # --- model artifact filenames / FileRef helpers ---

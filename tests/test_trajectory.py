@@ -212,9 +212,7 @@ def test_from_ase_rejects_mixed_property_availability() -> None:
 
 @pytest.mark.parametrize("suffix", ["", ".xz", ".gz"])
 def test_from_extxyz_matches_ase_parser(tmp_path: Path, suffix: str) -> None:
-    """The fast bulk reader reproduces the ASE extxyz reader, which also round-trips
-    the original trajectory within extxyz text precision, including compression.
-    """
+    """The fast bulk reader matches the ASE extxyz reader, compressed or not."""
     import ase.io
 
     from matbench_discovery.md import read_trajectory
@@ -331,9 +329,7 @@ def test_from_extxyz_real_format_stress_energy(tmp_path: Path) -> None:
 def test_from_extxyz_rejects_inconsistent_metadata(
     tmp_path: Path, frame1: str, match: str
 ) -> None:
-    """Frames differing from frame 0 in atom count, species, Properties header or pbc
-    must fail loudly rather than silently mixing systems into the stacked arrays.
-    """
+    """Frames inconsistent with frame 0 fail loudly instead of mixing systems."""
     frame0 = (
         '2\nLattice="4 0 0 0 4 0 0 0 4" '
         'Properties=species:S:1:pos:R:3 pbc="T T T"\n'

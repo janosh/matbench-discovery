@@ -26,7 +26,7 @@ declare module 'models/*.yml' {
   import type { ModelMetadata } from '$lib/schema/model'
   const data: ModelMetadata
   export default data
-} // Model metadata files
+}
 
 declare module '*/datasets.yml' {
   import type { Dataset } from '$lib/types'

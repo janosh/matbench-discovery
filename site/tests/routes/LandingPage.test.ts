@@ -270,11 +270,11 @@ describe(`Landing Page`, () => {
   it(`surfaces export failures in the UI`, async () => {
     vi.spyOn(console, `error`).mockImplementation(() => {})
     doc_query(`section.full-bleed table`).remove()
-    doc_query(`.download-btn`).click() // SVG is first
+    doc_query(`.download-btn`).click() // CSV export
     await tick()
     await tick()
     expect(document.querySelector(`.export-error`)?.textContent).toContain(
-      `Failed to generate SVG`,
+      `Failed to generate CSV`,
     )
   })
 
@@ -283,7 +283,7 @@ describe(`Landing Page`, () => {
       [...doc_query(`.downloads`).querySelectorAll(`.download-btn`)].map((button) =>
         button.textContent?.trim(),
       ),
-    ).toStrictEqual([`SVG`, `PNG`, `CSV`, `Excel`, `RSS`])
+    ).toStrictEqual([`CSV`, `RSS`])
   })
 })
 

@@ -6,7 +6,6 @@ import { describe, expect, it } from 'vitest'
 import { mount } from '../index'
 
 describe(`ModelCard`, () => {
-  // Get a real model from MODELS
   const found_model = MODELS.find((model) => model.model_key === `mace-mp-0`)
   if (!found_model) throw new Error(`Could not find mace-mp-0 model in MODELS`)
   const model = found_model
@@ -77,21 +76,19 @@ describe(`ModelCard`, () => {
   it(`handles training set display`, () => {
     mount_card()
 
-    // Look for span containing "Training set" text
     const training_set = [...document.querySelectorAll(`section.metadata span`)].find(
       (span) => span.textContent?.includes(`Training data`),
     )
     expect(training_set?.textContent).toContain(`Training data:`)
 
-    // Test actual training set data
     const training_set_links = training_set?.querySelectorAll(`a`)
     const dataset_key = model.training_sets[0]
     const dataset = DATASETS[dataset_key]
 
-    // Check that we're linking to our internal data page
+    // links to the internal data page
     expect(training_set_links?.[0]?.href).toContain(`/data/${dataset.slug}`)
 
-    // Check that structure count is shown in tooltip
+    // structure count is shown in the tooltip
     const formatted_structures = format_num(dataset.n_structures)
     expect(training_set_links?.[0]?.title).toContain(`${formatted_structures} structures`)
   })
@@ -143,11 +140,9 @@ describe(`ModelCard`, () => {
       }
       mount_card({ model: model_with_locator, show_details: true })
 
-      // Check author info within the list item
       const author_li = document.querySelector(`section:first-child ul li`)
       expect(author_li?.textContent?.trim()).toContain(model.authors[0].name)
 
-      // Check package versions
       const packages = [...document.querySelectorAll(`section:nth-child(2) li`)]
       expect(packages).toHaveLength(1)
       expect(packages[0]?.textContent).toContain(`tace`)

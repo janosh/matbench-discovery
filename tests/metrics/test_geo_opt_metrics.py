@@ -1,13 +1,13 @@
 """Tests for geometry optimization metrics (RMSD and symmetry changes vs DFT)."""
 
-from unittest.mock import mock_open, patch
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
 from pymatviz.enums import Key
 
-from matbench_discovery.data import make_file_ref
+from matbench_discovery.data import make_file_ref, round_trip_yaml
 from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.metrics import geo_opt
 
@@ -138,39 +138,31 @@ def test_write_geo_opt_metrics_to_yaml(
     expected_block: dict[MbdKey | Key | str, float | str | None],
     analysis_file_path: str,
     existing_ref: dict[str, object] | None,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Test saving geometry optimization metrics to YAML files with edge cases."""
     symprec = 1e-2
     symprec_key = "symprec=1e-2"
 
-    # Mock file and YAML operations
-    with (
-        patch("builtins.open", mock_open()) as mock_file,
-        patch("matbench_discovery.data.round_trip_yaml") as mock_yaml,
-    ):
-        prior_block = {"analysis_file": existing_ref} if existing_ref else {}
-        mock_yaml.load.return_value = {
-            "metrics": {"geo_opt": {symprec_key: prior_block}}
-        }
+    real_yaml_path = Path(Model.alignn.yaml_path)
+    original = real_yaml_path.read_bytes()
+    yaml_path = tmp_path / "model.yml"
+    prior_block = {"analysis_file": existing_ref} if existing_ref else {}
+    round_trip_yaml.dump(
+        {"metrics": {"geo_opt": {symprec_key: prior_block}}}, yaml_path
+    )
+    monkeypatch.setattr(Model, "yaml_path", property(lambda _model: str(yaml_path)))
 
-        # Call the function
-        geo_opt.write_metrics_to_yaml(
-            pd.DataFrame([metrics_data]), Model.alignn, symprec, analysis_file_path
-        )
-
-        # Verify YAML dump was called with expected content
-        actual_yaml = mock_yaml.dump.call_args[0][0]
-
-        # Compare metrics while handling NaN values
-        actual_block = actual_yaml["metrics"]["geo_opt"][symprec_key]
-        assert set(actual_block) == set(expected_block)
-        for key, expected_val in expected_block.items():
-            value = actual_block[key]
-            if key in {"analysis_file", "pred_file", "force_file", "run_info_file"}:
-                assert value == expected_val
-            else:
-                assert value == pytest.approx(expected_val, nan_ok=True)
-
-        # Verify file operations
-        mock_file.assert_called()
-        mock_yaml.dump.assert_called_once()
+    geo_opt.write_metrics_to_yaml(
+        pd.DataFrame([metrics_data]), Model.alignn, symprec, analysis_file_path
+    )
+    actual_block = round_trip_yaml.load(yaml_path)["metrics"]["geo_opt"][symprec_key]
+    assert set(actual_block) == set(expected_block)
+    for key, expected_val in expected_block.items():
+        value = actual_block[key]
+        if key in {"analysis_file", "pred_file", "force_file", "run_info_file"}:
+            assert value == expected_val
+        else:
+            assert value == pytest.approx(expected_val, nan_ok=True)
+    assert real_yaml_path.read_bytes() == original

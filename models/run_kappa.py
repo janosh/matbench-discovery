@@ -172,6 +172,7 @@ def write_yaml_results(
         artifacts.pred_file_path,
         run_metadata=merged_run.run_metadata,
         force_file_path=artifacts.force_file_path,
+        phonon_file_path=artifacts.phonon_file_path,
         run_info_path=artifacts.run_info_path,
         replace_pred_file=True,
     )
@@ -309,6 +310,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
         print(f"Wrote run provenance to {artifacts.run_info_path}")
         if artifacts.force_file_path:
             print(f"Wrote force sets to {artifacts.force_file_path}")
+        print(f"Wrote harmonic phonon data to {artifacts.phonon_file_path}")
         if args.write_yaml:
             write_yaml_results(model, artifacts, merged_run)
             print(f"Updated kappa metrics and provenance in {model.yaml_path}")

@@ -40,8 +40,7 @@ jobs:
           python-version: "3.14"
 
       - name: Install dependencies
-        # use the project's pinned pnpm (packageManager field) via corepack
-        run: corepack enable && pnpm install
+        run: corepack enable && npm_config_legacy_peer_deps=true pnpm install --config.dangerously-allow-all-builds=true --config.block-exotic-subdeps=false
 
       - name: Download parity assets
         env:
@@ -54,7 +53,7 @@ jobs:
             asset_prefix=$(jq -er '.asset_prefix | select(type == "string" and test("^[A-Za-z0-9._-]+$"))' "$manifest")
             assets_file="$RUNNER_TEMP/$kind-parity-assets"
             jq -er --arg prefix "$asset_prefix" \
-              '[.base.asset, .model_assets[].asset, ((.structure_bundles // [])[] | .asset)]
+              '[.base.asset, (.model_assets[] | .[].asset), ((.structure_bundles // [])[] | .asset)]
               | if all(.[]; type == "string" and startswith($prefix + "-")
                 and test("^[A-Za-z0-9._-]+-[0-9a-f]{16}\\.json\\.gz$"))
                 then .[] else error("invalid parity asset manifest") end' \
@@ -81,7 +80,7 @@ jobs:
         run: |
           # API docs import phono3py at module scope.
           uv run --with-editable "..[phonons]" ../scripts/make_api_docs.py
-          pnpm run build
+          npm run build
 
       - name: Upload build artifact
         uses: actions/upload-pages-artifact@v5
@@ -114,7 +113,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           manifest_assets() {
-            jq -er '.base.asset, .model_assets[].asset, ((.structure_bundles // [])[] | .asset)'
+            jq -er '.base.asset, (.model_assets[] | .[].asset), ((.structure_bundles // [])[] | .asset)'
           }
           protected=$(mktemp)
           for manifest in site/src/lib/parity/{energy,kappa}-parity-manifest.json; do

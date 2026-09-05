@@ -194,9 +194,9 @@ metrics:
       κ_SRME: 1.7338
       pred_file:
         name: models/orb/orb-v2/2024-11-09-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/52134887
-        size: 7165976
-        md5: f95795db879595958ae37138891f0f38
+        url: https://figshare.com/files/68221393
+        size: 7165924
+        md5: 277443d96f22fbc16853d00e5e945517
       κ_SRE: 1.4876
       κ_SRD: 0.4303
       κ_failure_rate: 0.0

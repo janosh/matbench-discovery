@@ -211,6 +211,20 @@ class StandardKappaAdapter:
             phono3py, calculator, pbar_kwargs={"disable": True}
         )
 
+    def harmonic_phonons(
+        self,
+        phono3py: Phono3py,
+        settings: KappaSettings,  # noqa: ARG002
+    ) -> dict[str, Any]:
+        """Derive band path, eigenvectors, DOS and thermal properties from FC2.
+
+        Runs after calculate_fc2 for every material, so it must not depend on FC3 or
+        the conductivity solver. Adapters that keep FC2 elsewhere override this.
+        """
+        from matbench_discovery.phonons.harmonic import harmonic_data_from_phono3py
+
+        return harmonic_data_from_phono3py(phono3py)
+
     def calculate_fc3(
         self,
         phono3py: Phono3py,

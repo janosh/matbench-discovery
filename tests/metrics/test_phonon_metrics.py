@@ -269,7 +269,6 @@ def test_calc_kappa_srme_error_cases(
         }
     )
 
-    # Update ml_data with error condition
     for key, val in ml_data.items():
         pred_data[key] = val
 
@@ -302,7 +301,6 @@ def test_calc_kappa_srme_invalid_predictions_score_two(
 
 def test_calc_kappa_srme_single_material() -> None:
     """Test SRME calculation for a single material."""
-    # Create mock data for a single material
     ml_data = pd.Series(
         {
             MbdKey.kappa_tot_avg: np.array([2.0]),
@@ -317,7 +315,6 @@ def test_calc_kappa_srme_single_material() -> None:
     ml_data[MbdKey.mode_kappa_tot_avg] = dft_data[MbdKey.mode_kappa_tot_avg] = np.nan
     assert phonon_metrics.calc_kappa_srme(ml_data, dft_data)[0] == 0
 
-    # Test with different values
     ml_data[MbdKey.kappa_tot_avg] = np.array([3.0])
     ml_data[MbdKey.mode_kappa_tot_rta] = [1.5 * np.eye(3)]
     assert phonon_metrics.calc_kappa_srme(ml_data, dft_data)[0] > 0
@@ -327,7 +324,6 @@ def test_calc_kappa_metrics_with_different_values(
     df_pred: pd.DataFrame, df_true: pd.DataFrame
 ) -> None:
     """Test calculation of aggregate metrics with different ML and DFT values."""
-    # Modify ML values to be different from DFT
     df_pred_copy = df_pred.copy()
     df_pred_copy[MbdKey.kappa_tot_rta] = [2 * np.diag([1, 2, 3]), 4 * np.eye(3)]
     df_pred_copy[MbdKey.mode_kappa_tot_rta] = [2 * np.diag([1, 2, 3]), 4 * np.eye(3)]
@@ -430,7 +426,7 @@ def test_calc_kappa_metrics_from_dfs_symmetry(df_minimal: pd.DataFrame) -> None:
     df_pred[Key.init_spg_num] = [1, 1, 1]
 
     df_true = pd.concat([df_minimal] * 3, ignore_index=True).copy()
-    df_true[Key.spg_num] = [1, 1, 1]
+    df_true[Key.init_spg_num] = [1, 1, 1]
 
     result = phonon_metrics.calc_kappa_metrics_from_dfs(df_pred, df_true)
     assert result[Key.srme].eq(2).tolist() == [True, True, True]
@@ -441,7 +437,6 @@ def test_calc_kappa_metrics_from_dfs_symmetry(df_minimal: pd.DataFrame) -> None:
     ("reference_spg_col", "expected_failures"),
     [
         (Key.init_spg_num, [False, True]),
-        (Key.spg_num, [False, True]),
         (None, [False, False]),
     ],
 )
@@ -450,7 +445,7 @@ def test_calc_kappa_srme_dataframes_missing_init_spg_uses_reference(
     reference_spg_col: str | None,
     expected_failures: list[bool],
 ) -> None:
-    """Missing prediction symmetry uses canonical, legacy, or absent references."""
+    """Missing prediction symmetry uses canonical or absent references."""
     df_pred = pd.concat([df_minimal] * 2, ignore_index=True).copy()
     df_pred[Key.final_spg_num] = [225, 186]
     df_true = pd.concat([df_minimal] * 2, ignore_index=True).copy()

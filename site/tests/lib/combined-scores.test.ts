@@ -107,6 +107,26 @@ describe(`calculate_cps`, () => {
     expect(calculate_cps(1.0, RMSD_BASELINE, 2, config)).toBeCloseTo(0.5, 4)
   })
 
+  it.each([-1, NaN, Infinity, Number.MAX_VALUE])(
+    `rejects invalid or overflowing weights: %s`,
+    (weight) => {
+      expect(
+        calculate_cps(0.8, 0.05, 0.5, make_cps_config(weight, weight, weight)),
+      ).toBeNull()
+      const cmds_config = clone_config()
+      for (const metric of Object.values(cmds_config)) metric.weight = weight
+      expect(
+        calculate_cmds(
+          { adf_error: 10, vdos_error: 20, pressure_error: 30, run_time_sec: mid_speed },
+          cmds_config,
+        ),
+      ).toBeNull()
+      const cds_config = clone_cds_config()
+      for (const pillar of Object.values(cds_config)) pillar.weight = weight
+      expect(calculate_cds(halfway_cds_values, cds_config)).toBeNull()
+    },
+  )
+
   it.each([
     { name: `F1`, value: 0.5, weights: [1, 0, 0], expected: 0.5 },
     { name: `F1 perfect`, value: 1.0, weights: [1, 0, 0], expected: 1.0 },
@@ -227,6 +247,7 @@ describe(`calculate_cmds`, () => {
     [{ adf_error: 10, vdos_error: 20, run_time_sec: 100 }], // missing component
     [{ adf_error: 10, vdos_error: 20, pressure_error: NaN, run_time_sec: 100 }],
     [{ ...perfect, run_time_sec: 0 }], // log speed scale needs positive wall time
+    [{ ...perfect, run_time_sec: 100, adf_error: -1 }],
     [{ ...perfect }], // missing run_time_sec with non-zero speed weight
   ])(`returns null when a non-zero-weight component is invalid: %o`, (values) => {
     expect(calculate_cmds(values, clone_config())).toBeNull()
@@ -317,6 +338,7 @@ describe(`calculate_cds`, () => {
     [{ ...halfway_cds_values, tortuosity: undefined }],
     [{ ...halfway_cds_values, pbe_force_mae: Number.NaN }],
     [{ ...halfway_cds_values, pbe_force_mae: Number.POSITIVE_INFINITY }],
+    [{ ...halfway_cds_values, pbe_force_mae: -1 }],
     [{ ...halfway_cds_values, run_time_sec: 0 }],
   ])(
     `returns null when a non-zero-weight pillar has an invalid component: %o`,

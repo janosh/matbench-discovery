@@ -4,27 +4,33 @@ Produces a DFT-vs-ML scatter of scalar lattice thermal conductivity for the 103
 phononDB-PBE materials, plus per-material structures and phonon DOS (DFT and ML)
 for the click-to-inspect popups. These are compact derivatives (~57 KiB/model) of
 the full kappa prediction files (12-18 MB/model), which are too large to ship to
-the browser. Like the energy-parity assets, the generated .json.gz are uploaded to
-the GitHub release and downloaded in CI (see .github/workflows/gh-pages.yml); only the
-JSON manifest is committed.
+the browser. Models whose kappa run recorded the harmonic phonon sidecar
+(``phonon_file``) additionally get a lazily loaded "modes" asset holding the
+high-symmetry band path per material with eigenvectors at the labeled q-points, which
+the site animates with matterviz's PhononModeExplorer. Like the energy-parity assets,
+the generated .json.gz are uploaded to the GitHub release and downloaded in CI (see
+.github/workflows/gh-pages.yml); only the JSON manifest is committed.
 """
 
 from __future__ import annotations
 
 import argparse
+import gzip
 import io
+import json
 import math
 from pathlib import Path
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final
 
 import ase.io
 import numpy as np
 from ase import Atoms
 from asset_helpers import (
+    PARITY_MANIFEST_SCHEMA_VERSION,
     clean_float,
     compact_extxyz,
+    prune_unreferenced_assets,
     read_manifest,
-    remove_model_assets,
     resolve_models,
     retained_parity_assets,
     write_json_gz,
@@ -50,12 +56,13 @@ LOCAL_ASSET_BASE_URL: Final = "/kappa-parity/assets"
 # round conductivities to 0.0001 W/mK and structure positions to 0.001 A
 KAPPA_DECIMALS: Final = 4
 STRUCTURE_DECIMALS: Final = 3
-# phonon DOS is precomputed as a histogram of mesh frequencies (THz) so the client
-# ships a small fixed-size array instead of the full per-q-point frequency mesh.
-# the client (matterviz Dos) applies Gaussian smearing, so a coarse histogram is fine
+# phonon DOS ships as a histogram of the mesh frequencies (THz) instead of the full
+# per-q-point mesh; matterviz's Dos applies Gaussian smearing, so coarse bins suffice
 DOS_BINS: Final = 128
 DOS_FREQ_DECIMALS: Final = 3
 DOS_DENSITY_DECIMALS: Final = 4
+MODES_DECIMALS: Final = 4
+Q_POINT_DECIMALS: Final = 10
 
 KAPPA_TOT_AVG: Final = str(MbdKey.kappa_tot_avg)
 PH_FREQS: Final = str(Key.ph_freqs)
@@ -161,6 +168,128 @@ def dos_from_row(row: pd.Series) -> dict[str, list[float]] | None:
     return phonon_dos(row[PH_FREQS], weights)
 
 
+def round_nested(values: npt.ArrayLike) -> list:
+    """Round a numeric array to ``MODES_DECIMALS`` and convert to nested JSON lists."""
+    return np.round(np.asarray(values, dtype=float), MODES_DECIMALS).tolist()
+
+
+def compact_phonon_modes(record: dict[str, Any]) -> dict[str, object]:
+    """Reduce one harmonic sidecar record to what the mode explorer needs.
+
+    The pipeline stores eigenvectors as ``(n_q, n_bands, n_atoms, 3, [re, im])`` at
+    every band-path q-point; the site asset keeps them only at segment endpoints, so
+    only those are converted to arrays.
+    """
+    mat_id = record[str(Key.mat_id)]
+    primitive, band_path = record["primitive"], record["band_path"]
+    segments: list[dict[str, int | str]] = band_path["segments"]
+    if not segments:
+        raise ValueError(f"{mat_id}: harmonic record has no band-path segments")
+    frequencies = np.asarray(band_path["frequencies"], dtype=float)
+    eigenvectors = band_path["eigenvectors"]
+    n_atoms = len(primitive["symbols"])
+    if frequencies.ndim != 2:
+        raise ValueError(f"{mat_id}: frequencies must be 2D, got {frequencies.shape}")
+    n_q, n_bands = frequencies.shape
+    # the client zips these four per-q-point arrays by index and reads masses and
+    # frac_coords per atom, so a length mismatch there silently truncates the band
+    # path or yields undefined displacements rather than failing
+    lengths = {
+        "eigenvectors": len(eigenvectors),
+        "q_points": len(band_path["q_points"]),
+        "distances": len(band_path["distances"]),
+    }
+    if set(lengths.values()) != {n_q}:
+        raise ValueError(
+            f"{mat_id}: band-path arrays disagree with {n_q} frequency q-points: "
+            f"{lengths}"
+        )
+    if n_bands != 3 * n_atoms:
+        raise ValueError(
+            f"{mat_id}: expected {3 * n_atoms} bands for {n_atoms} atoms, got {n_bands}"
+        )
+    per_atom = {key: len(primitive[key]) for key in ("masses", "frac_coords")}
+    if set(per_atom.values()) != {n_atoms}:
+        raise ValueError(
+            f"{mat_id}: primitive arrays disagree with {n_atoms} symbols: {per_atom}"
+        )
+    labeled = {
+        int(seg[key]) for seg in segments for key in ("start_index", "end_index")
+    }
+    if out_of_range := sorted(q_idx for q_idx in labeled if not 0 <= q_idx < n_q):
+        raise ValueError(
+            f"{mat_id}: segment endpoints {out_of_range} outside 0..{n_q - 1}"
+        )
+    expected_shape = (n_bands, n_atoms, 3, 2)
+    labeled_eigenvectors: dict[str, list] = {}
+    for q_idx in sorted(labeled):
+        q_eigenvectors = np.asarray(eigenvectors[q_idx], dtype=float)
+        if q_eigenvectors.shape != expected_shape:
+            raise ValueError(
+                f"{mat_id}: eigenvectors at q-point {q_idx} have shape "
+                f"{q_eigenvectors.shape}, expected {expected_shape}"
+            )
+        # JSON object keys must be strings; the client indexes qpoints by number
+        labeled_eigenvectors[str(q_idx)] = round_nested(q_eigenvectors)
+    return {
+        "primitive": {
+            "lattice": round_nested(primitive["lattice"]),
+            "symbols": list(primitive["symbols"]),
+            "masses": round_nested(primitive["masses"]),
+            "frac_coords": round_nested(primitive["frac_coords"]),
+        },
+        "segments": segments,
+        # 10 decimals, not MODES_DECIMALS: the explorer's supercell commensurability
+        # test allows |q.s - round(q.s)| <= 1e-8 and the site uses supercells up to 4,
+        # so the per-coordinate budget is 2.5e-9. The q-points already carry ~1e-15 of
+        # matmul error and rounding adds 5e-11, leaving ~50x margin. These are the
+        # costliest numbers in the asset (up to 18 chars each at repr precision)
+        "q_points": np.round(
+            np.asarray(band_path["q_points"], dtype=float), Q_POINT_DECIMALS
+        ).tolist(),
+        "distances": round_nested(band_path["distances"]),
+        "frequencies": round_nested(frequencies),
+        "eigenvectors": labeled_eigenvectors,
+    }
+
+
+def load_phonon_modes(path: str) -> dict[str, dict[str, object]]:
+    """Read a merged ``*-phonons.json.gz`` sidecar into compact per-material modes.
+
+    Parsed as ordinary JSON so any valid array works, not just the pipeline's
+    one-record-per-line layout: contributors submit this artifact themselves
+    (see contributing.md). Records are popped as they are compacted, so the ~30 MB
+    array is released while the much smaller compacted output accumulates. The merge
+    writes exactly one record per material; a repeat ID means a bad merge, so fail
+    rather than let the later record silently win.
+
+    Returned sorted by material ID: the asset writer does not sort keys, so record
+    order in the sidecar would otherwise reach the content hash and give identical
+    content two different asset names.
+    """
+    with gzip.open(path, mode="rt", encoding="utf-8") as file:
+        records = json.load(file)
+    if not isinstance(records, list):
+        raise TypeError(f"harmonic sidecar {path} must hold a JSON array of records")
+    if not records:
+        raise ValueError(f"harmonic sidecar {path} has no records")
+    materials: dict[str, dict[str, object]] = {}
+    seen_ids: set[str] = set()
+    while records:
+        record = records.pop()
+        if not isinstance(record, dict):
+            raise TypeError(f"harmonic sidecar {path} holds a non-object record")
+        mat_id = str(record[str(Key.mat_id)])
+        if mat_id in seen_ids:
+            raise ValueError(f"duplicate material {mat_id} in harmonic sidecar {path}")
+        seen_ids.add(mat_id)
+        # A failed band analysis still carries reusable FC2, DOS and thermal data.
+        if "band_path" not in record and "band_path" in record.get("errors", {}):
+            continue
+        materials[mat_id] = compact_phonon_modes(record)
+    return dict(sorted(materials.items()))
+
+
 def load_reference() -> tuple[
     pd.DataFrame, dict[str, str], dict[str, dict[str, str | int]]
 ]:
@@ -227,11 +356,8 @@ def main(argv: Sequence[str] | None = None) -> None:
             read_manifest(manifest_path), target_keys, base, args.asset_prefix
         )
     else:
-        for path in asset_dir.glob(f"{args.asset_prefix}-*.json.gz"):
-            path.unlink()
         model_assets = {}
         base_meta = write_json_gz(asset_dir / f"{args.asset_prefix}-base.json.gz", base)
-    remove_model_assets(asset_dir, args.asset_prefix, target_keys)
 
     for model in models:
         kappa_path = model.kappa_103_path
@@ -258,12 +384,27 @@ def main(argv: Sequence[str] | None = None) -> None:
             },
         }
         asset_name = f"{args.asset_prefix}-model-{model.key}.json.gz"
-        model_assets[model.key] = write_json_gz(
-            asset_dir / asset_name, {"model": model_payload}
+        model_assets[model.key] = {
+            "parity": write_json_gz(asset_dir / asset_name, {"model": model_payload})
+        }
+
+        phonon_path = model.kappa_103_phonon_path
+        if phonon_path is None:
+            print(f"No harmonic phonon sidecar for {model.label}; skipping modes")
+            continue
+        materials = load_phonon_modes(phonon_path)
+        if unknown := set(materials) - set(material_ids):
+            raise ValueError(
+                f"{model.label} harmonic sidecar has unknown materials: "
+                f"{sorted(unknown)}"
+            )
+        model_assets[model.key]["modes"] = write_json_gz(
+            asset_dir / f"{args.asset_prefix}-modes-{model.key}.json.gz",
+            {"model": {"model_key": model.key, "materials": materials}},
         )
 
     manifest = {
-        "schema_version": 2,
+        "schema_version": PARITY_MANIFEST_SCHEMA_VERSION,
         "asset_prefix": args.asset_prefix,
         "local_asset_base_url": args.local_asset_base_url.rstrip("/"),
         "row_count": len(material_ids),
@@ -271,6 +412,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         "model_assets": model_assets,
     }
     write_manifest(manifest_path, manifest)
+    # Commit the manifest before deleting assets referenced by its previous version.
+    for removed in prune_unreferenced_assets(asset_dir, args.asset_prefix, manifest):
+        print(f"Pruned unreferenced asset {removed}")
 
 
 if __name__ == "__main__":

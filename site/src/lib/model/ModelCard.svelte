@@ -275,7 +275,7 @@
   .dependency-detail span:last-child {
     flex: none;
   }
-  /* prevent long from increasing ModelCard container width */
+  /* keep long unbroken words from widening the ModelCard container */
   :is(section, div, nav) {
     word-break: break-word;
   }

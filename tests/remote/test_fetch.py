@@ -11,17 +11,7 @@ import pytest
 import requests
 
 from matbench_discovery.remote.fetch import download_file, maybe_auto_download_file
-
-
-def make_mock_response(content: bytes, status_code: int = 200) -> requests.Response:
-    """Create a mock requests.Response with given content and status code."""
-    response = requests.Response()
-    response.status_code = status_code
-    response._content = content  # noqa: SLF001
-    response.iter_content = (  # ty: ignore[invalid-assignment]
-        lambda chunk_size=1, decode_unicode=False: [content]  # noqa: ARG005
-    )
-    return response
+from tests.utils import make_mock_response
 
 
 @pytest.mark.parametrize(
@@ -49,6 +39,18 @@ def make_mock_response(content: bytes, status_code: int = 200) -> requests.Respo
         ),
         # Non-figshare URL unchanged
         ("https://example.com/files/test.gz", "https://example.com/files/test.gz"),
+        (
+            "https://example.com/figshare.com/files/123",
+            "https://example.com/figshare.com/files/123",
+        ),
+        (
+            "https://figshare.com.example.org/files/123",
+            "https://figshare.com.example.org/files/123",
+        ),
+        (
+            "https://figshare.com@other.example/files/123",
+            "https://figshare.com@other.example/files/123",
+        ),
     ],
 )
 def test_figshare_url_conversion(
@@ -66,8 +68,8 @@ def test_figshare_url_conversion(
         assert mock_get.call_args[0][0] == expected_url
 
 
-def test_download_file(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
-    """download_file keeps a download with matching expected md5, prints on failure."""
+def test_download_file(tmp_path: Path) -> None:
+    """Downloads verify checksums and propagate HTTP failures, preserving cache."""
     url = "https://example.com/test.txt"
     test_content = b"test content"
     dest_path = tmp_path / "test.txt"
@@ -75,36 +77,34 @@ def test_download_file(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
     with patch("requests.get", return_value=make_mock_response(test_content)):
         download_file(str(dest_path), url, md5=hashlib.md5(test_content).hexdigest())  # noqa: S324
         assert dest_path.read_bytes() == test_content
-        assert not os.path.isfile(f"{dest_path}.part")
+        assert not list(tmp_path.glob(".*.part"))
 
-    # Mock failed request
-    with patch("requests.get", return_value=make_mock_response(b"Not found", 404)):
-        download_file(str(dest_path), url)  # Should print error but not raise
+    with (
+        patch("requests.get", return_value=make_mock_response(b"Not found", 404)),
+        pytest.raises(requests.HTTPError, match="404") as error,
+    ):
+        download_file(str(dest_path), url)
+    assert url in " ".join(error.value.__notes__)
+    assert dest_path.read_bytes() == test_content
+    with pytest.raises(ValueError, match="Invalid IPv6 URL"):
+        download_file(str(dest_path), "https://[invalid")
+    assert not list(tmp_path.glob(".*.part"))
 
-    stdout, stderr = capsys.readouterr()
-    assert "MD5 mismatch" not in stdout
-    assert f"Error downloading {url=}" in stdout
-    assert stderr == ""
 
-
-def test_download_file_md5_mismatch_discards_download(
-    tmp_path: Path, capsys: pytest.CaptureFixture
-) -> None:
+def test_download_file_md5_mismatch_discards_download(tmp_path: Path) -> None:
     """A download failing md5 verification is discarded; cached file survives."""
     url = "https://example.com/test.txt"
     dest_path = tmp_path / "test.txt"
     dest_path.write_bytes(b"old content")
     expected_md5 = "0" * 32
 
-    with patch("requests.get", return_value=make_mock_response(b"new content")):
+    with (
+        patch("requests.get", return_value=make_mock_response(b"new content")),
+        pytest.raises(ValueError, match=f"MD5 mismatch.*expected {expected_md5}"),
+    ):
         download_file(str(dest_path), url, md5=expected_md5)
-
-    stdout, stderr = capsys.readouterr()
-    assert f"MD5 mismatch for {url=}" in stdout
-    assert f"expected {expected_md5}" in stdout
-    assert stderr == ""
     assert dest_path.read_bytes() == b"old content"
-    assert not os.path.isfile(f"{dest_path}.part")
+    assert not list(tmp_path.glob(".*.part"))
 
 
 def test_download_file_current_directory(
@@ -126,44 +126,73 @@ def test_download_file_current_directory(
 
 
 @pytest.mark.parametrize("token_env", ["HF_TOKEN", "HUGGING_FACE_HUB_TOKEN"])
+@pytest.mark.parametrize("status_code", [200, 401, 403, 404])
+@pytest.mark.parametrize(
+    ("url", "use_token"),
+    [
+        ("https://huggingface.co/org/repo/resolve/main/file.csv.gz", True),
+        ("https://cdn-lfs.huggingface.co/file", True),
+        ("https://huggingface.co.example.org/file", False),
+        ("https://example.org/huggingface.co/file", False),
+        ("https://example.org/file?source=huggingface.co", False),
+        ("https://huggingface.co@other.example/file", False),
+        ("http://huggingface.co/file", False),
+    ],
+)
 def test_download_file_adds_huggingface_token(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, token_env: str
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    token_env: str,
+    status_code: int,
+    url: str,
+    use_token: bool,
 ) -> None:
-    """HuggingFace downloads use bearer auth when a token env var is present."""
-    url = "https://huggingface.co/org/repo/resolve/main/file.csv.gz"
+    """Only HTTPS HuggingFace hosts receive automatically supplied bearer tokens."""
     dest_path = tmp_path / "file.csv.gz"
     monkeypatch.delenv("HF_TOKEN", raising=False)
     monkeypatch.delenv("HUGGING_FACE_HUB_TOKEN", raising=False)
     monkeypatch.setenv(token_env, "hf_test")
 
-    with patch("requests.get", return_value=make_mock_response(b"test")) as mock_get:
+    with (
+        patch(
+            "requests.get", return_value=make_mock_response(b"test", status_code)
+        ) as mock_get,
+        (
+            pytest.raises(requests.HTTPError) if status_code != 200 else nullcontext()
+        ) as error,
+    ):
         download_file(str(dest_path), url)
 
-    assert dest_path.read_bytes() == b"test"
-    assert mock_get.call_args.kwargs["headers"] == {"Authorization": "Bearer hf_test"}
+    if error is None:
+        assert dest_path.read_bytes() == b"test"
+    else:
+        notes = " ".join(error.value.__notes__)
+        assert ("HF_TOKEN" in notes) is (use_token and status_code in (401, 403))
+        assert not dest_path.is_file()
+    assert mock_get.call_args.kwargs["headers"] == (
+        {"Authorization": "Bearer hf_test"} if use_token else None
+    )
 
 
 def test_download_file_keeps_completed_part_file_on_replace_error(
-    tmp_path: Path, capsys: pytest.CaptureFixture
+    tmp_path: Path,
 ) -> None:
     """Completed downloads should survive final replace failures."""
     url = "https://example.com/test.txt"
     dest_path = tmp_path / "test.txt"
-    part_path = Path(f"{dest_path}.part")
     dest_path.write_bytes(b"old content")
 
     with (
         patch("requests.get", return_value=make_mock_response(b"new content")),
         patch("os.replace", side_effect=PermissionError("replace denied")),
+        pytest.raises(PermissionError, match="replace denied") as error,
     ):
         download_file(str(dest_path), url)
-
-    stdout, stderr = capsys.readouterr()
-    assert f"Error downloading {url=}" in stdout
-    assert "replace denied" in stdout
-    assert stderr == ""
     assert dest_path.read_bytes() == b"old content"
-    assert part_path.read_bytes() == b"new content"
+    part_paths = list(tmp_path.glob(".*.part"))
+    assert len(part_paths) == 1
+    assert part_paths[0].read_bytes() == b"new content"
+    assert repr(str(part_paths[0])) in " ".join(error.value.__notes__)
 
 
 @pytest.mark.parametrize(
@@ -178,7 +207,6 @@ def test_download_file_keeps_existing_file_on_stream_error(
     stream_chunks: tuple[bytes, ...],
     remove_error: OSError | None,
     tmp_path: Path,
-    capsys: pytest.CaptureFixture,
 ) -> None:
     """Failed streamed downloads should not corrupt existing cached files."""
     url = "https://example.com/test.txt"
@@ -194,20 +222,58 @@ def test_download_file_keeps_existing_file_on_stream_error(
     remove_ctx = (
         patch("os.remove", side_effect=remove_error) if remove_error else nullcontext()
     )
-    with patch("requests.get", return_value=response), remove_ctx:
+    with (
+        patch("requests.get", return_value=response),
+        remove_ctx,
+        pytest.raises(requests.ConnectionError, match="stream failed") as error,
+    ):
         download_file(str(dest_path), url)
-
-    stdout, stderr = capsys.readouterr()
-    assert f"Error downloading {url=}" in stdout
-    assert "stream failed" in stdout
-    assert stderr == ""
+    notes = " ".join(error.value.__notes__)
+    assert url in notes
     assert dest_path.read_bytes() == b"old content"
     if remove_error:
-        assert "Failed to remove partial download" in stdout
-        assert "cannot remove part file" in stdout
-        assert os.path.isfile(f"{dest_path}.part")
+        assert "Failed to remove partial download" in notes
+        assert "cannot remove part file" in notes
+        assert len(list(tmp_path.glob(".*.part"))) == 1
     else:
-        assert not os.path.isfile(f"{dest_path}.part")
+        assert not list(tmp_path.glob(".*.part"))
+
+
+def test_overlapping_downloads_use_independent_temporary_files(tmp_path: Path) -> None:
+    """Interleaved downloads cannot truncate or replace each other's temporary file."""
+    destination = tmp_path / "model.ckpt"
+    response = make_mock_response(b"")
+
+    def interleaved_content(**_kwargs: object) -> Iterator[bytes]:
+        """Complete a second download while the first is still streaming."""
+        yield b"first "
+        download_file(str(destination), "https://example.com/second")
+        assert destination.read_bytes() == b"second download"
+        yield b"download"
+
+    response.iter_content = interleaved_content  # ty: ignore[invalid-assignment]
+    with patch(
+        "requests.get", side_effect=[response, make_mock_response(b"second download")]
+    ):
+        download_file(str(destination), "https://example.com/first")
+    assert destination.read_bytes() == b"first download"
+    assert list(tmp_path.iterdir()) == [destination]
+
+
+@pytest.mark.parametrize("auth_header", ["Authorization", "authorization"])
+def test_explicit_authorization_is_preserved(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    auth_header: str,
+) -> None:
+    """Explicit authentication takes precedence regardless of header casing."""
+    monkeypatch.setenv("HF_TOKEN", "hf_environment")
+    headers = {auth_header: "Bearer explicit"}
+    with patch("requests.get", return_value=make_mock_response(b"data")) as mock_get:
+        download_file(
+            str(tmp_path / "model"), "https://huggingface.co/model", headers=headers
+        )
+    assert mock_get.call_args.kwargs["headers"] == headers
 
 
 @pytest.mark.parametrize(

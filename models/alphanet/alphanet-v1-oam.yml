@@ -210,9 +210,9 @@ metrics:
       κ_SRME: 0.6435
       pred_file:
         name: models/alphanet/alphanet-v1-oam/2025-04-20-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/56871824
-        size: 12337475
-        md5: ce837f375887995d5d45181f8e40a7d6
+        url: https://figshare.com/files/68221159
+        size: 7374155
+        md5: 0874936c11b70ff03aa76190dc2cb177
       κ_SRE: 0.4914
       κ_SRD: -0.3841
       κ_failure_rate: 0.0388

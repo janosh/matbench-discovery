@@ -173,9 +173,9 @@ metrics:
       κ_SRME: 0.6503
       pred_file:
         name: models/deepmd/dpa-3.1-mptrj/2025-06-05-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/55426289
-        size: 9822141
-        md5: 53ad1306b646c5a9c311f08c47c48b90
+        url: https://figshare.com/files/68221300
+        size: 7557752
+        md5: 22206123c40c0377d3e416257d651d1c
       κ_SRE: 0.4966
       κ_SRD: -0.3494
       κ_failure_rate: 0.0388

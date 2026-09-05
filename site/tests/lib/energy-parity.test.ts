@@ -120,14 +120,32 @@ describe(`energy parity data helpers`, () => {
     expect(fetch_mock).toHaveBeenCalledTimes(2)
   })
 
+  it(`keeps a replacement cached request when a cleared request fails later`, async () => {
+    const stale_response = Promise.withResolvers<Response>()
+    const fetch_mock = vi
+      .fn()
+      .mockReturnValueOnce(stale_response.promise)
+      .mockResolvedValueOnce(new Response(JSON.stringify({ fresh: true })))
+    vi.stubGlobal(`fetch`, fetch_mock)
+    const url = `/replaced-asset.json.gz`
+    const stale_result = load_json_asset(url).catch((error: unknown) => error)
+    clear_asset_cache()
+    const replacement = load_json_asset(url)
+    await expect(replacement).resolves.toEqual({ fresh: true })
+    stale_response.reject(new Error(`old request failed`))
+    await expect(stale_result).resolves.toEqual(new Error(`old request failed`))
+    expect(load_json_asset(url)).toBe(replacement)
+    expect(fetch_mock).toHaveBeenCalledTimes(2)
+  })
+
   it(`maps model keys to readable per-model release assets`, () => {
     const asset = model_asset(first_model_key)
     const model_assets = energy_parity_manifest.model_assets as Record<
       string,
-      { asset: string } | undefined
+      Record<string, { asset: string } | undefined> | undefined
     >
 
-    expect(asset).toBe(model_assets[first_model_key]?.asset)
+    expect(asset).toBe(model_assets[first_model_key]?.parity?.asset)
     expect(asset).toContain(`-model-`)
     expect(energy_parity_asset_url(asset)).toBe(`/energy-parity/assets/${asset}`)
     expect(() => model_asset(`missing-model`)).toThrow(

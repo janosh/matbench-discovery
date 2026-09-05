@@ -201,9 +201,9 @@ metrics:
     kappa_103:
       pred_file:
         name: models/tace/tace-oam-rra-preview/2026-06-27-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/66035516
-        size: 8236753
-        md5: e961ffa2e721d3099c50d94bead03692
+        url: https://figshare.com/files/68221417
+        size: 8236745
+        md5: 6acfaa4cd8aa2353718b1d7dd3041c97
       κ_SRME: 0.1009
       κ_SRE: 0.0433
       κ_SRD: -0.0081

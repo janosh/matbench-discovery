@@ -57,7 +57,6 @@
     return (2 * Math.PI * idx) / n_corners + offset
   }
 
-  // Compute axes points coordinates
   let axis_points = $derived(
     Object.values(config).map((_, idx, { length }) => {
       const angle = corner_angle(idx, length)
@@ -153,15 +152,14 @@
     const dist_from_center = Math.hypot(point.x - center.x, point.y - center.y)
     if (dist_from_center < radius * 0.05) new_values = keys.map(() => 1 / n_corners)
 
-    // Update weights in the config directly (axis order == config key order)
+    // axis order == config key order
     for (const [idx, key] of keys.entries()) config[key].weight = new_values[idx]
   }
 
-  // Helper to calculate triangle area using cross product
+  // triangle area via cross product
   const calc_triangle_area = (p1: Point, p2: Point, p3: Point) =>
     Math.abs((p1.x * (p2.y - p3.y) + p2.x * (p3.y - p1.y) + p3.x * (p1.y - p2.y)) / 2)
 
-  // Handle click on SVG to jump to position
   function handle_svg_click(event: MouseEvent) {
     event.preventDefault()
 
@@ -176,7 +174,7 @@
     move_to_position(event.clientX - svg_rect.left, event.clientY - svg_rect.top)
   }
 
-  // Handle keyboard activation - move to SVG center (equal weights)
+  // keyboard activation moves the knob to the center, i.e. equal weights
   function handle_keyboard_click(event: KeyboardEvent) {
     if (event.key === `Enter` || event.key === ` `) {
       event.preventDefault()
@@ -190,7 +188,6 @@
     return is_point_in_polygon(pt) ? pt : closest_point_on_polygon(pt)
   }
 
-  // Move the point to a position, constraining to the corner polygon if needed
   function move_to_position(click_x: number, click_y: number) {
     point = clamp_to_polygon(click_x, click_y)
     update_weights_from_point()
@@ -253,7 +250,6 @@
     return best
   }
 
-  // Helper to find closest point on a line segment
   function closest_point_on_line(p: Point, a: Point, b: Point) {
     const atob = { x: b.x - a.x, y: b.y - a.y }
     const atop = { x: p.x - a.x, y: p.y - a.y }

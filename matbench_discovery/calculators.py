@@ -18,6 +18,7 @@ import zipfile
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from importlib.metadata import PackageNotFoundError, version
+from urllib.parse import urlsplit
 
 from ase.calculators.calculator import Calculator
 from filelock import FileLock
@@ -74,17 +75,15 @@ def download_checkpoint(model_key: str, ext: str | None = None) -> str:
     url = Model.from_ref(model_key).metadata["checkpoint_url"]
     if not url:
         raise ValueError(f"{model_key} has no checkpoint_url in its YAML")
-    headers = None
-    if "huggingface.co" in url:
-        url = url.replace("/blob/", "/resolve/")
-        # gated repos (e.g. fairchem OMAT24) need a bearer token + license acceptance
-        token = os.getenv("HF_TOKEN") or os.getenv("HUGGING_FACE_HUB_TOKEN")
-        if token:
-            headers = {"Authorization": f"Bearer {token}"}
-    if "sciebo" in url and not url.endswith("/download"):
-        url = f"{url}/download"
-    if "github.com" in url and "/blob/" in url:  # serve the raw file, not the HTML page
-        url = url.replace("/blob/", "/raw/")
+    parsed = urlsplit(url)
+    hostname = parsed.hostname or ""
+    if hostname == "huggingface.co":
+        parsed = parsed._replace(path=parsed.path.replace("/blob/", "/resolve/"))
+    if hostname.endswith(".sciebo.de") and not parsed.path.endswith("/download"):
+        parsed = parsed._replace(path=f"{parsed.path}/download")
+    if hostname == "github.com":  # serve the raw file, not the HTML page
+        parsed = parsed._replace(path=parsed.path.replace("/blob/", "/raw/"))
+    url = parsed.geturl()
 
     ext = ext or os.path.splitext(url.split("?")[0])[1] or ".ckpt"
     url_hash = hashlib.sha256(url.encode()).hexdigest()[:12]
@@ -96,12 +95,10 @@ def download_checkpoint(model_key: str, ext: str | None = None) -> str:
         if os.path.isfile(dest) and not _is_non_empty_file(dest):
             os.remove(dest)
         if not _is_non_empty_file(dest):
-            download_file(dest, url, headers=headers)
+            download_file(dest, url)
     if not _is_non_empty_file(dest):
         raise RuntimeError(
-            f"Failed to download {model_key} checkpoint from {url}. If the repo is "
-            "gated (e.g. fairchem OMAT24), accept its license on HuggingFace and set "
-            "HF_TOKEN in the environment."
+            f"Empty checkpoint for {model_key} downloaded from {url} to {dest}"
         )
     return dest
 
