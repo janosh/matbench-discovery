@@ -40,7 +40,7 @@
     "svelte": "^5.57.0",
     "svelte-check-rs": "0.11.0",
     "svelte-widgets": "github:janosh/svelte-widgets#main",
-    "typescript": "^7.0.2",
+    "typescript": "^6.0.3",
     "unified": "^11.0.5",
     "vite": "^8.2.2",
     "vite-plus": "^0.3.0",
