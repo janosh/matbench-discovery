@@ -40,10 +40,7 @@ jobs:
           python-version: "3.14"
 
       - name: Install dependencies
-        # use the project's pinned pnpm (packageManager field) via corepack
-        run: |
-          corepack enable
-          pnpm install --config.dangerously-allow-all-builds=true --config.block-exotic-subdeps=false
+        run: npm install --package-lock=false
 
       - name: Download parity assets
         env:
@@ -83,7 +80,7 @@ jobs:
         run: |
           # API docs import phono3py at module scope.
           uv run --with-editable "..[phonons]" ../scripts/make_api_docs.py
-          pnpm run build
+          npm run build
 
       - name: Upload build artifact
         uses: actions/upload-pages-artifact@v5

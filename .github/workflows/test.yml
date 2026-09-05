@@ -52,13 +52,10 @@ jobs:
           node-version: 24
 
       - name: Install dependencies
-        # use the project's pinned pnpm (packageManager field) via corepack
-        run: |
-          corepack enable
-          pnpm install --config.dangerously-allow-all-builds=true --config.block-exotic-subdeps=false
+        run: npm install --package-lock=false
 
       - name: Run unit tests
-        run: pnpm test
+        run: npm test
 
   scripts:
     runs-on: ubuntu-latest

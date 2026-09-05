@@ -44,7 +44,7 @@
     "unified": "^11.0.5",
     "vite": "^8.2.2",
     "vite-plus": "^0.3.0",
-    "vitest": "^5.0.0"
+    "vitest": "4.1.11"
   },
   "packageManager": "pnpm@11.9.0",
   "author-url": "https://janosh.dev",
