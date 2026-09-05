@@ -98,9 +98,7 @@ def download_checkpoint(model_key: str, ext: str | None = None) -> str:
             download_file(dest, url)
     if not _is_non_empty_file(dest):
         raise RuntimeError(
-            f"Failed to download {model_key} checkpoint from {url}. If the repo is "
-            "gated (e.g. fairchem OMAT24), accept its license on HuggingFace and set "
-            "HF_TOKEN in the environment."
+            f"Empty checkpoint for {model_key} downloaded from {url} to {dest}"
         )
     return dest
 

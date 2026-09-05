@@ -519,6 +519,7 @@ def test_update_yaml_file_preserves_original_on_write_failure(
     original = "metrics:\n  discovery: {mae: 0.1}\n"
     target.write_text(original)
     target.chmod(0o640)
+    original_mode = target.stat().st_mode & 0o777
     path = target
     if use_symlink:
         path = tmp_path / "link.yml"
@@ -546,7 +547,7 @@ def test_update_yaml_file_preserves_original_on_write_failure(
     assert set(tmp_path.iterdir()) == expected_files
     update_yaml_file(path, "metrics.discovery", {"mae": 0.3})
     assert round_trip_yaml.load(target)["metrics"]["discovery"]["mae"] == 0.3
-    assert target.stat().st_mode & 0o777 == 0o640
+    assert target.stat().st_mode & 0o777 == original_mode
     assert path.is_symlink() is use_symlink
     assert set(tmp_path.iterdir()) == expected_files
 

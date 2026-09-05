@@ -90,6 +90,17 @@ def download_file(
         os.replace(tmp_file_path, file_path)
     except Exception as exc:
         exc.add_note(f"Downloading {url=} to {file_path=}")
+        if (
+            isinstance(exc, requests.HTTPError)
+            and exc.response is not None
+            and exc.response.status_code in (401, 403)
+            and parsed.scheme == "https"
+            and (hostname == "huggingface.co" or hostname.endswith(".huggingface.co"))
+        ):
+            exc.add_note(
+                "For gated HuggingFace repos, accept the model license and set "
+                "HF_TOKEN in the environment. Check the token's access to this repo."
+            )
         if download_finished:
             exc.add_note(f"Completed download retained at {tmp_file_path!r}")
         else:

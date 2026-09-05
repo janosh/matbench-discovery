@@ -798,6 +798,27 @@ def test_resumable_shards_strict_merge_and_artifacts(
     with pytest.raises(ValueError, match="Invalid phonon_file sidecar"):
         merge_kappa_shards(shard_dir, model_key="test_model")
     n_calls_before = len(computation_stub.material_ids)
+    # Completing missing sidecars accumulates the old run's costs, just like retries.
+    for changed_metadata in (
+        {"hardware": "different hardware"},
+        {"versions": {"synthetic-backend": "different"}},
+    ):
+        atomic_write_gzip_json(
+            missing_record_path,
+            asdict(
+                replace(
+                    missing_record,
+                    run_metadata={
+                        **missing_record.run_metadata,
+                        **changed_metadata,
+                    },
+                )
+            ),
+        )
+        with pytest.raises(ValueError, match="different hardware or package versions"):
+            shard_env.run(settings=settings, n_shards=2)
+    assert len(computation_stub.material_ids) == n_calls_before
+    atomic_write_gzip_json(missing_record_path, asdict(missing_record))
     shard_env.run(settings=settings, n_shards=2)
     shard_env.run(shard_index=1, settings=settings, n_shards=2)
     assert computation_stub.material_ids[n_calls_before:] == [missing_sidecar_id]

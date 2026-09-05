@@ -137,6 +137,7 @@ def test_download_file_current_directory(
 
 
 @pytest.mark.parametrize("token_env", ["HF_TOKEN", "HUGGING_FACE_HUB_TOKEN"])
+@pytest.mark.parametrize("status_code", [200, 401, 403, 404])
 @pytest.mark.parametrize(
     ("url", "use_token"),
     [
@@ -153,6 +154,7 @@ def test_download_file_adds_huggingface_token(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     token_env: str,
+    status_code: int,
     url: str,
     use_token: bool,
 ) -> None:
@@ -162,10 +164,22 @@ def test_download_file_adds_huggingface_token(
     monkeypatch.delenv("HUGGING_FACE_HUB_TOKEN", raising=False)
     monkeypatch.setenv(token_env, "hf_test")
 
-    with patch("requests.get", return_value=make_mock_response(b"test")) as mock_get:
+    with (
+        patch(
+            "requests.get", return_value=make_mock_response(b"test", status_code)
+        ) as mock_get,
+        (
+            pytest.raises(requests.HTTPError) if status_code != 200 else nullcontext()
+        ) as error,
+    ):
         download_file(str(dest_path), url)
 
-    assert dest_path.read_bytes() == b"test"
+    if error is None:
+        assert dest_path.read_bytes() == b"test"
+    else:
+        notes = " ".join(error.value.__notes__)
+        assert ("HF_TOKEN" in notes) is (use_token and status_code in (401, 403))
+        assert not dest_path.is_file()
     assert mock_get.call_args.kwargs["headers"] == (
         {"Authorization": "Bearer hf_test"} if use_token else None
     )
@@ -189,7 +203,7 @@ def test_download_file_keeps_completed_part_file_on_replace_error(
     part_paths = list(tmp_path.glob(".*.part"))
     assert len(part_paths) == 1
     assert part_paths[0].read_bytes() == b"new content"
-    assert str(part_paths[0]) in " ".join(error.value.__notes__)
+    assert repr(str(part_paths[0])) in " ".join(error.value.__notes__)
 
 
 @pytest.mark.parametrize(
