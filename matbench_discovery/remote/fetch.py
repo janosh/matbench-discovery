@@ -4,23 +4,12 @@ import builtins
 import hashlib
 import os
 import sys
-import traceback
+import tempfile
+from urllib.parse import urlsplit
 
 import requests
 
 from matbench_discovery import file_digest
-
-
-def _headers_for_url(
-    url: str, headers: dict[str, str] | None = None
-) -> dict[str, str] | None:
-    """Return request headers, adding HuggingFace bearer auth when available."""
-    request_headers = dict(headers or {})
-    if "huggingface.co" in url and "Authorization" not in request_headers:
-        token = os.getenv("HF_TOKEN") or os.getenv("HUGGING_FACE_HUB_TOKEN")
-        if token:
-            request_headers["Authorization"] = f"Bearer {token}"
-    return request_headers or None
 
 
 def download_file(
@@ -29,8 +18,7 @@ def download_file(
     headers: dict[str, str] | None = None,
     md5: str | None = None,
 ) -> None:
-    """Download the file from the given URL to the given file path.
-    Prints rather than raises if the file cannot be downloaded.
+    """Atomically download a file, raising HTTP, checksum, and filesystem errors.
 
     Args:
         file_path: Local path to write the downloaded file to.
@@ -38,58 +26,86 @@ def download_file(
         headers: Optional HTTP headers, e.g. an Authorization bearer token for
             gated HuggingFace checkpoints.
         md5: Optional expected MD5 checksum. On mismatch, the download is discarded
-            (any previously cached file_path is left unchanged) and an error printed.
+            and any previously cached file_path is left unchanged.
     """
     file_dir = os.path.dirname(file_path)
     if file_dir:
         os.makedirs(file_dir, exist_ok=True)
-    tmp_file_path = f"{file_path}.part"
-    download_finished = False
-
     # Convert any Figshare URL variant to the API download endpoint to avoid WAF
     # Handles: figshare.com/files/ID, figshare.com/ndownloader/files/ID,
     # and ndownloader.figshare.com/files/ID
-    if "figshare.com" in url and "/files/" in url:
-        file_id = url.rsplit("/files/", maxsplit=1)[-1].split("?", maxsplit=1)[0]
+    parsed = urlsplit(url)
+    hostname = parsed.hostname or ""
+    if (
+        hostname == "figshare.com" or hostname.endswith(".figshare.com")
+    ) and "/files/" in parsed.path:
+        file_id = parsed.path.rsplit("/files/", maxsplit=1)[-1]
         url = f"https://api.figshare.com/v2/file/download/{file_id}"
 
-    headers = _headers_for_url(url, headers)
+    is_huggingface = parsed.scheme == "https" and (
+        hostname == "huggingface.co" or hostname.endswith(".huggingface.co")
+    )
+    request_headers = dict(headers or {})
+    if (
+        is_huggingface
+        and not any(key.casefold() == "authorization" for key in request_headers)
+        and (token := os.getenv("HF_TOKEN") or os.getenv("HUGGING_FACE_HUB_TOKEN"))
+    ):
+        request_headers["Authorization"] = f"Bearer {token}"
+    file_descriptor, tmp_file_path = tempfile.mkstemp(
+        dir=file_dir or ".", prefix=f".{os.path.basename(file_path)}.", suffix=".part"
+    )
+    os.close(file_descriptor)
+    download_finished = False
     try:
         # Stream large files to avoid loading entire file into memory
-        response = requests.get(url, timeout=600, stream=True, headers=headers)
-        response.raise_for_status()
-
         file_hash = hashlib.md5()  # noqa: S324
-        with open(tmp_file_path, mode="wb") as file:
+        with (
+            requests.get(
+                url, timeout=600, stream=True, headers=request_headers or None
+            ) as response,
+            open(tmp_file_path, mode="wb") as file,
+        ):
+            response.raise_for_status()
             for chunk in response.iter_content(chunk_size=8192):
                 file.write(chunk)
                 file_hash.update(chunk)
 
         if md5 and (actual_md5 := file_hash.hexdigest()) != md5:
-            os.remove(tmp_file_path)
-            print(
+            raise ValueError(
                 f"MD5 mismatch for {url=}: expected {md5}, got {actual_md5}. "
-                f"Discarded the download, {file_path=} left unchanged."
+                f"{file_path=} left unchanged."
             )
-            return
 
         # set flag before replace: if only the rename fails, the fully-downloaded
         # .part file is deliberately kept so it doesn't have to be re-fetched
         download_finished = True
         os.replace(tmp_file_path, file_path)
-    except OSError, requests.RequestException:
-        error_msg = traceback.format_exc()
-        if not download_finished:
+    except Exception as exc:
+        exc.add_note(f"Downloading {url=} to {file_path=}")
+        if (
+            isinstance(exc, requests.HTTPError)
+            and exc.response is not None
+            and exc.response.status_code in (401, 403)
+            and is_huggingface
+        ):
+            exc.add_note(
+                "For gated HuggingFace repos, accept the model license and set "
+                "HF_TOKEN in the environment. Check the token's access to this repo."
+            )
+        if download_finished:
+            exc.add_note(f"Completed download retained at {tmp_file_path!r}")
+        else:
             try:
                 os.remove(tmp_file_path)
             except FileNotFoundError:
                 pass
-            except OSError:
-                error_msg += (
-                    f"\nFailed to remove partial download at {tmp_file_path=}.\n"
-                    f"{traceback.format_exc()}"
+            except OSError as cleanup_error:
+                exc.add_note(
+                    f"Failed to remove partial download {tmp_file_path=}: "
+                    f"{cleanup_error}"
                 )
-        print(f"Error downloading {url=}\nto {file_path=}.\n{error_msg}")
+        raise
 
 
 def maybe_auto_download_file(
@@ -110,12 +126,10 @@ def maybe_auto_download_file(
             "re-downloading"
         )
 
-    # whether to auto-download model prediction files without prompting
     auto_download_files = os.getenv("MBD_AUTO_DOWNLOAD_FILES", "true").lower() == "true"
 
+    # default to 'y' if auto-download is on or no interactive session (TTY/iPython)
     is_ipython = hasattr(builtins, "__IPYTHON__")
-    # default to 'y' if auto-download enabled or not in interactive session (TTY
-    # or iPython)
     answer = (
         "y"
         if auto_download_files or not (is_ipython or sys.stdin.isatty())

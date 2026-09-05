@@ -1,15 +1,108 @@
-import { make_config } from 'svelte-widgets/vite-config'
+import adapter from '@sveltejs/adapter-static'
 import { sveltekit } from '@sveltejs/kit/vite'
 import { load as load_yaml } from 'js-yaml'
 import type { JSONSchema4 } from 'json-schema'
 import { compile as json_to_ts } from 'json-schema-to-typescript'
+import { mdsvex } from 'mdsvex'
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
+import { createRequire } from 'node:module'
 import os from 'node:os'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import zlib from 'node:zlib'
+import { heading_ids } from 'svelte-widgets/heading-anchors' // Adds IDs to headings at build time
+import { katex_preprocess } from 'svelte-widgets/katex'
+import { starry_night_highlighter } from 'svelte-widgets/live-examples'
+import { make_config } from 'svelte-widgets/vite-config'
 import type { Plugin } from 'vite'
+import pkg from './package.json' with { type: 'json' }
+
+const { before: katex_before, after: katex_after } = katex_preprocess()
+
+// passed inline to sveltekit() (Kit >= 2.62) so no separate svelte.config.ts is needed;
+// kit options (adapter, version, alias) sit at the top level rather than under `kit`
+export const svelte_config = {
+  extensions: [`.svelte`, `.svx`, `.md`, `.html`],
+
+  preprocess: [
+    // Replace readme links to docs with site-internal links
+    // (which don't require browser navigation)
+    {
+      markup: ({ content }: { content: string }) => ({
+        code: content.replaceAll(pkg.homepage, ``),
+      }),
+    },
+    katex_before,
+    mdsvex({
+      extensions: [`.svx`, `.md`],
+      highlight: { highlighter: starry_night_highlighter },
+    }),
+    katex_after,
+    heading_ids(), // Runs after mdsvex converts markdown to HTML
+    {
+      markup: (file: { content: string; filename?: string }) => {
+        const filename = file.filename?.replaceAll(`\\`, `/`) ?? ``
+        const route = filename.split(`site/src/routes/`)[1] ?? ``
+
+        // Only manuscript figure markdown uses @label/@fig citation-style rewrites.
+        if (!route.includes(`discovery-metric-figs`)) return { code: file.content }
+
+        const fig_index: string[] = []
+
+        // Replace figure labels with 'Fig. {n}' and add to fig_index
+        let code = file.content.replaceAll(
+          /@label:(?<id>(?:fig|tab):[^\s]+)/g,
+          (_match, id) => {
+            if (!fig_index.includes(id)) fig_index.push(id)
+            const idx = (route.startsWith(`si`) ? `S` : ``) + fig_index.length
+            const link_icon = `<a aria-hidden="true" tabindex="-1" href="#${id}"><svg width="16" height="16" viewBox="0 0 16 16"><use xlink:href="#octicon-link"></use></svg></a>`
+            return `<strong id='${id}'>${link_icon}Fig. ${idx}</strong>`
+          },
+        )
+
+        // Replace figure references @fig:label with 'fig. {n}' and add to fig_index
+        code = code.replaceAll(
+          /@(?<id>(?<fig>fig):(?:[a-z0-9]+-?)+)/gi, // Match case-insensitive but replace case-sensitive
+          // @(f|F)ig becomes '(f|F)ig. {n}'
+          (_full_str, id, fig_or_Fig) => {
+            const id_lower = id.toLowerCase()
+            let idx: number | string = fig_index.indexOf(id_lower) + 1
+            if (idx === 0) {
+              console.warn(
+                `Figure id='${id}' not found, expected one of ${fig_index.join(`, `)}`,
+              )
+              idx = `not found`
+            }
+            return `<a href="#${id_lower}">${fig_or_Fig}. ${idx}</a>`
+          },
+        )
+
+        // Preprocess markdown citations @auth_1st-word-title_yyyy into citation links
+        // Links to bibliography items, href must match id format in References.svelte
+        code = code.replaceAll(
+          /\[?@(?<id>(?<author>.+?)_.+?_(?<year>\d{4}));?\]?/g, // Ends with ;?\]? to match single and multiple citations
+          (_match, id, author, year) =>
+            `[<a class="ref" href="#${id}">${author} ${year}</a>]`,
+        )
+
+        return { code }
+      },
+    },
+  ],
+
+  adapter: adapter(),
+  // Date.now() diverges across Vite+ SSR/client config loads and breaks hydration.
+  version: process.env.NODE_ENV === `production` ? undefined : { name: `dev` },
+
+  alias: {
+    $site: `.`,
+    $root: `..`,
+    $data: `../data`,
+    $pkg: `../matbench_discovery`,
+    $figs: `src/figs`,
+    $routes: `src/routes`,
+  },
+}
 
 // Parse .yml/.yaml/.cff imports into plain ES modules at build time (replaces @rollup/plugin-yaml).
 // All call sites import the default export only, so no per-key named exports are generated.
@@ -185,7 +278,8 @@ function yaml_schema_to_typescript_plugin(): Plugin {
 }
 
 const config = make_config()
-const matterviz_dist = path.dirname(fileURLToPath(import.meta.resolve(`matterviz`)))
+// Vite's bundle loader does not provide import.meta.resolve for the inline Svelte config.
+const matterviz_dist = path.dirname(createRequire(import.meta.url).resolve(`matterviz`))
 const three_compat = path.resolve(matterviz_dist, `scene/three-compat.js`)
 
 export default {
@@ -195,7 +289,7 @@ export default {
     ignorePatterns: [`src/routes/**/*.json`],
   },
   plugins: [
-    sveltekit(),
+    sveltekit(svelte_config),
     yaml_plugin(),
     yaml_schema_to_typescript_plugin(),
     json_payload_plugin(),
@@ -234,6 +328,7 @@ export default {
   },
 
   resolve: {
+    dedupe: [`svelte`],
     conditions: process.env.VITEST ? [`browser`] : undefined,
     // Keep bare Three imports on Matterviz's WebGPU-compatible build to avoid duplicates.
     alias: [{ find: /^three$/, replacement: three_compat }],

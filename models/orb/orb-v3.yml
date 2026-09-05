@@ -162,6 +162,18 @@ metrics:
         md5: 6d777036445d875664540ae7ed7d431b
   phonons:
     kappa_103:
+      run_info_file:
+        name: models/orb/orb-v3/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+        size: 8291
+        md5: 325d675a4a37ff5dd2562ed9aa9e2fe7
+      phonon_file:
+        name: models/orb/orb-v3/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+        size: 1317768809
+        md5: 09cbf8f218bcd0d3e13eab93ae54d551
+      force_file:
+        name: models/orb/orb-v3/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+        size: 14120327
+        md5: 86cb0cbf5b1aed6a43a9f5d61af36655
       κ_SRME: 0.2102
       pred_file:
         name: models/orb/orb-v3/2025-04-04-phonons-kappa-103.json.gz

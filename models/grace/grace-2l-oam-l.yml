@@ -168,12 +168,24 @@ metrics:
     n_systems: 17
   phonons:
     kappa_103:
+      phonon_file:
+        name: models/grace/grace-2l-oam-l/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+        size: 1340314358
+        md5: 231955ca9c8ddfabfd7827f181646b39
+      force_file:
+        name: models/grace/grace-2l-oam-l/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+        size: 8775580
+        md5: 645ee872c2f21316512cecec520f75d6
+      run_info_file:
+        name: models/grace/grace-2l-oam-l/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+        size: 8072
+        md5: 96c5d2ea9509e654e828fedb2cd00f56
       κ_SRME: 0.1688
       pred_file:
         name: models/grace/grace-2l-oam-l/2025-09-09-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/59046998
-        size: 9914409
-        md5: cc610987533572b2fd80eeb694d71ecf
+        url: https://figshare.com/files/68221354
+        size: 7622396
+        md5: 67d29f82d1dd240394b94ed64401aab2
       κ_SRE: 0.064
       κ_SRD: -0.0155
       κ_failure_rate: 0.0

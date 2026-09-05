@@ -207,12 +207,24 @@ metrics:
     n_systems: 17
   phonons:
     kappa_103:
+      phonon_file:
+        name: models/hienet/hienet/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+        size: 1303866766
+        md5: a6b9d1ab5600bbd6868e321b1beffde3
+      force_file:
+        name: models/hienet/hienet/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+        size: 8869053
+        md5: e4d201c48d0fc7ba6be15eba2337aaf6
+      run_info_file:
+        name: models/hienet/hienet/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+        size: 8054
+        md5: 92e79f3556c943ae33df49c57f8bfb75
       κ_SRME: 0.6423
       pred_file:
         name: models/hienet/hienet/2025-07-01-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/55909451
-        size: 8275900
-        md5: 3b8b5fe890adeaa37b86b185dbadfcf8
+        url: https://figshare.com/files/68221360
+        size: 8275935
+        md5: b20ce8dec71ccc87ab5770d48a14a85d
       κ_SRE: 0.4898
       κ_SRD: -0.4403
       κ_failure_rate: 0.0291

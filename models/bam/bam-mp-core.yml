@@ -166,11 +166,23 @@ metrics:
         md5: 3fff37eaa297fa215212377d9b2b8d75
   phonons:
     kappa_103:
+      run_info_file:
+        name: models/bam/bam-mp-core/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+        size: 8200
+        md5: 2d795670c29de575f3b84f05e129b0d6
+      phonon_file:
+        name: models/bam/bam-mp-core/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+        size: 1385530273
+        md5: 9c507d24acae60c8f5c5db722c11b28c
+      force_file:
+        name: models/bam/bam-mp-core/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+        size: 8835923
+        md5: c19f5965744f5585754407d84115f493
       pred_file:
         name: models/bam/bam-mp-core/2026-05-09-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/67080101
-        size: 7770664
-        md5: 42e5c1b3f3273827bc2f08ec22ee2d68
+        url: https://figshare.com/files/68221279
+        size: 7770580
+        md5: 54d8a5286b3192ce3d3af3c667f635e3
       hardware: NVIDIA A100
       run_time_sec: 28459
       κ_SRME: 0.8475

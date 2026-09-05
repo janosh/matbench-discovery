@@ -190,11 +190,23 @@ metrics:
       κ_SRME: 1.7255
       pred_file:
         name: models/orb/orb-v2-mptrj/2024-11-09-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/52134890
-        size: 7147306
-        md5: 08aa59ad261f1e6cb937702c7dbf759c
+        url: https://figshare.com/files/68221396
+        size: 7147121
+        md5: cb85a79075c511b1ecf3ad87f739ea07
       κ_SRE: 1.4544
       κ_SRD: 0.022
       κ_failure_rate: 0.0291
       imaginary_mode_rate: 0.0291
       spectrum_w1: 1.649
+      phonon_file:
+        name: models/orb/orb-v2-mptrj/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+        size: 1353348562
+        md5: 6e97cdbe2e7bd8808043b56aa6d467ae
+      force_file:
+        name: models/orb/orb-v2-mptrj/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+        size: 14368360
+        md5: 103d2dfaeac8b4240e3e3d0bf175bff3
+      run_info_file:
+        name: models/orb/orb-v2-mptrj/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+        size: 8303
+        md5: b4d51f599b6a8831d1acfff27e041912

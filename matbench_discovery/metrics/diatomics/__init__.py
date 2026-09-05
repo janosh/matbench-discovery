@@ -92,8 +92,7 @@ class DiatomicCurve:
         if n_e != n_dist:
             raise ValueError(f"distance and energy counts differ: {n_dist} != {n_e}")
 
-        # Handle forces stored as (1, n_distances*n_atoms, 3)
-        # instead of (n_distances, n_atoms, 3)
+        # handle forces stored as (1, n_distances*n_atoms, 3), not (n_dist, n_atoms, 3)
         if self.forces.shape == (1, 2 * n_dist, 3):
             self.forces = self.forces.reshape(n_dist, 2, 3)
         if (n_f := len(self.forces)) != n_dist:
@@ -215,7 +214,7 @@ def find_low_quality_dft_refs(
     """
     low_quality: set[str] = set()
     for elem_symbol, curve in ref_curves.homo_nuclear.items():
-        seps, energies = curve.distances, curve.energies  # np arrays per DiatomicCurve
+        seps, energies = curve.distances, curve.energies
         if seps.size == 0:
             continue
         r_min, r_max = eval_window(elem_symbol, float(np.max(seps)))

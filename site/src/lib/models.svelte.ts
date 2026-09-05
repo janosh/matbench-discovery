@@ -100,24 +100,21 @@ export const MODELS = $state(
     ...metadata_entries.filter(([, meta]) => meta.lifecycle !== `active`),
   ].map(to_model_data),
 )
-/** Leaderboards and other benchmark views. */
+// Leaderboards and other benchmark views.
 export const ACTIVE_MODELS = MODELS.slice(0, active_entries.length)
-// Update CPSs of models based on current CPS weights
+
 export function update_models_cps(models: ModelData[], cps_config: CpsConfig) {
   models.forEach((model) => {
-    // Extract required metrics for CPS calculation
     const f1 = model.metrics?.discovery?.unique_prototypes?.F1
     // use symprec=1e-2 to match the RMSD column path declared in ALL_METRICS.RMSD,
     // so the displayed RMSD is the same value that feeds into CPS
     const rmsd = model.metrics?.geo_opt?.[`symprec=1e-2`]?.rmsd
     const kappa = model.metrics?.phonons?.kappa_103?.κ_SRME
 
-    // Calculate and update CPS
     model.CPS = calculate_cps(f1, rmsd, kappa, cps_config) ?? Number.NaN
   })
 }
 
-// Calculate initial CPS for all models
 update_models_cps(MODELS, CPS_CONFIG)
 
 // Calculate initial CMDS (combined MD score) for all models. Computed on the fly

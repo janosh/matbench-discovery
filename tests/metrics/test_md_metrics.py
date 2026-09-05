@@ -452,9 +452,8 @@ def make_cosine_velocities(
 
 
 def test_calc_vdos_spectrum() -> None:
-    """VDOS must peak at each atom's oscillation frequency, and per-DOF
-    normalization (equipartition) must give a quiet atom's peak the same
-    integrated weight as a 10x louder atom's peak.
+    """VDOS peaks at each atom's oscillation frequency and per-DOF (equipartition)
+    normalization gives a quiet atom's peak the same weight as a 10x louder one.
     """
     velocities = make_cosine_velocities((5.0, 1.0), (12.5, 0.1))  # loud + quiet atom
     freqs, vdos = md_metrics.calc_vdos(velocities, time_step_fs=2.0)
@@ -595,8 +594,8 @@ def test_calc_vdos_error_grid_sampling_invariant() -> None:
 
 
 def test_get_trajectory_pressures() -> None:
-    """Per-frame pressures read from attached stress, averaging the full 3D trace (not a
-    2D slab formula): the anisotropic frame gives 3 GPa, not 1.5.
+    """Pressures average the full 3D stress trace, not a 2D slab formula, so the
+    anisotropic frame gives 3 GPa, not 1.5.
     """
     pressures = [0.5, -1.0, 2.0]
     frames = [
@@ -614,43 +613,32 @@ def test_get_trajectory_pressures() -> None:
 
 
 @pytest.mark.parametrize(
-    ("p_ref", "p_pred", "expected_mae"),
+    ("p_ref", "p_pred", "expected_mae", "expected_w1"),
     [
-        (np.array([0.0, 1.0, 2.0, 3.0]), np.array([0.0, 1.0, 2.0, 3.0]), 0.0),
-        # constant +0.5 offset -> mean bias 0.5
-        (np.array([0.0, 1.0, 2.0, 3.0]), np.array([0.5, 1.5, 2.5, 3.5]), 0.5),
-        # unequal lengths: means are 1.5 vs 1.0 -> bias 0.5
-        (np.array([0.0, 1.0, 2.0, 3.0]), np.array([0.5, 1.5]), 0.5),
-        # frame order is irrelevant: reversal preserves the mean -> zero bias
-        (np.arange(7.0), np.arange(7.0)[::-1], 0.0),
+        (np.arange(4.0), np.arange(4.0), 0.0, 0.0),
+        (np.arange(4.0), np.arange(4.0) + 0.5, 0.5, 0.5),
+        # Unequal lengths: mean bias 0.5; W1 = (0.5 + 0.5 + 0.5 + 1.5) / 4.
+        (np.arange(4.0), np.array([0.5, 1.5]), 0.5, 0.75),
+        (np.arange(7.0), np.arange(7.0)[::-1], 0.0, 0.0),
+        (np.arange(4.0), (np.arange(4.0) + 0.5)[::-1], 0.5, 0.5),
     ],
-    ids=["identical", "offset", "unequal_len", "reversed"],
+    ids=["identical", "offset", "unequal-lengths", "reversed", "reversed-offset"],
 )
-def test_calc_pressure_metrics_mae(
-    p_ref: np.ndarray, p_pred: np.ndarray, expected_mae: float
+def test_calc_pressure_metrics(
+    p_ref: np.ndarray, p_pred: np.ndarray, expected_mae: float, expected_w1: float
 ) -> None:
-    """Pressure MAE is the mean-pressure bias |mean(ref) - mean(pred)|: it compares the
-    separately-averaged trajectory pressures, independent of frame order and length.
-    """
+    """Pressure bias and Wasserstein distance allow reordered and unequal series."""
     metrics = md_metrics.calc_pressure_metrics(p_ref, p_pred)
     assert metrics["pressure_mae"] == pytest.approx(expected_mae)
+    assert metrics["pressure_wasserstein"] == pytest.approx(
+        expected_w1, rel=1e-6, abs=0
+    )
 
 
-def test_calc_pressure_metrics_wasserstein_and_validation() -> None:
-    """W1 distance equals the mean offset and is frame-order independent (compares full
-    distributions); empty pressure arrays raise. MAE rows live in the parametrized test.
-    """
-    p_ref = np.array([0.0, 1.0, 2.0, 3.0])
-    p_shifted = p_ref + 0.5
-
-    assert md_metrics.calc_pressure_metrics(p_ref, p_ref)["pressure_wasserstein"] == 0
-    shifted = md_metrics.calc_pressure_metrics(p_ref, p_shifted)
-    assert shifted["pressure_wasserstein"] == pytest.approx(0.5)
-    reversed_order = md_metrics.calc_pressure_metrics(p_ref, p_shifted[::-1])
-    assert reversed_order["pressure_wasserstein"] == pytest.approx(0.5)
-
+def test_calc_pressure_metrics_rejects_empty_input() -> None:
+    """Pressure metrics reject an empty pressure series."""
     with pytest.raises(ValueError, match="empty"):
-        md_metrics.calc_pressure_metrics(np.array([]), p_ref)
+        md_metrics.calc_pressure_metrics(np.array([]), np.arange(4.0))
 
 
 # === private energy/force diagnostics ===

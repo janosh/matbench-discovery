@@ -152,10 +152,8 @@
   function show_dropdown(event: ButtonMouseEvent, link_data: LinkData) {
     event.stopPropagation()
 
-    // Get button position for dropdown placement
+    // position the dropdown at the button's document coordinates
     const rect = event.currentTarget.getBoundingClientRect()
-
-    // Position dropdown relative to the button's position in the document
     pred_files_dropdown = {
       ...link_data.pred_files,
       x: rect.left + globalThis.scrollX,

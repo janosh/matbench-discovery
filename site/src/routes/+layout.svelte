@@ -167,14 +167,18 @@
   />
 {/if}
 
-<GitHubCorner href={pkg.repository} />
+<GitHubCorner href={pkg.repository} id="github-corner" />
 
+<!-- menu_props: the svelte-widgets mobile menu hugs its content and anchors to the start
+     edge, so page text shows beside the open menu; spanning the viewport fixes that.
+     `max-width` clears its 90vw cap. The desktop gap lives in the style block below since an
+     inline gap would also override the mobile menu's tight row spacing. -->
 <Nav
   {page}
   routes={[`/`, ...ordered_routes, [pkg.paper, `Paper`]]}
   style="margin-block: 1em 0"
-  menu_props={{ style: `gap: 1.5em` }}
-  labels={{
+  menu_props={{ style: `inset-inline: 0.5rem; width: auto; max-width: none` }}
+  route_labels={{
     '/': `Home`,
     '/api': `API`,
     '/data/sets': `Datasets`,
@@ -185,6 +189,8 @@
   --nav-item-padding="0 3pt"
   --nav-dropdown-link-padding="2pt 4pt"
   --nav-link-active-color="var(--link-color)"
+  --nav-mobile-z-index="50"
+  --nav-toggle-btn-z-index="50"
 >
   {#if find_enabled}
     <button
@@ -219,7 +225,7 @@
 
 <ModelComparison />
 
-<Footer links={footer_links} style="--footer-bg: var(--shadow)">
+<Footer links={footer_links} style="--footer-bg: var(--nav-bg)">
   <img src="/favicon.svg" alt="Logo" width="30px" style="vertical-align: middle" />
   &ensp;{pkg.title} &ensp; | &ensp; ©
   <a href={pkg[`author-url`]}>{pkg.author.split(`<`)[0]}</a>
@@ -229,6 +235,16 @@
 <style>
   :global(aside.toc > nav > ol > li > a) {
     color: inherit;
+  }
+  :global(nav:not(.mobile) .menu) {
+    gap: 1.5em;
+  }
+  /* On phones the fixed corner covers the top-right of the metrics table; the footer still
+     links to the repo */
+  @media (max-width: 600px) {
+    :global(#github-corner) {
+      display: none;
+    }
   }
   button.find-page {
     display: inline-grid;

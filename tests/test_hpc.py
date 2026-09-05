@@ -200,9 +200,7 @@ def test_merge_audit_metadata_strictly_rejects_missing_hardware() -> None:
 
 
 def test_peak_memory_gb() -> None:
-    """peak_memory_gb reports a positive host RSS high-water mark on Unix (GPU key
-    only when torch+CUDA are present) and reset_gpu_peak_memory is a safe no-op.
-    """
+    """peak_memory_gb reports a positive Unix RSS peak; GPU reset is a safe no-op."""
     mem = hpc.peak_memory_gb()
     if sys.platform != "win32":  # Windows lacks the resource module
         assert mem["max_rss_gb"] > 0

@@ -39,7 +39,7 @@ def _validate_diatomic_curve(
     if n_unique != len(xs_arr):
         raise ValueError(f"xs contains {len(xs_arr) - n_unique} duplicates")
 
-    sort_idx = np.argsort(xs_arr)  # ascending order
+    sort_idx = np.argsort(xs_arr)
     return xs_arr[sort_idx], ys_arr[sort_idx]
 
 

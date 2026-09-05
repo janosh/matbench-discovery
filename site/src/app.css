@@ -327,9 +327,12 @@ input {
 ul.selected input {
   background: inherit;
 }
+input[type='number'],
+input:focus {
+  background: var(--nav-bg);
+}
 input:focus {
   outline: none;
-  background: var(--nav-bg);
 }
 kbd {
   border: 1px solid var(--border);

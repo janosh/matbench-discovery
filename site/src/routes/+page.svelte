@@ -20,16 +20,10 @@
     bind_url_params,
     sort_from_query,
     sort_url_entries,
-    valid_query_param,
     weights_to_param,
   } from '$lib/url-state.svelte'
-  import {
-    generate_csv,
-    generate_excel,
-    generate_png,
-    generate_svg,
-    handle_export,
-  } from '$lib/table-export'
+  import { valid_query_param } from 'svelte-widgets/url-params'
+  import { generate_csv } from '$lib/table-export'
   import type { DiscoverySet, Label, ModelData, SortDir } from '$lib/types'
   import Readme from '$root/readme.md'
   import MdNote from '$routes/tasks/md/md-note.md'
@@ -287,16 +281,14 @@
 
   <div class="downloads">
     Download table as
-    {#each [[`SVG`, generate_svg], [`PNG`, generate_png], [`CSV`, generate_csv], [`Excel`, generate_excel]] as const as [label, generate_fn] (label)}
-      <button
-        class="download-btn"
-        onclick={async () => {
-          export_error = await handle_export(generate_fn, label, { discovery_set })
-        }}
-      >
-        {label}
-      </button>
-    {/each}
+    <button
+      class="download-btn"
+      onclick={() => {
+        export_error = generate_csv({ discovery_set }) ? `` : `Failed to generate CSV.`
+      }}
+    >
+      CSV
+    </button>
     &emsp;Subscribe via
     <a
       href="/rss.xml"
@@ -452,7 +444,6 @@ lives in MdNote and also renders on the /tasks/md page -->
     border-radius: 4px;
     border-inline-start: 4px solid #ff6b6b;
   }
-  /* Caption Radar Container Styles */
   figcaption.caption-radar-container {
     display: grid;
     grid-template-columns: 1fr max-content;

@@ -112,7 +112,6 @@ def pred_vs_ref_struct_symmetry(
 
     df_result = df_sym_pred.copy()
 
-    # Calculate differences
     df_result[MbdKey.spg_num_diff] = df_sym_pred[Key.spg_num] - df_sym_ref[Key.spg_num]
     df_result[MbdKey.n_sym_ops_diff] = (
         df_sym_pred[Key.n_sym_ops] - df_sym_ref[Key.n_sym_ops]
@@ -126,7 +125,6 @@ def pred_vs_ref_struct_symmetry(
     if len(shared_ids) == 0:
         raise ValueError(f"No shared IDs between:\n{pred_ids=}\n{ref_ids=}")
 
-    # Initialize RMSD column
     df_result[MbdKey.structure_rmsd_vs_dft] = None
 
     if pbar:

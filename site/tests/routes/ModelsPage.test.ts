@@ -59,7 +59,6 @@ describe(`Models Page`, () => {
       const model_cards = document.querySelectorAll(`ol > li`)
       expect(model_cards).toHaveLength(MODELS.length)
 
-      // Test first model card structure
       const first_card = model_cards[0]
       const first_link = doc_query<HTMLAnchorElement>(`h2 a`, first_card)
       expect(first_link.getAttribute(`href`)).toMatch(/^\/models\/[^/]+$/)

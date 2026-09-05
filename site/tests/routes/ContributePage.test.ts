@@ -8,12 +8,10 @@ describe(`Contribute Page`, () => {
   })
 
   it(`renders markdown content with correct structure`, () => {
-    // Check main heading
     expect(document.querySelector(`h1`)?.textContent).toBe(
       `How to submit new models to Matbench Discovery`,
     )
 
-    // Check section headings
     const headings = [...document.querySelectorAll(`h2`)]
     expect(headings.length).toBeGreaterThanOrEqual(2)
 
@@ -25,11 +23,9 @@ describe(`Contribute Page`, () => {
       ).toBe(true)
     })
 
-    // Check installation section
     const install_section = get_heading_section(document.body, `Installation`)
     expect(install_section?.textContent).toContain(`pip install -e ./matbench-discovery`)
 
-    // Check code blocks and PyPI link
     expect(document.querySelectorAll(`pre`).length).toBeGreaterThanOrEqual(2)
     const pypi_link = document.querySelector(
       `a[href*='pypi.org/project/matbench-discovery']`,
@@ -44,7 +40,6 @@ describe(`Contribute Page`, () => {
   it(`renders troubleshooting section with support links`, () => {
     const trouble_section = get_heading_section(document.body, `Troubleshooting`)
 
-    // Check for GitHub issues link
     const github_issue_link = trouble_section?.querySelector(
       `a[href*="github.com"][href*="issues"]`,
     )
@@ -60,7 +55,7 @@ describe(`Contribute Page`, () => {
   })
 })
 
-// Helper function to get a section following a heading with specific text
+// content between the h2 whose text contains `heading_text` and the next h2
 function get_heading_section(element: Element, heading_text: string): Element | null {
   const target_heading = [...element.querySelectorAll(`h2`)].find((h) =>
     h.textContent?.includes(heading_text),
@@ -68,7 +63,6 @@ function get_heading_section(element: Element, heading_text: string): Element | 
 
   if (!target_heading) return null
 
-  // Get content between this heading and the next h2
   const content = document.createElement(`div`)
   let current_node = target_heading.nextElementSibling
 

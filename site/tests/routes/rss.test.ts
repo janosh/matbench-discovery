@@ -17,18 +17,15 @@ describe(`RSS feed endpoint`, () => {
     expect(response.status).toBe(200)
     const xml = await response.text()
 
-    // Check RSS basics with exact matches
     expect(xml).toMatch(
       /<rss xmlns:atom="http:\/\/www\.w3\.org\/2005\/Atom" version="2\.0">/,
     )
     expect(xml).toMatch(/<channel>[\s\S]*<\/channel>/)
     expect(xml).toContain(`</rss>`)
 
-    // Check site info
     expect(xml).toContain(`<title>${pkg.name}</title>`)
     expect(xml).toContain(`<description>${pkg.description}</description>`)
 
-    // Check for required RSS elements
     expect(xml).toMatch(/<atom:link href=.*rel="self" type="application\/rss\+xml"\/>/)
     expect(xml).toMatch(/<link>.*<\/link>/)
 
@@ -48,11 +45,9 @@ describe(`RSS feed endpoint`, () => {
     const response = GET()
     const xml = await response.text()
 
-    // Extract the CDATA content from the first item
     const cdata_content = extract_first_cdata(xml)
     expect(cdata_content).not.toBe(``)
 
-    // Check for expected model details in the correct order
     expect(cdata_content).toMatch(/<h2>[^<]+<\/h2>/) // Model name heading
     expect(cdata_content).toMatch(/<strong>Metrics:<\/strong>/)
     expect(cdata_content).toMatch(/<strong>Parameters:<\/strong>[^<]+/)
@@ -65,7 +60,6 @@ describe(`RSS feed endpoint`, () => {
     const authors_pos = cdata_content.indexOf(`<strong>Authors:</strong>`)
     expect(metrics_pos).toBeLessThan(authors_pos)
 
-    // Check for proper HTML structure
     const strong_tags = [...cdata_content.matchAll(/<strong>/g)]
     const strong_close_tags = [...cdata_content.matchAll(/<\/strong>/g)]
 
@@ -79,13 +73,11 @@ describe(`RSS feed endpoint`, () => {
 
     const base_url = pkg.homepage.endsWith(`/`) ? pkg.homepage : `${pkg.homepage}/`
 
-    // Check for model links with exact pattern matching
     expect(xml).toMatch(new RegExp(`<link>${base_url}models/[^<]+</link>`))
     expect(xml).toMatch(
       new RegExp(`<guid isPermaLink="true">${base_url}models/[^<]+</guid>`),
     )
 
-    // Check for at least one model from the real data
     const model = MODELS[0]
     expect(xml).toContain(model.model_name)
     expect(xml).toContain(`models/${model.model_key}`)
@@ -152,12 +144,10 @@ describe(`RSS feed endpoint`, () => {
     const response = GET()
     const xml = await response.text()
 
-    // Check that the self-reference URL matches document URL
     expect(xml).toContain(
       `<atom:link href="${pkg.homepage}/rss.xml" rel="self" type="application/rss+xml"/>`,
     )
 
-    // Extract descriptions to check for relative URLs
     const descriptions = [
       ...xml.matchAll(/<description><!\[CDATA\[(?<cdata>[\s\S]*?)\]\]><\/description>/g),
     ]

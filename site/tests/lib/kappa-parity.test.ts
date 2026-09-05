@@ -1,5 +1,6 @@
 import {
   as_phonon_dos,
+  dos_per_atom,
   build_kappa_parity_series,
   get_kappa_parity_point,
   has_kappa_parity_model,
@@ -120,6 +121,24 @@ describe(`kappa parity data helpers`, () => {
     expect(as_phonon_dos(base.dft_dos[`mp-2`])).toBeNull()
     expect(as_phonon_dos(model.ml_dos[`mp-1`])?.type).toBe(`phonon`)
     expect(as_phonon_dos(model.ml_dos[`mp-3`])).toBeNull()
+  })
+
+  it(`rescales a peak-normalized DOS to 3 modes per atom for thermal properties`, () => {
+    // triangle DOS on a unit grid: trapezoid integral 2 -> scale factor 3/2
+    const per_atom = dos_per_atom({
+      type: `phonon`,
+      frequencies: [0, 1, 2, 3],
+      densities: [0, 1, 1, 0],
+    })
+    expect(per_atom.frequencies).toEqual([0, 1, 2, 3])
+    expect(per_atom.densities).toEqual([0, 1.5, 1.5, 0])
+    const integral = per_atom.densities
+      .slice(1)
+      .reduce((sum, density, idx) => sum + (density + per_atom.densities[idx]) / 2, 0)
+    expect(integral).toBeCloseTo(3, 12)
+    expect(() =>
+      dos_per_atom({ type: `phonon`, frequencies: [0, 1], densities: [0, 0] }),
+    ).toThrow(`integrates to 0`)
   })
 
   it(`returns prebuilt structures and null for missing materials`, () => {

@@ -27,27 +27,16 @@ const weighted_mean = (terms: WeightedTerm[]): number | null => {
   let weighted_sum = 0
   let total_weight = 0
   for (const { weight, value } of terms) {
+    if (!Number.isFinite(weight) || weight < 0) return null
     total_weight += weight
     if (weight === 0) continue
     if (value === null || !Number.isFinite(value)) return null
     weighted_sum += value * weight
   }
-  return total_weight === 0 ? null : weighted_sum / total_weight
+  return total_weight === 0 || !Number.isFinite(total_weight)
+    ? null
+    : weighted_sum / total_weight
 }
-
-// F1 score is between 0-1 where higher is better (no normalization needed)
-const normalize_f1 = (value: number | undefined): number =>
-  is_valid_score(value, 1) ? value : 0
-
-// RMSD is lower=better, with current models in the range of ~0.01-0.25 (unitless)
-// We invert this so that better performance = higher score
-const normalize_rmsd = (value: number | undefined): number =>
-  is_valid_score(value) ? Math.max(0, Math.min(1, 1 - value / RMSD_BASELINE)) : 0
-
-// κ_SRME is symmetric relative mean error, with range [0,2] by definition
-// Lower values are better (0 is perfect)
-const normalize_kappa_srme = (value: number | undefined): number =>
-  is_valid_score(value, 2) ? 1 - value / 2 : 0
 
 // Calculate a combined score using normalized metrics weighted by importance factors.
 // Fixed normalization reference points keep scores stable as new models are added.
@@ -59,11 +48,17 @@ export function calculate_cps(
 ): number | null {
   const { F1, RMSD, κ_SRME } = cps_config
   return weighted_mean([
-    { weight: F1.weight, value: is_valid_score(f1, 1) ? normalize_f1(f1) : null },
-    { weight: RMSD.weight, value: is_valid_score(rmsd) ? normalize_rmsd(rmsd) : null },
+    // F1 is already [0,1]; invert the lower-is-better RMSD and κ_SRME errors.
+    { weight: F1.weight, value: is_valid_score(f1, 1) ? f1 : null },
+    {
+      weight: RMSD.weight,
+      value: is_valid_score(rmsd)
+        ? Math.max(0, Math.min(1, 1 - rmsd / RMSD_BASELINE))
+        : null,
+    },
     {
       weight: κ_SRME.weight,
-      value: is_valid_score(kappa, 2) ? normalize_kappa_srme(kappa) : null,
+      value: is_valid_score(kappa, 2) ? 1 - kappa / 2 : null,
     },
   ])
 }
@@ -126,7 +121,7 @@ export function calculate_cmds(
     const { weight } = cmds_config[key]
     const value = values[key]
     // any missing/invalid component with non-zero weight invalidates the score
-    if (typeof value !== `number` || !Number.isFinite(value)) {
+    if (typeof value !== `number` || !Number.isFinite(value) || value < 0) {
       terms.push({ weight, value: null })
       continue
     }
@@ -263,6 +258,7 @@ export function calculate_cds(values: CdsValues, cds_config: CdsConfig): number 
       if (
         typeof value !== `number` ||
         !Number.isFinite(value) ||
+        value < 0 ||
         (component.log && value <= 0)
       ) {
         valid = false

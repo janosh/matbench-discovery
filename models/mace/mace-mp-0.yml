@@ -183,12 +183,24 @@ metrics:
     n_systems: 17
   phonons:
     kappa_103:
+      run_info_file:
+        name: models/mace/mace-mp-0/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+        size: 8300
+        md5: cc22278aae8a42f96e9b35d35a488f38
+      phonon_file:
+        name: models/mace/mace-mp-0/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+        size: 1128298009
+        md5: 3645352492948ab7bdee7db9981ccf5d
+      force_file:
+        name: models/mace/mace-mp-0/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+        size: 6897649
+        md5: 972807b1b0d858286e9ce41f5a07f6b7
       κ_SRME: 0.6823
       pred_file:
         name: models/mace/mace-mp-0/2024-11-09-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/52134872
-        size: 7161628
-        md5: 9cf38779b4ad0c5b1b8e51b866fc046c
+        url: https://figshare.com/files/68221366
+        size: 7161700
+        md5: 1b1183ac171cdb53c5a8b4b78ed6e3fa
       κ_SRE: 0.471
       κ_SRD: -0.2845
       κ_failure_rate: 0.0291

@@ -168,17 +168,26 @@ def test_all_active_models_have_required_metadata() -> None:
     assert not failures, failures
 
 
-def test_malformed_file_ref_fails_checklist(monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize(
+    ("file_ref", "error"),
+    [
+        ("legacy/path.csv.gz", "Invalid FileRef at metrics.discovery.pred_file"),
+        (
+            {"name": "models/mace/mace-mpa-0/../2026-09-05-discovery.csv.gz"},
+            "must live under",
+        ),
+    ],
+)
+def test_malformed_file_ref_fails_checklist(
+    monkeypatch: pytest.MonkeyPatch, file_ref: str | dict[str, str], error: str
+) -> None:
     """Malformed artifact metadata becomes a checklist failure instead of raising."""
     model = Model.mace_mpa_0
     discovery = model.metadata["metrics"]["discovery"]
-    monkeypatch.setitem(discovery, "pred_file", "legacy/path.csv.gz")
+    monkeypatch.setitem(discovery, "pred_file", file_ref)
     checks = ingest.Checklist()
     ingest.check_submission(model, checks, validate_runner=False)
-    assert any(
-        "Invalid FileRef at metrics.discovery.pred_file" in message
-        for message in msgs(checks, ingest.FAIL)
-    )
+    assert any(error in message for message in msgs(checks, ingest.FAIL))
 
 
 @pytest.mark.parametrize(
@@ -259,7 +268,17 @@ def test_publish_parity_assets_once(
         "asset": "asset.json.gz",
         "sha256": hashlib.sha256(asset_bytes).hexdigest(),
     }
-    manifest = {"base": entry, "model_assets": {}}
+    parity_entry = entry | {"asset": "parity.json.gz"}
+    modes_entry = entry | {"asset": "modes.json.gz"}
+    # base, a model's parity asset and its modes asset all have distinct stems
+    manifest = {
+        "base": entry,
+        "model_assets": {"model-key": {"parity": parity_entry, "modes": modes_entry}},
+    }
+    # publish_parity_assets uploads sorted(pending), not manifest order
+    asset_names = tuple(
+        sorted((entry["asset"], parity_entry["asset"], modes_entry["asset"]))
+    )
     asset_paths = []
     for parity_type in ("energy", "kappa"):
         manifest_path = (
@@ -267,19 +286,22 @@ def test_publish_parity_assets_once(
         )
         manifest_path.parent.mkdir(parents=True, exist_ok=True)
         manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
-        asset_path = (
-            tmp_path / f"site/static/{parity_type}-parity/assets/{entry['asset']}"
-        )
-        asset_path.parent.mkdir(parents=True, exist_ok=True)
-        asset_path.write_bytes(asset_bytes)
-        asset_paths.append(asset_path)
+        for name in asset_names:
+            asset_path = tmp_path / f"site/static/{parity_type}-parity/assets/{name}"
+            asset_path.parent.mkdir(parents=True, exist_ok=True)
+            asset_path.write_bytes(asset_bytes)
+            asset_paths.append(asset_path)
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(ingest, "release_asset_digests", dict)
     assert ingest.main(["--publish-parity"]) == 0
     assert len(run_cmd_calls) == 2
     assert all(
         command[:4] == ("gh", "release", "upload", "v1.0.0")
-        for command in run_cmd_calls
+        and command[4:]
+        == tuple(
+            f"site/static/{parity_type}-parity/assets/{name}" for name in asset_names
+        )
+        for command, parity_type in zip(run_cmd_calls, ("energy", "kappa"), strict=True)
     )
     assert all("--clobber" not in command for command in run_cmd_calls)
 
@@ -289,7 +311,7 @@ def test_publish_parity_assets_once(
     assert ingest.main(["--publish-parity"]) == 1
     assert not run_cmd_calls
 
-    published = {entry["asset"]: f"sha256:{entry['sha256']}"}
+    published = dict.fromkeys(asset_names, f"sha256:{entry['sha256']}")
     monkeypatch.setattr(ingest, "release_asset_digests", lambda: published)
     run_cmd_calls.clear()
     assert ingest.main(["--publish-parity"]) == 0

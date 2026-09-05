@@ -242,7 +242,8 @@ def test_write_yaml_results_masks_outliers_and_updates_yaml(
                     "geo_opt": {},
                 }
             }
-        )
+        ),
+        encoding="utf-8",
     )
     mock_model = cast("Model", SimpleNamespace(yaml_path=str(yaml_path)))
     run_metadata = {
@@ -252,7 +253,7 @@ def test_write_yaml_results_masks_outliers_and_updates_yaml(
         "hostnames": ["node-1"],  # audit-only fields must not leak into the YAML
     }
     discovery_runner._write_yaml_results(mock_model, artifacts, run_metadata)  # noqa: SLF001
-    written = yaml.safe_load(yaml_path.read_text())
+    written = yaml.safe_load(yaml_path.read_text(encoding="utf-8"))
     discovery_yaml = written["metrics"]["discovery"]
     # normpath makes the comparison robust to Windows CI, where tmp_path sits on a
     # different drive than the repo (relpath impossible -> absolute native path)

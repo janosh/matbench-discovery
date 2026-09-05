@@ -31,10 +31,9 @@ def reject_json_constant(const: str) -> None:
 
 
 def load_payload(name: str) -> dict[str, Any]:
-    """Load a committed figure payload by stem - either a gzipped aggregate
-    ``<name>.json.gz`` or a line-delimited ``<name>.jsonl`` (reassembled like the site's
-    jsonl Vite plugin). The exporter writes ``allow_nan=False`` so NaN can't reach disk;
-    the aggregate path also rejects NaN/Infinity literals to catch drift.
+    """Load a committed payload by stem: gzipped ``<name>.json.gz`` or ``<name>.jsonl``
+    (reassembled like the site's jsonl Vite plugin). The exporter writes
+    ``allow_nan=False``; the aggregate path also rejects NaN/Infinity to catch drift.
     """
     path = f"{SITE_FIG_DATA}/{name}.json.gz"
     if os.path.isfile(path):
@@ -94,9 +93,7 @@ def payload_model_keys(name: str) -> set[str]:
 
 
 def test_no_orphan_payloads() -> None:
-    """Every committed payload file is covered by a shape test below (and thus has a
-    consumer page); orphans should be deleted, not committed.
-    """
+    """Every committed payload has a shape test below (and thus a consumer page)."""
     aggregates: set[str] = set()  # gzipped <name>.json.gz (static payloads)
     jsonl: set[str] = set()  # line-delimited <name>.jsonl (multi-model payloads)
     for entry in os.listdir(SITE_FIG_DATA):
@@ -115,10 +112,7 @@ def test_no_orphan_payloads() -> None:
 
 
 def test_per_element_each_errors_payload() -> None:
-    """The route-local per-element-errors .jsonl (imported by per-element-errors.ts) is
-    readable and well-shaped: each column maps a model_key/metadata label to a dict of
-    finite per-element values (None allowed for gaps).
-    """
+    """Each per-element-each-errors column maps a key to finite per-element values."""
     path = f"{SITE_DIR}/routes/models/per-element-each-errors.jsonl"
     payload = figs.read_jsonl_payload(path)
     assert_num_list(list(payload["mp_occurrences"].values()))
@@ -401,10 +395,7 @@ DISCOVERY_PAYLOADS = (
 
 @pytest.mark.parametrize("name", DISCOVERY_PAYLOADS)
 def test_discovery_payload_covers_active_models(name: str) -> None:
-    """Each discovery figure must include every active model with discovery metrics
-    (by model_key), so a partial regen that drops models fails fast instead of silently
-    shipping an incomplete leaderboard figure.
-    """
+    """Each discovery figure covers every active model with discovery metrics."""
     expected = {model.key for model in Model.active() if model.metrics.get("discovery")}
     assert len(expected) > 30, f"sanity: too few discovery models ({len(expected)})"
     keys = payload_model_keys(name)
@@ -501,9 +492,7 @@ def test_geo_opt_payload_covers_active_models(name: str) -> None:
 
 
 def test_kappa_payload_covers_active_models() -> None:
-    """The kappa-103-analysis payload must include every active model with kappa_103
-    predictions, so a partial regen fails fast instead of silently dropping models.
-    """
+    """kappa-103-analysis covers every active model with kappa_103 predictions."""
     expected = {
         model.key
         for model in Model.active()

@@ -9,7 +9,6 @@ export const prerender = true
 // Ensure homepage URL ends with a slash for consistent path joining
 const base_url = pkg.homepage.endsWith(`/`) ? pkg.homepage : `${pkg.homepage}/`
 
-// Formats model data as XML for RSS feed
 function format_model_for_rss(model: ModelData): string {
   const discovery = model.metrics?.discovery
   const discovery_metrics = discovery?.full_test_set ?? discovery?.unique_prototypes
@@ -70,7 +69,7 @@ function format_model_for_rss(model: ModelData): string {
   `.trim()
 }
 
-// Generates an RSS feed of all models, newest first
+// RSS feed of all models, newest first
 export function GET() {
   const sorted_models = MODELS.toSorted(by_benchmark_added_desc)
   const headers = { 'Content-Type': `application/xml` }

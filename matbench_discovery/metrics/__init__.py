@@ -36,5 +36,4 @@ def metrics_df_from_yaml(nested_keys: Sequence[str]) -> pd.DataFrame:
             exc.add_note(f"{model.label=}")
             raise
 
-    # Return DataFrame with models as rows instead of columns
     return pd.DataFrame.from_dict(out_dict, orient="index")

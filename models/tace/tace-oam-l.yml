@@ -205,12 +205,24 @@ metrics:
     kappa_103:
       pred_file:
         name: models/tace/tace-oam-l/2026-04-09-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/63590373
-        size: 8215708
-        md5: c9b3fe92fd4c3d03627fa9f6ea9ab2b7
+        url: https://figshare.com/files/68221414
+        size: 8215801
+        md5: bdc03cb8c58df9a76698454a75869050
       κ_SRME: 0.126
       κ_SRE: 0.0502
       κ_SRD: -0.0054
       κ_failure_rate: 0.0
       imaginary_mode_rate: 0.0
       spectrum_w1: 0.0626
+      phonon_file:
+        name: models/tace/tace-oam-l/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+        size: 1287478123
+        md5: 9026986a57a21393bfe0bf919e5caefb
+      force_file:
+        name: models/tace/tace-oam-l/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+        size: 8719014
+        md5: 700091c326762fcfa003dac82827cd4f
+      run_info_file:
+        name: models/tace/tace-oam-l/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+        size: 8542
+        md5: 7c38e2e7f86e44be9093f141fb6bf101

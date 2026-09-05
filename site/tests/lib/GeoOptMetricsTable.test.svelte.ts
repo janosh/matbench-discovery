@@ -26,7 +26,6 @@ describe(`GeoOptMetricsTable`, () => {
     const header_texts = headers.map((h) => h.textContent?.trim())
     const header_html = headers.map((h) => h.innerHTML)
 
-    // Model column present
     expect(header_texts).toContain(`Model`)
 
     // RMSD header omits the unit for a concise default column header
@@ -41,7 +40,6 @@ describe(`GeoOptMetricsTable`, () => {
     const fmax_header = header_html.find((h) => h.includes(`f<sub>max</sub>`))
     expect(fmax_header).toContain(`(${HYPERPARAMS.max_force.unit})`)
 
-    // Visible hyperparams present
     expect(header_texts).toContain(HYPERPARAMS.ase_optimizer.label)
     expect(header_texts).toContain(HYPERPARAMS.max_steps.label)
     expect(header_texts).toContain(HYPERPARAMS.cell_filter.label)
@@ -52,7 +50,6 @@ describe(`GeoOptMetricsTable`, () => {
       header_html.some((h) => h.includes(HYPERPARAMS.graph_construction_radius.label)),
     ).toBe(false)
 
-    // At least some symmetry metrics present
     const symmetry_labels = Object.values(GEO_OPT_SYMMETRY_METRICS).map(
       (metric) => metric.label,
     )

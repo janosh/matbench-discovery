@@ -11,13 +11,10 @@
   import { get_pred_file_urls } from '$lib/models.svelte'
   import pkg from '$site/package.json'
   import type { ChemicalElement } from 'matterviz'
-  import { ButtonGroup, CopyButton, Icon } from 'svelte-widgets'
+  import { ButtonGroup, CopyButton, Icon, JsonTree } from 'svelte-widgets'
   import {
-    Alert,
     Calendar,
     CalendarCheck,
-    Check,
-    Copy,
     Directory,
     Docs,
     DOI,
@@ -38,7 +35,8 @@
   import type { D3InterpolateName } from 'matterviz/colors'
   import { click_outside, tooltip } from 'svelte-widgets/attachments'
   import { SvelteSet } from 'svelte/reactivity'
-  import { bind_url_params, valid_query_param } from '$lib/url-state.svelte'
+  import { bind_url_params } from '$lib/url-state.svelte'
+  import { valid_query_param } from 'svelte-widgets/url-params'
   import type { LoadStatus } from '$lib/asset-loader'
   import { parse_dependency_spec } from '$lib/environment'
   import { per_element_each_errors as per_elem_each_errors } from '$lib/per-element-errors'
@@ -195,14 +193,7 @@
       {@const pip_cmd = `pip install ${model.pypi.split(`/`).pop()}`}
       <code style="padding: 0 4pt; place-content: center">
         {pip_cmd}
-        <CopyButton
-          content={pip_cmd}
-          labels={{
-            ready: { icon: Copy, text: `` },
-            success: { icon: Check, text: `` },
-            error: { icon: Alert, text: `` },
-          }}
-        />
+        <CopyButton content={pip_cmd} />
       </code>
     {/if}
   </section>
@@ -424,11 +415,7 @@
   {#if model.hyperparams}
     <section class="hyperparams">
       <h2>Hyperparams</h2>
-      <ul>
-        {#each Object.entries(model.hyperparams) as [key, value] (key)}
-          <li><strong>{key}:</strong> <code>{JSON.stringify(value)}</code></li>
-        {/each}
-      </ul>
+      <JsonTree value={model.hyperparams} />
     </section>
   {/if}
 

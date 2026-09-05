@@ -126,6 +126,32 @@ export function as_phonon_dos(dos: RawDos | undefined): PhononDos | null {
   return { type: `phonon`, frequencies: dos.frequencies, densities: dos.densities }
 }
 
+// The stored DOS is peak-normalized for overlaying DFT and ML curves, but harmonic
+// thermal properties integrate the DOS, so rescale it to the 3 modes per atom the
+// histogram of all mesh frequencies represents. Deliberately integrate the full grid,
+// imaginary modes included: matterviz's thermal_properties then skips them without
+// renormalizing, exactly like phonopy, so unstable predictions correctly show a high-T
+// heat capacity below 3 k_B per atom. Normalizing over w > 0 only would hide that.
+export function dos_per_atom(dos: PhononDos): PhononDos {
+  const { frequencies, densities } = dos
+  let integral = 0
+  for (let idx = 1; idx < frequencies.length; idx++) {
+    integral +=
+      ((densities[idx - 1] + densities[idx]) / 2) *
+      (frequencies[idx] - frequencies[idx - 1])
+  }
+  if (!(integral > 0))
+    throw new Error(`Phonon DOS integrates to ${integral}, expected > 0`)
+  return { ...dos, densities: densities.map((density) => (3 * density) / integral) }
+}
+
+// Whether the DOS carries weight at negative frequencies, i.e. the structure is
+// dynamically unstable under this model. dos_per_atom deliberately keeps those modes
+// in the integral so the thermal curves come out depressed (see above); this lets the
+// UI say why, instead of showing an unexplained sub-3k_B heat capacity
+export const has_imaginary_modes = (dos: PhononDos): boolean =>
+  dos.frequencies.some((freq, idx) => freq < 0 && dos.densities[idx] > 0)
+
 export function kappa_structure(
   base: KappaParityBase,
   material_id: string,

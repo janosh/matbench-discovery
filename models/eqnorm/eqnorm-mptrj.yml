@@ -215,12 +215,24 @@ metrics:
     n_systems: 17
   phonons:
     kappa_103:
+      run_info_file:
+        name: models/eqnorm/eqnorm-mptrj/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+        size: 7662
+        md5: 6a605c6ae1662045c208ce5ed51c9e84
+      phonon_file:
+        name: models/eqnorm/eqnorm-mptrj/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+        size: 1326042491
+        md5: 6e269fa4a3ce63197f6137621e53bc42
+      force_file:
+        name: models/eqnorm/eqnorm-mptrj/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+        size: 8785393
+        md5: 01fee46ba7178cc47fafb394716efb01
       κ_SRME: 0.4079
       pred_file:
         name: models/eqnorm/eqnorm-mptrj/2025-06-16-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/55429706
-        size: 9278859
-        md5: 7baf53a0a70f3efaa94eb84c3489fbbf
+        url: https://figshare.com/files/68221318
+        size: 8402074
+        md5: 59b1548f6300a4b00675f5e079416316
       κ_SRE: 0.2722
       κ_SRD: -0.2165
       κ_failure_rate: 0.0097

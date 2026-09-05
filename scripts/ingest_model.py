@@ -29,8 +29,8 @@ from matbench_discovery.calculators import CALCULATORS
 from matbench_discovery.data import (
     file_ref_url,
     iter_file_refs,
-    parse_artifact_filename,
     task_coverage,
+    validate_artifact_path,
 )
 from matbench_discovery.discovery import ARCHIVED_DISCOVERY_MODELS, RelaxationSettings
 from matbench_discovery.enums import Model
@@ -160,9 +160,7 @@ def check_submission(
         artifact_refs = []
     for key_path, artifact_path in artifact_refs:
         try:
-            parse_artifact_filename(os.path.basename(artifact_path))
-            if os.path.dirname(artifact_path) != expected_artifact_dir:
-                raise ValueError("artifact is not directly model-owned")
+            validate_artifact_path(artifact_path, expected_artifact_dir)
         except ValueError as exc:
             checks.fail(f"Invalid {'.'.join(key_path)}: {exc}")
 
@@ -327,7 +325,12 @@ def publish_parity_assets(checks: Checklist) -> None:
             manifest = json.load(file)
         entries = [
             manifest["base"],
-            *manifest["model_assets"].values(),
+            # each model maps asset kind (parity/modes) to its metadata
+            *(
+                asset
+                for kinds in manifest["model_assets"].values()
+                for asset in kinds.values()
+            ),
             *manifest.get("structure_bundles", ()),
         ]
         pending: list[str] = []

@@ -16,16 +16,13 @@ describe(`Dataset Detail Page`, () => {
 
     mount(Page, { target: document.body, props: { data: { dataset } } })
 
-    // Check title is displayed
     expect(document.querySelector(`h1`)?.textContent).toBe(dataset.name)
 
-    // Check key metadata fields are displayed
     const meta_info = doc_query(`.meta-info`)
     expect(meta_info.textContent).toContain(`structures`)
     expect(meta_info.textContent).toContain(dataset.open ? `Open` : `Closed`)
     expect(meta_info.textContent).toContain(dataset.license)
 
-    // Check links and description have content
     expect(doc_query(`.links`).querySelectorAll(`a`).length).toBeGreaterThan(0)
     expect(doc_query(`.description`).textContent).toMatch(/\S/)
   })

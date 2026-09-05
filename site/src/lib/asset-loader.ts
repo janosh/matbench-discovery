@@ -38,9 +38,17 @@ export function parity_asset_resolver(
   kind: string,
   manifest: {
     local_asset_base_url: string
-    model_assets: Readonly<Record<string, { readonly asset: string } | undefined>>
+    model_assets: Readonly<
+      Record<
+        string,
+        Readonly<Record<string, { readonly asset: string } | undefined>> | undefined
+      >
+    >
   },
   env_base_url: string | undefined,
+  // which per-model asset to resolve; a model only has `modes` when its kappa run
+  // stored the harmonic sidecar, so `has_model` is false for the rest
+  asset_kind: `parity` | `modes` = `parity`,
 ) {
   const { model_assets } = manifest
   const configured_base_url = env_base_url?.trim() ?? ``
@@ -50,12 +58,12 @@ export function parity_asset_resolver(
   return {
     asset_url: (asset: string): string => `${base_url}/${asset.replace(/^\/+/, ``)}`,
     model_asset: (model_key: string): string => {
-      const asset = model_assets[model_key]?.asset
+      const asset = model_assets[model_key]?.[asset_kind]?.asset
       if (!asset) throw new Error(`No ${kind} parity model asset for ${model_key}`)
       return asset
     },
     has_model: (model_key: string | undefined): boolean =>
-      Boolean(model_key && model_assets[model_key]?.asset),
+      Boolean(model_key && model_assets[model_key]?.[asset_kind]?.asset),
   }
 }
 
@@ -92,7 +100,7 @@ export function load_json_asset<T>(url: string): Promise<T> {
     asset = read_asset_text(url)
       .then((text) => JSON.parse(text) as T)
       .catch((error: unknown) => {
-        asset_cache.delete(url)
+        if (asset_cache.get(url) === asset) asset_cache.delete(url)
         throw error
       })
     asset_cache.set(url, asset)

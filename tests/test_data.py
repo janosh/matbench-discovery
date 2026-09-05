@@ -244,13 +244,11 @@ def test_load_df_wbm_with_preds(
     for model_name in models:
         model = Model[model_name]
         if max_error_threshold is not None:
-            # Check if predictions exceeding the threshold are filtered out
             error = abs(
                 df_wbm_with_preds[model.key] - df_wbm_with_preds[MbdKey.e_form_dft]
             )
             assert np.all(error[~error.isna()] <= max_error_threshold)
         else:
-            # If no threshold is set, all predictions should be present
             assert df_wbm_with_preds[model.key].isna().sum() == 0
 
 
@@ -293,17 +291,14 @@ def test_load_df_wbm_max_error_threshold() -> None:
 
 def test_load_df_wbm_with_preds_errors(df_float: pd.DataFrame) -> None:
     """Test error handling in load_df_wbm_with_preds function."""
-    # Test invalid model name
     with pytest.raises(ValueError, match="not found in Model"):
         load_df_wbm_with_preds(models=["InvalidModel"])
 
-    # Test negative error threshold
     with pytest.raises(
         ValueError, match="max_error_threshold=-1 must be a positive number"
     ):
         load_df_wbm_with_preds(max_error_threshold=-1)
 
-    # Test missing canonical prediction column
     with (
         # Make glob return a non-empty list to skip the mock data loading path
         patch("matbench_discovery.data.glob", return_value=["dummy_file.csv"]),
@@ -385,18 +380,16 @@ def test_prediction_errors_and_element_enrichment(
 
 def test_update_yaml_file(tmp_path: Path) -> None:
     """Update YAML at dotted paths; preserve comments; callables own the merge."""
-    test_file = f"{tmp_path}/test.yml"
-
-    initial_data = {"metrics": {"discovery": {"mae": 0.1, "pred_file": "old.csv"}}}
-    with open(test_file, mode="w") as file:
-        round_trip_yaml.dump(initial_data, file)
+    test_file = tmp_path / "test.yml"
+    initial_yaml = "metrics:\n  discovery: {mae: 0.1, pred_file: old.csv}\n"
+    test_file.write_text(initial_yaml, encoding="utf-8")
 
     update_data = {"mae": 0.2, "rmse": 0.3}
     updated_yaml = update_yaml_file(test_file, "metrics.discovery", update_data)
-    result = updated_yaml["metrics"]["discovery"]
-    assert result["mae"] == 0.2
-    assert result["rmse"] == 0.3
-    assert result["pred_file"] == "old.csv"
+    assert updated_yaml["metrics"]["discovery"] == {
+        **update_data,
+        "pred_file": "old.csv",
+    }
     assert update_data == {"mae": 0.2, "rmse": 0.3}
 
     updated_yaml = update_yaml_file(test_file, "metrics.new.nested.path", {"value": 42})
@@ -412,32 +405,29 @@ metrics:
     mae: 0.1  # Mean absolute error
     rmse: 0.2  # Root mean squared error
 """
-    with open(test_file, mode="w") as file:
-        file.write(yaml_with_comments)
+    test_file.write_text(yaml_with_comments, encoding="utf-8")
 
     updated_yaml = update_yaml_file(
         test_file, "metrics.discovery", {"mae": 0.3, "rmse": 0.4}
     )
     assert updated_yaml["metrics"]["discovery"] == {"mae": 0.3, "rmse": 0.4}
 
-    with open(test_file) as file:
-        content = file.read()
+    content = test_file.read_text(encoding="utf-8")
     assert "discovery:  # Discovery metrics\n    mae: 0.3" in content, f"{content=}"
+    assert "mae: 0.3  # Mean absolute error" in content
+    assert "rmse: 0.4  # Root mean squared error" in content
 
     commented_data = CommentedMap({"value": 1})
-    commented_data.yaml_add_eol_comment("A comment", "value")
-    updated_yaml = update_yaml_file(test_file, "new.path", commented_data)
-    assert updated_yaml["new"]["path"]["value"] == 1
-    with open(test_file) as file:
-        content = file.read()
+    commented_data.yaml_add_eol_comment("κ (W/mK)", "value")
+    updated_yaml = update_yaml_file(test_file, "metrics.discovery", commented_data)
+    assert updated_yaml["metrics"]["discovery"]["value"] == 1
+    content = test_file.read_text(encoding="utf-8")
     assert "discovery:  # Discovery metrics\n    mae: 0.3" in content, f"{content=}"
-    assert "value: 1  # A comment" in content, f"{content=}"
+    assert "value: 1  # κ (W/mK)" in content, f"{content=}"
+    assert "mae: 0.3  # Mean absolute error" in content
 
     # Callables ignore preserve_existing and may drop unspecified prior keys.
-    with open(test_file, mode="w") as file:
-        round_trip_yaml.dump(
-            {"metrics": {"discovery": {"mae": 0.1, "pred_file": "old.csv"}}}, file
-        )
+    test_file.write_text(initial_yaml, encoding="utf-8")
 
     def replace_mae_only(section: dict[str, object]) -> dict[str, object]:
         """Return only the updated field (drops unspecified prior keys)."""
@@ -450,10 +440,7 @@ metrics:
     assert updated["metrics"]["discovery"] == {"mae": 0.9}
 
     # Dict updates honor preserve_existing.
-    with open(test_file, mode="w") as file:
-        round_trip_yaml.dump(
-            {"metrics": {"discovery": {"mae": 0.1, "pred_file": "old.csv"}}}, file
-        )
+    test_file.write_text(initial_yaml, encoding="utf-8")
     updated = update_yaml_file(
         test_file, "metrics.discovery", {"mae": 0.5}, preserve_existing=True
     )
@@ -481,7 +468,7 @@ def test_update_yaml_file_lock_survives_differing_tmpdir(
     into a corrupt YAML file.
     """
     test_file = f"{tmp_path}/test.yml"
-    with open(test_file, mode="w") as file:
+    with open(test_file, mode="w", encoding="utf-8") as file:
         round_trip_yaml.dump({"metrics": {}}, file)
 
     lock_paths: list[str] = []
@@ -509,6 +496,53 @@ def test_update_yaml_file_lock_survives_differing_tmpdir(
 
     assert lock_paths[0] == lock_paths[1]
     assert tmp_path.as_posix() not in lock_paths[0]  # never beside the target
+
+
+@pytest.mark.parametrize("use_symlink", [False, True])
+@pytest.mark.parametrize("failure_stage", ["dump", "replace"])
+def test_update_yaml_file_preserves_original_on_write_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    use_symlink: bool,
+    failure_stage: str,
+) -> None:
+    """Failed YAML writes preserve original bytes, symlinks, and file permissions."""
+    target = tmp_path / "model.yml"
+    original = "metrics:\n  discovery: {mae: 0.1}\n"
+    target.write_text(original, encoding="utf-8")
+    target.chmod(0o640)
+    original_mode = target.stat().st_mode & 0o777
+    path = target
+    if use_symlink:
+        path = tmp_path / "link.yml"
+        path.symlink_to(target)
+    expected_files = set(tmp_path.iterdir())
+
+    def fail_dump(_data: object, stream: io.TextIOBase) -> None:
+        """Simulate a partially written serialization failure."""
+        stream.write("partial YAML")
+        raise OSError("dump failed")
+
+    def fail_replace(_source: str, _destination: str) -> None:
+        """Simulate an unsuccessful atomic replacement."""
+        raise OSError("replace failed")
+
+    with monkeypatch.context() as patch_context:
+        if failure_stage == "dump":
+            patch_context.setattr(round_trip_yaml, "dump", fail_dump)
+        else:
+            patch_context.setattr(data_module.os, "replace", fail_replace)
+        with pytest.raises(OSError, match=f"{failure_stage} failed"):
+            update_yaml_file(path, "metrics.discovery", {"mae": 0.2})
+    assert target.read_text(encoding="utf-8") == original
+    assert path.is_symlink() is use_symlink
+    assert set(tmp_path.iterdir()) == expected_files
+    update_yaml_file(path, "metrics.discovery", {"mae": 0.3})
+    with target.open(encoding="utf-8") as file:
+        assert round_trip_yaml.load(file)["metrics"]["discovery"]["mae"] == 0.3
+    assert target.stat().st_mode & 0o777 == original_mode
+    assert path.is_symlink() is use_symlink
+    assert set(tmp_path.iterdir()) == expected_files
 
 
 # --- model artifact filenames / FileRef helpers ---

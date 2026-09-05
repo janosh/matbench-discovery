@@ -1,5 +1,7 @@
 import { parse_dependency_spec } from '$lib/environment'
 import { describe, expect, it, vi } from 'vitest'
+import pkg from '../../package.json' with { type: 'json' }
+import { svelte_config } from '../../vite.config'
 
 describe(`parse_dependency_spec`, () => {
   it.each([
@@ -79,14 +81,25 @@ describe(`parse_dependency_spec`, () => {
   })
 })
 
-it(`uses SvelteKit's stable default version in production`, async () => {
-  vi.stubEnv(`NODE_ENV`, `production`)
+// svelte_config is evaluated at module load, so re-import after stubbing NODE_ENV
+it.each([
+  { node_env: `production`, expected: undefined },
+  { node_env: `development`, expected: { name: `dev` } },
+])(`kit version is $expected when NODE_ENV=$node_env`, async ({ node_env, expected }) => {
+  vi.stubEnv(`NODE_ENV`, node_env)
   vi.resetModules()
   try {
-    const { default: svelte_config } = await import(`../../svelte.config`)
-    expect(svelte_config.kit?.version).toBeUndefined()
+    const { svelte_config: fresh_config } = await import(`../../vite.config`)
+    expect(fresh_config.version).toStrictEqual(expected)
   } finally {
     vi.unstubAllEnvs()
     vi.resetModules()
   }
+})
+
+it(`first svelte preprocessor rewrites pkg.homepage links to site-internal paths`, async () => {
+  const [strip_homepage] = svelte_config.preprocess
+  const content = `<a href="${pkg.homepage}/models">models</a> ${pkg.homepage}`
+  const result = await strip_homepage.markup?.({ content, filename: `readme.md` })
+  expect(result?.code).toBe(`<a href="/models">models</a> `)
 })

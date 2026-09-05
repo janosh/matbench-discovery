@@ -236,12 +236,24 @@ metrics:
     kappa_103:
       pred_file:
         name: models/nequix/nequix-mp-1-pft/2026-01-12-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/61019518
-        size: 8156601
-        md5: 5ac260ddcdd16f201de2cf45d7a1f646
+        url: https://figshare.com/files/68221390
+        size: 8156583
+        md5: d69aee7058ba61bd11a7f1f1060d67ae
       κ_SRME: 0.3066
       κ_SRE: 0.1689
       κ_SRD: -0.0962
       κ_failure_rate: 0.0097
       imaginary_mode_rate: 0.0097
       spectrum_w1: 0.1979
+      phonon_file:
+        name: models/nequix/nequix-mp-1-pft/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+        size: 1315646068
+        md5: a28560f16b0c6eefd63aafd52c27344f
+      force_file:
+        name: models/nequix/nequix-mp-1-pft/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+        size: 8680038
+        md5: a8ed406ef9c5fb4203f8239d88d2fba1
+      run_info_file:
+        name: models/nequix/nequix-mp-1-pft/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+        size: 8409
+        md5: 0747ffa24b8dd417518a6250adc865fe

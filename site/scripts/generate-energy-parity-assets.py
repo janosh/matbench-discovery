@@ -10,12 +10,14 @@ from typing import TYPE_CHECKING, Final, TypeGuard
 from zipfile import ZipFile
 
 from asset_helpers import (
+    PARITY_MANIFEST_SCHEMA_VERSION,
+    ModelAssets,
     clean_floats,
     clean_ints,
     compact_extxyz,
     is_asset_metadata,
+    prune_unreferenced_assets,
     read_manifest,
-    remove_model_assets,
     resolve_models,
     retained_parity_assets,
     write_json_gz,
@@ -137,7 +139,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     previous_manifest = read_manifest(manifest_path)
     target_keys = {model.key for model in models} if args.models else set()
     structure_identity = {
-        "schema_version": 2,
+        "schema_version": PARITY_MANIFEST_SCHEMA_VERSION,
         "row_count": len(material_ids),
         "material_ids_sha256": material_ids_sha256,
         "structure_shard_size": args.structure_shard_size,
@@ -173,23 +175,11 @@ def main(argv: Sequence[str] | None = None) -> None:
         "structure_shard_size": args.structure_shard_size,
     }
     base_meta: dict[str, str] | None = None
-    model_assets: dict[str, dict[str, str]] = {}
+    model_assets: ModelAssets = {}
     if args.models:
         base_meta, model_assets = retained_parity_assets(
             previous_manifest, target_keys, base, args.asset_prefix
         )
-    stale_patterns: list[str] = []
-    if not args.models:
-        stale_patterns += [
-            f"{args.asset_prefix}-base*.json.gz",
-            f"{args.asset_prefix}-model-*.json.gz",
-        ]
-    if reused_bundles is None:
-        stale_patterns.append(f"{args.asset_prefix}-structures-*.json.gz")
-    for pattern in stale_patterns:
-        for path in asset_dir.glob(pattern):
-            path.unlink()
-    remove_model_assets(asset_dir, args.asset_prefix, target_keys)
     if base_meta is None:
         base_meta = write_json_gz(asset_dir / f"{args.asset_prefix}-base.json.gz", base)
 
@@ -200,7 +190,8 @@ def main(argv: Sequence[str] | None = None) -> None:
             "e_form_pred": clean_floats(df_preds[model.key], ENERGY_DECIMALS),
         }
         meta = write_json_gz(asset_dir / asset_name, {"model": model_payload})
-        model_assets[model.key] = meta
+        # energy models have no harmonic sidecar, so only the "parity" kind
+        model_assets[model.key] = {"parity": meta}
 
     structure_bundles = reused_bundles or write_structure_shards(
         material_ids,
@@ -219,6 +210,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         "structure_bundles": structure_bundles,
     }
     write_manifest(manifest_path, manifest)
+    # Commit the manifest before deleting assets referenced by its previous version.
+    for removed in prune_unreferenced_assets(asset_dir, args.asset_prefix, manifest):
+        print(f"Pruned unreferenced asset {removed}")
 
 
 if __name__ == "__main__":

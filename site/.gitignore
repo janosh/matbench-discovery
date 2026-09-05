@@ -1,13 +1,3 @@
-# dependencies
 node_modules
-
-# production build
-.svelte-kit
-build
-
-# secrets
 .env
-
-# coverage
-coverage-summary.json
 coverage

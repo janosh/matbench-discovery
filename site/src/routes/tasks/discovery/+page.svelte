@@ -7,8 +7,8 @@
     bind_url_params,
     sort_from_query,
     sort_url_entries,
-    valid_query_param,
   } from '$lib/url-state.svelte'
+  import { valid_query_param } from 'svelte-widgets/url-params'
   import * as labels from '$lib/labels'
   import { DISCOVERY_SETS, type DiscoverySet } from '$lib/types'
   import HullConstructionNote from './hull-construction-note.md'
@@ -42,7 +42,7 @@
   let scatter_x = $state(default_scatter_x)
   let scatter_y = $state(default_scatter_y)
 
-  const scatter_keys = labels.scatter_options_by_key
+  const scatter_keys = labels.scatter_option_keys
   const read_url_params = (params: URLSearchParams) => {
     discovery_set = valid_query_param(
       params,

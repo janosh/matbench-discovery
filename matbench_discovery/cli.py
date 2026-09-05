@@ -95,6 +95,5 @@ def complete_models() -> list[Model]:
     ]
 
 
-# Set env var to auto-confirm file downloads when --auto-download is passed
 if cli_args.auto_download:
     os.environ["MBD_AUTO_DOWNLOAD_FILES"] = "true"

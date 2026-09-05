@@ -65,12 +65,11 @@ def test_calc_diatomic_curve_results() -> None:
 
 def test_calc_diatomic_curve_energy_trend() -> None:
     """Test that energy follows expected trend with distance."""
-    # Test with a range of distances around the equilibrium bond length for Cu2
     distances = np.logspace(1, -1, 40)  # Cu-Cu has larger equilibrium distance
     results = calc_diatomic_curve([("Cu", "Cu")], EMT(), "test", distances, {})
 
     energies = results["Cu-Cu"]["energies"]
-    # Energy should have a minimum at the equilibrium distance
+    # energy minimum must sit at the equilibrium distance, i.e. strictly interior
     min_energy_idx = np.argmin(energies)
     assert min_energy_idx > 0  # not at the shortest distance
     assert min_energy_idx < len(energies) - 1  # not at the longest distance
@@ -78,8 +77,7 @@ def test_calc_diatomic_curve_energy_trend() -> None:
 
 def test_calc_diatomic_curve_force_directions() -> None:
     """Test that forces point in the expected directions."""
-    # Test at very short and very long distances
-    distances = [2.0, 5.0]  # Å (adjusted for Cu-Cu)
+    distances = [2.0, 5.0]  # Å, very short and very long for Cu-Cu
     results = calc_diatomic_curve([("Cu", "Cu")], EMT(), "test", distances, {})
 
     forces: list[list[list[float]]] = results["Cu-Cu"]["forces"]  # ty: ignore[invalid-assignment]

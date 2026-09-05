@@ -204,11 +204,23 @@ metrics:
       κ_SRME: 1.7707
       pred_file:
         name: models/eqv2/eqv2-m-omat-salex-mp/2024-11-09-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/52134893
-        size: 8906650
-        md5: 3706a97220b7c4814d7cf6190b09592d
+        url: https://figshare.com/files/68221333
+        size: 8906926
+        md5: f690e14913fbfabd5748affd3962046c
       κ_SRE: 1.4827
       κ_SRD: -0.1591
       κ_failure_rate: 0.0583
       imaginary_mode_rate: 0.0583
       spectrum_w1: 2.3255
+      phonon_file:
+        name: models/eqv2/eqv2-m-omat-salex-mp/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+        size: 1307790494
+        md5: 7604118d0818247d892998807430e28a
+      force_file:
+        name: models/eqv2/eqv2-m-omat-salex-mp/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+        size: 8849392
+        md5: ae7ef82f463fac4c0bb7a7554526551c
+      run_info_file:
+        name: models/eqv2/eqv2-m-omat-salex-mp/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+        size: 8234
+        md5: d7b469c4289b3ba742951717213ae429

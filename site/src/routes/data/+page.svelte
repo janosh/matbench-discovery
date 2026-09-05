@@ -18,13 +18,12 @@
   import { BarPlot, sunburst_from_labels_parents, Sunburst } from 'matterviz/plot'
   import { Icon, MultiSelect } from 'svelte-widgets'
   import { Info } from 'svelte-widgets/icons'
+  import { bind_url_params, url_color_scale } from '$lib/url-state.svelte'
   import {
-    bind_url_params,
     bool_from_param,
     bool_url_entry,
-    url_color_scale,
     valid_query_param,
-  } from '$lib/url-state.svelte'
+  } from 'svelte-widgets/url-params'
   import { tooltip } from 'svelte-widgets/attachments'
   import MPtrjElemCountsPtable from './[slug]/MPtrjElemCountsPtable.svelte'
   import MpTrjNSitesHist from './[slug]/MpTrjNSitesHist.svelte'

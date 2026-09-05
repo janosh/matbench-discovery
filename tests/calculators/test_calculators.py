@@ -19,9 +19,7 @@ from matbench_discovery.enums import Model
 
 
 def test_load_calculator(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Emt loads with no extra deps; dtype is ignored by models that don't declare it;
-    unknown keys raise a helpful error.
-    """
+    """EMT loads with no deps, undeclared dtype is ignored, unknown keys raise."""
     # emt has no model YAML: must stay an eager CalcSpec, not _runtime_calc_spec.
     assert isinstance(CALCULATORS._data["emt"], calculators.CalcSpec)  # noqa: SLF001
     assert isinstance(load_calculator("emt"), EMT)
@@ -197,31 +195,21 @@ def test_pet_factory_casts_exported_model(
     model_capabilities = SimpleNamespace(dtype="float32")
     float64_dtype = object()
 
-    def capabilities_stub() -> SimpleNamespace:
-        """Return mutable model capabilities."""
-        return model_capabilities
-
     def cast_model(**kwargs: object) -> SimpleNamespace:
         """Capture the requested torch dtype and device."""
         captured.update(kwargs)
         return fake_model
 
-    fake_model = SimpleNamespace(capabilities=capabilities_stub, to=cast_model)
-
-    def load_model(_path: str) -> SimpleNamespace:
-        """Return the fake exported model."""
-        return fake_model
-
-    def make_calculator(_model: object, **_kwargs: object) -> SimpleNamespace:
-        """Return a placeholder Metatomic calculator."""
-        return SimpleNamespace()
+    fake_model = SimpleNamespace(capabilities=lambda: model_capabilities, to=cast_model)
 
     torch_module = ModuleType("torch")
     torch_module.__dict__.update(float32=object(), float64=float64_dtype)
     metatomic_torch_module = ModuleType("metatomic.torch")
-    metatomic_torch_module.__dict__["load_atomistic_model"] = load_model
+    metatomic_torch_module.__dict__["load_atomistic_model"] = lambda _path: fake_model
     calculator_module = ModuleType("metatomic.torch.ase_calculator")
-    calculator_module.__dict__["MetatomicCalculator"] = make_calculator
+    calculator_module.__dict__["MetatomicCalculator"] = lambda _model, **_kwargs: (
+        SimpleNamespace()
+    )
     for module_name, module in {
         "torch": torch_module,
         "metatomic": ModuleType("metatomic"),
@@ -230,10 +218,10 @@ def test_pet_factory_casts_exported_model(
     }.items():
         monkeypatch.setitem(sys.modules, module_name, module)
 
-    def export_stub(*_args: object, **_kwargs: object) -> None:
-        """Stand in for the separately tested export cache."""
-
-    monkeypatch.setattr(calculators, "_run_to_atomic_output", export_stub)
+    # Stand in for the separately tested export cache.
+    monkeypatch.setattr(
+        calculators, "_run_to_atomic_output", lambda *_args, **_kwargs: None
+    )
     calculators._pet("fake")(  # noqa: SLF001
         "cpu", dtype="float64", checkpoint=str(tmp_path / "model.ckpt")
     )
@@ -363,6 +351,8 @@ def test_atomic_command_output_recovers_after_timeout(
         seen_envs.append(env)
         n_calls += 1
         output_path = next(argument for argument in command if ".tmp." in argument)
+        assert output_path.endswith(".nequip.pth")
+        assert Path(output_path).parent == destination.parent
         Path(output_path).write_bytes(b"partial" if n_calls == 1 else b"complete")
         if n_calls == 1:
             raise subprocess.TimeoutExpired(command, timeout)
@@ -427,29 +417,54 @@ def test_atomic_command_output_recovers_after_timeout(
     assert "X" not in os.environ
 
 
+@pytest.mark.parametrize(
+    ("url", "resolved_url"),
+    [
+        ("https://example.com/model.ckpt", "https://example.com/model.ckpt"),
+        (
+            "https://huggingface.co/org/model/blob/main/model.ckpt",
+            "https://huggingface.co/org/model/resolve/main/model.ckpt",
+        ),
+        (
+            "https://huggingface.co.example.org/blob/model.ckpt",
+            "https://huggingface.co.example.org/blob/model.ckpt",
+        ),
+        (
+            "https://github.com/org/model/blob/main/model.ckpt",
+            "https://github.com/org/model/raw/main/model.ckpt",
+        ),
+        (
+            "https://uni.sciebo.de/s/token?key=abc",
+            "https://uni.sciebo.de/s/token/download?key=abc",
+        ),
+    ],
+)
 def test_download_checkpoint_replaces_zero_byte_cache(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    url: str,
+    resolved_url: str,
 ) -> None:
     """download_checkpoint redownloads zero-byte cached checkpoint files."""
     from matbench_discovery.remote import fetch
 
-    url = "https://example.com/model.ckpt"
+    monkeypatch.setenv("HF_TOKEN", "hf_test")
     monkeypatch.setattr(calculators, "CHECKPOINT_DIR", f"{tmp_path}")
     from_ref_mock = classmethod(
         lambda _model_cls, _model_key: SimpleNamespace(metadata={"checkpoint_url": url})
     )
     monkeypatch.setattr(Model, "from_ref", from_ref_mock)
 
-    download_file_mock = (  # noqa: E731
-        lambda destination_path, _url, **_kwargs: Path(destination_path).write_bytes(
-            b"checkpoint"
-        )
-    )
+    def download_file_mock(destination_path: str, download_url: str) -> None:
+        """Verify normalized URLs; the shared downloader owns authentication."""
+        assert download_url == resolved_url
+        Path(destination_path).write_bytes(b"checkpoint")
+
     monkeypatch.setattr(fetch, "download_file", download_file_mock)
-    url_hash = hashlib.sha256(url.encode()).hexdigest()[:12]
+    url_hash = hashlib.sha256(resolved_url.encode()).hexdigest()[:12]
     dest = tmp_path / f"fake-{url_hash}.ckpt"
     dest.write_bytes(b"")
 
-    actual_path = os.path.normpath(calculators.download_checkpoint("fake"))
+    actual_path = os.path.normpath(calculators.download_checkpoint("fake", ext=".ckpt"))
     assert actual_path == os.path.normpath(f"{dest}")
     assert dest.read_bytes() == b"checkpoint"

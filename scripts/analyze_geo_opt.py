@@ -54,7 +54,7 @@ def analyze_model_symprec(
     *,
     debug_mode: int = 0,
     pbar_pos: int = 0,  # tqdm progress bar position
-    overwrite: bool = False,  # Whether to overwrite existing analysis files
+    overwrite: bool = False,
 ) -> pd.DataFrame | None:
     """Analyze a single model for a single symprec value."""
     geo_opt_metrics: dict[str, Any] = model.metrics.get("geo_opt") or {}
@@ -70,7 +70,6 @@ def analyze_model_symprec(
         )
         return None
 
-    # Load model structures
     try:
         df_ml_structs = pd.read_json(geo_opt_path, lines=True)
     except Exception as exc:
@@ -92,7 +91,6 @@ def analyze_model_symprec(
     if debug_mode:
         df_ml_structs = df_ml_structs.head(debug_mode)
 
-    # Convert structures
     model_structs = {
         mat_id: Structure.from_dict(struct_dict)
         for mat_id, struct_dict in df_ml_structs["structure"].items()
@@ -117,7 +115,7 @@ def analyze_model_symprec(
     else:
         geo_opt_csv_path = f"{geo_opt_dir}/{analysis_name}"
 
-        # Try to download existing analysis file only if path matches exactly
+        # only reuse/download a published analysis file if its path matches exactly
         symprec_metrics = geo_opt_metrics.get(symprec_str, {})
         analysis_ref = symprec_metrics.get("analysis_file")
         analysis_url = file_ref_url(analysis_ref)
@@ -125,7 +123,6 @@ def analyze_model_symprec(
         analysis_file_path = f"{ROOT}/{analysis_file}" if analysis_file else ""
 
         if analysis_file_path == geo_opt_csv_path:
-            # Paths match - try to download if file missing
             if not os.path.isfile(geo_opt_csv_path) and analysis_url:
                 maybe_auto_download_file(
                     analysis_url,
@@ -149,7 +146,6 @@ def analyze_model_symprec(
         action = "Overwriting" if os.path.isfile(geo_opt_csv_path) else "Analyzing"
         print(f"{action} {model.label} for {symprec=}")
 
-        # Analyze symmetry for current symprec
         pbar_desc = f"Process {pbar_pos}: Analyzing {model.label} for {symprec=}"
         df_model_analysis = symmetry.get_sym_info_from_structs(
             model_structs,
@@ -157,7 +153,6 @@ def analyze_model_symprec(
             symprec=symprec,
         )
 
-        # Compare with DFT reference
         pbar_desc = f"Process {pbar_pos}: Comparing DFT vs {model.label} for {symprec=}"
         df_ml_geo_analysis = symmetry.pred_vs_ref_struct_symmetry(
             df_model_analysis,
@@ -167,12 +162,10 @@ def analyze_model_symprec(
             pbar=dict(desc=pbar_desc, position=pbar_pos, leave=True),
         )
 
-        # Save model results
         os.makedirs(os.path.dirname(geo_opt_csv_path), exist_ok=True)
         df_ml_geo_analysis.to_csv(geo_opt_csv_path)
         print(f"Completed {model.label} {symprec=}, saved to {geo_opt_csv_path}")
 
-    # Calculate metrics and write to YAML
     metrics_dict = geo_opt.calc_geo_opt_metrics(df_ml_geo_analysis)
     df_metrics = pd.DataFrame([metrics_dict])
     if debug_mode:
@@ -186,15 +179,14 @@ def analyze_model_symprec(
 
 
 def main(raw_args: list[str] | None = None) -> int:
-    """Main function to analyze geometry optimization results.
+    """Analyze geometry optimization results.
 
     Args:
-        raw_args: Command line arguments. If None, sys.argv[1:] will be used.
+        raw_args: Command line arguments. Defaults to sys.argv[1:].
 
     Returns:
-        int: Exit code (0 for success).
+        Exit code (0 for success).
     """
-    # Add geo_opt specific arguments to the central CLI parser
     geo_opt_group = cli_parser.add_argument_group(
         "geo_opt", "Arguments for geometry optimization analysis"
     )
@@ -207,12 +199,9 @@ def main(raw_args: list[str] | None = None) -> int:
     )
     args, _unknown = cli_parser.parse_known_args(raw_args)
 
-    # set to > 0 to activate debug mode, only that many structures will be analyzed
+    # > 0 activates debug mode, analyzing only that many structures
     debug_mode: Final[int] = args.debug
-    # List of symprec values to analyze
     symprec_values: Final[Sequence[float]] = args.symprec
-
-    # Get list of models to analyze
     moyo_version = importlib.metadata.version("moyopy")
 
     # %%
@@ -232,9 +221,8 @@ def main(raw_args: list[str] | None = None) -> int:
     for symprec in symprec_values:
         symprec_str = f"symprec={canonical_scientific_notation(symprec)}"
 
-        # Always use full DFT analysis file, regardless of debug mode, ensuring
-        # reference data available for all model structures regardless of debug mode
-        # and sorting of material IDs
+        # always the full DFT analysis file, even in debug mode, so reference data
+        # covers all model structures whatever subset/ordering they use
         dft_csv_path = (
             f"{ROOT}/data/wbm/dft-geo-opt-{symprec_str}-moyo={moyo_version}.csv.gz"
         )
@@ -250,7 +238,6 @@ def main(raw_args: list[str] | None = None) -> int:
             )
             dft_analysis_dict[symprec].to_csv(dft_csv_path)
 
-    # Create list of all model-symprec combinations
     tasks = list(itertools.product(args.models, symprec_values))
     n_workers = min(len(tasks), args.workers)
 
@@ -274,9 +261,8 @@ def main(raw_args: list[str] | None = None) -> int:
             )
             for idx, (model_name, symprec) in enumerate(tasks)
         ]
-        # Wait for all tasks to complete
         for future in futures:
-            future.result()  # This will raise any exceptions that occurred
+            future.result()  # re-raises any worker exception
 
     print(f"\nAll {len(tasks)} model-symprec combinations processed!")
     return 0

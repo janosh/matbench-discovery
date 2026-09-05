@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import re
+from contextlib import nullcontext
 from functools import cache
 from glob import glob
 from typing import Any
@@ -14,7 +15,7 @@ from jsonschema import Draft7Validator
 
 from matbench_discovery import DATA_DIR, PKG_DIR, ROOT
 from matbench_discovery.calculators import CALCULATORS
-from matbench_discovery.data import DATASETS, iter_file_refs, parse_artifact_filename
+from matbench_discovery.data import DATASETS, iter_file_refs, validate_artifact_path
 from matbench_discovery.discovery import ARCHIVED_DISCOVERY_MODELS
 from matbench_discovery.enums import ArchitectureType, Model, Open, Targets, Task
 
@@ -65,11 +66,31 @@ def test_model_yaml_schema_and_identity(yaml_path: str) -> None:
     )
     expected_artifact_dir = f"models/{family_dir}/{model_key}"
     for _key_path, artifact_path in iter_file_refs(metadata):
-        assert os.path.dirname(artifact_path) == expected_artifact_dir, (
-            f"Artifact {artifact_path!r} must live under {expected_artifact_dir!r} "
-            f"({yaml_path})"
+        validate_artifact_path(artifact_path, expected_artifact_dir)
+
+
+@pytest.mark.parametrize(
+    ("directory", "valid"),
+    [
+        ("models/mace/mace-mp-0", True),
+        ("models/mace/mace-mp-0/harmonic/nested", True),
+        ("models/mace/mace-mp-0/harmonic/..", True),
+        ("models/mace/mace-mp-0/../other", False),
+        ("models/mace/mace-mp-0/harmonic/../../other", False),
+        ("models/mace/mace-mp-0-extra", False),
+        ("../models/mace/mace-mp-0", False),
+        ("/models/mace/mace-mp-0", False),
+        ("C:/models/mace/mace-mp-0", False),
+        (r"models/mace/mace-mp-0/harmonic\..\..\other", False),
+    ],
+)
+def test_artifact_path_containment(directory: str, valid: bool) -> None:
+    """Allow nested artifacts without accepting paths outside the model directory."""
+    with nullcontext() if valid else pytest.raises(ValueError, match="must live"):
+        validate_artifact_path(
+            f"{directory}/2026-09-05-phonons-kappa-103-phonons.json.gz",
+            "models/mace/mace-mp-0",
         )
-        parse_artifact_filename(os.path.basename(artifact_path))
 
 
 def test_modeling_tasks_align_with_schema() -> None:

@@ -19,17 +19,22 @@ if (!locator_dependency) throw new Error(`missing TACE-OAM-L dependency`)
 const locator_detail = parse_dependency_spec(locator_dependency).detail
 
 describe(`Model Detail Page`, () => {
-  it(`renders model details correctly`, () => {
-    mount(ModelPage, { target: document.body, props: { data: test_page_data } })
+  it(`renders model details correctly`, async () => {
+    const hyperparams = {
+      training: { learning_rate: 0.001 },
+      upstream_config: { layers: [32, 64], enabled: true },
+    }
+    mount(ModelPage, {
+      target: document.body,
+      props: { data: { ...test_page_data, model: { ...test_model, hyperparams } } },
+    })
 
-    // Check basic model info
     expect(document.querySelector(`h1`)?.textContent).toBe(test_model.model_name)
     expect(document.body.textContent).toContain(test_model.model_version)
     expect(document.body.textContent).toContain(test_model.dates.benchmark_added)
     if (test_model.dates.paper_published)
       expect(document.body.textContent).toContain(test_model.dates.paper_published)
 
-    // Check meta info section
     const meta_info = document.querySelector(`.meta-info`)
     expect(meta_info?.textContent).toContain(`parameters`)
     expect(
@@ -44,7 +49,6 @@ describe(`Model Detail Page`, () => {
       discovery_detail?.querySelector(`.energy-parity-controls`)?.textContent,
     ).toContain(`Missing preds`)
 
-    // Check links section
     const links = document.querySelectorAll(`.links a`)
     const expected_link_count = [
       test_model.repo,
@@ -55,7 +59,6 @@ describe(`Model Detail Page`, () => {
     ].filter(Boolean).length
     expect(links.length).toBeGreaterThanOrEqual(expected_link_count)
 
-    // Check authors section
     const authors = document.querySelectorAll(`.authors li`)
     expect(authors).toHaveLength(test_model.authors.length)
     for (const [idx, yaml_author] of test_model.authors.entries()) {
@@ -82,7 +85,6 @@ describe(`Model Detail Page`, () => {
       )
     }
 
-    // Check trained by section if present
     const expected_trainers = test_model.trained_by ?? []
     const trainers = document.querySelectorAll(`.trained-by li`)
     expect(trainers).toHaveLength(expected_trainers.length)
@@ -94,7 +96,6 @@ describe(`Model Detail Page`, () => {
       ).toBe(true)
     }
 
-    // Check model info section
     const model_info = document.querySelector(`.model-info`)
     const expected_role =
       test_model.targets === `E` ? `Energy predictor` : `Interatomic potential`
@@ -105,19 +106,27 @@ describe(`Model Detail Page`, () => {
     expect(model_info?.textContent).toContain(`Discovery Train Task`)
     expect(model_info?.textContent).toContain(`Discovery Test Task`)
 
-    // Check training set section: one dataset link per training_sets entry
+    // one dataset link per training_sets entry
     expect(document.querySelectorAll(`.training-set a`)).toHaveLength(
       test_model.training_sets.length,
     )
 
-    // Hyperparams section renders iff the model declares hyperparams
-    const hyperparams = document.querySelector(`.hyperparams`)
-    const hyperparameter_entries = Object.entries(test_model.hyperparams ?? {})
-    expect(hyperparams !== null).toBe(test_model.hyperparams != null)
-    for (const [key, value] of hyperparameter_entries) {
-      expect(hyperparams?.textContent).toContain(key)
-      expect(hyperparams?.textContent).toContain(JSON.stringify(value))
-    }
+    // Nested hyperparameters remain accessible after folding and searching.
+    const tree = document.querySelector(`.hyperparams .json-tree`)
+    expect(tree).not.toBeNull()
+    for (const key of Object.keys(hyperparams)) expect(tree?.textContent).toContain(key)
+    tree?.querySelector<HTMLButtonElement>(`button[title="Collapse all"]`)?.click()
+    await tick()
+    expect(tree?.querySelector(`[data-path="training.learning_rate"]`)).toBeNull()
+    const search = tree?.querySelector<HTMLInputElement>(`input[type="search"]`)
+    if (!search) throw new Error(`missing hyperparameter search`)
+    search.value = `learning_rate`
+    search.dispatchEvent(new Event(`input`, { bubbles: true }))
+    await vi.waitFor(() => {
+      expect(
+        tree?.querySelector(`[data-path="training.learning_rate"]`)?.textContent,
+      ).toContain(`0.001`)
+    })
 
     // null md_per_system page data -> no per-system MD section
     expect(document.querySelector(`section.md-per-system`)).toBeNull()
@@ -126,9 +135,15 @@ describe(`Model Detail Page`, () => {
   it(`preserves both ends of overflowing dependency details`, () => {
     mount(ModelPage, {
       target: document.body,
-      props: { data: { model: locator_model, md_per_system: null } },
+      props: {
+        data: {
+          model: { ...locator_model, hyperparams: undefined },
+          md_per_system: null,
+        },
+      },
     })
 
+    expect(document.querySelector(`.hyperparams`)).toBeNull()
     const link = document.querySelector<HTMLAnchorElement>(`.deps .dependency-detail`)
     if (!link) throw new Error(`missing dependency detail link`)
     const [leading, trailing] = link.querySelectorAll(`span`)

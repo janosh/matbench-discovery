@@ -90,10 +90,10 @@ phonondb_pbe_103_structures:
   md5: 0b149802835e260aa3ab0c7e3c88625b
 
 phonondb_pbe_103_kappa_no_nac:
-  url: https://figshare.com/files/59988539
+  url: https://figshare.com/files/68221426
   path: phonons/2024-11-09-kappas-phononDB-PBE-noNAC.json.gz
   description: 103 phononDB structures run by Togo with PBE settings received in private communication. See https://github.com/atztogo/phonondb/blob/bba206/README.md#url-links-to-phono3py-finite-displacement-method-inputs-of-103-compounds-on-mdr-at-nims-pbe for details.
-  md5: 70c7a8b0df4cbb4d98f12aea5f61aeee
+  md5: e9a0addbe4d0c163fd66736e40f0408a
 
 dynamat_v1_0_md_trajectories:
   path: md/2026-06-29-dynamat-v1.0-reference-trajectories.h5

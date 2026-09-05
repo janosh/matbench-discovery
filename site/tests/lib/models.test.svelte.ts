@@ -243,22 +243,20 @@ describe(`update_models_cps`, () => {
   })
 
   it(`should update CPS for models based on metrics and current weights`, () => {
-    // Act: Call the function under test
     update_models_cps(MODELS, CPS_CONFIG)
 
-    // Assert: Check if at least one model has a non-NaN CPS value
     const models_with_cps = MODELS.filter((model) => !isNaN(Number(model.CPS)))
     expect(models_with_cps.length).toBeGreaterThan(0)
   })
 
   it(`should set CPS to NaN when required metrics are missing`, () => {
-    // Act: Set weights that would require all metrics to be present
+    // weights requiring every metric to be present
     CPS_CONFIG.F1.weight = 0.3
     CPS_CONFIG.RMSD.weight = 0.3
     CPS_CONFIG.κ_SRME.weight = 0.4
     update_models_cps(MODELS, CPS_CONFIG)
 
-    // Assert: Check if some models have NaN CPS (due to missing metrics)
+    // models missing a metric get NaN CPS
     const models_with_nan_cps = MODELS.filter((model) => isNaN(Number(model.CPS)))
     expect(models_with_nan_cps.length).toBeGreaterThan(0)
   })
@@ -288,7 +286,7 @@ describe(`update_models_cps`, () => {
   })
 
   it(`should handle different weight configurations correctly`, () => {
-    // First configuration - only F1 matters
+    // only F1 matters
     CPS_CONFIG.F1.weight = 1.0
     CPS_CONFIG.RMSD.weight = 0.0
     CPS_CONFIG.κ_SRME.weight = 0.0
@@ -296,7 +294,7 @@ describe(`update_models_cps`, () => {
 
     const f1_cps_values = MODELS.map((model) => Number(model.CPS))
 
-    // Second configuration - only RMSD matters
+    // only RMSD matters
     CPS_CONFIG.F1.weight = 0.0
     CPS_CONFIG.RMSD.weight = 1.0
     CPS_CONFIG.κ_SRME.weight = 0.0

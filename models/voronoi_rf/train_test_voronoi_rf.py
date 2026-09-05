@@ -35,7 +35,7 @@ print(f"{task_type=}")
 out_dir = f"{module_dir}/{today}-train-test"
 os.makedirs(out_dir, exist_ok=True)
 out_path = f"{out_dir}/e-form-preds-{task_type}.csv.gz"
-model_path = f"{out_dir}/voronoi-rf-model.joblib"  # Path to save the model
+model_path = f"{out_dir}/voronoi-rf-model.joblib"
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path=} already exists, exiting early")
 

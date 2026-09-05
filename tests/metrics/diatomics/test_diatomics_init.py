@@ -28,7 +28,8 @@ def write_diatomics_yaml(
     yaml_path.write_text(
         yaml.safe_dump(
             {"model_name": "test_model", "metrics": {"diatomics": dict(metrics)}}
-        )
+        ),
+        encoding="utf-8",
     )
     model.__dict__.pop("metadata", None)
 
@@ -293,7 +294,6 @@ def test_diatomic_curve_metrics(
     with pytest.raises(ValueError, match="distance and force counts differ"):
         DiatomicCurves.from_dict(raw_dict)
 
-    # Test with custom parameters
     custom_metrics: dict[str, dict[str, object]] = {
         MbdKey.pbe_wall_dist_mae: {"thresholds_ev": (1.0,)},
     }
@@ -303,8 +303,6 @@ def test_diatomic_curve_metrics(
     assert set(custom_results["H"]) == set(custom_metrics)
     assert custom_results["H"][MbdKey.pbe_wall_dist_mae] >= 0
 
-    # Test with interpolation parameter
-    # Create a copy of ref_curves with slightly different distances
     modified_dists = ref_dists.copy() * 1.001  # 0.1% difference
     modified_ref_curves = DiatomicCurves(
         distances=modified_dists,
@@ -317,7 +315,6 @@ def test_diatomic_curve_metrics(
         hetero_nuclear=ref_curves.hetero_nuclear,
     )
 
-    # This should raise an error without interpolation
     with pytest.raises(
         ValueError,
         match="Reference and predicted distances must be same when interpolate=False",
@@ -332,7 +329,6 @@ def test_diatomic_curve_metrics(
         )
         assert "H" in interp_results
 
-    # Test with invalid metric name
     with pytest.raises(
         ValueError,
         match=re.escape(
@@ -364,7 +360,7 @@ def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
 
     result = diatomics.write_metrics_to_yaml(model, {})
     assert result == existing_file_refs
-    yaml_content = yaml_path.read_text()
+    yaml_content = yaml_path.read_text(encoding="utf-8")
     assert "diatomics:" in yaml_content
     assert f"url: {pred_file_url}" in yaml_content
     assert "pred_file_url:" not in yaml_content
@@ -403,7 +399,7 @@ def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
     }
     result = diatomics.write_metrics_to_yaml(model, metrics_by_element)
 
-    yaml_content = yaml_path.read_text()
+    yaml_content = yaml_path.read_text(encoding="utf-8")
     assert "metrics:" in yaml_content
     assert "diatomics:" in yaml_content
     for metric_key, metric_value in expected_metrics.items():
@@ -439,13 +435,12 @@ def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
         "excluded_formula_reasons": {"He-He": "exploding errors"},
         **expected_metrics,
     }
-    yaml_content = yaml_path.read_text()
+    yaml_content = yaml_path.read_text(encoding="utf-8")
     assert yaml_content.index("hardware:") < yaml_content.index("energy_jump:")
     assert "max_rss_gb: 4.2" in yaml_content
     assert "max_gpu_mem_gb: 11.5" in yaml_content
 
-    # a recompute with current empty exclusions clears stale exclusions while preserving
-    # the other existing run metadata
+    # empty current exclusions clear stale ones but preserve other run metadata
     model.__dict__.pop("metadata", None)
     recomputed = diatomics.write_metrics_to_yaml(
         model, metrics_by_element, run_metadata={"excluded_formula_reasons": {}}
@@ -535,7 +530,7 @@ def test_write_metrics_drops_deprecated_and_handles_nan(
     result = diatomics.write_metrics_to_yaml(model, metrics)
 
     assert "smoothness" not in result  # deprecated key fully dropped
-    assert "smoothness" not in yaml_path.read_text()
+    assert "smoothness" not in yaml_path.read_text(encoding="utf-8")
     assert file_ref_url(result["pred_file"]) == "https://figshare.com/files/x"
     assert "pred_file_url" not in result
     assert result["tortuosity"] == 2.0  # mean over the one finite value
@@ -546,4 +541,4 @@ def test_write_metrics_drops_deprecated_and_handles_nan(
         model, {"H": {MbdKey.tortuosity: float("nan")}}
     )
     assert "tortuosity" not in all_nan
-    assert "tortuosity" not in yaml_path.read_text()
+    assert "tortuosity" not in yaml_path.read_text(encoding="utf-8")

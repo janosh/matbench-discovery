@@ -8,21 +8,28 @@ from pymatviz.enums import Key
 def read_kappa_json(path: str) -> pd.DataFrame:
     """Read a kappa prediction/reference JSON file indexed by material_id.
 
-    Normalizes legacy IDs, symmetry columns, and Voigt conductivity tensors.
+    Requires canonical field names and unique, non-empty material IDs.
     """
     from matbench_discovery.phonons.schema import normalize_kappa_dataframe
 
     df_kappa = pd.read_json(path)
-    if not {str(Key.mat_id), "mp_id"} & set(df_kappa):
+    if str(Key.mat_id) not in df_kappa:
         raise ValueError(
-            "read_kappa_json requires an 'mp_id' or 'material_id' column, "
+            "read_kappa_json requires a canonical 'material_id' column, "
             f"got columns={list(df_kappa)!r}"
         )
     df_kappa = normalize_kappa_dataframe(df_kappa)
-    return df_kappa.set_index(str(Key.mat_id))
+    return df_kappa.set_index(str(Key.mat_id), verify_integrity=True)
 
 
-def check_imaginary_freqs(frequencies: np.ndarray, threshold: float = -0.01) -> bool:
+# acoustic modes at gamma come out slightly negative from numerical noise (measured
+# ~-5e-8 THz on stable fcc Cu), so only frequencies below this count as imaginary
+IMAGINARY_FREQ_THRESHOLD = -0.01
+
+
+def check_imaginary_freqs(
+    frequencies: np.ndarray, threshold: float = IMAGINARY_FREQ_THRESHOLD
+) -> bool:
     """Check if frequencies are imaginary.
 
     Args:

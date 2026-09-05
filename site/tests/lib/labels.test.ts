@@ -9,63 +9,32 @@ import { describe, expect, it } from 'vitest'
 
 describe(`format_power_ten`, () => {
   it.each([
-    {
-      input: `1.23e-4`,
-      expected: `1.23×10<sup>-4</sup>`,
-      description: `negative exponent`,
-    },
-    {
-      input: `5.67e+8`,
-      expected: `5.67×10<sup>8</sup>`,
-      description: `positive exponent with plus sign`,
-    },
-    {
-      input: `9.01e12`,
-      expected: `9.01×10<sup>12</sup>`,
-      description: `mantissa ending in 1 is not collapsed`,
-    },
-    {
-      input: `1e6`,
-      expected: `10<sup>6</sup>`,
-      description: `simplifies 1×10 to just 10`,
-    },
-    {
-      input: `1×10<sup>3</sup>`,
-      expected: `10<sup>3</sup>`,
-      description: `collapses pre-formatted 1×10`,
-    },
-    {
-      input: `2.5×10<sup>-3</sup>`,
-      expected: `2.5×10<sup>-3</sup>`,
-      description: `already formatted is unchanged`,
-    },
-    { input: ``, expected: ``, description: `empty string` },
-    {
-      input: `just a regular string with numbers 123.456`,
-      expected: `just a regular string with numbers 123.456`,
-      description: `no scientific notation`,
-    },
-    {
-      input: `some text 1.23e-4 more text`,
-      expected: `some text 1.23×10<sup>-4</sup> more text`,
-      description: `works within text`,
-    },
-    {
-      input: `1.23E-4`, // uppercase E
-      expected: `1.23×10<sup>-4</sup>`,
-      description: `uppercase E notation`,
-    },
-    {
-      input: `multiple 1.2e3 and 4.5e-6 values`,
-      expected: `multiple 1.2×10<sup>3</sup> and 4.5×10<sup>-6</sup> values`,
-      description: `multiple scientific notations`,
-    },
-  ])(
-    `formats '$input' to '$expected' ($description)`,
-    ({ input, expected }: { input: string; expected: string }) => {
-      expect(format_power_ten(input)).toBe(expected)
-    },
-  )
+    [`negative exponent`, `1.23e-4`, `1.23×10<sup>-4</sup>`],
+    [`positive exponent with plus sign`, `5.67e+8`, `5.67×10<sup>8</sup>`],
+    [`mantissa ending in 1 is not collapsed`, `9.01e12`, `9.01×10<sup>12</sup>`],
+    [`simplifies 1×10`, `1e6`, `10<sup>6</sup>`],
+    [`collapses pre-formatted 1×10`, `1×10<sup>3</sup>`, `10<sup>3</sup>`],
+    [`already formatted`, `2.5×10<sup>-3</sup>`, `2.5×10<sup>-3</sup>`],
+    [`empty string`, ``, ``],
+    [
+      `no scientific notation`,
+      `just a regular string with numbers 123.456`,
+      `just a regular string with numbers 123.456`,
+    ],
+    [
+      `within text`,
+      `some text 1.23e-4 more text`,
+      `some text 1.23×10<sup>-4</sup> more text`,
+    ],
+    [`uppercase E notation`, `1.23E-4`, `1.23×10<sup>-4</sup>`],
+    [
+      `multiple scientific notations`,
+      `multiple 1.2e3 and 4.5e-6 values`,
+      `multiple 1.2×10<sup>3</sup> and 4.5×10<sup>-6</sup> values`,
+    ],
+  ])(`formats %s`, (_description, input, expected) => {
+    expect(format_power_ten(input)).toBe(expected)
+  })
 })
 
 describe(`format_property_path`, () => {

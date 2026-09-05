@@ -89,10 +89,8 @@ def calc_diatomic_curve(
     Returns:
         DiatomicResults: Potential energy and forces data for diatomic molecules.
     """
-    # saving results in dict: {"symbol-symbol": {"energies": [...], "forces": [...]}}
     expected_distances = np.asarray(distances)
     for idx, (z1, z2) in (pbar := tqdm(enumerate(pairs, start=1))):
-        # Convert atomic numbers to symbols if needed
         elem1 = atom_num_symbol_map.get(z1, z1)
         elem2 = atom_num_symbol_map.get(z2, z2)
         formula = f"{elem1}-{elem2}"

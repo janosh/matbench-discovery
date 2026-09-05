@@ -15,11 +15,9 @@ describe(`Datasets Page`, () => {
     const thead = doc_query(`thead`, table)
     const tbody = doc_query(`tbody`, table)
 
-    // Check header columns
     const header_cols = thead.querySelectorAll(`th`)
     expect(header_cols).toHaveLength(10)
 
-    // Verify expected column headers are present
     const column_headers = [...header_cols].map(
       (col) => col.textContent?.trim().replaceAll(/[↑↓]/g, ``) ?? ``,
     )
@@ -41,47 +39,24 @@ describe(`Datasets Page`, () => {
   })
 
   it(`properly renders resource links for datasets`, () => {
-    // Links column is the last column (10th, index 9)
-    const tbody = document.querySelector(`.${heatmap_class} tbody`)
-    if (!tbody) throw new Error(`Datasets table body not found`)
-    const rows = tbody.querySelectorAll(`tr`)
-
-    // Count resource links (Website, Download, DOI)
-    let resource_link_count = 0
-    rows.forEach((row) => {
-      const cells = row.querySelectorAll(`td`)
-      const links_cell = cells[9] // Updated Links column index
-      // Ensure the cell was found before querying links
-      if (!links_cell) return
-
-      const resource_links = [...links_cell.querySelectorAll(`a`)].filter(
-        (link) => link.hasAttribute(`title`) || link.hasAttribute(`data-original-title`),
-      )
-      resource_link_count += resource_links.length
-
-      // Each link should have target="_blank"
-      resource_links.forEach((link) => {
-        expect(link.getAttribute(`target`)).toBe(`_blank`)
-        expect(link.getAttribute(`rel`)).toContain(`noopener`)
-        const title =
-          link.getAttribute(`title`) ?? link.getAttribute(`data-original-title`)
-        expect([`Website`, `Download`, `DOI`]).toContain(title)
-        expect(link.getAttribute(`aria-label`)).toBe(title)
-      })
-    })
-
-    // There should be multiple resource links
-    expect(resource_link_count).toBeGreaterThan(10)
+    const resource_links = document.querySelectorAll(
+      `.${heatmap_class} tbody td:nth-child(10) a[title],
+       .${heatmap_class} tbody td:nth-child(10) a[data-original-title]`,
+    )
+    expect(resource_links.length).toBeGreaterThan(10)
+    for (const link of resource_links) {
+      expect(link.getAttribute(`target`)).toBe(`_blank`)
+      expect(link.getAttribute(`rel`)).toContain(`noopener`)
+      const title = link.getAttribute(`title`) ?? link.getAttribute(`data-original-title`)
+      expect([`Website`, `Download`, `DOI`]).toContain(title)
+      expect(link.getAttribute(`aria-label`)).toBe(title)
+    }
   })
 
   it(`properly renders API links for datasets`, () => {
-    // API column is the 9th column (index 8)
-    const rows = document.querySelectorAll(`.${heatmap_class} tbody tr`)
-    const api_links = [...rows].flatMap((row) =>
-      [...row.querySelectorAll(`td`)[8].children].filter(
-        (child): child is HTMLAnchorElement => child.tagName === `A`,
-      ),
-    )
+    const api_links = [
+      ...document.querySelectorAll(`.${heatmap_class} tbody td:nth-child(9) > a`),
+    ]
 
     // One API link per dataset native_api/optimade_api URL
     const by_string = (str_1: string, str_2: string) => str_1.localeCompare(str_2)
@@ -111,17 +86,11 @@ describe(`Datasets Page`, () => {
   })
 
   it(`formats numbers correctly in the table`, () => {
-    // Find Structures column (usually 2nd column) cells
-    const tbody = document.querySelector(`.${heatmap_class} tbody`)
-    const rows = tbody?.querySelectorAll(`tr`) ?? []
+    const structures_cells = [
+      ...document.querySelectorAll(`.${heatmap_class} tbody td:nth-child(2)`),
+    ]
 
-    // Get cells from second column (Structures)
-    const structures_cells = [...rows].map((row) => {
-      const cells = row.querySelectorAll(`td`)
-      return cells[1] // Second column (index 1)
-    })
-
-    // Check that at least some cells have formatted numbers (K/M for thousands/millions)
+    // K/M suffixes for thousands/millions
     const has_formatted_number = structures_cells.some((cell) => {
       const cell_text = cell?.textContent?.trim() ?? ``
       return cell_text !== `n/a` && /\d+(?:\.\d+)?[KM]/.test(cell_text)
@@ -131,30 +100,20 @@ describe(`Datasets Page`, () => {
   })
 
   it(`correctly displays method information in the table`, () => {
-    // Method is usually the 8th column (index 7)
-    const tbody = document.querySelector(`.${heatmap_class} tbody`)
-    const rows = tbody?.querySelectorAll(`tr`) ?? []
+    const method_cells = [
+      ...document.querySelectorAll(`.${heatmap_class} tbody td:nth-child(8)`),
+    ]
 
-    // Get cells from the Method column
-    const method_cells = [...rows].map((row) => {
-      const cells = row.querySelectorAll(`td`)
-      return cells[7] // Keep Method column index at 7
-    })
-
-    // At least some cells should have method information (not all n/a)
     const method_count = method_cells.filter(
       (cell) => cell?.textContent?.trim() !== `n/a`,
     ).length
 
-    // There should be at least several datasets with method information
     expect(method_count).toBeGreaterThan(3)
 
-    // Check for common methods like DFT or ML in the column
     const all_methods_text = method_cells
       .map((cell) => cell?.textContent?.trim())
       .join(` `)
 
-    // Should find at least one of these common methods
     expect(/DFT|ML|experiment|GW|DMFT|MD/.test(all_methods_text)).toBe(true)
   })
 })

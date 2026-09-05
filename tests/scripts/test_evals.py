@@ -10,21 +10,25 @@ Outcome = str | Exception | None  # skip reason, raised error, or success
 
 
 @pytest.mark.parametrize(
-    ("models", "outcomes", "expected_code"),
+    ("outcomes", "expected_code", "expected_tally"),
     [
-        ([], {}, 0),  # selecting nothing is not a failure
-        ([MODEL_A], {MODEL_A: None}, 0),
-        ([MODEL_A], {MODEL_A: "no artifact"}, 1),
-        ([MODEL_A], {MODEL_A: ValueError("boom")}, 1),
-        ([MODEL_A, MODEL_B], {MODEL_A: None, MODEL_B: "no artifact"}, 0),
-        ([MODEL_A, MODEL_B], {MODEL_A: None, MODEL_B: OSError("boom")}, 1),
+        ({}, 0, "0 skipped, 0 failed"),  # selecting nothing is not a failure
+        ({MODEL_A: None}, 0, "0 skipped, 0 failed"),
+        ({MODEL_A: "no artifact"}, 1, "1 skipped, 0 failed"),
+        ({MODEL_A: ValueError("boom")}, 1, "0 skipped, 1 failed"),
+        ({MODEL_A: None, MODEL_B: "no artifact"}, 0, "1 skipped, 0 failed"),
+        ({MODEL_A: None, MODEL_B: OSError("boom")}, 1, "0 skipped, 1 failed"),
+        ({MODEL_A: "no artifact", MODEL_B: KeyError("boom")}, 1, "1 skipped, 1 failed"),
     ],
-    ids=["empty", "ok", "all-skipped", "all-failed", "partial-skip", "partial-fail"],
+    ids=["empty", "ok", "skip", "error", "ok-skip", "ok-error", "skip-error"],
 )
 def test_evaluate_models_exit_code(
-    models: list[Model], outcomes: dict[Model, Outcome], expected_code: int
+    outcomes: dict[Model, Outcome],
+    expected_code: int,
+    expected_tally: str,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Errors fail; all-skipped non-empty runs return 1, while empty runs return 0."""
+    """Exit codes and summaries distinguish successful, skipped, and failed models."""
 
     def evaluate_one(model: Model) -> str | None:
         outcome = outcomes[model]
@@ -32,18 +36,5 @@ def test_evaluate_models_exit_code(
             raise outcome
         return outcome
 
-    assert evaluate_models("test", models, evaluate_one) == expected_code
-
-
-def test_evaluate_models_counts_errors_apart_from_skips(
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    """The summary must not report an errored model as skipped."""
-
-    def evaluate_one(model: Model) -> str | None:
-        if model is MODEL_B:
-            raise KeyError("boom")
-        return "no artifact"
-
-    assert evaluate_models("test", [MODEL_A, MODEL_B], evaluate_one) == 1
-    assert "1 skipped, 1 failed" in capsys.readouterr().out
+    assert evaluate_models("test", list(outcomes), evaluate_one) == expected_code
+    assert expected_tally in capsys.readouterr().out

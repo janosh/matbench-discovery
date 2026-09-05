@@ -223,11 +223,23 @@ metrics:
     n_systems: 17
   phonons:
     kappa_103:
+      run_info_file:
+        name: models/sevennet/sevennet-omni-i12/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+        size: 8028
+        md5: c9c73b0bdee0d4eb0a5bd27d4b3d2c0e
+      phonon_file:
+        name: models/sevennet/sevennet-omni-i12/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+        size: 1294150955
+        md5: 75cc9d073b5e5b52ef58ef5f58ee53f2
+      force_file:
+        name: models/sevennet/sevennet-omni-i12/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+        size: 8687705
+        md5: f63a12ea0a87778f99c673e6861e9eb7
       pred_file:
         name: models/sevennet/sevennet-omni-i12/2026-01-12-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/60977131
-        size: 8201591
-        md5: ea7e2e3753f76093f00457ad7f34a78c
+        url: https://figshare.com/files/68221411
+        size: 8201624
+        md5: ad9da6920825c6c962dae317786b291f
       κ_SRME: 0.1917
       κ_SRE: 0.0963
       κ_SRD: -0.045

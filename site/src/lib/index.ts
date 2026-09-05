@@ -52,7 +52,6 @@ for (const { notes, metadata_file } of MODELS) {
   notes.html ??= {}
 
   for (const [key, note] of Object.entries(notes)) {
-    // Skip if note was already parsed to HTML or is not a string
     if (typeof note !== `string` || key in notes.html) continue
 
     const html_note = md_to_html(note)
@@ -73,7 +72,6 @@ for (const [key, entry] of Object.entries(data_files)) {
   entry.html = md_to_html(`${entry.description}\n\n${data_file_links}`)
 }
 
-// Format date string into human-readable format
 export const format_date = (
   date: string | number,
   options?: Intl.DateTimeFormatOptions,

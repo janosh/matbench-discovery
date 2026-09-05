@@ -175,9 +175,8 @@ def build_reference(
                 replacements = []
             label = FUNC_LABEL[xc]
             if len(merged_points) < 2:
-                # surface dropped elements in the summary and quality report: a pair
-                # silently vanishing from the bundled reference between rebuilds
-                # (e.g. all candidate curves missing/corrupt) should be visible
+                # record dropped pairs so one vanishing between rebuilds (e.g. all
+                # candidate curves missing/corrupt) stays visible in the reports
                 increment_summary(summary, "skipped", label)
                 quality_rows.append(
                     {

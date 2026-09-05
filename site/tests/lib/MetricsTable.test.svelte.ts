@@ -57,7 +57,6 @@ describe(`MetricsTable`, () => {
       props: { col_filter: () => true },
     })
 
-    // Check table structure
     const table = document.querySelector(`table`)
     expect(table).toBeDefined()
     expect(table?.querySelector(`thead`)).toBeDefined()
@@ -70,7 +69,6 @@ describe(`MetricsTable`, () => {
       `0`,
     )
 
-    // Check essential columns are present (with sort indicators)
     const header_texts = header_cells().map((h) => h.textContent?.trim())
     const required_cols = [
       `Model`,
@@ -83,7 +81,6 @@ describe(`MetricsTable`, () => {
       `Links`,
     ]
 
-    // Make sure each required column is present
     for (const col of required_cols) {
       expect(header_texts).toContain(col)
     }
@@ -94,20 +91,16 @@ describe(`MetricsTable`, () => {
     const metric_order = [`CPS ↑`, `F1`, `DAF`].map((col) => header_texts.indexOf(col))
     expect(metric_order).toStrictEqual([...metric_order].toSorted((n1, n2) => n1 - n2))
 
-    // Test prediction files dropdown interaction
     const pred_files_button = doc_query<HTMLButtonElement>(
       `tbody button[aria-label="Download model prediction files"]`,
     )
-    expect(pred_files_button).toBeDefined() // Ensure at least one button exists
+    expect(pred_files_button).toBeDefined()
 
-    // Dropdown should not exist initially
     expect(document.querySelector(`.pred-files-dropdown`)).toBeNull()
 
-    // Click the button
     pred_files_button.click()
-    await tick() // Wait for state update and render
+    await tick()
 
-    // Dropdown should now exist
     let dropdown = document.querySelector(`.pred-files-dropdown`)
     expect(dropdown).toBeDefined()
     expect(dropdown?.textContent).toContain(`Files for`)
@@ -117,21 +110,17 @@ describe(`MetricsTable`, () => {
     document.body.dispatchEvent(new PointerEvent(`pointerdown`, { bubbles: true }))
     await tick()
 
-    // Dropdown should be gone after clicking outside
     dropdown = document.querySelector(`.pred-files-dropdown`)
     expect(dropdown).toBeNull()
 
-    // Test closing with Escape key
-    pred_files_button.click() // Reopen dropdown
+    pred_files_button.click() // reopen dropdown
     await tick()
     dropdown = document.querySelector(`.pred-files-dropdown`)
     expect(dropdown).toBeDefined()
 
-    // Dispatch Escape keydown event
     globalThis.dispatchEvent(new KeyboardEvent(`keydown`, { key: `Escape` }))
     await tick()
 
-    // Dropdown should be gone
     dropdown = document.querySelector(`.pred-files-dropdown`)
     expect(dropdown).toBeNull()
   })
@@ -205,11 +194,9 @@ describe(`MetricsTable`, () => {
 
     const header_texts = header_names()
 
-    // Check hidden columns
     expect(header_texts).not.toContain(`F1`)
     expect(header_texts).not.toContain(`DAF`)
 
-    // Check other columns still visible
     expect(header_texts).toContain(`Model`)
     expect(header_texts).toContain(`CPS`)
     expect(header_texts).toContain(`Prec`)
@@ -241,7 +228,7 @@ describe(`MetricsTable`, () => {
   )
 
   it(`filters models based on model_filter prop`, () => {
-    // First test: show no models
+    // show no models
     const no_model_filter = (_model: ModelData) => false
     mount(MetricsTable, {
       target: document.body,
@@ -254,7 +241,7 @@ describe(`MetricsTable`, () => {
     // HeatmapTable may render a "no data" placeholder row when empty
     expect(data_rows.length).toBeLessThanOrEqual(1)
 
-    // Second test: show all models
+    // show all models
     document.body.innerHTML = ``
     mount(MetricsTable, {
       target: document.body,
@@ -266,7 +253,7 @@ describe(`MetricsTable`, () => {
     const all_rows = document.querySelectorAll(`tbody tr`).length
     expect(all_rows).toBe(visible_row_count())
 
-    // Third test: show specific models (e.g., only models with CHG in name)
+    // only models with CHG in the name
     document.body.innerHTML = ``
     mount(MetricsTable, {
       target: document.body,
@@ -284,7 +271,6 @@ describe(`MetricsTable`, () => {
     )
     expect(filtered_rows.length).toBeLessThan(all_rows)
 
-    // Verify that filtered rows actually contain CHG
     filtered_rows.forEach((row) => {
       const model_cell = row.querySelector(`td[data-col="Model"]`)
       expect(model_cell?.textContent).toContain(`CHG`)
@@ -457,7 +443,6 @@ describe(`MetricsTable`, () => {
       async ({ props }) => {
         mount(MetricsTable, { target: document.body, props })
 
-        // Find Model column header
         const headers = header_cells()
         const model_header = headers.find((h) => h.textContent?.includes(`Model`))
 
@@ -471,10 +456,9 @@ describe(`MetricsTable`, () => {
             })
             .filter(Boolean) as string[]
 
-        model_header.click() // Click to sort (ascending A-Z)
+        model_header.click() // sort ascending A-Z
         await tick()
 
-        // Get model names after first sort
         const sorted_model_names = get_model_names()
 
         expect(sorted_model_names).toHaveLength(
@@ -483,23 +467,18 @@ describe(`MetricsTable`, () => {
           ),
         )
 
-        // Verify sorted in some alphabetical order (ascending or descending)
-        const ascending = [...sorted_model_names].toSorted((a, b) => a.localeCompare(b))
-        const is_ascending =
-          JSON.stringify(sorted_model_names) === JSON.stringify(ascending)
-        const is_descending =
-          JSON.stringify(sorted_model_names) === JSON.stringify(ascending.toReversed())
-        expect(is_ascending || is_descending).toBe(true)
+        // alphabetical in either direction
+        const ascending = sorted_model_names.toSorted((name_a, name_b) =>
+          name_a.localeCompare(name_b),
+        )
+        expect([ascending, ascending.toReversed()]).toContainEqual(sorted_model_names)
 
-        // Click again to reverse sort direction
         model_header.click()
         await tick()
 
         const reverse_sorted_model_names = get_model_names()
         // Second click should reverse the sort direction
-        expect(reverse_sorted_model_names).toStrictEqual(
-          is_ascending ? ascending.toReversed() : ascending,
-        )
+        expect(reverse_sorted_model_names).toStrictEqual(sorted_model_names.toReversed())
       },
     )
 
@@ -512,21 +491,18 @@ describe(`MetricsTable`, () => {
         },
       })
 
-      // Find CPS and Links column headers
       const headers = header_cells()
       const cps_header = headers.find((h) => h.textContent?.includes(`CPS`))
       if (!cps_header) throw new Error(`CPS column not found`)
       const links_header = headers.find((h) => h.textContent?.includes(`Links`))
       if (!links_header) throw new Error(`Links column not found`)
 
-      // Verify Links header has not-sortable class
       expect(links_header.classList.contains(`not-sortable`)).toBe(true)
 
       // Sort by CPS first (to establish a known order)
       cps_header.click()
       await tick()
 
-      // Get model names in current order
       const initial_models = [...document.querySelectorAll(`td[data-col="Model"]`)].map(
         (cell) => cell.textContent,
       )
@@ -535,7 +511,6 @@ describe(`MetricsTable`, () => {
       links_header.click()
       await tick()
 
-      // Get model names after clicking Links
       const after_links_click_models = [
         ...document.querySelectorAll(`td[data-col="Model"]`),
       ].map((cell) => cell.textContent)
@@ -546,7 +521,7 @@ describe(`MetricsTable`, () => {
   })
 
   describe(`Links Column`, () => {
-    it(`renders external links with proper attributes`, async () => {
+    it(`renders external links, unavailable icons, and prediction file buttons`, async () => {
       const col_filter = (col: Label) => [`Model`, `Links`].includes(col.label)
       mount(MetricsTable, {
         target: document.body,
@@ -555,17 +530,14 @@ describe(`MetricsTable`, () => {
 
       await tick() // Wait for component to process data
 
-      // Find all links cells
       const links_cells = [...document.querySelectorAll(`td[data-col="Links"]`)]
       expect(links_cells).toHaveLength(visible_row_count())
 
-      // Check that rows have links (at least some should)
       let rows_with_links = 0
       for (const cell of links_cells) {
         const links = [...cell.querySelectorAll(`a`)]
         if (links.length > 1) rows_with_links++
 
-        // Check each link has proper attributes
         for (const link of links) {
           expect(link.getAttribute(`target`)).toBe(`_blank`)
           expect(link.getAttribute(`rel`)).toBe(`noopener noreferrer`)
@@ -585,20 +557,6 @@ describe(`MetricsTable`, () => {
 
       // At least half of rows should have multiple links
       expect(rows_with_links).toBeGreaterThan(links_cells.length / 2)
-    })
-
-    it(`shows icon-unavailable for missing links`, async () => {
-      mount(MetricsTable, {
-        target: document.body,
-        props: {
-          col_filter: (col: Label) => [`Model`, `Links`].includes(col.label),
-        },
-      })
-
-      await tick() // Wait for component to process data
-
-      // Find all links cells
-      const links_cells = [...document.querySelectorAll(`td[data-col="Links"]`)]
 
       const missing_icon_titles = links_cells.flatMap((cell) =>
         [...cell.querySelectorAll(`span[title$="not available"] svg`)].map((icon) =>
@@ -611,17 +569,6 @@ describe(`MetricsTable`, () => {
       expect(missing_icon_titles.every((title) => title?.match(/not available/))).toBe(
         true,
       )
-    })
-
-    it(`renders prediction files button`, async () => {
-      mount(MetricsTable, {
-        target: document.body,
-        props: {
-          col_filter: (col: Label) => [`Model`, `Links`].includes(col.label),
-        },
-      })
-
-      await tick() // Wait for component to process data
 
       // Find all pred_files buttons (every row renders one)
       const pred_file_buttons = [
@@ -631,11 +578,9 @@ describe(`MetricsTable`, () => {
       ]
       expect(pred_file_buttons).toHaveLength(visible_row_count())
 
-      // Check button attributes
       for (const button of pred_file_buttons) {
         expect(button.getAttribute(`aria-label`)).toBe(`Download model prediction files`)
 
-        // Check for the SVG icon
         const svg = button.querySelector(`svg`)
         expect(svg).not.toBeNull()
       }
@@ -972,24 +917,21 @@ describe(`MetricsTable`, () => {
     })
 
     it(
-      `toggles filter state and updates UI labels correctly`,
+      `filters selected rows and updates toggle labels and highlighting`,
       { timeout: 30_000 },
       async () => {
         mount(MetricsTable, {
           target: document.body,
           props: { col_filter: () => true },
         })
+        const initial_count = get_rows().length
+        expect(initial_count).toBeGreaterThan(1)
 
-        // Select a model to make toggle visible
         double_click_row(get_rows()[0])
         await tick()
-
         const toggle = get_toggle()
         const label = get_toggle_label()
-        expect(toggle).not.toBeNull()
-        if (!toggle) return // Type guard
-
-        // Test toggle states
+        if (!toggle) throw new Error(`Toggle not found`)
         expect(toggle.checked).toBe(false)
         expect(label?.textContent).toContain(`Show only 1 selected`)
 
@@ -997,47 +939,13 @@ describe(`MetricsTable`, () => {
         await tick()
         expect(toggle.checked).toBe(true)
         expect(label?.textContent).toContain(`Show all`)
+        expect(get_rows()).toHaveLength(1)
+        expect(get_rows()[0].classList.contains(`highlight`)).toBe(false)
 
         toggle.click()
         await tick()
         expect(toggle.checked).toBe(false)
         expect(label?.textContent).toContain(`Show only 1 selected`)
-      },
-    )
-
-    it(
-      `filters rows and manages styling based on filter state`,
-      { timeout: 30_000 },
-      async () => {
-        mount(MetricsTable, {
-          target: document.body,
-          props: { col_filter: () => true },
-        })
-
-        const initial_count = get_rows().length
-        expect(initial_count).toBeGreaterThan(1)
-
-        // Select first row
-        double_click_row(get_rows()[0])
-        await tick()
-
-        // Enable filter
-        const toggle_enable = get_toggle()
-        if (!toggle_enable) throw new Error(`Toggle not found`)
-        toggle_enable.click()
-        await tick()
-
-        // Should show only selected row
-        expect(get_rows()).toHaveLength(1)
-        expect(get_rows()[0].classList.contains(`highlight`)).toBe(false) // No highlight when filtering
-
-        // Disable filter
-        const toggle_disable = get_toggle()
-        if (!toggle_disable) throw new Error(`Toggle not found`)
-        toggle_disable.click()
-        await tick()
-
-        // Should show all rows with highlight
         expect(get_rows()).toHaveLength(initial_count)
         expect(get_rows()[0].classList.contains(`highlight`)).toBe(true)
       },
@@ -1045,7 +953,7 @@ describe(`MetricsTable`, () => {
   })
 
   describe(`Column Reordering`, () => {
-    it(`initializes column_order with all columns, not just visible ones`, async () => {
+    it(`initializes all columns and displays visible columns in column_order`, async () => {
       const state = { column_order: [] as string[] }
       mount(MetricsTable, {
         target: document.body,
@@ -1070,41 +978,6 @@ describe(`MetricsTable`, () => {
       expect(state.column_order).toContain(`DAF`)
 
       expect(header_names()).toStrictEqual([`Model`, `F1`, `DAF`])
-    })
-
-    it.each([
-      { columns: [`Model`, `F1`, `DAF`], name: `basic columns` },
-      { columns: [`Model`, `F1`, `DAF`, `CPS`], name: `with CPS` },
-    ])(`maintains Model column first with $name`, async ({ columns }) => {
-      mount(MetricsTable, {
-        target: document.body,
-        props: {
-          col_filter: (col: Label) => columns.includes(col.key ?? col.label),
-        },
-      })
-      await tick()
-
-      const headers = header_cells()
-      expect(headers[0].textContent?.split(` `)[0]).toBe(`Model`)
-      expect(headers[0].classList.contains(`sticky-col`)).toBe(true)
-    })
-
-    it(`respects column_order for visible column display order`, async () => {
-      const state = { column_order: [] as string[] }
-      mount(MetricsTable, {
-        target: document.body,
-        props: {
-          get column_order() {
-            return state.column_order
-          },
-          set column_order(val) {
-            state.column_order = val
-          },
-          col_filter: (col: Label) =>
-            [`Model`, `F1`, `DAF`].includes(col.key ?? col.label),
-        },
-      })
-      await tick()
 
       const f1_idx = state.column_order.indexOf(`F1`)
       const daf_idx = state.column_order.indexOf(`DAF`)
@@ -1122,6 +995,23 @@ describe(`MetricsTable`, () => {
           ? visible_f1_pos < visible_daf_pos
           : visible_f1_pos > visible_daf_pos,
       ).toBe(true)
+    })
+
+    it.each([
+      { columns: [`Model`, `F1`, `DAF`], name: `basic columns` },
+      { columns: [`Model`, `F1`, `DAF`, `CPS`], name: `with CPS` },
+    ])(`maintains Model column first with $name`, async ({ columns }) => {
+      mount(MetricsTable, {
+        target: document.body,
+        props: {
+          col_filter: (col: Label) => columns.includes(col.key ?? col.label),
+        },
+      })
+      await tick()
+
+      const headers = header_cells()
+      expect(headers[0].textContent?.split(` `)[0]).toBe(`Model`)
+      expect(headers[0].classList.contains(`sticky-col`)).toBe(true)
     })
 
     it(`preserves column_order when toggling column visibility`, async () => {

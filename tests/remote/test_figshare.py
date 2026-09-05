@@ -1,17 +1,54 @@
 """Unit tests for Figshare API helper functions."""
 
 import hashlib
+from functools import partial
 from pathlib import Path
+from types import ModuleType
 from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
+from ruamel.yaml import YAML
 
+import scripts.upload_data_files_to_figshare as upload_data
+import scripts.upload_model_preds_to_figshare as upload_models
+from matbench_discovery.enums import Model
 from matbench_discovery.remote import figshare
 
 ARTICLE_URL = f"{figshare.ARTICLE_URL_PREFIX}/12345"
 KAPPA_FILE = "models/model1/ver1/file-kappa-103.json.gz"
+
+
+@pytest.mark.parametrize(
+    "uploader", [upload_data, upload_models], ids=["data", "models"]
+)
+def test_upload_preserves_unicode_yaml(
+    uploader: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Archive updates preserve UTF-8 metadata under a Windows default encoding."""
+    yaml_path = tmp_path / "metadata.yml"
+    original = "description: κ — Å — 声子\nmetrics: {}\n"
+    yaml_path.write_text(original, encoding="utf-8")
+    monkeypatch.setattr(
+        uploader, "open", partial(open, encoding="cp1252"), raising=False
+    )
+    monkeypatch.setattr(uploader, "round_trip_yaml", YAML())
+    monkeypatch.setattr(figshare, "article_exists", lambda _article_id: True)
+    monkeypatch.setattr(figshare, "get_existing_files", lambda _article_id: {})
+    monkeypatch.setattr(figshare, "list_article_files", lambda _article_id: [])
+    monkeypatch.setattr(figshare, "make_request", MagicMock(side_effect=AssertionError))
+    if uploader is upload_data:
+        assert (
+            uploader.main(str(yaml_path), 123, {"keywords": [], "urls": {}}, files=[])
+            == 0
+        )
+    else:
+        monkeypatch.setattr(Model, "yaml_path", property(lambda _model: str(yaml_path)))
+        uploader.update_one_modeling_task_article(
+            "phonons", [Model.mace_mp_0], modeling_tasks={"phonons": {}}
+        )
+    assert yaml_path.read_text(encoding="utf-8") == original
 
 
 @pytest.mark.parametrize(
@@ -165,7 +202,6 @@ def test_upload_file_to_figshare_variants(
         if method == "GET" and url == "upload_url":
             return {"parts": file_parts}
         if method == "POST" and isinstance(data := kwargs.get("data"), dict):
-            # Verify the file name in the POST request
             assert data["name"] == (file_name or test_file.name)
         return mock_responses[method]
 
@@ -212,34 +248,28 @@ DUMMY_FILES = [
 ]
 
 
-@pytest.mark.parametrize("files", [[], DUMMY_FILES])  # Empty and non-empty
-def test_list_article_files(files: list[dict[str, Any]]) -> None:
-    """Test list_article_files with various file configurations."""
-    with patch(
-        "matbench_discovery.remote.figshare.make_request", return_value=files
-    ) as request:
-        assert figshare.list_article_files(12345) == files
-    request.assert_called_once_with(
-        "GET",
-        f"{figshare.BASE_URL}/account/articles/12345/files?page_size=1000&page=1",
-    )
-
-
-def test_list_article_files_paginates() -> None:
-    """Fetch subsequent pages until Figshare returns a short page."""
-    first_page = [
-        {"name": f"file-{file_idx}.txt", "id": file_idx} for file_idx in range(1000)
-    ]
+@pytest.mark.parametrize(
+    "pages",
+    [
+        [[]],
+        [DUMMY_FILES],
+        [[{"name": f"file-{idx}.txt", "id": idx} for idx in range(1000)], DUMMY_FILES],
+    ],
+    ids=["empty", "single-page", "paginated"],
+)
+def test_list_article_files(pages: list[list[dict[str, Any]]]) -> None:
+    """Collect all files and request consecutive pages until a short page arrives."""
     with patch(
         "matbench_discovery.remote.figshare.make_request",
-        side_effect=[first_page, DUMMY_FILES],
+        side_effect=pages,
     ) as request:
-        assert figshare.list_article_files(12345) == [*first_page, *DUMMY_FILES]
+        assert figshare.list_article_files(12345) == [
+            file for page in pages for file in page
+        ]
 
     base_url = f"{figshare.BASE_URL}/account/articles/12345/files?page_size=1000"
     assert [mock_call.args for mock_call in request.call_args_list] == [
-        ("GET", f"{base_url}&page=1"),
-        ("GET", f"{base_url}&page=2"),
+        ("GET", f"{base_url}&page={page}") for page in range(1, len(pages) + 1)
     ]
 
 
@@ -363,7 +393,6 @@ def test_upload_file_if_needed(
             existing_files=existing_files,
         )
 
-        # Verify expected behavior
         assert mock_delete.called == expected_delete
         assert mock_upload.called == expected_upload
         assert was_uploaded == expected_upload
@@ -409,6 +438,12 @@ def test_publish_article(
         (KAPPA_FILE, {"models/model1/ver1/f-phonon-50.json.gz": {"id": 1}}, [], 0.7),
         (KAPPA_FILE, {"models/model1/ver2/f-kappa-103.json.gz": {"id": 1}}, [], 0.7),
         (
+            KAPPA_FILE,
+            {f"models/model1/ver1/nested/{KAPPA_FILE.rsplit('/', 1)[-1]}": {"id": 1}},
+            [],
+            0.7,
+        ),
+        (
             "models/model1/ver1/file-kappa-103-v1.json.gz",
             {"models/model1/ver1/file-kappa-103-v2.json.gz": {"id": 123}},
             [("models/model1/ver1/file-kappa-103-v2.json.gz", 123)],
@@ -446,3 +481,26 @@ def test_find_similar_files(
         figshare.find_similar_files(filename, existing_files, threshold)
         == expected_similar
     )
+
+
+@pytest.mark.parametrize("suffix_idx", range(6))
+def test_similar_files_keep_artifact_roles_and_directories(suffix_idx: int) -> None:
+    """Match dates without conflating complementary artifacts, settings or folders."""
+    suffixes = [
+        "phonons-kappa-103.json.gz",
+        "phonons-kappa-103-forces.json.gz",
+        "phonons-kappa-103-phonons.json.gz",
+        "phonons-kappa-103-run-info.json",
+        "geo-opt-symprec=1e-2-moyo=0.12.0.csv.gz",
+        "geo-opt-symprec=1e-5-moyo=0.12.0.csv.gz",
+    ]
+    directory = "models/mace/mace-mp-0/harmonic"
+    candidates = {
+        f"{folder}/2026-09-05-{suffix}": {"id": idx}
+        for folder in (directory, f"{directory}/other")
+        for idx, suffix in enumerate(suffixes)
+    }
+    suffix = suffixes[suffix_idx]
+    assert figshare.find_similar_files(
+        f"{directory}/2026-09-06-{suffix}", candidates
+    ) == [(f"{directory}/2026-09-05-{suffix}", suffix_idx)]

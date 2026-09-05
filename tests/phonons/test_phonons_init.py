@@ -25,11 +25,10 @@ def test_check_imaginary_freqs(freqs: np.ndarray, expected: bool) -> None:
     assert phonons.check_imaginary_freqs(freqs) == expected
 
 
-@pytest.mark.parametrize("id_col", ["mp_id", Key.mat_id])
-def test_read_kappa_json_sets_material_id_index(tmp_path: Path, id_col: str) -> None:
-    """Kappa JSON files are indexed by material ID, including legacy mp_id."""
+def test_read_kappa_json_sets_material_id_index(tmp_path: Path) -> None:
+    """Kappa JSON files are indexed by material ID, using the canonical field."""
     json_path = tmp_path / "kappa.json"
-    pd.DataFrame({id_col: ["mp-1", "mp-2"], "kappa": [1.0, 2.0]}).to_json(json_path)
+    pd.DataFrame({Key.mat_id: ["mp-1", "mp-2"], "kappa": [1.0, 2.0]}).to_json(json_path)
 
     df_kappa = phonons.read_kappa_json(str(json_path))
 
@@ -37,10 +36,13 @@ def test_read_kappa_json_sets_material_id_index(tmp_path: Path, id_col: str) -> 
     assert df_kappa.index.name == Key.mat_id
 
 
-def test_read_kappa_json_rejects_missing_id_column(tmp_path: Path) -> None:
-    """Kappa JSON files without material IDs fail with a clear error."""
+@pytest.mark.parametrize("ids", [None, [""], [None], [1], ["mp-1", "mp-1"]])
+def test_read_kappa_json_rejects_invalid_ids(tmp_path: Path, ids: list | None) -> None:
+    """Missing, empty, non-string, duplicate, and legacy-only IDs fail early."""
     json_path = tmp_path / "kappa.json"
-    pd.DataFrame({"kappa": [1.0]}).to_json(json_path)
+    pd.DataFrame({"mp_id": ["mp-1"]} if ids is None else {Key.mat_id: ids}).to_json(
+        json_path
+    )
 
-    with pytest.raises(ValueError, match=r"mp_id.*material_id.*columns=\['kappa'\]"):
+    with pytest.raises(ValueError, match=r"material_id|duplicate"):
         phonons.read_kappa_json(str(json_path))

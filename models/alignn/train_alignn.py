@@ -63,7 +63,6 @@ df_mp_cse[Key.structure] = [
     for cse in tqdm(df_mp_cse.entry, desc="Structures from dict")
 ]
 
-# load energies
 df_in = pd.read_csv(DataFiles.mp_energies.path).set_index(Key.mat_id)
 df_in[Key.structure] = df_mp_cse[Key.structure]
 if target_col not in df_in:

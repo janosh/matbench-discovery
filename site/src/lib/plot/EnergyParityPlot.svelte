@@ -19,7 +19,7 @@
   import { get_error_message, type LoadStatus } from '$lib/asset-loader'
   import type { ModelData } from '$lib/types'
   import { compact_formula, format_num, sanitize_compact_formula } from 'matterviz'
-  import { Spinner } from 'matterviz/feedback'
+  import { Spinner } from 'svelte-widgets'
   import type { AnyStructure } from 'matterviz/structure'
   import { BinnedScatterPlot } from 'matterviz/plot'
   import type {
@@ -373,7 +373,7 @@ title, so label the section for screen readers instead -->
         class="popup-anchor {popup_placement.side}"
         style:left="{popup_placement.left}px"
         style:top="{popup_placement.top}px"
-        style:--structure-popup-gap="{structure_popup_gap}px"
+        style:--popup-gap="{structure_popup_gap}px"
       >
         {#if selected_structure && StructurePopup}
           <StructurePopup
@@ -455,10 +455,10 @@ title, so label the section for screen readers instead -->
     transform: translateY(-50%);
   }
   .structure-status.left {
-    right: calc(100% + var(--structure-popup-gap, 1em));
+    right: calc(100% + var(--popup-gap, 1em));
   }
   .structure-status.right {
-    left: calc(100% + var(--structure-popup-gap, 1em));
+    left: calc(100% + var(--popup-gap, 1em));
   }
   :global(.energy-parity-plot .structure-popup:not(:hover) .control-buttons) {
     opacity: 0 !important;

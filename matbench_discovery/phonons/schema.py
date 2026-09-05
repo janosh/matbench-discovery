@@ -1,4 +1,4 @@
-"""Canonicalize thermal-conductivity records from current and legacy runners."""
+"""Validate canonical thermal-conductivity records and normalize internal tensors."""
 
 from __future__ import annotations
 
@@ -21,30 +21,28 @@ KAPPA_TENSOR_KEYS = (
 )
 VOIGT_MATRIX_INDICES = np.array(((0, 5, 4), (5, 1, 3), (4, 3, 2)))
 
-KAPPA_COLUMN_ALIASES: dict[str, tuple[str, ...]] = {
-    str(Key.mat_id): ("mp_id",),
-    str(Key.init_spg_num): (
-        str(Key.spg_num),
+# Reject retired spellings instead of silently ignoring data in legacy fields.
+NON_CANONICAL_FIELDS = frozenset(
+    {
+        "mp_id",
+        "spg_num",
         "initial_space_group_number",
         "initial_spg_num",
         "init_space_group_number",
-    ),
-    str(Key.final_spg_num): (
         "relaxed_space_group_number",
         "final_space_group_number",
         "relaxed_spg_num",
-    ),
-    str(Key.has_imag_ph_modes): (
         "imaginary_freqs",
         "has_imaginary_freqs",
         "has_imaginary_modes",
-    ),
-    str(Key.ph_freqs): ("frequencies", "phonon_frequencies"),
-}
+        "frequencies",
+        "phonon_frequencies",
+    }
+)
 
 
 def _is_missing_scalar(value: object) -> bool:
-    """Return whether a scalar is a DataFrame placeholder rather than alias data."""
+    """Return whether a scalar is a missing DataFrame value."""
     missing = pd.isna(value)
     return isinstance(missing, bool | np.bool_) and bool(missing)
 
@@ -68,44 +66,18 @@ def voigt_6_to_full_3x3(tensor: object) -> object:
     return tensor_array[..., VOIGT_MATRIX_INDICES]
 
 
-def _values_equal(first: object, second: object) -> bool:
-    """Compare scalar or array alias values, treating paired NaNs as equal."""
-    try:
-        first_array, second_array = np.asarray(first), np.asarray(second)
-        if first_array.shape != second_array.shape:
-            return False
-        try:
-            return bool(np.array_equal(first_array, second_array, equal_nan=True))
-        except TypeError:
-            return bool(np.array_equal(first_array, second_array))
-    except TypeError, ValueError:
-        return False
-
-
 def normalize_kappa_result(result: Mapping[str, Any]) -> dict[str, Any]:
     """Return one result row using canonical IDs, symmetry fields, and tensors."""
     normalized = {str(key): value for key, value in result.items()}
-    for canonical, aliases in KAPPA_COLUMN_ALIASES.items():
-        present_names = [
-            name
-            for name in (canonical, *aliases)
-            if name in normalized and not _is_missing_scalar(normalized[name])
-        ]
-        if present_names:
-            value = normalized[present_names[0]]
-            # Some files contain canonical irreducible-mesh ph_freqs alongside a
-            # legacy full-mesh frequencies field. The canonical field is authoritative;
-            # alias-only and all other canonical/alias conflicts remain errors.
-            check_conflicts = not (
-                canonical == str(Key.ph_freqs) and canonical in present_names
-            )
-            if check_conflicts and any(
-                not _values_equal(value, normalized[name]) for name in present_names[1:]
-            ):
-                raise ValueError(f"Conflicting aliases for kappa column {canonical!r}")
-            normalized[canonical] = value
-        for alias in aliases:
-            normalized.pop(alias, None)
+    if legacy := normalized.keys() & NON_CANONICAL_FIELDS:
+        raise ValueError(
+            f"Non-canonical kappa fields {sorted(legacy)}; migrate the artifact"
+        )
+    material_id = normalized.get(str(Key.mat_id))
+    if not isinstance(material_id, str) or not material_id.strip():
+        raise ValueError(
+            f"Kappa record requires a non-empty material_id, got {material_id!r}"
+        )
 
     for tensor_key in KAPPA_TENSOR_KEYS:
         if tensor_key in normalized:
@@ -129,12 +101,6 @@ def normalize_kappa_result(result: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def normalize_kappa_dataframe(df_kappa: pd.DataFrame) -> pd.DataFrame:
-    """Normalize legacy kappa dataframe columns without changing row order."""
-    normalized = df_kappa.copy()
-    if str(Key.mat_id) not in normalized and normalized.index.name in {
-        str(Key.mat_id),
-        *KAPPA_COLUMN_ALIASES[str(Key.mat_id)],
-    }:
-        normalized = normalized.reset_index()
-    rows = [normalize_kappa_result(row) for row in normalized.to_dict(orient="records")]
-    return pd.DataFrame(rows, index=normalized.index)
+    """Normalize canonical records without changing dataframe row order."""
+    rows = [normalize_kappa_result(row) for row in df_kappa.to_dict(orient="records")]
+    return pd.DataFrame(rows, index=df_kappa.index)

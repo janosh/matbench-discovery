@@ -143,9 +143,7 @@ beforeEach(() => {
 // running until unmount(); clearing document.body.innerHTML only detaches the DOM. Without
 // this, mounts leak across the file, accumulating effects that slow later renders until
 // synchronous tests hit the 5s default timeout on CI. Track instances and unmount below.
-// Typed concretely via Parameters/ReturnType (svelte-check-rs won't infer rest-arg types
-// from a generic contextual annotation), then re-exported with svelte's generic mount
-// signature so call sites keep full prop type-checking.
+// Re-export with Svelte's generic mount signature so call sites retain prop type-checking.
 const mounted_components: ReturnType<typeof svelte_mount>[] = []
 const tracked_mount = (
   ...args: Parameters<typeof svelte_mount>

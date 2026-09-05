@@ -68,11 +68,13 @@ def test_mp_ref_energies() -> None:
         ("Fe4O6", -20.0, -0.4),  # complex composition
         ("Fe", -2.0, -1.0),  # single atom
         ("O2", -6.0, -1.0),  # diatomic
+        (ComputedEntry(Composition("FeO"), -5.0), None, -1.0),
+        ({"composition": "FeO", "energy": -5.0}, None, -1.0),
     ],
 )
 def test_calc_energy_from_e_refs_various_inputs(
-    input_obj: str | Composition,
-    total_energy: float,
+    input_obj: str | Composition | EntryLike,
+    total_energy: float | None,
     expected: float,
     ref_energies: dict[str, float],
 ) -> None:
@@ -81,37 +83,17 @@ def test_calc_energy_from_e_refs_various_inputs(
     assert energy == pytest.approx(expected)
 
 
-@pytest.mark.parametrize(
-    "input_obj,ref_energies,expected",
-    [
-        (ComputedEntry(Composition("FeO"), -5.0), {"Fe": -1.0, "O": -2.0}, -1.0),
-        ({"composition": "FeO", "energy": -5.0}, {"Fe": -1.0, "O": -2.0}, -1.0),
-    ],
-)
-def test_calc_energy_from_e_refs_entry_inputs(
-    input_obj: EntryLike,
-    ref_energies: dict[str, float],
-    expected: float,
-) -> None:
-    """Test calculation with Entry-like inputs."""
-    energy = calc_energy_from_e_refs(input_obj, ref_energies)
-    assert energy == pytest.approx(expected)
-
-
 def test_calc_energy_from_e_refs_error_cases(
     dummy_struct: Structure,
     ref_energies: dict[str, float],
 ) -> None:
     """Test error handling."""
-    # Missing total_energy
     with pytest.raises(ValueError, match="total_energy can't be None"):
         calc_energy_from_e_refs(dummy_struct, ref_energies)
 
-    # Missing reference energy
     with pytest.raises(ValueError, match="Missing reference energies"):
         calc_energy_from_e_refs(dummy_struct, {"Fe": -1.0}, total_energy=-5.0)
 
-    # Invalid input type
     with pytest.raises(TypeError, match="Expected Entry, Structure"):
         calc_energy_from_e_refs([1, 2, 3], ref_energies, total_energy=-5.0)
 

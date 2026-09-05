@@ -42,7 +42,7 @@
     ],
   ] as const)
 
-  // Format the params object into [label, value] pairs for a readable list
+  // params object -> [label, value] pairs
   const format_params = (
     params: Record<string, unknown> | undefined,
   ): [string, string][] =>

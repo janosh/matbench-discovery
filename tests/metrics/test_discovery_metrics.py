@@ -255,7 +255,8 @@ def test_discovery_metrics_match_manual_calculation_and_round_trip(
     test_yaml.write_text(
         "metrics:\n  discovery:\n"
         "    most_stable_10k: {F1: 0.9}\n"
-        "    unique_prototypes: {TPR: 0.2, F1: 0.1}\n"
+        "    unique_prototypes: {TPR: 0.2, F1: 0.1}\n",
+        encoding="utf-8",
     )
     mock_model = cast("Model", SimpleNamespace(yaml_path=str(test_yaml)))
     written = write_all_metrics_to_yaml(
@@ -263,7 +264,7 @@ def test_discovery_metrics_match_manual_calculation_and_round_trip(
     )
     assert written[TestSubset.full_test_set][str(MbdKey.missing_preds)] == 2
     assert written[TestSubset.uniq_protos][str(MbdKey.missing_preds)] == 1
-    yaml_text = test_yaml.read_text()
+    yaml_text = test_yaml.read_text(encoding="utf-8")
     assert "most_stable_10k" not in yaml_text
     assert "TPR:" not in yaml_text
     assert "Recall:" in yaml_text

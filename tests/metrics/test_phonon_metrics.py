@@ -269,7 +269,6 @@ def test_calc_kappa_srme_error_cases(
         }
     )
 
-    # Update ml_data with error condition
     for key, val in ml_data.items():
         pred_data[key] = val
 
@@ -302,7 +301,6 @@ def test_calc_kappa_srme_invalid_predictions_score_two(
 
 def test_calc_kappa_srme_single_material() -> None:
     """Test SRME calculation for a single material."""
-    # Create mock data for a single material
     ml_data = pd.Series(
         {
             MbdKey.kappa_tot_avg: np.array([2.0]),
@@ -317,7 +315,6 @@ def test_calc_kappa_srme_single_material() -> None:
     ml_data[MbdKey.mode_kappa_tot_avg] = dft_data[MbdKey.mode_kappa_tot_avg] = np.nan
     assert phonon_metrics.calc_kappa_srme(ml_data, dft_data)[0] == 0
 
-    # Test with different values
     ml_data[MbdKey.kappa_tot_avg] = np.array([3.0])
     ml_data[MbdKey.mode_kappa_tot_rta] = [1.5 * np.eye(3)]
     assert phonon_metrics.calc_kappa_srme(ml_data, dft_data)[0] > 0
@@ -327,7 +324,6 @@ def test_calc_kappa_metrics_with_different_values(
     df_pred: pd.DataFrame, df_true: pd.DataFrame
 ) -> None:
     """Test calculation of aggregate metrics with different ML and DFT values."""
-    # Modify ML values to be different from DFT
     df_pred_copy = df_pred.copy()
     df_pred_copy[MbdKey.kappa_tot_rta] = [2 * np.diag([1, 2, 3]), 4 * np.eye(3)]
     df_pred_copy[MbdKey.mode_kappa_tot_rta] = [2 * np.diag([1, 2, 3]), 4 * np.eye(3)]
@@ -430,7 +426,7 @@ def test_calc_kappa_metrics_from_dfs_symmetry(df_minimal: pd.DataFrame) -> None:
     df_pred[Key.init_spg_num] = [1, 1, 1]
 
     df_true = pd.concat([df_minimal] * 3, ignore_index=True).copy()
-    df_true[Key.spg_num] = [1, 1, 1]
+    df_true[Key.init_spg_num] = [1, 1, 1]
 
     result = phonon_metrics.calc_kappa_metrics_from_dfs(df_pred, df_true)
     assert result[Key.srme].eq(2).tolist() == [True, True, True]
@@ -441,7 +437,6 @@ def test_calc_kappa_metrics_from_dfs_symmetry(df_minimal: pd.DataFrame) -> None:
     ("reference_spg_col", "expected_failures"),
     [
         (Key.init_spg_num, [False, True]),
-        (Key.spg_num, [False, True]),
         (None, [False, False]),
     ],
 )
@@ -450,7 +445,7 @@ def test_calc_kappa_srme_dataframes_missing_init_spg_uses_reference(
     reference_spg_col: str | None,
     expected_failures: list[bool],
 ) -> None:
-    """Missing prediction symmetry uses canonical, legacy, or absent references."""
+    """Missing prediction symmetry uses canonical or absent references."""
     df_pred = pd.concat([df_minimal] * 2, ignore_index=True).copy()
     df_pred[Key.final_spg_num] = [225, 186]
     df_true = pd.concat([df_minimal] * 2, ignore_index=True).copy()
@@ -677,7 +672,7 @@ def test_evaluate_kappa_predictions_rejects_duplicate_ids(
 
 def update_temp_kappa_yaml(
     tmp_path: Path,
-    initial_yaml: str,
+    initial_metrics: dict[str, object] | None = None,
     *,
     metrics: dict[str, float | None] | None = None,
     pred_file_path: str = KAPPA_PRED,
@@ -689,7 +684,12 @@ def update_temp_kappa_yaml(
     """Update a temporary model YAML and return its kappa metrics mapping."""
     yaml_path = f"{tmp_path}/model.yml"
     with open(yaml_path, mode="w", encoding="utf-8") as file:
-        file.write(initial_yaml)
+        mbd_data.round_trip_yaml.dump(
+            {"metrics": {"phonons": {"kappa_103": initial_metrics}}}
+            if initial_metrics is not None
+            else {"metrics": {}},
+            file,
+        )
     model = cast("Model", SimpleNamespace(yaml_path=yaml_path))
     phonon_metrics.write_metrics_to_yaml(
         model,
@@ -709,14 +709,13 @@ def test_write_metrics_to_yaml_preserves_existing_artifacts(tmp_path: Path) -> N
     """Metric recomputation preserves established artifact metadata."""
     kappa_metrics = update_temp_kappa_yaml(
         tmp_path,
-        (
-            f"metrics:\n  phonons:\n    kappa_103:\n"
-            f"      pred_file:\n"
-            f"        name: {KAPPA_PRED_EXISTING}\n"
-            f"        url: https://figshare.com/files/existing\n"
-            f"      analysis_file:\n"
-            f"        name: {_GEO_OPT_FILE}\n"
-        ),
+        {
+            "pred_file": {
+                "name": KAPPA_PRED_EXISTING,
+                "url": "https://figshare.com/files/existing",
+            },
+            "analysis_file": {"name": _GEO_OPT_FILE},
+        },
         metrics={
             **KAPPA_METRICS,
             "srme": 0.1234,
@@ -750,7 +749,6 @@ def test_kappa_metric_yaml_creates_prediction_file(
     """Completed runs create phonon metadata with optional authoritative URLs."""
     kappa_metrics = update_temp_kappa_yaml(
         tmp_path,
-        "metrics: {}\n",
         run_metadata=(
             {"pred_file_url": pred_file_url} if pred_file_url is not None else None
         ),
@@ -764,19 +762,18 @@ def test_kappa_metric_yaml_round_trip_updates_provenance(tmp_path: Path) -> None
     """Complete-run metadata and sidecars round-trip through model YAML."""
     kappa_metrics = update_temp_kappa_yaml(
         tmp_path,
-        (
-            f"metrics:\n  phonons:\n    kappa_103:\n"
-            f"      κ_SRME: 1.0\n"
-            f"      pred_file:\n"
-            f"        name: {KAPPA_PRED}\n"
-            f"        url: https://example.com/old.json.gz\n"
-            f"      force_file:\n"
-            f"        name: {KAPPA_FORCE}\n"
-            f"        url: https://example.com/old-forces.json.gz\n"
-            f"      run_info_file:\n"
-            f"        name: {KAPPA_RUN_INFO}\n"
-            f"        url: https://example.com/old-run-info.json\n"
-        ),
+        {
+            "κ_SRME": 1.0,
+            "pred_file": {"name": KAPPA_PRED, "url": "https://example.com/old.json.gz"},
+            "force_file": {
+                "name": KAPPA_FORCE,
+                "url": "https://example.com/old-forces.json.gz",
+            },
+            "run_info_file": {
+                "name": KAPPA_RUN_INFO,
+                "url": "https://example.com/old-run-info.json",
+            },
+        },
         run_metadata={
             "hardware": "NVIDIA H200",
             "run_time_sec": 12.5,
@@ -804,16 +801,17 @@ def test_kappa_metric_yaml_clears_url_when_sidecar_path_changes(
     """Changing a sidecar path invalidates its existing remote URL."""
     kappa_metrics = update_temp_kappa_yaml(
         tmp_path,
-        (
-            f"metrics:\n  phonons:\n    kappa_103:\n"
-            f"      κ_SRME: 1.0\n"
-            f"      pred_file:\n"
-            f"        name: {KAPPA_PRED}\n"
-            f"        url: https://example.com/pred.json.gz\n"
-            f"      force_file:\n"
-            f"        name: {KAPPA_FORCE}\n"
-            f"        url: https://example.com/old-forces.json.gz\n"
-        ),
+        {
+            "κ_SRME": 1.0,
+            "pred_file": {
+                "name": KAPPA_PRED,
+                "url": "https://example.com/pred.json.gz",
+            },
+            "force_file": {
+                "name": KAPPA_FORCE,
+                "url": "https://example.com/old-forces.json.gz",
+            },
+        },
         pred_file_path=KAPPA_PRED,
         force_file_path=KAPPA_FORCE_NEW,
     )
@@ -829,17 +827,18 @@ def test_kappa_metric_yaml_replacement_clears_stale_sidecars(
     """Replacing predictions removes provenance absent from the new run."""
     kappa_metrics = update_temp_kappa_yaml(
         tmp_path,
-        (
-            f"metrics:\n  phonons:\n    kappa_103:\n"
-            f"      κ_SRME: 1.0\n"
-            f"      force_file:\n"
-            f"        name: {KAPPA_FORCE}\n"
-            f"        url: https://example.com/old-forces.json.gz\n"
-            f"      run_info_file:\n"
-            f"        name: {KAPPA_RUN_INFO}\n"
-            f"        url: https://example.com/old-run-info.json\n"
-            f"      max_gpu_mem_gb: 9.0\n"
-        ),
+        {
+            "κ_SRME": 1.0,
+            "force_file": {
+                "name": KAPPA_FORCE,
+                "url": "https://example.com/old-forces.json.gz",
+            },
+            "run_info_file": {
+                "name": KAPPA_RUN_INFO,
+                "url": "https://example.com/old-run-info.json",
+            },
+            "max_gpu_mem_gb": 9.0,
+        },
         replace_pred_file=True,
     )
     for stale_key in ("force_file", "run_info_file", "max_gpu_mem_gb"):

@@ -144,12 +144,24 @@ metrics:
     kappa_103:
       pred_file:
         name: models/equflash/equflash-29m-oam/2025-06-23-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/57277382
-        size: 12590181
-        md5: 015524fbaf1f9f15b496aeadbc7dbebd
+        url: https://figshare.com/files/68221321
+        size: 12590363
+        md5: 0bc0b49effc44833ea4502ebbff7c953
       κ_SRME: 0.1583
       κ_SRE: 0.0772
       κ_SRD: -0.0235
       κ_failure_rate: 0.0
       imaginary_mode_rate: 0.0
       spectrum_w1: 0.0952
+      phonon_file:
+        name: models/equflash/equflash-29m-oam/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+        size: 1291996821
+        md5: b03139e0cc99e91d7362cedaafbfc244
+      force_file:
+        name: models/equflash/equflash-29m-oam/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+        size: 8710855
+        md5: 2499d510c261149fde1bf3c1dba877e6
+      run_info_file:
+        name: models/equflash/equflash-29m-oam/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+        size: 9444
+        md5: f80659743ed8fb8319c36d767bbb207c

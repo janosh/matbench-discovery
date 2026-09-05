@@ -177,11 +177,23 @@ metrics:
       κ_SRME: 0.688
       pred_file:
         name: models/deepmd/dpa3-v2-openlam/2025-03-14-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/53090585
-        size: 7553156
-        md5: 9a7085d7d682a15531838fbdb41e59da
+        url: https://figshare.com/files/68221294
+        size: 7552976
+        md5: 5a33f100a8e3624d54ccff83218fbbd6
       κ_SRE: 0.5938
       κ_SRD: -0.5334
       κ_failure_rate: 0.0583
       imaginary_mode_rate: 0.0583
       spectrum_w1: 0.2838
+      phonon_file:
+        name: models/deepmd/dpa3-v2-openlam/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+        size: 1274641682
+        md5: 6caaefa03a52eabcc416fb4ef66d22c7
+      force_file:
+        name: models/deepmd/dpa3-v2-openlam/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+        size: 8765576
+        md5: 746f1617a456611d0b910e09f257727b
+      run_info_file:
+        name: models/deepmd/dpa3-v2-openlam/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+        size: 8189
+        md5: 52feefb5eb2e24faea93e341ab8a4763

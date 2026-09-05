@@ -10,16 +10,16 @@
     bind_url_params,
     sort_from_query,
     sort_url_entries,
-    valid_query_param,
   } from '$lib/url-state.svelte'
+  import { valid_query_param } from 'svelte-widgets/url-params'
   import {
     PHONON_METRICS,
     scatter_axis_label,
-    scatter_options_by_key,
+    scatter_option_keys,
     task_page_visible_cols,
   } from '$lib/labels'
   import { format_num } from 'matterviz'
-  import { Spinner } from 'matterviz/feedback'
+  import { Spinner } from 'svelte-widgets'
   import { onMount } from 'svelte'
   import KappaSrmeScatter from './KappaSrmeScatter.svelte'
   import PhononFreqParity from './PhononFreqParity.svelte'
@@ -97,8 +97,8 @@
 
   // axis selections for the model-comparison scatter, bound so the section title
   // tracks whatever properties the user picks
-  let scatter_x = $state(default_scatter_x)
-  let scatter_y = $state(default_scatter_y)
+  let scatter_x = $state<string>(default_scatter_x)
+  let scatter_y = $state<string>(default_scatter_y)
 
   let table_sort = $state({ ...default_table_sort })
   const filters = make_table_filters()
@@ -106,8 +106,8 @@
   const read_url_params = (params: URLSearchParams) => {
     selected_key = valid_query_param(params, `model`, default_selected_key, model_keys)
     sort_mode = valid_query_param(params, `model_sort`, default_sort_mode, sort_modes)
-    scatter_x = valid_query_param(params, `x`, default_scatter_x, scatter_options_by_key)
-    scatter_y = valid_query_param(params, `y`, default_scatter_y, scatter_options_by_key)
+    scatter_x = valid_query_param(params, `x`, default_scatter_x, scatter_option_keys)
+    scatter_y = valid_query_param(params, `y`, default_scatter_y, scatter_option_keys)
     table_sort = sort_from_query(params, default_table_sort)
     filters.read(params)
   }

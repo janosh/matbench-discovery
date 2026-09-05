@@ -216,3 +216,15 @@ metrics:
       κ_failure_rate: 0.0
       imaginary_mode_rate: 0.0
       spectrum_w1: 0.1257
+      phonon_file:
+        name: models/nequip/nequip-oam-l-0.1/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+        size: 1286144727
+        md5: 7eccbed6c15dd2f4c7823cb1f6d298a0
+      force_file:
+        name: models/nequip/nequip-oam-l-0.1/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+        size: 8706835
+        md5: 9755efc0efaf487c255e1656265f7f59
+      run_info_file:
+        name: models/nequip/nequip-oam-l-0.1/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+        size: 8088
+        md5: b877552a9f56ccf735a5b3833bcfaba7

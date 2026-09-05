@@ -38,9 +38,7 @@ __date__ = "2022-08-13"
 epochs = 300
 data_path = DataFiles.mp_energies.path
 target_col = Key.formation_energy_per_atom
-# data_path = f"{ROOT}/data/2022-08-25-m3gnet-trainset-mp-2021-struct-energy.json.gz"
-# target_col = "mp_energy_per_atom"
-data_name = "m3gnet-trainset" if "m3gnet" in data_path else "mp"
+data_name = "mp"
 ensemble_size = 10
 job_name = f"{today}-train-{Model.wrenformer}-ens={ensemble_size}-robust-{data_name}"
 module_dir = os.path.dirname(__file__)
@@ -144,7 +142,6 @@ wandb.init(
 train_ensemble(
     model_class=Wrenformer,
     model_name=model_name,
-    # folds=(ensemble_size, slurm_array_task_id),
     run_id=slurm_array_task_id,
     ensemble_folds=1,
     epochs=epochs,

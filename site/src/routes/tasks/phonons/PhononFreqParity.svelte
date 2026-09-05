@@ -23,7 +23,7 @@
     entry,
     base,
     ...rest
-  }: HTMLAttributes<HTMLDivElement> & {
+  }: Omit<HTMLAttributes<HTMLDivElement>, `title` | `children`> & {
     entry: KappaModelEntry
     base: Pick<typeof kappa_data, `material_ids` | `formulas` | `spg_nums`>
   } = $props()

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { ButtonGroup } from 'svelte-widgets'
-  import { bind_url_params, valid_query_param } from '$lib/url-state.svelte'
+  import { bind_url_params } from '$lib/url-state.svelte'
+  import { valid_query_param } from 'svelte-widgets/url-params'
   import { ScatterPlot } from 'matterviz'
   import { ELEM_SYMBOLS } from 'matterviz/labels'
   import { SvelteSet } from 'svelte/reactivity'

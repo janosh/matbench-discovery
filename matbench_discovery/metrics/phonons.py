@@ -392,9 +392,7 @@ def _calc_kappa_srme_dataframes(
         relaxed_spg = row_pred.get(Key.final_spg_num)
         if not censored and not pd.isna(relaxed_spg) and relaxed_spg:
             initial_spg = row_pred.get(Key.init_spg_num)
-            # normalize_kappa_result canonicalizes the reference's spg_num alias
-            # into init_spg_num, so check both keys for the DFT spacegroup
-            reference_spg = row_true.get(Key.init_spg_num, row_true.get(Key.spg_num))
+            reference_spg = row_true.get(Key.init_spg_num)
             expected_spg = reference_spg if pd.isna(initial_spg) else initial_spg
             censored = not pd.isna(expected_spg) and relaxed_spg != expected_spg
         valid = not censored and result.size == 1 and np.isfinite(result[0])
@@ -496,6 +494,7 @@ def write_metrics_to_yaml(
     *,
     run_metadata: Mapping[str, object] | None = None,
     force_file_path: str | None = None,
+    phonon_file_path: str | None = None,
     run_info_path: str | None = None,
     replace_pred_file: bool = False,
 ) -> None:
@@ -507,6 +506,8 @@ def write_metrics_to_yaml(
         pred_file_path: Path to prediction file.
         run_metadata: Optional complete-run provenance, including pred_file_url.
         force_file_path: Optional separate force-set artifact path.
+        phonon_file_path: Optional harmonic phonon sidecar (band path, eigenvectors,
+            DOS, thermal properties) artifact path.
         run_info_path: Optional small manifest/provenance sidecar path.
         replace_pred_file: If True, replace pred_file and clear stale force/run_info
             URLs plus unset run_metadata fields. A pred_file_url supplied in
@@ -543,6 +544,7 @@ def write_metrics_to_yaml(
             )
         for artifact_key, artifact_path in (
             ("force_file", force_file_path),
+            ("phonon_file", phonon_file_path),
             ("run_info_file", run_info_path),
         ):
             if artifact_path is not None:

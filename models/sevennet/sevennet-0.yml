@@ -146,12 +146,24 @@ metrics:
       n_structures: 256614     # count
   phonons:
     kappa_103:
+      run_info_file:
+        name: models/sevennet/sevennet-0/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+        size: 8013
+        md5: 19d1f4518ea13d6ae880a477903180d5
+      phonon_file:
+        name: models/sevennet/sevennet-0/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+        size: 1337970321
+        md5: cf21f89ec3a573aa092b00c2f5708c4e
+      force_file:
+        name: models/sevennet/sevennet-0/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+        size: 8818269
+        md5: 73baefb8b0a85ea847b84e75575e13b0
       κ_SRME: 0.762
       pred_file:
         name: models/sevennet/sevennet-0/2024-11-09-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/52134878
-        size: 7491734
-        md5: f3ccb03abc8a82c6047236504c1b0e6c
+        url: https://figshare.com/files/68221402
+        size: 7491503
+        md5: e7f93e1b285008ac0dcacf7b942031bc
       κ_SRE: 0.6051
       κ_SRD: -0.5534
       κ_failure_rate: 0.0777

@@ -218,3 +218,15 @@ metrics:
       κ_failure_rate: 0.0097
       imaginary_mode_rate: 0.0097
       spectrum_w1: 0.186
+      phonon_file:
+        name: models/allegro/allegro-oam-l-0.1/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+        size: 1434341167
+        md5: a1b600ecfeeb20a58753e6fcd2009de6
+      force_file:
+        name: models/allegro/allegro-oam-l-0.1/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+        size: 8765190
+        md5: 6388f2eef9c2099a660e214f26613782
+      run_info_file:
+        name: models/allegro/allegro-oam-l-0.1/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+        size: 8379
+        md5: 38dead20021a787caa49815de1849611

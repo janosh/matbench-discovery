@@ -186,10 +186,9 @@ def main() -> int:
     # geometric spacing densifies the short-range repulsive wall, where unphysical
     # wiggles and discontinuities are most diagnostic (matches the MACE-MP convention)
     distances = np.geomspace(args.min_dist, args.max_dist, n_points)
-    # reuse one prior shard dir (or --shard-dir) so shards written on an earlier date
-    # can be resumed/merged; the merged artifact inherits that dir's date. Like
-    # run_discovery, dry runs get their own shard dirs and a dry-run/ artifact dir so
-    # a 10-point smoke test can never clobber (or be merged into) a real run.
+    # reuse one prior shard dir (or --shard-dir) so shards from an earlier date can be
+    # resumed/merged; the merged artifact inherits that date. Dry runs get their own
+    # shard and artifact dirs so a smoke test can never clobber a real run.
     dry_suffix = "-dry-run" if args.dry_run else ""
     try:
         shard_dir, artifact_prefix = resolve_sharded_prefix(
@@ -288,13 +287,11 @@ def main() -> int:
         "hetero-nuclear": {},
         "distances": distances.tolist(),
     }
-    # persist provenance (hardware, run time, exclusions) so shards can be aggregated
-    # and merged/local files keep it
+    # provenance (hardware, run time, exclusions) so shards can be aggregated later
     results["run_metadata"] = run_metadata
     os.makedirs(os.path.dirname(json_path), exist_ok=True)
     with gzip.open(json_path, mode="wt") as file:
-        # allow_nan=False guards against writing invalid JSON (NaN) if a non-finite
-        # value slips through the filter above
+        # allow_nan=False catches non-finite values that slipped past the trim above
         json.dump(results, file, allow_nan=False, default=lambda arr: arr.tolist())
     print(f"Wrote {len(curves)}/{n_pairs} diatomic curves to {json_path}")
     if not args.merge_shards:

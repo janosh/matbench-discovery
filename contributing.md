@@ -19,7 +19,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
 
    - geometry optimization: `<yyyy-mm-dd>-geo-opt.jsonl.gz` — final relaxed structures with `energy`, `converged`, `n_steps`, and WBM material IDs in [JSON Lines format](https://jsonlines.org). Optional analysis files use `<yyyy-mm-dd>-geo-opt-symprec=<symprec>-moyo=<version>.csv.gz`.
    - discovery: `<yyyy-mm-dd>-discovery.csv.gz` — compressed CSV with `material_id` and final `e_form_per_atom` columns.
-   - phonons: `<yyyy-mm-dd>-phonons-kappa-103.json.gz` — predictions for exactly the 103 PhononDB material IDs. Optional force sets and run provenance use `-forces.json.gz` and `-run-info.json`.
+   - phonons: `<yyyy-mm-dd>-phonons-kappa-103.json.gz` — predictions for exactly the 103 PhononDB material IDs. Use canonical fields `material_id`, `init_spg_num`, `final_spg_num`, `has_imag_ph_modes`, and `ph_freqs`; legacy spellings such as `mp_id`, `spg_num`, and `frequencies` are rejected rather than converted while loading. The shared runner also writes `-phonons.json.gz` (referenced as `phonon_file`): unrounded FC2 with cell bases and masses, weighted mesh spectra, seekpath bands with eigenvectors and group velocities, tetrahedron DOS, and thermal properties. Schema v2 records can be restored with `matbench_discovery.phonons.harmonic.phonopy_from_harmonic_data(record)` to evaluate new metrics without MLIP force calls; v1 records lack the FC2 input and require regeneration for this purpose. Each harmonic analysis reports its own `errors`; these also appear as `phonon_errors` in predictions and never invalidate successful conductivity. Resume skips recorded failures unless `--retry-failures` is passed. The site displays modes for successful band paths. Optional force sets and run provenance use `-forces.json.gz` and `-run-info.json`.
    - molecular dynamics: `<yyyy-mm-dd>-md-metrics.csv.gz`.
    - diatomics: `<yyyy-mm-dd>-diatomics.json.gz`.
 
@@ -34,7 +34,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
      md5: <32-char hex>  # optional; required together with size
    ```
 
-   The same shape is used for `analysis_file`, `force_file`, and `run_info_file`.
+   The same shape is used for `analysis_file`, `force_file`, `phonon_file`, and `run_info_file`.
 
    Optionally you can also share the complete relaxation trajectories. Having the forces and stresses at each relaxation step also allows analyzing any pathological behavior for structures where relaxation failed or went haywire.
 
@@ -302,7 +302,7 @@ The `Model` enum is generated during ingestion from each model YAML's required `
 
 ### Step 3: Upload results files to Figshare (or similar)
 
-Upload the canonical prediction artifacts for each submitted task to [Figshare](https://figshare.com) (or any cloud storage with stable direct-download links) and record their URLs in the corresponding `pred_file.url`, `analysis_file.url`, `force_file.url`, or `run_info_file.url` keys. These URLs are what automated ingestion downloads, so they must resolve without authentication. During ingestion we archive copies to the project's Figshare articles and update those URLs (optionally adding `size`/`md5`).
+Upload the canonical prediction artifacts for each submitted task to [Figshare](https://figshare.com) (or any cloud storage with stable direct-download links) and record their URLs in the corresponding `pred_file.url`, `analysis_file.url`, `force_file.url`, `phonon_file.url`, or `run_info_file.url` keys. These URLs are what automated ingestion downloads, so they must resolve without authentication. During ingestion we archive copies to the project's Figshare articles and update those URLs (optionally adding `size`/`md5`).
 
 ### Step 4: Open a PR to the [Matbench Discovery repo][repo]
 

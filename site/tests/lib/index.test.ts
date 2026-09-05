@@ -2,10 +2,10 @@ import { arr_to_str, data_files, DATASETS, format_date, slugify } from '$lib'
 import {
   apply_weights_param,
   sort_from_query,
-  sync_url_params,
-  valid_query_param,
   weights_to_param,
+  sync_url_params,
 } from '$lib/url-state.svelte'
+import { valid_query_param } from 'svelte-widgets/url-params'
 import { describe, expect, it, vi } from 'vitest'
 
 describe(`$lib data re-exports reflect index.ts mutations`, () => {
@@ -167,6 +167,7 @@ describe(`weights_to_param / apply_weights_param`, () => {
     [`negative weight resets to defaults`, `-1,1,1`, [0.5, 0.4, 0.1]],
     [`non-numeric resets to defaults`, `a,b,c`, [0.5, 0.4, 0.1]],
     [`all-zero resets to defaults`, `0,0,0`, [0.5, 0.4, 0.1]],
+    [`overflowing sum resets to defaults`, `1e308,1e308,1e308`, [0.5, 0.4, 0.1]],
   ] as const)(`%s`, (_name, param, expected) => {
     const config = make_config([0.2, 0.3, 0.5]) // start from non-default weights
     apply_weights_param(param, config, defaults)

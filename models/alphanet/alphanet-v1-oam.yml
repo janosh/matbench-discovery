@@ -207,12 +207,24 @@ metrics:
     n_systems: 17
   phonons:
     kappa_103:
+      run_info_file:
+        name: models/alphanet/alphanet-v1-oam/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+        size: 7834
+        md5: 07290f72279e0e03b96a175b0d0bb7b5
+      phonon_file:
+        name: models/alphanet/alphanet-v1-oam/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+        size: 1207370385
+        md5: 2a4d99152d76ed5c63281c503a04ed5c
+      force_file:
+        name: models/alphanet/alphanet-v1-oam/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+        size: 8372780
+        md5: 44ab1fe099bb088c16fbfdec74daf58f
       κ_SRME: 0.6435
       pred_file:
         name: models/alphanet/alphanet-v1-oam/2025-04-20-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/56871824
-        size: 12337475
-        md5: ce837f375887995d5d45181f8e40a7d6
+        url: https://figshare.com/files/68221159
+        size: 7374155
+        md5: 0874936c11b70ff03aa76190dc2cb177
       κ_SRE: 0.4914
       κ_SRD: -0.3841
       κ_failure_rate: 0.0388

@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import os
 import shlex
+from dataclasses import replace
 from typing import TYPE_CHECKING
 
 from matbench_discovery import file_digest, today
@@ -74,6 +75,11 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--harmonic-only",
+        action="store_true",
+        help="Compute reusable FC2, displacement forces and harmonic data without FC3",
+    )
+    parser.add_argument(
         "--dry-run-size",
         type=int,
         default=1,
@@ -112,9 +118,12 @@ def resolve_output_paths(
     out_dir: str,
     dry_run: bool,
     shard_dir: str | None,
+    harmonic_only: bool = False,
 ) -> tuple[str, str]:
     """Reuse one prior shard directory and emit a canonical prediction artifact."""
     dry_suffix = "-dry-run" if dry_run else ""
+    if harmonic_only:
+        out_dir = f"{out_dir}/harmonic"
     default_stem = f"{out_dir}/{today}-phonondb-kappa-103{dry_suffix}"
     selected_shard_dir, artifact_stem = resolve_sharded_prefix(
         default_prefix=default_stem,
@@ -152,7 +161,7 @@ def print_cmd_args(args: argparse.Namespace, model_key: str) -> list[str]:
             "n-shards": args.n_shards,
             "shard-index": args.shard_index,
         },
-        ("dry-run", "merge-shards", "write-yaml", "retry-failures"),
+        ("dry-run", "merge-shards", "write-yaml", "retry-failures", "harmonic-only"),
     )
 
 
@@ -172,6 +181,7 @@ def write_yaml_results(
         artifacts.pred_file_path,
         run_metadata=merged_run.run_metadata,
         force_file_path=artifacts.force_file_path,
+        phonon_file_path=artifacts.phonon_file_path,
         run_info_path=artifacts.run_info_path,
         replace_pred_file=True,
     )
@@ -205,6 +215,10 @@ def validate_cli_args(
 ) -> None:
     """Reject incompatible runner modes before loading model dependencies."""
     validate_sharded_write_args(parser, args)
+    if args.harmonic_only and args.write_yaml:
+        parser.error(
+            "--harmonic-only cannot replace conductivity metrics with --write-yaml"
+        )
     if args.merge_shards and args.retry_failures:
         parser.error("--retry-failures is incompatible with --merge-shards")
     if args.dry_run_size < 1:
@@ -238,6 +252,8 @@ def main(raw_args: Sequence[str] | None = None) -> int:
         model_key = resolve_calculator_key(args.model)
         model = Model.from_ref(model_key)
         settings = KappaSettings.from_model(model_key)
+        if args.harmonic_only:
+            settings = replace(settings, harmonic_only=True, save_forces=True)
     except (TypeError, ValueError) as exc:
         parser.error(f"{exc}, see --list-models")
     if (
@@ -260,6 +276,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
             out_dir=out_dir,
             dry_run=args.dry_run,
             shard_dir=args.shard_dir,
+            harmonic_only=args.harmonic_only,
         )
     except ValueError as exc:
         parser.error(str(exc))
@@ -309,6 +326,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
         print(f"Wrote run provenance to {artifacts.run_info_path}")
         if artifacts.force_file_path:
             print(f"Wrote force sets to {artifacts.force_file_path}")
+        print(f"Wrote harmonic phonon data to {artifacts.phonon_file_path}")
         if args.write_yaml:
             write_yaml_results(model, artifacts, merged_run)
             print(f"Updated kappa metrics and provenance in {model.yaml_path}")

@@ -150,11 +150,9 @@ def calc_energy_from_e_refs(
                 f"got {cls_name}"
             )
 
-    # Check that we have all needed reference energies
     if missing_refs := set(map(str, comp)) - set(ref_energies):
         raise ValueError(f"Missing reference energies for elements: {missing_refs}")
 
-    # Calculate reference energy
     e_ref = sum(ref_energies[str(el)] * amt for el, amt in comp.items())
 
     return (energy - e_ref) / comp.num_atoms

@@ -67,32 +67,27 @@ def test_trim_curve_to_finite(run_diatomics: ModuleType) -> None:
     }
     assert run_diatomics.trim_curve_to_finite("Cu-Cu", finite_curve) == finite_curve
 
-    # Cu wall scoring starts at 0.8 * r_cov ~ 1.06 A; NaN below that gets trimmed
-    deep_overlap_nan = {**finite_curve, "energies": [np.nan, *[1.0] * 29]}
-    trimmed = run_diatomics.trim_curve_to_finite("Cu-Cu", deep_overlap_nan)
-    assert trimmed is not None
-    assert len(trimmed["energies"]) == len(trimmed["distances"]) == 29
-    assert trimmed["distances"] == distances[1:]
-
     wall_r_min = 0.8 * covalent_radii[atomic_numbers["Cu"]]
     wall_idx = int(np.flatnonzero(np.asarray(distances) >= wall_r_min)[0])
-    wall_nan_energies = [1.0] * 30
-    wall_nan_energies[wall_idx] = np.nan
-    wall_nan = {**finite_curve, "energies": wall_nan_energies}
-    assert run_diatomics.trim_curve_to_finite("Cu-Cu", wall_nan) is None
-
-    # non-finite at scored separations (last point = 6 A is inside Cu's window since
-    # 3.1 * r_vdw(Cu) > 6 A) drops the whole curve
-    in_window_nan = {**finite_curve, "energies": [*[1.0] * 29, np.inf]}
-    assert run_diatomics.trim_curve_to_finite("Cu-Cu", in_window_nan) is None
-
-    # H's window ends at 3.1 * r_vdw(H) ~ 3.7 A; a NaN at 6 A is above it (never
-    # scored) so only that point is trimmed, not the whole curve
-    above_window_nan = {**finite_curve, "energies": [*[1.0] * 29, np.nan]}
-    trimmed = run_diatomics.trim_curve_to_finite("H-H", above_window_nan)
-    assert trimmed is not None
-    assert len(trimmed["energies"]) == len(trimmed["distances"]) == 29
-    assert trimmed["distances"] == distances[:-1]
+    for formula, bad_idx, value, expected_distances in (
+        # Cu wall scoring starts at ~1.06 A; a NaN below that is unscored.
+        ("Cu-Cu", 0, np.nan, distances[1:]),
+        ("Cu-Cu", wall_idx, np.nan, None),
+        # 6 A is inside Cu's window but above H's ~3.7 A upper bound.
+        ("Cu-Cu", -1, np.inf, None),
+        ("H-H", -1, np.nan, distances[:-1]),
+    ):
+        energies = [1.0] * 30
+        energies[bad_idx] = value
+        trimmed = run_diatomics.trim_curve_to_finite(
+            formula, {**finite_curve, "energies": energies}
+        )
+        if expected_distances is None:
+            assert trimmed is None, (formula, bad_idx)
+        else:
+            assert trimmed is not None, (formula, bad_idx)
+            assert len(trimmed["energies"]) == len(trimmed["distances"]) == 29
+            assert trimmed["distances"] == expected_distances
 
     empty_curve = {"distances": [], "energies": [], "forces": []}
     assert run_diatomics.trim_curve_to_finite("Cu-Cu", empty_curve) is None
