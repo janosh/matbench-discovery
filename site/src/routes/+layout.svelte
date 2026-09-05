@@ -177,7 +177,7 @@
   {page}
   routes={[`/`, ...ordered_routes, [pkg.paper, `Paper`]]}
   style="margin-block: 1em 0"
-  menu_props={{ style: `inset-inline: 0.5rem; max-width: none` }}
+  menu_props={{ style: `inset-inline: 0.5rem; width: auto; max-width: none` }}
   route_labels={{
     '/': `Home`,
     '/api': `API`,
@@ -238,52 +238,6 @@
   }
   :global(nav:not(.mobile) .menu) {
     gap: 1.5em;
-  }
-  /* Shim reproducing the svelte-widgets fix until it ships (see its Nav.svelte). Its mobile
-     rule pads `.menu > span` — the element that paints a plain link's pill — but `.dropdown`,
-     whose *child* paints the pill, so plain-link rows rendered wider and taller pills than
-     dropdown rows. Move the padding onto the pill in both cases. `!important` because the
-     widget's rules carry its scoping class and out-specify anything writable from here. */
-  :global(nav.mobile .dropdown) {
-    padding: 0 !important;
-  }
-  :global(nav.mobile .menu > span),
-  :global(nav.mobile .dropdown > div:first-child) {
-    padding: 0 6pt !important;
-  }
-  :global(nav.mobile .menu > span > a) {
-    flex: 1;
-    padding: var(--nav-item-padding, 1pt 4pt) !important;
-  }
-  :global(nav.mobile .dropdown > div:last-child a) {
-    /* 8pt of its own indent plus the 8pt the `.dropdown` padding no longer contributes */
-    margin-inline-start: 16pt !important;
-    padding-block: 1pt !important;
-  }
-  /* Compact rows: the widget's padding is gone above, so this min-height sets row height */
-  :global(nav.mobile .menu > span > a),
-  :global(nav.mobile .dropdown > div:first-child > :is(a, span)),
-  :global(nav.mobile .dropdown > div:last-child a) {
-    display: inline-flex;
-    align-items: center;
-    min-height: 1.5rem;
-    box-sizing: border-box;
-  }
-  :global(nav.mobile .dropdown > div:first-child > button) {
-    min-height: 1.5rem;
-    /* Finger-sized target grown leading-side only so the caret still hugs the row's
-       trailing edge; the row padding is the only gap wanted */
-    min-width: 2.5rem;
-    justify-content: flex-end;
-    padding-inline-end: 0 !important;
-  }
-  /* Same shim: the widget offsets the open burger's two strokes by a hardcoded 0.4rem, but
-     under `space-around` adjacent bar centers are height/3 apart, so the X read lopsided. */
-  :global(nav .burger[aria-expanded='true'] span:first-child) {
-    transform: translateY(calc(1.4rem / 3)) rotate(45deg) !important;
-  }
-  :global(nav .burger[aria-expanded='true'] span:nth-child(3)) {
-    transform: translateY(calc(1.4rem / -3)) rotate(-45deg) !important;
   }
   /* On phones the fixed corner covers the top-right of the metrics table; the footer still
      links to the repo */

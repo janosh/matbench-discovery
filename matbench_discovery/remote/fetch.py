@@ -12,24 +12,6 @@ import requests
 from matbench_discovery import file_digest
 
 
-def _headers_for_url(
-    url: str, headers: dict[str, str] | None = None
-) -> dict[str, str] | None:
-    """Return request headers, adding HuggingFace bearer auth when available."""
-    request_headers = dict(headers or {})
-    parsed = urlsplit(url)
-    hostname = parsed.hostname or ""
-    if (
-        parsed.scheme == "https"
-        and (hostname == "huggingface.co" or hostname.endswith(".huggingface.co"))
-        and not any(key.casefold() == "authorization" for key in request_headers)
-    ):
-        token = os.getenv("HF_TOKEN") or os.getenv("HUGGING_FACE_HUB_TOKEN")
-        if token:
-            request_headers["Authorization"] = f"Bearer {token}"
-    return request_headers or None
-
-
 def download_file(
     file_path: str,
     url: str,
@@ -60,7 +42,16 @@ def download_file(
         file_id = parsed.path.rsplit("/files/", maxsplit=1)[-1]
         url = f"https://api.figshare.com/v2/file/download/{file_id}"
 
-    headers = _headers_for_url(url, headers)
+    is_huggingface = parsed.scheme == "https" and (
+        hostname == "huggingface.co" or hostname.endswith(".huggingface.co")
+    )
+    request_headers = dict(headers or {})
+    if (
+        is_huggingface
+        and not any(key.casefold() == "authorization" for key in request_headers)
+        and (token := os.getenv("HF_TOKEN") or os.getenv("HUGGING_FACE_HUB_TOKEN"))
+    ):
+        request_headers["Authorization"] = f"Bearer {token}"
     file_descriptor, tmp_file_path = tempfile.mkstemp(
         dir=file_dir or ".", prefix=f".{os.path.basename(file_path)}.", suffix=".part"
     )
@@ -70,7 +61,9 @@ def download_file(
         # Stream large files to avoid loading entire file into memory
         file_hash = hashlib.md5()  # noqa: S324
         with (
-            requests.get(url, timeout=600, stream=True, headers=headers) as response,
+            requests.get(
+                url, timeout=600, stream=True, headers=request_headers or None
+            ) as response,
             open(tmp_file_path, mode="wb") as file,
         ):
             response.raise_for_status()
@@ -94,8 +87,7 @@ def download_file(
             isinstance(exc, requests.HTTPError)
             and exc.response is not None
             and exc.response.status_code in (401, 403)
-            and parsed.scheme == "https"
-            and (hostname == "huggingface.co" or hostname.endswith(".huggingface.co"))
+            and is_huggingface
         ):
             exc.add_note(
                 "For gated HuggingFace repos, accept the model license and set "

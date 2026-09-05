@@ -352,14 +352,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     # a full run (no --models) regenerates everything; a partial run keeps existing
     # model assets so submitting a single model doesn't wipe the others
     if args.models:
-        manifest_json = read_manifest(manifest_path)
-        if manifest_json is None:
-            raise FileNotFoundError(
-                f"Targeted kappa refresh requires an existing manifest at "
-                f"{manifest_path}"
-            )
         base_meta, model_assets = retained_parity_assets(
-            manifest_json, target_keys, base, args.asset_prefix
+            read_manifest(manifest_path), target_keys, base, args.asset_prefix
         )
     else:
         model_assets = {}
@@ -399,9 +393,6 @@ def main(argv: Sequence[str] | None = None) -> None:
             print(f"No harmonic phonon sidecar for {model.label}; skipping modes")
             continue
         materials = load_phonon_modes(phonon_path)
-        if not materials:
-            print(f"No successful band paths for {model.label}; skipping modes")
-            continue
         if unknown := set(materials) - set(material_ids):
             raise ValueError(
                 f"{model.label} harmonic sidecar has unknown materials: "

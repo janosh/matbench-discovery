@@ -257,11 +257,7 @@ class KappaRunManifest:
             settings_hash=str(data["settings_hash"]),
             adapter_name=str(data["adapter_name"]),
             source_hash=str(data["source_hash"]),
-            checkpoint_hash=(
-                str(data["checkpoint_hash"])
-                if data.get("checkpoint_hash") is not None
-                else None
-            ),
+            checkpoint_hash=_optional_str(data.get("checkpoint_hash")),
             dtype=str(data["dtype"]),
             device=str(data["device"]),
             dry_run=bool(data.get("dry_run", False)),
@@ -339,7 +335,7 @@ class KappaRecord:
         record = cls(
             material_id=str(data["material_id"]),
             result=normalize_kappa_result(result),
-            error=str(data["error"]) if data.get("error") is not None else None,
+            error=_optional_str(data.get("error")),
             run_metadata=dict(metadata),
             force_file=_optional_str(data.get("force_file")),
             phonon_file=_optional_str(data.get("phonon_file")),
@@ -683,12 +679,11 @@ def calculate_kappa_for_structure(
                     "traceback": traceback.format_exc(),
                 }
             }
-        should_calculate_conductivity_value = should_calculate_conductivity(
+        if should_calculate_conductivity(
             has_imaginary_modes=has_imaginary_modes,
             broken_symmetry=bool(result["broken_symmetry"]),
             settings=settings,
-        )
-        if should_calculate_conductivity_value:
+        ):
             fc3_set = adapter.calculate_fc3(
                 phono3py,
                 calculator,
@@ -699,7 +694,6 @@ def calculate_kappa_for_structure(
                 forces["fc3_set"] = fc3_set
             phono3py.forces = np.asarray(fc3_set)
             phono3py.produce_fc3(symmetrize_fc3r=True)
-        if should_calculate_conductivity_value:
             error_stage = "Conductivity"
             from matbench_discovery.phonons import thermal_conductivity as ltc
 

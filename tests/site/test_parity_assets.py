@@ -491,59 +491,40 @@ def test_compact_phonon_modes_keeps_eigenvectors_at_labeled_points_only() -> Non
     # JSON must round-trip (no numpy scalars/arrays left behind)
     json.dumps(compact)
 
-    # a wrong per-q-point layout (3 atoms instead of 2) and a q-count mismatch both fail
-    record["band_path"]["eigenvectors"] = np.zeros((4, 6, 3, 3, 2))
-    with pytest.raises(ValueError, match="have shape"):
-        kappa_assets.compact_phonon_modes(record)
-    record["band_path"]["eigenvectors"] = np.zeros((3, 6, 2, 3, 2))
-    with pytest.raises(ValueError, match="band-path arrays disagree"):
-        kappa_assets.compact_phonon_modes(record)
-    record["band_path"]["segments"] = []
-    with pytest.raises(ValueError, match="no band-path segments"):
-        kappa_assets.compact_phonon_modes(record)
 
-
-# the client zips these arrays by index without rechecking, so a length mismatch here
-# truncates the band path or yields undefined displacements instead of failing loudly
+# The client indexes these arrays together; reject malformed shapes before export.
 @pytest.mark.parametrize(
-    ("mutate", "expected"),
+    ("field_path", "value", "expected"),
     [
+        (("band_path", "q_points"), np.zeros((2, 3)), "band-path arrays disagree"),
+        (("band_path", "distances"), np.zeros(7), "band-path arrays disagree"),
+        (("primitive", "masses"), [1.0], "primitive arrays disagree"),
+        (("primitive", "frac_coords"), np.zeros((1, 3)), "primitive arrays disagree"),
         (
-            lambda rec: rec["band_path"].__setitem__("q_points", np.zeros((2, 3))),
-            "band-path arrays disagree",
-        ),
-        (
-            lambda rec: rec["band_path"].__setitem__("distances", np.zeros(7)),
-            "band-path arrays disagree",
-        ),
-        (
-            lambda rec: rec["primitive"].__setitem__("masses", [1.0]),
-            "primitive arrays disagree",
-        ),
-        (
-            lambda rec: rec["primitive"].__setitem__("frac_coords", np.zeros((1, 3))),
-            "primitive arrays disagree",
-        ),
-        (
-            lambda rec: rec["band_path"].__setitem__("frequencies", np.zeros((4, 5))),
+            ("band_path", "frequencies"),
+            np.zeros((4, 5)),
             "expected 6 bands for 2 atoms",
         ),
+        (("band_path", "segments", 1, "end_index"), 99, "outside 0..3"),
+        (("band_path", "segments", 0, "start_index"), -1, "outside 0..3"),
+        (("band_path", "eigenvectors"), np.zeros((4, 6, 3, 3, 2)), "have shape"),
         (
-            lambda rec: rec["band_path"]["segments"][1].__setitem__("end_index", 99),
-            "outside 0..3",
+            ("band_path", "eigenvectors"),
+            np.zeros((3, 6, 2, 3, 2)),
+            "band-path arrays disagree",
         ),
-        (
-            lambda rec: rec["band_path"]["segments"][0].__setitem__("start_index", -1),
-            "outside 0..3",
-        ),
+        (("band_path", "segments"), [], "no band-path segments"),
     ],
 )
 def test_compact_phonon_modes_rejects_inconsistent_shapes(
-    mutate: Callable[[dict[str, Any]], None], expected: str
+    field_path: tuple[str | int, ...], value: object, expected: str
 ) -> None:
-    """Every array the client indexes is length-checked against the frequency grid."""
+    """Every array the client indexes is checked against the frequency grid."""
     record = make_harmonic_record()
-    mutate(record)
+    target: Any = record
+    for key in field_path[:-1]:
+        target = target[key]
+    target[field_path[-1]] = value
     with pytest.raises(ValueError, match=expected):
         kappa_assets.compact_phonon_modes(record)
 
@@ -697,20 +678,23 @@ def test_kappa_requires_complete_reference_data(
         (FileNotFoundError("missing"), None),
         (ValueError("checksum"), None),
         (None, OSError("corrupt")),
+        (None, None),  # all band paths may fail without invalidating the run
     ],
 )
-def test_targeted_kappa_fails_on_declared_artifact_errors(
+def test_targeted_kappa_handles_declared_artifacts(
     monkeypatch: pytest.MonkeyPatch,
     resolution_error: Exception | None,
     read_error: Exception | None,
+    tmp_path: Path,
 ) -> None:
-    """A broken declared kappa artifact cannot silently delete its manifest entry."""
+    """Artifact errors abort generation, while failed bands retain a modes asset."""
 
     class BrokenModel:
         """Minimal model whose declared kappa artifact cannot be loaded."""
 
         key = "broken-model"
         label = "Broken model"
+        kappa_103_phonon_path = str(tmp_path / "phonons.json.gz")
 
         @property
         def kappa_103_path(self) -> str:
@@ -747,7 +731,29 @@ def test_targeted_kappa_fails_on_declared_artifact_errors(
         return reference
 
     monkeypatch.setattr(kappa_assets, "read_kappa_json", read_kappa_json)
-    artifact_error = resolution_error or read_error
-    assert artifact_error is not None
-    with pytest.raises(type(artifact_error), match=str(artifact_error)):
-        kappa_assets.main(["--models", BrokenModel.key])
+    manifest_path = tmp_path / "manifest.json"
+    args = [
+        "--models",
+        BrokenModel.key,
+        "--manifest",
+        str(manifest_path),
+        "--out-dir",
+        str(tmp_path),
+    ]
+    if artifact_error := resolution_error or read_error:
+        with pytest.raises(type(artifact_error), match=str(artifact_error)):
+            kappa_assets.main(args)
+    else:
+        failed = make_harmonic_record()
+        del failed["band_path"]
+        failed["errors"] = {"band_path": {"message": "seekpath failed"}}
+        with gzip.open(BrokenModel.kappa_103_phonon_path, "wt") as file:
+            write_json_records(file, [failed])
+        kappa_assets.main(args)
+        manifest = json.loads(manifest_path.read_text())
+        modes = manifest["model_assets"][BrokenModel.key]["modes"]
+        with gzip.open(tmp_path / "assets" / modes["asset"], "rt") as file:
+            assert json.load(file)["model"] == {
+                "model_key": BrokenModel.key,
+                "materials": {},
+            }

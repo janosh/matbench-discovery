@@ -6,6 +6,7 @@ from types import ModuleType
 from typing import Any
 
 import numpy as np
+import requests
 
 from matbench_discovery import ROOT
 
@@ -78,3 +79,12 @@ def make_harmonic_record(
             "heat_capacity": [0.0, 1.0],
         },
     }
+
+
+def make_mock_response(content: bytes, status_code: int = 200) -> requests.Response:
+    """Create a consumed response that streams the given bytes through Requests."""
+    response = requests.Response()
+    response.status_code = status_code
+    response._content = content  # noqa: SLF001
+    response._content_consumed = True  # noqa: SLF001
+    return response

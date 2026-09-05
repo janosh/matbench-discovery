@@ -88,6 +88,8 @@ describe(`Table Export Functionality`, () => {
     const model_cell = document.querySelector<HTMLElement>(`tbody td:nth-child(2)`)
     if (!model_cell) throw new Error(`missing model cell`)
     model_cell.dataset.sortValue = `Model A, revised`
+    vi.useFakeTimers()
+    const revoke_spy = vi.spyOn(URL, `revokeObjectURL`)
     const result = generate_csv({ discovery_set: `unique_prototypes` })
 
     if (!result) throw new Error(`CSV export returned null`)
@@ -95,6 +97,10 @@ describe(`Table Export Functionality`, () => {
     expect(result.filename).toBe(`matbench-unique-prototypes-2models-${today()}.csv`)
     expect(result.url).toBe(`mock-url`)
     expect(click_spy).toHaveBeenCalled()
+    expect(revoke_spy).not.toHaveBeenCalled()
+    vi.advanceTimersByTime(100)
+    expect(revoke_spy).toHaveBeenCalledWith(result.url)
+    vi.useRealTimers()
 
     const csv_content = await exported_blob().text()
     expect(csv_content).toContain(`Model,F1,DAF,CPS,R2,Params`)

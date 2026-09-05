@@ -28,16 +28,7 @@ from matbench_discovery.enums import (
 )
 from matbench_discovery.remote import figshare
 from matbench_discovery.remote.fetch import maybe_auto_download_file
-
-
-def make_mock_response(content: bytes) -> requests.Response:
-    """Create a successful streaming response with fixed byte content."""
-    response = requests.Response()
-    response.status_code = 200
-    response._content = content  # noqa: SLF001
-    response._content_consumed = True  # noqa: SLF001
-    response.iter_content = lambda chunk_size=8192: [content]  # ty: ignore[invalid-assignment] # noqa: ARG005
-    return response
+from tests.utils import make_mock_response
 
 
 @pytest.mark.parametrize("enum_cls", [ArchitectureType, MbdKey, Open, Task, TestSubset])

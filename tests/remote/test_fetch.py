@@ -11,18 +11,7 @@ import pytest
 import requests
 
 from matbench_discovery.remote.fetch import download_file, maybe_auto_download_file
-
-
-def make_mock_response(content: bytes, status_code: int = 200) -> requests.Response:
-    """Create a mock requests.Response with given content and status code."""
-    response = requests.Response()
-    response.status_code = status_code
-    response._content = content  # noqa: SLF001
-    response._content_consumed = True  # noqa: SLF001
-    response.iter_content = (  # ty: ignore[invalid-assignment]
-        lambda chunk_size=1, decode_unicode=False: [content]  # noqa: ARG005
-    )
-    return response
+from tests.utils import make_mock_response
 
 
 @pytest.mark.parametrize(

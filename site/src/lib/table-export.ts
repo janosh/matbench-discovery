@@ -7,33 +7,6 @@ export const heatmap_class = `heatmap`
 type ExportOptions = { discovery_set?: string }
 type ExportResult = { filename: string; url: string }
 
-function generate_filename(
-  format: string,
-  discovery_set: string = `unique_prototypes`,
-): string {
-  const date = new Date().toISOString().split(`T`)[0]
-  const discovery = discovery_set.replaceAll(`_`, `-`)
-
-  const table_el = document.querySelector(`.${heatmap_class}`)
-  const model_count = table_el?.querySelectorAll(`tbody tr`).length ?? 0
-
-  return `matbench-${discovery}-${model_count}models-${date}.${format.toLowerCase()}`
-}
-
-function trigger_download(url: string, filename: string): void {
-  const anchor = document.createElement(`a`)
-  anchor.href = url
-  anchor.download = filename
-  anchor.click()
-}
-
-function download_blob(blob: Blob, filename: string): ExportResult {
-  const url = URL.createObjectURL(blob)
-  trigger_download(url, filename)
-  setTimeout(() => URL.revokeObjectURL(url), 100)
-  return { filename, url }
-}
-
 // Headers and column indices to export, excluding SVG icon columns (Org and Links)
 // and the structural rank (#) column (just 1..N under the current sort)
 function get_export_columns(table_el: Element): { headers: string[]; indices: number[] } {
@@ -138,8 +111,16 @@ export function generate_csv({
     const csv_content = [headers, ...rows].map(csv_line).join(`\n`)
 
     const blob = new Blob([csv_content], { type: `text/csv;charset=utf-8;` })
-    const filename = generate_filename(`csv`, discovery_set)
-    return download_blob(blob, filename)
+    const date = new Date().toISOString().split(`T`)[0]
+    const discovery = discovery_set.replaceAll(`_`, `-`)
+    const filename = `matbench-${discovery}-${rows.length}models-${date}.csv`
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement(`a`)
+    anchor.href = url
+    anchor.download = filename
+    anchor.click()
+    setTimeout(() => URL.revokeObjectURL(url), 100)
+    return { filename, url }
   } catch (error) {
     console.error(`Error generating CSV:`, error)
     return null
