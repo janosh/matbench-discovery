@@ -3,7 +3,7 @@ import { sveltekit } from '@sveltejs/kit/vite'
 import { load as load_yaml } from 'js-yaml'
 import type { JSONSchema4 } from 'json-schema'
 import { compile as json_to_ts } from 'json-schema-to-typescript'
-import { mdsvex } from 'mdsvex'
+import { create_markdown, markdown } from 'svelte-widgets/markdown'
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import { createRequire } from 'node:module'
@@ -11,13 +11,10 @@ import os from 'node:os'
 import path from 'node:path'
 import zlib from 'node:zlib'
 import { heading_ids } from 'svelte-widgets/heading-anchors' // Adds IDs to headings at build time
-import { katex_preprocess } from 'svelte-widgets/katex'
-import { starry_night_highlighter } from 'svelte-widgets/live-examples'
+import { default_highlighter } from 'svelte-widgets/highlight'
 import { make_config } from 'svelte-widgets/vite-config'
 import type { Plugin } from 'vite'
 import pkg from './package.json' with { type: 'json' }
-
-const { before: katex_before, after: katex_after } = katex_preprocess()
 
 // passed inline to sveltekit() (Kit >= 2.62) so no separate svelte.config.ts is needed;
 // kit options (adapter, version, alias) sit at the top level rather than under `kit`
@@ -32,13 +29,14 @@ export const svelte_config = {
         code: content.replaceAll(pkg.homepage, ``),
       }),
     },
-    katex_before,
-    mdsvex({
-      extensions: [`.svx`, `.md`],
-      highlight: { highlighter: starry_night_highlighter },
-    }),
-    katex_after,
-    heading_ids(), // Runs after mdsvex converts markdown to HTML
+    markdown(
+      create_markdown({
+        math: true,
+        typography: true,
+        highlight: default_highlighter.highlight,
+      }),
+    ),
+    heading_ids(), // Adds anchors to native Svelte pages; Markdown assigns its own
     {
       markup: (file: { content: string; filename?: string }) => {
         const filename = file.filename?.replaceAll(`\\`, `/`) ?? ``
