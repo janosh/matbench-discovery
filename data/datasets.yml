@@ -716,10 +716,13 @@ ELEMENTA:
   license: CC-BY-NC-4.0
   description: |
     Composition-complete, prototype-independent first-principles dataset by Kairos Materials.
-    Systematically enumerates unary, binary and ternary compositions with up to twelve atoms
-    per cell (~1.9M reduced formulas) explored via random structure search, represented by DFT
-    relaxation trajectories: ~210 million frames with energies, forces and stresses over >9.7M
-    distinct relaxed polymorphs. As for the training of the models for Matbench Discovery, structures
+    Systematically enumerates the compact space of unary, binary and ternary compositions with
+    up to twelve atoms per cell (~1.9M reduced formulas) explored via random structure search,
+    represented by DFT relaxation trajectories: ~210 million frames with energies, forces and
+    stresses over >9.7M distinct relaxed polymorphs. Beyond this compact enumerated space, the
+    corpus also includes representative ternary and quaternary systems with larger reduced
+    formulas and cells of up to 40 atoms.
+    As for the training of the models for Matbench Discovery, structures
     overlapping with the WBM benchmark test set were removed during post processing. Two expansion
     sets probe additional physical dimensions: ELEMENTA Spin (4.7M frames, systematic magnetic-moment scans)
     and ELEMENTA Vib (~8M perturbed structures probing local vibrational environments and energy-surface curvature).
@@ -728,7 +731,8 @@ ELEMENTA:
       The full 210M-frame corpus is not public. A first public release is available on
       [Hugging Face](https://huggingface.co/datasets/kairosmaterial/ELEMENTA) under
       CC-BY-NC-4.0: ~39M core frames (complete unary and binary chemical spaces plus
-      ternary compositions with reduced-formula stoichiometric coefficients) together
+      ternary compositions with reduced-formula stoichiometric coefficients summing to
+      no more than four) together
       with the complete 4.7M-frame ELEMENTA Spin set, in extended-XYZ format.
   method: DFT
   params:
