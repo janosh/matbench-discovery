@@ -1,11 +1,3 @@
-import DATASETS from '$data/datasets.yml'
-import data_files from '$pkg/data-files.yml'
-import rehypeStringify from 'rehype-stringify'
-import remarkParse from 'remark-parse'
-import remarkRehype from 'remark-rehype'
-import { unified } from 'unified'
-import { MODELS } from './models.svelte'
-
 export { default as AuthorBrief } from './model/ModelAuthor.svelte'
 export { default as GeoOptMetricsTable } from './table/GeoOptMetricsTable.svelte'
 export { default as MetricsTable } from './table/MetricsTable.svelte'
@@ -21,55 +13,15 @@ export { default as PtableInset } from './PtableInset.svelte'
 export { default as DiscoverySetToggle } from './DiscoverySetToggle.svelte'
 export { default as TableControls } from './table/TableControls.svelte'
 export * from './types'
-// these resolve to the same singleton module objects enriched in-place below
-// (DATASETS gets slug/description_html, data_files entries get html), so $lib
-// consumers receive the mutated objects — not pristine re-imports
+// YAML data is enriched at build time.
 export { default as DATASETS } from '$data/datasets.yml'
 export { default as data_files } from '$pkg/data-files.yml'
-
-const md_parser = unified().use(remarkParse).use(remarkRehype).use(rehypeStringify)
-const md_to_html = (md: string): string => String(md_parser.processSync(md)?.value ?? ``)
-
-export const slugify = (text: string): string =>
-  text.toLowerCase().replaceAll(/[\s_]+/g, `-`)
 
 // Stringify values for display, rendering nullish/empty values as 'n/a'
 export function arr_to_str(value: unknown): string {
   if (value === null || value === undefined || value === ``) return `n/a`
   if (Array.isArray(value)) return value.join(`, `)
   return JSON.stringify(value)
-}
-
-// Process datasets to add slugs and convert descriptions to HTML
-for (const [key, dataset] of Object.entries(DATASETS)) {
-  dataset.slug = slugify(key)
-  dataset.description_html = md_to_html(dataset.description)
-}
-
-// Parse markdown notes to html with remark/rehype
-for (const { notes, metadata_file } of MODELS) {
-  if (!notes) continue
-  notes.html ??= {}
-
-  for (const [key, note] of Object.entries(notes)) {
-    if (typeof note !== `string` || key in notes.html) continue
-
-    const html_note = md_to_html(note)
-
-    if (html_note) notes.html[key] = html_note
-    else console.error(`${metadata_file}: Failed to compile note '${key}'\n`)
-  }
-}
-
-// oxlint-disable-next-line typescript/dot-notation -- `_links` is an external data-files.yml field; dot access trips no-underscore-dangle
-const data_file_links = data_files[`_links`]
-if (typeof data_file_links !== `string`) {
-  throw new TypeError(`data-files.yml: _links must be a string`)
-}
-
-for (const [key, entry] of Object.entries(data_files)) {
-  if (key.startsWith(`_`) || typeof entry !== `object`) continue
-  entry.html = md_to_html(`${entry.description}\n\n${data_file_links}`)
 }
 
 export const format_date = (

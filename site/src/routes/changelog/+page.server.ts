@@ -11,5 +11,5 @@ export const load = async () => {
       dialect: `markdown`,
     }),
   )
-  return { changelog: { code: assert_ok(await render_markdown(document)) } }
+  return { changelog: assert_ok(await render_markdown(document)) }
 }

@@ -4,4 +4,4 @@
   let { data }: { data: PageData } = $props()
 </script>
 
-{@html data.changelog?.code}
+{@html data.changelog}

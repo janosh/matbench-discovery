@@ -15,7 +15,7 @@
     ThemeToggle,
     Toc,
   } from 'svelte-widgets'
-  import type { FooterLink } from 'svelte-widgets'
+  import type { CmdAction, FooterLink } from 'svelte-widgets'
   import { Changelog, Email, GitHub, RSS, Search } from 'svelte-widgets/icons'
   import MODELING_TASKS from '$pkg/modeling-tasks.yml'
   import pkg from '$site/package.json'
@@ -111,20 +111,14 @@
   let description = $derived(descriptions[url] ?? base_description)
   let title = $derived(url === `/` ? `` : `${url} • `)
 
-  const actions = Object.keys(import.meta.glob(`./**/+page.{svelte,md}`))
+  const actions: CmdAction[] = Object.keys(import.meta.glob(`./**/+page.{svelte,md}`))
     .filter((filename) => !filename.includes(`[`))
     .map((filename) => {
       const parts = filename.split(`/`).filter((part) => !part.startsWith(`(`)) // Remove hidden route segments
-      const route = `/${parts.slice(1, -1).join(`/`)}`
-
-      return { label: route, action: () => goto(route) }
+      return `/${parts.slice(1, -1).join(`/`)}`
     })
-    .concat(
-      MODELS.map((model) => ({
-        label: `/models/${model.model_key}`,
-        action: () => goto(`/models/${model.model_key}`),
-      })),
-    )
+    .concat(MODELS.map(({ model_key }) => `/models/${model_key}`))
+    .map((route) => ({ id: route, label: route, action: () => goto(route) }))
 </script>
 
 <CommandMenu
