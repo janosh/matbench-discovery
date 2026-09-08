@@ -54,7 +54,9 @@ it.each([
   },
 ])(
   `sets log toggles for $scenario`,
-  ({ min_value, max_value, x_key, expected_labels }) => {
+  async ({ min_value, max_value, x_key, expected_labels }) => {
+    vi.spyOn(HTMLElement.prototype, `clientWidth`, `get`).mockReturnValue(800)
+    vi.spyOn(HTMLElement.prototype, `clientHeight`, `get`).mockReturnValue(600)
     mount(DynamicScatter, {
       target: document.body,
       props: {
@@ -63,6 +65,7 @@ it.each([
         ...scatter_props,
       },
     })
+    await tick()
 
     const toggles = [
       ...document.querySelectorAll<HTMLInputElement>(`.log-controls input`),
@@ -74,10 +77,19 @@ it.each([
     expect(document.querySelector(`.log-controls`) !== null).toBe(
       expected_labels.length > 0,
     )
+    const plot_area = doc_query<SVGRectElement>(`.scatter clipPath rect`)
+    const label_group = doc_query(`.scatter .y-label`).closest(`g`)
+    const plot_center_y =
+      Number(plot_area.getAttribute(`y`)) + Number(plot_area.getAttribute(`height`)) / 2
+    const rotation = label_group?.getAttribute(`transform`)
+    expect(rotation).toMatch(/^rotate\(-90, /)
+    expect(Number(rotation?.split(`, `)[2]?.replace(`)`, ``))).toBe(plot_center_y)
   },
 )
 
 it(`re-evaluates manual log choices after an axis change`, async () => {
+  vi.spyOn(HTMLElement.prototype, `clientWidth`, `get`).mockReturnValue(800)
+  vi.spyOn(HTMLElement.prototype, `clientHeight`, `get`).mockReturnValue(600)
   let x_key = $state(HYPERPARAMS.model_params.key)
   mount(DynamicScatter, {
     target: document.body,
@@ -92,15 +104,22 @@ it(`re-evaluates manual log choices after an axis change`, async () => {
       },
     },
   })
+  await tick()
 
+  const x_ticks = () =>
+    [...document.querySelectorAll(`.x-axis .tick text`)].map((label) => label.textContent)
+  const log_ticks = x_ticks()
   const x_toggle = document.querySelector<HTMLInputElement>(`.log-controls input`)
   expect(x_toggle?.checked).toBe(true)
   x_toggle?.click()
+  await tick()
   expect(x_toggle?.checked).toBe(false)
+  expect(x_ticks()).not.toEqual(log_ticks)
 
   x_key = METADATA_COLS.n_training_materials.key
   await tick()
   expect(x_toggle?.checked).toBe(true)
+  expect(x_ticks()).toEqual(log_ticks)
 })
 
 it.each([
@@ -125,6 +144,11 @@ it.each([
       },
     })
     await tick()
+
+    const size_picker = doc_query(`#size-select`).closest(`.multiselect`)
+    expect(size_picker).not.toBeNull()
+    expect(doc_query(`ul.selected`, size_picker).style.flexWrap).toBe(`nowrap`)
+    expect(doc_query(`ul.selected > li`, size_picker).style.fontSize).toBe(`14px`)
 
     doc_query<HTMLButtonElement>(`.axis-trigger`).click()
     await vi.waitFor(() =>

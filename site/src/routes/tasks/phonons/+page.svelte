@@ -205,8 +205,8 @@
     View model:
     <ModelSelect
       options={model_options}
-      minSelect={1}
-      maxSelect={1}
+      min_select={1}
+      max_select={1}
       style="width: 32em; max-width: 100%; border: 1px solid var(--border)"
       bind:selected={
         () => model_options.filter((option) => option.value === selected_key),

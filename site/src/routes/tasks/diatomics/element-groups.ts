@@ -1,8 +1,6 @@
 // TODO: remove category_groups+element_groups ie this whole file once the next MatterViz release exports these element groups.
 import type { ChemicalElement, ElementCategory } from 'matterviz/element'
 
-export { element_by_symbol } from 'matterviz/element'
-
 type ElementGroup = {
   value: string
   label: string

@@ -46,14 +46,33 @@ def test_generate_diatomics_rejects_distance_beyond_half_box() -> None:
         generate_diatomics("H", "H", [3.0], box_size=5.0)
 
 
-def test_calc_diatomic_curve_results() -> None:
-    """Pairs given as symbols and/or atomic numbers yield correctly shaped curves."""
-    distances = [1.0, 2.0]
+@pytest.mark.parametrize(
+    ("distances", "initial_results"),
+    [
+        ([1.0, 2.0], {}),
+        (
+            [1.0],
+            {
+                "Cu-Cu": {
+                    "distances": [2.0],
+                    "energies": [-1.0],
+                    "forces": [[[0.1, 0, 0], [-0.1, 0, 0]]],
+                }
+            },
+        ),
+    ],
+    ids=["fresh", "stale-distance-grid"],
+)
+def test_calc_diatomic_curve_results(
+    distances: list[float], initial_results: DiatomicResults
+) -> None:
+    """Symbol/number pairs yield full curves, replacing caches on stale grids."""
     # mixed symbol/number pair specs, incl. H-H requested in both forms
     pairs = [(1, 1), ("H", 1), (8, "O"), ("Cu", 29)]
-    results = calc_diatomic_curve(pairs, EMT(), "test", distances, {})
+    results = calc_diatomic_curve(pairs, EMT(), "test", distances, initial_results)
 
     assert set(results) == {"H-H", "O-O", "Cu-Cu"}
+    assert results["Cu-Cu"]["energies"] != [-1.0]
     n_atoms, n_dims = 2, 3
     for formula, curve in results.items():
         assert curve["distances"] == distances, formula
@@ -71,8 +90,7 @@ def test_calc_diatomic_curve_energy_trend() -> None:
     energies = results["Cu-Cu"]["energies"]
     # energy minimum must sit at the equilibrium distance, i.e. strictly interior
     min_energy_idx = np.argmin(energies)
-    assert min_energy_idx > 0  # not at the shortest distance
-    assert min_energy_idx < len(energies) - 1  # not at the longest distance
+    assert 0 < min_energy_idx < len(energies) - 1
 
 
 def test_calc_diatomic_curve_force_directions() -> None:
@@ -88,27 +106,4 @@ def test_calc_diatomic_curve_force_directions() -> None:
     assert forces[1][0][0] > 0  # first atom, x component
     assert forces[1][1][0] < 0  # second atom, x component
     # y and z components should be zero
-    assert all(f[0][1:] == [0, 0] for f in forces)  # first atom
-    assert all(f[1][1:] == [0, 0] for f in forces)  # second atom
-
-
-def test_calc_diatomic_curve_prior_results() -> None:
-    """calc_diatomic_curve recalculates requested pairs, overwriting stale results."""
-    distances = [1.0]
-    initial_results: DiatomicResults = {
-        "Cu-Cu": {
-            "distances": [2.0],
-            "energies": [-1.0],
-            "forces": [[[0.1, 0, 0], [-0.1, 0, 0]]],
-        }
-    }
-
-    results = calc_diatomic_curve(
-        [("Cu", "Cu")], EMT(), "test", distances, initial_results
-    )
-
-    # Cu-Cu was recalculated on the new distance grid, not taken from initial_results
-    cu_curve = results["Cu-Cu"]
-    assert cu_curve["distances"] == distances
-    assert cu_curve["energies"] != [-1.0]
-    assert np.array(cu_curve["forces"]).shape == (len(distances), 2, 3)
+    assert all(atom_force[1:] == [0, 0] for frame in forces for atom_force in frame)

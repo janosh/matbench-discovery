@@ -190,14 +190,9 @@
   })
   let supported_log_dims = $derived(log_dims.filter((dim) => can_log[dim]))
   // Initialize automatically; manual toggles reset when data or dimensions change.
-  // svelte-ignore state_referenced_locally
-  let log = $state({ ...can_log })
-  $effect(() => {
-    log = { ...can_log }
-  })
-  // A stale manual toggle falls back to linear when the data no longer supports logs.
+  let log = $derived({ ...can_log })
   const scale_of = (dim: keyof typeof log) =>
-    log[dim] && can_log[dim] ? (`log` as const) : (`linear` as const)
+    log[dim] ? (`log` as const) : (`linear` as const)
 
   // plot and legend share this scale so legend swatches always match point colors
   let color_scale = $derived({
@@ -361,13 +356,13 @@
       {options}
       id="size-select"
       bind:value={size_prop}
-      maxSelect={1}
-      minSelect={1}
+      max_select={1}
+      min_select={1}
       key={(opt: ScatterOption) => opt.key}
       style="flex: 1; max-width: 300px; margin: 0; line-height: normal; --sms-min-height: 24px"
-      ulSelectedStyle="flex-wrap: nowrap; overflow: hidden; min-width: 0;"
-      liSelectedStyle="font-size: 14px; min-width: 0; max-width: 100%; overflow: hidden;"
-      liOptionStyle="font-size: 13px;"
+      ul_selected_style="flex-wrap: nowrap; overflow: hidden; min-width: 0;"
+      li_selected_style="font-size: 14px; min-width: 0; max-width: 100%; overflow: hidden;"
+      li_option_style="font-size: 13px;"
     >
       {#snippet children({ option: prop, type }: { option: ScatterOption; type: string })}
         <span class:selected-label={type === `selected`}>
@@ -383,7 +378,11 @@
         <strong>Log Scale</strong>
         {#each supported_log_dims as dim (dim)}
           <label>
-            <input type="checkbox" bind:checked={log[dim]} />
+            <input
+              type="checkbox"
+              checked={log[dim]}
+              onchange={(event) => (log = { ...log, [dim]: event.currentTarget.checked })}
+            />
             {log_dim_labels[dim]}
           </label>
         {/each}
@@ -419,10 +418,6 @@
       label: axes.y?.label,
       format: axes.y?.format,
       scale_type: scale_of(`y`),
-      label_shift: {
-        x: -10,
-        y: [`benchmark_added`, `model_params`].includes(axes.y?.key ?? ``) ? -40 : -10,
-      },
       ticks,
       options: prop_options,
       selected_key: y_key,

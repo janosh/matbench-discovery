@@ -3,7 +3,7 @@ import { sveltekit } from '@sveltejs/kit/vite'
 import { load as load_yaml } from 'js-yaml'
 import type { JSONSchema4 } from 'json-schema'
 import { compile as json_to_ts } from 'json-schema-to-typescript'
-import { mdsvex } from 'mdsvex'
+import { create_markdown, markdown } from 'svelte-widgets/markdown'
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import { createRequire } from 'node:module'
@@ -11,18 +11,17 @@ import os from 'node:os'
 import path from 'node:path'
 import zlib from 'node:zlib'
 import { heading_ids } from 'svelte-widgets/heading-anchors' // Adds IDs to headings at build time
-import { katex_preprocess } from 'svelte-widgets/katex'
-import { starry_night_highlighter } from 'svelte-widgets/live-examples'
+import { default_highlighter } from 'svelte-widgets/highlight'
 import { make_config } from 'svelte-widgets/vite-config'
+import { yaml_plugin } from 'svelte-widgets/yaml'
 import type { Plugin } from 'vite'
 import pkg from './package.json' with { type: 'json' }
-
-const { before: katex_before, after: katex_after } = katex_preprocess()
+import { render_data_markdown } from './scripts/markdown-data.ts'
 
 // passed inline to sveltekit() (Kit >= 2.62) so no separate svelte.config.ts is needed;
 // kit options (adapter, version, alias) sit at the top level rather than under `kit`
 export const svelte_config = {
-  extensions: [`.svelte`, `.svx`, `.md`, `.html`],
+  extensions: [`.svelte`, `.md`],
 
   preprocess: [
     // Replace readme links to docs with site-internal links
@@ -32,13 +31,14 @@ export const svelte_config = {
         code: content.replaceAll(pkg.homepage, ``),
       }),
     },
-    katex_before,
-    mdsvex({
-      extensions: [`.svx`, `.md`],
-      highlight: { highlighter: starry_night_highlighter },
-    }),
-    katex_after,
-    heading_ids(), // Runs after mdsvex converts markdown to HTML
+    markdown(
+      create_markdown({
+        math: true,
+        typography: true,
+        highlight: default_highlighter.highlight,
+      }),
+    ),
+    heading_ids(), // Adds anchors to native Svelte pages; Markdown assigns its own
     {
       markup: (file: { content: string; filename?: string }) => {
         const filename = file.filename?.replaceAll(`\\`, `/`) ?? ``
@@ -54,13 +54,12 @@ export const svelte_config = {
           /@label:(?<id>(?:fig|tab):[^\s]+)/g,
           (_match, id) => {
             if (!fig_index.includes(id)) fig_index.push(id)
-            const idx = (route.startsWith(`si`) ? `S` : ``) + fig_index.length
             const link_icon = `<a aria-hidden="true" tabindex="-1" href="#${id}"><svg width="16" height="16" viewBox="0 0 16 16"><use xlink:href="#octicon-link"></use></svg></a>`
-            return `<strong id='${id}'>${link_icon}Fig. ${idx}</strong>`
+            return `<strong id='${id}'>${link_icon}Fig. ${fig_index.length}</strong>`
           },
         )
 
-        // Replace figure references @fig:label with 'fig. {n}' and add to fig_index
+        // Resolve references after collecting all labels, including forward references.
         code = code.replaceAll(
           /@(?<id>(?<fig>fig):(?:[a-z0-9]+-?)+)/gi, // Match case-insensitive but replace case-sensitive
           // @(f|F)ig becomes '(f|F)ig. {n}'
@@ -75,14 +74,6 @@ export const svelte_config = {
             }
             return `<a href="#${id_lower}">${fig_or_Fig}. ${idx}</a>`
           },
-        )
-
-        // Preprocess markdown citations @auth_1st-word-title_yyyy into citation links
-        // Links to bibliography items, href must match id format in References.svelte
-        code = code.replaceAll(
-          /\[?@(?<id>(?<author>.+?)_.+?_(?<year>\d{4}));?\]?/g, // Ends with ;?\]? to match single and multiple citations
-          (_match, id, author, year) =>
-            `[<a class="ref" href="#${id}">${author} ${year}</a>]`,
         )
 
         return { code }
@@ -103,22 +94,6 @@ export const svelte_config = {
     $routes: `src/routes`,
   },
 }
-
-// Parse .yml/.yaml/.cff imports into plain ES modules at build time (replaces @rollup/plugin-yaml).
-// All call sites import the default export only, so no per-key named exports are generated.
-const yaml_plugin = (): Plugin => ({
-  name: `yaml`,
-  transform: {
-    filter: { id: /\.(?:ya?ml|cff)$/ },
-    handler(content) {
-      const data = load_yaml(content)
-      const code = `export default /* @__PURE__ */ JSON.parse(${JSON.stringify(
-        JSON.stringify(data),
-      )})`
-      return { code, map: null }
-    },
-  },
-})
 
 // Load committed data payloads as parsed ES modules. Figure payloads in site/src/figs
 // are typed per payload in src/figs/payloads.d.ts. Two formats: <name>.json.gz
@@ -208,7 +183,6 @@ function yaml_schema_to_typescript_plugin(): Plugin {
       const yaml_content = fs.readFileSync(file, `utf-8`)
       const file_dir = path.dirname(file)
 
-      // Replace relative file paths in $refs with absolute file URIs
       const parsed_yaml = load_yaml(yaml_content) as JSONSchema4
       const base_name = path.basename(file, `.yml`)
 
@@ -290,7 +264,7 @@ export default {
   },
   plugins: [
     sveltekit(svelte_config),
-    yaml_plugin(),
+    yaml_plugin({ transform: render_data_markdown }),
     yaml_schema_to_typescript_plugin(),
     json_payload_plugin(),
     unchanged_generated_hmr_plugin(),

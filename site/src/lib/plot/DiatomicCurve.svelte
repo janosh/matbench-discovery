@@ -75,9 +75,14 @@
       label: `Distance (Å)`,
       format: `.1f`,
       range: x_range,
-      label_shift: { y: -30 },
+      label_shift: { y: 0 },
     }}
-    y_axis={{ label: `Energy (eV)`, format: `.2f`, range: y_range }}
+    y_axis={{
+      label: `Energy (eV)`,
+      format: `.2f`,
+      range: y_range,
+      label_shift: { x: 12 },
+    }}
     legend={null}
     point_tween={no_tween}
     line_tween={no_tween}

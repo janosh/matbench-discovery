@@ -15,7 +15,7 @@
     ThemeToggle,
     Toc,
   } from 'svelte-widgets'
-  import type { FooterLink } from 'svelte-widgets'
+  import type { CmdAction, FooterLink } from 'svelte-widgets'
   import { Changelog, Email, GitHub, RSS, Search } from 'svelte-widgets/icons'
   import MODELING_TASKS from '$pkg/modeling-tasks.yml'
   import pkg from '$site/package.json'
@@ -111,20 +111,14 @@
   let description = $derived(descriptions[url] ?? base_description)
   let title = $derived(url === `/` ? `` : `${url} • `)
 
-  const actions = Object.keys(import.meta.glob(`./**/+page.{svelte,md}`))
+  const actions: CmdAction[] = Object.keys(import.meta.glob(`./**/+page.{svelte,md}`))
     .filter((filename) => !filename.includes(`[`))
     .map((filename) => {
       const parts = filename.split(`/`).filter((part) => !part.startsWith(`(`)) // Remove hidden route segments
-      const route = `/${parts.slice(1, -1).join(`/`)}`
-
-      return { label: route, action: () => goto(route) }
+      return `/${parts.slice(1, -1).join(`/`)}`
     })
-    .concat(
-      MODELS.map((model) => ({
-        label: `/models/${model.model_key}`,
-        action: () => goto(`/models/${model.model_key}`),
-      })),
-    )
+    .concat(MODELS.map(({ model_key }) => `/models/${model_key}`))
+    .map((route) => ({ id: route, label: route, action: () => goto(route) }))
 </script>
 
 <CommandMenu
@@ -141,22 +135,22 @@
 
 {#if ![`/`, `/models`, `/tasks/diatomics`, `/tasks/geo-opt`].includes(url)}
   <Toc
-    headingSelector={heading_selector}
+    {heading_selector}
     breakpoint={1350}
-    minItems={3}
-    hideOnIntersect="section.full-bleed .table-container, .bleed-1400"
+    min_items={3}
+    hide_on_intersect="section.full-bleed .table-container, .bleed-1400"
     bind:desktop={toc_desktop}
-    asideProps={{
+    aside_props={{
       style: toc_desktop
         ? `max-width: 22em; position: fixed; left: calc(50vw + var(--main-max-width) / 2); top: 8em;`
         : `z-index: 1;`,
     }}
-    navProps={{
+    nav_props={{
       style: toc_desktop
         ? `font-size: 7pt;`
         : `font-size: 7pt; z-index: 10; padding: 1em;`,
     }}
-    titleProps={{ style: `margin: 3pt` }}
+    title_props={{ style: `margin: 3pt` }}
     --toc-title-font-weight="600"
     --toc-li-color="var(--text-color)"
     --toc-active-color="var(--link-color)"

@@ -48,6 +48,10 @@ it(`filters TMI elements and functionals while preserving curve gaps`, async () 
   expect(button_for(`Halogens`).getAttribute(`aria-checked`)).toBe(`true`)
   const pbe = button_for(`PBE`, `.legend button`)
   expect(plotted_series()).toHaveLength(4)
+  expect(get_scatter_plot_props(plot_mocks.ScatterPlot)).toMatchObject({
+    x_axis: { label_shift: { y: 0 } },
+    y_axis: { label_shift: { x: 12 } },
+  })
   expect(plotted_series()[0]).toMatchObject({ x: [1, 2], y: [1, Number.NaN] })
 
   pbe.click()

@@ -17,7 +17,7 @@ from scripts.evals import evaluate_models
 
 
 def main() -> int:
-    """Evaluate diatomic metrics, returning 0 if any model succeeds and 1 otherwise."""
+    """Evaluate diatomic metrics with the shared sweep's failure and skip handling."""
     pbe_ref_curves = diatomics.load_dft_reference_curves("PBE")
 
     def evaluate_one(model: Model) -> str | None:

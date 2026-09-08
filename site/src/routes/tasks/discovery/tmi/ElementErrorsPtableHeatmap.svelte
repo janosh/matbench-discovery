@@ -97,7 +97,12 @@
   each element tile splits into one segment per model.
 </p>
 
-<ModelSelect bind:selected={current_model} options={models} maxSelect={4} minSelect={1} />
+<ModelSelect
+  bind:selected={current_model}
+  options={models}
+  max_select={4}
+  min_select={1}
+/>
 
 {#if selected_models.length > 1}
   <div class="split-legend">

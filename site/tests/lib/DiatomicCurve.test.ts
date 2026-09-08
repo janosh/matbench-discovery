@@ -42,8 +42,18 @@ describe(`DiatomicCurve`, () => {
           line_style: { stroke: `#123456` },
         },
       ],
-      x_axis: { label: `Distance (Å)`, format: `.1f`, range: [0.2, 6] },
-      y_axis: { label: `Energy (eV)`, format: `.2f`, range: [-8, 20] },
+      x_axis: {
+        label: `Distance (Å)`,
+        format: `.1f`,
+        range: [0.2, 6],
+        label_shift: { y: 0 },
+      },
+      y_axis: {
+        label: `Energy (eV)`,
+        format: `.2f`,
+        range: [-8, 20],
+        label_shift: { x: 12 },
+      },
       legend: null,
     })
   })

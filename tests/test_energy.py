@@ -23,10 +23,15 @@ def ref_energies() -> dict[str, float]:
     return {"Fe": -1.0, "O": -2.0}
 
 
-@pytest.mark.parametrize("constructor", [PDEntry, ComputedEntry, lambda **x: x])
+@pytest.mark.parametrize(
+    ("constructor", "expected_type"),
+    [(PDEntry, PDEntry), (ComputedEntry, ComputedEntry), (dict, PDEntry)],
+)
 @pytest.mark.parametrize("verbose", [True, False])
 def test_get_elemental_ref_entries(
-    constructor: Callable[..., Entry | dict[str, Any]], verbose: bool
+    constructor: Callable[..., Entry | dict[str, Any]],
+    expected_type: type[Entry],
+    verbose: bool,
 ) -> None:
     """Test that elemental reference entries are correctly identified."""
     entries = [
@@ -40,9 +45,7 @@ def test_get_elemental_ref_entries(
         [constructor(composition=comp, energy=energy) for comp, energy in entries],
         verbose=verbose,
     )
-    if getattr(constructor, "__name__", None) == "<lambda>":
-        constructor = PDEntry
-    expected = {"Fe": constructor(comp1, energy1), "O": constructor(comp2, energy2)}
+    expected = {"Fe": expected_type(comp1, energy1), "O": expected_type(comp2, energy2)}
     assert elemental_ref_entries == expected
 
 

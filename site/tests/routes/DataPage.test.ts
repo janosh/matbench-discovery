@@ -95,6 +95,22 @@ describe(`Data Route URL state`, () => {
     await mount_with_url(DataRoute, `http://localhost/data${query}`)
 
     expect(count_mode_text()).toContain(expected_mode)
+
+    const input = document.querySelector<HTMLInputElement>(`#count-mode`)
+    const picker = input?.closest(`.multiselect`)
+    expect(picker?.querySelector(`button[title^="Remove"]`)).toBeNull()
+    input?.click()
+    await tick()
+    const other_mode = expected_mode === `occurrence` ? `composition` : `occurrence`
+    const option = [...(picker?.querySelectorAll(`li[role="option"]`) ?? [])].find(
+      (element) => element.textContent?.includes(other_mode),
+    )
+    expect(option).toBeDefined()
+    option?.dispatchEvent(new MouseEvent(`click`, { bubbles: true }))
+    await tick()
+    expect(count_mode_text()).toContain(other_mode)
+    expect(count_mode_text()).not.toContain(expected_mode)
+    expect(picker?.querySelectorAll(`ul.selected > li`)).toHaveLength(1)
   })
 
   const log_checkboxes = (): HTMLInputElement[] =>

@@ -1,20 +1,45 @@
 import type { ModelData } from '$lib/types'
+import { MODELS } from '$lib/models.svelte'
 import DiatomicsPage from '$routes/tasks/diatomics/+page.svelte'
 import { tick } from 'svelte'
 import { PLOT_COLORS } from 'matterviz'
 import { describe, expect, it } from 'vitest'
-import { mount_with_url, sorted_header } from '../index'
+import { doc_query, mount_with_url, sorted_header } from '../index'
 
-const model_data = [
-  { model_key: `model-a`, model_name: `Model A` },
-  { model_key: `model-b`, model_name: `Model B` },
-] as ModelData[]
+const model_data: ModelData[] = (
+  [
+    [`a`, 0.1],
+    [`b`, 0.8],
+    [`c`, 0.6],
+    [`d`, 0.9],
+    [`e`, 1],
+    [`f`, 0.95],
+  ] as const
+).map(([suffix, combined_score]) => ({
+  ...MODELS[0],
+  model_key: `model-${suffix}`,
+  model_name: `Model ${suffix.toUpperCase()}`,
+  metrics: { diatomics: { combined_score } },
+}))
 
-const curve = { distances: [1], 'homo-nuclear': { 'H-H': { energies: [0] } } }
+const curve = {
+  distances: [1],
+  'homo-nuclear': {
+    'H-H': { energies: [0] },
+    'He-He': { energies: [0] },
+    'F-F': { energies: [0] },
+  },
+}
 const page_data = {
   diatomic_models: model_data,
-  diatomic_curves: { PBE: curve, r2SCAN: curve, 'model-a': curve, 'model-b': curve },
-  errors: {},
+  diatomic_curves: {
+    PBE: curve,
+    r2SCAN: curve,
+    ...Object.fromEntries(
+      model_data.slice(0, 5).map(({ model_key }) => [model_key, curve]),
+    ),
+  },
+  errors: { 'model-e': `Curve unavailable` },
   reference_names: [`PBE`, `r2SCAN`],
 }
 
@@ -26,13 +51,7 @@ const button_for = (text: string): HTMLButtonElement => {
   return button
 }
 
-const model_select = (): HTMLElement => {
-  // scope to the curve-controls div: the Pareto scatter adds its own marker-size
-  // multiselect earlier in the DOM, so a bare `.multiselect` would match that instead
-  const select = document.querySelector<HTMLElement>(`.controls .multiselect`)
-  if (!select) throw new Error(`No model multiselect found`)
-  return select
-}
+const model_select = () => doc_query(`.controls .multiselect`)
 
 const mount_page = async (search = ``): Promise<void> => {
   await mount_with_url(DiatomicsPage, `http://localhost/tasks/diatomics${search}`, {
@@ -40,8 +59,12 @@ const mount_page = async (search = ``): Promise<void> => {
   })
 }
 
-const selected_options = (): HTMLElement | null =>
-  model_select().querySelector(`ul[aria-label="selected options"]`)
+const selected_options = () =>
+  doc_query(`ul[aria-label="selected options"]`, model_select())
+const selected_labels = () =>
+  [...selected_options().querySelectorAll(`:scope > li`)].map((item) =>
+    item.textContent?.trim(),
+  )
 
 async function select_model_option(model_name: string): Promise<void> {
   model_select().querySelector<HTMLInputElement>(`input`)?.click()
@@ -56,24 +79,25 @@ async function select_model_option(model_name: string): Promise<void> {
 }
 
 describe(`Diatomics Page URL state`, () => {
-  it(`uses default selected curve models without query params`, async () => {
+  it(`defaults to the top three CDS models with curves plus DFT references`, async () => {
     await mount_page()
 
-    const selected_text = selected_options()?.textContent
-    expect(selected_text).toContain(`PBE (DFT)`)
-    expect(selected_text).toContain(`r2SCAN (DFT)`)
-    expect(selected_text).toContain(`Model A`)
-    expect(selected_text).toContain(`Model B`)
+    expect(selected_labels()).toEqual([
+      `PBE (DFT)`,
+      `r2SCAN (DFT)`,
+      `Model B`,
+      `Model C`,
+      `Model D`,
+    ])
+    await select_model_option(`Model A`)
+    expect(selected_options()?.textContent).toContain(`Model A`)
   })
 
   it(`restores selected curve models from the models query param`, async () => {
     await mount_page(`?models=model-b`)
 
     const selected = selected_options()
-    expect(selected?.textContent).toContain(`Model B`)
-    expect(selected?.textContent).not.toContain(`Model A`)
-    expect(selected?.textContent).not.toContain(`PBE (DFT)`)
-    expect(selected?.textContent).not.toContain(`r2SCAN (DFT)`)
+    expect(selected_labels()).toEqual([`Model B`])
     const selected_item = selected?.querySelector<HTMLLIElement>(`li`)
     // Model B is the second model, so it takes the second palette entry
     expect(selected_item?.style.background).toContain(PLOT_COLORS[1])
@@ -93,6 +117,8 @@ describe(`Diatomics Page URL state`, () => {
 
     expect(button_for(`All`).getAttribute(`aria-checked`)).toBe(`false`)
     expect(button_for(`Halogens`).getAttribute(`aria-checked`)).toBe(`true`)
+    expect(document.querySelectorAll(`.diatomic-plot-title`)).toHaveLength(1)
+    expect(doc_query(`.diatomic-plot-title`).textContent).toContain(`F-F`)
   })
 
   it(`syncs selected element subset back to the elements query param`, async () => {

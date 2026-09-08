@@ -112,8 +112,8 @@
       id="count-mode"
       bind:value={count_mode}
       options={count_modes}
-      minSelect={1}
-      maxSelect={1}
+      min_select={1}
+      max_select={1}
     >
       {#snippet children({ option })}
         {option}&nbsp;<span

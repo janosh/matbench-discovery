@@ -66,6 +66,8 @@ const heading_texts = (): (string | undefined)[] =>
 
 describe(`Phonons Task Page`, () => {
   it(`renders the task narrative, scatter, and diagnostics`, async () => {
+    vi.spyOn(HTMLElement.prototype, `clientWidth`, `get`).mockReturnValue(800)
+    vi.spyOn(HTMLElement.prototype, `clientHeight`, `get`).mockReturnValue(600)
     mount(PhononsPage, { target: document.body })
 
     expect(doc_query(`h1`).textContent).toContain(`MLFF Phonon Modeling Metrics`)
@@ -85,6 +87,16 @@ describe(`Phonons Task Page`, () => {
       { timeout: 10_000 },
     )
     expect(doc_query(`.diagnostics-grid`).querySelectorAll(`div.scatter`)).toHaveLength(2)
+    const annotation = await vi.waitFor(() =>
+      doc_query(`.diagnostics-grid .plot-annotation`),
+    )
+    const annotation_frame = annotation.closest(`foreignObject`)
+    const plot_area = doc_query(`clipPath rect`, annotation.closest(`svg`))
+    // Keep the metric inside the data area when the legend reserves bottom padding.
+    for (const attr of [`x`, `y`, `width`, `height`]) {
+      expect(annotation_frame?.getAttribute(attr)).toBe(plot_area.getAttribute(attr))
+    }
+    expect(annotation.style.inset).toBe(`auto 0.5em 0.5em auto`)
   })
 
   // a leaderboard model absent from kappa-103-analysis.jsonl used to leave the spinner up forever

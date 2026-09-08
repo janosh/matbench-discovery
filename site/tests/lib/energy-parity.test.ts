@@ -13,10 +13,13 @@ import {
   structure_popup_placement,
 } from '$lib/parity/energy-parity'
 import type { EnergyParityBase, EnergyParityModel } from '$lib/parity/energy-parity'
+import * as energy_parity from '$lib/parity/energy-parity'
+import EnergyParityPlot from '$lib/plot/EnergyParityPlot.svelte'
+import { MODELS } from '$lib/models.svelte'
 import { clear_asset_cache, load_json_asset } from '$lib/asset-loader'
 import { gzipSync } from 'node:zlib'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { gzipped_json_response, request_url } from '../index'
+import { doc_query, gzipped_json_response, mount, request_url } from '../index'
 
 beforeEach(clear_asset_cache)
 
@@ -46,6 +49,25 @@ const first_structure_bundle = energy_parity_manifest.structure_bundles[0]
 if (!first_structure_bundle) {
   throw new Error(`energy parity manifest has no structure bundles`)
 }
+
+it(`renders parity statistics through the plot's automatic annotation placement`, async () => {
+  vi.spyOn(HTMLElement.prototype, `clientWidth`, `get`).mockReturnValue(800)
+  vi.spyOn(HTMLElement.prototype, `clientHeight`, `get`).mockReturnValue(520)
+  vi.spyOn(energy_parity, `load_energy_parity_base`).mockResolvedValue(base)
+  vi.spyOn(energy_parity, `load_energy_parity_model`).mockResolvedValue({
+    ...model,
+    model_key: first_model_key,
+  })
+  mount(EnergyParityPlot, {
+    target: document.body,
+    props: { model: { ...MODELS[0], model_key: first_model_key }, energy_kind: `e-form` },
+  })
+  const badge = await vi.waitFor(() => doc_query(`.annotation .plot-annotation`))
+  expect(badge.textContent).toContain(`MAE = 150`)
+  expect(badge.textContent).toContain(`R2`)
+  expect(badge.style.position).toBe(`static`)
+  expect(badge.parentElement?.dataset.decorationLocation).toBeDefined()
+})
 
 function manifest_sized_base(
   overrides: Partial<EnergyParityBase> = {},
@@ -256,42 +278,25 @@ describe(`energy parity data helpers`, () => {
     expect(fetch_mock).toHaveBeenCalledTimes(1)
   })
 
-  it(`pins the structure popup to the roomier side, overlapping the plot when tight`, () => {
-    const placement = {
-      plot_width: 800,
-      plot_height: 520,
-      popup_width: 500,
-    }
-
-    // wide left gutter -> popup sits left, just outside the data area (anchor at pad)
-    expect(
-      structure_popup_placement({
-        ...placement,
-        viewport_width: 1600,
-        plot_left: 700,
-      }),
-    ).toEqual({ side: `left`, left: 64, top: 260 })
-
-    // wide right gutter -> popup sits right, just outside the data area
-    expect(
-      structure_popup_placement({
-        ...placement,
-        viewport_width: 1600,
-        plot_left: 16,
-      }),
-    ).toEqual({ side: `right`, left: 776, top: 260 })
-
-    // tight gutters -> stays on the roomier side (left) and overlaps the plot edge
-    // (anchor pushed in so the popup's left edge clamps to the viewport margin)
-    // right edge = plot_left + anchor - gap = 100 + 432 - 16 = 516; left edge = 16
-    expect(
-      structure_popup_placement({
-        ...placement,
-        viewport_width: 900,
-        plot_left: 100,
-      }),
-    ).toEqual({ side: `left`, left: 432, top: 260 })
-  })
+  it.each([
+    [`wide left gutter`, 1600, 700, `left`, 64],
+    [`wide right gutter`, 1600, 16, `right`, 776],
+    // Clamp the popup's left edge to the 16px viewport margin: 100 + 432 - 16 - 500.
+    [`tight gutters, overlapping on the left`, 900, 100, `left`, 432],
+  ] as const)(
+    `positions the structure popup with %s`,
+    (_name, viewport_width, plot_left, side, left) => {
+      expect(
+        structure_popup_placement({
+          plot_width: 800,
+          plot_height: 520,
+          popup_width: 500,
+          viewport_width,
+          plot_left,
+        }),
+      ).toEqual({ side, left, top: 260 })
+    },
+  )
 
   it.each([
     {

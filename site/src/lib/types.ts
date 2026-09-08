@@ -1,7 +1,7 @@
 import type { Label as MattervizLabel } from 'matterviz'
 import type { IconData } from 'svelte-widgets'
 import type { Label1 as LabelType } from './schema/label'
-import type { ModelMetadata, Person } from './schema/model'
+import type { DiatomicsMetrics, MdMetrics, ModelMetadata, Person } from './schema/model'
 
 export type { Dataset } from './schema/dataset'
 
@@ -9,7 +9,13 @@ export type OrgLogo =
   | { name: string; src: string; icon?: never }
   | { name: string; icon: IconData; src?: never }
 
+type ScoredMetrics<Metrics> = Metrics & { combined_score?: number }
+
 export type ModelData = ModelMetadata & {
+  metrics?: ModelMetadata[`metrics`] & {
+    diatomics?: ScoredMetrics<DiatomicsMetrics>
+    md?: ScoredMetrics<MdMetrics>
+  }
   // These fields are populated in MODELS variable in models.svelte.ts
   dirname: string
   metadata_file: string

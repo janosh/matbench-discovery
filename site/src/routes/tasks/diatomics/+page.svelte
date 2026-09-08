@@ -26,12 +26,11 @@
   import { valid_query_param } from 'svelte-widgets/url-params'
   import type { SortDir } from '$lib/types'
   import DiatomicsNote from './diatomics-note.md'
-  import type { ChemicalElement } from 'matterviz/element'
+  import { element_data } from 'matterviz/element'
   import { pick_contrast_color, PLOT_COLORS } from 'matterviz'
-  import { ELEM_SYMBOLS } from 'matterviz/labels'
   import { SvelteSet } from 'svelte/reactivity'
   import type { PageData } from './$types'
-  import { element_by_symbol, element_group_keys, element_groups } from './element-groups'
+  import { element_group_keys, element_groups } from './element-groups'
   import { make_plot_observer } from './observe-plot'
 
   let { data }: { data: PageData } = $props()
@@ -65,8 +64,6 @@
   let scatter_x = $state(default_scatter_x)
   let scatter_y = $state(default_scatter_y)
 
-  const homo_diatomic_formulas = ELEM_SYMBOLS.map((symbol) => `${symbol}-${symbol}`)
-
   // DFT references get fixed, high-contrast colors (not in the model palette) so they
   // read as ground truth
   const ref_colors: Record<string, string> = { PBE: `#000000`, r2SCAN: `#f032e6` }
@@ -81,14 +78,14 @@
       element_groups[0],
   )
 
-  // default to the 5 most recently added models with curve data (diatomic_models is
-  // sorted newest-first); every other model stays toggleable in the buttons below
-  const default_n_models = 5
+  let available_models = $derived(
+    diatomic_models.filter(
+      ({ model_key }) => model_key in diatomic_curves && !errors[model_key],
+    ),
+  )
   let selectable_keys = $derived([
     ...reference_names,
-    ...diatomic_models
-      .map((model) => model.model_key)
-      .filter((model_key) => model_key in diatomic_curves && !errors[model_key]),
+    ...available_models.map(({ model_key }) => model_key),
   ])
   let selectable_options = $derived(
     selectable_keys.map((model_key) => {
@@ -105,12 +102,17 @@
     }),
   )
 
-  // DFT references on by default, plus the newest models with curve data
+  // DFT references plus the three highest CDS-ranked models with available curves.
   let default_selected_keys = $derived([
     ...reference_names,
-    ...selectable_keys
-      .filter((model_key) => !reference_names.includes(model_key))
-      .slice(0, default_n_models),
+    ...available_models
+      .toSorted(
+        (left, right) =>
+          (right.metrics?.diatomics?.combined_score ?? -Infinity) -
+          (left.metrics?.diatomics?.combined_score ?? -Infinity),
+      )
+      .slice(0, 3)
+      .map(({ model_key }) => model_key),
   ])
 
   const model_selection = new UrlModelSelection(() => ({
@@ -122,18 +124,15 @@
   const observe_plot = make_plot_observer(visible_diatomics)
   let diatomics_to_render = $derived(
     // Only render diatomics where at least one model has data
-    homo_diatomic_formulas.filter((formula) => {
-      const element_symbol = formula.split(`-`, 1)[0] as ChemicalElement[`symbol`]
-      const element = element_by_symbol.get(element_symbol)
-      return (
-        element &&
-        selected_group.includes(element) &&
+    element_data
+      .filter(selected_group.includes)
+      .map(({ symbol }) => `${symbol}-${symbol}`)
+      .filter((formula) =>
         selected_model_keys.some(
           (model_key) =>
             diatomic_curves[model_key]?.[homo_nuc_key]?.[formula]?.energies?.length > 0,
-        )
-      )
-    }),
+        ),
+      ),
   )
 
   const read_url_params = (params: URLSearchParams) => {

@@ -700,3 +700,29 @@ MDR-MP PBE ω_q:
     Potentials". This dataset was constructed by randomly sampling 8,510
     structures with overlapping mp-id's with MPtrj and preprocessing into
     .aselmbd files with the Hessian stored in atoms.info["hessian"].
+
+ELEMENTA:
+  name: ELEMENTA
+  url: https://www.kairosmaterials.com/papers/ELEMENTA.pdf
+  download_url: https://huggingface.co/datasets/kairosmaterial/ELEMENTA
+  doi: https://doi.org/10.5281/zenodo.22638068
+  n_structures: 210656285
+  n_materials: 9781175
+  open: false
+  static: true
+  optimade_api: null
+  native_api: null
+  date_created: 2026-07-27
+  license: CC-BY-NC-4.0
+  description: |
+    First-principles dataset by Kairos Materials, generated through random structure search over a compact enumerated space of ~1.9M reduced unary, binary and ternary formulas with up to twelve atoms per cell. Beyond this compact space, the corpus includes representative ternary and quaternary systems with larger reduced formulas and cells of up to 40 atoms. DFT relaxation trajectories contain ~210M frames with energies, forces and stresses across >9.7M distinct relaxed polymorphs. For Matbench Discovery model training, Kairos Materials reports removing structures overlapping the WBM test set during post-processing. Expansion sets include ELEMENTA Spin (4.7M frames from magnetic-moment scans) and ELEMENTA Vib (~8M perturbed structures probing local vibrational environments).
+    The full 210M-frame corpus is not public. The first public release on [Hugging Face](https://huggingface.co/datasets/kairosmaterial/ELEMENTA) contains ~39M core frames covering the unary and binary chemical spaces and ternary compositions whose reduced-formula coefficients sum to at most four, plus the complete 4.7M-frame ELEMENTA Spin set. These subsets are available as extended XYZ under CC-BY-NC-4.0.
+  method: DFT
+  params:
+    code: VASP
+    functional: PBE+U
+    pseudopotentials: PBE
+  created_by:
+    - name: Kairos Materials Team
+      email: research@kairosmaterials.com
+      url: https://www.kairosmaterials.com

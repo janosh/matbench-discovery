@@ -3,14 +3,10 @@
   import { bind_url_params } from '$lib/url-state.svelte'
   import { valid_query_param } from 'svelte-widgets/url-params'
   import { ScatterPlot } from 'matterviz'
-  import { ELEM_SYMBOLS } from 'matterviz/labels'
+  import { element_data } from 'matterviz/element'
   import { SvelteSet } from 'svelte/reactivity'
   import type { PageData } from './$types'
-  import {
-    element_by_symbol,
-    element_group_keys,
-    element_groups,
-  } from '../element-groups'
+  import { element_group_keys, element_groups } from '../element-groups'
   import { make_plot_observer } from '../observe-plot'
 
   let { data }: { data: PageData } = $props()
@@ -32,13 +28,10 @@
       element_groups[0],
   )
   let formulas = $derived(
-    ELEM_SYMBOLS.flatMap((symbol) => {
-      const formula = `${symbol}-${symbol}`
-      const element = element_by_symbol.get(symbol)
-      return formula in magmom_curves && element && selected_group.includes(element)
-        ? [{ formula, element }]
-        : []
-    }),
+    element_data
+      .filter(selected_group.includes)
+      .map((element) => ({ formula: `${element.symbol}-${element.symbol}`, element }))
+      .filter(({ formula }) => formula in magmom_curves),
   )
 
   const visible_plots = new SvelteSet<string>()
@@ -149,9 +142,9 @@
             label: `Distance (Å)`,
             format: `.1f`,
             range: [0.2, 6],
-            label_shift: { y: -30 },
+            label_shift: { y: 0 },
           }}
-          y_axis={{ label: `Magmom (μB)`, format: `.1f` }}
+          y_axis={{ label: `Magmom (μB)`, format: `.1f`, label_shift: { x: 12 } }}
           legend={null}
           point_tween={{ duration: 0 }}
           line_tween={{ duration: 0 }}

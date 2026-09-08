@@ -128,7 +128,7 @@ dependent on geometry than chemistry.
   <ModelSelect
     options={elem_prev_options}
     bind:selected={elem_prev_selection.selected}
-    minSelect={1}
+    min_select={1}
   />
 </label>
 <ScatterPlot
@@ -166,8 +166,8 @@ plotting against that the absolute E<sub>above hull</sub> errors for each model.
   <ModelSelect
     options={single_selects.fp_model}
     bind:selected={picked.fp_model}
-    minSelect={1}
-    maxSelect={1}
+    min_select={1}
+    max_select={1}
   />
   <small>MAE = {fp_diff_active.mae} eV/atom (dashed line)</small>
 </label>
@@ -204,8 +204,8 @@ errors.
   <ModelSelect
     options={single_selects.each_model}
     bind:selected={picked.each_model}
-    minSelect={1}
-    maxSelect={1}
+    min_select={1}
+    max_select={1}
   />
   <small>MAE = {each_errors_active.mae} eV/atom</small>
 </label>
@@ -234,8 +234,8 @@ each model and the mean of all models.
   <ModelSelect
     options={single_selects.hist_model}
     bind:selected={picked.hist_model}
-    minSelect={1}
-    maxSelect={1}
+    min_select={1}
+    max_select={1}
   />
 </label>
 <BarPlot

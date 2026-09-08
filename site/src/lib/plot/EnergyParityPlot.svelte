@@ -236,56 +236,6 @@
       if (selection_is_current()) structure_loading = false
     }
   }
-
-  // matterviz auto-places the density colorbar in whichever corner least occludes
-  // data, so the MAE/R² annotation claims the diagonally opposite corner to
-  // guarantee the two never overlap. Insets clear the axes + their tick labels.
-  // colorbar_class is owned by this file and injected through matterviz's public
-  // color_bar props, so placement never depends on matterviz-internal class names.
-  const colorbar_class = `density-color-bar`
-  const colorbar_selector = `.${colorbar_class}`
-  const annotation_insets = {
-    top_left: `2.5em auto auto 7em`,
-    top_right: `2.5em 2em auto auto`,
-    bottom_left: `auto auto 5em 7em`,
-    bottom_right: `auto 2em 5em auto`,
-  }
-  let annotation_inset = $state(annotation_insets.bottom_right)
-
-  function place_annotation_opposite_colorbar() {
-    const bar = plot_wrap?.querySelector(colorbar_selector)?.getBoundingClientRect()
-    const wrap = plot_wrap?.getBoundingClientRect()
-    // zero-width wrap = plot in a hidden tab; its rects would misplace the annotation
-    if (!bar || !wrap?.width) return
-    const vert = bar.top + bar.height / 2 < wrap.top + wrap.height / 2 ? `bottom` : `top`
-    const horiz = bar.left + bar.width / 2 < wrap.left + wrap.width / 2 ? `right` : `left`
-    annotation_inset = annotation_insets[`${vert}_${horiz}`]
-  }
-
-  $effect(() => {
-    if (load_controller.status !== `ready` || !plot_wrap) return
-    // the colorbar mounts late and moves on zoom/resize (all via inline-style
-    // updates), so watch mutations involving it instead of enumerating triggers.
-    // Cheap filter keeps tooltip style churn from forcing layout on every mousemove.
-    const involves_colorbar = (node: Node) =>
-      node instanceof HTMLElement &&
-      (node.closest(colorbar_selector) ?? node.querySelector(colorbar_selector)) != null
-    const observer = new MutationObserver((mutations) => {
-      if (
-        mutations.some((mut) => [mut.target, ...mut.addedNodes].some(involves_colorbar))
-      ) {
-        place_annotation_opposite_colorbar()
-      }
-    })
-    observer.observe(plot_wrap, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: [`style`],
-    })
-    place_annotation_opposite_colorbar()
-    return () => observer.disconnect()
-  })
 </script>
 
 <svelte:window onresize={update_popup_placement} />
@@ -335,7 +285,7 @@ title, so label the section for screen readers instead -->
       density={{
         color_scale: { type: `log`, scheme: `interpolateMagma` },
       }}
-      color_bar={{ title: `Density`, class: colorbar_class }}
+      color_bar={{ title: `Density` }}
       size_scale={{ radius_range: [2, 18], pick_radius: `auto` }}
       overlays={parity_overlays}
       on_point_click={({ point }) => void show_structure(Number(point.point_id))}
@@ -357,9 +307,9 @@ title, so label the section for screen readers instead -->
         {/if}
       {/snippet}
 
-      {#snippet children()}
+      {#snippet annotation()}
         {#if stats && Number.isFinite(stats.mae)}
-          <div class="plot-annotation" style:inset={annotation_inset}>
+          <div class="plot-annotation" style="position: static">
             MAE = {format_num(stats.mae * 1000, `.3~`)} <small>meV/atom</small><br />
             R<sup>2</sup> = {format_num(stats.r2, `.3~`)}
           </div>
@@ -429,13 +379,6 @@ title, so label the section for screen readers instead -->
   .energy-parity-plot :global(.plot-tooltip) {
     background: var(--tooltip-bg);
     box-shadow: 0 4px 12px var(--shadow);
-  }
-  /* the binned plot pins the y-axis title 20px left of the plot edge, ignoring both
-     tick-label width and axis label_shift, so long model names overlap the tick
-     labels. Shift the title further left (local +y maps to screen +x inside the
-     rotate(-90) group) into the room made by the wider left padding above. */
-  .energy-parity-plot :global(g.y-axis .axis-label) {
-    transform: translateY(-21px);
   }
   .popup-anchor {
     height: 0;

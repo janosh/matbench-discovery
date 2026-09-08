@@ -20,7 +20,12 @@ type ScatterPlotProps = {
     size_values: number[]
     point_label: { text: string; font_size: string; auto_placement: boolean }[]
   }[]
-  x_axis: { label: string; format: string; range: [number, null] }
+  x_axis: {
+    label: string
+    format: string
+    range: [number, null]
+    label_shift?: { y?: number }
+  }
   y_axis: { label: string; format: string; range: [number, null] }
   color_bar: { title: string; tick_format: string }
   color_scale: { type: string }
@@ -110,6 +115,8 @@ describe(`GitHubActivityScatter`, () => {
       color_bar: { title: `Commits Last Year`, tick_format: `~s` },
       color_scale: { type: `log` },
     })
+    // An inward title shift puts the label over the plotted data.
+    expect(props.x_axis.label_shift?.y ?? 0).toBeGreaterThanOrEqual(0)
   })
 
   it(`passes rest props and disables labels when requested`, () => {

@@ -84,7 +84,6 @@
     x_axis={{
       label: axes.x.label,
       format: axes.x.format,
-      label_shift: { y: -50 },
       range: [0, null],
     }}
     y_axis={{

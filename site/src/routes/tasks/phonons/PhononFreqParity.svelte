@@ -111,16 +111,16 @@
       {entry.label}: {y_formatted} THz
     {/snippet}
 
-    {#snippet user_content({ width, height })}
+    {#snippet user_content({ width, height, pad })}
       {#if entry.freq_w1_mean !== null}
         <foreignObject
-          x="0"
-          y="0"
-          {width}
-          {height}
+          x={pad.l}
+          y={pad.t}
+          width={Math.max(1, width - pad.l - pad.r)}
+          height={Math.max(1, height - pad.t - pad.b)}
           style="pointer-events: none; overflow: visible"
         >
-          <div class="plot-annotation">
+          <div class="plot-annotation" style="inset: auto 0.5em 0.5em auto">
             W₁(ω) = {format_num(entry.freq_w1_mean, `.3~`)} <small>THz</small>
           </div>
         </foreignObject>

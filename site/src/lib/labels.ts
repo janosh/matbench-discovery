@@ -37,17 +37,6 @@ const parse_date = (date?: Date | string): Date | null => {
   return isNaN(date.getTime()) ? null : date
 }
 
-// Format date as UTC string: "2024-01-15 14:30:00 UTC".
-const format_utc_time = (date?: Date | string): string => {
-  if (!date) return `N/A`
-  const timestamp = typeof date === `string` ? new Date(date) : date
-  if (isNaN(timestamp.getTime())) return `N/A`
-  return timestamp
-    .toISOString()
-    .replace(`T`, ` `)
-    .replace(/\.\d+Z$/, ` UTC`)
-}
-
 // Format date as relative time: "5 hours ago", "2 days ago".
 // Dates treated as UTC to avoid timezone issues. Future dates return absolute UTC time.
 export const format_relative_time = (
@@ -59,7 +48,12 @@ export const format_relative_time = (
   if (!timestamp || !now) return `N/A`
 
   const diff_ms = now.getTime() - timestamp.getTime()
-  if (diff_ms < 0) return format_utc_time(timestamp)
+  if (diff_ms < 0) {
+    return timestamp
+      .toISOString()
+      .replace(`T`, ` `)
+      .replace(/\.\d+Z$/, ` UTC`)
+  }
 
   const diff_mins = Math.max(1, Math.floor(diff_ms / (1000 * 60)))
   const diff_hours = Math.floor(diff_ms / (1000 * 60 * 60))

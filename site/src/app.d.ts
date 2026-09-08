@@ -1,5 +1,4 @@
 /// <reference types="@sveltejs/kit" />
-/// <reference types="mdsvex/globals" />
 
 declare module '*.md'
 
@@ -39,7 +38,7 @@ declare module '*data-files.yml' {
     url: string
     path: string
     description: string
-    html?: string // Auto-generated after ESM import in lib/index.ts
+    html?: string // Rendered from description during the YAML build transform
     figshare?: string
     md5?: string
   }

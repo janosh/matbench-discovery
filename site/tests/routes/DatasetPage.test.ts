@@ -10,22 +10,35 @@ describe(`Dataset Detail Page`, () => {
   })
 
   // MP 2022 has all optional fields set, NOMAD is a minimal dataset entry
-  it.each([`MP 2022`, `NOMAD`])(`renders %s dataset correctly`, (dataset_key) => {
-    const dataset = DATASETS[dataset_key]
-    if (!dataset) throw new Error(`Dataset ${dataset_key} not found in DATASETS`)
+  it.each([`MP 2022`, `NOMAD`, `ELEMENTA`])(
+    `renders %s dataset correctly`,
+    (dataset_key) => {
+      const dataset = DATASETS[dataset_key]
+      if (!dataset) throw new Error(`Dataset ${dataset_key} not found in DATASETS`)
 
-    mount(Page, { target: document.body, props: { data: { dataset } } })
+      mount(Page, { target: document.body, props: { data: { dataset } } })
 
-    expect(document.querySelector(`h1`)?.textContent).toBe(dataset.name)
+      expect(document.querySelector(`h1`)?.textContent).toBe(dataset.name)
 
-    const meta_info = doc_query(`.meta-info`)
-    expect(meta_info.textContent).toContain(`structures`)
-    expect(meta_info.textContent).toContain(dataset.open ? `Open` : `Closed`)
-    expect(meta_info.textContent).toContain(dataset.license)
+      const meta_info = doc_query(`.meta-info`)
+      expect(meta_info.textContent).toContain(`structures`)
+      expect(meta_info.textContent).toContain(dataset.open ? `Open` : `Closed`)
+      expect(meta_info.textContent).toContain(dataset.license)
 
-    expect(doc_query(`.links`).querySelectorAll(`a`).length).toBeGreaterThan(0)
-    expect(doc_query(`.description`).textContent).toMatch(/\S/)
-  })
+      expect(doc_query(`.links`).querySelectorAll(`a`).length).toBeGreaterThan(0)
+      expect(doc_query(`.description`).textContent).toMatch(/\S/)
+      if (dataset_key === `ELEMENTA`) {
+        const description = doc_query(`.description`)
+        expect(description.textContent).toContain(
+          `The full 210M-frame corpus is not public`,
+        )
+        expect(description.textContent).toContain(`coefficients sum to at most four`)
+        expect(description.querySelector(`a`)?.getAttribute(`href`)).toBe(
+          dataset.download_url,
+        )
+      }
+    },
+  )
 
   // values used to be re-split on `:` after joining, truncating anything past a colon
   it(`lists method params with title-cased keys and colon-safe values`, () => {

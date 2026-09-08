@@ -1,4 +1,5 @@
-import { arr_to_str, data_files, DATASETS, format_date, slugify } from '$lib'
+import { arr_to_str, data_files, DATASETS, MODELS, format_date } from '$lib'
+import { render_data_markdown } from '../../scripts/markdown-data'
 import {
   apply_weights_param,
   sort_from_query,
@@ -8,16 +9,13 @@ import {
 import { valid_query_param } from 'svelte-widgets/url-params'
 import { describe, expect, it, vi } from 'vitest'
 
-describe(`$lib data re-exports reflect index.ts mutations`, () => {
+describe(`$lib data includes rendered YAML Markdown`, () => {
   it(`DATASETS entries expose computed slug and description_html`, () => {
     const entries = Object.entries(DATASETS)
     expect(entries.length).toBeGreaterThanOrEqual(20) // datasets.yml entry count
     for (const [key, dataset] of entries) {
-      expect(dataset.slug, `${key} missing slug`).toBe(slugify(key))
-      expect(
-        dataset.description_html?.length,
-        `${key} missing description_html`,
-      ).toBeGreaterThan(0)
+      for (const field of [`slug`, `description_html`] as const)
+        expect(dataset[field]?.length, `${key} missing ${field}`).toBeGreaterThan(0)
     }
   })
 
@@ -32,16 +30,91 @@ describe(`$lib data re-exports reflect index.ts mutations`, () => {
         `${key} missing html`,
       ).toBeGreaterThan(0)
     }
+    const entry = data_files.wbm_computed_structure_entries
+    expect(typeof entry === `object` && entry.html).toContain(
+      `href="https://github.com/materialsproject/pymatgen/`,
+    )
   })
-})
 
-describe(`slugify`, () => {
+  it(`model notes are rendered through eager YAML imports`, () => {
+    const notes = MODELS.flatMap((model) => (model.notes ? [model.notes] : []))
+    expect(notes.length).toBeGreaterThan(20)
+    for (const note of notes) {
+      for (const [key, value] of Object.entries(note)) {
+        if (typeof value === `string` && value.trim())
+          expect(
+            note.html?.[key]?.length,
+            `missing rendered note ${key}`,
+          ).toBeGreaterThan(0)
+      }
+    }
+  })
+
+  it(`renders references while dropping raw HTML and retaining authored HTML overrides`, async () => {
+    const files = {
+      example: { description: `Before <b>bold</b> and [reference][target]` },
+      _links: `[target]: https://example.org/reference`,
+      _private: { description: `Leave **metadata** alone` },
+    }
+    await render_data_markdown(files, `/repo/matbench_discovery/data-files.yml`)
+    expect(files.example).toEqual({
+      description: `Before <b>bold</b> and [reference][target]`,
+      html: `<p>Before bold and <a href="https://example.org/reference">reference</a></p>\n`,
+    })
+    expect(files._private).toEqual({ description: `Leave **metadata** alone` })
+    const model = {
+      notes: {
+        description: `<div>Hidden</div>\n\n**Visible** {value}`,
+        training: `Original`,
+        constructor: `**Constructor**`,
+        [`__proto__`]: `*Prototype*`,
+        count: 2,
+        html: { training: `<p>Authored override</p>` },
+      },
+    }
+    await render_data_markdown(model, `/repo/models/example/model.yml`)
+    expect(model.notes.html).toEqual({
+      description: `<p><strong>Visible</strong> &#123;value&#125;</p>\n`,
+      training: `<p>Authored override</p>`,
+      constructor: `<p><strong>Constructor</strong></p>\n`,
+      [`__proto__`]: `<p><em>Prototype</em></p>\n`,
+    })
+    expect(Object.getPrototypeOf(model.notes.html)).toBe(Object.prototype)
+    const unrelated = { description: `**untouched**` }
+    expect(await render_data_markdown(unrelated, `/repo/data/other.yml`)).toBe(unrelated)
+    expect(unrelated).toEqual({ description: `**untouched**` })
+  })
+
+  it.each([
+    [`---\n\n**Visible**`, `<hr>\n<p><strong>Visible</strong></p>\n`],
+    [
+      `---\ntitle: Keep me\n---\nAfter`,
+      `<hr>\n<h2 id="title-keep-me">title: Keep me</h2>\n<p>After</p>\n`,
+    ],
+  ])(
+    `preserves Markdown separators in descriptions: %s`,
+    async (description, expected) => {
+      const data = { example: { description, description_html: `` } }
+      await render_data_markdown(data, `/repo/data/datasets.yml`)
+      expect(data.example.description_html).toBe(expected)
+    },
+  )
+
+  it.each([
+    [`/repo/matbench_discovery/data-files.yml`, {}, `_links must be a string`],
+    [`/repo/data/datasets.yml`, { bad: { description: 7 } }, `bad.description`],
+    [`/repo/models/example/model.yml`, { notes: `bad` }, `notes: expected a mapping`],
+  ])(`rejects invalid Markdown data in %s`, async (filename, data, message) => {
+    await expect(render_data_markdown(data, filename)).rejects.toThrow(message)
+  })
   it.each([
     [`Test String`, `test-string`],
     [`test_string`, `test-string`],
     [`Test__Multiple   Spaces`, `test-multiple-spaces`],
-  ])(`converts '%s' → '%s'`, (input, expected) => {
-    expect(slugify(input)).toBe(expected)
+  ])(`assigns dataset slug '%s' → '%s'`, async (input, expected) => {
+    const data = { [input]: { description: `` } }
+    await render_data_markdown(data, `/repo/data/datasets.yml`)
+    expect(data[input]).toEqual({ description: ``, description_html: ``, slug: expected })
   })
 })
 

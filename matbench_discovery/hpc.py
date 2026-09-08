@@ -247,14 +247,14 @@ def slurm_submit(
         out_dir (str): Directory to write slurm logs. Log file will include slurm job
             ID and array task ID.
         time (str): 'HH:MM:SS' time limit for the job.
-            Defaults to the path of the file calling slurm_submit().
         account (str): Account to charge for this job.
         partition (str, optional): Slurm partition.
         py_file_path (str, optional): Path to the python script to be submitted.
+            Defaults to the path of the file calling slurm_submit().
         slurm_flags (str | list[str], optional): Extra slurm CLI flags. Defaults to ().
             Examples: ('--nodes 1', '--gpus-per-node 1') or ('--mem', '16G').
         array (str, optional): Slurm array specifier. Defaults to None. Example:
-            '9' (for SLURM_ARRAY_TASK_ID from 0-9 inclusive), '1-10' or '1-10%2', etc.
+            '0-9', '1-10' or '1-10%2'.
         pre_cmd (str, optional): Things like `module load` commands and environment
             variables to set before running the python script go here. Example:
             pre_cmd='ENV_VAR=42' or 'module load pytorch;'. Defaults to "". If running
