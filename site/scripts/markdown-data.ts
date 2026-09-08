@@ -1,6 +1,6 @@
-import { assert_ok, create_markdown, render_markdown } from 'svelte-widgets/markdown'
+import { assert_ok, create_markdown } from 'svelte-widgets/markdown'
 
-const engine = create_markdown({ raw_html: `omit` })
+const engine = create_markdown({ raw_html: `omit`, frontmatter: false })
 
 const record = (value: unknown, context: string): Record<string, unknown> => {
   if (!value || typeof value !== `object` || Array.isArray(value))
@@ -11,10 +11,7 @@ const record = (value: unknown, context: string): Record<string, unknown> => {
 async function render_text(value: unknown, context: string, suffix = ``) {
   if (typeof value !== `string`)
     throw new TypeError(`${context}: expected Markdown text, received ${typeof value}`)
-  const document = assert_ok(
-    await engine.parse(value + suffix, { filename: context, dialect: `markdown` }),
-  )
-  return assert_ok(await render_markdown(document))
+  return assert_ok(await engine.render(value + suffix, { filename: context }))
 }
 
 // Enrich YAML data during Vite transforms, keeping parsing and mutation out of client modules.
@@ -34,9 +31,15 @@ export async function render_data_markdown(
     const notes = record(entries.notes, `${filename}: notes`)
     const html = record((notes.html ??= {}), `${filename}: notes.html`)
     for (const [key, note] of Object.entries(notes)) {
-      if (typeof note !== `string` || key in html) continue
+      if (typeof note !== `string` || Object.hasOwn(html, key)) continue
       const rendered = await render_text(note, `${filename}: notes.${key}`)
-      if (rendered) html[key] = rendered
+      if (rendered)
+        Object.defineProperty(html, key, {
+          value: rendered,
+          enumerable: true,
+          configurable: true,
+          writable: true,
+        })
     }
     return data
   }

@@ -66,6 +66,8 @@ describe(`$lib data includes rendered YAML Markdown`, () => {
       notes: {
         description: `<div>Hidden</div>\n\n**Visible** {value}`,
         training: `Original`,
+        constructor: `**Constructor**`,
+        [`__proto__`]: `*Prototype*`,
         count: 2,
         html: { training: `<p>Authored override</p>` },
       },
@@ -74,11 +76,29 @@ describe(`$lib data includes rendered YAML Markdown`, () => {
     expect(model.notes.html).toEqual({
       description: `<p><strong>Visible</strong> &#123;value&#125;</p>\n`,
       training: `<p>Authored override</p>`,
+      constructor: `<p><strong>Constructor</strong></p>\n`,
+      [`__proto__`]: `<p><em>Prototype</em></p>\n`,
     })
+    expect(Object.getPrototypeOf(model.notes.html)).toBe(Object.prototype)
     const unrelated = { description: `**untouched**` }
     expect(await render_data_markdown(unrelated, `/repo/data/other.yml`)).toBe(unrelated)
     expect(unrelated).toEqual({ description: `**untouched**` })
   })
+
+  it.each([
+    [`---\n\n**Visible**`, `<hr>\n<p><strong>Visible</strong></p>\n`],
+    [
+      `---\ntitle: Keep me\n---\nAfter`,
+      `<hr>\n<h2 id="title-keep-me">title: Keep me</h2>\n<p>After</p>\n`,
+    ],
+  ])(
+    `preserves Markdown separators in descriptions: %s`,
+    async (description, expected) => {
+      const data = { example: { description, description_html: `` } }
+      await render_data_markdown(data, `/repo/data/datasets.yml`)
+      expect(data.example.description_html).toBe(expected)
+    },
+  )
 
   it.each([
     [`/repo/matbench_discovery/data-files.yml`, {}, `_links must be a string`],
