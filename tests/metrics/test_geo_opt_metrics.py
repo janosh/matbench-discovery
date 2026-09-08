@@ -161,7 +161,7 @@ def test_write_geo_opt_metrics_to_yaml(
     assert set(actual_block) == set(expected_block)
     for key, expected_val in expected_block.items():
         value = actual_block[key]
-        if key in {"analysis_file", "pred_file", "force_file", "run_info_file"}:
+        if key == "analysis_file":
             assert value == expected_val
         else:
             assert value == pytest.approx(expected_val, nan_ok=True)

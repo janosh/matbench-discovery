@@ -35,7 +35,7 @@ def evaluate_one(model: Model) -> str | None:
 
 
 def main() -> int:
-    """Evaluate kappa metrics, returning 0 if any model succeeds and 1 otherwise."""
+    """Evaluate kappa metrics with the shared sweep's failure and skip handling."""
     return evaluate_models("kappa", cli_args.models, evaluate_one)
 
 

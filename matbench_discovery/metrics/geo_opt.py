@@ -40,21 +40,18 @@ def write_metrics_to_yaml(
     analysis_file_path = repo_relative_path(analysis_file_path)
 
     metrics_for_symprec = {
-        str(Key.rmsd): round(
-            float(df_geo_opt[MbdKey.structure_rmsd_vs_dft].iloc[0]), 4
-        ),
-        str(Key.n_sym_ops_mae): round(float(df_geo_opt[Key.n_sym_ops_mae].iloc[0]), 4),
-        str(Key.symmetry_decrease): round(
-            float(df_geo_opt[Key.symmetry_decrease].iloc[0]), 4
-        ),
-        str(Key.symmetry_match): round(
-            float(df_geo_opt[Key.symmetry_match].iloc[0]), 4
-        ),
-        str(Key.symmetry_increase): round(
-            float(df_geo_opt[Key.symmetry_increase].iloc[0]), 4
-        ),
-        str(Key.n_structures): int(df_geo_opt[Key.n_structures].iloc[0]),
+        str(output_key): round(float(df_geo_opt[input_key].iloc[0]), 4)
+        for output_key, input_key in (
+            (Key.rmsd, MbdKey.structure_rmsd_vs_dft),
+            (Key.n_sym_ops_mae, Key.n_sym_ops_mae),
+            (Key.symmetry_decrease, Key.symmetry_decrease),
+            (Key.symmetry_match, Key.symmetry_match),
+            (Key.symmetry_increase, Key.symmetry_increase),
+        )
     }
+    metrics_for_symprec[str(Key.n_structures)] = int(
+        df_geo_opt[Key.n_structures].iloc[0]
+    )
     metric_units: dict[str, str] = {
         Key.rmsd: "unitless",
         Key.n_sym_ops_mae: "unitless",

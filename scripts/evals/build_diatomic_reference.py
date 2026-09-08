@@ -174,19 +174,17 @@ def build_reference(
                 merged_points = merge_min_energy_curve(candidate_points)
                 replacements = []
             label = FUNC_LABEL[xc]
+            quality: dict[str, object] = {
+                "symbol": symbol,
+                "xc": xc,
+                "merged_points": len(merged_points),
+                "short_candidates": short_candidates,
+            }
             if len(merged_points) < 2:
                 # record dropped pairs so one vanishing between rebuilds (e.g. all
                 # candidate curves missing/corrupt) stays visible in the reports
                 increment_summary(summary, "skipped", label)
-                quality_rows.append(
-                    {
-                        "symbol": symbol,
-                        "xc": xc,
-                        "merged_points": len(merged_points),
-                        "short_candidates": short_candidates,
-                        "skipped": True,
-                    }
-                )
+                quality_rows.append(quality | {"skipped": True})
                 continue
 
             refs[label][f"{symbol}-{symbol}"] = serializable_curve(merged_points)
@@ -206,14 +204,7 @@ def build_reference(
                 increment_summary(summary, "short_candidate_pairs", label)
             if short_candidates or tail_jumps or magmom_jumps:
                 quality_rows.append(
-                    {
-                        "symbol": symbol,
-                        "xc": xc,
-                        "merged_points": len(merged_points),
-                        "short_candidates": short_candidates,
-                        "tail_jumps": tail_jumps,
-                        "magmom_jumps": magmom_jumps,
-                    }
+                    quality | {"tail_jumps": tail_jumps, "magmom_jumps": magmom_jumps}
                 )
             if merged_dir:
                 write_merged_curve(merged_dir, symbol, xc, merged_points, replacements)

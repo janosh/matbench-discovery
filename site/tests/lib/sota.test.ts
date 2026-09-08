@@ -90,17 +90,17 @@ describe(`sota_frontier_indices`, () => {
 })
 
 describe(`sota_step_line`, () => {
-  it(`builds horizontal steps with vertical jumps at each record`, () => {
-    const records = [
-      { date: day(1), value: 0.5 },
-      { date: day(3), value: 0.8 },
-    ]
-    const { x, y } = sota_step_line(records, day(5))
-    expect(x).toEqual([day(1), day(3), day(3), day(5)])
-    expect(y).toEqual([0.5, 0.5, 0.8, 0.8])
-  })
-
   it.each([
+    {
+      desc: `horizontal steps with vertical jumps at each record`,
+      records: [
+        { date: day(1), value: 0.5 },
+        { date: day(3), value: 0.8 },
+      ],
+      end: day(5),
+      x: [day(1), day(3), day(3), day(5)],
+      y: [0.5, 0.5, 0.8, 0.8],
+    },
     { desc: `empty records give empty line`, records: [], end: day(9), x: [], y: [] },
     {
       desc: `single record extends to end date`,
@@ -110,7 +110,7 @@ describe(`sota_step_line`, () => {
       y: [0.6, 0.6],
     },
     {
-      desc: `end date before last record adds no extension`,
+      desc: `end date equal to last record adds no extension`,
       records: [{ date: day(2), value: 0.6 }],
       end: day(2),
       x: [day(2)],
@@ -138,11 +138,8 @@ describe(`pareto_staircase`, () => {
   })
 
   it(`flips domination with axis directions`, () => {
-    // x higher=better, y lower=better: (4, 0.9) is now worst on both -> dominated by
-    // any point with lower y... actually only frontier points survive domination
+    // (4, 0.9) has the best x and (1, 0.5) the best y; both remain on the frontier.
     const line = pareto_staircase(points, `higher`, `lower`)
-    // frontier sorted by descending x: (4, 0.9) dominated by (2,0.8)? x=4 better,
-    // y=0.9 worse -> not dominated. (1, 0.5) has best y but worst x -> frontier.
     expect(line?.x[0]).toBe(4) // sorted best-x first under higher-is-better x
     expect(line?.y.at(-1)).toBe(0.5) // ends at the best-y point
   })

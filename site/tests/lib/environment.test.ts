@@ -1,4 +1,5 @@
 import { parse_dependency_spec } from '$lib/environment'
+import fs from 'node:fs'
 import { describe, expect, it, vi } from 'vitest'
 import pkg from '../../package.json' with { type: 'json' }
 import { svelte_config } from '../../vite.config'
@@ -102,4 +103,22 @@ it(`first svelte preprocessor rewrites pkg.homepage links to site-internal paths
   const content = `<a href="${pkg.homepage}/models">models</a> ${pkg.homepage}`
   const result = await strip_homepage.markup?.({ content, filename: `readme.md` })
   expect(result?.code).toBe(`<a href="/models">models</a> `)
+})
+
+it(`manuscript preprocessing numbers figure labels and resolves forward references`, async () => {
+  const figure_markup = svelte_config.preprocess.at(-1)?.markup
+  const filename = `site/src/routes/tasks/discovery/tmi/discovery-metric-figs.md`
+  const content = fs.readFileSync(`../${filename}`, `utf8`)
+  const result = await figure_markup?.({ content, filename })
+  const labels = [...content.matchAll(/@label:(?<id>fig:[^\s]+)/g)]
+  expect(labels).toHaveLength(5)
+  for (const [idx, [, label]] of labels.entries()) {
+    expect(result?.code).toContain(`<strong id='${label}'>`)
+    expect(result?.code).toContain(`Fig. ${idx + 1}</strong>`)
+  }
+  expect(result?.code).toContain(`<a href="#fig:cumulative-precision-recall">fig. 2</a>`)
+  expect(result?.code).not.toMatch(/@(?:label|fig):/)
+  expect(await figure_markup?.({ content, filename: `unrelated.md` })).toEqual({
+    code: content,
+  })
 })

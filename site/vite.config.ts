@@ -21,7 +21,7 @@ import { render_data_markdown } from './scripts/markdown-data.ts'
 // passed inline to sveltekit() (Kit >= 2.62) so no separate svelte.config.ts is needed;
 // kit options (adapter, version, alias) sit at the top level rather than under `kit`
 export const svelte_config = {
-  extensions: [`.svelte`, `.svx`, `.md`, `.html`],
+  extensions: [`.svelte`, `.md`],
 
   preprocess: [
     // Replace readme links to docs with site-internal links
@@ -54,13 +54,12 @@ export const svelte_config = {
           /@label:(?<id>(?:fig|tab):[^\s]+)/g,
           (_match, id) => {
             if (!fig_index.includes(id)) fig_index.push(id)
-            const idx = (route.startsWith(`si`) ? `S` : ``) + fig_index.length
             const link_icon = `<a aria-hidden="true" tabindex="-1" href="#${id}"><svg width="16" height="16" viewBox="0 0 16 16"><use xlink:href="#octicon-link"></use></svg></a>`
-            return `<strong id='${id}'>${link_icon}Fig. ${idx}</strong>`
+            return `<strong id='${id}'>${link_icon}Fig. ${fig_index.length}</strong>`
           },
         )
 
-        // Replace figure references @fig:label with 'fig. {n}' and add to fig_index
+        // Resolve references after collecting all labels, including forward references.
         code = code.replaceAll(
           /@(?<id>(?<fig>fig):(?:[a-z0-9]+-?)+)/gi, // Match case-insensitive but replace case-sensitive
           // @(f|F)ig becomes '(f|F)ig. {n}'
@@ -75,14 +74,6 @@ export const svelte_config = {
             }
             return `<a href="#${id_lower}">${fig_or_Fig}. ${idx}</a>`
           },
-        )
-
-        // Preprocess markdown citations @auth_1st-word-title_yyyy into citation links
-        // Links to bibliography items, href must match id format in References.svelte
-        code = code.replaceAll(
-          /\[?@(?<id>(?<author>.+?)_.+?_(?<year>\d{4}));?\]?/g, // Ends with ;?\]? to match single and multiple citations
-          (_match, id, author, year) =>
-            `[<a class="ref" href="#${id}">${author} ${year}</a>]`,
         )
 
         return { code }
@@ -192,7 +183,6 @@ function yaml_schema_to_typescript_plugin(): Plugin {
       const yaml_content = fs.readFileSync(file, `utf-8`)
       const file_dir = path.dirname(file)
 
-      // Replace relative file paths in $refs with absolute file URIs
       const parsed_yaml = load_yaml(yaml_content) as JSONSchema4
       const base_name = path.basename(file, `.yml`)
 

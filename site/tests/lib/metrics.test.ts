@@ -495,41 +495,25 @@ describe(`Model Sorting Logic`, () => {
     expect(desc_keys).toStrictEqual(asc_keys.toReversed())
   })
 
-  it(`sorts models by runtime correctly, treating 0 as infinity`, () => {
-    const models = Object.entries({ a: 10, b: 0, c: 5, d: 0 }).map(
-      ([model_key, run_time]) => ({
-        model_key: `model_${model_key}`,
-        'Run Time': run_time,
-      }),
-    ) as unknown as ModelData[]
+  it.each([
+    { order: `asc`, expected: [`model_c`, `model_a`, `model_b`, `model_d`] },
+    { order: `desc`, expected: [`model_b`, `model_d`, `model_a`, `model_c`] },
+  ] as const)(
+    `sorts runtime in $order order, treating 0 as infinity`,
+    ({ order, expected }) => {
+      const models = Object.entries({ a: 10, b: 0, c: 5, d: 0 }).map(
+        ([model_key, run_time]) => ({
+          model_key: `model_${model_key}`,
+          'Run Time': run_time,
+        }),
+      ) as unknown as ModelData[]
 
-    // ascending: runtime 0 sorts last
-    const sorted_asc = models.toSorted(sort_models(`Run Time`, `asc`))
-    expect(sorted_asc.slice(0, 2).map((model) => model.model_key)).toStrictEqual([
-      `model_c`,
-      `model_a`,
-    ])
-    // order among the zeroes is not guaranteed
-    expect(
-      sorted_asc
-        .slice(2)
-        .map((model) => model.model_key)
-        .toSorted((key_1, key_2) => (key_1 ?? ``).localeCompare(key_2 ?? ``)),
-    ).toStrictEqual([`model_b`, `model_d`])
-
-    // descending: runtime 0 sorts first
-    const sorted_desc = models.toSorted(sort_models(`Run Time`, `desc`))
-    expect(
-      sorted_desc
-        .slice(0, 2)
-        .map((model) => model.model_key)
-        .toSorted((key_1, key_2) => (key_1 ?? ``).localeCompare(key_2 ?? ``)),
-    ).toStrictEqual([`model_b`, `model_d`])
-    expect(sorted_desc.slice(2).map((model) => model.model_key)).toStrictEqual([
-      `model_a`,
-      `model_c`,
-    ])
-  })
+      // Equal zero runtimes retain their input order in the stable sort.
+      expect(
+        models.toSorted(sort_models(`Run Time`, order)).map((model) => model.model_key),
+      ).toStrictEqual(expected)
+    },
+  )
 
   // sorting is stable: input order is preserved when values tie or are all missing
   it.each([

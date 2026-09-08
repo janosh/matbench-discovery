@@ -51,157 +51,120 @@ describe(`MetricsTable`, () => {
       return model
     })
 
-  it(`renders with default props`, async () => {
-    mount(MetricsTable, {
-      target: document.body,
-      props: { col_filter: () => true },
-    })
-
-    const table = document.querySelector(`table`)
-    expect(table).toBeDefined()
-    expect(table?.querySelector(`thead`)).toBeDefined()
-    expect(table?.querySelector(`tbody`)).toBeDefined()
-    const table_container = doc_query(`.table-container`)
-    expect(
-      table_container.style.getPropertyValue(`--heatmap-sticky-cell-odd-bg`),
-    ).toContain(`linear-gradient`)
-    expect(table_container.style.getPropertyValue(`--heatmap-row-num-padding-left`)).toBe(
-      `0`,
-    )
-
-    const header_texts = header_cells().map((h) => h.textContent?.trim())
-    const required_cols = [
-      `Model`,
-      `CPS ↑`, // active sort column has indicator
-      `F1`,
-      `DAF`,
-      `Training Set`,
-      `Params`,
-      `Targets`,
-      `Links`,
-    ]
-
-    for (const col of required_cols) {
-      expect(header_texts).toContain(col)
-    }
-
-    // Model stays first and Org is a regular metadata column at the far right.
-    expect(header_texts[0]).toBe(`Model`)
-    expect(header_texts.at(-1)).toBe(`Org`)
-    const metric_order = [`CPS ↑`, `F1`, `DAF`].map((col) => header_texts.indexOf(col))
-    expect(metric_order).toStrictEqual([...metric_order].toSorted((n1, n2) => n1 - n2))
-
-    const pred_files_button = doc_query<HTMLButtonElement>(
-      `tbody button[aria-label="Download model prediction files"]`,
-    )
-    expect(pred_files_button).toBeDefined()
-
-    expect(document.querySelector(`.pred-files-dropdown`)).toBeNull()
-
-    pred_files_button.click()
-    await tick()
-
-    let dropdown = document.querySelector(`.pred-files-dropdown`)
-    expect(dropdown).toBeDefined()
-    expect(dropdown?.textContent).toContain(`Files for`)
-
-    // click_outside dismisses on pointerdown, not click, so a bare body.click() is
-    // not enough to close the dropdown
-    document.body.dispatchEvent(new PointerEvent(`pointerdown`, { bubbles: true }))
-    await tick()
-
-    dropdown = document.querySelector(`.pred-files-dropdown`)
-    expect(dropdown).toBeNull()
-
-    pred_files_button.click() // reopen dropdown
-    await tick()
-    dropdown = document.querySelector(`.pred-files-dropdown`)
-    expect(dropdown).toBeDefined()
-
-    globalThis.dispatchEvent(new KeyboardEvent(`keydown`, { key: `Escape` }))
-    await tick()
-
-    dropdown = document.querySelector(`.pred-files-dropdown`)
-    expect(dropdown).toBeNull()
-  })
-
   it(
-    `renders Org as a regular rightmost metadata column`,
+    `renders columns, header tooltips and prediction downloads`,
     { timeout: 30_000 },
     async () => {
       mount(MetricsTable, {
         target: document.body,
         props: { col_filter: () => true },
       })
-      await tick()
+
+      const table = doc_query(`table`)
+      expect(table.querySelector(`thead`)).not.toBeNull()
+      expect(table.querySelector(`tbody`)).not.toBeNull()
+      const table_container = doc_query(`.table-container`)
+      expect(
+        table_container.style.getPropertyValue(`--heatmap-sticky-cell-odd-bg`),
+      ).toContain(`linear-gradient`)
+      expect(
+        table_container.style.getPropertyValue(`--heatmap-row-num-padding-left`),
+      ).toBe(`0`)
+
+      const header_texts = header_cells().map((h) => h.textContent?.trim())
+      const required_cols = [
+        `Model`,
+        `CPS ↑`, // active sort column has indicator
+        `F1`,
+        `DAF`,
+        `Training Set`,
+        `Params`,
+        `Targets`,
+        `Links`,
+      ]
+
+      for (const col of required_cols) {
+        expect(header_texts).toContain(col)
+      }
+
+      // Model stays first and Org is a regular metadata column at the far right.
+      expect(header_texts[0]).toBe(`Model`)
+      expect(header_texts.at(-1)).toBe(`Org`)
+      const metric_order = [`CPS ↑`, `F1`, `DAF`].map((col) => header_texts.indexOf(col))
+      expect(metric_order).toStrictEqual([...metric_order].toSorted((n1, n2) => n1 - n2))
 
       const org_cell = doc_query(`td[data-col="Org"]`)
-      const org_preview = doc_query(`td[data-col="Org"] .org-preview`)
-      const headers = header_cells()
-      const org_header = headers.at(-1)
-      if (!org_header) throw new Error(`Org column header not found`)
-
-      expect(org_header?.textContent?.trim()).toBe(`Org`)
-      expect(org_header.getAttribute(`title`)).toBe(`Model author affiliations`)
-      expect(org_preview.classList.contains(`org-preview`)).toBe(true)
+      expect(doc_query(`.org-preview`, org_cell)).toBeDefined()
       expect(org_cell.getAttribute(`style`)).not.toContain(`min-width:`)
+      expect(header_cells().at(-1)?.getAttribute(`title`)).toBe(
+        `Model author affiliations`,
+      )
+      const cps_header = header_cells().find((header) =>
+        header.textContent?.trim().startsWith(`CPS`),
+      )
+      expect(cps_header?.getAttribute(`title`)).toContain(`(higher=better)`)
+
+      const pred_files_button = doc_query<HTMLButtonElement>(
+        `tbody button[aria-label="Download model prediction files"]`,
+      )
+      expect(document.querySelector(`.pred-files-dropdown`)).toBeNull()
+
+      pred_files_button.click()
+      await tick()
+
+      let dropdown = document.querySelector(`.pred-files-dropdown`)
+      expect(dropdown).not.toBeNull()
+      expect(dropdown?.textContent).toContain(`Files for`)
+
+      // click_outside dismisses on pointerdown, not click, so a bare body.click() is
+      // not enough to close the dropdown
+      document.body.dispatchEvent(new PointerEvent(`pointerdown`, { bubbles: true }))
+      await tick()
+
+      dropdown = document.querySelector(`.pred-files-dropdown`)
+      expect(dropdown).toBeNull()
+
+      pred_files_button.click() // reopen dropdown
+      await tick()
+      dropdown = document.querySelector(`.pred-files-dropdown`)
+      expect(dropdown).not.toBeNull()
+
+      globalThis.dispatchEvent(new KeyboardEvent(`keydown`, { key: `Escape` }))
+      await tick()
+
+      dropdown = document.querySelector(`.pred-files-dropdown`)
+      expect(dropdown).toBeNull()
     },
   )
 
-  it(`exposes column descriptions with better-as hints as header titles`, async () => {
-    mount(MetricsTable, {
-      target: document.body,
-      props: { col_filter: () => true },
-    })
-    await tick()
+  it.each([
+    {
+      name: `metadata`,
+      hidden_keys: [`Training Set`, `Targets`, `benchmark_added`, `Links`],
+      hidden_labels: [`Training Set`, `Targets`, `Date Added`, `Links`],
+      retained_labels: [`CPS`, `F1`, `DAF`, `Prec`, `Acc`],
+    },
+    {
+      name: `metrics`,
+      hidden_keys: [`F1`, `DAF`],
+      hidden_labels: [`F1`, `DAF`],
+      retained_labels: [`Model`, `CPS`, `Prec`, `Acc`],
+    },
+  ])(
+    `hides selected $name columns`,
+    ({ hidden_keys, hidden_labels, retained_labels }) => {
+      mount(MetricsTable, {
+        target: document.body,
+        props: {
+          col_filter: (col: Label) => !hidden_keys.includes(col.key ?? col.label),
+        },
+      })
 
-    const cps_header = header_cells().find((header) =>
-      header.textContent?.trim().startsWith(`CPS`),
-    )
-    if (!cps_header) throw new Error(`CPS column header not found`)
-
-    expect(cps_header.getAttribute(`title`)).toContain(`(higher=better)`)
-  })
-
-  it(`hides metadata columns without hiding metrics`, () => {
-    // Keys used by col_filter (col.key ?? col.label)
-    const metadata_keys = new Set([`Training Set`, `Targets`, `benchmark_added`, `Links`])
-    // Labels displayed in table headers
-    const metadata_labels = [`Training Set`, `Targets`, `Date Added`, `Links`]
-    mount(MetricsTable, {
-      target: document.body,
-      props: {
-        col_filter: (col: Label) => !metadata_keys.has(col.key ?? col.label),
-      },
-    })
-
-    const header_texts = header_names()
-    for (const col of metadata_labels) {
-      expect(header_texts).not.toContain(col)
-    }
-
-    for (const col of [`CPS`, `F1`, `DAF`, `Prec`, `Acc`]) {
-      expect(header_texts).toContain(col)
-    }
-  })
-
-  it(`filters specified columns`, () => {
-    const col_filter = (col: Label) => ![`F1`, `DAF`].includes(col.key ?? col.label)
-    mount(MetricsTable, {
-      target: document.body,
-      props: { col_filter },
-    })
-
-    const header_texts = header_names()
-
-    expect(header_texts).not.toContain(`F1`)
-    expect(header_texts).not.toContain(`DAF`)
-
-    expect(header_texts).toContain(`Model`)
-    expect(header_texts).toContain(`CPS`)
-    expect(header_texts).toContain(`Prec`)
-    expect(header_texts).toContain(`Acc`)
-  })
+      const header_texts = header_names()
+      for (const label of hidden_labels) expect(header_texts).not.toContain(label)
+      for (const label of retained_labels) expect(header_texts).toContain(label)
+    },
+  )
 
   it(
     `hides energy-only models by default via the targets filter`,

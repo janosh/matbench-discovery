@@ -85,11 +85,9 @@ def test_archived_discovery_models_skip_shared_runner() -> None:
     )
 
 
-@pytest.mark.parametrize(
-    ("validate_runner", "should_fail"), [(True, True), (False, False)]
-)
+@pytest.mark.parametrize("validate_runner", [True, False])
 def test_unregistered_discovery_model_validation(
-    monkeypatch: pytest.MonkeyPatch, validate_runner: bool, should_fail: bool
+    monkeypatch: pytest.MonkeyPatch, validate_runner: bool
 ) -> None:
     """Trusted artifact validation does not require PR calculator code."""
     monkeypatch.delitem(
@@ -99,8 +97,8 @@ def test_unregistered_discovery_model_validation(
     checks = ingest.Checklist()
     ingest.check_submission(Model.mace_mpa_0, checks, validate_runner=validate_runner)
     failures = "\n".join(msgs(checks, ingest.FAIL))
-    assert ("discovery model is not registered" in failures) is should_fail
-    assert ("kappa shared runner unsupported" in failures) is should_fail
+    assert ("discovery model is not registered" in failures) is validate_runner
+    assert ("kappa shared runner unsupported" in failures) is validate_runner
 
 
 @pytest.mark.parametrize("task", ["discovery", "kappa", "diatomics"])

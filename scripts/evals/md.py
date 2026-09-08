@@ -59,7 +59,7 @@ def coverage_problems(index: pd.Index, expected: set[str]) -> list[str]:
 
 
 def main() -> int:
-    """Evaluate MD metrics, returning 0 if any model succeeds and 1 otherwise."""
+    """Evaluate MD metrics with the shared sweep's failure and skip handling."""
     expected: set[str] | None = None
 
     def evaluate_one(model: Model) -> str | None:

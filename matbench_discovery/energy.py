@@ -24,7 +24,7 @@ def get_elemental_ref_entries(
     Args:
         entries (Sequence[Entry]): pymatgen Entries (PDEntry, ComputedEntry or
             ComputedStructureEntry) to find elemental reference entries of.
-        verbose (bool, optional): Whether to show a progress bar. Defaults to False.
+        verbose (bool, optional): Whether to show a progress bar. Defaults to True.
 
     Raises:
         ValueError: If some elements are missing terminal reference entries.
@@ -33,9 +33,7 @@ def get_elemental_ref_entries(
         dict[str, Entry]: Map from element symbol to its lowest energy entry.
     """
     normalized_entries: list[Entry] = [
-        PDEntry.from_dict(cast("dict[str, Any]", entry))
-        if isinstance(entry, dict)
-        else cast("Entry", entry)
+        PDEntry.from_dict(entry) if isinstance(entry, dict) else cast("Entry", entry)
         for entry in entries
     ]
     elements = {
@@ -120,19 +118,17 @@ def calc_energy_from_e_refs(
         TypeError: If input types are invalid
         ValueError: If missing reference energies for some elements
     """
-    if isinstance(struct_or_entry, dict):  # entry dict case
-        entry_dict = cast("dict[str, Any]", struct_or_entry)
-        if missing_keys := {"composition", "energy"} - set(entry_dict):
+    if isinstance(struct_or_entry, dict):
+        if missing_keys := {"composition", "energy"} - struct_or_entry.keys():
             raise ValueError(
                 f"Entry dict missing required keys: {sorted(missing_keys)}"
             )
-        energy: float = entry_dict["energy"]
-        comp = Composition(entry_dict["composition"])
-    # Entry/ComputedEntry/ComputedStructureEntry instance case
+        energy: float = struct_or_entry["energy"]
+        comp = Composition(struct_or_entry["composition"])
     elif isinstance(struct_or_entry, Entry):
         energy = struct_or_entry.energy
         comp = struct_or_entry.composition
-    else:  # Structure/Composition/formula case
+    else:
         if total_energy is None:
             raise ValueError("total_energy can't be None when 1st arg is not an Entry")
         energy = total_energy

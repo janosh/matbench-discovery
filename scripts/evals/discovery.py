@@ -11,7 +11,7 @@ from scripts.evals import evaluate_models
 
 
 def main() -> int:
-    """Evaluate discovery metrics, returning 0 if any model succeeds and 1 otherwise."""
+    """Evaluate complete discovery models and fail if any evaluation fails."""
     models = complete_models()
     for model in cli_args.models:
         if model not in models:
