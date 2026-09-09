@@ -1,18 +1,27 @@
-import { DATASETS, format_date, ACTIVE_MODELS } from '$lib'
+import DATASETS from '$data/datasets.yml'
+import { format_date } from '$lib'
+import {
+  CDS_COMPONENTS,
+  CDS_CONFIG,
+  CMDS_CONFIG,
+  CPS_CONFIG,
+  type CdsPillar,
+} from '$lib/combined-scores.svelte'
+import { ACTIVE_MODELS, get_pred_file_urls } from '$lib/models.svelte'
 import {
   ALL_METRICS,
+  DISCOVERY_METRICS,
   DIATOMICS_METRICS,
-  GEO_OPT_SYMMETRY_METRICS,
   HYPERPARAMS,
   MD_METRICS,
   METADATA_COLS,
-  PHONON_METRICS,
 } from '$lib/labels'
 import type { ModelMetadata, TargetType } from '$lib/schema/model'
-import { get_pred_file_urls } from '$lib/models.svelte'
 import type { DiscoverySet, Label, ModelData } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
-import { escape_html, format_num, type CellVal } from 'matterviz'
+import { escape_html } from 'matterviz/utils'
+import { format_num } from 'matterviz/labels'
+import { is_invalid, type CellVal } from 'matterviz/table'
 
 export const targets_tooltips: Record<TargetType, string> = {
   E: `Energy`,
@@ -54,15 +63,20 @@ export const discovery_task_tooltips: Record<
   'IS2RE-SR': `initial structure to relaxed energy with structure relaxation`,
 } as const
 
+// Paths come from the fixed metric/metadata labels; reuse their parsed segments on redraw.
+const data_paths = new Map<string, string[]>()
 export function get_nested_value(model: ModelData, dotted_path: string): unknown {
-  const keys = dotted_path.split(`.`).filter(Boolean)
+  let keys = data_paths.get(dotted_path)
+  if (!keys) {
+    keys = dotted_path.split(`.`).filter(Boolean)
+    data_paths.set(dotted_path, keys)
+  }
   if (keys.length === 0) return undefined // empty path returns undefined, not the whole model
   let value: unknown = model
 
   for (const key of keys) {
-    if (typeof value === `object` && value && key in value) {
-      value = Reflect.get(value, key) // dynamic lookup without weakening the surrounding type
-    } else return undefined
+    if (typeof value !== `object` || value === null) return undefined
+    value = Reflect.get(value, key) // absent properties already yield undefined
   }
 
   return value
@@ -87,6 +101,115 @@ const sortable_span = (value: number | undefined): string =>
 // data field name) over `key` when the two differ
 export const label_data_path = (label: Label | undefined): string =>
   `${label?.path ?? ``}.${label?.property ?? label?.key ?? ``}`.replace(/^\./, ``)
+
+export const metric_data_path = (
+  label: Label,
+  discovery_set: DiscoverySet = `unique_prototypes`,
+): string =>
+  label.path === DISCOVERY_METRICS.F1.path
+    ? `metrics.discovery.${discovery_set}.${label.property ?? label.key}`
+    : label_data_path(label)
+
+export const metric_value = (
+  model: ModelData,
+  label: Label,
+  discovery_set: DiscoverySet = `unique_prototypes`,
+): unknown => get_nested_value(model, metric_data_path(label, discovery_set))
+
+// Compose combined-score reasons without repeating the submission invitation.
+export const missing_metric_reason = (model: ModelData, label: Label): string =>
+  [...new Set(missing_metric_messages(model, label))]
+    .toSorted(
+      (left, right) =>
+        Number(left.startsWith(`Contributions welcome`)) -
+        Number(right.startsWith(`Contributions welcome`)),
+    )
+    .join(` `)
+
+// Explain absent results using declared task status before inferring capability.
+function missing_metric_messages(model: ModelData, label: Label): string[] {
+  const is_cps = label.key === ALL_METRICS.CPS.key
+  const raw_task =
+    label.path?.split(`.`)[1] ??
+    (label.key === MD_METRICS.md_time_multiplier.key
+      ? `md`
+      : label.key === DIATOMICS_METRICS.diatomics_time_multiplier.key
+        ? `diatomics`
+        : undefined)
+  const task_key =
+    raw_task && Object.hasOwn(MODELINGS_TASKS, raw_task)
+      ? (raw_task as keyof NonNullable<ModelData['metrics']>)
+      : undefined
+  if (!task_key && !is_cps) {
+    return [`${label.label.replaceAll(/<[^>]*>/g, ``)}: not reported.`]
+  }
+
+  const task_name = task_key ? MODELINGS_TASKS[task_key].label : `CPS`
+  const task_data = task_key ? model.metrics?.[task_key] : undefined
+  const detail = task_data?.reason ? ` ${task_data.reason}` : ``
+  if (task_data?.status === `not_applicable`) {
+    return [`${task_name}: unsupported.${detail}`]
+  }
+  const requires_forces =
+    [`geo_opt`, `phonons`, `md`].includes(task_key ?? ``) ||
+    (task_key === `diatomics` &&
+      (label.key.includes(`force`) ||
+        label.key === DIATOMICS_METRICS.diatomics_combined_score.key))
+  if (model.targets === `E` && requires_forces) {
+    return [`${task_name} requires forces; this model predicts only energies.${detail}`]
+  }
+
+  const invite = `Contributions welcome to add missing model predictions.`
+  const property = label.property ?? label.key
+  if (
+    [`run_time_sec`, `max_rss_gb`, `max_gpu_mem_gb`].includes(property) ||
+    label.key.endsWith(`time_multiplier`)
+  ) {
+    return [
+      `${task_name}: ${label.key.endsWith(`time_multiplier`) ? `positive runtime` : property === `run_time_sec` ? `runtime` : `peak memory`} not reported.`,
+      `Contributions welcome to add missing timing or memory data.`,
+    ]
+  }
+  if (task_data?.status === `pending`) {
+    return [`${task_name}: evaluation pending.${detail}`, invite]
+  }
+  if (task_data?.status === `not_available`) {
+    return [`${task_name}: results unavailable.${detail}`, invite]
+  }
+  const has_results =
+    task_data &&
+    Object.keys(task_data).some((key) => key !== `status` && key !== `reason`)
+  if (is_cps || (has_results && property === `combined_score`)) {
+    const components: Label[] =
+      is_cps || task_key === `md`
+        ? Object.values(is_cps ? CPS_CONFIG : CMDS_CONFIG).filter(
+            ({ weight }) => weight > 0,
+          )
+        : Object.entries(CDS_COMPONENTS).flatMap(([pillar, entries]) =>
+            CDS_CONFIG[pillar as CdsPillar].weight > 0
+              ? entries.map(({ key }) => ({
+                  key,
+                  label: key,
+                  path: `metrics.diatomics`,
+                  description: ``,
+                }))
+              : [],
+          )
+    const missing = components.filter((component) => {
+      const value = metric_value(model, component)
+      return (
+        !is_finite_num(value) ||
+        ((component.property ?? component.key) === `run_time_sec` && value <= 0)
+      )
+    })
+    return missing.length
+      ? missing.flatMap((component) => missing_metric_messages(model, component))
+      : [`${label.label}: invalid components or weights.${detail}`]
+  }
+  return has_results
+    ? [`${task_name}: incomplete results.${detail}`, invite]
+    : [`${task_name}: not evaluated yet.${detail}`, invite]
+}
 
 // Append "(higher|lower)=better" hint to a column tooltip where applicable
 export function append_better_hint(col: Label, better = col.better): string {
@@ -168,12 +291,15 @@ type MetricsRowData = Pick<ModelData, `org_logos` | `authors`> & {
   model_name: string
   Model: string
   CPS: ModelData[`CPS`]
+  model: ModelData
   class?: string
   Links: Record<`paper` | `repo` | `pr_url` | `checkpoint`, string | null> & {
     pred_files: { files: { name: string; url: string }[]; name: string }
   }
   [key: string]: CellVal | ModelData[`org_logos` | `authors`]
 }
+
+const metadata_labels = [...Object.values(HYPERPARAMS), ...Object.values(METADATA_COLS)]
 
 export function assemble_row_data(
   discovery_set: DiscoverySet,
@@ -190,18 +316,8 @@ export function assemble_row_data(
     (model) => model_filter(model) && filter_matches(model),
   )
 
-  const { RMSD } = ALL_METRICS
-  // label_data_path prefers label.property over label.key, so columns whose row key
-  // must differ from the YAML field (e.g. the two run_time_sec columns) resolve too
   const metric_num = (model: ModelData, label: Label) =>
     get_nested_number(model, label_data_path(label))
-  const metric_columns = <Labels extends Record<keyof Labels, Label>>(
-    model: ModelData,
-    labels: Labels,
-  ): Record<string, number | undefined> =>
-    Object.fromEntries(
-      Object.values<Label>(labels).map((label) => [label.key, metric_num(model, label)]),
-    )
   const finite_positive = (value: unknown): value is number =>
     is_finite_num(value) && value > 0
   // Slowdown columns: wall time relative to the fastest model in the current
@@ -223,7 +339,6 @@ export function assemble_row_data(
   )
   const all_metrics = filtered_models.map((model) => {
     const { license, metrics } = model
-    const discovery_metrics = metrics?.discovery?.[discovery_set]
     const targets = model.targets.replaceAll(/_(?<char>.)/g, `<sub>$<char></sub>`)
     const targets_str = `<span title="${targets_tooltips[model.targets]}">${targets}</span>`
 
@@ -271,23 +386,18 @@ export function assemble_row_data(
         `<span aria-hidden="true">*</span></span>`
     }
 
-    return {
+    const row: MetricsRowData = {
       model_key: model.model_key,
       model_name: model.model_name,
+      model,
       Model: `<a title="Version: ${model.model_version ?? `unknown`}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>${model_exclusion_marker}`,
+      ...Object.fromEntries(
+        Object.values(ALL_METRICS).map((label) => [
+          label.key,
+          metric_value(model, label, discovery_set),
+        ]),
+      ),
       CPS: model.CPS,
-      F1: discovery_metrics?.F1,
-      DAF: discovery_metrics?.DAF,
-      Precision: discovery_metrics?.Precision,
-      Recall: discovery_metrics?.Recall,
-      Accuracy: discovery_metrics?.Accuracy,
-      MAE: discovery_metrics?.MAE,
-      RMSE: discovery_metrics?.RMSE,
-      R2: discovery_metrics?.R2,
-      ...metric_columns(model, PHONON_METRICS),
-      [RMSD.key]: metric_num(model, RMSD),
-      ...metric_columns(model, MD_METRICS),
-      ...metric_columns(model, DIATOMICS_METRICS),
       // computed after the spreads so they override the (pathless) spread entries
       [MD_METRICS.md_time_multiplier.key]: md_time_multiplier(model),
       [DIATOMICS_METRICS.diatomics_time_multiplier.key]: diatomics_time_multiplier(model),
@@ -301,7 +411,6 @@ export function assemble_row_data(
         ? `<span data-sort-value="${cell_filter}">${cell_filter_display}</span>`
         : `n/a`,
       [HYPERPARAMS.n_layers.key]: sortable_span(n_layers),
-      ...metric_columns(model, GEO_OPT_SYMMETRY_METRICS),
       Targets: targets_str,
       [METADATA_COLS.benchmark_added.key]:
         `<span title="${model.dates.benchmark_added ? format_date(model.dates.benchmark_added) : `Unknown`}" data-sort-value="${new Date(model.dates.benchmark_added ?? ``).getTime()}">${model.dates.benchmark_added ?? `n/a`}</span>`,
@@ -318,6 +427,13 @@ export function assemble_row_data(
       org_logos: model.org_logos,
       authors: model.authors,
     }
+    for (const label of metadata_labels) {
+      if (is_invalid(row[label.key]) || row[label.key] === `n/a`) {
+        row[label.key] =
+          `<span data-title="${escape_html(missing_metric_reason(model, label))}">n/a</span>`
+      }
+    }
+    return row
   })
 
   // Sort by combined performance score (descending)

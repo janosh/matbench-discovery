@@ -20,8 +20,11 @@ from matbench_discovery.enums import Model, TestSubset
             set(),
         ),
         (
-            ["--models", "alphanet-v1-mptrj"],
-            {"models": [Model.alphanet_v1_mptrj]},
+            ["--models", "alphanet-v1-mptrj", "--md-run-dir", "models/run-2026-09-12"],
+            {
+                "models": [Model.alphanet_v1_mptrj],
+                "md_run_dir": "models/run-2026-09-12",
+            },
             set(),
         ),
         (
@@ -70,6 +73,7 @@ def test_cli_parser(
         (["--models"], None),
         (["--models", "invalid_model"], "invalid model: invalid_model"),
         (["--test-subset", "invalid_subset"], None),
+        (["--md-run-dir"], None),
     ],
 )
 def test_cli_parser_invalid_args(

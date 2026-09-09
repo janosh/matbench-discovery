@@ -238,6 +238,29 @@ export function doc_query<T extends Element = HTMLElement>(
   return node as T
 }
 
+export async function choose_scatter_property(
+  label: string,
+  query: string,
+): Promise<void> {
+  const picker = [...document.querySelectorAll(`.property-picker`)].find(
+    (element) => element.querySelector(`label`)?.textContent === label,
+  )
+  if (!picker) throw new Error(`Missing property picker: ${label}`)
+  const input = doc_query<HTMLInputElement>(`input[role="combobox"]`, picker)
+  input.focus()
+  input.value = query
+  input.dispatchEvent(new InputEvent(`input`, { bubbles: true }))
+  await tick()
+  const option = [
+    ...picker.querySelectorAll<HTMLElement>(`ul.options li[aria-posinset]`),
+  ].find(
+    (element) => element.querySelector(`span`)?.firstChild?.textContent?.trim() === query,
+  )
+  if (!option) throw new Error(`Missing option ${query} in ${label}`)
+  option.click()
+  await tick()
+}
+
 export function get_scatter_plot_props(scatter_plot_mock: {
   mock: { lastCall?: unknown[] }
 }): unknown {

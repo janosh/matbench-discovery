@@ -1,5 +1,6 @@
 import PtableHeatmap from '$lib/PtableHeatmap.svelte'
-import { format_num, type ElementSymbol } from 'matterviz'
+import { format_num } from 'matterviz/labels'
+import type { ElementSymbol } from 'matterviz/element'
 import { tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
 import { checkbox_for, mount } from '../index'

@@ -130,11 +130,28 @@ describe(`pareto_staircase`, () => {
     { x: 4, y: 0.9 }, // frontier: best but most expensive
   ]
 
-  it(`keeps non-dominated points and inserts staircase corners`, () => {
-    const line = pareto_staircase(points, `lower`, `higher`)
-    // corner at (next.x, current.y) between consecutive frontier points
-    expect(line?.x).toEqual([1, 2, 2, 4, 4])
-    expect(line?.y).toEqual([0.5, 0.5, 0.8, 0.8, 0.9])
+  it.each([
+    { input: points },
+    { input: [...points, points[1], { x: 2, y: 0.6 }, { x: 3, y: 0.8 }].toReversed() },
+  ])(
+    `keeps non-dominated points, handles ties, and inserts staircase corners`,
+    ({ input }) => {
+      const line = pareto_staircase(input, `lower`, `higher`)
+      // corner at (next.x, current.y) between consecutive frontier points
+      expect(line?.x).toEqual([1, 2, 2, 4, 4])
+      expect(line?.y).toEqual([0.5, 0.5, 0.8, 0.8, 0.9])
+    },
+  )
+
+  it.each([NaN, Infinity, -Infinity])(`rejects non-finite coordinates (%s)`, (value) => {
+    for (const point of [
+      { x: value, y: 1 },
+      { x: 1, y: value },
+    ]) {
+      expect(() => pareto_staircase([points[0], point], `lower`, `higher`)).toThrow(
+        `Pareto coordinates must be finite`,
+      )
+    }
   })
 
   it(`flips domination with axis directions`, () => {
@@ -144,17 +161,24 @@ describe(`pareto_staircase`, () => {
     expect(line?.y.at(-1)).toBe(0.5) // ends at the best-y point
   })
 
-  it(`draws an L through a single all-dominating point (e.g. fastest AND best model)`, () => {
-    const pts = [
-      { x: 1, y: 0.9 },
-      { x: 2, y: 0.5 },
-      { x: 3, y: 0.1 },
-    ]
-    const line = pareto_staircase(pts, `lower`, `higher`)
-    // vertical lead-in from the worst-y extent, horizontal tail-out to worst-x extent
-    expect(line?.x).toEqual([1, 1, 3])
-    expect(line?.y).toEqual([0.1, 0.9, 0.9])
-  })
+  it.each([1, 200_000])(
+    `draws an L through an all-dominating point (%s repeated cohorts)`,
+    (repetitions) => {
+      const pts = [
+        { x: 1, y: 0.9 },
+        { x: 2, y: 0.5 },
+        { x: 3, y: 0.1 },
+      ]
+      const line = pareto_staircase(
+        Array.from({ length: repetitions }, () => pts).flat(),
+        `lower`,
+        `higher`,
+      )
+      // vertical lead-in from the worst-y extent, horizontal tail-out to worst-x extent
+      expect(line?.x).toEqual([1, 1, 3])
+      expect(line?.y).toEqual([0.1, 0.9, 0.9])
+    },
+  )
 
   it.each([
     [`empty input`, []],

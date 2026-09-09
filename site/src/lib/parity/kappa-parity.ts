@@ -1,5 +1,5 @@
+import type kappa_analysis_data from '$figs/kappa-103-analysis.jsonl'
 import type { AnyStructure } from 'matterviz/structure'
-import { parse_structure_file } from 'matterviz/structure/parse'
 import {
   assert_array_length,
   load_json_asset,
@@ -9,6 +9,33 @@ import {
 import type { ParityBase, ParityModel, ParityPoint } from '../asset-loader'
 import kappa_parity_manifest_json from './kappa-parity-manifest.json'
 import { is_finite_num } from '../metrics'
+
+export type KappaAnalysis = typeof kappa_analysis_data
+
+let analysis_promise: Promise<KappaAnalysis> | undefined
+
+// Lazily load and cache the shared κ-103 per-material analysis payload.
+export const load_kappa_analysis = (): Promise<KappaAnalysis> =>
+  (analysis_promise ??= import(`$figs/kappa-103-analysis.jsonl`).then(
+    (module) => module.default,
+  ))
+
+// Map material IDs to one model's per-material κ_SRME values.
+export async function load_kappa_srme_map(
+  model_key: string,
+): Promise<Map<string, number | null> | undefined> {
+  const analysis = await load_kappa_analysis()
+  const model_analysis = analysis.models.find(
+    (model_data) => model_data.model_key === model_key,
+  )
+  if (!model_analysis) return undefined
+  return new Map(
+    analysis.material_ids.map((material_id, idx) => [
+      material_id,
+      model_analysis.srme[idx],
+    ]),
+  )
+}
 
 export const kappa_parity_manifest = kappa_parity_manifest_json
 // raw phonon DOS as stored in assets (histogram of mesh frequencies in THz)
@@ -151,21 +178,3 @@ export function dos_per_atom(dos: PhononDos): PhononDos {
 // UI say why, instead of showing an unexplained sub-3k_B heat capacity
 export const has_imaginary_modes = (dos: PhononDos): boolean =>
   dos.frequencies.some((freq, idx) => freq < 0 && dos.densities[idx] > 0)
-
-export function kappa_structure(
-  base: KappaParityBase,
-  material_id: string,
-): AnyStructure | null {
-  const payload = base.structures[material_id]
-  if (!payload) return null
-  if (typeof payload !== `string`) return payload
-
-  // runs inside a $derived in the component, so degrade gracefully on parse
-  // failure (returning null hides the structure) instead of crashing the plot
-  try {
-    return parse_structure_file(payload, `${material_id}.extxyz`)
-  } catch (error) {
-    console.warn(`Failed to parse structure for ${material_id}:`, error)
-    return null
-  }
-}

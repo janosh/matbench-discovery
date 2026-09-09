@@ -1,7 +1,8 @@
-import { by_benchmark_added_desc, type DiatomicsCurves, ACTIVE_MODELS } from '$lib'
+import { by_benchmark_added_desc } from '$lib'
+import type { DiatomicsCurves } from '$lib/types'
+import { ACTIVE_MODELS, has_diatomics_curves } from '$lib/models.svelte'
 import dft_references from '$lib/diatomics-dft.json.gz'
-import { has_diatomics_curves } from '$lib/models.svelte'
-import { fetch_diatomics_data } from '$lib/server/diatomics'
+import { fetch_diatomics_data } from '$lib/server/predictions'
 import type { PageServerLoad } from './$types'
 
 // VASP PBE/r2SCAN homonuclear references, keyed functional -> formula -> curve. Each

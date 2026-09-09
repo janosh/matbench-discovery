@@ -265,6 +265,43 @@ def test_find_low_quality_dft_refs_on_bundled_pbe_reference() -> None:
     assert diatomics.find_low_quality_dft_refs(ref_curves) == jumpy_lanthanides
 
 
+@pytest.mark.parametrize("predicted_elements", [("H", "Cs"), ("Cs",), ()])
+def test_vib_freq_coverage(predicted_elements: tuple[str, ...]) -> None:
+    """Failed and missing predictions never shrink the reference-only denominator."""
+    reference = diatomics.load_dft_reference_curves("PBE")
+    cesium = reference.homo_nuclear["Cs"]
+    curves = {
+        "H": reference.homo_nuclear["H"],
+        "Cs": DiatomicCurve(
+            cesium.distances, np.zeros_like(cesium.energies), cesium.forces
+        ),
+    }
+    predictions = DiatomicCurves(
+        reference.distances,
+        {element: curves[element] for element in predicted_elements},
+    )
+    metrics = diatomics.calc_diatomic_metrics(
+        reference, predictions, metrics={MbdKey.pbe_vib_freq_error: {}}
+    )
+    coverage = diatomics.calc_vib_freq_coverage(reference, predictions, metrics)
+    assert coverage["n_eligible"] == 73
+    assert coverage["n_valid"] == int("H" in predicted_elements)
+    assert coverage["failed_elements"] == (["Cs"] if "Cs" in predicted_elements else [])
+    assert len(coverage["missing_elements"]) == 73 - len(predicted_elements)
+    assert not set(predicted_elements) & set(coverage["missing_elements"])
+    # Unbound, low-quality and non-MP references are excluded for every model.
+    assert not {"He", "Ne", "Ar", "Kr", "Xe", "Ho", "Er", "Po"} & set(
+        coverage["missing_elements"]
+    )
+    assert diatomics.calc_vib_freq_coverage(
+        DiatomicCurves(np.array([]), {"H": DiatomicCurve([], [], [])}), predictions, {}
+    ) == dict(n_valid=0, n_eligible=0, failed_elements=[], missing_elements=[])
+    with pytest.raises(ValueError, match=r"reference-ineligible elements.*He"):
+        diatomics.calc_vib_freq_coverage(
+            reference, predictions, metrics | {"He": {MbdKey.pbe_vib_freq_error: 1.0}}
+        )
+
+
 def test_diatomic_curve_metrics(
     pred_ref_diatomic_curves: tuple[DiatomicCurves, DiatomicCurves],
 ) -> None:
@@ -349,33 +386,29 @@ def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
     model, yaml_path = diatomics_model
     pred_file = "models/mace/mace-mp-0/2025-02-13-diatomics.json.gz"
     pred_file_url = "https://figshare.com/files/fake-url-00000"
-    # url/size/md5 must survive every recompute that keeps the same pred_file path
+    # url/size/md5 survive recomputing the declared source.
     existing_file_refs = {
         "pred_file": make_file_ref(
             pred_file, url=pred_file_url, size=12345, md5="a" * 32
         ),
     }
 
-    write_diatomics_yaml(model, yaml_path, existing_file_refs)
+    for refs in (existing_file_refs, {"pred_file": make_file_ref(pred_file)}):
+        write_diatomics_yaml(model, yaml_path, refs)
+        assert diatomics.write_metrics_to_yaml(model, {}) == refs
+        assert yaml.safe_load(yaml_path.read_text())["metrics"]["diatomics"] == refs
 
-    result = diatomics.write_metrics_to_yaml(model, {})
-    assert result == existing_file_refs
-    yaml_content = yaml_path.read_text(encoding="utf-8")
-    assert "diatomics:" in yaml_content
-    assert f"url: {pred_file_url}" in yaml_content
-    assert "pred_file_url:" not in yaml_content
-
-    write_diatomics_yaml(model, yaml_path, {"pred_file": make_file_ref(pred_file)})
-    assert diatomics.write_metrics_to_yaml(model, {}) == {
-        "pred_file": make_file_ref(pred_file),
-    }
-
-    # relative and absolute pred_file_path both record the repo-relative path
+    # New runs, including overwrites at the same path, cannot inherit old provenance.
     new_pred_file = "models/mace/mace-mp-0/2026-06-28-diatomics.json.gz"
-    write_diatomics_yaml(model, yaml_path, {})
-    for path_arg in (new_pred_file, f"{ROOT}/{new_pred_file}"):
+    for path_arg in (pred_file, new_pred_file, f"{ROOT}/{new_pred_file}"):
+        write_diatomics_yaml(
+            model,
+            yaml_path,
+            existing_file_refs
+            | {"hardware": "old GPU", "run_time_sec": 99, "max_gpu_mem_gb": 7},
+        )
         assert diatomics.write_metrics_to_yaml(model, {}, pred_file_path=path_arg) == {
-            "pred_file": make_file_ref(new_pred_file),
+            "pred_file": make_file_ref(path_arg.removeprefix(f"{ROOT}/")),
         }
     with pytest.raises(ValueError, match="must be inside repo root"):
         diatomics.write_metrics_to_yaml(
@@ -384,14 +417,8 @@ def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
 
     write_diatomics_yaml(model, yaml_path, existing_file_refs)
     metrics_by_element: dict[str, dict[str, float]] = {
-        "H": {
-            MbdKey.energy_jump: 1.0,
-            MbdKey.tortuosity: 2.0,
-        },
-        "He": {
-            MbdKey.energy_jump: 4.0,
-            MbdKey.tortuosity: 5.0,
-        },
+        "H": {MbdKey.energy_jump: 1.0, MbdKey.tortuosity: 2.0},
+        "He": {MbdKey.energy_jump: 4.0, MbdKey.tortuosity: 5.0},
     }
     expected_metrics = {
         MbdKey.energy_jump: 2.5,
@@ -399,16 +426,14 @@ def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
     }
     result = diatomics.write_metrics_to_yaml(model, metrics_by_element)
 
-    yaml_content = yaml_path.read_text(encoding="utf-8")
-    assert "metrics:" in yaml_content
-    assert "diatomics:" in yaml_content
-    for metric_key, metric_value in expected_metrics.items():
-        assert f"{metric_key}: {metric_value}" in yaml_content
-
-    assert result == {
-        **existing_file_refs,
-        **expected_metrics,
-    }
+    assert (
+        yaml.safe_load(yaml_path.read_text())["metrics"]["diatomics"]
+        == result
+        == {
+            **existing_file_refs,
+            **expected_metrics,
+        }
+    )
 
     # pred_file_path overrides the existing pred_file (dropping its url/size/md5);
     # run_metadata is recorded ahead of the metric values
@@ -522,23 +547,43 @@ def test_write_metrics_drops_deprecated_and_handles_nan(
     }
     write_diatomics_yaml(model, yaml_path, existing_file_refs)
 
-    # H has a finite tortuosity + an extra (ref-only) metric; He's tortuosity is NaN
+    # Preserve first-seen order even when a metric's first finite value comes later.
     metrics: dict[str, dict[str, float]] = {
-        "H": {MbdKey.tortuosity: 2.0, MbdKey.pbe_energy_mae: 1.0},
-        "He": {MbdKey.tortuosity: float("nan")},
+        "H": {
+            MbdKey.energy_jump: float("inf"),
+            MbdKey.tortuosity: 2.0,
+            MbdKey.pbe_energy_mae: 1.0,
+            MbdKey.pbe_vib_freq_error: 47.7,
+        },
+        "He": {
+            MbdKey.energy_jump: 3.0,
+            MbdKey.tortuosity: float("nan"),
+            MbdKey.pbe_vib_freq_error: float("nan"),
+        },
     }
-    result = diatomics.write_metrics_to_yaml(model, metrics)
+    coverage = diatomics.VibFreqCoverage(
+        n_valid=1, n_eligible=3, failed_elements=["He"], missing_elements=["Li"]
+    )
+    result = diatomics.write_metrics_to_yaml(model, metrics, vib_freq_coverage=coverage)
 
     assert "smoothness" not in result  # deprecated key fully dropped
     assert "smoothness" not in yaml_path.read_text(encoding="utf-8")
     assert file_ref_url(result["pred_file"]) == "https://figshare.com/files/x"
     assert "pred_file_url" not in result
+    assert list(result)[1:3] == ["energy_jump", "tortuosity"]
+    assert result["energy_jump"] == 3.0
     assert result["tortuosity"] == 2.0  # mean over the one finite value
     assert result["pbe_energy_mae"] == 1.0  # unioned key present only on H
+    assert result["pbe_vib_freq_error"] == 47.7  # still the finite-only mean
+    assert result["pbe_vib_freq_coverage"] == coverage
+    assert yaml.safe_load(yaml_path.read_text())["metrics"]["diatomics"] == result
 
-    # a metric that is NaN for every element is omitted, not written as .nan
+    # All-nonfinite metrics are omitted and stale coverage is cleared.
     all_nan = diatomics.write_metrics_to_yaml(
-        model, {"H": {MbdKey.tortuosity: float("nan")}}
+        model,
+        {"H": {MbdKey.tortuosity: float("nan"), MbdKey.energy_jump: float("-inf")}},
     )
     assert "tortuosity" not in all_nan
+    assert "energy_jump" not in all_nan
     assert "tortuosity" not in yaml_path.read_text(encoding="utf-8")
+    assert "pbe_vib_freq_coverage" not in all_nan  # stale coverage must not survive

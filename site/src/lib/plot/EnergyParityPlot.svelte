@@ -18,7 +18,8 @@
   import { ParityLoadController } from '$lib/parity/load-controller.svelte'
   import { get_error_message, type LoadStatus } from '$lib/asset-loader'
   import type { ModelData } from '$lib/types'
-  import { compact_formula, format_num, sanitize_compact_formula } from 'matterviz'
+  import { compact_formula, sanitize_compact_formula } from 'matterviz/sanitize'
+  import { format_num } from 'matterviz/labels'
   import { Spinner } from 'svelte-widgets'
   import type { AnyStructure } from 'matterviz/structure'
   import { BinnedScatterPlot } from 'matterviz/plot'
@@ -87,8 +88,9 @@
 
   const load_controller = new ParityLoadController()
   $effect(() => onstatus?.(load_controller.status))
-  let base = $state<EnergyParityBase | undefined>()
-  let parity_model = $state<EnergyParityModel | undefined>()
+  // Immutable asset snapshots: avoid a reactive proxy for every one of the 257k rows.
+  let base = $state.raw<EnergyParityBase>()
+  let parity_model = $state.raw<EnergyParityModel>()
   let selected_point = $state<EnergyParityPoint | null>(null)
   let selected_structure = $state<AnyStructure | null>(null)
   let structure_error = $state(``)

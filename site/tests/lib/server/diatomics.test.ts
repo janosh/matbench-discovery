@@ -1,21 +1,12 @@
-import { fetch_diatomics_data } from '$lib/server/diatomics'
+import { fetch_diatomics_data } from '$lib/server/predictions'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, onTestFinished, vi } from 'vitest'
 
 describe(`diatomics server data loader`, () => {
-  const tmp_dirs: string[] = []
-
-  afterEach(async () => {
-    await Promise.all(
-      tmp_dirs.map((tmp_dir) => rm(tmp_dir, { recursive: true, force: true })),
-    )
-    tmp_dirs.length = 0
-  })
-
   it(`does not fall back to remote data when local pred_file is corrupt`, async () => {
     const tmp_dir = await mkdtemp(`${tmpdir()}/diatomics-test-`)
-    tmp_dirs.push(tmp_dir)
+    onTestFinished(() => rm(tmp_dir, { recursive: true }))
     await writeFile(`${tmp_dir}/diatomics.json.gz`, `not gzip`)
     const fetch_fn = vi.fn<typeof fetch>()
 

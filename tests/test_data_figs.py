@@ -4,7 +4,9 @@ import gzip
 import json
 
 import pandas as pd
+import pymatviz as pmv
 import pytest
+from pymatgen.core import Composition
 from pymatviz.enums import Key
 
 from matbench_discovery import ROOT
@@ -98,22 +100,53 @@ def test_build_mp_trj_hist_payload() -> None:
     assert payload["n-sites"]["cumulative"] == [0.0, 1.0]
 
 
-def test_build_route_and_comparison_element_counts() -> None:
+@pytest.mark.parametrize(
+    "wbm_formulas",
+    [
+        ["LiF", "NaCl", "MgO", "AlN", "SiC"],
+        ["Li2O", "Li2O", "Ca3(PO4)2", "H2", "NaN"],
+        ["Fe0"],
+        [],
+    ],
+)
+def test_build_route_and_comparison_element_counts(wbm_formulas: list[str]) -> None:
     """Route counts and the MP/WBM comparison share occurrence inputs."""
-    df_mp = pd.DataFrame({Key.formula: ["Li2O", "NaCl"]})
+    df_mp = pd.DataFrame({Key.formula: ["Li2O", "NaCl", "NaN"]})
     df_wbm = pd.DataFrame(
-        {Key.formula: ["LiF", "NaCl", "MgO", "AlN", "SiC"]},
-        index=[f"wbm-{step}-1" for step in range(1, 6)],
+        {Key.formula: wbm_formulas},
+        index=[f"wbm-{step}-1" for step in range(1, len(wbm_formulas) + 1)],
     )
-    df_mp_trj = pd.DataFrame({Key.formula: ["Li2O", "LiF"]})
+    df_mp_trj = pd.DataFrame({Key.formula: ["Fe0.1Ni0.9O", "Fe0.1Ni0.9O", "LiF"]})
     counts = build_route_element_counts(df_mp, df_wbm, df_mp_trj)
 
-    assert {
-        "mp-element-counts-by-occurrence",
-        "wbm-element-counts-batch=1",
-        "wbm-element-counts-arity=2",
-        "mp-trj-element-counts-by-composition",
-    } <= set(counts)
+    for dataset, formulas in (
+        ("mp", df_mp[Key.formula].iloc[:2]),
+        ("wbm", df_wbm[Key.formula]),
+        ("mp-trj", df_mp_trj[Key.formula]),
+    ):
+        for count_mode in ("occurrence", "composition"):
+            expected = pmv.count_elements(formulas, count_mode=count_mode)
+            if dataset != "mp-trj":
+                expected = expected.astype("Int64")
+            pd.testing.assert_series_equal(
+                counts[f"{dataset}-element-counts-by-{count_mode}"],
+                expected,
+                check_exact=True,
+            )
+    for batch, formula in enumerate(wbm_formulas, start=1):
+        pd.testing.assert_series_equal(
+            counts[f"wbm-element-counts-batch={batch}"],
+            pmv.count_elements([formula]),
+            check_exact=True,
+        )
+    for arity, formulas in df_wbm[Key.formula].groupby(
+        df_wbm[Key.formula].map(Composition).map(len)
+    ):
+        pd.testing.assert_series_equal(
+            counts[f"wbm-element-counts-arity={arity}"],
+            pmv.count_elements(formulas),
+            check_exact=True,
+        )
 
     payload = build_element_counts_payload(
         counts["mp-element-counts-by-occurrence"], df_wbm[Key.formula]

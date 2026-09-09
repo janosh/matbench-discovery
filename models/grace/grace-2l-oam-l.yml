@@ -85,6 +85,11 @@ metrics:
     force_total_variation: 118.8
     force_jump: 5.339
     pbe_force_mae: 1.291
+    pbe_vib_freq_coverage:
+      n_valid: 73
+      n_eligible: 73
+      failed_elements: []
+      missing_elements: []
   discovery:
     pred_file:
       name: models/grace/grace-2l-oam-l/2025-09-09-discovery.csv.gz

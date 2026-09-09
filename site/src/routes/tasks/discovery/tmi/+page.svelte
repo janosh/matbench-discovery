@@ -1,13 +1,13 @@
 <script lang="ts">
+  import { MultiSelect } from 'svelte-widgets'
   import elem_prev from '$figs/element-prevalence-vs-error.jsonl'
   import hist_largest from '$figs/hist-largest-each-errors-fp-diff.jsonl'
   import each_errors from '$figs/scatter-largest-each-errors-fp-diff.jsonl'
   import fp_diff from '$figs/scatter-largest-fp-diff-each-error.jsonl'
-  import { ModelSelect } from '$lib'
+  import ModelSelect from '$lib/ModelSelect.svelte'
   import { dashed, series_blue, series_red, wide_legend } from '$lib/fig-helpers'
   import { UrlModelSelection } from '$lib/model-selection.svelte'
   import { bind_url_params } from '$lib/url-state.svelte'
-  import { valid_query_param } from 'svelte-widgets/url-params'
   import type { UrlParamEntry } from 'svelte-widgets/url-params'
   import { BarPlot, BinnedScatterPlot, ScatterPlot } from 'matterviz/plot'
   import DiscoveryMetricFigs from './discovery-metric-figs.md'
@@ -38,9 +38,9 @@
     hist_model: model_options(hist_largest.models),
   }
 
-  let picked = $state<Record<string, ModelOption[]>>(
+  let picked = $state<Record<string, ModelOption>>(
     Object.fromEntries(
-      Object.entries(single_selects).map(([key, options]) => [key, [options[0]]]),
+      Object.entries(single_selects).map(([key, options]) => [key, options[0]]),
     ),
   )
 
@@ -50,18 +50,14 @@
       elem_prev_selection.selected = elem_prev_options.slice(0, 3)
     }
     for (const [key, options] of Object.entries(single_selects)) {
-      const options_by_key = Object.fromEntries(
-        options.map((option) => [option.value, option]),
-      )
-      const model_key = valid_query_param(params, key, options[0].value, options_by_key)
-      picked[key] = [options_by_key[model_key]]
+      picked[key] = options.find(({ value }) => value === params.get(key)) ?? options[0]
     }
   }
   bind_url_params(read_url_params, () => [
     elem_prev_selection.url_entry,
     ...Object.entries(single_selects).map(([key, options]): UrlParamEntry => [
       key,
-      picked[key][0].value,
+      picked[key].value,
       options[0].value,
     ]),
   ])
@@ -71,12 +67,12 @@
       elem_prev_selection.values.includes(model_key),
     ),
   )
-  const fp_diff_active = $derived(find_model(fp_diff.models, picked.fp_model[0].value))
+  const fp_diff_active = $derived(find_model(fp_diff.models, picked.fp_model.value))
   const each_errors_active = $derived(
-    find_model(each_errors.models, picked.each_model[0].value),
+    find_model(each_errors.models, picked.each_model.value),
   )
   const hist_largest_active = $derived(
-    find_model(hist_largest.models, picked.hist_model[0].value),
+    find_model(hist_largest.models, picked.hist_model.value),
   )
 
   const numeric_pairs = (
@@ -99,12 +95,12 @@
   }
 </script>
 
-<h1>Discovery: Too Much Information</h1>
+<h1 id="discovery-too-much-information">Discovery: Too Much Information</h1>
 
 Discovery diagnostics that didn't make the cut into the
 <a href="/tasks/discovery">task page</a>.
 
-<h2>Per-Element Model Error Heatmaps</h2>
+<h2 id="per-element-model-error-heatmaps">Per-Element Model Error Heatmaps</h2>
 
 <ElementErrorsPtableHeatmap />
 
@@ -112,7 +108,9 @@ Discovery diagnostics that didn't make the cut into the
 
 <DiscoveryMetricFigs />
 
-<h2>Does error correlate with element prevalence in training set?</h2>
+<h2 id="does-error-correlate-with-element-prevalence-in-training-set">
+  Does error correlate with element prevalence in training set?
+</h2>
 
 Answer: not much. You might expect the more examples of structures containing a certain
 element models have seen in the training set, the smaller their average error on test set
@@ -127,7 +125,7 @@ dependent on geometry than chemistry.
   Models
   <ModelSelect
     options={elem_prev_options}
-    bind:selected={elem_prev_selection.selected}
+    bind:value={elem_prev_selection.selected}
     min_select={1}
   />
 </label>
@@ -149,7 +147,9 @@ dependent on geometry than chemistry.
   {/snippet}
 </ScatterPlot>
 
-<h2>Does error correlate with relaxation change?</h2>
+<h2 id="does-error-correlate-with-relaxation-change">
+  Does error correlate with relaxation change?
+</h2>
 
 Taking structures with the largest difference in atomic environments before vs after
 relaxation as measured by<code>matminer</code>'s
@@ -163,11 +163,12 @@ plotting against that the absolute E<sub>above hull</sub> errors for each model.
 
 <label>
   Model
-  <ModelSelect
+  <MultiSelect
+    style="width: fit-content; max-width: min(48rem, 100%); min-width: min(19rem, 100%); border: 1px solid var(--border)"
     options={single_selects.fp_model}
-    bind:selected={picked.fp_model}
+    bind:value={picked.fp_model}
     min_select={1}
-    max_select={1}
+    mode="single"
   />
   <small>MAE = {fp_diff_active.mae} eV/atom (dashed line)</small>
 </label>
@@ -201,11 +202,12 @@ errors.
 
 <label>
   Model
-  <ModelSelect
+  <MultiSelect
+    style="width: fit-content; max-width: min(48rem, 100%); min-width: min(19rem, 100%); border: 1px solid var(--border)"
     options={single_selects.each_model}
-    bind:selected={picked.each_model}
+    bind:value={picked.each_model}
     min_select={1}
-    max_select={1}
+    mode="single"
   />
   <small>MAE = {each_errors_active.mae} eV/atom</small>
 </label>
@@ -231,11 +233,12 @@ each model and the mean of all models.
 
 <label>
   Model
-  <ModelSelect
+  <MultiSelect
+    style="width: fit-content; max-width: min(48rem, 100%); min-width: min(19rem, 100%); border: 1px solid var(--border)"
     options={single_selects.hist_model}
-    bind:selected={picked.hist_model}
+    bind:value={picked.hist_model}
     min_select={1}
-    max_select={1}
+    mode="single"
   />
 </label>
 <BarPlot

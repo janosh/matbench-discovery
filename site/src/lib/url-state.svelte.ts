@@ -39,6 +39,37 @@ export const sort_url_entries = (
   [`dir`, sort.dir, default_sort.dir],
 ]
 
+// Shared task-page axis and table-sort state. Pages compose its URL entries with
+// their task-specific filters, weights, and model selections.
+export class UrlPlotState {
+  x = $state(``)
+  y = $state(``)
+  sort = $state<SortState>({ column: ``, dir: `asc` })
+
+  constructor(
+    private readonly defaults: { x: string; y: string; sort: SortState },
+    private readonly options: ValidQueryValues<string>,
+  ) {
+    this.x = defaults.x
+    this.y = defaults.y
+    this.sort = { ...defaults.sort }
+  }
+
+  read = (params: URLSearchParams): void => {
+    this.x = valid_query_param(params, `x`, this.defaults.x, this.options)
+    this.y = valid_query_param(params, `y`, this.defaults.y, this.options)
+    this.sort = sort_from_query(params, this.defaults.sort)
+  }
+
+  get url_entries(): UrlParamEntry[] {
+    return [
+      [`x`, this.x, this.defaults.x],
+      [`y`, this.y, this.defaults.y],
+      ...sort_url_entries(this.sort, this.defaults.sort),
+    ]
+  }
+}
+
 // -- Weighted-score radar weights as a single URL param ------------------------
 // Serialized as comma-joined values in config-key order, e.g. weights=0.5,0.4,0.1.
 type WeightsConfig = Record<string, { weight: number }>
@@ -191,13 +222,15 @@ export class UrlTableFilters {
   })
   fs_mode = $state<FsMode>(`any`)
   show_heatmap = $state(true)
+  private readonly training_entries = $derived(Object.entries(this.training))
+  private readonly target_entries = $derived(Object.entries(this.targets))
 
   constructor(readonly training_sets: string[]) {}
 
   // number of active non-default constraints (drives filter-button badges)
   get n_active(): number {
     return (
-      Object.keys(this.training).length +
+      this.training_entries.length +
       (this.openness.length < OPENNESS_OPTIONS.length ? 1 : 0) +
       (this.targets_param === DEFAULT_TARGETS_PARAM ? 0 : 1)
     )
@@ -206,13 +239,13 @@ export class UrlTableFilters {
   matches = (model: FilterableModel): boolean => {
     if (!this.openness.includes(model.openness)) return false
     const { outputs, fs_mode } = parse_targets(model.targets)
-    const outputs_ok = Object.entries(this.targets).every(
+    const outputs_ok = this.target_entries.every(
       ([key, mode]) => outputs.has(key) === (mode === `require`),
     )
     if (!outputs_ok) return false
     // direct/gradient also drops models without any force/stress prediction
     if (this.fs_mode !== `any` && fs_mode !== this.fs_mode) return false
-    return Object.entries(this.training).every(
+    return this.training_entries.every(
       ([key, mode]) => model.training_sets.includes(key) === (mode === `require`),
     )
   }

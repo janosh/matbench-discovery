@@ -1,5 +1,4 @@
-import { DATASETS } from '$lib'
-import { heatmap_class } from '$lib/table-export'
+import DATASETS from '$data/datasets.yml'
 import Page from '$routes/data/sets/+page.svelte'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { doc_query, mount } from '../index'
@@ -11,7 +10,7 @@ describe(`Datasets Page`, () => {
 
   it(`renders the table with correct structure`, () => {
     expect(doc_query<HTMLHeadingElement>(`h1`).textContent).toContain(`Datasets`)
-    const table = doc_query<HTMLTableElement>(`.${heatmap_class}`)
+    const table = doc_query<HTMLTableElement>(`.heatmap`)
     const thead = doc_query(`thead`, table)
     const tbody = doc_query(`tbody`, table)
 
@@ -40,8 +39,8 @@ describe(`Datasets Page`, () => {
 
   it(`properly renders resource links for datasets`, () => {
     const resource_links = document.querySelectorAll(
-      `.${heatmap_class} tbody td:nth-child(10) a[title],
-       .${heatmap_class} tbody td:nth-child(10) a[data-original-title]`,
+      `.heatmap tbody td:nth-child(10) a[title],
+       .heatmap tbody td:nth-child(10) a[data-original-title]`,
     )
     expect(resource_links.length).toBeGreaterThan(10)
     for (const link of resource_links) {
@@ -54,9 +53,7 @@ describe(`Datasets Page`, () => {
   })
 
   it(`properly renders API links for datasets`, () => {
-    const api_links = [
-      ...document.querySelectorAll(`.${heatmap_class} tbody td:nth-child(9) > a`),
-    ]
+    const api_links = [...document.querySelectorAll(`.heatmap tbody td:nth-child(9) > a`)]
 
     // One API link per dataset native_api/optimade_api URL
     const by_string = (str_1: string, str_2: string) => str_1.localeCompare(str_2)
@@ -77,7 +74,7 @@ describe(`Datasets Page`, () => {
 
   it(`marks only the Links and API columns as non-sortable`, () => {
     // In HeatmapTable, non-sortable columns have the 'not-sortable' class
-    const all_headers = [...document.querySelectorAll(`.${heatmap_class} th`)]
+    const all_headers = [...document.querySelectorAll(`.heatmap th`)]
     const non_sortable = all_headers.filter((th) => th.classList.contains(`not-sortable`))
     expect(non_sortable.map((th) => th.textContent?.trim())).toStrictEqual([
       `API`,
@@ -87,7 +84,7 @@ describe(`Datasets Page`, () => {
 
   it(`formats numbers correctly in the table`, () => {
     const structures_cells = [
-      ...document.querySelectorAll(`.${heatmap_class} tbody td:nth-child(2)`),
+      ...document.querySelectorAll(`.heatmap tbody td:nth-child(2)`),
     ]
 
     // K/M suffixes for thousands/millions
@@ -100,9 +97,7 @@ describe(`Datasets Page`, () => {
   })
 
   it(`correctly displays method information in the table`, () => {
-    const method_cells = [
-      ...document.querySelectorAll(`.${heatmap_class} tbody td:nth-child(8)`),
-    ]
+    const method_cells = [...document.querySelectorAll(`.heatmap tbody td:nth-child(8)`)]
 
     const method_count = method_cells.filter(
       (cell) => cell?.textContent?.trim() !== `n/a`,

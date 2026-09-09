@@ -2,7 +2,7 @@ import Page from '$routes/data/data-files-direct-download.md'
 import DataRoute from '$routes/data/+page.svelte'
 import { tick } from 'svelte'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { mount, mount_with_url } from '../index'
+import { doc_query, mount, mount_with_url } from '../index'
 
 describe(`Data Page`, () => {
   beforeEach(() => {
@@ -89,12 +89,36 @@ describe(`Data Route URL state`, () => {
 
   it.each([
     [``, `occurrence`],
-    [`?count_mode=composition`, `composition`],
+    [`?count_mode=composition&color_scale=interpolatePlasma`, `composition`],
     [`?count_mode=bogus`, `occurrence`], // invalid value falls back to default
   ])(`restores count mode from URL %s`, async (query, expected_mode) => {
     await mount_with_url(DataRoute, `http://localhost/data${query}`)
 
     expect(count_mode_text()).toContain(expected_mode)
+    expect(document.querySelector(`.periodic-table .colorbar`)).not.toBeNull()
+    expect(new URL(location.href).searchParams.get(`color_scale`)).toBe(
+      new URLSearchParams(query).get(`color_scale`),
+    )
+    const scale_input = doc_query<HTMLInputElement>(`input[aria-label="Color scale"]`)
+    const scale_picker = scale_input.closest(`.multiselect`)
+    const expected_scale = (
+      new URLSearchParams(query).get(`color_scale`) ?? `interpolateViridis`
+    ).replace(`interpolate`, ``)
+    expect(scale_picker?.querySelector(`ul.selected`)?.textContent).toContain(
+      expected_scale,
+    )
+    scale_input.focus()
+    await tick()
+    const cividis_option = [
+      ...(scale_picker?.querySelectorAll<HTMLElement>(`ul.options li[aria-posinset]`) ??
+        []),
+    ].find((option) => option.textContent?.includes(`Cividis`))
+    expect(cividis_option?.querySelector(`.colorbar`)).not.toBeNull()
+    cividis_option?.click()
+    await tick()
+    expect(new URL(location.href).searchParams.get(`color_scale`)).toBe(
+      `interpolateCividis`,
+    )
 
     const input = document.querySelector<HTMLInputElement>(`#count-mode`)
     const picker = input?.closest(`.multiselect`)

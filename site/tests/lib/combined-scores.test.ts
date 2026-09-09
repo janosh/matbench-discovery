@@ -1,4 +1,4 @@
-import type { ModelData } from '$lib'
+import type { ModelData } from '$lib/types'
 import type {
   CpsConfig,
   CdsConfig,

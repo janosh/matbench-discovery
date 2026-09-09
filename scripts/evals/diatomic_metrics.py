@@ -47,15 +47,22 @@ def main() -> int:
         with gzip.open(prediction_path, mode="rb") as file:
             pred_data = json.load(file) or {}
 
+        pred_curves = DiatomicCurves.from_dict(pred_data)
         metrics = diatomics.calc_diatomic_metrics(
             ref_curves=pbe_ref_curves,
-            pred_curves=DiatomicCurves.from_dict(pred_data),
+            pred_curves=pred_curves,
             # default metrics=None scores every key in diatomics.DIATOMIC_METRIC_KEYS
             interpolate=200,
         )
         metrics = drop_metric_exclusions(model.name, metrics)
         # Preserve source metadata by leaving run_metadata unset.
-        mean_metrics = diatomics.write_metrics_to_yaml(model, metrics)
+        mean_metrics = diatomics.write_metrics_to_yaml(
+            model,
+            metrics,
+            vib_freq_coverage=diatomics.calc_vib_freq_coverage(
+                pbe_ref_curves, pred_curves, metrics
+            ),
+        )
         print(f"{model.label}:")
         for metric, value in mean_metrics.items():
             value_str = f"{value:.5}" if isinstance(value, numbers.Real) else str(value)

@@ -1,4 +1,4 @@
-import type { Label as MattervizLabel } from 'matterviz'
+import type { Column } from 'matterviz/table'
 import type { IconData } from 'svelte-widgets'
 import type { Label1 as LabelType } from './schema/label'
 import type { DiatomicsMetrics, MdMetrics, ModelMetadata, Person } from './schema/model'
@@ -30,8 +30,7 @@ export type ModelData = ModelMetadata & {
 
 export type Author = Person
 
-export type Label = LabelType & Pick<MattervizLabel, `color_scale`>
-export type TableLabel = Omit<Label, `better`> & MattervizLabel
+export type Label = LabelType & Pick<Column, `color_scale`>
 
 export const DISCOVERY_SETS = [`full_test_set`, `unique_prototypes`] as const
 export type DiscoverySet = (typeof DISCOVERY_SETS)[number]

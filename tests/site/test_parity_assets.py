@@ -17,10 +17,12 @@ import gzip
 import hashlib
 import json
 import os
+import shutil
 import subprocess
 import sys
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import nullcontext
 from pathlib import Path
 from typing import Any
 
@@ -76,13 +78,15 @@ def model_has_phonon_sidecar(model: Model, kind: str) -> bool:
 
 
 @pytest.fixture(scope="module")
-def published_release_assets() -> dict[str, dict[str, Any]]:
+def published_release_assets(
+    url_session: requests.Session,
+) -> dict[str, dict[str, Any]]:
     """Asset metadata in the GitHub release serving parity data."""
     url = "https://api.github.com/repos/janosh/matbench-discovery/releases/tags/v1.0.0"
     token = os.getenv("GH_TOKEN") or os.getenv("GITHUB_TOKEN")
     headers = {"Authorization": f"Bearer {token}"} if token else {}
     try:
-        response = requests.get(url, headers=headers, timeout=30)
+        response = url_session.get(url, headers=headers, timeout=30)
     except requests.RequestException as exc:  # offline local dev -> skip
         pytest.skip(f"GitHub API unreachable: {exc}")
     # rate-limited (unauthenticated runs share a per-IP quota) -> no evidence either
@@ -141,8 +145,11 @@ def test_parity_manifest_matches_active_models(kind: str) -> None:
 
 
 @pytest.mark.parametrize("kind", ["energy", "kappa"])
+@pytest.mark.network
 def test_release_has_all_parity_manifest_assets(
-    kind: str, published_release_assets: dict[str, dict[str, Any]]
+    kind: str,
+    published_release_assets: dict[str, dict[str, Any]],
+    url_session: requests.Session,
 ) -> None:
     """Release assets match manifest hashes and embed canonical model keys."""
     manifest = parity_manifest(kind)
@@ -170,12 +177,20 @@ def test_release_has_all_parity_manifest_assets(
         )
 
     def verify_model_asset(item: tuple[str, dict[str, Any]]) -> None:
-        """Download one model asset and validate its bytes and identity."""
+        """Validate one model asset's bytes and identity."""
         model_key, entry = item
         released = published_release_assets[entry["asset"]]
-        response = requests.get(released["browser_download_url"], timeout=60)
-        response.raise_for_status()
-        compressed = response.content
+        assert os.path.basename(entry["asset"]) == entry["asset"]
+        cached = f"{ROOT}/site/static/{kind}-parity/assets/{entry['asset']}"
+        # Fresh release metadata above proves the asset still exists with this digest.
+        # Cached bytes undergo the same hash and embedded-model checks as downloads.
+        if os.path.isfile(cached):
+            with open(cached, "rb") as file:
+                compressed = file.read()
+        else:
+            response = url_session.get(released["browser_download_url"], timeout=60)
+            response.raise_for_status()
+            compressed = response.content
         assert hashlib.sha256(compressed).hexdigest() == entry["sha256"]
         payload = json.loads(gzip.decompress(compressed))
         assert payload["model"]["model_key"] == model_key
@@ -188,12 +203,92 @@ def test_release_has_all_parity_manifest_assets(
         list(pool.map(verify_model_asset, parity_entries))
 
 
-def test_workflows_refresh_and_deploy_exact_parity_assets() -> None:
+@pytest.mark.parametrize("cache_state", ["missing", "valid", "corrupt"])
+def test_parity_asset_cache_checks_bytes_and_avoids_downloads(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cache_state: str
+) -> None:
+    """Cached assets still require matching bytes and never trigger a download."""
+    from unittest.mock import Mock
+
+    compressed = gzip.compress(json.dumps({"model": {"model_key": "test"}}).encode())
+    digest = hashlib.sha256(compressed).hexdigest()
+    entry = {"asset": "model.json.gz", "sha256": digest}
+    manifest = {"base": entry, "model_assets": {"test": {"parity": entry}}}
+    monkeypatch.setattr(sys.modules[__name__], "ROOT", str(tmp_path))
+    monkeypatch.setattr(
+        sys.modules[__name__], "parity_manifest", lambda _kind: manifest
+    )
+    cache_file = tmp_path / "site/static/energy-parity/assets/model.json.gz"
+    if cache_state != "missing":
+        cache_file.parent.mkdir(parents=True)
+        cache_file.write_bytes(b"corrupt" if cache_state == "corrupt" else compressed)
+    session = Mock(spec=requests.Session)
+    session.get.return_value.content = compressed
+    released = {
+        "model.json.gz": {
+            "digest": f"sha256:{digest}",
+            "browser_download_url": "https://example.com/model.json.gz",
+        }
+    }
+    with pytest.raises(AssertionError) if cache_state == "corrupt" else nullcontext():
+        test_release_has_all_parity_manifest_assets("energy", released, session)
+    assert session.get.call_count == int(cache_state == "missing")
+
+
+@pytest.mark.parametrize(
+    ("pr_state", "head_sha", "accepted"),
+    [("open", "a" * 40, True), ("open", "b" * 40, False), ("closed", "a" * 40, False)],
+)
+def test_workflows_refresh_and_deploy_exact_parity_assets(
+    tmp_path: Path, pr_state: str, head_sha: str, accepted: bool
+) -> None:
     """Automation refreshes, deploys, and prunes exact parity assets."""
     with open(
         f"{ROOT}/.github/workflows/update-site-figs.yml", encoding="utf-8"
     ) as file:
         workflow = file.read()
+    resolver = yaml.safe_load(workflow)["jobs"]["update-site-figs"]["steps"][0]
+    output_file = tmp_path / "outputs"
+    bash_path = shutil.which("bash")
+    assert bash_path, "bash is required to test the workflow resolver"
+    result = subprocess.run(
+        [
+            bash_path,
+            "-e",
+            "-o",
+            "pipefail",
+            "-c",
+            'gh() { printf "%s" "$PR_JSON"; };\n' + resolver["run"],
+        ],
+        env=os.environ
+        | {
+            "GITHUB_REPOSITORY": "owner/repo",
+            "RUNNER_TEMP": str(tmp_path),
+            "GITHUB_OUTPUT": str(output_file),
+            "EXPECTED_SHA": "a" * 40,
+            "PR": "7",
+            "PR_JSON": json.dumps(
+                {
+                    "number": 7,
+                    "state": pr_state,
+                    "changed_files": 1,
+                    "head": {
+                        "sha": head_sha,
+                        "ref": "submission",
+                        "repo": {"full_name": "owner/repo"},
+                    },
+                }
+            ),
+        },
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert (result.returncode == 0) is accepted, result.stderr
+    if accepted:
+        assert f"head_sha={head_sha}\n" in output_file.read_text()
+    else:
+        assert not output_file.is_file()
     refresh = workflow.split("- name: Refresh payloads without secrets", 1)[1].split(
         "- name: Recheck submission head before archival", 1
     )[0]
@@ -218,7 +313,6 @@ def test_workflows_refresh_and_deploy_exact_parity_assets() -> None:
     )
     assert "jq -er" in deploy
     assert 'startswith($prefix + "-")' in deploy
-    assert 'mapfile -t assets < "$assets_file"' in deploy
     assert "[0-9a-f]{16}\\\\.json\\\\.gz" in deploy
     assert "-*.json.gz" not in deploy
     assert "cancel-in-progress: ${{ github.event_name == 'pull_request' }}" in deploy
@@ -236,10 +330,105 @@ def test_workflows_refresh_and_deploy_exact_parity_assets() -> None:
     assert "parity/(energy|kappa)-parity-manifest" in guard
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="runs the Ubuntu setup shell")
+@pytest.mark.parametrize(
+    ("api_docs", "docs_exit", "install_exit"),
+    [(False, 0, 0), (True, 0, 0), (True, 7, 0), (True, 0, 9)],
+)
+def test_site_setup_overlaps_docs_and_propagates_failures(
+    tmp_path: Path, api_docs: bool, docs_exit: int, install_exit: int
+) -> None:
+    """Site setup overlaps independent work and fails if either process fails."""
+    with open(
+        f"{ROOT}/.github/actions/setup-site/action.yml", encoding="utf-8"
+    ) as file:
+        action = yaml.safe_load(file)
+    install = next(
+        step["run"]
+        for step in action["runs"]["steps"]
+        if step.get("name") == "Install site dependencies"
+    )
+    # Waiting for pnpm catches accidental serialization; the outer timeout bounds it.
+    commands = (
+        "uv() { while [[ ! -f installed ]]; do sleep 0.01; done; "
+        f"touch docs; return {docs_exit}; }}\n"
+        f"pnpm() {{ touch installed; return {install_exit}; }}\n"
+    )
+    result = subprocess.run(
+        ["/bin/bash", "-e", "-o", "pipefail", "-c", commands + install],
+        cwd=tmp_path,
+        env=os.environ | {"BUILD_API_DOCS": str(api_docs).lower()},
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=5,
+    )
+    assert result.returncode == (install_exit or docs_exit), result.stderr
+    assert (tmp_path / "installed").is_file()
+    assert (tmp_path / "docs").is_file() == api_docs
+
+
 @pytest.mark.skipif(
     sys.platform == "win32",
-    reason="runs the ubuntu-only gh-pages cleanup step under /bin/bash with a fake gh "
-    "shell script on a colon-separated PATH",
+    reason="runs the Ubuntu download step under /bin/bash with a fake curl",
+)
+@pytest.mark.parametrize("failure", ["", "download", "missing", "unsafe"])
+def test_parity_download_requires_valid_names_and_complete_files(
+    tmp_path: Path, failure: str
+) -> None:
+    """Parallel downloads reject unsafe names, HTTP failures and missing files."""
+    with open(f"{ROOT}/.github/workflows/gh-pages.yml", encoding="utf-8") as file:
+        workflow = yaml.safe_load(file)
+    download = next(
+        step["run"]
+        for step in workflow["jobs"]["build"]["steps"]
+        if step.get("name") == "Download parity assets"
+    )
+    manifest_dir = tmp_path / "src/lib/parity"
+    manifest_dir.mkdir(parents=True)
+    expected_files = []
+    for kind in ("energy", "kappa"):
+        prefix = f"{kind}-parity-test"
+        asset = f"{prefix}-base-{'0' * 16}.json.gz"
+        manifest = {
+            "asset_prefix": prefix,
+            "base": {"asset": "../escape.json.gz" if failure == "unsafe" else asset},
+            "model_assets": {},
+        }
+        (manifest_dir / f"{kind}-parity-manifest.json").write_text(json.dumps(manifest))
+        expected_files.append(tmp_path / f"static/{kind}-parity/assets/{asset}")
+    fake_curl = tmp_path / "curl"
+    fake_curl.write_text(
+        "#!/bin/bash\nset -eu\n"
+        'while [[ "$1" != "--output" ]]; do shift; done\n'
+        '[[ "$FAILURE" != download ]] || exit 22\n'
+        '[[ "$FAILURE" == missing ]] || touch "$2"\n'
+    )
+    fake_curl.chmod(0o755)
+    result = subprocess.run(
+        ["/bin/bash", "-e", "-o", "pipefail", "-c", download],
+        cwd=tmp_path,
+        env=os.environ
+        | {
+            "FAILURE": failure,
+            "RUNNER_TEMP": str(tmp_path),
+            "PATH": f"{tmp_path}:{os.environ['PATH']}",
+        },
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+    if failure:
+        assert result.returncode != 0, result.stdout
+        assert not any(path.is_file() for path in expected_files)
+    else:
+        assert result.returncode == 0, result.stderr
+        assert all(path.is_file() for path in expected_files)
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="runs the Ubuntu cleanup step under /bin/bash with a fake gh",
 )
 def test_parity_cleanup_skips_stale_pr_and_deletes_only_unprotected_asset(
     tmp_path: Path,

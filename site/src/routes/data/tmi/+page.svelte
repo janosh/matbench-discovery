@@ -1,11 +1,10 @@
 <script lang="ts">
   import elem_counts_bar from '$figs/element-counts-mp-vs-wbm.json.gz'
-  import { PtableHeatmap } from '$lib'
+  import PtableHeatmap from '$lib/PtableHeatmap.svelte'
   import { series_blue, series_red } from '$lib/fig-helpers'
   import type { ElementSymbol } from 'matterviz'
-  import { ColorScaleSelect } from 'matterviz'
+  import { ColorScaleSelect, BarPlot } from 'matterviz/plot'
   import type { D3InterpolateName } from 'matterviz/colors'
-  import { BarPlot } from 'matterviz/plot'
   import { bind_url_params, url_color_scale } from '$lib/url-state.svelte'
   import {
     bool_from_param,
@@ -42,7 +41,7 @@
   )
 
   const read_url_params = (params: URLSearchParams) => {
-    filter = valid_query_param(params, `filter`, default_filter, new Set(all_keys))
+    filter = valid_query_param(params, `filter`, default_filter, elem_counts)
     log = bool_from_param(params, `log`)
     normalized_bar_counts = bool_from_param(params, `normalized`)
     color_scale = url_color_scale.read(params)
@@ -55,11 +54,11 @@
   ])
 </script>
 
-<h1>Too Much Information</h1>
+<h1 id="too-much-information">Too Much Information</h1>
 
 <p>Stuff that didn't make the cut into the main page describing the WBM test set.</p>
 
-<h2>WBM Element Counts for <code>{filter}</code></h2>
+<h2 id="wbm-element-counts-for">WBM Element Counts for <code>{filter}</code></h2>
 
 <p>
   Filter WBM element counts by composition <strong>arity</strong> (how many elements in
@@ -67,7 +66,7 @@
   structure was generated in).
 </p>
 
-<ColorScaleSelect bind:value={color_scale} selected={[color_scale]} />
+<ColorScaleSelect bind:value={color_scale} aria-label="Color scale" />
 
 <form>
   <span>
@@ -100,7 +99,7 @@
   }}
 />
 
-<h2>Element Counts</h2>
+<h2 id="element-counts">Element Counts</h2>
 
 <label>
   Normalize by data set size

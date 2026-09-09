@@ -99,6 +99,11 @@ metrics:
     force_total_variation: 415.0
     force_jump: 205.5
     pbe_force_mae: 4.927
+    pbe_vib_freq_coverage:
+      n_valid: 73
+      n_eligible: 73
+      failed_elements: []
+      missing_elements: []
   discovery:
     pred_file:
       name: models/chgnet/chgnet-0.3.0/2023-12-21-discovery.csv.gz

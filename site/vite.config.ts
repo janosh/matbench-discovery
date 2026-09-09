@@ -10,7 +10,6 @@ import { createRequire } from 'node:module'
 import os from 'node:os'
 import path from 'node:path'
 import zlib from 'node:zlib'
-import { heading_ids } from 'svelte-widgets/heading-anchors' // Adds IDs to headings at build time
 import { default_highlighter } from 'svelte-widgets/highlight'
 import { make_config } from 'svelte-widgets/vite-config'
 import { yaml_plugin } from 'svelte-widgets/yaml'
@@ -38,7 +37,6 @@ export const svelte_config = {
         highlight: default_highlighter.highlight,
       }),
     ),
-    heading_ids(), // Adds anchors to native Svelte pages; Markdown assigns its own
     {
       markup: (file: { content: string; filename?: string }) => {
         const filename = file.filename?.replaceAll(`\\`, `/`) ?? ``
@@ -231,6 +229,8 @@ function yaml_schema_to_typescript_plugin(): Plugin {
 
   return {
     name: `yaml-schema-to-typescript`,
+    // Tests consume the committed declarations; only the dev server regenerates them.
+    apply: (_config, { command }) => command === `serve` && !process.env.VITEST,
     configureServer(server) {
       const schema_files = new Set(
         fs

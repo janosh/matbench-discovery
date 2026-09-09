@@ -222,6 +222,12 @@ export type DiatomicsMetrics = {
   pbe_well_depth_error?: number
   pbe_force_mae?: number
   pbe_vib_freq_error?: number
+  pbe_vib_freq_coverage?: {
+    n_valid: number
+    n_eligible: number
+    failed_elements: string[]
+    missing_elements: string[]
+  }
   force_flips?: number
   force_total_variation?: number
   force_jump?: number

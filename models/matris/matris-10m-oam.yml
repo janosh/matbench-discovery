@@ -113,6 +113,11 @@ metrics:
     force_total_variation: 288.0
     force_jump: 35.92
     pbe_force_mae: 1.548
+    pbe_vib_freq_coverage:
+      n_valid: 73
+      n_eligible: 73
+      failed_elements: []
+      missing_elements: []
   discovery:
     pred_file:
       name: models/matris/matris-10m-oam/2025-10-29-discovery.csv.gz

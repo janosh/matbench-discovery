@@ -1,5 +1,9 @@
 <script lang="ts">
-  import { AuthorBrief, CompareToggle, DATASETS, ModelRankCard, PtableInset } from '$lib'
+  import AuthorBrief from '$lib/model/ModelAuthor.svelte'
+  import { comparison } from '$lib/model-comparison.svelte'
+  import DATASETS from '$data/datasets.yml'
+  import ModelRankCard from '$lib/model/ModelRankCard.svelte'
+  import PtableInset from '$lib/PtableInset.svelte'
   import {
     discovery_task_tooltips,
     model_role_from_targets,
@@ -7,7 +11,8 @@
     targets_tooltips,
   } from '$lib/metrics'
   import { has_kappa_parity_model } from '$lib/parity/kappa-parity'
-  import { EnergyParityPlot, KappaParityPlot } from '$lib/plot'
+  import EnergyParityPlot from '$lib/plot/EnergyParityPlot.svelte'
+  import KappaParityPlot from '$lib/plot/KappaParityPlot.svelte'
   import { get_pred_file_urls } from '$lib/models.svelte'
   import pkg from '$site/package.json'
   import type { ChemicalElement } from 'matterviz'
@@ -27,10 +32,13 @@
     Paper,
     PullRequest,
     PyPI,
+    Scale,
     Versions,
   } from 'svelte-widgets/icons'
   import { format_relative_time } from '$lib/labels'
-  import { format_num, HeatmapTable, ColorBar } from 'matterviz'
+  import { format_num } from 'matterviz/labels'
+  import { HeatmapTable } from 'matterviz/table'
+  import { ColorBar } from 'matterviz/plot'
   import { PeriodicTable, TableInset } from 'matterviz/periodic-table'
   import type { D3InterpolateName } from 'matterviz/colors'
   import { click_outside, tooltip } from 'svelte-widgets/attachments'
@@ -49,37 +57,37 @@
   // per-system MD breakdown: columns shown only when present in the CSV (older
   // pred files lack n_atoms/cost provenance; pressure is NaN for stress-less systems)
   const md_col_defs = [
-    { key: `system`, label: `System`, sticky: true },
-    { key: `temperature_kelvin`, label: `T (K)`, format: `.0f` },
-    { key: `n_atoms`, label: `Atoms`, format: `.0f` },
-    { key: `rdf_error`, label: `ΔRDF (%)`, better: `lower`, format: `.1f` },
-    { key: `adf_error`, label: `ΔADF (%)`, better: `lower`, format: `.1f` },
-    { key: `vdos_error`, label: `ΔvDOS (%)`, better: `lower`, format: `.1f` },
+    { id: `system`, label: `System`, sticky: true },
+    { id: `temperature_kelvin`, label: `T (K)`, format: `.0f` },
+    { id: `n_atoms`, label: `Atoms`, format: `.0f` },
+    { id: `rdf_error`, label: `ΔRDF (%)`, better: `lower`, format: `.1f` },
+    { id: `adf_error`, label: `ΔADF (%)`, better: `lower`, format: `.1f` },
+    { id: `vdos_error`, label: `ΔvDOS (%)`, better: `lower`, format: `.1f` },
     {
-      key: `pressure_mae`,
+      id: `pressure_mae`,
       label: `P<sub>MAE</sub> (GPa)`,
       better: `lower`,
       format: `.2f`,
     },
-    { key: `pressure_error`, label: `ΔP (%)`, better: `lower`, format: `.1f` },
+    { id: `pressure_error`, label: `ΔP (%)`, better: `lower`, format: `.1f` },
     {
-      key: `energy_rmse`,
+      id: `energy_rmse`,
       label: `ΔE<sub>RMSE</sub> (meV/atom)`,
       better: `lower`,
       format: `.2f`,
     },
     {
-      key: `force_rmse`,
+      id: `force_rmse`,
       label: `F<sub>RMSE</sub> (meV/Å)`,
       better: `lower`,
       format: `.1f`,
     },
-    { key: `run_time_sec`, label: `Time (s)`, better: `lower`, format: `.3~s` },
-    { key: `max_gpu_mem_gb`, label: `VRAM (GB)`, better: `lower`, format: `.2f` },
+    { id: `run_time_sec`, label: `Time (s)`, better: `lower`, format: `.3~s` },
+    { id: `max_gpu_mem_gb`, label: `VRAM (GB)`, better: `lower`, format: `.2f` },
   ] as const
   let md_rows = $derived(data.md_per_system ?? [])
   let md_cols = $derived(
-    md_col_defs.filter((col) => md_rows.some((row) => col.key in row)),
+    md_col_defs.filter((col) => md_rows.some((row) => col.id in row)),
   )
 
   // static: this page has no color-scale picker (see /tasks/discovery/tmi for one)
@@ -115,6 +123,8 @@
     () => [[`energy_tab`, energy_parity_tab, default_energy_tab]],
   )
   let { model } = $derived(data)
+  let comparing = $derived(comparison.keys.has(model.model_key))
+  let n_others = $derived(comparison.keys.size - (comparing ? 1 : 0))
   let env_packages = $derived(model.environment.dependencies.map(parse_dependency_spec))
   let added_ago = $derived(
     model.dates.benchmark_added ? format_relative_time(model.dates.benchmark_added) : ``,
@@ -190,16 +200,27 @@
     {/if}
 
     {#if model.pypi}
-      {@const pip_cmd = `pip install ${model.pypi.split(`/`).pop()}`}
+      {@const install_cmd = `uv pip install ${new URL(model.pypi).pathname.split(`/`)[2]}`}
       <code style="padding: 0 4pt; place-content: center">
-        {pip_cmd}
-        <CopyButton content={pip_cmd} />
+        {install_cmd}
+        <CopyButton content={install_cmd} />
       </code>
     {/if}
   </section>
 
   <section class="links" {@attach tooltip()}>
-    <CompareToggle model_key={model.model_key} open_dialog />
+    <button
+      class:selected={comparing}
+      title="Open the side-by-side comparison with this model"
+      onclick={() => comparison.open_with(model.model_key)}
+    >
+      <Icon icon={Scale} />
+      {#if comparing && n_others > 0}
+        Comparing with {n_others} other{n_others === 1 ? `` : `s`}
+      {:else}
+        Compare with…
+      {/if}
+    </button>
     {#each external_links as [href, label, icon, title] (label)}
       {#if href?.startsWith(`http`)}
         <a {href} target="_blank" rel="noopener noreferrer" {title}>
@@ -233,7 +254,7 @@
   <ModelRankCard model_key={model.model_key} />
 
   <section class="discovery-detail">
-    <h2>
+    <h2 id="discovery-energy-and-convex-hull-diagnostics">
       <a href="/tasks/discovery">Discovery</a>: energy and convex hull diagnostics
     </h2>
     <!-- segmented tab bar controls the parity plot; the active button shows a
@@ -286,7 +307,9 @@
           (entry): entry is [string, number] => entry[1] !== null,
         ),
       )}
-      <h3 class="toc-exclude">Per-element convex hull distance errors</h3>
+      <h3 id="per-element-convex-hull-distance-errors" class="toc-exclude">
+        Per-element convex hull distance errors
+      </h3>
       <PeriodicTable
         {heatmap_values}
         {color_scale}
@@ -328,7 +351,9 @@
 
   {#if md_rows.length > 0}
     <section class="md-per-system">
-      <h2 style="text-align: center">Molecular dynamics: per-system breakdown</h2>
+      <h2 id="molecular-dynamics-per-system-breakdown" style="text-align: center">
+        Molecular dynamics: per-system breakdown
+      </h2>
       <p>
         Errors of this model's NVT rollouts against each DynaMat v1.0 ab-initio reference
         trajectory (see the <a href="/tasks/md">MD task page</a> for metric definitions). Reveals
@@ -345,7 +370,7 @@
   {/if}
 
   <section class="authors">
-    <h2>Model Authors</h2>
+    <h2 id="model-authors">Model Authors</h2>
     <ol>
       {#each model.authors as author (author.name)}
         <li>
@@ -357,7 +382,7 @@
 
   {#if model.trained_by}
     <section class="trained-by">
-      <h2>Trained By</h2>
+      <h2 id="trained-by">Trained By</h2>
       <ol>
         {#each model.trained_by as author (author.name)}
           <li>
@@ -369,7 +394,7 @@
   {/if}
 
   <section class="model-info">
-    <h2>Model Info</h2>
+    <h2 id="model-info">Model Info</h2>
     <ul>
       {#each model_info_items as [key, value, title = null] (key)}
         <li {title} {@attach tooltip()}>
@@ -384,7 +409,7 @@
     </ul>
   </section>
 
-  <h2>Training Set</h2>
+  <h2 id="training-set">Training Set</h2>
   <section class="training-set">
     {#each model.training_sets as dataset_key (dataset_key)}
       {@const { n_structures, name, slug, n_materials } = DATASETS[dataset_key]}
@@ -414,14 +439,14 @@
 
   {#if model.hyperparams}
     <section class="hyperparams">
-      <h2>Hyperparams</h2>
+      <h2 id="hyperparams">Hyperparams</h2>
       <JsonTree value={model.hyperparams} />
     </section>
   {/if}
 
   {#if env_packages.length}
     <section class="deps">
-      <h2>Dependencies</h2>
+      <h2 id="dependencies">Dependencies</h2>
       <ul>
         {#each env_packages as { name, detail, href } (name + detail)}
           <li>
@@ -531,13 +556,21 @@
     place-content: center;
     margin: 2em auto;
   }
-  .links :is(a, summary) {
+  .links :is(a, summary, button) {
     display: inline-flex;
     place-items: center;
     gap: 5px;
     padding: 0 5pt;
     background-color: var(--chip-bg);
     border-radius: 5px;
+  }
+  .links > button {
+    font: inherit;
+    color: inherit;
+    &.selected {
+      color: var(--link-color);
+      box-shadow: inset 0 0 0 1px var(--link-color);
+    }
   }
   .links details {
     position: relative;

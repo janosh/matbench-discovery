@@ -18,7 +18,7 @@ from sklearn.metrics import (
 )
 
 from matbench_discovery import ROOT
-from matbench_discovery.data import df_wbm, load_discovery_predictions
+from matbench_discovery.data import load_discovery_predictions
 from matbench_discovery.enums import MbdKey, Model, TestSubset
 from matbench_discovery.metrics import metrics_df_from_yaml
 from matbench_discovery.metrics.discovery import (
@@ -29,7 +29,6 @@ from matbench_discovery.metrics.discovery import (
     write_all_metrics_to_yaml,
 )
 
-df_preds, df_each_pred, df_each_err = load_discovery_predictions()
 df_full_discovery_metrics = metrics_df_from_yaml(["discovery.full_test_set"])
 full_discovery_model_keys = set(df_full_discovery_metrics.index)
 
@@ -299,17 +298,54 @@ def test_discovery_eval_skips_incomplete_cli_model() -> None:
     assert "KeyError" not in output
 
 
-@pytest.mark.parametrize(
-    ("df_values", "expected_columns"),
-    [
-        (df_each_pred, full_discovery_model_keys),
-        (df_each_err, full_discovery_model_keys | {str(MbdKey.each_err_models)}),
-    ],
-    ids=["predictions", "hull-errors"],
-)
 def test_discovery_prediction_frames(
-    df_values: pd.DataFrame, expected_columns: set[str]
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Prediction frames span WBM and contain the expected model columns."""
-    assert len(df_values) == len(df_wbm) == len(df_preds)
-    assert set(df_values) == expected_columns
+    """Full-roster frames round, align hull energies, and average valid errors."""
+    material_ids = pd.Index(["wbm-2-1", "wbm-1-1", "wbm-3-1"])
+    raw = pd.DataFrame(
+        {
+            MbdKey.e_form_dft: [-1.0004, -0.5, 0.0],
+            MbdKey.each_true: [-0.1004, 0.2, 0.0],
+            **{key: [-1.1254, -0.25, np.nan] for key in full_discovery_model_keys},
+        },
+        index=material_ids,
+    )
+    # One missing prediction must not poison the cross-model mean.
+    raw.loc[material_ids[0], Model.mace_mpa_0.key] = np.nan
+
+    def load_predictions(*, models: list[Model]) -> pd.DataFrame:
+        """Exercise real roster selection without loading gigabytes to check shapes."""
+        assert {model.key for model in models} == full_discovery_model_keys
+        return raw.copy()
+
+    monkeypatch.setattr(
+        "matbench_discovery.data.load_df_wbm_with_preds", load_predictions
+    )
+    # Exercise the loader without retaining synthetic predictions in its global cache.
+    cache_info = load_discovery_predictions.cache_info()
+    df_preds, df_each_pred, df_each_err = load_discovery_predictions.__wrapped__()
+    assert load_discovery_predictions.cache_info() == cache_info
+    assert set(df_each_pred) == full_discovery_model_keys
+    assert set(df_each_err) == full_discovery_model_keys | {str(MbdKey.each_err_models)}
+    for frame in (df_preds, df_each_pred, df_each_err):
+        pd.testing.assert_index_equal(frame.index, material_ids)
+    for model_key in full_discovery_model_keys:
+        missing = model_key == Model.mace_mpa_0.key
+        # Two f64 additions/subtractions near unity: allow fewer than five eps.
+        np.testing.assert_allclose(
+            df_each_pred[model_key],
+            [np.nan if missing else -0.225, 0.45, np.nan],
+            rtol=0,
+            atol=1e-15,
+        )
+        np.testing.assert_array_equal(
+            df_each_err[model_key], [np.nan if missing else -0.125, 0.25, np.nan]
+        )
+    for frame in (df_preds, df_each_err):
+        np.testing.assert_array_equal(
+            frame[MbdKey.each_err_models], [0.125, 0.25, np.nan]
+        )
+    pd.testing.assert_frame_equal(
+        df_preds.drop(columns=MbdKey.each_err_models), raw.round(3), check_exact=True
+    )

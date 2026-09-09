@@ -1,5 +1,31 @@
+<script module lang="ts">
+  import { ACTIVE_MODELS } from '$lib/models.svelte'
+  import { parse_targets, TARGET_OUTPUTS, type TargetOutput } from '$lib/url-state.svelte'
+
+  const target_outputs = Object.entries(TARGET_OUTPUTS) as [TargetOutput, string][]
+  // static per-category model tallies shown in the filter panels. Semantics mirror
+  // UrlTableFilters.matches: targets use the same parser, and fs_mode `any` counts
+  // every model.
+  const openness_counts: Record<string, number> = {}
+  const training_counts: Record<string, number> = {}
+  const target_counts: Record<string, number> = {}
+  const fs_mode_counts: Record<string, number> = { any: ACTIVE_MODELS.length }
+  for (const model of ACTIVE_MODELS) {
+    const openness = model.openness
+    openness_counts[openness] = (openness_counts[openness] ?? 0) + 1
+    for (const dataset of model.training_sets) {
+      training_counts[dataset] = (training_counts[dataset] ?? 0) + 1
+    }
+    const { outputs, fs_mode } = parse_targets(model.targets)
+    for (const output of outputs) {
+      target_counts[output] = (target_counts[output] ?? 0) + 1
+    }
+    if (fs_mode) fs_mode_counts[fs_mode] = (fs_mode_counts[fs_mode] ?? 0) + 1
+  }
+</script>
+
 <script lang="ts">
-  import type { TableLabel } from '$lib'
+  import type { Column } from 'matterviz/table'
   import {
     BUILTIN_PRESETS,
     delete_user_preset,
@@ -8,16 +34,14 @@
   } from '$lib/filter-presets.svelte'
   import { openness_tooltips } from '$lib/metrics'
   import { comparison, row_model_key } from '$lib/model-comparison.svelte'
-  import { make_table_filters, ACTIVE_MODELS } from '$lib/models.svelte'
+  import { make_table_filters } from '$lib/models.svelte'
   import {
     DEFAULT_TARGETS_PARAM,
     FS_MODES,
     OPENNESS_OPTIONS,
-    parse_targets,
-    TARGET_OUTPUTS,
     TRAIN_FILTER_MODES,
   } from '$lib/url-state.svelte'
-  import type { TargetOutput, UrlTableFilters } from '$lib/url-state.svelte'
+  import type { UrlTableFilters } from '$lib/url-state.svelte'
   import { Icon, Sheet } from 'svelte-widgets'
   import { Cross, Filter, Scale } from 'svelte-widgets/icons'
   import { ToggleMenu } from 'matterviz/table'
@@ -31,7 +55,7 @@
     show_selected_only = $bindable(false),
     ...rest
   }: HTMLAttributes<HTMLDivElement> & {
-    columns?: TableLabel[]
+    columns?: Column[]
     filters?: UrlTableFilters
     show_selected_only?: boolean
   } = $props()
@@ -61,26 +85,6 @@
   // to desktop can dismiss an open dialog (display:none alone can leave it top-layered)
   let filter_sheet_open = $state(false)
 
-  const target_outputs = Object.entries(TARGET_OUTPUTS) as [TargetOutput, string][]
-  // static per-category model tallies shown in the filter panels. Semantics mirror
-  // UrlTableFilters.matches: targets use the same parser, and fs_mode `any` counts
-  // every model.
-  const openness_counts: Record<string, number> = {}
-  const training_counts: Record<string, number> = {}
-  const target_counts: Record<string, number> = {}
-  const fs_mode_counts: Record<string, number> = { any: ACTIVE_MODELS.length }
-  for (const model of ACTIVE_MODELS) {
-    const openness = model.openness
-    openness_counts[openness] = (openness_counts[openness] ?? 0) + 1
-    for (const dataset of model.training_sets) {
-      training_counts[dataset] = (training_counts[dataset] ?? 0) + 1
-    }
-    const { outputs, fs_mode } = parse_targets(model.targets)
-    for (const output of outputs) {
-      target_counts[output] = (target_counts[output] ?? 0) + 1
-    }
-    if (fs_mode) fs_mode_counts[fs_mode] = (fs_mode_counts[fs_mode] ?? 0) + 1
-  }
   const n_train = $derived(Object.keys(filters.training).length)
   const training_sets_by_model_count = $derived(
     filters.training_sets.toSorted(
@@ -329,20 +333,24 @@
     </button>
   {/if}
 
-  <label>
-    <input
-      type="checkbox"
-      bind:checked={filters.show_heatmap}
-      aria-label="Toggle heatmap colors"
-    />
-    Heatmap
-  </label>
+  {#if columns.length}
+    <label>
+      <input
+        type="checkbox"
+        bind:checked={filters.show_heatmap}
+        aria-label="Toggle heatmap colors"
+      />
+      Heatmap
+    </label>
 
-  <ToggleMenu bind:columns />
+    <ToggleMenu bind:columns />
+  {/if}
 </div>
 
 <style>
   .table-controls {
+    position: relative;
+    z-index: 5;
     display: inline-flex;
     flex-wrap: wrap;
     justify-content: end;

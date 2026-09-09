@@ -244,3 +244,35 @@ metrics:
         name: models/deepmd/dpa-4.0.1-pro-mptrj/harmonic/2026-09-05-phonons-kappa-103-run-info.json
         size: 8337
         md5: df88402daf437ac7cb9b2de948f651b0
+  diatomics:
+    pred_file:
+      name: models/deepmd/dpa-4.0.1-pro-mptrj/2026-09-12-diatomics.json.gz
+      size: 511608
+      md5: 99665766d47eacc961bf7d1faea5eecd
+      url: https://figshare.com/files/68484280
+    hardware: NVIDIA H200
+    run_time_sec: 701.62
+    max_rss_gb: 2.346
+    max_gpu_mem_gb: 0.461
+    excluded_formula_reasons: {}
+    pbe_wall_dist_mae: 0.5381
+    pbe_energy_mae: 3.479
+    pbe_bond_length_error: 0.3304
+    pbe_well_depth_error: 97.16
+    pbe_vib_freq_error: 5714.0
+    tortuosity: 2.344
+    energy_diff_flips: 4.253
+    energy_jump: 1384.0
+    force_flips: 4.218
+    force_total_variation: 1578000000.0
+    force_jump: 1762000000.0
+    pbe_force_mae: 905900.0
+    pbe_vib_freq_coverage:
+      n_valid: 69
+      n_eligible: 73
+      failed_elements:
+      - B
+      - Be
+      - H
+      - Si
+      missing_elements: []

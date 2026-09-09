@@ -12,9 +12,9 @@
   import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
   import { rank_color, RANKED_METRICS } from '$lib/rankings'
   import type { ModelData } from '$lib/types'
-  import { format_num } from 'matterviz'
+  import { format_num } from 'matterviz/labels'
   import { tick, untrack } from 'svelte'
-  import { Dialog, Icon, MultiSelect, type Option } from 'svelte-widgets'
+  import { Dialog, Icon, MultiSelect, Popover } from 'svelte-widgets'
   import { tooltip } from 'svelte-widgets/attachments'
   import { Cross } from 'svelte-widgets/icons'
 
@@ -82,19 +82,17 @@
 >
   {#snippet header({ close })}
     <div class="head">
-      <h2>Compare models</h2>
+      <h2 id="compare-models">Compare models</h2>
       <MultiSelect
         options={model_options}
         placeholder="Add models…"
         bind:input={picker_input}
-        bind:selected={
+        bind:value={
           () => selected_options,
           (options: ModelOption[]) => comparison.set(options.map((opt) => opt.value))
         }
       >
-        {#snippet children({ option, type }: { option: Option; type: string })}
-          <!-- MultiSelect isn't generic over our option shape, only ever fed model_options -->
-          {@const opt = option as ModelOption}
+        {#snippet children({ option: opt, type })}
           {opt.label}
           {#if type === `option`}
             <small class="option-detail">
@@ -156,8 +154,22 @@
           </tr>
           {#each group.rows as { row, cells } (row.key)}
             <tr>
-              <th title={row.description} {@attach tooltip({ allow_html: true })}>
-                {@html row.label}{#if row.unit}<small> {row.unit}</small>{/if}
+              <th>
+                <Popover
+                  trigger_mode="hover"
+                  trap_focus={false}
+                  aria-label="Metric description"
+                >
+                  {#snippet trigger(trigger_props)}<span
+                      role="button"
+                      tabindex="0"
+                      {...trigger_props}
+                      >{@html row.label}{#if row.unit}<small>
+                          {row.unit}</small
+                        >{/if}</span
+                    >{/snippet}
+                  {@html row.description ?? ``}
+                </Popover>
               </th>
               {#each cells as cell, idx (models[idx].model_key)}
                 <td class:best={cell.best} class:text={!row.better}>
@@ -173,10 +185,18 @@
                         {@attach tooltip()}>{part.text}</a
                       >
                     {:else if part.title}
-                      <span
-                        title={part.title}
-                        {@attach tooltip({ allow_html: !cell.parts })}>{part.text}</span
+                      <Popover
+                        trigger_mode="hover"
+                        trap_focus={false}
+                        aria-label="Metric details"
                       >
+                        {#snippet trigger(trigger_props)}<span
+                            role="button"
+                            tabindex="0"
+                            {...trigger_props}>{part.text}</span
+                          >{/snippet}
+                        {#if cell.parts}{part.title}{:else}{@html part.title}{/if}
+                      </Popover>
                     {:else}{part.text}{/if}
                   {/each}
                   {#if cell.rank && cell.n}

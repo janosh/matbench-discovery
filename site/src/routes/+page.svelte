@@ -1,7 +1,11 @@
 <script lang="ts">
   import { page } from '$app/state'
-  import { DATASETS, DISCOVERY_SETS, DiscoverySetToggle, MetricsTable } from '$lib'
-  import { DynamicScatter, GitHubActivityScatter, RadarChart } from '$lib/plot'
+  import DiscoverySetToggle from '$lib/DiscoverySetToggle.svelte'
+  import MetricsTable from '$lib/table/MetricsTable.svelte'
+  import { DISCOVERY_SETS } from '$lib/types'
+  import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
+  import GitHubActivityScatter from '$lib/plot/GitHubActivityScatter.svelte'
+  import RadarChart from '$lib/plot/RadarChart.svelte'
   import {
     ALL_METRICS,
     DIATOMICS_METRICS,
@@ -13,7 +17,7 @@
     PHONON_METRICS,
   } from '$lib/labels'
   import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined-scores.svelte'
-  import { get_nested_number, is_finite_num, label_data_path } from '$lib/metrics'
+  import { is_finite_num, metric_value } from '$lib/metrics'
   import { make_table_filters, ACTIVE_MODELS } from '$lib/models.svelte'
   import {
     apply_weights_param,
@@ -23,11 +27,7 @@
     weights_to_param,
   } from '$lib/url-state.svelte'
   import { valid_query_param } from 'svelte-widgets/url-params'
-  import { generate_csv } from '$lib/table-export'
   import type { DiscoverySet, Label, ModelData, SortDir } from '$lib/types'
-  import Readme from '$root/readme.md'
-  import MdNote from '$routes/tasks/md/md-note.md'
-  import { format_num } from 'matterviz'
   import { ButtonGroup, Icon } from 'svelte-widgets'
   import { RSS } from 'svelte-widgets/icons'
   import { onMount } from 'svelte'
@@ -35,9 +35,6 @@
   import { tooltip } from 'svelte-widgets/attachments'
   import type { Snapshot } from './$types'
   import github_activity_data from './models/mlip-github-activity.json'
-
-  const n_wbm_stable_uniq_protos = 32_942
-  const n_wbm_uniq_protos = DATASETS.WBM.n_materials
 
   // landing hid TPR; keep its Recall replacement supplementary too
   const supplementary_hidden = new Set(
@@ -93,8 +90,6 @@
     label: name,
     tooltip: `Focus the table on ${preset_expansions[name] ?? name} metrics`,
   }))
-
-  let export_error: string | null = $state(null)
 
   let col_preset = $state<ColPreset>(default_col_preset)
   let preset_metric_keys = $derived(
@@ -163,36 +158,13 @@
     ],
   )
 
-  const preset_metric_value = (
-    model: ModelData,
-    preset: ColPreset,
-  ): number | undefined => {
-    const discovery = model.metrics?.discovery
-    const value =
-      preset === `Discovery`
-        ? discovery?.[discovery_set]?.F1
-        : get_nested_number(model, label_data_path(preset_primary_metrics[preset]))
-    return is_finite_num(value) ? value : undefined
-  }
-
   // Each task view includes only models with its headline metric.
-  let has_preset_data = $derived(
-    (model: ModelData) => preset_metric_value(model, col_preset) !== undefined,
+  let has_preset_data = $derived((model: ModelData) =>
+    is_finite_num(metric_value(model, preset_primary_metrics[col_preset], discovery_set)),
   )
   let in_cohort = $derived(
     (model: ModelData) => has_preset_data(model) && filters.matches(model),
   )
-  let primary_metric = $derived(preset_primary_metrics[col_preset])
-  let best_entry = $derived.by(() => {
-    const entries = ACTIVE_MODELS.filter(in_cohort).flatMap((model) => {
-      const value = preset_metric_value(model, col_preset)
-      return value === undefined ? [] : [{ model, value }]
-    })
-    const sort_factor = primary_metric.better === `lower` ? 1 : -1
-    return entries.toSorted(
-      (entry_1, entry_2) => sort_factor * (entry_1.value - entry_2.value),
-    )[0]
-  })
 
   export const snapshot: Snapshot = {
     capture: () => ({
@@ -227,12 +199,17 @@
 <!-- MatterViz portals column toggle inputs to document.body, outside the table section. -->
 <svelte:document onclickcapture={handle_table_event} />
 
-<h1>
+<h1 id="matbench-discovery">
   <img src="/favicon.svg" alt="Matbench Discovery Logo" width="60px" />
   Matbench Discovery
 </h1>
 
-<figure style="margin-top: 3em" id="metrics-table">
+<p class="intro">
+  Compare machine-learning models across <a href="/tasks">five materials-science tasks</a
+  >.
+</p>
+
+<figure id="metrics-table">
   <div class="toggle-row">
     <span>Column presets:</span>
     <ButtonGroup
@@ -253,7 +230,10 @@
 
   <!-- surface the MD beta warning right at the table when MD columns are shown -->
   {#if col_preset === `MD`}
-    <MdNote />
+    <p class="task-note">
+      <strong>MD is in beta.</strong> These metrics are preliminary and may change.
+      <a href="/tasks/md">About this task →</a>
+    </p>
   {/if}
 
   <section
@@ -273,128 +253,112 @@
     />
   </section>
 
-  {#if export_error}
-    <div class="export-error">
-      {export_error}
+  <figcaption>
+    <div class="table-footer">
+      <p>{ACTIVE_MODELS.filter(in_cohort).length} models</p>
+      <div style="display: flex; align-items: center; gap: 1em">
+        <a href="/contribute">Submit a model</a>
+        <a
+          href="/rss.xml"
+          title="Follow new model submissions in your RSS reader"
+          {@attach tooltip()}
+        >
+          <Icon icon={RSS} /> RSS
+        </a>
+      </div>
     </div>
-  {/if}
-
-  <div class="downloads">
-    Download table as
-    <button
-      class="download-btn"
-      onclick={() => {
-        export_error = generate_csv({ discovery_set }) ? `` : `Failed to generate CSV.`
-      }}
-    >
-      CSV
-    </button>
-    &emsp;Subscribe via
-    <a
-      href="/rss.xml"
-      class="download-btn"
-      title="Be notified of new model submissions through an RSS reader"
-      {@attach tooltip()}
-    >
-      <Icon icon={RSS} /> RSS
-    </a>
-  </div>
-
-  <figcaption class="caption-radar-container">
-    <div
-      style="background-color: var(--card-bg); padding: 0.2em 0.5em; border-radius: 4px"
-    >
-      The <strong>CPS</strong> (Combined Performance Score) is a metric that weights
-      discovery performance (F1), geometry optimization quality (RMSD), and thermal
-      conductivity prediction accuracy (κ<sub>SRME</sub>). Use the radar chart to adjust
-      the importance of each component.
-      <br /><br />
-      The training set column shows the number of materials used to train the model. For models
-      trained on DFT relaxations, we show the number of distinct frames in parentheses. In cases
-      where only the number of frames is known, we report the number of frames as the training
-      set size. <code>(N=x)</code> in the Model Params column shows the number of
-      estimators if an ensemble was used.
-      {#if col_preset === `Discovery`}
-        DAF = Discovery Acceleration Factor measures how many more stable materials a
-        model finds compared to random selection from the test set. The unique structure
-        prototypes in the WBM test set
-        {#if n_wbm_uniq_protos}
-          have a
-          <code>{format_num(n_wbm_stable_uniq_protos / n_wbm_uniq_protos, `.1%`)}</code>
-          rate of stable crystals, meaning the max possible DAF is
-          <code>
-            ({format_num(n_wbm_stable_uniq_protos)} / {format_num(n_wbm_uniq_protos)})^−1
-            ≈ {format_num(n_wbm_uniq_protos / n_wbm_stable_uniq_protos)}
-          </code>.
-        {:else}
-          have an unknown rate of stable crystals (WBM n_materials unavailable).
-        {/if}
-      {/if}
-    </div>
-    <!-- CPS weight controls -->
-    <RadarChart size={260} />
+    <section id="score-weights" aria-labelledby="score-weights-heading">
+      <h3 id="score-weights-heading">Adjust score weights</h3>
+      <div class="score-guide">
+        <p>
+          CPS combines <a href="/tasks/discovery">discovery (F1)</a>,
+          <a href="/tasks/geo-opt">geometry optimization (RMSD)</a>, and
+          <a href="/tasks/phonons">thermal conductivity (κ<sub>SRME</sub>)</a>. Drag the
+          dot to change their importance; scores and rankings update immediately. Custom
+          weights are included in the page URL so you can share your view.
+        </p>
+        <RadarChart size={260} />
+      </div>
+    </section>
+    <details class="page-details" id="table-guide">
+      <summary>How to read the table</summary>
+      <p>
+        Select a column heading to sort. Hover labels for definitions and n/a cells for
+        missing-result explanations. Use Compare or double-click model rows to compare
+        models side by side.
+      </p>
+      <p>
+        <a href="/data/sets">Training Set</a> counts distinct materials, with relaxation
+        frames in parentheses. When only frame counts are available, those are shown
+        instead.
+        <code>(N=x)</code> beside Params gives the number of estimators in an ensemble.
+      </p>
+      <p><a href="/tasks">Task definitions and methodology →</a></p>
+    </details>
   </figcaption>
 </figure>
 
-<!-- Dynamic axis scatter plot: defaults to field progress over time (CPS vs date
-added) with a running-best line showing which releases moved the frontier -->
-<h2>CPS Progress Over Time</h2>
-<p>
-  Each point is a model placed at its benchmark inclusion date; the dashed step line
-  traces the running best ("SOTA frontier") CPS v1, so its jumps mark the models that set
-  a new record when they joined the leaderboard. Use the axis/color/size selectors to
-  compare models across any pair of metrics and parameters. The plot shows the same model
-  cohort as the metrics table above, following the active task preset and table filters.
-</p>
-<DynamicScatter
-  models={ACTIVE_MODELS}
-  model_filter={in_cohort}
-  x_key={METADATA_COLS.benchmark_added.key}
-  y_key={ALL_METRICS.CPS.key}
-  show_pareto_frontier
-/>
+<section class="plot-section" aria-labelledby="cps-progress-over-time">
+  <h2 id="cps-progress-over-time">CPS Progress Over Time</h2>
+  <p>Each dot is a model; the dashed line tracks the best score so far.</p>
+  <DynamicScatter
+    models={ACTIVE_MODELS}
+    model_filter={in_cohort}
+    {discovery_set}
+    x_key={METADATA_COLS.benchmark_added.key}
+    y_key={ALL_METRICS.CPS.key}
+    show_pareto_frontier
+  />
+</section>
 
-<Readme>
-  {#snippet title()}{/snippet}
-  {#snippet model_count()}
-    {ACTIVE_MODELS.filter(in_cohort).length}
-  {/snippet}
+<section class="plot-section" aria-labelledby="github-activity">
+  <h2 id="github-activity">GitHub Activity</h2>
+  <p>
+    Explore <a href="/models">model communities</a>. Larger dots mean more contributors;
+    color shows recent commits.
+  </p>
+  <GitHubActivityScatter github_data={github_activity_data} />
+</section>
 
-  {#snippet best_report()}
-    {#if best_entry}
-      {@const { model: best_model, value } = best_entry}
-      <span id="best-report">
-        <a href="/models/{best_model.model_key}">{best_model.model_name}</a> leads the
-        {col_preset} view with the best {@html primary_metric.label} of {format_num(
-          value,
-          primary_metric.format ?? `.3`,
-        )}
-        {primary_metric.unit ?? ``}.
-      </span>
-    {/if}
-  {/snippet}
-</Readme>
-<!-- landing-only announcement; the shared MD note (warning + dataset + how to submit)
-lives in MdNote and also renders on the /tasks/md page -->
-<blockquote>
-  🆕 <strong>New task — Molecular Dynamics.</strong> Matbench Discovery now scores how
-  faithfully MLIPs reproduce finite-temperature observables of ab-initio MD (AIMD): radial
-  distribution functions, vibrational density of states, pressure distributions, and
-  single-point energy/force RMSEs. Explore the new metrics on the
-  <a href="/tasks/md">MD leaderboard</a>.
-</blockquote>
-<MdNote />
-
-<h2>GitHub Activity</h2>
-<p>
-  Development activity and community engagement of MLIP GitHub repos. Points are sized by
-  number of contributors and colored by number of commits over the last year.
-</p>
-<GitHubActivityScatter github_data={github_activity_data} />
+<section id="about-benchmark" aria-labelledby="about-matbench-discovery">
+  <h2 id="about-matbench-discovery">About Matbench Discovery</h2>
+  <p>
+    This benchmark compares accuracy, robustness, and computational cost across
+    <a href="/tasks/discovery">crystal discovery</a>,
+    <a href="/tasks/geo-opt">geometry optimization</a>,
+    <a href="/tasks/phonons">phonons</a>,
+    <a href="/tasks/md">molecular dynamics</a>, and
+    <a href="/tasks/diatomics">diatomics</a>. Rankings help you explore trade-offs; they
+    are not a complete assessment or an endorsement of a model.
+  </p>
+  <p>
+    Crystal stability is evaluated against a
+    <a href="/tasks/discovery#convex-hull-construction-in-matbench-discovery"
+      >convex hull</a
+    >
+    built from
+    <a
+      href="https://docs.materialsproject.org/methodology/materials-methodology/calculation-details"
+      >DFT</a
+    >
+    reference energies.
+  </p>
+  <p>
+    Riebesell, J., Goodall, R.E.A., Benner, P. et al.
+    <a href="https://doi.org/10.1038/s42256-025-01055-1">
+      A framework to evaluate machine learning crystal stability predictions.</a
+    >
+    <i>Nature Machine Intelligence</i> 7, 836–847 (2025).
+  </p>
+  <p>
+    <a href="/tasks">Explore the tasks</a> ·
+    <a href="/contribute">Contribute predictions</a>
+  </p>
+</section>
 
 <style>
   h1 {
-    margin-block: -1.2em 1em;
+    margin-block: -1.2em 0.35em;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -411,7 +375,7 @@ lives in MdNote and also renders on the /tasks/md page -->
     display: grid;
     gap: 1ex;
   }
-  :is(.toggle-row, .downloads) {
+  :is(.toggle-row, .table-footer) {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -421,34 +385,51 @@ lives in MdNote and also renders on the /tasks/md page -->
     gap: 8pt;
     font-size: smaller;
   }
-  .downloads {
-    gap: 1ex;
-    margin-block: 1ex;
+  .intro {
+    text-align: center;
+    color: var(--text-muted);
+    margin: 0 0 1.8em;
   }
-  .downloads .download-btn {
-    padding: 1pt 6pt;
-    font: inherit;
+  figcaption {
+    font-size: 0.9em;
   }
-  .downloads a.download-btn {
-    padding-inline-start: 2pt;
-    &:not(:hover) {
-      color: var(--text-color);
+  .table-footer {
+    justify-content: space-between;
+    gap: 0 1em;
+    > p {
+      flex: 1 1 25em;
+      color: var(--text-muted);
+      margin-block: 0.75em;
     }
   }
-  .export-error {
-    color: #ff6b6b;
-    margin-block: 0.5em 1em;
-    flex-basis: 100%;
-    background-color: color-mix(in oklab, #ff6b6b 10%, transparent);
-    padding: 1em;
-    border-radius: 4px;
-    border-inline-start: 4px solid #ff6b6b;
+  #score-weights,
+  .page-details {
+    border-top: 1px solid var(--border);
+    padding-block: 0.65em;
+    > summary {
+      color: var(--link-color);
+      width: fit-content;
+    }
   }
-  figcaption.caption-radar-container {
-    display: grid;
-    grid-template-columns: 1fr max-content;
-    align-items: start;
+  .score-guide {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
     gap: 1em;
-    font-size: 0.9em;
+    > p {
+      flex: 1 1 18em;
+    }
+  }
+  .plot-section {
+    margin-block-start: 2.5em;
+    > h2 {
+      margin-block-end: 0.4em;
+    }
+    > p {
+      text-align: center;
+      color: var(--text-muted);
+      margin-block-start: 0;
+    }
   }
 </style>

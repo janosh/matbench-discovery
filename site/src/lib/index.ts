@@ -1,22 +1,3 @@
-export { default as AuthorBrief } from './model/ModelAuthor.svelte'
-export { default as GeoOptMetricsTable } from './table/GeoOptMetricsTable.svelte'
-export { default as MetricsTable } from './table/MetricsTable.svelte'
-export { default as ModelCard } from './model/ModelCard.svelte'
-export { default as CompareToggle } from './model/CompareToggle.svelte'
-export { default as ModelRankCard } from './model/ModelRankCard.svelte'
-export { default as ModelRowMenu } from './table/ModelRowMenu.svelte'
-export { default as ModelSelect } from './ModelSelect.svelte'
-export { ACTIVE_MODELS, MODELS } from './models.svelte'
-export { default as OrgLogos } from './model/OrgLogos.svelte'
-export { default as PtableHeatmap } from './PtableHeatmap.svelte'
-export { default as PtableInset } from './PtableInset.svelte'
-export { default as DiscoverySetToggle } from './DiscoverySetToggle.svelte'
-export { default as TableControls } from './table/TableControls.svelte'
-export * from './types'
-// YAML data is enriched at build time.
-export { default as DATASETS } from '$data/datasets.yml'
-export { default as data_files } from '$pkg/data-files.yml'
-
 // Stringify values for display, rendering nullish/empty values as 'n/a'
 export function arr_to_str(value: unknown): string {
   if (value === null || value === undefined || value === ``) return `n/a`

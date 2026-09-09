@@ -163,3 +163,48 @@ metrics:
         name: models/m3gnet/m3gnet/harmonic/2026-09-05-phonons-kappa-103-run-info.json
         size: 8198
         md5: 1ae693e88513425d31c29f7d9cc31b94
+  diatomics:
+    pred_file:
+      name: models/m3gnet/m3gnet/2026-09-12-diatomics.json.gz
+      size: 224598
+      md5: 51c67aa4dd56b8477fd9425378037166
+      url: https://figshare.com/files/68484286
+    hardware: NVIDIA H100 80GB HBM3
+    run_time_sec: 67.28
+    max_rss_gb: 1.696
+    excluded_formula_reasons: {}
+    pbe_wall_dist_mae: 0.1554
+    pbe_energy_mae: 1.077
+    pbe_bond_length_error: 0.3058
+    pbe_well_depth_error: 0.8734
+    pbe_vib_freq_error: 763.4
+    tortuosity: 1.078
+    energy_diff_flips: 2.276
+    energy_jump: 0.4592
+    force_flips: 2.207
+    force_total_variation: 216.0
+    force_jump: 90.61
+    pbe_force_mae: 1.2
+    pbe_vib_freq_coverage:
+      n_valid: 73
+      n_eligible: 73
+      failed_elements: []
+      missing_elements: []
+  md:
+    pred_file:
+      name: models/m3gnet/m3gnet/2026-09-12-md-metrics.csv.gz
+      size: 4067
+      md5: 446e001cc9b1fdbb045f26017d6e2c72
+      url: https://figshare.com/files/68484316
+    max_rss_gb: 2.429 # GB
+    energy_rmse: 2.5742 # meV/atom
+    force_rmse: 221.9537 # meV/Å
+    rdf_error: 10.4884 # %
+    adf_error: 6.3542 # %
+    vdos_error: 36.5473 # %
+    pressure_mae: 1.8433 # GPa
+    pressure_wasserstein: 1.8494 # GPa
+    pressure_error: 80.0509 # %
+    n_systems: 17 # count
+    hardware: NVIDIA H100 (H100/H200 equal-speed assumption)
+    run_time_sec: 19516.4 # s

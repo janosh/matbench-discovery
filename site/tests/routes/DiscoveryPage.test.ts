@@ -1,5 +1,4 @@
-import { ACTIVE_MODELS } from '$lib'
-import { make_table_filters } from '$lib/models.svelte'
+import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
 import DiscoveryPage from '$routes/tasks/discovery/+page.svelte'
 import { tick } from 'svelte'
 import { beforeEach, describe, expect, it, vi } from 'vitest'

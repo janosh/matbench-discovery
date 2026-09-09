@@ -118,6 +118,12 @@ metrics:
     force_total_variation: 179.1
     force_jump: 4.72
     pbe_force_mae: 0.9552
+    pbe_vib_freq_coverage:
+      n_valid: 72
+      n_eligible: 73
+      failed_elements:
+      - F
+      missing_elements: []
   discovery:
     pred_file:
       name: models/tace/tace-oam-l/2026-04-09-discovery.csv.gz

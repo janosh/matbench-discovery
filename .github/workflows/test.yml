@@ -20,20 +20,34 @@ permissions:
   contents: read
 
 concurrency:
-  # Cancel only on same PR number
-  group: ${{ github.workflow }}-pr-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_call' && github.event_name != 'release' }}
 
 jobs:
   pytest:
+    # Preserve the required check names while keeping Python and its dependencies
+    # on the same drive (setup-python on C: + uv cache on D: forces slow copies).
+    name: pytest (${{ matrix.os }}) / tests
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-    uses: janosh/workflows/.github/workflows/pytest.yml@main
-    with:
-      os: ${{ matrix.os }}
-      python-version: "3.14"
-      install-cmd: uv pip install -e .[test,symmetry] --system
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@v9.0.0
+        with:
+          python-version: "3.14"
+
+      # Live URL/release checks run once in model-pr-guard, independent of OS.
+      # Keep coverage on Linux; tracing the same suite again slows Windows down.
+      - name: Run tests
+        run: >-
+          uv run --no-project --with-editable ".[test,symmetry]" pytest --durations=20
+          ${{ github.event_name != 'release' && '-m "not network"' || '' }}
+          ${{ matrix.os == 'ubuntu-latest' && '--cov=.' || '' }}
 
   vitest:
     defaults:
@@ -46,16 +60,23 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up node
-        uses: actions/setup-node@v7
-        with:
-          node-version: 24
+      - uses: ./.github/actions/setup-site
 
-      - name: Install dependencies
-        run: corepack enable && npm_config_legacy_peer_deps=true pnpm install --config.dangerously-allow-all-builds=true --config.block-exotic-subdeps=false
+      # pnpm's installed graph includes resolved Git SHAs, unlike package.json.
+      # Vitest hashes source/config files and excludes import.meta.glob modules.
+      - name: Cache Node bytecode and Vitest transforms
+        uses: actions/cache@v6
+        with:
+          path: |
+            site/.cache/node-compile
+            site/.cache/vitest
+          key: vitest-${{ runner.os }}-${{ hashFiles('site/node_modules/.pnpm/lock.yaml', 'site/vite.config.ts', 'site/scripts/**') }}-${{ github.sha }}
+          restore-keys: vitest-${{ runner.os }}-${{ hashFiles('site/node_modules/.pnpm/lock.yaml', 'site/vite.config.ts', 'site/scripts/**') }}-
 
       - name: Run unit tests
-        run: npm test
+        env:
+          NODE_COMPILE_CACHE: .cache/node-compile
+        run: npm test -- --maxWorkers=100% --fsModuleCache --fsModuleCachePath=.cache/vitest
 
   scripts:
     runs-on: ubuntu-latest

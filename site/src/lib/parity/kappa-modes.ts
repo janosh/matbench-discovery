@@ -5,7 +5,7 @@
 // validates the shapes, so the client trusts the JSON without rechecking.
 import type { Matrix3x3, Vec3 } from 'matterviz/math'
 import type { Complex, PhononModeData, PhononPathSegment } from 'matterviz/spectral'
-import { load_json_asset, parity_asset_resolver } from '../asset-loader'
+import { load_model_asset, parity_asset_resolver } from '../asset-loader'
 import { kappa_parity_manifest } from './kappa-parity'
 
 export interface KappaModesMaterial {
@@ -40,18 +40,12 @@ const {
 )
 export { has_kappa_modes }
 
-export async function load_kappa_modes(model_key: string): Promise<KappaModesModel> {
-  const { model } = await load_json_asset<{ model?: KappaModesModel }>(
+export const load_kappa_modes = async (model_key: string): Promise<KappaModesModel> =>
+  load_model_asset<KappaModesModel>(
+    `kappa modes`,
     kappa_modes_asset_url(kappa_modes_asset(model_key)),
+    model_key,
   )
-  if (!model) throw new Error(`No kappa modes model ${model_key} in its asset`)
-  if (model.model_key !== model_key) {
-    throw new Error(
-      `Invalid kappa modes model: expected ${model_key}, got ${model.model_key}`,
-    )
-  }
-  return model
-}
 
 // q-points without stored eigenvectors get `eigenvector: null`; the explorer snaps to
 // the nearest q-point that has one

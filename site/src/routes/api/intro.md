@@ -1,7 +1,9 @@
 The [`matbench-discovery`](https://pypi.org/project/matbench-discovery) Python package is the reference implementation behind this benchmark. It fetches the training and test sets, provides the shared task runners that every model submission plugs into, and computes each metric shown on the leaderboards.
 
+Install into an activated Python 3.14+ virtual environment:
+
 ```sh
-pip install matbench-discovery
+uv pip install matbench-discovery
 ```
 
 ## Quickstart

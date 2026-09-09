@@ -1,34 +1,26 @@
 <script lang="ts">
-  import { type Label, ModelCard } from '$lib'
-  import { Icon } from 'svelte-widgets'
+  import ModelCard from '$lib/model/ModelCard.svelte'
+  import type { Label } from '$lib/types'
+  import { Icon, Popover } from 'svelte-widgets'
   import { Info } from 'svelte-widgets/icons'
   import { ALL_METRICS, MD_METRICS, METADATA_COLS } from '$lib/labels'
   import { get_nested_value, label_data_path, sort_models } from '$lib/metrics'
   import { MODELS } from '$lib/models.svelte'
   import { bind_url_params } from '$lib/url-state.svelte'
-  import {
-    bool_from_param,
-    bool_url_entry,
-    valid_query_param,
-  } from 'svelte-widgets/url-params'
+  import { valid_query_param } from 'svelte-widgets/url-params'
   import { interpolateRdBu } from 'd3-scale-chromatic'
-  import { ColorBar, pick_contrast_color } from 'matterviz'
-  import { untrack } from 'svelte'
-  import { tooltip } from 'svelte-widgets/attachments'
+  import { ColorBar } from 'matterviz/plot'
+  import { pick_contrast_color } from 'matterviz/colors'
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
 
-  let { initial_show_n_best }: { initial_show_n_best?: number } = $props()
-
   let sort_by: Label = $state(ALL_METRICS.CPS)
-  let show_details = $state(false)
   let order: `asc` | `desc` = $state(`desc`)
   const min_models = 2
-  // untracked on purpose: captures the initial prop value only
-  const initial_n_best = untrack(() =>
-    Math.min(MODELS.length, Math.max(min_models, initial_show_n_best ?? MODELS.length)),
-  )
-  let show_n_best = $state(initial_n_best)
+  const clamp_model_count = (count: number) =>
+    Math.min(MODELS.length, Math.max(min_models, Math.trunc(count)))
+  let show_n_best = $state<number | null>(MODELS.length)
+  const model_limit = $derived(clamp_model_count(show_n_best ?? min_models))
   // label_data_path honors `property` (e.g. CDS is stored as metrics.diatomics.combined_score)
   let sort_by_path = $derived(label_data_path(sort_by))
 
@@ -43,31 +35,20 @@
   ]
   const sort_options = [{ ...METADATA_COLS.model_name, label: `Model Name` }, ...metrics]
 
-  const sort_keys = new Set(sort_options.map((opt) => opt.key))
   const order_dirs = new Set([`asc`, `desc`] as const)
-  const default_sort_key = ALL_METRICS.CPS.key
   const read_url_params = (params: URLSearchParams) => {
-    const sort_key = valid_query_param(params, `sort`, default_sort_key, sort_keys)
-    sort_by = sort_options.find((opt) => opt.key === sort_key) ?? ALL_METRICS.CPS
+    sort_by =
+      sort_options.find(({ key }) => key === params.get(`sort`)) ?? ALL_METRICS.CPS
     order = valid_query_param(params, `dir`, `desc`, order_dirs)
-    // any non-numeric or out-of-range n_best (incl. missing param -> 0) resets
-    const n_best = Math.trunc(Number(params.get(`n_best`) ?? ``))
-    show_n_best = n_best >= min_models ? Math.min(n_best, MODELS.length) : initial_n_best
-    show_details = bool_from_param(params, `details`)
+    // Missing, non-numeric, or below-minimum limits reset to all models.
+    const n_best = Number(params.get(`n_best`) ?? ``)
+    show_n_best = n_best >= min_models ? clamp_model_count(n_best) : MODELS.length
   }
   bind_url_params(read_url_params, () => [
-    [`sort`, sort_by.key, default_sort_key],
+    [`sort`, sort_by.key, ALL_METRICS.CPS.key],
     [`dir`, order, `desc`],
-    [`n_best`, `${show_n_best}`, `${initial_n_best}`],
-    bool_url_entry(`details`, show_details),
+    [`n_best`, `${model_limit}`, `${MODELS.length}`],
   ])
-
-  const capture_state = () => ({ show_details, sort_by, order, show_n_best })
-  export const snapshot = {
-    capture: capture_state,
-    restore: (values: ReturnType<typeof capture_state>) =>
-      ({ show_details, sort_by, order, show_n_best } = values),
-  }
 
   function bg_color(val: number, min: number, max: number) {
     if (isNaN(val)) return `rgba(255, 255, 255, 0.6)` // Default background for NaN values
@@ -90,6 +71,8 @@
     return lower_is_better ? [max_val, min_val] : [min_val, max_val]
   })
 </script>
+
+<h1 id="models">Models</h1>
 
 <!-- minmax(0, 1fr) prevents the full-bleed 100vw list from inflating its grid
 track, which would miscenter it and overflow at wider browser zoom levels. -->
@@ -121,16 +104,24 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
           }}
           style="position: relative"
         >
-          {@html label ?? key}
+          {@html label}
           {#if description}
             <!-- round page-bg backing so the glyph's transparent cutouts don't show
             the button's corner behind the badge (no opacity for the same reason) -->
-            <span
-              {@attach tooltip({ content: description, allow_html: true })}
-              style="width: 8pt; height: 8pt; position: absolute; top: -4pt; right: -4pt; background: var(--page-bg); border-radius: 50%"
+            <Popover
+              trigger_mode="hover"
+              trap_focus={false}
+              aria-label="Metric description"
             >
-              <Icon icon={Info} />
-            </span>
+              {#snippet trigger(trigger_props)}
+                <span
+                  {...trigger_props}
+                  style="width: 8pt; height: 8pt; position: absolute; top: -4pt; right: -4pt; background: var(--page-bg); border-radius: 50%"
+                  ><Icon icon={Info} /></span
+                >
+              {/snippet}
+              {@html description}
+            </Popover>
           {/if}
         </button>
       </li>
@@ -158,7 +149,7 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
   </legend>
 
   <ol class="models full-bleed">
-    {#each models.slice(0, Math.max(min_models, show_n_best)) as model (model.model_key)}
+    {#each models.slice(0, model_limit) as model (model.model_key)}
       {@const metric_val = sort_by.better ? get_nested_value(model, sort_by_path) : 0}
       {@const bg_clr = bg_color(metric_val as number, best_val, worst_val)}
       {@const text_color = pick_contrast_color({ background: bg_clr, backdrop: `white` })}
@@ -166,26 +157,17 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
         animate:flip={{ duration: 400 }}
         in:fade={{ delay: 100 }}
         out:fade={{ delay: 100 }}
-        style:grid-row="span {show_details ? 5 : 4}"
       >
         <ModelCard
           {model}
           {metrics}
           sort_by={sort_by.key}
-          bind:show_details
           title_style="background-color: {bg_clr}; color: {text_color};"
         />
       </li>
     {/each}
   </ol>
 </div>
-
-<!-- link to ALL model pages with hidden links for the SvelteKit crawler -->
-{#each MODELS as model (model.model_key)}
-  <a href="/models/{model.model_key}" hidden>
-    {model.model_name}
-  </a>
-{/each}
 
 <style>
   legend {
@@ -232,6 +214,7 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
     border-radius: 3pt;
     display: grid;
     grid-template-rows: subgrid;
+    grid-row: span 4;
     position: relative;
     gap: 1em;
   }

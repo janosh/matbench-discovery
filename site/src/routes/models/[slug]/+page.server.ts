@@ -1,5 +1,5 @@
-import { MODELS } from '$lib'
-import { read_md_per_system } from '$lib/server/md'
+import { MODELS } from '$lib/models.svelte'
+import { read_md_per_system } from '$lib/server/predictions'
 import { error } from '@sveltejs/kit'
 import type { EntryGenerator, PageServerLoad } from './$types'
 

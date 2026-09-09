@@ -1,9 +1,11 @@
-import { DATASETS, MODELS } from '$lib'
-import { ALL_METRICS, DIATOMICS_METRICS, PHONON_METRICS } from '$lib/labels'
+import DATASETS from '$data/datasets.yml'
+import { MODELS } from '$lib/models.svelte'
+import { ALL_METRICS, DIATOMICS_METRICS, MD_METRICS, PHONON_METRICS } from '$lib/labels'
 import {
   assemble_row_data,
   format_train_set,
   metric_better_as,
+  missing_metric_reason,
   sort_models,
 } from '$lib/metrics'
 import type { ModelData } from '$lib/types'
@@ -158,9 +160,11 @@ describe(`assemble_row_data`, () => {
     expect(mace_row?.graph_construction_radius).toBe(
       `<span data-sort-value="6">6 Å</span>`,
     )
-    // n_layers should be present as either a sortable span or 'n/a'
+    // Missing metadata carries its own explanation.
     const n_layers_val = mace_row?.n_layers as string
-    expect(n_layers_val).toMatch(/^(?:<span data-sort-value="\d+">\d+<\/span>|n\/a)$/)
+    expect(n_layers_val).toMatch(
+      /^<span (?:data-sort-value="\d+">\d+|data-title="[^"]+">n\/a)<\/span>$/,
+    )
     expect(chgnet_row?.Model).toContain(`chgnet-0.3.0`)
     for (const [metric, expected] of [
       [PHONON_METRICS.κ_SRME, 0.6823],
@@ -198,6 +202,73 @@ describe(`assemble_row_data`, () => {
     expect(rows[0].F1).toBeUndefined()
     expect(rows[0][DIATOMICS_METRICS.pbe_energy_mae.key]).toBe(1)
   })
+
+  it.each([
+    [ALL_METRICS.RMSD, {}, `predicts only energies`, false, `E`],
+    [PHONON_METRICS.κ_SRME, {}, `requires forces`, false, `E`],
+    [MD_METRICS.md_combined_score, {}, `not evaluated yet`, true],
+    [DIATOMICS_METRICS.diatomics_combined_score, {}, `not evaluated yet`, true],
+    [
+      ALL_METRICS.RMSD,
+      {
+        geo_opt: { status: `not_applicable`, reason: `No structure relaxation support.` },
+      },
+      `unsupported. No structure relaxation support.`,
+      false,
+    ],
+    [
+      PHONON_METRICS.κ_SRME,
+      { phonons: { status: `pending`, reason: `Evaluation is queued.` } },
+      `pending. Evaluation is queued.`,
+      true,
+    ],
+    [
+      PHONON_METRICS.κ_SRME,
+      { phonons: { status: `not_available`, reason: `Predictions were not retained.` } },
+      `unavailable. Predictions were not retained.`,
+      true,
+    ],
+    [
+      PHONON_METRICS.κ_SRME,
+      {
+        phonons: {
+          status: `partial`,
+          reason: `Missing conductivity predictions.`,
+          kappa_103: {},
+        },
+      },
+      `incomplete results. Missing conductivity predictions.`,
+      true,
+    ],
+    [
+      MD_METRICS.md_combined_score,
+      { md: { adf_error: 0, vdos_error: 0, pressure_error: 0 } },
+      `runtime not reported`,
+      false,
+    ],
+    [
+      MD_METRICS.md_max_gpu_mem_gb,
+      { md: { vdos_error: 0 } },
+      `peak memory not reported`,
+      false,
+    ],
+    [ALL_METRICS.CPS, {}, `requires forces`, true, `E`],
+    [ALL_METRICS.CPS, {}, `not evaluated yet`, true],
+  ] as const)(
+    `explains missing results (%#)`,
+    (label, metrics, expected, invite, targets: ModelData['targets'] = `EFS_G`) => {
+      const model = { ...tece_model, targets, metrics } as ModelData
+      const reason = missing_metric_reason(model, label)
+      expect(reason).toContain(expected)
+      expect(
+        reason.match(/Contributions welcome to add missing model predictions/g) ?? [],
+      ).toHaveLength(invite ? 1 : 0)
+      if (invite)
+        expect(reason).toMatch(
+          /Contributions welcome to add missing model predictions\.$/,
+        )
+    },
+  )
 
   it.each([
     { task: `diatomics`, multiplier_key: `diatomics_time_multiplier` },

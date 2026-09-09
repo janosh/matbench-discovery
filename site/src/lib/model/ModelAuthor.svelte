@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Author } from '$lib'
+  import type { Author } from '$lib/types'
   import { get_org_logo } from '$lib/labels'
   import { Icon } from 'svelte-widgets'
   import { Email, GitHub, Globe, ORCID } from 'svelte-widgets/icons'

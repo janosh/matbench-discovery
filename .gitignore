@@ -38,3 +38,8 @@ models/_*
 
 # generated API module docs
 site/src/routes/api/modules/
+
+# site dependencies, local configuration and test coverage
+/site/**/node_modules
+/site/**/.env
+/site/**/coverage

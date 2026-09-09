@@ -167,6 +167,18 @@ def build_route_element_counts(
 ) -> dict[str, pd.Series]:
     """Build every route-local periodic-table element-count series."""
     counts: dict[str, pd.Series] = {}
+    wbm_counts: dict[str, pd.Series] = {}
+    # Parse each distinct formula once, then reuse numeric rows for count modes,
+    # batches, and arities instead of rebuilding compositions for every grouping.
+    wbm_formulas = set(df_wbm[Key.formula])
+    compositions: dict[str, dict[str, float]] = {}
+    arities: dict[str, int] = {}
+    for formula in pd.concat(
+        [df_mp[Key.formula], df_wbm[Key.formula], df_mp_trj[Key.formula]]
+    ).unique():
+        composition = Composition(formula, allow_negative=formula not in wbm_formulas)
+        compositions[formula] = composition.element_composition.as_dict()
+        arities[formula] = len(composition)
     for dataset, formulas in (
         ("wbm", df_wbm[Key.formula]),
         ("mp", df_mp[Key.formula]),
@@ -175,26 +187,33 @@ def build_route_element_counts(
         # Preserve the committed route convention: three literal "NaN" MP formulas
         # were historically parsed as missing rather than sodium nitride.
         filtered_formulas = formulas[formulas != "NaN"] if dataset == "mp" else formulas
-        for count_mode in (ElemCountMode.occurrence, ElemCountMode.composition):
-            series = pmv.count_elements(filtered_formulas, count_mode=count_mode)
+        frame = pd.DataFrame(
+            filtered_formulas.map(compositions).tolist(), index=filtered_formulas.index
+        )
+        for count_mode, totals in (
+            (ElemCountMode.occurrence, frame.count()),
+            (ElemCountMode.composition, frame.sum(min_count=1)),
+        ):
+            series = pmv.count_elements(totals)
             if dataset != "mp-trj":
                 series = series.astype("Int64")
             counts[f"{dataset}-element-counts-by-{count_mode}"] = series
 
-    steps = df_wbm.index.to_series().str.split("-").str[1].astype(int)
-    if not steps.between(1, 5).all():
-        raise ValueError("WBM material IDs must encode steps 1 through 5")
-    for batch in range(1, 6):
-        counts[f"wbm-element-counts-batch={batch}"] = pmv.count_elements(
-            df_wbm.loc[steps == batch, Key.formula]
-        )
+        if dataset != "wbm":
+            continue
+        steps = df_wbm.index.to_series().str.split("-").str[1].astype(int)
+        if not steps.between(1, 5).all():
+            raise ValueError("WBM material IDs must encode steps 1 through 5")
+        for batch in range(1, 6):
+            wbm_counts[f"wbm-element-counts-batch={batch}"] = pmv.count_elements(
+                frame.loc[steps == batch].sum(min_count=1).dropna()
+            )
 
-    arity = df_wbm[Key.formula].map(Composition).map(len)
-    for n_elements, df_group in df_wbm.groupby(arity):
-        counts[f"wbm-element-counts-arity={n_elements}"] = pmv.count_elements(
-            df_group[Key.formula]
-        )
-    return counts
+        for n_elements, df_group in frame.groupby(formulas.map(arities)):
+            wbm_counts[f"wbm-element-counts-arity={n_elements}"] = pmv.count_elements(
+                df_group.sum(min_count=1).dropna()
+            )
+    return counts | wbm_counts
 
 
 def build_element_counts_payload(

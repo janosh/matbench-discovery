@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { OrgLogo } from '$lib'
+  import type { OrgLogo } from '$lib/types'
   import { Icon } from 'svelte-widgets'
 
   // Suppress native titles when a parent supplies a richer tooltip.

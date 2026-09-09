@@ -1,12 +1,12 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
-  import type { ModelData } from '$lib'
+  import type { ModelData, Label, DiscoverySet } from '$lib/types'
   import { extent } from 'd3-array'
   import { interpolateViridis } from 'd3-scale-chromatic'
-  import { format_num, ScatterPlot } from 'matterviz'
+  import { format_num } from 'matterviz/labels'
+  import { ScatterPlot } from 'matterviz/plot'
   import type { DataSeries, InternalPoint } from 'matterviz/plot'
   import type { ComponentProps } from 'svelte'
-  import { tick } from 'svelte'
   import { MultiSelect } from 'svelte-widgets'
   import {
     ALL_METRICS,
@@ -16,10 +16,14 @@
     HYPERPARAMS,
     scatter_options,
   } from '$lib/labels'
-  import { get_nested_value, is_finite_num, label_data_path } from '$lib/metrics'
+  import {
+    get_nested_value,
+    is_finite_num,
+    label_data_path,
+    metric_data_path,
+  } from '$lib/metrics'
   import { make_models_legend } from '$lib/fig-helpers'
   import { pareto_staircase, sota_frontier_indices, sota_step_line } from '$lib/sota'
-  import type { Label } from '$lib/types'
 
   // Keep size-select labels short by dropping discovery-set segments and abbreviating
   // "Geometry Optimization" to "Geo Opt".
@@ -35,14 +39,17 @@
   type ScatterOption = (typeof scatter_options)[number]
 
   const get_label_path = (label: Label | undefined): string =>
-    label_path_overrides[label?.key ?? ``] ?? label_data_path(label)
+    label_path_overrides[label?.key ?? ``] ??
+    (label ? metric_data_path(label, discovery_set) : ``)
 
-  // Get value from model using label's path, converting dates to timestamps
-  function get_label_value(model: ModelData, label: Label | undefined): unknown {
+  // Resolve each axis path/date conversion once per selection, not per model.
+  const label_accessor = (label: Label | undefined) => {
     const path = get_label_path(label)
-    let val = get_nested_value(model, path)
-    if (path.includes(`date`)) val = new Date(val as string).getTime()
-    return val
+    const is_date = path.includes(`date`)
+    return (model: ModelData): unknown => {
+      const value = get_nested_value(model, path)
+      return is_date ? new Date(value as string).getTime() : value
+    }
   }
 
   const {
@@ -64,7 +71,8 @@
     label_path_overrides = {},
     show_pareto_frontier = false,
     highlight_keys,
-    select_filter_threshold = 10,
+    discovery_set = `unique_prototypes`,
+    size_key = $bindable(HYPERPARAMS.model_params.key),
     legend = models_legend,
     bleed = true,
     ...rest
@@ -84,61 +92,43 @@
     // when given, only these models are labeled and drawn at full opacity with a ring,
     // the rest recede into a translucent field
     highlight_keys?: Set<string>
-    // Show a text filter in axis/color dropdowns with more than this many options.
-    select_filter_threshold?: number
+    discovery_set?: DiscoverySet
+    size_key?: string
     // span the full viewport width (the default on task pages, off inside dialogs)
     bleed?: boolean
   } = $props()
 
   const log_dims = [`x`, `y`, `color`, `size`] as const
   const log_dim_labels = { x: `X`, y: `Y`, color: `Color`, size: `Size` } as const
-  let size_prop = $state(HYPERPARAMS.model_params as ScatterOption)
-
   let options_by_key = $derived(Object.fromEntries(options.map((opt) => [opt.key, opt])))
   let axes = $derived({
     x: options_by_key[x_key],
     y: options_by_key[y_key],
     color_value: options_by_key[color_key],
-    size_value: size_prop,
+    size_value: options_by_key[size_key],
   })
+
+  let axis_accessors = $derived(Object.values(axes).map(label_accessor))
 
   const ticks = 5
   let display = $state({ x_grid: true, y_grid: true })
 
   let filtered_models = $derived(models.filter(model_filter))
-  let duplicate_model_names = $derived(
-    filtered_models
-      .map(({ model_name }) => model_name)
-      .filter((name, idx, names) => names.indexOf(name) !== idx),
+  let models_by_name = $derived(
+    Object.groupBy(filtered_models, ({ model_name }) => model_name),
   )
   let model_counts_by_prop = $derived(
     Object.fromEntries(
-      options.map((prop) => [
-        prop.key,
-        filtered_models.filter(
-          (model) => get_nested_value(model, get_label_path(prop)) !== undefined,
-        ).length,
-      ]),
+      options.map((prop) => {
+        const path = get_label_path(prop)
+        let count = 0
+        for (const model of filtered_models) {
+          if (get_nested_value(model, path) !== undefined) count++
+        }
+        return [prop.key, count]
+      }),
     ),
   )
-
-  // Axis/color-select options with model counts.
-  let prop_options = $derived(
-    options.map((prop) => ({
-      key: prop.key,
-      label: `${prop.label} (${model_counts_by_prop[prop.key]} models)`,
-      unit: prop.unit,
-    })),
-  )
-
-  // ScatterPlot requests only x/y data here; the color bar handles color changes below.
-  const data_loader = async (axis: string, key: string) => {
-    if (axis === `x`) x_key = key
-    else if (axis === `y`) y_key = key
-
-    await tick()
-    return { series, axis_label: options_by_key[key]?.label ?? key }
-  }
 
   const format_label_title = (prop: Label | undefined): string =>
     `${prop?.label ?? ``}${prop?.better ? ` (${prop?.better}=better)` : ``}`
@@ -156,9 +146,7 @@
 
   let plot_data = $derived(
     filtered_models.flatMap((model) => {
-      const values = [axes.x, axes.y, axes.color_value, axes.size_value].map((label) =>
-        get_label_value(model, label),
-      )
+      const values = axis_accessors.map((accessor) => accessor(model))
       if (!values.every(is_finite_num)) return []
       const [x, y, color_value, size_value] = values
       const { model_name, model_key } = model
@@ -265,9 +253,10 @@
           id: item.metadata.model_key,
           x: [item.x],
           y: [item.y],
-          label: duplicate_model_names.includes(item.metadata.model_name)
-            ? `${item.metadata.model_name} (${item.metadata.model_key})`
-            : item.metadata.model_name,
+          label:
+            (models_by_name[item.metadata.model_name]?.length ?? 0) > 1
+              ? `${item.metadata.model_name} (${item.metadata.model_key})`
+              : item.metadata.model_name,
           legend_group,
           markers: `points` as const,
           metadata: [item.metadata],
@@ -297,82 +286,53 @@
     ...(pareto_series ? [pareto_series] : []),
   ])
 
-  function add_select_filter(): void {
-    const option_list = document.querySelector<HTMLUListElement>(
-      `.portal-select-dropdown > ul`,
-    )
-    if (!option_list || option_list.querySelector(`.portal-select-filter`)) return
-
-    const option_items = [...option_list.querySelectorAll<HTMLLIElement>(`:scope > li`)]
-    if (option_items.length <= select_filter_threshold) return
-
-    const filter_item = document.createElement(`li`)
-    filter_item.className = `portal-select-filter`
-    filter_item.setAttribute(`role`, `presentation`)
-    const filter_input = document.createElement(`input`)
-    Object.assign(filter_input, {
-      type: `search`,
-      placeholder: `Filter options…`,
-      ariaLabel: `Filter dropdown options`,
-    })
-    filter_input.addEventListener(`input`, () => {
-      const query = filter_input.value.trim().toLocaleLowerCase()
-      option_items.forEach((option_item) => option_item.remove())
-      option_list.append(
-        ...option_items.filter((option_item) =>
-          (option_item.textContent?.toLocaleLowerCase() ?? ``).includes(query),
-        ),
-      )
-    })
-    filter_item.append(filter_input)
-    option_list.prepend(filter_item)
-    filter_input.focus()
+  const picker_labels = { x: `X axis`, y: `Y axis`, color: `Color`, size: `Marker size` }
+  const picker_keys = $derived({ x: x_key, y: y_key, color: color_key, size: size_key })
+  function select_property(dim: keyof typeof picker_labels, key: string) {
+    if (dim === `x`) x_key = key
+    else if (dim === `y`) y_key = key
+    else if (dim === `color`) color_key = key
+    else size_key = key
   }
-
-  // Matterviz portals axis/color dropdowns to document.body, or to the enclosing open
-  // <dialog> (a modal's top layer would otherwise render a body portal inert)
-  function observe_select_dropdowns(element: HTMLElement): () => void {
-    const observer = new MutationObserver(() => {
-      queueMicrotask(() => {
-        if (element.querySelector(`.portal-select-trigger[aria-expanded="true"]`)) {
-          add_select_filter()
-        }
-      })
-    })
-    observer.observe(element.closest(`dialog`) ?? document.body, { childList: true })
-    return () => observer.disconnect()
-  }
+  const picker_id = $props.id()
 </script>
 
 <div
   class={[`dynamic-scatter collapsible-legend`, bleed && `bleed-1400`]}
   style="margin-block: 2em"
-  {@attach observe_select_dropdowns}
   {@attach collapse_on_outside_click}
 >
   <div class="controls-row">
-    <label for="size-select">Marker Size</label>
-    <MultiSelect
-      {options}
-      id="size-select"
-      bind:value={size_prop}
-      max_select={1}
-      min_select={1}
-      key={(opt: ScatterOption) => opt.key}
-      style="flex: 1; max-width: 300px; margin: 0; line-height: normal; --sms-min-height: 24px"
-      ul_selected_style="flex-wrap: nowrap; overflow: hidden; min-width: 0;"
-      li_selected_style="font-size: 14px; min-width: 0; max-width: 100%; overflow: hidden;"
-      li_option_style="font-size: 13px;"
-    >
-      {#snippet children({ option: prop, type }: { option: ScatterOption; type: string })}
-        <span class:selected-label={type === `selected`}>
-          {@html format_size_option_path(label_data_path(prop))}
-          <span style="font-size: smaller; color: gray">
-            {model_counts_by_prop[prop.key]} models
-          </span>
-        </span>
-      {/snippet}
-    </MultiSelect>
+    {#each log_dims as dim (dim)}
+      <div class="property-picker">
+        <label for="{picker_id}-{dim}">{picker_labels[dim]}</label>
+        <MultiSelect
+          {options}
+          id={`${picker_id}-${dim}`}
+          value={options_by_key[picker_keys[dim]]}
+          mode="single"
+          min_select={1}
+          key={(opt: ScatterOption) => opt.key}
+          on_change={(event) => {
+            if (event.type === `add`) select_property(dim, event.option.key)
+          }}
+          style="margin: 0; --sms-min-height: 28px"
+          ul_selected_style="flex-wrap: nowrap; overflow: hidden; min-width: 0;"
+          li_selected_style="font-size: 14px; min-width: 0; max-width: 100%; overflow: hidden;"
+        >
+          {#snippet children({ option: prop, type })}
+            <span class:selected-label={type === `selected`}>
+              {@html prop.label}
+              <small
+                >{format_size_option_path(label_data_path(prop))} · {model_counts_by_prop[
+                  prop.key
+                ]} models</small
+              >
+            </span>
+          {/snippet}
+        </MultiSelect>
+      </div>
+    {/each}
     {#if supported_log_dims.length}
       <div class="log-controls" role="group" aria-label="Logarithmic scales">
         <strong>Log Scale</strong>
@@ -402,7 +362,7 @@
 
   <ScatterPlot
     style="height: 600px"
-    bind:series
+    {series}
     bind:tooltip_point
     {legend}
     padding={{ b: 70 }}
@@ -411,16 +371,12 @@
       format: axes.x?.format,
       scale_type: scale_of(`x`),
       ticks,
-      options: prop_options,
-      selected_key: x_key,
     }}
     y_axis={{
       label: axes.y?.label,
       format: axes.y?.format,
       scale_type: scale_of(`y`),
       ticks,
-      options: prop_options,
-      selected_key: y_key,
     }}
     bind:display
     {color_scale}
@@ -431,18 +387,6 @@
     color_bar={{
       title: format_label_title(axes.color_value),
       tick_format: colorbar_tick_format(axes.color_value),
-      property_options: prop_options,
-      selected_property_key: color_key,
-      data_loader: async (key) => {
-        color_key = key
-        const prop = options_by_key[key]
-        const [min = 0, max = 1] = extent(
-          filtered_models
-            .map((model) => get_label_value(model, prop))
-            .filter(is_finite_num),
-        )
-        return { range: [min, max], title: format_label_title(prop) }
-      },
     }}
     label_placement_config={{
       leader_line_threshold: 15,
@@ -454,7 +398,6 @@
       onclick: ({ point }) => goto(`/models/${point.metadata?.model_key ?? ``}`),
     }}
     {...rest}
-    {data_loader}
   >
     {#snippet controls_extra()}
       <label title="Toggle model names on the plot">
@@ -540,23 +483,12 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  :global(.portal-select-filter) {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    padding: 0;
-    background: var(--dropdown-bg);
-    border-bottom: 1px solid var(--dropdown-border);
+  .property-picker {
+    flex: 1 1 220px;
+    min-width: 0;
+    max-width: 320px;
   }
-  :global(.portal-select-filter input) {
-    display: block;
-    box-sizing: border-box;
-    width: 100%;
-    height: 100%;
-    padding: var(--dropdown-padding-v, 3px) var(--dropdown-padding-h, 10px);
-    border-radius: 0;
-    background: var(--dropdown-bg);
-    color: var(--dropdown-color);
-    font: inherit;
+  .selected-label small {
+    display: none;
   }
 </style>

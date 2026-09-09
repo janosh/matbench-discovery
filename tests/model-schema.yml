@@ -342,6 +342,23 @@ definitions:
         type: number
       pbe_vib_freq_error:
         type: number
+      pbe_vib_freq_coverage:
+        type: object
+        additionalProperties: false
+        required: [n_valid, n_eligible, failed_elements, missing_elements]
+        properties:
+          n_valid:
+            type: integer
+            minimum: 0
+          n_eligible:
+            type: integer
+            minimum: 0
+          failed_elements: &element_list
+            type: array
+            uniqueItems: true
+            items:
+              type: string
+          missing_elements: *element_list
       force_flips:
         type: number
       force_total_variation:

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ScatterPlot } from 'matterviz'
+  import { ScatterPlot } from 'matterviz/plot'
   import { element_data, type ChemicalElement } from 'matterviz/element'
   import { tooltip as add_tooltip } from 'svelte-widgets/attachments'
   import type { HTMLAttributes } from 'svelte/elements'
@@ -39,16 +39,20 @@
   let series = $derived(
     curves.map((curve) => {
       // Keep only points within the x range, pairing each distance with its energy
-      const points = curve.distances
-        .map((distance, idx) => ({ distance, energy: curve.energies[idx] }))
-        .filter(({ distance }) => distance >= x_range[0] && distance <= x_range[1])
-      const ref_energy = points.at(-1)?.energy ?? 0
+      const x: number[] = []
+      const energies: number[] = []
+      curve.distances.forEach((distance, idx) => {
+        if (!(distance >= x_range[0] && distance <= x_range[1])) return
+        x.push(distance)
+        energies.push(curve.energies[idx])
+      })
+      const ref_energy = energies.at(-1) ?? 0
 
       return {
         id: curve.model_key,
         label: curve.label,
-        x: points.map((point) => point.distance),
-        y: points.map((point) => point.energy - ref_energy),
+        x,
+        y: energies.map((energy) => energy - ref_energy),
         markers: `line+points` as const,
         point_style: { fill: curve.color, radius: 1.5, stroke_width: 0 },
         line_style: {

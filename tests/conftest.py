@@ -1,11 +1,36 @@
 """Shared pytest fixtures for the test suite."""
 
+from collections.abc import Iterator
+
 import numpy as np
 import pandas as pd
 import pytest
+import requests
 from pymatgen.core import Lattice, Structure
+from requests.adapters import HTTPAdapter, Retry
 
 from matbench_discovery.metrics.diatomics import DiatomicCurves
+
+
+@pytest.fixture(scope="session")
+def url_session() -> Iterator[requests.Session]:
+    """Reuse HTTP connections and retry transient errors for live artifact checks."""
+    with requests.Session() as session:
+        session.headers["User-Agent"] = "unit test"
+        session.mount(
+            "https://",
+            HTTPAdapter(
+                pool_connections=16,
+                pool_maxsize=16,
+                max_retries=Retry(
+                    total=3,
+                    backoff_factor=1,
+                    status_forcelist=(429, 500, 502, 503, 504),
+                    raise_on_status=False,
+                ),
+            ),
+        )
+        yield session
 
 
 @pytest.fixture

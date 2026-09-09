@@ -79,11 +79,11 @@ def main() -> int:
         return 0
     args.model = model_key
     # a subset run writes model-level metrics from incomplete coverage; aggregation
-    # over all systems belongs to scripts/evals/md.py, not a per-array-task write
+    # over all systems belongs to scripts/evals/md.py with an explicit run directory
     if args.write_yaml and args.systems:
         parser.error(
             "--write-yaml needs a full run; a --systems subset would write partial "
-            "model metrics. Aggregate with scripts/evals/md.py instead."
+            "model metrics. Aggregate with scripts/evals/md.py --md-run-dir <dir>."
         )
 
     if args.print_cmd:

@@ -21,7 +21,7 @@ DPA3 is an advanced interatomic potential leveraging the message-passing archite
 #### How to install
 
 ```bash
-pip install git+https://github.com/deepmodeling/deepmd-kit@devel
+uv pip install git+https://github.com/deepmodeling/deepmd-kit@devel
 ```
 
 #### How to use

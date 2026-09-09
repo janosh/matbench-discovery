@@ -127,6 +127,11 @@ metrics:
     force_total_variation: 306.5
     force_jump: 269.7
     pbe_force_mae: 2.369
+    pbe_vib_freq_coverage:
+      n_valid: 73
+      n_eligible: 73
+      failed_elements: []
+      missing_elements: []
   discovery:
     pred_file:
       name: models/deepmd/dpa-3.1-3m-ft/2025-06-05-discovery.csv.gz

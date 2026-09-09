@@ -110,7 +110,7 @@ metrics:
     pbe_energy_mae: 4.896
     pbe_bond_length_error: 0.6183
     pbe_well_depth_error: 0.751
-    pbe_vib_freq_error: 86.3
+    pbe_vib_freq_error: 84.4
     tortuosity: 1.202
     energy_diff_flips: 2.736
     energy_jump: 1.197
@@ -118,6 +118,14 @@ metrics:
     force_total_variation: 277.2
     force_jump: 33.68
     pbe_force_mae: 2.676
+    pbe_vib_freq_coverage:
+      n_valid: 70
+      n_eligible: 73
+      failed_elements:
+      - Cs
+      - K
+      - Rb
+      missing_elements: []
   discovery:
     pred_file:
       name: models/tace/tace-oam-rra-preview/2026-06-27-discovery.csv.gz

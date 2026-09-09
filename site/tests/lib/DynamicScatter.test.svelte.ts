@@ -1,9 +1,9 @@
-import { HYPERPARAMS, METADATA_COLS, scatter_options } from '$lib/labels'
+import { HYPERPARAMS, METADATA_COLS } from '$lib/labels'
 import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
 import type { ModelData } from '$lib/types'
 import { tick } from 'svelte'
-import { expect, it, vi } from 'vitest'
-import { doc_query, mount } from '../index'
+import { beforeEach, expect, it, vi } from 'vitest'
+import { choose_scatter_property, doc_query, mount } from '../index'
 
 const make_models = (min_value: number, max_value: number): ModelData[] =>
   [min_value, max_value].map(
@@ -22,6 +22,11 @@ const scatter_props = {
   color_key: METADATA_COLS.n_training_structures.key,
   show_model_labels: false,
 }
+
+beforeEach(() => {
+  vi.spyOn(HTMLElement.prototype, `clientWidth`, `get`).mockReturnValue(800)
+  vi.spyOn(HTMLElement.prototype, `clientHeight`, `get`).mockReturnValue(600)
+})
 
 it.each([
   {
@@ -55,8 +60,6 @@ it.each([
 ])(
   `sets log toggles for $scenario`,
   async ({ min_value, max_value, x_key, expected_labels }) => {
-    vi.spyOn(HTMLElement.prototype, `clientWidth`, `get`).mockReturnValue(800)
-    vi.spyOn(HTMLElement.prototype, `clientHeight`, `get`).mockReturnValue(600)
     mount(DynamicScatter, {
       target: document.body,
       props: {
@@ -88,19 +91,17 @@ it.each([
 )
 
 it(`re-evaluates manual log choices after an axis change`, async () => {
-  vi.spyOn(HTMLElement.prototype, `clientWidth`, `get`).mockReturnValue(800)
-  vi.spyOn(HTMLElement.prototype, `clientHeight`, `get`).mockReturnValue(600)
-  let x_key = $state(HYPERPARAMS.model_params.key)
+  const axis = $state({ key: HYPERPARAMS.model_params.key })
   mount(DynamicScatter, {
     target: document.body,
     props: {
       models: make_models(1, 100),
       ...scatter_props,
       get x_key() {
-        return x_key
+        return axis.key
       },
       set x_key(value) {
-        x_key = value
+        axis.key = value
       },
     },
   })
@@ -116,63 +117,64 @@ it(`re-evaluates manual log choices after an axis change`, async () => {
   expect(x_toggle?.checked).toBe(false)
   expect(x_ticks()).not.toEqual(log_ticks)
 
-  x_key = METADATA_COLS.n_training_materials.key
-  await tick()
+  await choose_scatter_property(`X axis`, `Training Materials`)
+  expect(axis.key).toBe(METADATA_COLS.n_training_materials.key)
   expect(x_toggle?.checked).toBe(true)
   expect(x_ticks()).toEqual(log_ticks)
 })
 
 it.each([
-  { scenario: `default threshold`, select_filter_threshold: undefined, has_filter: true },
-  {
-    scenario: `threshold equal to the option count`,
-    select_filter_threshold: scatter_options.length,
-    has_filter: false,
-  },
-])(
-  `adds a dropdown filter for option lists above the $scenario`,
-  async ({ select_filter_threshold, has_filter }) => {
-    vi.spyOn(HTMLElement.prototype, `clientWidth`, `get`).mockReturnValue(800)
-    vi.spyOn(HTMLElement.prototype, `clientHeight`, `get`).mockReturnValue(600)
+  [`x`, `X axis`],
+  [`y`, `Y axis`],
+  [`color`, `Color`],
+  [`size`, `Marker size`],
+] as const)(
+  `searches the %s picker and updates its data binding and rendered plot`,
+  async (dim, label) => {
+    const models = [1, 4, 10].map((value, idx) => ({
+      ...make_models(value, value)[0],
+      n_training_materials: idx + 1,
+    }))
+    const selection = $state({ key: `model_params` })
+    const prop_key = `${dim}_key` as const
     mount(DynamicScatter, {
       target: document.body,
       props: {
-        models: make_models(1, 100),
-        x_key: HYPERPARAMS.model_params.key,
-        select_filter_threshold,
-        ...scatter_props,
+        models,
+        show_model_labels: false,
+        x_key: `model_params`,
+        y_key: `model_params`,
+        color_key: `n_training_structures`,
+        size_key: `model_params`,
+        get [prop_key]() {
+          return selection.key
+        },
+        set [prop_key](value: string) {
+          selection.key = value
+        },
       },
     })
     await tick()
-
-    const size_picker = doc_query(`#size-select`).closest(`.multiselect`)
-    expect(size_picker).not.toBeNull()
-    expect(doc_query(`ul.selected`, size_picker).style.flexWrap).toBe(`nowrap`)
-    expect(doc_query(`ul.selected > li`, size_picker).style.fontSize).toBe(`14px`)
-
-    doc_query<HTMLButtonElement>(`.axis-trigger`).click()
-    await vi.waitFor(() =>
-      expect(document.querySelector(`.portal-select-filter input`) !== null).toBe(
-        has_filter,
-      ),
-    )
-    const filter_input = document.querySelector<HTMLInputElement>(
-      `.portal-select-filter input`,
-    )
-
-    if (filter_input) {
-      filter_input.value = `no option has this label`
-      filter_input.dispatchEvent(new InputEvent(`input`, { bubbles: true }))
-      expect(
-        document.querySelectorAll(`.portal-select-dropdown [role="option"]`),
-      ).toHaveLength(0)
-    }
+    expect(
+      document.querySelectorAll(`.property-picker input[role="combobox"]`),
+    ).toHaveLength(4)
+    const rendered_values = () =>
+      dim === `color` || dim === `size`
+        ? [...document.querySelectorAll(`path.marker`)].map((marker) =>
+            marker.getAttribute(dim === `color` ? `fill` : `d`),
+          )
+        : [...document.querySelectorAll(`.${dim}-axis .tick text`)].map(
+            (tick_label) => tick_label.textContent,
+          )
+    const previous_values = rendered_values()
+    expect(previous_values.length).toBeGreaterThan(0)
+    await choose_scatter_property(label, `Training Materials`)
+    expect(selection.key).toBe(`n_training_materials`)
+    expect(rendered_values()).not.toEqual(previous_values)
   },
 )
 
 it(`keeps duplicate-label series distinct and collapses their legend`, async () => {
-  vi.spyOn(HTMLElement.prototype, `clientWidth`, `get`).mockReturnValue(800)
-  vi.spyOn(HTMLElement.prototype, `clientHeight`, `get`).mockReturnValue(600)
   const models = make_models(10, 20).map((model) => ({
     ...model,
     model_name: `Duplicate label`,
@@ -207,8 +209,6 @@ it(`keeps duplicate-label series distinct and collapses their legend`, async () 
 })
 
 it(`dims and unlabels models outside highlight_keys, drawing highlighted ones last`, async () => {
-  vi.spyOn(HTMLElement.prototype, `clientWidth`, `get`).mockReturnValue(800)
-  vi.spyOn(HTMLElement.prototype, `clientHeight`, `get`).mockReturnValue(600)
   const models = make_models(1, 100)
   mount(DynamicScatter, {
     target: document.body,

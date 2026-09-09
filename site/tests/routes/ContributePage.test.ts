@@ -24,7 +24,12 @@ describe(`Contribute Page`, () => {
     })
 
     const install_section = get_heading_section(document.body, `Installation`)
-    expect(install_section?.textContent).toContain(`pip install -e ./matbench-discovery`)
+    expect(install_section?.textContent).toContain(
+      `activated Python 3.14+ virtual environment`,
+    )
+    expect(install_section?.textContent).toContain(
+      `uv pip install -e ./matbench-discovery`,
+    )
 
     expect(document.querySelectorAll(`pre`).length).toBeGreaterThanOrEqual(2)
     const pypi_link = document.querySelector(

@@ -1,7 +1,6 @@
-import { ACTIVE_MODELS } from '$lib'
+import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
 import GeoOptMetricsTable from '$lib/table/GeoOptMetricsTable.svelte'
 import { GEO_OPT_SYMMETRY_METRICS, HYPERPARAMS } from '$lib/labels'
-import { make_table_filters } from '$lib/models.svelte'
 import type { ModelData } from '$lib/types'
 import { tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
@@ -27,6 +26,7 @@ describe(`GeoOptMetricsTable`, () => {
     const header_html = headers.map((h) => h.innerHTML)
 
     expect(header_texts).toContain(`Model`)
+    expect(header_texts).not.toContain(`#`)
 
     // RMSD header omits the unit for a concise default column header
     const rmsd_header = headers.find((header) => header.innerHTML.includes(`RMSD`))
@@ -213,10 +213,19 @@ describe(`GeoOptMetricsTable`, () => {
 
     doc_query(`thead`, doc_query(`table`))
 
-    const rows = document.querySelectorAll(`tbody tr`)
-    const expected_rows = geo_opt_row_count(filters.matches)
-    // HeatmapTable may render a "no data" placeholder row when empty
-    if (expected_rows === 0) expect(rows.length).toBeLessThanOrEqual(1)
-    else expect(rows).toHaveLength(expected_rows)
+    const rows = document.querySelectorAll(`tbody tr[data-row-idx]`)
+    expect(rows).toHaveLength(geo_opt_row_count(filters.matches))
+    const first_row = rows[0]
+    if (first_row) {
+      const href = doc_query<HTMLAnchorElement>(
+        `a[href^="/models/"]`,
+        first_row,
+      ).getAttribute(`href`)
+      filters.clear()
+      await tick()
+      expect(doc_query(`a[href="${href}"]`, doc_query(`tbody`)).closest(`tr`)).toBe(
+        first_row,
+      )
+    } else expect(doc_query(`tbody`).textContent?.trim()).toBe(`No data`)
   })
 })

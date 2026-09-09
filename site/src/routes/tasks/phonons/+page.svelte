@@ -1,25 +1,22 @@
 <script lang="ts">
-  import { by_benchmark_added_desc, MetricsTable, ModelSelect, ACTIVE_MODELS } from '$lib'
-  import type { ModelData } from '$lib'
+  import MetricsTable from '$lib/table/MetricsTable.svelte'
+  import { by_benchmark_added_desc } from '$lib'
+  import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
+  import type { ModelData } from '$lib/types'
   import { get_error_message } from '$lib/asset-loader'
-  import { load_kappa_analysis, type KappaAnalysis } from '$lib/parity/kappa-analysis'
-  import { DynamicScatter, KappaParityPlot } from '$lib/plot'
-  import { make_table_filters } from '$lib/models.svelte'
-  import type { SortState } from '$lib/url-state.svelte'
-  import {
-    bind_url_params,
-    sort_from_query,
-    sort_url_entries,
-  } from '$lib/url-state.svelte'
+  import { load_kappa_analysis, type KappaAnalysis } from '$lib/parity/kappa-parity'
+  import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
+  import KappaParityPlot from '$lib/plot/KappaParityPlot.svelte'
+  import { bind_url_params, UrlPlotState } from '$lib/url-state.svelte'
   import { valid_query_param } from 'svelte-widgets/url-params'
   import {
     PHONON_METRICS,
     scatter_axis_label,
-    scatter_option_keys,
+    scatter_options_by_key,
     task_page_visible_cols,
   } from '$lib/labels'
-  import { format_num } from 'matterviz'
-  import { Spinner } from 'svelte-widgets'
+  import { format_num } from 'matterviz/labels'
+  import { MultiSelect, Spinner } from 'svelte-widgets'
   import { onMount } from 'svelte'
   import KappaSrmeScatter from './KappaSrmeScatter.svelte'
   import PhononFreqParity from './PhononFreqParity.svelte'
@@ -49,13 +46,18 @@
     { mode: `date`, label: `date added` },
   ]
   const default_sort_mode: SortMode = `kappa`
-  const default_scatter_x = PHONON_METRICS.κ_SRE.key
-  const default_scatter_y = PHONON_METRICS.κ_SRME.key
-  const default_table_sort: SortState = {
-    column: default_scatter_y,
-    dir: `asc`,
-  }
-  const sort_modes = new Set(sort_options.map(({ mode }) => mode))
+  // Axis selections also drive the model-comparison section title.
+  const plot = new UrlPlotState(
+    {
+      x: PHONON_METRICS.κ_SRE.key,
+      y: PHONON_METRICS.κ_SRME.key,
+      sort: {
+        column: PHONON_METRICS.κ_SRME.key,
+        dir: `asc`,
+      },
+    },
+    scatter_options_by_key,
+  )
   const model_keys = new Set(leaderboard_models.map((model) => model.model_key))
 
   let sort_mode = $state<SortMode>(default_sort_mode)
@@ -68,7 +70,7 @@
     date: by_benchmark_added_desc,
   }
   let sorted_models = $derived(leaderboard_models.toSorted(sort_compare[sort_mode]))
-  let kappa_analysis = $state<KappaAnalysis>()
+  let kappa_analysis = $state.raw<KappaAnalysis>()
   let analysis_error = $state(``)
   onMount(() => {
     void load_kappa_analysis()
@@ -95,28 +97,18 @@
     }),
   )
 
-  // axis selections for the model-comparison scatter, bound so the section title
-  // tracks whatever properties the user picks
-  let scatter_x = $state<string>(default_scatter_x)
-  let scatter_y = $state<string>(default_scatter_y)
-
-  let table_sort = $state({ ...default_table_sort })
   const filters = make_table_filters()
 
   const read_url_params = (params: URLSearchParams) => {
     selected_key = valid_query_param(params, `model`, default_selected_key, model_keys)
-    sort_mode = valid_query_param(params, `model_sort`, default_sort_mode, sort_modes)
-    scatter_x = valid_query_param(params, `x`, default_scatter_x, scatter_option_keys)
-    scatter_y = valid_query_param(params, `y`, default_scatter_y, scatter_option_keys)
-    table_sort = sort_from_query(params, default_table_sort)
+    sort_mode = valid_query_param(params, `model_sort`, default_sort_mode, sort_compare)
+    plot.read(params)
     filters.read(params)
   }
   bind_url_params(read_url_params, () => [
     [`model`, selected_key, default_selected_key],
     [`model_sort`, sort_mode, default_sort_mode],
-    [`x`, scatter_x, default_scatter_x],
-    [`y`, scatter_y, default_scatter_y],
-    ...sort_url_entries(table_sort, default_table_sort),
+    ...plot.url_entries,
     ...filters.url_entries,
   ])
 
@@ -124,7 +116,7 @@
   const github_src_url = `https://github.com/janosh/matbench-discovery/blob/main/matbench_discovery`
 </script>
 
-<h1>MLFF Phonon Modeling Metrics</h1>
+<h1 id="mlff-phonon-modeling-metrics">MLFF Phonon Modeling Metrics</h1>
 
 <div class="task-intro">
   <div>
@@ -155,7 +147,7 @@
   <a href="{github_src_url}/metrics/phonons.py">metric evaluation</a>.
 </blockquote>
 
-<h2>Leaderboard</h2>
+<h2 id="leaderboard">Leaderboard</h2>
 <p>
   κ failed is the fraction of predictions whose κ<sub>SRME</sub> was censored to 2 because
   of imaginary modes, broken symmetry, or invalid conductivity data. A valid κ<sub
@@ -166,14 +158,14 @@
   <MetricsTable
     model_filter={has_phonon_metrics}
     col_filter={(col) => visible_cols[col.key] ?? true}
-    bind:sort={table_sort}
+    bind:sort={plot.sort}
     {filters}
   />
 </section>
 
-<h2>
-  Model Comparison: {@html scatter_axis_label(scatter_y)} vs {@html scatter_axis_label(
-    scatter_x,
+<h2 id="model-comparison">
+  Model Comparison: {@html scatter_axis_label(plot.y)} vs {@html scatter_axis_label(
+    plot.x,
   )}
 </h2>
 <p>
@@ -186,8 +178,8 @@
 <DynamicScatter
   models={ACTIVE_MODELS}
   model_filter={has_phonon_metrics}
-  bind:x_key={scatter_x}
-  bind:y_key={scatter_y}
+  bind:x_key={plot.x}
+  bind:y_key={plot.y}
   style="height: 800px"
   point_events={{
     onclick: ({ point }) => {
@@ -199,19 +191,18 @@
   }}
 />
 
-<h2>Model Inspector</h2>
+<h2 id="model-inspector">Model Inspector</h2>
 {#if selected_model}
   <label class="kappa-model-select">
     View model:
-    <ModelSelect
+    <MultiSelect
       options={model_options}
       min_select={1}
-      max_select={1}
+      mode="single"
       style="width: 32em; max-width: 100%; border: 1px solid var(--border)"
-      bind:selected={
-        () => model_options.filter((option) => option.value === selected_key),
-        (selected_options) => {
-          const selected_option = selected_options[0]
+      bind:value={
+        () => model_options.find((option) => option.value === selected_key) ?? null,
+        (selected_option) => {
           if (selected_option) selected_key = String(selected_option.value)
         }
       }

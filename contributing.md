@@ -2,11 +2,11 @@
 
 ## 🔨 &thinsp; Installation
 
-Clone [the repo](https://github.com/janosh/matbench-discovery) and install `matbench-discovery` into your Python environment:
+In an activated Python 3.14+ virtual environment, clone [the repo](https://github.com/janosh/matbench-discovery) and install `matbench-discovery`:
 
 ```zsh
 git clone https://github.com/janosh/matbench-discovery --depth 1
-pip install -e ./matbench-discovery
+uv pip install -e ./matbench-discovery
 ```
 
 There's also a [PyPI package](https://pypi.org/project/matbench-discovery) for faster installation if you don't need the latest code changes (unlikely if you're planning to submit a model since the benchmark is under active development).
@@ -295,6 +295,8 @@ For a full contiguous Slurm discovery or kappa array, the runner can infer shard
 
 The MD runner's `--write-yaml` records model-level metrics under `metrics.md` and writes the per-system predictions to `<yyyy-mm-dd>-md-metrics.csv.gz`. Public runs compute the observable metrics only; energy/force RMSEs are maintainer-computed private-label diagnostics and are not required in external submissions. Upload generated artifacts to Figshare (or similar) and set their download URLs under the corresponding YAML `pred_file.url` fields — see [Step 3](#step-3-upload-results-files-to-figshare-or-similar) for the upload conventions.
 
+For parallel MD runs, aggregate one selected run directory with `uv run scripts/evals/md.py --models <model_key> --md-run-dir <run_directory>`. Missing, duplicate, or unexpected systems abort the update. Without `--md-run-dir`, the evaluator only recomputes the YAML's declared prediction and preserves its download URL and checksums; `--overwrite` does not select another source.
+
 The `Model` enum is generated during ingestion from each model YAML's required `model_key`; do not edit [`matbench_discovery/enums.py`](https://github.com/janosh/matbench-discovery/blob/main/matbench_discovery/enums.py) in submission PRs. Models with `lifecycle: aborted` are omitted, while `Model.active()` selects models with `lifecycle: active`.
 
 > [!WARNING]
@@ -371,7 +373,7 @@ Calculator changes may ship with their model YAML. Changes to payload-generating
 - Roster drift fails `tests/site/test_fig_payloads.py`'s coverage tests. After adding or updating an active model, run `uv run --with-editable . scripts/ingest_model.py <model_key> --payloads-only` to splice its freshly computed entries into the committed payloads. After removing, aborting, deprecating, or superseding a model, omit the model key and run `uv run --with-editable . scripts/ingest_model.py --payloads-only --full-roster` to rebuild payloads from the full active roster.
 - The `model-pr-guard` check fails any PR that changes payload-generating code without also updating its committed outputs (`site/src/figs`, route-local JSON, or parity manifests): regenerate multi-model JSONL locally with `uv run --with-editable . scripts/ingest_model.py --payloads-only --full-roster`, or add the `payloads-unchanged` label for output-neutral refactors.
 - Parity generators are separate because their large assets live on the GitHub release. Run `MBD_AUTO_DOWNLOAD_FILES=true uv run --with-editable . site/scripts/generate-energy-parity-assets.py` and `MBD_AUTO_DOWNLOAD_FILES=true uv run --with-editable ".[phonons]" site/scripts/generate-kappa-parity-assets.py`, publish the generated files with `uv run --with-editable . scripts/ingest_model.py --publish-parity`, then commit both manifests.
-- Model-independent data-page payloads and route-local element counts are owned by `scripts/export_data_fig_payloads.py`. Run it after changing that script or `matbench_discovery/data_figs.py`; it requires the local `data/mp/2022-09-16-mp-trj-summary.json.bz2` cache. If absent, regenerate that cache from the extXYZ source with `python data/mp/eda_mp_trj.py`.
+- Model-independent data-page payloads and route-local element counts are owned by `scripts/export_data_fig_payloads.py`. Run it after changing that script or `matbench_discovery/data_figs.py`; it requires the local `data/mp/2022-09-16-mp-trj-summary.json.bz2` cache. If absent, regenerate that cache from the extXYZ source with `uv run data/mp/eda_mp_trj.py`.
 
 Maintainer notes: ingestion requires the repo secrets `SITE_FIGS_PAT` (classic PAT with `public_repo` scope, used to push to fork branches) and `FIGSHARE_TOKEN` (archival uploads). Re-trigger by re-applying the label, or run `uv run --with-editable . scripts/ingest_model.py <model_key> --archive` locally.
 

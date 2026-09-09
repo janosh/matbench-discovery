@@ -1,5 +1,5 @@
 <script>
-  import { data_files } from '$lib'
+  import data_files from '$pkg/data-files.yml'
 </script>
 
 ## 📙 &thinsp; Downloading Data Files

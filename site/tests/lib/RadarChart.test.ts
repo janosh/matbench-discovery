@@ -1,4 +1,4 @@
-import { MODELS } from '$lib'
+import { MODELS, update_models_cps } from '$lib/models.svelte'
 import RadarChart from '$lib/plot/RadarChart.svelte'
 import app_css from '../../src/app.css?raw'
 import {
@@ -8,7 +8,6 @@ import {
   DEFAULT_CDS_CONFIG,
 } from '$lib/combined-scores.svelte'
 import { ALL_METRICS } from '$lib/labels'
-import { update_models_cps } from '$lib/models.svelte'
 import { flushSync } from 'svelte'
 import { describe, expect, it, vi } from 'vitest'
 import { doc_query, mount } from '../index'

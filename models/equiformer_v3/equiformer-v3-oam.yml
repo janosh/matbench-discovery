@@ -183,3 +183,55 @@ metrics:
       κ_failure_rate: 0.0
       imaginary_mode_rate: 0.0
       spectrum_w1: 0.0649
+  diatomics:
+    pred_file:
+      name: models/equiformer_v3/equiformer-v3-oam/2026-09-12-diatomics.json.gz
+      size: 540818
+      md5: 97cdbeb8239dd444c6fc8fbc8e5663a6
+      url: https://figshare.com/files/68484277
+    hardware: NVIDIA H200
+    run_time_sec: 621.84
+    max_rss_gb: 2.237
+    max_gpu_mem_gb: 0.327
+    excluded_formula_reasons: {}
+    pbe_wall_dist_mae: 0.5899
+    pbe_energy_mae: 1.838
+    pbe_bond_length_error: 0.6892
+    pbe_well_depth_error: 2.399
+    pbe_vib_freq_error: 229.1
+    tortuosity: 1.296
+    energy_diff_flips: 7.103
+    energy_jump: 14.25
+    force_flips: 7.115
+    force_total_variation: 562.4
+    force_jump: 641.9
+    pbe_force_mae: 4.191
+    pbe_vib_freq_coverage:
+      n_valid: 68
+      n_eligible: 73
+      failed_elements:
+      - Cs
+      - K
+      - Rb
+      - Sr
+      - V
+      missing_elements: []
+  md:
+    pred_file:
+      name: models/equiformer_v3/equiformer-v3-oam/2026-09-12-md-metrics.csv.gz
+      size: 3698
+      md5: 6d79e3f527f56003517e39b9bf196fef
+      url: https://figshare.com/files/68487184
+    hardware: NVIDIA H200
+    run_time_sec: 173945.84 # s
+    max_rss_gb: 2.868 # GB
+    max_gpu_mem_gb: 39.208 # GB
+    energy_rmse: 0.4413 # meV/atom
+    force_rmse: 42.976 # meV/Å
+    rdf_error: 3.2709 # %
+    adf_error: 1.3855 # %
+    vdos_error: 21.8482 # %
+    pressure_mae: 0.8054 # GPa
+    pressure_wasserstein: 0.8108 # GPa
+    pressure_error: 41.5239 # %
+    n_systems: 17 # count

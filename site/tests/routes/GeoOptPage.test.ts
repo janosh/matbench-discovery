@@ -1,7 +1,8 @@
 import spg_sankeys from '$figs/spg-sankeys.jsonl'
 import struct_rmsd_cdf from '$figs/struct-rmsd-cdf.jsonl'
 import sym_ops_diff from '$figs/sym-ops-diff-bar.jsonl'
-import { by_benchmark_added_desc, MODELS } from '$lib'
+import { by_benchmark_added_desc } from '$lib'
+import { MODELS } from '$lib/models.svelte'
 import GeoOptPage from '$routes/tasks/geo-opt/+page.svelte'
 import { describe, expect, it } from 'vitest'
 import {
@@ -91,19 +92,23 @@ describe(`Geo Opt Task Page`, () => {
     )
     if (!shared_model) throw new Error(`No model shared by all geo-opt payloads`)
     const { model_key, label } = shared_model
-    await mount_with_url(GeoOptPage, `http://localhost/tasks/geo-opt?models=${model_key}`)
+    await mount_with_url(
+      GeoOptPage,
+      `http://localhost/tasks/geo-opt?models=unknown,${model_key},${model_key}`,
+    )
 
     expect(selected_text()).toContain(label_by_model_key.get(model_key) ?? label)
     expect(cdf_labels()).toStrictEqual([label])
     expect(histogram_labels()).toStrictEqual([label])
     expect(sankey_labels()).toStrictEqual([label])
+    expect(new URL(location.href).searchParams.get(`models`)).toBe(model_key)
   })
 
-  it(
-    `keeps empty states for unselected aggregate diagnostics`,
+  it.each([``, `unknown`])(
+    `keeps empty states for aggregate diagnostics with models=%s`,
     { timeout: 30_000 },
-    async () => {
-      await mount_with_url(GeoOptPage, `http://localhost/tasks/geo-opt?models=`)
+    async (models) => {
+      await mount_with_url(GeoOptPage, `http://localhost/tasks/geo-opt?models=${models}`)
 
       expect(document.querySelectorAll(`.empty-note`)).toHaveLength(3)
       expect(document.querySelector(`.rmsd-cdf`)).toBeNull()

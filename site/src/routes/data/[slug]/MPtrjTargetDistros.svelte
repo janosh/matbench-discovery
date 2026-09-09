@@ -1,10 +1,15 @@
 <script lang="ts">
   import mp_trj_hists from '$figs/mp-trj-hists.json.gz'
+  import data_files from '$pkg/data-files.yml'
   import { series_blue } from '$lib/fig-helpers'
   import { BarPlot } from 'matterviz/plot'
   import MPtrjElemCountsPtable from './MPtrjElemCountsPtable.svelte'
   import MpTrjNSitesHist from './MpTrjNSitesHist.svelte'
-  import MPtrjTargetCounts from './mptrj-target-counts.md'
+
+  const mp_trj_data = data_files.mp_trj_original
+  if (!mp_trj_data || typeof mp_trj_data === `string`) {
+    throw new Error(`mp_trj_original not found in data-files.yml`)
+  }
 
   // per-target presentation: title, x label, and whether the count axis needs
   // arcsinh compression (log-like but keeps a valid 0 baseline for bars)
@@ -26,7 +31,8 @@
   ] as const
 </script>
 
-<MPtrjTargetCounts />
+<h2 id="target-distributions">Target Distributions</h2>
+{@html mp_trj_data.html}
 
 <ul>
   {#each targets as { key, title, x_label, arcsinh } (key)}
@@ -45,12 +51,12 @@
     </li>
   {/each}
   <li>
-    <h3>Number of Sites</h3>
+    <h3 id="number-of-sites">Number of Sites</h3>
     <MpTrjNSitesHist style="height: 300px; width: 100%; max-width: 700px" />
   </li>
 </ul>
 
-<h2>Elemental Prevalence</h2>
+<h2 id="elemental-prevalence">Elemental Prevalence</h2>
 
 <MPtrjElemCountsPtable />
 

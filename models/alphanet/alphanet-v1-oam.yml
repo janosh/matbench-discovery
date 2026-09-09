@@ -124,6 +124,11 @@ metrics:
     force_total_variation: 188.6
     force_jump: 4.378
     pbe_force_mae: 1.031
+    pbe_vib_freq_coverage:
+      n_valid: 73
+      n_eligible: 73
+      failed_elements: []
+      missing_elements: []
   discovery:
     pred_file:
       name: models/alphanet/alphanet-v1-oam/2025-07-24-discovery.csv.gz

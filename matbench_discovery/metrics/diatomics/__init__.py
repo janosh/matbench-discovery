@@ -9,7 +9,7 @@ https://huggingface.co/spaces/atomind/mlip-arena, respectively.
 import gzip
 import json
 from dataclasses import dataclass, field
-from typing import Any, Self
+from typing import Any, Self, TypedDict
 
 import numpy as np
 from ase.data import atomic_numbers, covalent_radii, vdw_alvarez
@@ -41,7 +41,17 @@ from matbench_discovery.metrics.diatomics.force import (
     calc_force_total_variation,
 )
 
-DiatomicsYamlValue = str | float | dict[str, str] | FileRef | None
+
+class VibFreqCoverage(TypedDict):
+    """Fit coverage over a model-independent set of eligible reference curves."""
+
+    n_valid: int
+    n_eligible: int
+    failed_elements: list[str]
+    missing_elements: list[str]
+
+
+DiatomicsYamlValue = str | float | dict[str, str] | FileRef | VibFreqCoverage | None
 # Elements absent from the Materials Project (MP covers 89 elements: H-Pu minus these
 # five), and hence from MPtrj/OMat24-derived training data. Models trained on MP data
 # cannot predict them, so diatomic metrics skip them for every model (and the runner
@@ -432,50 +442,78 @@ def calc_diatomic_metrics(
     return results
 
 
+def calc_vib_freq_coverage(
+    ref_curves: DiatomicCurves,
+    pred_curves: DiatomicCurves,
+    metrics: dict[str, dict[str, float]],
+) -> VibFreqCoverage:
+    """Count valid, failed/excluded and missing fits against reference-only eligibility.
+
+    Eligibility uses each reference's full evaluation window, never a model's grid or
+    supported elements. Low-quality, unbound and non-MP references are excluded for all
+    models. The supplied metrics must be computed with default frequency-fit settings
+    and have model-specific exclusions applied, matching the published finite mean.
+    """
+    eligible = set()
+    excluded_refs = NON_MP_ELEMENTS | find_low_quality_dft_refs(ref_curves)
+    for element, curve in ref_curves.homo_nuclear.items():
+        if element in excluded_refs or len(curve.distances) < 3:
+            continue
+        lower, upper = eval_window(element, float(curve.distances.max()))
+        mask = (curve.distances >= lower) & (curve.distances <= upper)
+        distances, energies = curve.distances[mask], curve.energies[mask]
+        if len(distances) >= 3 and np.isfinite(
+            calc_pbe_vib_freq_error(element, distances, energies, distances, energies)
+        ):
+            eligible.add(element)
+    valid = {
+        element
+        for element, values in metrics.items()
+        if np.isfinite(values.get(MbdKey.pbe_vib_freq_error, np.nan))
+    }
+    if invalid := valid - eligible:
+        raise ValueError(
+            "Frequency metrics include reference-ineligible elements: "
+            f"{sorted(invalid)}"
+        )
+    missing = eligible - pred_curves.homo_nuclear.keys()
+    return VibFreqCoverage(
+        n_valid=len(valid),
+        n_eligible=len(eligible),
+        failed_elements=sorted(eligible - valid - missing),
+        missing_elements=sorted(missing),
+    )
+
+
 def write_metrics_to_yaml(
     model: Model,
     metrics: dict[str, dict[str, float]],
     pred_file_path: str | None = None,
     run_metadata: dict[str, str | float | dict[str, str]] | None = None,
+    *,
+    vib_freq_coverage: VibFreqCoverage | None = None,
 ) -> dict[str, DiatomicsYamlValue]:
-    """Write diatomic metrics to model YAML file.
+    """Write finite per-element means and fit coverage to metrics.diatomics.
 
-    Args:
-        model (Model): Model to write metrics for.
-        metrics (dict[str, dict[str, float]]): Map of element symbols to dicts of
-            metric values.
-        pred_file_path (str | None): If given, record this path as
-            metrics.diatomics.pred_file. Absolute paths must be inside the repo and are
-            converted to repo-relative paths. Otherwise an existing pred_file is
-            preserved.
-        run_metadata (dict[str, str | float | dict[str, str]] | None): Extra run
-            fields (e.g. hardware, run_time_sec, pred_file_url). ``pred_file_url``
-            overrides or supplies the prediction file URL. A recompute without
-            run_metadata preserves existing values.
+    Recomputing the declared prediction retains its file reference and run metadata.
+    Supplying pred_file_path starts a new run, discarding old costs and file metadata
+    even at the same filename. Absolute paths must lie inside the repository.
+    run_metadata can supply costs, excluded_formula_reasons and pred_file_url.
 
-    Returns:
-        dict[str, DiatomicsYamlValue]: The metrics.diatomics block written (file refs
-            and run metadata first, then metric means across all elements).
+    Return the complete written block, with provenance before the metric means.
+    Absent metrics and vib_freq_coverage are removed, including on all-nonfinite input.
     """
-    # mean of each metric over the elements that have a finite value: skips elements
-    # whose windowed curve is degenerate (e.g. tortuosity is NaN for a flat curve), and
-    # drops a metric entirely if no element has a finite value rather than writing an
-    # invalid `.nan`. Union the keys since elements can differ (only some have a ref).
-    mean_metrics: dict[str, DiatomicsYamlValue] = {}
-    for metric in dict.fromkeys(
-        key for elem_metrics in metrics.values() for key in elem_metrics
-    ):
-        finite = [
-            val
-            for elem_metrics in metrics.values()
-            if (val := elem_metrics.get(metric)) is not None and np.isfinite(val)
-        ]
-        if finite:
-            mean_metrics[str(metric)] = float(f"{np.mean(finite):.4}")
+    # Collect finite values in one pass, retaining first-seen metric order even when
+    # an element's fit is degenerate. All-nonfinite metrics are omitted below.
+    metric_values: dict[str, list[float]] = {}
+    for elem_metrics in metrics.values():
+        for metric, value in elem_metrics.items():
+            values = metric_values.setdefault(str(metric), [])
+            if value is not None and np.isfinite(value):
+                values.append(value)
 
-    # carry over only recognized run metadata (it describes the source run, not the
-    # computed metrics, so it stays valid on recalculation)
-    existing = model.metrics.get("diatomics") or {}
+    # Only a recompute can reuse the recorded source metadata.
+    existing = (model.metrics.get("diatomics") or {}) if pred_file_path is None else {}
     run_metadata = run_metadata or {}
     block: dict[str, DiatomicsYamlValue] = {}
     existing_pred_file = existing.get("pred_file")
@@ -496,11 +534,14 @@ def write_metrics_to_yaml(
             val = existing.get(key)
         if val is not None:
             block[key] = val
-    block |= mean_metrics
+    block.update(
+        (metric, float(f"{np.mean(values):.4}"))
+        for metric, values in metric_values.items()
+        if values
+    )
+    if vib_freq_coverage is not None:
+        block["pbe_vib_freq_coverage"] = vib_freq_coverage
 
-    # preserve_existing=False so a recompute fully replaces the block, dropping
-    # deprecated metrics left in the YAML. This still runs when no finite metrics were
-    # produced, preventing stale metric values from surviving.
     update_yaml_file(
         model.yaml_path, "metrics.diatomics", block, preserve_existing=False
     )

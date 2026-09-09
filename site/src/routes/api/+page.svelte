@@ -10,7 +10,7 @@
   ).toSorted(([path_a], [path_b]) => path_a.localeCompare(path_b))
 </script>
 
-<h1 class="toc-exclude">API</h1>
+<h1 id="api" class="toc-exclude">API</h1>
 
 <Intro />
 

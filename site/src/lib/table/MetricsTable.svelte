@@ -1,5 +1,5 @@
 <script module lang="ts">
-  import type { SortState } from '$lib/url-state.svelte'
+  import type { SortState, UrlTableFilters } from '$lib/url-state.svelte'
 
   // the table's default sort; pages binding `sort` reuse this so URL sort params
   // are omitted when the table is at its resting state
@@ -10,15 +10,26 @@
 </script>
 
 <script lang="ts">
-  import { ModelRowMenu, OrgLogos, TableControls } from '$lib'
-  import { append_better_hint, metric_better_as } from '$lib/metrics'
-  import { mark_compared_rows, toggle_row_model } from '$lib/model-comparison.svelte'
-  import { make_table_filters } from '$lib/models.svelte'
-  import type { UrlTableFilters } from '$lib/url-state.svelte'
-  import type { DiscoverySet, Label, ModelData, SortDir, TableLabel } from '$lib/types'
-  import type { CellSnippetArgs, RowData } from 'matterviz'
-  import { HeatmapTable } from 'matterviz'
-  import { Icon } from 'svelte-widgets'
+  import { goto } from '$app/navigation'
+  import OrgLogos from '$lib/model/OrgLogos.svelte'
+  import TableControls from '$lib/table/TableControls.svelte'
+  import {
+    append_better_hint,
+    metric_better_as,
+    missing_metric_reason,
+  } from '$lib/metrics'
+  import {
+    comparison,
+    mark_compared_rows,
+    row_model_key,
+    toggle_row_model,
+  } from '$lib/model-comparison.svelte'
+  import { make_table_filters, MODELS } from '$lib/models.svelte'
+  import type { DiscoverySet, Label, ModelData, SortDir } from '$lib/types'
+  import type { CellSnippet, CellSnippetArgs, Column, RowData } from 'matterviz/table'
+  import { HeatmapTable, is_invalid } from 'matterviz/table'
+  import { format_num } from 'matterviz/labels'
+  import { ActionMenu, type CmdAction, Icon } from 'svelte-widgets'
   import {
     Code,
     Download,
@@ -28,9 +39,7 @@
     Unavailable,
   } from 'svelte-widgets/icons'
   import { click_outside } from 'svelte-widgets/attachments'
-  import { untrack } from 'svelte'
   import type { HTMLAttributes } from 'svelte/elements'
-  import { SvelteMap, SvelteSet } from 'svelte/reactivity'
   import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from '../labels'
   import { assemble_row_data } from '../metrics'
 
@@ -43,11 +52,46 @@
     [`pr_url`, `View pull request`, PullRequest],
     [`checkpoint`, `Download model checkpoint`, Download],
   ] as const
+  const format_element_count = (elements: string[]) =>
+    `${elements.length}${elements.length ? ` (${elements.join(`, `)})` : ``}`
+  const cells: Record<string, CellSnippet> = {
+    ...Object.fromEntries(
+      Object.values(ALL_METRICS).map(({ key }) => [key, metric_cell]),
+    ),
+    Links: links_cell,
+    Org: affiliation_cell,
+  }
+
+  const { model_name, training_sets, targets, benchmark_added, links } = METADATA_COLS
+  const { checkpoint_license, code_license, org } = METADATA_COLS
+  const { graph_construction_radius, model_params } = HYPERPARAMS
+  const heatmap_disabled_cols = new Set([
+    training_sets.key,
+    graph_construction_radius.key,
+    benchmark_added.key,
+    model_params.key,
+  ])
+
+  const default_columns = [
+    model_name,
+    ...Object.values(ALL_METRICS),
+    model_params,
+    targets,
+    benchmark_added,
+    links,
+    graph_construction_radius,
+    checkpoint_license,
+    code_license,
+    training_sets,
+    org,
+  ]
 
   let {
     discovery_set = $bindable(`unique_prototypes`),
     model_filter = $bindable(() => true),
     col_filter = $bindable(() => true),
+    column_labels = default_columns,
+    show_row_numbers = true,
     filters = make_table_filters(),
     column_order = $bindable([]),
     sort = $bindable({ ...DEFAULT_TABLE_SORT }),
@@ -56,6 +100,8 @@
     discovery_set?: DiscoverySet
     model_filter?: (model: ModelData) => boolean
     col_filter?: (col: Label) => boolean
+    column_labels?: Label[]
+    show_row_numbers?: boolean
     filters?: UrlTableFilters
     column_order?: string[]
     sort?: { column: string; dir: SortDir }
@@ -63,89 +109,30 @@
   // toggled from TableControls; no page binds it, so plain local state
   let show_selected_only = $state(false)
 
-  const { model_name, training_sets, targets, benchmark_added, links } = METADATA_COLS
-  const { checkpoint_license, code_license, org } = METADATA_COLS
-  const { graph_construction_radius, model_params } = HYPERPARAMS
-  const pinned_col_rank = (col: Label): number => (col.label === model_name.label ? 0 : 1)
-  const heatmap_disabled_cols = new SvelteSet([
-    training_sets.key,
-    graph_construction_radius.key,
-    benchmark_added.key,
-    model_params.key,
-  ])
-
   let pred_files_dropdown = $state<PredFilesDropdown | null>(null)
 
-  // Reuse one row object per model across rebuilds: HeatmapTable keys its {#each}
-  // by row-object identity, so its flip animation only runs when the SAME objects
-  // reorder. Without this cache, every CPS/CMDS weight change rebuilds all rows and
-  // re-sorts happen as delete+recreate with no row-movement animation. Cached rows
-  // must be $state proxies: in-place updates on plain objects wouldn't trigger
-  // fine-grained re-renders of changed cells (same object identity = no signal).
-  const row_cache = new SvelteMap<string, MetricsRow>()
-  function build_rows(): MetricsRow[] {
-    const fresh_rows = mark_compared_rows(
+  let metrics_data = $derived(
+    mark_compared_rows(
       assemble_row_data(discovery_set, model_filter, filters.matches),
       show_selected_only,
-    )
-    // cache access is untracked so callers don't subscribe to the very row signals
-    // this merge writes (which would re-trigger them and double-render the table)
-    return untrack(() =>
-      fresh_rows.map((row) => {
-        const cached = row_cache.get(row.model_key)
-        if (!cached) {
-          const proxied = $state(row) // deep proxy for fine-grained cell updates
-          row_cache.set(row.model_key, proxied)
-          return proxied
-        }
-        // blank keys absent from the fresh row (e.g. after a discovery-set switch);
-        // undefined renders/sorts like a missing key and avoids dynamic `delete`
-        for (const key of Object.keys(cached)) {
-          if (!(key in row)) Reflect.set(cached, key, undefined)
-        }
-        return Object.assign(cached, row)
-      }),
-    )
-  }
-  // initialized eagerly (so SSR/prerendered HTML isn't empty), then synced by
-  // $effect.pre. NOT a $derived: the cache merge writes $state proxies, and state
-  // writes during derived evaluation schedule a second render flush -- the table then
-  // reconciled twice per weight change and the second pass cancelled the first's flip
-  // animations (rows jumped instantly). $effect.pre settles everything in one flush.
-  let metrics_data = $state(build_rows())
-  $effect.pre(() => {
-    metrics_data = build_rows()
-  })
+    ),
+  )
   let columns = $derived(
-    [
-      ...Object.values(ALL_METRICS),
-      model_name,
-      model_params,
-      targets,
-      benchmark_added,
-      links,
-      graph_construction_radius,
-      checkpoint_license,
-      code_license,
-      training_sets,
-      org,
-    ]
-      .map((col): TableLabel => {
-        const better = col.better ?? metric_better_as(col.label) ?? undefined
-        const visible = col.visible !== false && col_filter(col)
-        return {
-          ...col,
-          better,
+    column_labels.map((col): Column => {
+      const better = col.better ?? metric_better_as(col.label) ?? undefined
+      return {
+        ...col,
+        id: col.group ? `${col.key} (${col.group})` : col.key,
+        cell: cells[col.key],
+        ...(column_labels === default_columns && {
           color_scale: heatmap_disabled_cols.has(col.key) ? null : col.color_scale,
-          description: append_better_hint(col, better),
-          visible,
-          // tuck the Model cells (always adjacent to the rank column, being pinned
-          // first) against the rank numbers
           ...(col === model_name && { style: `padding-left: 0;${col.style ?? ``}` }),
-        }
-      })
-      // Keep the sticky model column first, preserving definition order for the rest.
-      .toSorted((col1, col2) => pinned_col_rank(col1) - pinned_col_rank(col2)),
+        }),
+        better,
+        description: append_better_hint(col, better),
+        visible: col.visible !== false && col_filter(col),
+      }
+    }),
   )
 
   type ButtonMouseEvent = MouseEvent & { currentTarget: HTMLButtonElement }
@@ -161,6 +148,49 @@
     }
   }
   const close_dropdown = () => (pred_files_dropdown = null)
+
+  let at = $state<{ x: number; y: number } | null>(null)
+  let model_key = $state(``)
+  let model = $derived(MODELS.find((md) => md.model_key === model_key))
+  let selected = $derived(comparison.keys.has(model_key))
+
+  let actions: CmdAction[] = $derived.by(() => {
+    if (!model) return []
+    const { model_name: name } = model
+    const n_selected = comparison.keys.size
+    return [
+      {
+        id: `toggle`,
+        label: selected ? `Remove ${name} from comparison` : `Add ${name} to comparison`,
+        action: () => comparison.toggle(model_key),
+      },
+      {
+        id: `open`,
+        label:
+          selected && n_selected > 1
+            ? `Compare ${n_selected} selected models`
+            : `Compare ${name} with…`,
+        action: () => comparison.open_with(model_key),
+      },
+      {
+        id: `page`,
+        label: `Open ${name} model page`,
+        action: () => void goto(`/models/${model_key}`),
+      },
+    ]
+  })
+
+  function open_menu(event: MouseEvent) {
+    // Links, buttons and inputs keep the browser's own menu (open in new tab, copy link).
+    const target = event.target instanceof Element ? event.target : null
+    if (!target || target.closest(`a, button, input, select`)) return
+    const key = row_model_key(target.closest(`tbody tr`))
+    if (!key) return
+    event.preventDefault()
+    event.stopPropagation() // capture phase: preempts HeatmapTable's column menu
+    model_key = key
+    at = { x: event.clientX, y: event.clientY }
+  }
 </script>
 
 <svelte:window
@@ -175,6 +205,33 @@
 {#snippet affiliation_cell({ row }: CellSnippetArgs)}
   {@const metrics_row = row as MetricsRow}
   <OrgLogos org_logos={metrics_row.org_logos} authors={metrics_row.authors} />
+{/snippet}
+
+{#snippet metric_cell({ row, col, val }: CellSnippetArgs)}
+  {@const coverage =
+    col.key === ALL_METRICS.pbe_vib_freq_error.key
+      ? (row as MetricsRow).model.metrics?.diatomics?.pbe_vib_freq_coverage
+      : undefined}
+  {#if coverage}
+    <span
+      data-title={`Valid fits: ${coverage.n_valid}/${coverage.n_eligible} reference-eligible elements. No valid fit: ${format_element_count(coverage.failed_elements)}. Unavailable curves: ${format_element_count(coverage.missing_elements)}.`}
+    >
+      {typeof val === `number` && !is_invalid(val)
+        ? format_num(val, col.format ?? `.3f`)
+        : `n/a`}
+      <small style="font-weight: 400; opacity: 0.75;"
+        >· {coverage.n_valid}/{coverage.n_eligible}</small
+      >
+    </span>
+  {:else if is_invalid(val)}
+    <span data-title={missing_metric_reason((row as MetricsRow).model, col as Label)}
+      >n/a</span
+    >
+  {:else if typeof val === `number`}
+    {format_num(val, col.format ?? `.3f`)}
+  {:else}
+    {val}
+  {/if}
 {/snippet}
 
 {#snippet links_cell({ val }: CellSnippetArgs)}
@@ -200,29 +257,36 @@
   </button>
 {/snippet}
 
-<ModelRowMenu>
-  <HeatmapTable
-    data={metrics_data as RowData[]}
-    {columns}
-    bind:sort
-    special_cells={{
-      Links: links_cell,
-      Org: affiliation_cell,
-    }}
-    show_row_numbers
-    default_num_format=".3f"
-    bind:show_heatmap={filters.show_heatmap}
-    bind:column_order
-    on_row_double_click={toggle_row_model}
-    {...rest}
-    class={[`leaderboard`, rest.class]}
-    root_style={METRICS_TABLE_ROOT_STYLE}
-  >
-    {#snippet controls()}
-      <TableControls bind:columns bind:show_selected_only {filters} />
-    {/snippet}
-  </HeatmapTable>
-</ModelRowMenu>
+<HeatmapTable
+  data={metrics_data as RowData[]}
+  row_key="model_key"
+  {columns}
+  bind:sort
+  {show_row_numbers}
+  default_num_format=".3f"
+  bind:show_heatmap={filters.show_heatmap}
+  bind:column_order
+  export_data={{ formats: [`csv`], filename: `matbench-discovery-${discovery_set}` }}
+  on_row_double_click={toggle_row_model}
+  {...rest}
+  oncontextmenucapture={open_menu}
+  class={[`leaderboard`, rest.class]}
+  root_style={METRICS_TABLE_ROOT_STYLE}
+>
+  {#snippet controls()}
+    <TableControls bind:columns bind:show_selected_only {filters} />
+  {/snippet}
+</HeatmapTable>
+
+<!-- Press dismissal prevents the right-click's mouseup from immediately closing the menu. -->
+<ActionMenu
+  {actions}
+  bind:at
+  trigger="none"
+  dismiss={{ dismiss_on: `press` }}
+  aria-label="Model row actions"
+  style="font-size: 12px; --action-menu-padding: 0; --action-menu-item-padding: 3pt 8pt"
+/>
 
 {#if pred_files_dropdown}
   {@const { x, y, name, files } = pred_files_dropdown}
@@ -232,7 +296,7 @@
     {style}
     {@attach click_outside({ callback: close_dropdown })}
   >
-    <h4>Files for {name}</h4>
+    <h4 id="files-for">Files for {name}</h4>
     <ol>
       {#each files as { name: file_name, url } (url)}
         <li>

@@ -151,6 +151,11 @@ metrics:
     force_total_variation: 81.45
     force_jump: 18.66
     pbe_force_mae: 2.886
+    pbe_vib_freq_coverage:
+      n_valid: 73
+      n_eligible: 73
+      failed_elements: []
+      missing_elements: []
   discovery:
     pred_file:
       name: models/nequix/nequix-mp-1-pft/2026-01-12-discovery.csv.gz

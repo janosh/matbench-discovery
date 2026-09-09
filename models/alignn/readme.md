@@ -14,8 +14,8 @@ The changes in `alignn/alignn-2023.01.10.patch` were applied to ALIGNN version [
 To reproduce the `alignn` package state used for this submission, run
 
 ```bash
-pip install alignn==2023.01.10
-alignn_dir=$(python -c "import alignn; print(alignn.__path__[0])")
+uv pip install alignn==2023.01.10
+alignn_dir=$(uv run python -c "import alignn; print(alignn.__path__[0])")
 cd $alignn_dir
 git apply /path/to/models/alignn/alignn/alignn-2023.01.10.patch
 ```

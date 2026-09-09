@@ -100,6 +100,13 @@ metrics:
     force_total_variation: 158.4
     force_jump: 18.93
     pbe_force_mae: 2.088
+    pbe_vib_freq_coverage:
+      n_valid: 71
+      n_eligible: 73
+      failed_elements:
+      - Pa
+      - Se
+      missing_elements: []
   discovery:
     pred_file:
       name: models/mace/mace-mp-0/2023-12-11-discovery.csv.gz

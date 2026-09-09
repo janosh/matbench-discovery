@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { arr_to_str, DATASETS, format_date } from '$lib'
+  import DATASETS from '$data/datasets.yml'
+  import { arr_to_str, format_date } from '$lib'
   import { format_relative_time, title_case } from '$lib/labels'
-  import { format_num } from 'matterviz'
+  import { format_num } from 'matterviz/labels'
   import { Icon } from 'svelte-widgets'
   import {
     Calendar,
@@ -104,13 +105,13 @@
 </section>
 
 <section class="description">
-  <h2>Description</h2>
+  <h2 id="description">Description</h2>
   <p>{@html dataset.description_html}</p>
 </section>
 
 {#if dataset.temperature_range || dataset.pressure_range}
   <section class="conditions">
-    <h2>Conditions</h2>
+    <h2 id="conditions">Conditions</h2>
     <ul>
       {#if dataset.temperature_range}
         <li>
@@ -128,7 +129,7 @@
 
 {#if dataset.contains}
   <section class="derived-from">
-    <h2>Derived From</h2>
+    <h2 id="derived-from">Derived From</h2>
     <ol>
       {#each dataset.contains as source (source)}
         {@const contained_data = DATASETS[source]}
@@ -142,7 +143,7 @@
 
 {#if dataset.method}
   <section class="method-info">
-    <h2>Methodology</h2>
+    <h2 id="methodology">Methodology</h2>
     <ul>
       <li>
         Method: <strong>{arr_to_str(dataset.method)}</strong>
@@ -160,7 +161,7 @@
 
 {#if dataset.created_by && dataset.created_by.length > 0}
   <section>
-    <h2>Authors</h2>
+    <h2 id="authors">Authors</h2>
     <ol>
       {#each dataset.created_by as person (person.name)}
         <li>

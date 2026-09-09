@@ -185,3 +185,50 @@ metrics:
       κ_failure_rate: 0.0
       imaginary_mode_rate: 0.0
       spectrum_w1: 0.2244
+  diatomics:
+    pred_file:
+      name: models/orb/orb-v3/2026-09-12-diatomics.json.gz
+      size: 503407
+      md5: 218e3a4655384728fd0b851735145952
+      url: https://figshare.com/files/68484268
+    hardware: NVIDIA H200
+    run_time_sec: 124.83
+    max_rss_gb: 2.178
+    max_gpu_mem_gb: 0.232
+    excluded_formula_reasons: {}
+    pbe_wall_dist_mae: 0.1087
+    pbe_energy_mae: 0.5452
+    pbe_bond_length_error: 0.1517
+    pbe_well_depth_error: 0.3042
+    pbe_vib_freq_error: 35.36
+    tortuosity: 1.001
+    energy_diff_flips: 1.333
+    energy_jump: 0.112
+    force_flips: 1.345
+    force_total_variation: 210.1
+    force_jump: 25.47
+    pbe_force_mae: 1.347
+    pbe_vib_freq_coverage:
+      n_valid: 73
+      n_eligible: 73
+      failed_elements: []
+      missing_elements: []
+  md:
+    pred_file:
+      name: models/orb/orb-v3/2026-09-12-md-metrics.csv.gz
+      size: 3760
+      md5: 57f23ba73c57d7197a112a44bce826df
+      url: https://figshare.com/files/68484310
+    hardware: NVIDIA H200
+    run_time_sec: 16891.19 # s
+    max_rss_gb: 2.84 # GB
+    max_gpu_mem_gb: 1.608 # GB
+    energy_rmse: 0.7505 # meV/atom
+    force_rmse: 77.2683 # meV/Å
+    rdf_error: 3.6841 # %
+    adf_error: 1.4992 # %
+    vdos_error: 23.9754 # %
+    pressure_mae: 0.8089 # GPa
+    pressure_wasserstein: 0.8295 # GPa
+    pressure_error: 50.9602 # %
+    n_systems: 17 # count

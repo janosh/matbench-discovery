@@ -122,6 +122,13 @@ metrics:
     force_total_variation: 176.1
     force_jump: 14.08
     pbe_force_mae: 2.218
+    pbe_vib_freq_coverage:
+      n_valid: 71
+      n_eligible: 73
+      failed_elements:
+      - Rb
+      - Sr
+      missing_elements: []
   discovery:
     pred_file:
       name: models/eqv2/eqv2-s-dens-mp/2024-10-18-discovery.csv.gz

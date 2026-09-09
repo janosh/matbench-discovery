@@ -1,4 +1,4 @@
-import type { OrgLogo } from '$lib'
+import type { OrgLogo } from '$lib/types'
 import { Magnetic, Meta } from 'svelte-widgets/icons'
 import OrgLogos from '$lib/model/OrgLogos.svelte'
 import { flushSync, type ComponentProps } from 'svelte'
@@ -11,14 +11,14 @@ describe(`OrgLogos.svelte`, () => {
     src: `/logos/massachusetts-institute-of-technology.svg`,
   } satisfies OrgLogo
 
-  // mount, hover the preview, and return the resulting tooltip content element
-  const open_tooltip = async (
+  // mount, hover the preview, and return the resulting popover content element
+  const open_popover = async (
     props: ComponentProps<typeof OrgLogos>,
   ): Promise<HTMLElement> => {
     mount(OrgLogos, { target: document.body, props })
-    flushSync() // ensure the tooltip attachment effect has run before hovering
-    doc_query(`.org-preview`).dispatchEvent(new PointerEvent(`pointerover`))
-    return vi.waitFor(() => doc_query(`.custom-tooltip .tooltip-content`))
+    flushSync() // ensure the popover effect has run before hovering
+    doc_query(`.org-preview`).dispatchEvent(new MouseEvent(`mouseenter`))
+    return vi.waitFor(() => doc_query(`[role="dialog"]`))
   }
 
   it(`renders one preview logo per org (src + icon types)`, () => {
@@ -41,7 +41,7 @@ describe(`OrgLogos.svelte`, () => {
   })
 
   it(`shows grouped authors with escaped affiliations on hover`, async () => {
-    const { innerHTML } = await open_tooltip({
+    const { innerHTML } = await open_popover({
       org_logos: [mit_logo, { name: `FAIR at Meta`, icon: Meta }],
       authors: [
         { name: `Ada Lovelace`, affiliation: `Massachusetts Institute of Technology` },
@@ -65,8 +65,8 @@ describe(`OrgLogos.svelte`, () => {
     expect(innerHTML).toContain(`<svg`)
   })
 
-  it(`preserves stroked icon rendering in tooltip HTML`, async () => {
-    const content_el = await open_tooltip({
+  it(`preserves stroked icon rendering in popover HTML`, async () => {
+    const content_el = await open_popover({
       org_logos: [{ name: `Magnetic`, icon: Magnetic }],
     })
     const svg = doc_query(`svg`, content_el)

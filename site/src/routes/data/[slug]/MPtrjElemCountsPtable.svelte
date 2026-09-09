@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { data_files, PtableHeatmap } from '$lib'
+  import data_files from '$pkg/data-files.yml'
+  import PtableHeatmap from '$lib/PtableHeatmap.svelte'
   import type { ElementSymbol } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
 

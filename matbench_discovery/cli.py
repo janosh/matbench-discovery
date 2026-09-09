@@ -47,6 +47,10 @@ cli_parser.add_argument(
     help="Number of processes to use for parallel tasks.",
 )
 cli_parser.add_argument(
+    "--md-run-dir",
+    help="Combine MD metric CSVs from this directory instead of the declared file.",
+)
+cli_parser.add_argument(
     "--overwrite",
     action="store_true",
     help="Overwrite existing output files.",

@@ -1,6 +1,9 @@
-import { DATASETS, ModelCard, MODELS } from '$lib'
+import DATASETS from '$data/datasets.yml'
+import ModelCard from '$lib/model/ModelCard.svelte'
+import { ACTIVE_MODELS, MODELS } from '$lib/models.svelte'
 import { ALL_METRICS } from '$lib/labels'
-import { format_num } from 'matterviz'
+import { model_metric_ranks, RANKED_METRICS } from '$lib/rankings'
+import { format_num } from 'matterviz/labels'
 import type { ComponentProps } from 'svelte'
 import { describe, expect, it } from 'vitest'
 import { mount } from '../index'
@@ -10,10 +13,7 @@ describe(`ModelCard`, () => {
   if (!found_model) throw new Error(`Could not find mace-mp-0 model in MODELS`)
   const model = found_model
 
-  const metrics = ([`F1`, `DAF`, `κ_SRME`] as const).map((metric_key) => ({
-    ...ALL_METRICS[metric_key],
-    key: metric_key,
-  }))
+  const metrics = [ALL_METRICS.F1, ALL_METRICS.DAF, ALL_METRICS.κ_SRME]
 
   // Mount ModelCard with the shared model/metrics, overriding props per test
   const mount_card = (overrides: Partial<ComponentProps<typeof ModelCard>> = {}) =>
@@ -35,14 +35,15 @@ describe(`ModelCard`, () => {
 
       const header = document.querySelector(`h2`)
       expect(header?.textContent).toContain(`MACE`)
+      expect(header?.querySelector(`a`)?.getAttribute(`href`)).toBe(
+        `/models/${model.model_key}`,
+      )
+      expect(header?.querySelector(`button`)).toBeNull()
 
       const links = document.querySelectorAll<HTMLAnchorElement>(`nav a`)
       expect(links).toHaveLength(nav_link_count(model))
       expect(links[0].href).toBe(model.repo ?? ``)
-      // every card's compare button reads "Compare" but must name its model for AT users
-      expect(
-        document.querySelector(`nav button[aria-pressed]`)?.getAttribute(`aria-label`),
-      ).toBe(`Compare ${model.model_name}`)
+      expect(document.querySelector(`nav button`)).toBeNull()
       expect(document.body.textContent).toContain(`Added ${model.dates.benchmark_added}`)
       if (model.dates.paper_published) {
         expect(document.body.textContent).toContain(
@@ -52,11 +53,6 @@ describe(`ModelCard`, () => {
       expect(document.body.textContent).toContain(
         `${format_num(model.model_params, `.3~s`)} params`,
       )
-
-      // show_details defaults to false: no detail sections rendered
-      expect(
-        document.querySelectorAll(`section:not(.metrics):not(.metadata) h3`),
-      ).toHaveLength(0)
     })
 
     it(`handles missing optional fields gracefully`, () => {
@@ -94,11 +90,21 @@ describe(`ModelCard`, () => {
   })
 
   describe(`Metrics Display`, () => {
-    it(`displays metrics with correct formatting`, () => {
-      mount_card()
+    it(`displays formatted metrics with linked leaderboard ranks`, () => {
+      mount_card({ metrics: RANKED_METRICS })
 
       const metrics_lis = document.querySelectorAll(`.metrics li`)
-      expect(metrics_lis).toHaveLength(metrics.length)
+      expect(metrics_lis).toHaveLength(RANKED_METRICS.length)
+      expect(
+        [...document.querySelectorAll(`.metric-rank`)].map((link) => [
+          link.textContent?.trim(),
+          link.getAttribute(`href`),
+        ]),
+      ).toEqual(
+        model_metric_ranks(model.model_key, ACTIVE_MODELS, RANKED_METRICS).map(
+          ({ metric, rank, n_models }) => [`#${rank}/${n_models}`, metric.rank_href],
+        ),
+      )
 
       const f1_metric = [...metrics_lis].find((item) => item.textContent?.includes(`F1`))
       const f1_value = model.metrics?.discovery?.unique_prototypes?.F1
@@ -125,34 +131,7 @@ describe(`ModelCard`, () => {
 
       const metrics_li_strong = document.querySelectorAll(`.metrics li strong`)[0]
       expect(metrics_li_strong.textContent?.trim()).toBe(`n/a`)
-    })
-  })
-
-  describe(`Expandable Details`, () => {
-    it(`displays authors and package versions correctly`, () => {
-      const detail = `git+https://github.com/xvzemin/tace@81f65a4c188bd09cec8d1419388f7afdcc1b6fd0`
-      const model_with_locator: typeof model = {
-        ...model,
-        environment: {
-          ...model.environment,
-          dependencies: [`tace @ ${detail}`],
-        },
-      }
-      mount_card({ model: model_with_locator, show_details: true })
-
-      const author_li = document.querySelector(`section:first-child ul li`)
-      expect(author_li?.textContent?.trim()).toContain(model.authors[0].name)
-
-      const packages = [...document.querySelectorAll(`section:nth-child(2) li`)]
-      expect(packages).toHaveLength(1)
-      expect(packages[0]?.textContent).toContain(`tace`)
-      const link = packages[0]?.querySelector<HTMLAnchorElement>(`.dependency-detail`)
-      if (!link) throw new Error(`missing dependency detail link`)
-      const [leading, trailing] = link.querySelectorAll(`span`)
-      // happy-dom doesn't reflect aria-* attributes to element properties (ariaLabel)
-      expect(link.getAttribute(`aria-label`)).toBe(detail)
-      expect(leading?.textContent).toBe(detail.slice(0, -10))
-      expect(trailing?.textContent).toBe(detail.slice(-10))
+      expect(document.querySelectorAll(`.metric-rank`)).toHaveLength(0)
     })
   })
 })

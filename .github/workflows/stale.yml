@@ -1,6 +1,7 @@
 name: 'Close Stale Pull Requests'
 
 on:
+  workflow_dispatch:
   schedule:
     # Run every day at midnight UTC
     - cron: '0 0 * * *'

@@ -191,3 +191,50 @@ metrics:
       κ_failure_rate: 0.1262
       imaginary_mode_rate: 0.068
       spectrum_w1: 0.8002
+  diatomics:
+    pred_file:
+      name: models/bam/bam-mp-core/2026-09-12-diatomics.json.gz
+      size: 223016
+      md5: f9ee5c59c856144326829a36ead5f0c5
+      url: https://figshare.com/files/68484274
+    hardware: NVIDIA H200
+    run_time_sec: 499.2
+    max_rss_gb: 2.491
+    max_gpu_mem_gb: 0.483
+    excluded_formula_reasons: {}
+    pbe_wall_dist_mae: 0.2373
+    pbe_energy_mae: 1.325
+    pbe_bond_length_error: 0.3401
+    pbe_well_depth_error: 1.108
+    pbe_vib_freq_error: 82.57
+    tortuosity: 1.013
+    energy_diff_flips: 1.414
+    energy_jump: 0.08473
+    force_flips: 1.391
+    force_total_variation: 107.1
+    force_jump: 4.423
+    pbe_force_mae: 1.644
+    pbe_vib_freq_coverage:
+      n_valid: 73
+      n_eligible: 73
+      failed_elements: []
+      missing_elements: []
+  md:
+    pred_file:
+      name: models/bam/bam-mp-core/2026-09-12-md-metrics.csv.gz
+      size: 3630
+      md5: aeba40f14eaa8e254ed18aff55374cee
+      url: https://figshare.com/files/68484313
+    hardware: NVIDIA H200
+    run_time_sec: 80156.25 # s
+    max_rss_gb: 3.212 # GB
+    max_gpu_mem_gb: 13.974 # GB
+    energy_rmse: 1.302 # meV/atom
+    force_rmse: 124.0329 # meV/Å
+    rdf_error: 4.5838 # %
+    adf_error: 2.1025 # %
+    vdos_error: 26.8635 # %
+    pressure_mae: 0.8955 # GPa
+    pressure_wasserstein: 0.9023 # GPa
+    pressure_error: 61.2269 # %
+    n_systems: 17 # count

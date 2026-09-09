@@ -969,25 +969,6 @@ def test_calc_md_metrics_handles_all_nan_pressure() -> None:
     assert np.isnan(metrics["pressure_error"])
 
 
-def test_combine_per_system_metrics() -> None:
-    """Per-system frames concat into one frame indexed by system; reruns override."""
-    frames = [
-        pd.DataFrame({"system": ["sysA"], "rdf_error": [10.0]}),
-        pd.DataFrame({"system": ["sysB"], "rdf_error": [20.0]}),
-        # a rerun of sysA with a better value, later in the list -> must override
-        pd.DataFrame({"system": ["sysA"], "rdf_error": [5.0]}),
-    ]
-    df_md = md_metrics.combine_per_system_metrics(frames)
-    assert list(df_md.index) == ["sysB", "sysA"]  # sysA dedup'd to its last (rerun) row
-    assert df_md.loc["sysA", "rdf_error"] == 5.0
-    assert df_md.loc["sysB", "rdf_error"] == 20.0
-
-    with pytest.raises(ValueError, match="No per-system metric frames given"):
-        md_metrics.combine_per_system_metrics([])
-    with pytest.raises(ValueError, match="lack a 'system' column"):
-        md_metrics.combine_per_system_metrics([pd.DataFrame({"rdf_error": [10.0]})])
-
-
 def test_write_metrics_to_yaml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Metrics should be written under metrics.md with units and rounding."""
     yaml_path = tmp_path / "model.yml"
@@ -1025,8 +1006,29 @@ def test_write_metrics_to_yaml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
 
     # a later recompute from per-system CSVs lacking timing columns (e.g. legacy runs)
     # must preserve the recorded run provenance, not silently drop it
-    md_metrics.write_metrics_to_yaml(model, {"rdf_error": 11.0, "n_systems": 17})
+    recomputed = md_metrics.write_metrics_to_yaml(
+        model, {"rdf_error": 11.0, "n_systems": 17}
+    )
     text = yaml_path.read_text(encoding="utf-8")
-    assert "hardware: NVIDIA H200" in text
-    assert "run_time_sec: 4521.484" in text
+    assert (
+        yaml.safe_load(text)["metrics"]["md"]
+        == recomputed
+        == {
+            "pred_file": {"name": path, "url": url},
+            "hardware": "NVIDIA H200",
+            "run_time_sec": 4521.484,
+            "rdf_error": 11.0,
+            "n_systems": 17,
+        }
+    )
     assert "rdf_error: 11.0 # %" in text
+
+    # A new source cannot inherit the old source's timings or private diagnostics.
+    md_metrics.write_metrics_to_yaml(
+        model, {"rdf_error": 3.0, "n_systems": 17}, pred_file_path=path
+    )
+    assert yaml.safe_load(yaml_path.read_text())["metrics"]["md"] == {
+        "pred_file": {"name": path},
+        "rdf_error": 3.0,
+        "n_systems": 17,
+    }

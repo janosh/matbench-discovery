@@ -1,9 +1,34 @@
 import { goto } from '$app/navigation'
 import { MODELS } from '$lib/models.svelte'
+import { comparison } from '$lib/model-comparison.svelte'
 import Layout from '$routes/+layout.svelte'
 import { createRawSnippet, tick } from 'svelte'
 import { expect, it, vi } from 'vitest'
 import { doc_query, mount, mount_with_url } from '../index'
+
+it(`loads comparison on demand and retains its controls between openings`, async () => {
+  comparison.keys.clear()
+  comparison.open = false
+  await mount_with_url(Layout, `http://localhost/`)
+  expect(document.querySelector(`dialog[aria-label="Model comparison"]`)).toBeNull()
+  comparison.open_with(MODELS[0].model_key)
+  const dialog = await vi.waitFor(
+    () => doc_query<HTMLDialogElement>(`dialog[aria-label="Model comparison"]`),
+    { timeout: 5000 },
+  )
+  const select = doc_query<HTMLSelectElement>(`select`, dialog)
+  select.value = `added`
+  select.dispatchEvent(new Event(`change`, { bubbles: true }))
+  comparison.open = false
+  await tick()
+  comparison.open = true
+  await tick()
+  expect(
+    doc_query<HTMLSelectElement>(`dialog[aria-label="Model comparison"] select`).value,
+  ).toBe(`added`)
+  comparison.open = false
+  comparison.keys.clear()
+})
 
 it.each([`/api`, `/data`])(
   `shows the table of contents for three headings on %s`,

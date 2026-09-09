@@ -8,9 +8,9 @@
   "repository": "https://github.com/janosh/matbench-discovery",
   "type": "module",
   "scripts": {
-    "dev": "vp dev",
-    "build": "vp build",
-    "preview": "vp preview",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "test": "vitest run",
     "check": "vp check",
     "lint": "vp lint",

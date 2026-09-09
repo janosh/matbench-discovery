@@ -1,7 +1,6 @@
 <script lang="ts">
   import { Icon, Spinner } from 'svelte-widgets'
   import { Cross } from 'svelte-widgets/icons'
-  import { load_kappa_srme_map } from '$lib/parity/kappa-analysis'
   import {
     build_phonon_mode_data,
     has_kappa_modes,
@@ -15,6 +14,7 @@
     has_kappa_parity_model,
     load_kappa_parity_base,
     load_kappa_parity_model,
+    load_kappa_srme_map,
   } from '$lib/parity/kappa-parity'
   import type {
     KappaParityBase,
@@ -27,7 +27,8 @@
   import { parity_diagonal } from '$lib/fig-helpers'
   import { get_nested_number, is_finite_num } from '$lib/metrics'
   import type { ModelData } from '$lib/types'
-  import { Dos, format_num, sanitize_compact_formula, sanitize_html } from 'matterviz'
+  import { format_num } from 'matterviz/labels'
+  import { sanitize_compact_formula, sanitize_html } from 'matterviz/sanitize'
   import { ScatterPlot } from 'matterviz/plot'
   import type { DataSeries, RefLine } from 'matterviz/plot'
   import { type CrystalSystem, spacegroup_to_crystal_sys } from 'matterviz/symmetry'
@@ -38,8 +39,8 @@
 
   const KappaScatter = ScatterPlot<KappaParityPoint>
   const load_controller = new ParityLoadController()
-  let base = $state<KappaParityBase>()
-  let parity_model = $state<KappaParityModel>()
+  let base = $state.raw<KappaParityBase>()
+  let parity_model = $state.raw<KappaParityModel>()
   let selected_idx = $state<number | null>(null)
   // per-material κ_SRME from the kappa-103 analysis payload (null = not computable);
   // undefined until loaded or when the model has no analysis entry
@@ -154,7 +155,9 @@
 </script>
 
 <section class="kappa-parity-plot" {...rest}>
-  <h2 class="toc-exclude">ML vs DFT Lattice Thermal Conductivity</h2>
+  <h2 id="ml-vs-dft-lattice-thermal-conductivity" class="toc-exclude">
+    ML vs DFT Lattice Thermal Conductivity
+  </h2>
 
   {#if load_controller.status === `error`}
     <p class="plot-state" role="alert" style="min-height: 0; margin: 0">
@@ -165,6 +168,17 @@
       <Spinner text="Loading κ parity data..." />
     </div>
   {:else}
+    {#if srme_by_id}
+      <label
+        style="display: flex; align-items: center; justify-content: center; gap: 0.5em"
+      >
+        Color by
+        <select aria-label="Color metric" bind:value={color_metric}>
+          <option value="srme">κ_SRME</option>
+          <option value="sre">κ_SRE</option>
+        </select>
+      </label>
+    {/if}
     <KappaScatter
       {series}
       ref_lines={parity_ref_lines}
@@ -182,19 +196,12 @@
         range: extent,
       }}
       size_scale={{ type: `linear`, radius_range: [4, 7] }}
+      color_scale={{ value_range: color_range }}
       color_bar={{
         title: `${color_metric_labels[color_metric]} (${format_num(
           parity?.points.length ?? 0,
           `,`,
         )} points)`,
-        property_options: srme_by_id
-          ? Object.entries(color_metric_labels).map(([key, label]) => ({ key, label }))
-          : undefined,
-        selected_property_key: color_metric,
-        data_loader: async (key) => {
-          if (key === `srme` || key === `sre`) color_metric = key
-          return { range: color_range }
-        },
       }}
       selected_point={selected_point_ref}
       on_point_click={({ point }) => {
@@ -263,15 +270,15 @@
             </button>
           </header>
           {#if dos_entries.length}
-            <Dos
-              {doses}
-              style="height: 100%; min-height: 360px"
-              padding={{ t: 20, b: 60, r: 10 }}
-            />
             <!-- thermal properties integrate each DOS, so one plot per source (DFT/ML)
             keeps the curves comparable side by side; matterviz spans 0-1000 K -->
             {#await spectral_promise then spectral}
               {#if spectral}
+                <spectral.Dos
+                  {doses}
+                  style="height: 100%; min-height: 360px"
+                  padding={{ t: 20, b: 60, r: 10 }}
+                />
                 {@const PhononThermalPlot = spectral.PhononThermalPlot}
                 {#each dos_entries as [label, dos], plot_idx (label)}
                   <div class="thermal">

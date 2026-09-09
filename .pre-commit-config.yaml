@@ -10,17 +10,15 @@ repos:
         args: [--fix]
       - id: ruff-format
 
-  - repo: https://github.com/astral-sh/ty-pre-commit
-    rev: v0.0.79
+  - repo: local
     hooks:
       - id: ty
-        # --isolated: don't create/update uv.lock or the local .venv
-        args: [--isolated]
-        env:
-          # Explicit config avoids uv workspace discovery for this unmanaged project.
-          TY_CONFIG_FILE: ty.toml
-          # prek-only: override global UV_FROZEN=1, which would require a uv.lock.
-          UV_FROZEN: "0"
+        name: ty
+        entry: ty check
+        language: python
+        additional_dependencies: [ty==0.0.79]
+        pass_filenames: false
+        always_run: true
 
   - repo: https://github.com/janosh/format-ipy-cells
     rev: v0.1.11

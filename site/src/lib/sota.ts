@@ -66,20 +66,28 @@ export const pareto_staircase = (
   y_better: `higher` | `lower`,
 ): { x: number[]; y: number[] } | null => {
   if (points.length < 2) return null
+  // Collect extents while validating; spreading large arrays into Math.min/max
+  // exceeds JavaScript's argument limit even though the frontier sweep scales well.
+  let worst_x = points[0].x
+  let worst_y = points[0].y
+  for (const { x, y } of points) {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+      throw new TypeError(`Pareto coordinates must be finite: x=${x}, y=${y}`)
+    }
+    worst_x = x_better === `higher` ? Math.min(worst_x, x) : Math.max(worst_x, x)
+    worst_y = y_better === `higher` ? Math.min(worst_y, y) : Math.max(worst_y, y)
+  }
   // sign-flip so both axes minimize
-  const [sx, sy] = [x_better === `higher` ? -1 : 1, y_better === `higher` ? -1 : 1]
-  const frontier = points
-    .filter(
-      (pt) =>
-        !points.some(
-          (other) =>
-            sx * other.x <= sx * pt.x &&
-            sy * other.y <= sy * pt.y &&
-            (sx * other.x < sx * pt.x || sy * other.y < sy * pt.y),
-        ),
-    )
-    .toSorted((p1, p2) => sx * (p1.x - p2.x))
-  if (frontier.length === 0) return null // all points non-finite/mutually dominated
+  const [x_sign, y_sign] = [
+    x_better === `higher` ? -1 : 1,
+    y_better === `higher` ? -1 : 1,
+  ]
+  // Best-y records in best-x order are precisely the non-dominated points. Reuse
+  // the timeline sweep (including best-first same-x ties) instead of all-pairs comparisons.
+  const frontier = sota_frontier_indices(
+    points.map(({ x, y }) => ({ date: x_sign * x, value: y_sign * y })),
+    `lower`,
+  ).map((idx) => points[idx])
 
   const [x, y] = [[] as number[], [] as number[]]
   const push = (px: number, py: number) => {
@@ -87,10 +95,6 @@ export const pareto_staircase = (
     x.push(px)
     y.push(py)
   }
-  // data extremes in the "worse" direction of each axis
-  const worst_x = (sx > 0 ? Math.max : Math.min)(...points.map((pt) => pt.x))
-  const worst_y = (sy > 0 ? Math.max : Math.min)(...points.map((pt) => pt.y))
-
   push(frontier[0].x, worst_y) // vertical lead-in at the best-x end
   push(frontier[0].x, frontier[0].y)
   for (const [idx, pt] of frontier.slice(1).entries()) {

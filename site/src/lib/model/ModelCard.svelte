@@ -1,14 +1,13 @@
 <script lang="ts">
-  import type { Label, ModelData } from '$lib'
-  import { AuthorBrief, CompareToggle, DATASETS } from '$lib'
-  import { parse_dependency_spec } from '$lib/environment'
+  import type { Label, ModelData } from '$lib/types'
+  import DATASETS from '$data/datasets.yml'
   import { get_nested_number, label_data_path } from '$lib/metrics'
+  import { ACTIVE_MODELS } from '$lib/models.svelte'
+  import { model_metric_ranks, rank_color, RANKED_METRICS } from '$lib/rankings'
   import pkg from '$site/package.json'
-  import { format_num } from 'matterviz'
-  import { Icon } from 'svelte-widgets'
+  import { format_num } from 'matterviz/labels'
+  import { Icon, Popover } from 'svelte-widgets'
   import {
-    ArrowDown,
-    ArrowUp,
     Calendar,
     CalendarCheck,
     Database,
@@ -22,28 +21,21 @@
     Paper,
   } from 'svelte-widgets/icons'
   import { tooltip } from 'svelte-widgets/attachments'
-  import type { HTMLAttributes } from 'svelte/elements'
-  import { fade, slide } from 'svelte/transition'
 
   let {
     model,
     metrics,
     sort_by,
-    show_details = $bindable(false),
-    metrics_style = ``,
     title_style = ``,
-    ...rest
-  }: HTMLAttributes<HTMLElementTagNameMap[`section`]> & {
+  }: {
     model: ModelData
     metrics: readonly Label[]
     sort_by: string // metric label key (or `Model`) highlighted in the metrics list
-    show_details?: boolean
-    metrics_style?: string
     title_style?: string
   } = $props()
 
   let { model_name, model_key, model_params, training_sets } = $derived(model)
-  let env_packages = $derived(model.environment.dependencies.map(parse_dependency_spec))
+  let ranks = $derived(model_metric_ranks(model_key, ACTIVE_MODELS, RANKED_METRICS))
 
   let links = $derived([
     [model.repo, `Repo`, GitHub],
@@ -52,36 +44,22 @@
     [model.checkpoint_url, `Checkpoint`, Download],
     [`${pkg.repository}/tree/HEAD/models/${model.dirname}`, `Files`, Directory],
   ] as const)
-  const target = { target: `_blank`, rel: `noopener` }
   let n_model_params = $derived(format_num(model_params, `.3~s`))
-  let expand_title = $derived(
-    `${show_details ? `Hide` : `Show`} authors and package versions`,
-  )
 </script>
 
-<h2 style={title_style}>
+<h2 id={model_key} style={title_style}>
   <a href="/models/{model_key}">{model_name}</a>
-  <button
-    onclick={() => (show_details = !show_details)}
-    aria-expanded={show_details}
-    aria-label={expand_title}
-    title={expand_title}
-    style={title_style}
-  >
-    <Icon icon={show_details ? ArrowUp : ArrowDown} />
-  </button>
 </h2>
 <nav>
-  <CompareToggle {model_key} {model_name} style="background: none; padding: 0" />
   {#each links.filter( ([href]) => href?.startsWith(`http`) ) as [href, title, link_icon] (title)}
-    <a {href} {...target}>
+    <a {href} target="_blank" rel="noopener">
       <Icon icon={link_icon} />
       {title}
     </a>
   {/each}
 </nav>
 
-<section class="metadata" {...rest}>
+<section class="metadata">
   <span style="grid-column: span 2">
     <Icon icon={Database} />
     Training data:
@@ -127,48 +105,8 @@
     </span>
   {/if}
 </section>
-{#if show_details}
-  <div transition:fade={{ duration: 200 }}>
-    <section transition:slide={{ duration: 200 }}>
-      <h3>Authors</h3>
-      <ul>
-        {#each model.authors as author (author.name)}
-          <li><AuthorBrief {author} /></li>
-        {/each}
-      </ul>
-      {#if model.trained_by}
-        <h3>Trained By</h3>
-        <ul>
-          {#each model.trained_by as author (author.name)}
-            <li><AuthorBrief {author} /></li>
-          {/each}
-        </ul>
-      {/if}
-    </section>
-    <section transition:slide={{ duration: 200 }}>
-      <h3>Package versions</h3>
-      <ul>
-        {#each env_packages as { name, detail, href } (name + detail)}
-          <li style="font-size: smaller">
-            {name}{#if detail}:
-              <a
-                class="dependency-detail"
-                {href}
-                {...target}
-                aria-label={detail}
-                title={detail}
-              >
-                <span aria-hidden="true">{detail.slice(0, -10)}</span>
-                <span aria-hidden="true">{detail.slice(-10)}</span>
-              </a>{/if}
-          </li>
-        {/each}
-      </ul>
-    </section>
-  </div>
-{/if}
 
-<section class="metrics" style={metrics_style || null}>
+<section class="metrics">
   <h3 style="margin: 0; font-weight: normal">Metrics</h3>
   <ul>
     {#each metrics as metric (metric.key)}
@@ -176,20 +114,38 @@
       <!-- resolve by the label's own data path so any metric works (RMSD lives under
       metrics.geo_opt.symprec=1e-2, which a hardcoded section merge would miss) -->
       {@const value = get_nested_number(model, label_data_path(metric))}
-      <li
-        class:active={sort_by == key}
-        title={description}
-        {@attach tooltip({ allow_html: true })}
-      >
-        <label for={key}>{@html label ?? key}</label>
-        <strong>
-          {#if value === undefined || isNaN(value)}
-            n/a
-          {:else}
-            {format_num(value)}
-            <small>{unit ?? ``}</small>
-          {/if}
-        </strong>
+      {@const rank_entry = ranks.find((entry) => entry.metric.key === key)}
+      <li class:active={sort_by == key}>
+        <Popover trigger_mode="hover" trap_focus={false} aria-label="Metric description">
+          {#snippet trigger(trigger_props)}
+            <span
+              style="display: flex; width: 100%; justify-content: space-between"
+              role="button"
+              tabindex="0"
+              {...trigger_props}
+              ><label for={key}>{@html label}</label>
+              <strong>
+                {#if value === undefined || isNaN(value)}
+                  n/a
+                {:else}
+                  {format_num(value)}
+                  <small>{unit ?? ``}</small>
+                {/if}
+              </strong></span
+            >
+          {/snippet}
+          {@html description}
+        </Popover>
+        {#if value !== undefined && !isNaN(value) && rank_entry}
+          <a
+            class="metric-rank"
+            href={rank_entry.metric.rank_href}
+            aria-label="{key}: rank {rank_entry.rank} of {rank_entry.n_models}"
+            ><b style:color={rank_color(rank_entry.rank, rank_entry.n_models)}
+              >#{rank_entry.rank}</b
+            ><span>/{rank_entry.n_models}</span></a
+          >
+        {/if}
       </li>
     {/each}
   </ul>
@@ -203,11 +159,6 @@
   }
   h2 a {
     color: inherit;
-  }
-  button {
-    background: none;
-    padding: 0;
-    font: inherit;
   }
   nav {
     font-weight: 250;
@@ -228,21 +179,13 @@
     font-size: 0.95em;
     align-content: center;
   }
-  div {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15pt;
-  }
   small {
     font-weight: 100;
     font-size: 8pt;
   }
   section.metrics > ul {
     display: grid;
-    /* cap track width so label and value stay close (widest current pair is ~9.2em:
-    'MAE 0.044 eV / atom'); leftover space goes between columns (justify-content),
-    not inside cells where it'd stretch the label-value gap */
-    grid-template-columns: repeat(auto-fill, minmax(9em, 9.5em));
+    grid-template-columns: repeat(auto-fill, minmax(11em, 1fr));
     justify-content: space-between;
     gap: 3pt 1em;
     list-style: none;
@@ -252,31 +195,23 @@
     font-weight: lighter;
     display: flex;
     justify-content: space-between;
+    align-items: baseline;
+    gap: 3pt;
   }
-  section.metrics > ul > li > :is(label, strong) {
+  section.metrics > ul > li :is(label, strong) {
     padding: 0 4pt;
     border-radius: 3pt;
   }
-  section.metrics > ul > li.active > label {
+  section.metrics > ul > li.active label {
     font-weight: bold;
   }
-  .dependency-detail {
-    display: inline-flex;
-    min-width: 0;
-    max-width: 100%;
-    vertical-align: bottom;
+  .metric-rank {
+    font-size: 0.75em;
     white-space: nowrap;
-  }
-  .dependency-detail span:first-child {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .dependency-detail span:last-child {
-    flex: none;
+    color: var(--text-secondary);
   }
   /* keep long unbroken words from widening the ModelCard container */
-  :is(section, div, nav) {
+  :is(section, nav) {
     word-break: break-word;
   }
 </style>

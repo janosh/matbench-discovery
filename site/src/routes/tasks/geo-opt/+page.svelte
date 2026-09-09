@@ -2,32 +2,24 @@
   import spg_sankeys from '$figs/spg-sankeys.jsonl'
   import struct_rmsd_cdf from '$figs/struct-rmsd-cdf.jsonl'
   import sym_ops_diff from '$figs/sym-ops-diff-bar.jsonl'
-  import {
-    ACTIVE_MODELS,
-    by_benchmark_added_desc,
-    GeoOptMetricsTable,
-    ModelSelect,
-  } from '$lib'
+  import GeoOptMetricsTable from '$lib/table/GeoOptMetricsTable.svelte'
+  import ModelSelect from '$lib/ModelSelect.svelte'
+  import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
+  import { by_benchmark_added_desc } from '$lib'
   import { order_models } from '$lib/fig-helpers'
   import {
     ALL_METRICS,
     GEO_OPT_SYMMETRY_METRICS,
     METADATA_COLS,
     scatter_axis_label,
-    scatter_option_keys,
+    scatter_options_by_key,
   } from '$lib/labels'
   import { UrlModelSelection } from '$lib/model-selection.svelte'
-  import { make_table_filters } from '$lib/models.svelte'
-  import { DynamicScatter } from '$lib/plot'
-  import type { SortState } from '$lib/url-state.svelte'
-  import {
-    bind_url_params,
-    sort_from_query,
-    sort_url_entries,
-  } from '$lib/url-state.svelte'
-  import { valid_query_param } from 'svelte-widgets/url-params'
+  import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
+  import { bind_url_params, UrlPlotState } from '$lib/url-state.svelte'
   import { min } from 'd3-array'
-  import { format_num, pick_contrast_color } from 'matterviz'
+  import { format_num } from 'matterviz/labels'
+  import { pick_contrast_color } from 'matterviz/colors'
   import { BarPlot, Sankey, sankey_from_links, ScatterPlot } from 'matterviz/plot'
   import GeoOptReadme from './geo-opt-readme.md'
 
@@ -37,19 +29,23 @@
   const struct_rmsd_sorted = order_models(struct_rmsd_cdf.models, (mdl) => -mdl.auc)
   const sym_ops_sorted = order_models(sym_ops_diff.models, (mdl) => mdl.sigma)
   const default_n_models = 5
-  const default_scatter_x = ALL_METRICS.RMSD.key
-  const default_scatter_y = GEO_OPT_SYMMETRY_METRICS[`symmetry_match_1e-2`].key
-  const default_table_sort: SortState = {
-    column: ALL_METRICS.RMSD.key,
-    dir: `asc`,
-  }
+  const plot = new UrlPlotState(
+    {
+      x: ALL_METRICS.RMSD.key,
+      y: GEO_OPT_SYMMETRY_METRICS[`symmetry_match_1e-2`].key,
+      sort: {
+        column: ALL_METRICS.RMSD.key,
+        dir: `asc`,
+      },
+    },
+    scatter_options_by_key,
+  )
   const model_by_key = new Map(ACTIVE_MODELS.map((model) => [model.model_key, model]))
   const plot_label_by_key = new Map([
     ...struct_rmsd_cdf.models.map(({ model_key, label }) => [model_key, label] as const),
     ...sym_ops_diff.models.map(({ model_key, label }) => [model_key, label] as const),
     ...spg_sankeys.models.map(({ model_key, label }) => [model_key, label] as const),
   ])
-  const selectable_model_keys = new Set(plot_label_by_key.keys())
 
   // plot-only models missing from ACTIVE_MODELS get a null date so they sort last
   const undated_model = { dates: { benchmark_added: null } }
@@ -80,8 +76,6 @@
   const model_selection = new UrlModelSelection(() => ({
     options: selectable_options,
     defaults: default_selected_keys,
-    from_url: (model_key) =>
-      selectable_model_keys.has(model_key) ? model_key : undefined,
   }))
   let selected_model_key_set = $derived(new Set(model_selection.values))
   let filtered_struct_rmsd_sorted = $derived(
@@ -95,23 +89,16 @@
   )
 
   const filters = make_table_filters()
-  let table_sort = $state({ ...default_table_sort })
-  let scatter_x = $state(default_scatter_x)
-  let scatter_y = $state(default_scatter_y)
 
   const read_url_params = (params: URLSearchParams) => {
     model_selection.read(params)
     filters.read(params)
-    table_sort = sort_from_query(params, default_table_sort)
-    scatter_x = valid_query_param(params, `x`, default_scatter_x, scatter_option_keys)
-    scatter_y = valid_query_param(params, `y`, default_scatter_y, scatter_option_keys)
+    plot.read(params)
   }
   bind_url_params(read_url_params, () => [
     model_selection.url_entry,
     ...filters.url_entries,
-    ...sort_url_entries(table_sort, default_table_sort),
-    [`x`, scatter_x, default_scatter_x],
-    [`y`, scatter_y, default_scatter_y],
+    ...plot.url_entries,
   ])
 
   const n_min_relaxed_structures =
@@ -124,15 +111,15 @@
 <GeoOptReadme>
   {#snippet geo_opt_metrics_table()}
     <section class="full-bleed">
-      <GeoOptMetricsTable {filters} bind:sort={table_sort} />
+      <GeoOptMetricsTable {filters} bind:sort={plot.sort} />
     </section>
   {/snippet}
   {#snippet min_relaxed_structures()}
     <span>{format_num(n_min_relaxed_structures)}</span>
   {/snippet}
   {#snippet model_comparison_scatter()}
-    <h3>
-      {@html scatter_axis_label(scatter_y)} vs {@html scatter_axis_label(scatter_x)}
+    <h3 id="metric-comparison">
+      {@html scatter_axis_label(plot.y)} vs {@html scatter_axis_label(plot.x)}
     </h3>
     <p>
       The default view compares structure-matching RMSD (lower is better) with the
@@ -142,8 +129,8 @@
     <DynamicScatter
       models={ACTIVE_MODELS}
       model_filter={(model) => model.metrics?.geo_opt != null}
-      bind:x_key={scatter_x}
-      bind:y_key={scatter_y}
+      bind:x_key={plot.x}
+      bind:y_key={plot.y}
       color_key={METADATA_COLS.n_training_materials.key}
       show_pareto_frontier
       style="height: 800px"
@@ -151,10 +138,7 @@
   {/snippet}
   {#snippet diagnostic_model_picker()}
     <div class="plot-controls bleed-1400">
-      <ModelSelect
-        options={selectable_options}
-        bind:selected={model_selection.selected}
-      />
+      <ModelSelect options={selectable_options} bind:value={model_selection.selected} />
     </div>
   {/snippet}
   {#snippet struct_rmsd_cdf_models()}

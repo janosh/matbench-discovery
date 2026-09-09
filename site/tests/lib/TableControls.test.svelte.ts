@@ -1,4 +1,5 @@
-import { TableControls, type TableLabel } from '$lib'
+import TableControls from '$lib/table/TableControls.svelte'
+import type { Column } from 'matterviz/table'
 import { ACTIVE_MODELS, ALL_TRAINING_SETS, make_table_filters } from '$lib/models.svelte'
 import { OPENNESS_OPTIONS, type Openness } from '$lib/url-state.svelte'
 import { tick } from 'svelte'
@@ -6,11 +7,11 @@ import { describe, expect, it, vi } from 'vitest'
 import { doc_query, mount } from '../index'
 
 describe(`TableControls`, () => {
-  const sample_columns: TableLabel[] = [
-    { key: `model`, label: `Model`, description: `Model name`, visible: true },
-    { key: `f1`, label: `F1`, description: `F1 Score`, visible: true },
-    { key: `daf`, label: `DAF`, description: `DAF Score`, visible: true },
-    { key: `rmse`, label: `RMSE`, description: `RMSE`, visible: false },
+  const sample_columns: Column[] = [
+    { id: `model`, label: `Model`, description: `Model name`, visible: true },
+    { id: `f1`, label: `F1`, description: `F1 Score`, visible: true },
+    { id: `daf`, label: `DAF`, description: `DAF Score`, visible: true },
+    { id: `rmse`, label: `RMSE`, description: `RMSE`, visible: false },
   ]
 
   const summary_for = (text: string): HTMLElement => {
@@ -133,6 +134,11 @@ describe(`TableControls`, () => {
     expect(filters.matches(filter_model([`MPtrj`, `MP 2022`], `OSOD`))).toBe(true)
     expect(filters.matches(filter_model([`MPtrj`, `OMat24`], `OSOD`))).toBe(false)
     expect(filters.matches(filter_model([`MPtrj`], `CSOD`))).toBe(false)
+    // Derived filter entries must follow in-place updates and deletion immediately.
+    filters.set_target(`F`, `exclude`)
+    expect(filters.matches(filter_model([`MPtrj`], `OSOD`))).toBe(false)
+    filters.set_target(`F`, `exclude`)
+    expect(filters.matches(filter_model([`MPtrj`], `OSOD`))).toBe(true)
   })
 
   it(`saves, applies and deletes user presets via localStorage`, async () => {

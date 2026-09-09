@@ -1,11 +1,10 @@
 import { page } from '$app/state'
-import { DATASETS } from '$lib'
+import DATASETS from '$data/datasets.yml'
 import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from '$lib/labels'
 import {
   discovery_task_tooltips,
-  get_nested_value,
   is_finite_num,
-  label_data_path,
+  metric_value,
   openness_tooltips,
   targets_tooltips,
 } from '$lib/metrics'
@@ -13,7 +12,7 @@ import { ACTIVE_MODELS, MODELS } from '$lib/models.svelte'
 import { competition_rank } from '$lib/rankings'
 import type { Author, Label, ModelData } from '$lib/types'
 import { bind_url_params } from '$lib/url-state.svelte'
-import { format_num } from 'matterviz'
+import { format_num } from 'matterviz/labels'
 import type { RowData } from 'matterviz/table'
 import { SvelteSet } from 'svelte/reactivity'
 
@@ -111,7 +110,7 @@ export type CompareRow = Label & {
 export type CompareGroup = { title: string; href?: string; rows: CompareRow[] }
 
 export const row_value = (row: CompareRow, model: ModelData): unknown =>
-  row.value ? row.value(model) : get_nested_value(model, label_data_path(row))
+  row.value ? row.value(model) : metric_value(model, row)
 
 const metrics = (...keys: (keyof typeof ALL_METRICS)[]): CompareRow[] =>
   keys.map((key) => ALL_METRICS[key])
@@ -157,8 +156,7 @@ const training_cost_title = ({ training_cost }: ModelData): string | undefined =
     .filter(Boolean)
     .join(`<br>`)
 
-// Cost rows double as the x-axis menu of the cost-vs-accuracy scatter in
-// ModelComparison.svelte, hence lower=better on all of them.
+// Cost rows also drive the cost-vs-accuracy scatter, hence lower=better on all of them.
 export const COST_ROWS: CompareRow[] = [
   {
     ...HYPERPARAMS.model_params,
@@ -400,8 +398,8 @@ export function compare_cells(
     if (!row.better) return cell
     // a compared model outside the field (superseded/deprecated) ranks against the field
     // plus itself so rank never exceeds n
-    const nums = field.includes(model) ? field_nums : [...field_nums, value]
-    const { rank, n_models } = competition_rank(value, nums, row.better)
-    return { ...cell, rank, n: n_models, best: sign * value === best }
+    const { rank, n_models } = competition_rank(value, field_nums, row.better)
+    const cohort_size = n_models + Number(!field.includes(model))
+    return { ...cell, rank, n: cohort_size, best: sign * value === best }
   })
 }

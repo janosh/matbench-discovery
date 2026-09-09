@@ -1,5 +1,13 @@
 @import '@wooorm/starry-night/style/core';
 
+.custom-tooltip > .tooltip-content {
+  font-weight: 400;
+}
+.table-container th .popover {
+  font-weight: 400;
+  white-space: normal;
+  text-align: left;
+}
 :root {
   /* Theme-aware colors consumed by Starry Night's core styles */
   --color-prettylights-syntax-brackethighlighter-angle: light-dark(#59636e, #9198a1);

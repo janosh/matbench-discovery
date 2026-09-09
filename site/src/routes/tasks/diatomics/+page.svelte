@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { MetricsTable, ModelSelect, ACTIVE_MODELS, MODELS } from '$lib'
+  import MetricsTable from '$lib/table/MetricsTable.svelte'
+  import ModelSelect from '$lib/ModelSelect.svelte'
+  import { ACTIVE_MODELS, MODELS, has_diatomics_curves } from '$lib/models.svelte'
   import { ButtonGroup } from 'svelte-widgets'
   import {
     CDS_CONFIG,
@@ -10,24 +12,23 @@
     DIATOMICS_METRICS,
     METADATA_COLS,
     scatter_axis_label,
-    scatter_option_keys,
+    scatter_options_by_key,
     task_page_visible_cols,
   } from '$lib/labels'
-  import { has_diatomics_curves } from '$lib/models.svelte'
-  import { DiatomicCurve, DynamicScatter, RadarChart } from '$lib/plot'
+  import DiatomicCurve from '$lib/plot/DiatomicCurve.svelte'
+  import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
+  import RadarChart from '$lib/plot/RadarChart.svelte'
   import { UrlModelSelection } from '$lib/model-selection.svelte'
   import {
     apply_weights_param,
     bind_url_params,
-    sort_from_query,
-    sort_url_entries,
+    UrlPlotState,
     weights_to_param,
   } from '$lib/url-state.svelte'
   import { valid_query_param } from 'svelte-widgets/url-params'
-  import type { SortDir } from '$lib/types'
   import DiatomicsNote from './diatomics-note.md'
   import { element_data } from 'matterviz/element'
-  import { pick_contrast_color, PLOT_COLORS } from 'matterviz'
+  import { pick_contrast_color, PLOT_COLORS } from 'matterviz/colors'
   import { SvelteSet } from 'svelte/reactivity'
   import type { PageData } from './$types'
   import { element_group_keys, element_groups } from './element-groups'
@@ -51,18 +52,20 @@
   const homo_nuc_key = `homo-nuclear`
   const visible_cols = task_page_visible_cols(...Object.values(DIATOMICS_METRICS))
   // default-sort by the combined diatomics score (CDS), best (highest) first
-  const default_sort: { column: string; dir: SortDir } = {
-    column: DIATOMICS_METRICS.diatomics_combined_score.key,
-    dir: `desc`,
-  }
-  let sort = $state({ ...default_sort })
+  const plot = new UrlPlotState(
+    {
+      x: DIATOMICS_METRICS.diatomics_run_time_sec.key,
+      y: DIATOMICS_METRICS.diatomics_combined_score.key,
+      sort: {
+        column: DIATOMICS_METRICS.diatomics_combined_score.key,
+        dir: `desc`,
+      },
+    },
+    scatter_options_by_key,
+  )
 
   // cost-vs-fidelity Pareto: sweep wall time (x) vs CDS (y), size = model params,
   // color = training-set size (the two scaling levers)
-  const default_scatter_x = DIATOMICS_METRICS.diatomics_run_time_sec.key
-  const default_scatter_y = DIATOMICS_METRICS.diatomics_combined_score.key
-  let scatter_x = $state(default_scatter_x)
-  let scatter_y = $state(default_scatter_y)
 
   // DFT references get fixed, high-contrast colors (not in the model palette) so they
   // read as ground truth
@@ -143,17 +146,13 @@
       `all`,
       element_group_keys,
     )
-    sort = sort_from_query(params, default_sort)
-    scatter_x = valid_query_param(params, `x`, default_scatter_x, scatter_option_keys)
-    scatter_y = valid_query_param(params, `y`, default_scatter_y, scatter_option_keys)
+    plot.read(params)
     apply_weights_param(params.get(`weights`), CDS_CONFIG, DEFAULT_CDS_CONFIG)
   }
   bind_url_params(read_url_params, () => [
     model_selection.url_entry,
     [`elements`, selected_element_group, `all`],
-    ...sort_url_entries(sort, default_sort),
-    [`x`, scatter_x, default_scatter_x],
-    [`y`, scatter_y, default_scatter_y],
+    ...plot.url_entries,
     // custom CDS pillar weights (accuracy,geometry,speed,physicality); omitted at defaults
     [`weights`, weights_to_param(CDS_CONFIG, DEFAULT_CDS_CONFIG)],
   ])
@@ -177,7 +176,7 @@
     })
 </script>
 
-<h1>Diatomics</h1>
+<h1 id="diatomics">Diatomics</h1>
 
 <div class="task-intro" style="margin-bottom: 1em">
   <!-- wrapper div: the markdown renders multiple top-level elements which would
@@ -203,10 +202,12 @@
 <MetricsTable
   model_filter={has_diatomics_curves}
   col_filter={(col) => visible_cols[col.key] ?? true}
-  bind:sort
+  bind:sort={plot.sort}
 />
 
-<h2>{@html scatter_axis_label(scatter_y)} vs {@html scatter_axis_label(scatter_x)}</h2>
+<h2 id="model-comparison">
+  {@html scatter_axis_label(plot.y)} vs {@html scatter_axis_label(plot.x)}
+</h2>
 <p>
   This defaults to a cost-vs-fidelity Pareto: each model's full diatomic-sweep wall time
   against its CDS, with marker size showing model parameters and color the training-set
@@ -216,14 +217,14 @@
 <DynamicScatter
   models={ACTIVE_MODELS}
   model_filter={has_diatomics_curves}
-  bind:x_key={scatter_x}
-  bind:y_key={scatter_y}
+  bind:x_key={plot.x}
+  bind:y_key={plot.y}
   color_key={METADATA_COLS.n_training_materials.key}
   show_pareto_frontier
   style="height: 800px"
 />
 
-<h2>Diatomic Energy Curves</h2>
+<h2 id="diatomic-energy-curves">Diatomic Energy Curves</h2>
 
 {#if error_entries.length > 0}
   <p class="error-summary" role="alert" title={error_title}>
@@ -239,7 +240,7 @@
     bind:selected={selected_element_group}
   />
 
-  <ModelSelect options={selectable_options} bind:selected={model_selection.selected} />
+  <ModelSelect options={selectable_options} bind:value={model_selection.selected} />
 </div>
 
 <div class="diatomics-grid bleed-1400">

@@ -1,9 +1,13 @@
 <script lang="ts">
-  import { ACTIVE_MODELS, ModelSelect, PtableInset } from '$lib'
+  import ModelSelect from '$lib/ModelSelect.svelte'
+  import PtableInset from '$lib/PtableInset.svelte'
+  import { ACTIVE_MODELS } from '$lib/models.svelte'
   import type { ModelData } from '$lib/types'
   import { max } from 'd3-array'
   import type { ChemicalElement, ElementSymbol } from 'matterviz'
-  import { ColorBar, format_num, PeriodicTable, TableInset } from 'matterviz'
+  import { ColorBar } from 'matterviz/plot'
+  import { format_num } from 'matterviz/labels'
+  import { PeriodicTable, TableInset } from 'matterviz/periodic-table'
   import type { D3InterpolateName } from 'matterviz/colors'
   import type { ComponentProps } from 'svelte'
   import { per_element_each_errors as each_errors } from '$lib/per-element-errors'
@@ -97,12 +101,7 @@
   each element tile splits into one segment per model.
 </p>
 
-<ModelSelect
-  bind:selected={current_model}
-  options={models}
-  max_select={4}
-  min_select={1}
-/>
+<ModelSelect bind:value={current_model} options={models} max_select={4} min_select={1} />
 
 {#if selected_models.length > 1}
   <div class="split-legend">

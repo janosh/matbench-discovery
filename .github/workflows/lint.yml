@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   prek:
     runs-on: ubuntu-latest
@@ -19,14 +23,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up node
-        uses: actions/setup-node@v7
-        with:
-          node-version: 24
-
-      - name: Install site dependencies
-        run: corepack enable && npm_config_legacy_peer_deps=true pnpm install --config.dangerously-allow-all-builds=true --config.block-exotic-subdeps=false
-        working-directory: site
+      - uses: ./.github/actions/setup-site
 
       - name: Run prek
         uses: j178/prek-action@v3.0.0

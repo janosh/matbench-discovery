@@ -303,9 +303,11 @@ def main() -> int:
             return 0
         from matbench_discovery.metrics import diatomics
 
+        ref_curves = diatomics.load_dft_reference_curves("PBE")
+        pred_curves = diatomics.DiatomicCurves.from_dict(results)
         metrics = diatomics.calc_diatomic_metrics(
-            ref_curves=diatomics.load_dft_reference_curves("PBE"),
-            pred_curves=diatomics.DiatomicCurves.from_dict(results),
+            ref_curves=ref_curves,
+            pred_curves=pred_curves,
             interpolate=200,
         )
         metrics = drop_metric_exclusions(args.model, metrics)
@@ -314,6 +316,9 @@ def main() -> int:
             metrics,
             pred_file_path=json_path,
             run_metadata=run_metadata,
+            vib_freq_coverage=diatomics.calc_vib_freq_coverage(
+                ref_curves, pred_curves, metrics
+            ),
         )
         print(f"\n{args.model} mean diatomic metrics:")
         for key, val in mean_metrics.items():

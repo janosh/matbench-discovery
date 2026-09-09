@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { PtableInset } from '$lib'
+  import PtableInset from '$lib/PtableInset.svelte'
   import { extent } from 'd3-array'
   import type { ChemicalElement, ElementSymbol } from 'matterviz'
-  import { ColorBar, PeriodicTable, TableInset } from 'matterviz'
+  import { ColorBar } from 'matterviz/plot'
+  import { PeriodicTable, TableInset } from 'matterviz/periodic-table'
   import type { D3InterpolateName } from 'matterviz/colors'
   import type { ComponentProps } from 'svelte'
 

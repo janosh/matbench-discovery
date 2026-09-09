@@ -1,6 +1,5 @@
 import { fsum, variance } from 'd3-array'
 import type { AnyStructure } from 'matterviz/structure'
-import { parse_structure_file } from 'matterviz/structure/parse'
 import {
   assert_array_length,
   load_json_asset,
@@ -268,6 +267,7 @@ export async function load_wbm_structure(
   if (!payload) throw new Error(`No structure found for ${material_id}`)
   if (typeof payload !== `string`) return payload
 
+  const { parse_structure_file } = await import(`matterviz/structure/parse`)
   const structure = parse_structure_file(payload, `${material_id}.extxyz`)
   if (!structure) throw new Error(`Could not parse structure for ${material_id}`)
   return structure

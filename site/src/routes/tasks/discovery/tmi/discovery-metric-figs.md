@@ -5,7 +5,7 @@
   import roc from '$figs/roc-models.jsonl'
   import rolling_mae from '$figs/rolling-mae-vs-hull-dist.jsonl'
   import { dashed, labeled_vline, model_mae, order_models, wide_legend } from '$lib/fig-helpers'
-  import { format_num } from 'matterviz'
+  import { format_num } from 'matterviz/labels'
   import { BarPlot, BoxPlot, PlotLegend, ScatterPlot } from 'matterviz/plot'
   import type { DataSeries, FillRegion, LegendItem } from 'matterviz/plot'
 

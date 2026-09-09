@@ -113,7 +113,7 @@ metrics:
     pbe_energy_mae: 8.571
     pbe_bond_length_error: 0.5899
     pbe_well_depth_error: 8.938
-    pbe_vib_freq_error: 450.0
+    pbe_vib_freq_error: 453.2
     tortuosity: 2.491
     energy_diff_flips: 6.909
     energy_jump: 64.18
@@ -121,6 +121,15 @@ metrics:
     force_total_variation: 16610.0
     force_jump: 23140.0
     pbe_force_mae: 44.32
+    pbe_vib_freq_coverage:
+      n_valid: 69
+      n_eligible: 73
+      failed_elements:
+      - Ac
+      - F
+      - H
+      - Li
+      missing_elements: []
   discovery:
     pred_file:
       name: models/alphanet/alphanet-v1-mptrj/2025-03-04-discovery.csv.gz

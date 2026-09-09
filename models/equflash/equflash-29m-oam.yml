@@ -165,3 +165,61 @@ metrics:
         name: models/equflash/equflash-29m-oam/harmonic/2026-09-05-phonons-kappa-103-run-info.json
         size: 9444
         md5: f80659743ed8fb8319c36d767bbb207c
+  diatomics:
+    pred_file:
+      name: models/equflash/equflash-29m-oam/2026-09-12-diatomics.json.gz
+      size: 207190
+      md5: c6fb37bb961f52c21642a0c9a34e854b
+      url: https://figshare.com/files/68484265
+    hardware: NVIDIA H200
+    run_time_sec: 602.24
+    max_rss_gb: 3.243
+    max_gpu_mem_gb: 0.201
+    excluded_formula_reasons:
+      Ac-Ac: invalid or unsupported curve
+      Pa-Pa: invalid or unsupported curve
+      Th-Th: invalid or unsupported curve
+      U-U: invalid or unsupported curve
+    pbe_wall_dist_mae: 0.132
+    pbe_energy_mae: 1.06e+29
+    pbe_bond_length_error: 0.159
+    pbe_well_depth_error: 0.3361
+    pbe_vib_freq_error: 47.68
+    tortuosity: 1.021
+    energy_diff_flips: 1.422
+    energy_jump: 344.9
+    force_flips: 1.398
+    force_total_variation: 8.136e+32
+    force_jump: 16790.0
+    pbe_force_mae: 1.836e+30
+    pbe_vib_freq_coverage:
+      n_valid: 66
+      n_eligible: 73
+      failed_elements:
+      - Cs
+      - K
+      - Rb
+      missing_elements:
+      - Ac
+      - Pa
+      - Th
+      - U
+  md:
+    pred_file:
+      name: models/equflash/equflash-29m-oam/2026-09-12-md-metrics.csv.gz
+      size: 3921
+      md5: 994b2c206ec0df043cb893033d3eb21f
+      url: https://figshare.com/files/68484307
+    max_rss_gb: 3.882 # GB
+    energy_rmse: 0.6359 # meV/atom
+    force_rmse: 70.1899 # meV/Å
+    rdf_error: 3.305 # %
+    adf_error: 1.3382 # %
+    vdos_error: 22.1819 # %
+    pressure_mae: 0.8176 # GPa
+    pressure_wasserstein: 0.8264 # GPa
+    pressure_error: 46.5533 # %
+    n_systems: 17 # count
+    hardware: NVIDIA H100 (H100/H200 equal-speed assumption)
+    run_time_sec: 65783.76 # s
+    max_gpu_mem_gb: 6.219 # GB

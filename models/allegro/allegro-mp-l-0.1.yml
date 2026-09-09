@@ -123,6 +123,11 @@ metrics:
     force_total_variation: 100.8
     force_jump: 3.301
     pbe_force_mae: 1.869
+    pbe_vib_freq_coverage:
+      n_valid: 73
+      n_eligible: 73
+      failed_elements: []
+      missing_elements: []
   discovery:
     pred_file:
       name: models/allegro/allegro-mp-l-0.1/2025-09-08-discovery.csv.gz

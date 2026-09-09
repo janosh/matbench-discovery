@@ -1,9 +1,9 @@
-import { MODELS } from '$lib'
+import { MODELS } from '$lib/models.svelte'
 import { parse_dependency_spec } from '$lib/environment'
 import { get_org_logo } from '$lib/labels'
 import { RANKED_METRICS } from '$lib/rankings'
 import ModelPage from '$routes/models/[slug]/+page.svelte'
-import { tick } from 'svelte'
+import { type ComponentProps, tick } from 'svelte'
 import { describe, expect, it, vi } from 'vitest'
 import { mount, mount_with_url } from '../index'
 
@@ -12,6 +12,8 @@ const test_model = MODELS.find((model) =>
 )
 if (!test_model) throw new Error(`missing Mirror Physics model`)
 const test_page_data = { model: test_model, md_per_system: null }
+const mount_page = (data: ComponentProps<typeof ModelPage>[`data`] = test_page_data) =>
+  mount(ModelPage, { target: document.body, props: { data } })
 const locator_model = MODELS.find((model) => model.model_key === `tace-oam-l`)
 if (!locator_model) throw new Error(`missing TACE-OAM-L model`)
 const locator_dependency = locator_model.environment.dependencies[0]
@@ -20,14 +22,12 @@ const locator_detail = parse_dependency_spec(locator_dependency).detail
 
 describe(`Model Detail Page`, () => {
   it(`renders model details correctly`, async () => {
+    const pypi = `https://pypi.org/project/test-model`
     const hyperparams = {
       training: { learning_rate: 0.001 },
       upstream_config: { layers: [32, 64], enabled: true },
     }
-    mount(ModelPage, {
-      target: document.body,
-      props: { data: { ...test_page_data, model: { ...test_model, hyperparams } } },
-    })
+    mount_page({ ...test_page_data, model: { ...test_model, hyperparams, pypi } })
 
     expect(document.querySelector(`h1`)?.textContent).toBe(test_model.model_name)
     expect(document.body.textContent).toContain(test_model.model_version)
@@ -37,6 +37,9 @@ describe(`Model Detail Page`, () => {
 
     const meta_info = document.querySelector(`.meta-info`)
     expect(meta_info?.textContent).toContain(`parameters`)
+    expect(meta_info?.querySelector(`code`)?.textContent).toContain(
+      `uv pip install test-model`,
+    )
     expect(
       meta_info?.textContent?.includes(`Ensemble ${test_model.n_estimators} models`),
     ).toBe((test_model.n_estimators ?? 1) > 1)
@@ -55,7 +58,7 @@ describe(`Model Detail Page`, () => {
       test_model.paper,
       test_model.docs,
       test_model.doi,
-      test_model.pypi,
+      pypi,
     ].filter(Boolean).length
     expect(links.length).toBeGreaterThanOrEqual(expected_link_count)
 
@@ -132,15 +135,20 @@ describe(`Model Detail Page`, () => {
     expect(document.querySelector(`section.md-per-system`)).toBeNull()
   }, 10_000)
 
+  it.each([
+    `https://pypi.org/project/test-model/`,
+    `https://pypi.org/project/test-model/1.2.3/?source=docs#files`,
+  ])(`builds the install command from %s`, (pypi) => {
+    mount_page({ ...test_page_data, model: { ...test_model, pypi } })
+    expect(document.querySelector(`.meta-info code`)?.textContent?.trim()).toBe(
+      `uv pip install test-model`,
+    )
+  })
+
   it(`preserves both ends of overflowing dependency details`, () => {
-    mount(ModelPage, {
-      target: document.body,
-      props: {
-        data: {
-          model: { ...locator_model, hyperparams: undefined },
-          md_per_system: null,
-        },
-      },
+    mount_page({
+      model: { ...locator_model, hyperparams: undefined },
+      md_per_system: null,
     })
 
     expect(document.querySelector(`.hyperparams`)).toBeNull()
@@ -156,8 +164,8 @@ describe(`Model Detail Page`, () => {
     expect(getComputedStyle(leading).textOverflow).toBe(`ellipsis`)
   })
 
-  it(`renders leaderboard rank card with task-prefixed metric labels`, () => {
-    mount(ModelPage, { target: document.body, props: { data: test_page_data } })
+  it(`renders leaderboard rank card with task-prefixed metric labels`, async () => {
+    mount_page()
 
     const rank_links = [...document.querySelectorAll(`.rank-card a`)]
     expect(rank_links.length).toBeGreaterThan(0)
@@ -168,6 +176,13 @@ describe(`Model Detail Page`, () => {
     }
     expect(link_texts.some((text) => text.startsWith(`Discovery F1`))).toBe(true)
     // rank links lead to leaderboard pages (subset: models may lack some tasks' metrics)
+    rank_links[0]?.dispatchEvent(new MouseEvent(`mouseenter`))
+    await vi.waitFor(() =>
+      expect(document.querySelector(`.popover`)?.textContent?.trim()).toMatch(
+        /^Ranked \d+ of \d+ models with a /,
+      ),
+    )
+    expect(document.querySelector(`.popover br`)).not.toBeNull()
     const leaderboard_hrefs = RANKED_METRICS.map((metric) => metric.rank_href)
     for (const link of rank_links) {
       expect(leaderboard_hrefs).toContain(link.getAttribute(`href`))
@@ -189,10 +204,7 @@ describe(`Model Detail Page`, () => {
         n_atoms: 72,
       },
     ]
-    mount(ModelPage, {
-      target: document.body,
-      props: { data: { model: test_model, md_per_system } },
-    })
+    mount_page({ model: test_model, md_per_system })
 
     const section = document.querySelector(`section.md-per-system`)
     expect(section?.textContent).toContain(`per-system breakdown`)
@@ -208,7 +220,7 @@ describe(`Model Detail Page`, () => {
 
   it(`lazy-mounts energy parity plots and observes their size`, async () => {
     const observe = vi.spyOn(ResizeObserver.prototype, `observe`)
-    mount(ModelPage, { target: document.body, props: { data: test_page_data } })
+    mount_page()
     await tick()
 
     // only the default tab's plot mounts on load; toggling mounts the other for good

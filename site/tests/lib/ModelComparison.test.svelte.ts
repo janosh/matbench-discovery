@@ -1,25 +1,30 @@
 import { afterNavigate } from '$app/navigation'
 import { page } from '$app/state'
-import { ACTIVE_MODELS, DATASETS, MODELS } from '$lib'
+import DATASETS from '$data/datasets.yml'
+import { ACTIVE_MODELS, MODELS } from '$lib/models.svelte'
 import {
   bind_comparison_url,
   COMPARE_GROUPS,
-  COST_ROWS,
   compare_cells,
   comparison,
   mark_compared_rows,
   type CompareRow,
 } from '$lib/model-comparison.svelte'
-import CompareToggle from '$lib/model/CompareToggle.svelte'
 import ModelComparison from '$lib/model/ModelComparison.svelte'
+import ModelPage from '$routes/models/[slug]/+page.svelte'
 import type { ModelData } from '$lib/types'
 import { flushSync, tick } from 'svelte'
 import { afterEach, beforeEach, describe, expect, it, test, vi } from 'vitest'
-import { doc_query, get_scatter_plot_props, mount } from '../index'
+import {
+  choose_scatter_property,
+  doc_query,
+  get_scatter_plot_props,
+  mount,
+} from '../index'
 
 // happy-dom never measures the plot, so capture ScatterPlot's props instead of its SVG
 const plot_mocks = vi.hoisted(() => ({ ScatterPlot: vi.fn() }))
-vi.mock(`matterviz`, async (import_original) => ({
+vi.mock(`matterviz/plot`, async (import_original) => ({
   ...(await import_original<Record<string, unknown>>()),
   ScatterPlot: plot_mocks.ScatterPlot,
 }))
@@ -33,11 +38,8 @@ type PlotProps = {
   x_axis: {
     label: string
     scale_type: string
-    selected_key: string
-    options: { key: string }[]
   }
-  y_axis: { label: string; selected_key: string }
-  data_loader: (axis: string, key: string) => Promise<unknown>
+  y_axis: { label: string }
   point_events: {
     onclick: (payload: { point: { metadata: { model_key: string } } }) => void
   }
@@ -268,12 +270,12 @@ describe(`ModelComparison dialog`, () => {
     )
   })
 
-  it(`CompareToggle in open_dialog mode adds the model and opens the dialog`, async () => {
-    mount(CompareToggle, {
+  it(`the model page opens comparison without deselecting the current model`, async () => {
+    mount(ModelPage, {
       target: document.body,
-      props: { model_key: key_a, open_dialog: true },
+      props: { data: { model: MODELS[0], md_per_system: null } },
     })
-    const button = doc_query<HTMLButtonElement>(`button`)
+    const button = doc_query<HTMLButtonElement>(`.links > button`)
     expect(button.textContent?.trim()).toBe(`Compare with…`)
     button.click()
     await tick()
@@ -286,6 +288,10 @@ describe(`ModelComparison dialog`, () => {
     button.click()
     await tick()
     expect([...comparison.keys]).toEqual([key_a, key_b])
+    comparison.toggle(key_c)
+    await tick()
+    expect(button.textContent?.trim()).toBe(`Comparing with 2 others`)
+    expect(button.classList.contains(`selected`)).toBe(true)
   })
 
   it(`removes models via the header buttons and adds via the picker`, async () => {
@@ -346,7 +352,7 @@ describe(`ModelComparison dialog`, () => {
     expect(option_labels()[0]).toContain(`${newest.model_name} `)
     expect(option_labels()[0]).toContain(`· ${newest.dates.benchmark_added}`)
 
-    // picking an option adds that model (MultiSelect's bind:selected writes back to the
+    // picking an option adds that model (MultiSelect's bind:value writes back to the
     // store), and the dialog's own close button closes it
     document.querySelector<HTMLLIElement>(`dialog ul.options li`)?.click()
     await tick()
@@ -368,21 +374,12 @@ describe(`ModelComparison dialog`, () => {
     mount(ModelComparison, { target: document.body })
     await tick()
     const plot = () => get_scatter_plot_props(plot_mocks.ScatterPlot) as PlotProps
-    // cost rows lead the in-plot axis menus, then the regular scatter options
     expect(plot().x_axis).toMatchObject({
       label: `Params`,
       scale_type: `log`,
-      selected_key: `model_params`,
     })
-    expect(
-      plot()
-        .x_axis.options.slice(0, 2)
-        .map((opt) => opt.key),
-    ).toEqual([`model_params`, `n_training_materials`])
-    expect(plot().x_axis.options.length).toBeGreaterThan(COST_ROWS.length)
     expect(plot().y_axis).toMatchObject({
       label: `κ<sub>SRME</sub>`,
-      selected_key: `κ_SRME`,
     })
     // one series per model with the dimmed field first, highlighted (ringed, labeled)
     // compared models last, then the dashed Pareto frontier
@@ -401,10 +398,9 @@ describe(`ModelComparison dialog`, () => {
     expect(dimmed.every((trace) => trace.point_style?.fill_opacity === 0.3)).toBe(true)
     expect(dimmed.every((trace) => trace.point_label?.length === 0)).toBe(true)
 
-    // the axis menus drive the plot through data_loader; clicking a point toggles the model
-    await plot().data_loader(`x`, `n_training_materials`)
-    await plot().data_loader(`y`, `F1`)
-    await tick()
+    // Axis selections update the derived series; clicking a point toggles the model.
+    await choose_scatter_property(`X axis`, `Training Materials`)
+    await choose_scatter_property(`Y axis`, `F1`)
     expect(plot().x_axis.label).toBe(`Training Materials`)
     expect(plot().y_axis.label).toBe(`F1`)
     plot().point_events.onclick({ point: { metadata: { model_key: compared[0] } } })

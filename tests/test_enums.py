@@ -9,7 +9,6 @@ from unittest.mock import patch
 
 import pytest
 import requests
-import requests.adapters
 
 import scripts.generate_model_enum as model_enum_generator
 from matbench_discovery import DATA_DIR, ROOT
@@ -261,6 +260,7 @@ def test_model_md_path_returns_path_for_dict_md(
 
 
 @pytest.mark.parametrize("data_file", DataFiles)
+@pytest.mark.network
 def test_data_files_enum_urls(
     data_file: DataFiles, url_session: requests.Session
 ) -> None:
@@ -285,6 +285,7 @@ def figshare_data_file_md5s(url_session: requests.Session) -> dict[str, str]:
 
 
 @pytest.mark.parametrize("data_file", DataFiles)
+@pytest.mark.network
 def test_data_files_md5_matches_figshare(
     data_file: DataFiles, figshare_data_file_md5s: dict[str, str]
 ) -> None:
@@ -479,30 +480,8 @@ def test_model_md_path_passes_huggingface_token(
 
 
 TIMEOUT = 30
-TRANSIENT_URL_STATUSES = (429, 500, 502, 503, 504)
+URL_WORKERS = 16  # HTTP checks wait on the network, not the runner's CPU cores.
 VALID_URL_STATUSES = {200, 202, 403, 429}
-
-
-@pytest.fixture(scope="session")
-def url_session() -> requests.Session:
-    """HTTP session retrying transient 429/5xx errors so hiccups don't fail tests."""
-    session = requests.Session()
-    session.headers["User-Agent"] = "unit test"
-    n_pool = 2 * (os.cpu_count() or 4)
-    session.mount(
-        "https://",
-        requests.adapters.HTTPAdapter(
-            pool_connections=n_pool,
-            pool_maxsize=n_pool,
-            max_retries=requests.adapters.Retry(
-                total=3,
-                backoff_factor=1,
-                status_forcelist=TRANSIENT_URL_STATUSES,
-                raise_on_status=False,
-            ),
-        ),
-    )
-    return session
 
 
 def check_url(session: requests.Session, url: str) -> None:
@@ -512,10 +491,10 @@ def check_url(session: requests.Session, url: str) -> None:
     assert status in VALID_URL_STATUSES, f"unexpected {status=} for {url}"
 
 
+@pytest.mark.network
 def test_model_prediction_urls(url_session: requests.Session) -> None:
     """Test that all model prediction file URLs are valid."""
     import concurrent.futures
-    import multiprocessing as mp
 
     tasks: dict[str, str] = {}
     for model in Model.active():
@@ -536,9 +515,8 @@ def test_model_prediction_urls(url_session: requests.Session) -> None:
                 elif isinstance(val, dict):
                     stack.append((key_path, val))
 
-    n_workers = min(len(tasks), mp.cpu_count())
     errors: list[Exception] = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=n_workers) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=URL_WORKERS) as executor:
         futures = {
             executor.submit(check_url, url_session, url): (url, desc)
             for url, desc in tasks.items()

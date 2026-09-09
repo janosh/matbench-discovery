@@ -4,7 +4,7 @@
   import hist_hull_dist from '$figs/hist-wbm-hull-dist.json.gz'
   import arity_hist from '$figs/mp-vs-mp-trj-vs-wbm-arity-hist.json.gz'
   import sunbursts from '$figs/spacegroup-sunbursts.json.gz'
-  import { PtableHeatmap } from '$lib'
+  import PtableHeatmap from '$lib/PtableHeatmap.svelte'
   import {
     dashed,
     floating_label,
@@ -13,10 +13,15 @@
     series_red,
   } from '$lib/fig-helpers'
   import type { ElementSymbol } from 'matterviz'
-  import { ColorScaleSelect, format_num } from 'matterviz'
+  import {
+    ColorScaleSelect,
+    BarPlot,
+    sunburst_from_labels_parents,
+    Sunburst,
+  } from 'matterviz/plot'
+  import { format_num } from 'matterviz/labels'
   import type { D3InterpolateName } from 'matterviz/colors'
-  import { BarPlot, sunburst_from_labels_parents, Sunburst } from 'matterviz/plot'
-  import { Icon, MultiSelect } from 'svelte-widgets'
+  import { Icon, MultiSelect, Popover } from 'svelte-widgets'
   import { Info } from 'svelte-widgets/icons'
   import { bind_url_params, url_color_scale } from '$lib/url-state.svelte'
   import {
@@ -24,7 +29,6 @@
     bool_url_entry,
     valid_query_param,
   } from 'svelte-widgets/url-params'
-  import { tooltip } from 'svelte-widgets/attachments'
   import MPtrjElemCountsPtable from './[slug]/MPtrjElemCountsPtable.svelte'
   import MpTrjNSitesHist from './[slug]/MpTrjNSitesHist.svelte'
   import DataFilesDirectDownload from './data-files-direct-download.md'
@@ -112,21 +116,28 @@
       id="count-mode"
       bind:value={count_mode}
       options={count_modes}
+      mode="single"
       min_select={1}
-      max_select={1}
     >
       {#snippet children({ option })}
-        {option}&nbsp;<span
-          title="The difference between count modes is best explained by example.
-          <code>occurrence</code> mode maps Fe<sub>2</sub>O<sub>3</sub> to <code>{`{Fe: 1, O: 1}`}</code>,
-          <code>composition</code> mode maps it to <code>{`{Fe: 2, O: 3}`}</code>."
-          {@attach tooltip({ allow_html: true })}
+        {option}&nbsp;<Popover
+          trigger_mode="hover"
+          trap_focus={false}
+          aria-label="Count modes"
         >
-          <Icon icon={Info} style="color: var(--link-color)" />
-        </span>
+          {#snippet trigger(trigger_props)}
+            <span role="button" tabindex="0" {...trigger_props}
+              ><Icon icon={Info} style="color: var(--link-color)" /></span
+            >
+          {/snippet}
+          The difference between count modes is best explained by example.
+          <code>occurrence</code> mode maps Fe<sub>2</sub>O<sub>3</sub> to
+          <code>{'{Fe: 1, O: 1}'}</code>,
+          <code>composition</code> mode maps it to <code>{'{Fe: 2, O: 3}'}</code>.
+        </Popover>
       {/snippet}
     </MultiSelect>
-    <ColorScaleSelect bind:value={color_scale} selected={[color_scale]} />
+    <ColorScaleSelect bind:value={color_scale} aria-label="Color scale" />
     <PtableHeatmap
       heatmap_values={wbm_elem_counts}
       {color_scale}

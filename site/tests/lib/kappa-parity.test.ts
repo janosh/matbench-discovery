@@ -7,15 +7,36 @@ import {
   kappa_parity_manifest,
   kappa_model_asset,
   kappa_parity_asset_url,
-  kappa_structure,
   load_kappa_parity_base,
   load_kappa_parity_model,
 } from '$lib/parity/kappa-parity'
 import type { KappaParityBase, KappaParityModel } from '$lib/parity/kappa-parity'
 import { clear_asset_cache } from '$lib/asset-loader'
+import * as kappa_parity from '$lib/parity/kappa-parity'
+import KappaParityPlot from '$lib/plot/KappaParityPlot.svelte'
+import { MODELS } from '$lib/models.svelte'
+import { tick } from 'svelte'
 import type { AnyStructure } from 'matterviz/structure'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { gzipped_json_response, request_url } from '../index'
+import {
+  doc_query,
+  get_scatter_plot_props,
+  gzipped_json_response,
+  mount,
+  request_url,
+} from '../index'
+
+const plot_mocks = vi.hoisted(() => ({
+  ScatterPlot: vi.fn(),
+  Dos: vi.fn(),
+  PhononThermalPlot: vi.fn(),
+  spectral_loaded: vi.fn(),
+}))
+vi.mock(`matterviz/plot`, () => ({ ScatterPlot: plot_mocks.ScatterPlot }))
+vi.mock(`matterviz/spectral`, () => {
+  plot_mocks.spectral_loaded()
+  return plot_mocks
+})
 
 beforeEach(clear_asset_cache)
 
@@ -44,6 +65,45 @@ const model: KappaParityModel = {
 
 const first_model_key = Object.keys(kappa_parity_manifest.model_assets)[0]
 if (!first_model_key) throw new Error(`kappa parity manifest has no model assets`)
+
+it(`loads spectral plots only after selecting a material and renders both DOS sources`, async () => {
+  vi.spyOn(kappa_parity, `load_kappa_parity_base`).mockResolvedValue(base)
+  vi.spyOn(kappa_parity, `load_kappa_parity_model`).mockResolvedValue(model)
+  vi.spyOn(kappa_parity, `load_kappa_srme_map`).mockResolvedValue(
+    new Map([[`mp-1`, 0.4]]),
+  )
+  mount(KappaParityPlot, {
+    target: document.body,
+    props: { model: { ...MODELS[0], model_key: first_model_key } },
+  })
+  const props = (await vi.waitFor(() =>
+    get_scatter_plot_props(plot_mocks.ScatterPlot),
+  )) as {
+    series: { color_values: (number | null)[] }[]
+    on_point_click: (event: { point: { series_idx: number; point_idx: number } }) => void
+  }
+  const color_values = () =>
+    (get_scatter_plot_props(plot_mocks.ScatterPlot) as typeof props).series[0]
+      .color_values
+  expect(color_values()).toEqual([0.4])
+  const color_select = doc_query<HTMLSelectElement>(`select[aria-label="Color metric"]`)
+  color_select.value = `sre`
+  // happy-dom lacks option:checked, which Svelte reads once in the change handler.
+  vi.spyOn(color_select, `querySelector`).mockReturnValueOnce(
+    color_select.selectedOptions[0],
+  )
+  color_select.dispatchEvent(new Event(`change`, { bubbles: true }))
+  await tick()
+  expect(color_values()).toEqual([(2 * Math.abs(8 - 10)) / (8 + 10)])
+  expect(plot_mocks.spectral_loaded).not.toHaveBeenCalled()
+  props.on_point_click({ point: { series_idx: 0, point_idx: 0 } })
+  await vi.waitFor(() => expect(plot_mocks.Dos).toHaveBeenCalledOnce())
+  expect(plot_mocks.PhononThermalPlot).toHaveBeenCalledTimes(2)
+  expect(document.querySelector(`.detail-panel`)?.textContent).toContain(`mp-1`)
+  doc_query<HTMLButtonElement>(`button[aria-label="Close"]`).click()
+  await tick()
+  expect(document.querySelector(`.detail-panel`)).toBeNull()
+})
 
 function manifest_sized_base(overrides: Partial<KappaParityBase> = {}): KappaParityBase {
   const row_count = kappa_parity_manifest.row_count
@@ -139,19 +199,6 @@ describe(`kappa parity data helpers`, () => {
     expect(() =>
       dos_per_atom({ type: `phonon`, frequencies: [0, 1], densities: [0, 0] }),
     ).toThrow(`integrates to 0`)
-  })
-
-  it(`returns prebuilt structures and null for missing materials`, () => {
-    expect(kappa_structure(base, `mp-1`)).toBe(dummy_structure)
-    expect(kappa_structure(base, `mp-2`)).toBeNull()
-  })
-
-  it(`returns null (not throws) for an unparsable structure payload`, () => {
-    // runs inside a $derived in the component, so a throw would crash the plot
-    const bad_base = { ...base, structures: { 'mp-x': `not a valid structure` } }
-    vi.spyOn(console, `error`).mockImplementation(() => {})
-    vi.spyOn(console, `warn`).mockImplementation(() => {})
-    expect(kappa_structure(bad_base, `mp-x`)).toBeNull()
   })
 
   it(`maps model keys to per-model release assets`, () => {

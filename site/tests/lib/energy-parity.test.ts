@@ -51,6 +51,7 @@ if (!first_structure_bundle) {
 }
 
 it(`renders parity statistics through the plot's automatic annotation placement`, async () => {
+  const build_series = vi.spyOn(energy_parity, `build_energy_parity_series`)
   vi.spyOn(HTMLElement.prototype, `clientWidth`, `get`).mockReturnValue(800)
   vi.spyOn(HTMLElement.prototype, `clientHeight`, `get`).mockReturnValue(520)
   vi.spyOn(energy_parity, `load_energy_parity_base`).mockResolvedValue(base)
@@ -67,6 +68,8 @@ it(`renders parity statistics through the plot's automatic annotation placement`
   expect(badge.textContent).toContain(`R2`)
   expect(badge.style.position).toBe(`static`)
   expect(badge.parentElement?.dataset.decorationLocation).toBeDefined()
+  // Loaded arrays are immutable snapshots, not hundreds of thousands of reactive proxies.
+  expect(build_series.mock.calls.at(-1)?.[0]).toBe(base)
 })
 
 function manifest_sized_base(

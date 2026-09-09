@@ -256,7 +256,15 @@ def test_load_df_wbm_with_preds_mock_data_models() -> None:
     """Test default and explicit model loading with pytest mock data."""
     inactive_model = Model.alphanet_v1_mptrj
     inactive_model_refs = (inactive_model, inactive_model.name, inactive_model.label)
-    with patch("matbench_discovery.data.glob", return_value=[]):
+    # Mock resolution as well as reading: discovery_path otherwise downloads every
+    # real prediction file before glob_to_df substitutes the 500-row test fixture.
+    with (
+        patch(
+            "matbench_discovery.enums.resolve_verified_file",
+            side_effect=lambda abs_path, **_kwargs: abs_path,
+        ) as resolve_file,
+        patch("matbench_discovery.data.glob", return_value=[]),
+    ):
         df_default = load_df_wbm_with_preds(pbar=False)
         inactive_cols = [
             list(load_df_wbm_with_preds(models=[model_ref], pbar=False))
@@ -269,6 +277,8 @@ def test_load_df_wbm_with_preds_mock_data_models() -> None:
         model.key for model in Model if not model.is_active
     )
     assert inactive_cols == [[*df_wbm, inactive_model.key]] * len(inactive_model_refs)
+    assert resolve_file.call_count == len(Model.active()) + len(inactive_model_refs)
+    assert df_default[Model.mace_mpa_0.key].notna().any()
 
 
 @pytest.mark.skipif(
@@ -324,7 +334,11 @@ def test_load_df_wbm_with_preds_subset(
     subset: str | TestSubset | list[str] | pd.Index | None,
 ) -> None:
     """Subset selectors return exactly the requested WBM material IDs."""
-    df_subset = load_df_wbm_with_preds(subset=subset)
+    # Default model selection is covered above; one prediction column exercises
+    # subsetting without loading every model for each selector.
+    model = Model.mace_mpa_0
+    with patch("matbench_discovery.data.glob", return_value=[]):
+        df_subset = load_df_wbm_with_preds(models=[model], subset=subset, pbar=False)
     if subset is None:
         expected_index = df_wbm.index
     elif isinstance(subset, list | pd.Index):
@@ -332,6 +346,8 @@ def test_load_df_wbm_with_preds_subset(
     else:
         expected_index = df_wbm.query(MbdKey.uniq_proto).index
     assert df_subset.index.equals(expected_index)
+    assert list(df_subset) == [*df_wbm, model.key]
+    assert df_subset[model.key].notna().any()
 
 
 def test_prediction_errors_and_element_enrichment(

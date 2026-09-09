@@ -68,10 +68,16 @@ jobs:
             exit 1
           fi
 
-      - name: Model registry and schema guardrails
-        run: uv run --with-editable . --with pytest --with jsonschema pytest tests/models/ -q
+      # Reuse the site's immutable downloads; release metadata is still checked live.
+      - name: Restore parity assets
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            site/static/energy-parity/assets
+            site/static/kappa-parity/assets
+          key: parity-assets-${{ hashFiles('site/src/lib/parity/*-parity-manifest.json') }}
 
-      - name: Check parity manifests + release assets
+      - name: Model registry, schemas, prediction URLs and parity assets
         env:
           GH_TOKEN: ${{ github.token }} # avoids GitHub API rate limits
-        run: uv run --with-editable . --with pytest pytest tests/site/test_parity_assets.py -q
+        run: uv run --with-editable . --with pytest --with jsonschema pytest tests/models/ tests/site/test_parity_assets.py tests/test_enums.py -q --durations=10

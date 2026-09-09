@@ -2,7 +2,7 @@
 // model detail pages. Values are read via the same label paths the metrics table
 // uses, so ranks always agree with the leaderboard.
 import { ALL_METRICS, MD_METRICS } from '$lib/labels'
-import { get_nested_number, is_finite_num, label_data_path } from '$lib/metrics'
+import { is_finite_num, metric_value } from '$lib/metrics'
 import type { Label, ModelData } from '$lib/types'
 
 // headline metrics to rank models by, with the page where each leaderboard lives.
@@ -37,9 +37,10 @@ export const competition_rank = (
   all_values: readonly number[],
   better: Label[`better`],
 ) => {
-  const n_better = all_values.filter((other) =>
-    better === `lower` ? other < value : other > value,
-  ).length
+  let n_better = 0
+  for (const other of all_values) {
+    if (better === `lower` ? other < value : other > value) n_better++
+  }
   return { rank: n_better + 1, n_models: all_values.length }
 }
 
@@ -54,11 +55,10 @@ export function model_metric_ranks<M extends Label>(
   if (!model) return []
 
   return metrics.flatMap((metric) => {
-    const path = label_data_path(metric)
-    const value = get_nested_number(model, path)
+    const value = metric_value(model, metric)
     if (!is_finite_num(value)) return []
     const all_values = models
-      .map((entry) => get_nested_number(entry, path))
+      .map((entry) => metric_value(entry, metric))
       .filter(is_finite_num)
     return [{ metric, ...competition_rank(value, all_values, metric.better), value }]
   })

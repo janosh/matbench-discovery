@@ -1,12 +1,16 @@
 import { goto } from '$app/navigation'
-import { HYPERPARAMS } from '$lib/labels'
+import { DIATOMICS_METRICS, HYPERPARAMS } from '$lib/labels'
 import { comparison } from '$lib/model-comparison.svelte'
 import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
 import MetricsTable from '$lib/table/MetricsTable.svelte'
-import type { Label, ModelData } from '$lib/types'
-import { tick } from 'svelte'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { DiscoverySet, Label, ModelData } from '$lib/types'
+import { tick, type ComponentProps } from 'svelte'
+import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { doc_query, header_name, mount } from '../index'
+import app_css from '$site/src/app.css?raw'
+
+const mount_table = (props: ComponentProps<typeof MetricsTable> = {}) =>
+  mount(MetricsTable, { target: document.body, props })
 
 // all header cells except the structural rank (#) column HeatmapTable renders
 // for show_row_numbers
@@ -55,9 +59,12 @@ describe(`MetricsTable`, () => {
     `renders columns, header tooltips and prediction downloads`,
     { timeout: 30_000 },
     async () => {
-      mount(MetricsTable, {
-        target: document.body,
-        props: { col_filter: () => true },
+      let discovery_set = $state<DiscoverySet>(`unique_prototypes`)
+      mount_table({
+        col_filter: () => true,
+        get discovery_set() {
+          return discovery_set
+        },
       })
 
       const table = doc_query(`table`)
@@ -71,69 +78,171 @@ describe(`MetricsTable`, () => {
         table_container.style.getPropertyValue(`--heatmap-row-num-padding-left`),
       ).toBe(`0`)
 
-      const header_texts = header_cells().map((h) => h.textContent?.trim())
-      const required_cols = [
-        `Model`,
-        `CPS ↑`, // active sort column has indicator
-        `F1`,
-        `DAF`,
-        `Training Set`,
-        `Params`,
-        `Targets`,
-        `Links`,
-      ]
-
-      for (const col of required_cols) {
-        expect(header_texts).toContain(col)
-      }
-
+      const header_texts = header_cells().map((header) =>
+        header.textContent?.trim().replaceAll(/\s+/g, ` `),
+      )
       // Model stays first and Org is a regular metadata column at the far right.
       expect(header_texts[0]).toBe(`Model`)
       expect(header_texts.at(-1)).toBe(`Org`)
       const metric_order = [`CPS ↑`, `F1`, `DAF`].map((col) => header_texts.indexOf(col))
       expect(metric_order).toStrictEqual([...metric_order].toSorted((n1, n2) => n1 - n2))
 
+      const initial_rows = [...table.querySelectorAll(`tbody tr`)]
+      for (const subset of [`full_test_set`, `unique_prototypes`] as const) {
+        discovery_set = subset
+        await tick()
+        const models = row_models()
+        for (const [idx, row] of [...table.querySelectorAll(`tbody tr`)].entries()) {
+          expect(row).toBe(initial_rows[idx])
+          const f1 = models[idx].metrics?.discovery?.[subset]?.F1
+          expect(
+            doc_query(`td[data-col="F1"]`, row).getAttribute(`data-sort-value`),
+          ).toBe(f1 == null ? null : String(f1))
+        }
+      }
+
       const org_cell = doc_query(`td[data-col="Org"]`)
       expect(doc_query(`.org-preview`, org_cell)).toBeDefined()
       expect(org_cell.getAttribute(`style`)).not.toContain(`min-width:`)
-      expect(header_cells().at(-1)?.getAttribute(`title`)).toBe(
-        `Model author affiliations`,
-      )
-      const cps_header = header_cells().find((header) =>
-        header.textContent?.trim().startsWith(`CPS`),
-      )
-      expect(cps_header?.getAttribute(`title`)).toContain(`(higher=better)`)
+      const cps_header = header_cells().find((header) => header_name(header) === `CPS`)
+      if (!cps_header) throw new Error(`CPS header is missing`)
+      const style = document.createElement(`style`)
+      // happy-dom's CSS parser swallows the first rule after a bare @import.
+      style.textContent = app_css.replaceAll(/^@import[^;]+;/gm, ``)
+      document.body.append(style)
+      cps_header.style.fontWeight = `700`
+      await tick()
+      const trigger = doc_query<HTMLButtonElement>(`button[aria-haspopup]`, cps_header)
+      trigger.dispatchEvent(new MouseEvent(`mouseenter`))
+      await vi.waitFor(() => {
+        const content = doc_query(`.popover`, cps_header)
+        expect(content.textContent).toContain(`Combined Performance Score`)
+        expect(content.textContent).toContain(`(higher=better)`)
+        expect(getComputedStyle(content).fontWeight).toBe(`400`)
+        expect(getComputedStyle(content).whiteSpace).toBe(`normal`)
+        expect(getComputedStyle(content).textAlign).toBe(`left`)
+      })
+      trigger.dispatchEvent(new MouseEvent(`mouseleave`))
+      await vi.waitFor(() => expect(cps_header.querySelector(`.popover`)).toBeNull())
 
       const pred_files_button = doc_query<HTMLButtonElement>(
         `tbody button[aria-label="Download model prediction files"]`,
       )
       expect(document.querySelector(`.pred-files-dropdown`)).toBeNull()
 
-      pred_files_button.click()
+      // Exercise reopening and both dismissal paths; click_outside uses pointerdown.
+      for (const [target, event] of [
+        [document.body, new PointerEvent(`pointerdown`, { bubbles: true })],
+        [globalThis, new KeyboardEvent(`keydown`, { key: `Escape` })],
+      ] as const) {
+        pred_files_button.click()
+        await tick()
+        expect(doc_query(`.pred-files-dropdown`).textContent).toContain(`Files for`)
+        target.dispatchEvent(event)
+        await tick()
+        expect(document.querySelector(`.pred-files-dropdown`)).toBeNull()
+      }
+    },
+  )
+
+  it(`explains every n/a cell and displays the reason on hover`, async () => {
+    const pending_model = ACTIVE_MODELS.find(
+      ({ model_key }) => model_key === `equflash-29m-oam`,
+    )
+    if (!pending_model?.metrics) throw new Error(`Missing EquFlash test metrics`)
+    const { metrics } = pending_model
+    const previous_md = metrics.md
+    metrics.md = undefined
+    onTestFinished(() => {
+      metrics.md = previous_md
+    })
+    mount_table({
+      model_filter: (model: ModelData) =>
+        [`cgcnn`, `equflash-29m-oam`].includes(model.model_key),
+      filters: all_targets_filters(),
+      col_filter: () => true,
+    })
+    await tick()
+    const missing_cells = [...document.querySelectorAll(`tbody td`)].filter(
+      (cell) => cell.textContent?.trim() === `n/a`,
+    )
+    expect(missing_cells.length).toBeGreaterThan(0)
+    for (const cell of missing_cells) {
+      const trigger = doc_query(`[data-title]`, cell)
+      expect(trigger.getAttribute(`data-title`)).not.toBe(`Not available`)
+      expect(trigger.getAttribute(`data-title`)?.length).toBeGreaterThan(15)
+    }
+    const unsupported = doc_query(`a[href="/models/cgcnn"]`).closest(`tr`)
+    const pending = doc_query(`a[href="/models/equflash-29m-oam"]`).closest(`tr`)
+    if (!unsupported || !pending) throw new Error(`Missing model rows`)
+    expect(
+      doc_query(`td[data-col="RMSD"] [data-title]`, unsupported).dataset.title,
+    ).toContain(`requires forces`)
+    const pending_cell = doc_query(`td[data-col="CMDS"]`, pending)
+    expect(pending_cell.getAttribute(`data-sort-value`)).toBeNull()
+    const trigger = doc_query(`[data-title]`, pending_cell)
+    trigger.dispatchEvent(new PointerEvent(`pointerover`, { bubbles: true }))
+    await vi.waitFor(() => {
+      expect(doc_query(`.custom-tooltip .tooltip-content`).textContent).toBe(
+        `Molecular Dynamics: not evaluated yet. Contributions welcome to add missing model predictions.`,
+      )
+    })
+  })
+
+  it.each([
+    {
+      n_valid: 66,
+      n_eligible: 73,
+      failed_elements: [`Cs`, `K`, `Rb`],
+      missing_elements: [`Ac`, `Pa`, `Th`, `U`],
+      tooltip: `Valid fits: 66/73 reference-eligible elements. No valid fit: 3 (Cs, K, Rb). Unavailable curves: 4 (Ac, Pa, Th, U).`,
+    },
+    {
+      n_valid: 0,
+      n_eligible: 2,
+      failed_elements: [`K`],
+      missing_elements: [`U`],
+      tooltip: `Valid fits: 0/2 reference-eligible elements. No valid fit: 1 (K). Unavailable curves: 1 (U).`,
+    },
+    {
+      n_valid: 2,
+      n_eligible: 2,
+      failed_elements: [],
+      missing_elements: [],
+      tooltip: `Valid fits: 2/2 reference-eligible elements. No valid fit: 0. Unavailable curves: 0.`,
+    },
+  ])(
+    `shows frequency fit coverage $n_valid/$n_eligible without changing numeric sorting`,
+    async ({ tooltip, ...coverage }) => {
+      const model = ACTIVE_MODELS[0]
+      const { metrics } = model
+      if (!metrics) throw new Error(`Missing test model metrics`)
+      const previous = metrics.diatomics
+      onTestFinished(() => {
+        metrics.diatomics = previous
+      })
+      metrics.diatomics = {
+        pbe_vib_freq_error: coverage.n_valid ? 47.7 : undefined,
+        pbe_vib_freq_coverage: coverage,
+      }
+      mount_table({
+        model_filter: (candidate: ModelData) => candidate.model_key === model.model_key,
+        column_labels: [DIATOMICS_METRICS.pbe_vib_freq_error],
+        filters: all_targets_filters(),
+      })
       await tick()
-
-      let dropdown = document.querySelector(`.pred-files-dropdown`)
-      expect(dropdown).not.toBeNull()
-      expect(dropdown?.textContent).toContain(`Files for`)
-
-      // click_outside dismisses on pointerdown, not click, so a bare body.click() is
-      // not enough to close the dropdown
-      document.body.dispatchEvent(new PointerEvent(`pointerdown`, { bubbles: true }))
-      await tick()
-
-      dropdown = document.querySelector(`.pred-files-dropdown`)
-      expect(dropdown).toBeNull()
-
-      pred_files_button.click() // reopen dropdown
-      await tick()
-      dropdown = document.querySelector(`.pred-files-dropdown`)
-      expect(dropdown).not.toBeNull()
-
-      globalThis.dispatchEvent(new KeyboardEvent(`keydown`, { key: `Escape` }))
-      await tick()
-
-      dropdown = document.querySelector(`.pred-files-dropdown`)
-      expect(dropdown).toBeNull()
+      const cell = doc_query(`tbody td[data-col="PBE Δω"]`)
+      expect(cell.getAttribute(`data-sort-value`)).toBe(coverage.n_valid ? `47.7` : null)
+      expect(cell.textContent?.trim()).toBe(
+        `${coverage.n_valid ? `47.7` : `n/a`} · ${coverage.n_valid}/${coverage.n_eligible}`,
+      )
+      expect(doc_query(`small`, cell).style.fontWeight).toBe(`400`)
+      doc_query(`[data-title]`, cell).dispatchEvent(
+        new PointerEvent(`pointerover`, { bubbles: true }),
+      )
+      await vi.waitFor(() => {
+        expect(doc_query(`.custom-tooltip .tooltip-content`).textContent).toBe(tooltip)
+      })
     },
   )
 
@@ -153,11 +262,8 @@ describe(`MetricsTable`, () => {
   ])(
     `hides selected $name columns`,
     ({ hidden_keys, hidden_labels, retained_labels }) => {
-      mount(MetricsTable, {
-        target: document.body,
-        props: {
-          col_filter: (col: Label) => !hidden_keys.includes(col.key ?? col.label),
-        },
+      mount_table({
+        col_filter: (col: Label) => !hidden_keys.includes(col.key ?? col.label),
       })
 
       const header_texts = header_names()
@@ -173,71 +279,52 @@ describe(`MetricsTable`, () => {
     },
     async () => {
       // default filters require force prediction, hiding energy-only models
-      mount(MetricsTable, { target: document.body })
+      const filters = make_table_filters()
+      mount_table({ filters })
       await tick()
-      const rows_without_energy = document.querySelectorAll(`tbody tr`).length
+      const rows_without_energy = row_models().length
+      expect(rows_without_energy).toBe(visible_row_count())
 
       // clearing the targets filter shows them
-      document.body.innerHTML = ``
-      const show_all = all_targets_filters()
-      mount(MetricsTable, { target: document.body, props: { filters: show_all } })
+      filters.targets = {}
       await tick()
-      const rows_with_energy = document.querySelectorAll(`tbody tr`).length
+      const rows_with_energy = row_models().length
 
-      expect(rows_without_energy).toBe(visible_row_count())
-      expect(rows_with_energy).toBe(visible_row_count(show_all.matches))
+      expect(rows_with_energy).toBe(visible_row_count(filters.matches))
       expect(rows_with_energy).toBeGreaterThan(rows_without_energy)
     },
   )
 
-  it(`filters models based on model_filter prop`, () => {
-    // show no models
-    const no_model_filter = (_model: ModelData) => false
-    mount(MetricsTable, {
-      target: document.body,
-      props: {
-        model_filter: no_model_filter,
+  it(`reactively filters models and displays an empty state when none match`, async () => {
+    let model_filter = $state<(model: ModelData) => boolean>(() => false)
+    mount_table({
+      get model_filter() {
+        return model_filter
       },
     })
-
-    const data_rows = document.querySelectorAll(`tbody tr`)
-    // HeatmapTable may render a "no data" placeholder row when empty
-    expect(data_rows.length).toBeLessThanOrEqual(1)
-
-    // show all models
-    document.body.innerHTML = ``
-    mount(MetricsTable, {
-      target: document.body,
-      props: {
-        model_filter: () => true,
-      },
-    })
-
-    const all_rows = document.querySelectorAll(`tbody tr`).length
-    expect(all_rows).toBe(visible_row_count())
-
-    // only models with CHG in the name
-    document.body.innerHTML = ``
-    mount(MetricsTable, {
-      target: document.body,
-      props: {
-        model_filter: (model: ModelData) => model.model_name.includes(`CHG`),
-      },
-    })
-
-    const filtered_rows = document.querySelectorAll(`tbody tr`)
     const default_matches = make_table_filters().matches
-    expect(filtered_rows).toHaveLength(
-      visible_row_count(
-        (model) => default_matches(model) && model.model_name.includes(`CHG`),
-      ),
-    )
-    expect(filtered_rows.length).toBeLessThan(all_rows)
-
-    filtered_rows.forEach((row) => {
-      const model_cell = row.querySelector(`td[data-col="Model"]`)
-      expect(model_cell?.textContent).toContain(`CHG`)
-    })
+    for (const matches of [
+      () => false,
+      () => true,
+      (model: ModelData) => model.model_name.includes(`CHG`),
+      () => false,
+    ]) {
+      model_filter = matches
+      await tick()
+      const expected_models = ACTIVE_MODELS.filter(
+        (model) => default_matches(model) && matches(model),
+      )
+      expect(
+        row_models()
+          .map(({ model_key }) => model_key)
+          .toSorted(),
+      ).toStrictEqual(expected_models.map(({ model_key }) => model_key).toSorted())
+      expect(document.querySelectorAll(`tbody tr.empty-row`)).toHaveLength(
+        expected_models.length ? 0 : 1,
+      )
+      if (!expected_models.length)
+        expect(doc_query(`tbody`).textContent?.trim()).toBe(`No data`)
+    }
   })
 
   it.each([
@@ -257,7 +344,7 @@ describe(`MetricsTable`, () => {
       expected_headers: [`Model`, `F1`, `DAF`],
     },
   ])(`handles col_filter: $name`, ({ col_filter, expected_headers }) => {
-    mount(MetricsTable, { target: document.body, props: { col_filter } })
+    mount_table({ col_filter })
 
     expect(header_names()).toStrictEqual(expected_headers)
   })
@@ -278,14 +365,15 @@ describe(`MetricsTable`, () => {
   ])(
     `combines filters: $expected_model_match models with $expected_headers`,
     ({ model_filter, col_filter, expected_model_match, expected_headers }) => {
-      mount(MetricsTable, {
-        target: document.body,
-        props: { model_filter, col_filter },
-      })
+      mount_table({ model_filter, col_filter })
 
       expect(header_names()).toStrictEqual(expected_headers)
 
       const rows = document.querySelectorAll(`tbody tr`)
+      const default_matches = make_table_filters().matches
+      expect(rows).toHaveLength(
+        visible_row_count((model) => default_matches(model) && model_filter(model)),
+      )
       rows.forEach((row) => {
         const model_cell = row.querySelector(`td[data-col="Model"]`)
         expect(model_cell?.textContent).toContain(expected_model_match)
@@ -294,13 +382,9 @@ describe(`MetricsTable`, () => {
   )
 
   it(`marks models with excluded metric samples`, async () => {
-    document.body.innerHTML = ``
-    mount(MetricsTable, {
-      target: document.body,
-      props: {
-        model_filter: (model: ModelData) => model.model_name === `AlphaNet-v1-OAM`,
-        col_filter: (col: Label) => col.label === `Model`,
-      },
+    mount_table({
+      model_filter: (model: ModelData) => model.model_name === `AlphaNet-v1-OAM`,
+      col_filter: (col: Label) => col.label === `Model`,
     })
     await tick()
 
@@ -336,11 +420,8 @@ describe(`MetricsTable`, () => {
     ])(
       `sorts $header numerically via data-sort-value`,
       async ({ col_key, header, sort_key }) => {
-        mount(MetricsTable, {
-          target: document.body,
-          props: {
-            col_filter: (col: Label) => [`Model`, col_key].includes(col.key ?? col.label),
-          },
+        mount_table({
+          col_filter: (col: Label) => [`Model`, col_key].includes(col.key ?? col.label),
         })
 
         const sort_header = header_cells().find((th) => th.textContent?.includes(header))
@@ -365,11 +446,8 @@ describe(`MetricsTable`, () => {
     )
 
     it(`renders Training Set cells as dataset links`, async () => {
-      mount(MetricsTable, {
-        target: document.body,
-        props: {
-          col_filter: (col: Label) => [`Model`, `Training Set`].includes(col.label),
-        },
+      mount_table({
+        col_filter: (col: Label) => [`Model`, `Training Set`].includes(col.label),
       })
       await tick()
 
@@ -404,7 +482,7 @@ describe(`MetricsTable`, () => {
       `alphabetically sorts by Model name on $test_name header click`,
       { timeout: 30_000 }, // happy-dom renders of the full-column table are slow in CI
       async ({ props }) => {
-        mount(MetricsTable, { target: document.body, props })
+        mount_table(props)
 
         const headers = header_cells()
         const model_header = headers.find((h) => h.textContent?.includes(`Model`))
@@ -446,12 +524,9 @@ describe(`MetricsTable`, () => {
     )
 
     it(`prevents sorting of unsortable Links column`, async () => {
-      mount(MetricsTable, {
-        target: document.body,
-        props: {
-          col_filter: (col: Label) =>
-            [`Model`, `CPS`, `Links`].includes(col.key ?? col.label),
-        },
+      mount_table({
+        col_filter: (col: Label) =>
+          [`Model`, `CPS`, `Links`].includes(col.key ?? col.label),
       })
 
       const headers = header_cells()
@@ -486,10 +561,7 @@ describe(`MetricsTable`, () => {
   describe(`Links Column`, () => {
     it(`renders external links, unavailable icons, and prediction file buttons`, async () => {
       const col_filter = (col: Label) => [`Model`, `Links`].includes(col.label)
-      mount(MetricsTable, {
-        target: document.body,
-        props: { col_filter },
-      })
+      mount_table({ col_filter })
 
       await tick() // Wait for component to process data
 
@@ -550,46 +622,8 @@ describe(`MetricsTable`, () => {
     })
   })
 
-  describe(`Heatmap Toggle Interaction`, () => {
-    // happy-dom renders of the full-column table are slow in CI
-    it(
-      `toggles heatmap colors via TableControls checkbox`,
-      { timeout: 30_000 },
-      async () => {
-        mount(MetricsTable, {
-          target: document.body,
-          props: {},
-        })
-        await tick() // Wait for initial render
-
-        // Find the heatmap toggle checkbox within TableControls
-        const heatmap_checkbox = document.querySelector<HTMLInputElement>(
-          `input[type="checkbox"][aria-label="Toggle heatmap colors"]`,
-        )
-
-        expect(heatmap_checkbox).not.toBeNull()
-        if (!heatmap_checkbox) return // Type guard
-
-        // Initially, heatmap should be on (default)
-        expect(heatmap_checkbox.checked).toBe(true)
-
-        // Click the checkbox to turn heatmap off
-        heatmap_checkbox.click()
-        await tick()
-
-        expect(heatmap_checkbox.checked).toBe(false)
-
-        // Click again to turn heatmap back on
-        heatmap_checkbox.click()
-        await tick()
-
-        expect(heatmap_checkbox.checked).toBe(true)
-      },
-    )
-  })
-
   it(`renders the correct default columns`, () => {
-    mount(MetricsTable, { target: document.body })
+    mount_table()
 
     // Core text expected in default visible columns (duplicates intended: MD and
     // diatomics each have Speed and Slowdown columns, disambiguated by tooltip)
@@ -668,18 +702,17 @@ describe(`MetricsTable`, () => {
       expected_core_columns.toSorted(compare_labels),
     )
 
-    // every column carries a description that HeatmapTable renders as tooltip
-    for (const th of header_elements) {
+    // Every column exposes its rich description through a hover/focus trigger.
+    for (const header of header_elements) {
       expect(
-        th.getAttribute(`title`),
-        `Header ${th.textContent} has no tooltip`,
-      ).not.toBe(``)
-      expect(th.getAttribute(`title`)).not.toBeNull()
+        header.querySelector(`button[aria-haspopup]`),
+        `Header ${header_name(header)} has no tooltip trigger`,
+      ).not.toBeNull()
     }
   })
 
   it(`shows rank numbers 1..N in row order`, () => {
-    mount(MetricsTable, { target: document.body })
+    mount_table()
 
     expect(doc_query(`thead th.row-num-col`).textContent?.trim()).toBe(`#`)
     const rank_texts = [...document.querySelectorAll(`tbody td.row-num-col`)].map((td) =>
@@ -712,13 +745,10 @@ describe(`MetricsTable`, () => {
       `selects and deselects models on double-click with proper state management`,
       { timeout: 30_000 },
       async () => {
-        mount(MetricsTable, {
-          target: document.body,
-          props: { col_filter: () => true },
-        })
+        mount_table({ col_filter: () => true })
         await tick() // Wait for initial render
 
-        // Use fresh row references each time to avoid stale DOM after re-renders
+        const initial_row = get_rows()[0]
         expect(get_rows().length).toBeGreaterThanOrEqual(2)
 
         // Initially no selection
@@ -746,6 +776,7 @@ describe(`MetricsTable`, () => {
         expect(get_rows()[0].classList.contains(`highlight`)).toBe(false)
         expect(get_rows()[1].classList.contains(`highlight`)).toBe(true)
         expect([...comparison.keys]).toEqual([second_key])
+        expect(get_rows()[0]).toBe(initial_row)
       },
     )
 
@@ -753,10 +784,7 @@ describe(`MetricsTable`, () => {
       `manages toggle visibility and count dynamically`,
       { timeout: 30_000 },
       async () => {
-        mount(MetricsTable, {
-          target: document.body,
-          props: { col_filter: () => true },
-        })
+        mount_table({ col_filter: () => true })
 
         // Initially no toggle, compare button shows no count
         expect(get_toggle()).toBeNull()
@@ -815,7 +843,7 @@ describe(`MetricsTable`, () => {
     )
 
     it(`toggles models via the row context menu`, async () => {
-      mount(MetricsTable, { target: document.body, props: { col_filter: () => true } })
+      mount_table({ col_filter: () => true })
       await tick()
       // the toolbar with the Compare button is opted out of matterviz's hover-reveal
       expect(document.querySelector(`.table-container.leaderboard`)).not.toBeNull()
@@ -883,10 +911,7 @@ describe(`MetricsTable`, () => {
       `filters selected rows and updates toggle labels and highlighting`,
       { timeout: 30_000 },
       async () => {
-        mount(MetricsTable, {
-          target: document.body,
-          props: { col_filter: () => true },
-        })
+        mount_table({ col_filter: () => true })
         const initial_count = get_rows().length
         expect(initial_count).toBeGreaterThan(1)
 
@@ -915,21 +940,64 @@ describe(`MetricsTable`, () => {
     )
   })
 
+  it.each([`full_test_set`, `unique_prototypes`] as const)(
+    `exports the visible ordered %s cohort directly from table data`,
+    async (discovery_set) => {
+      const filters = make_table_filters()
+      const models = ACTIVE_MODELS.filter(
+        (model) =>
+          filters.matches(model) && model.metrics?.discovery?.[discovery_set]?.F1 != null,
+      ).slice(0, 3)
+      const keys = new Set(models.map(({ model_key }) => model_key))
+      let exported_blob: Blob | undefined
+      vi.spyOn(URL, `createObjectURL`).mockImplementation((blob) => {
+        exported_blob = blob as Blob
+        return `blob:table-export`
+      })
+      vi.spyOn(HTMLAnchorElement.prototype, `click`).mockImplementation(() => {})
+      mount_table({
+        discovery_set,
+        filters,
+        model_filter: (model: ModelData) => keys.has(model.model_key),
+        col_filter: (col: Label) => [`Model`, `F1`, `DAF`].includes(col.key),
+        column_order: [`Model`, `DAF`, `F1`],
+        sort: { column: `F1`, dir: `asc` },
+      })
+      await tick()
+      doc_query<HTMLButtonElement>(`.dropdown-wrapper > button`).click()
+      await tick()
+      doc_query<HTMLButtonElement>(`.dropdown-pane .dropdown-option`).click()
+      expect(exported_blob).toBeDefined()
+      const csv = await exported_blob?.text()
+      const sorted = models.toSorted(
+        (left, right) =>
+          (left.metrics?.discovery?.[discovery_set]?.F1 ?? 0) -
+          (right.metrics?.discovery?.[discovery_set]?.F1 ?? 0),
+      )
+      expect(csv?.split(`\n`)).toEqual([
+        `Model,DAF,F1`,
+        ...sorted.map((model) => {
+          const metrics = model.metrics?.discovery?.[discovery_set]
+          const excluded =
+            Object.keys(model.metrics?.diatomics?.excluded_formula_reasons ?? {}).length >
+            0
+          return `${model.model_name}${excluded ? `*` : ``},${metrics?.DAF},${metrics?.F1}`
+        }),
+      ])
+    },
+  )
+
   describe(`Column Reordering`, () => {
     it(`initializes all columns and displays visible columns in column_order`, async () => {
       const state = { column_order: [] as string[] }
-      mount(MetricsTable, {
-        target: document.body,
-        props: {
-          get column_order() {
-            return state.column_order
-          },
-          set column_order(val) {
-            state.column_order = val
-          },
-          col_filter: (col: Label) =>
-            [`Model`, `F1`, `DAF`].includes(col.key ?? col.label),
+      mount_table({
+        get column_order() {
+          return state.column_order
         },
+        set column_order(val) {
+          state.column_order = val
+        },
+        col_filter: (col: Label) => [`Model`, `F1`, `DAF`].includes(col.key ?? col.label),
       })
       await tick()
 
@@ -964,11 +1032,8 @@ describe(`MetricsTable`, () => {
       { columns: [`Model`, `F1`, `DAF`], name: `basic columns` },
       { columns: [`Model`, `F1`, `DAF`, `CPS`], name: `with CPS` },
     ])(`maintains Model column first with $name`, async ({ columns }) => {
-      mount(MetricsTable, {
-        target: document.body,
-        props: {
-          col_filter: (col: Label) => columns.includes(col.key ?? col.label),
-        },
+      mount_table({
+        col_filter: (col: Label) => columns.includes(col.key ?? col.label),
       })
       await tick()
 
@@ -984,18 +1049,15 @@ describe(`MetricsTable`, () => {
         column_order: [] as string[],
       }
 
-      mount(MetricsTable, {
-        target: document.body,
-        props: {
-          get col_filter() {
-            return state.col_filter
-          },
-          get column_order() {
-            return state.column_order
-          },
-          set column_order(val) {
-            state.column_order = val
-          },
+      mount_table({
+        get col_filter() {
+          return state.col_filter
+        },
+        get column_order() {
+          return state.column_order
+        },
+        set column_order(val) {
+          state.column_order = val
         },
       })
       await tick()
@@ -1022,12 +1084,8 @@ describe(`MetricsTable`, () => {
     })
 
     it(`sets columns as draggable without initial drag state`, () => {
-      mount(MetricsTable, {
-        target: document.body,
-        props: {
-          col_filter: (col: Label) =>
-            [`Model`, `F1`, `DAF`].includes(col.key ?? col.label),
-        },
+      mount_table({
+        col_filter: (col: Label) => [`Model`, `F1`, `DAF`].includes(col.key ?? col.label),
       })
 
       // header_cells() excludes the rank (#) column, which is structural and

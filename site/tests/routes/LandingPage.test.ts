@@ -4,6 +4,7 @@ import { flushSync, tick } from 'svelte'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   doc_query,
+  header_name,
   mount,
   mount_with_url,
   POPOVER_OPEN_ATTR,
@@ -11,7 +12,10 @@ import {
 } from '../index'
 
 const header_text = () =>
-  [...document.querySelectorAll(`thead th`)].map((header) => header.textContent).join(` `)
+  [...document.querySelectorAll(`thead th`)]
+    .map((header) => header.textContent)
+    .join(` `)
+    .replaceAll(/\s+/g, ` `)
 const toggle_buttons = (label: string): HTMLButtonElement[] => {
   const toggle = [...document.querySelectorAll(`.button-group`)].find((element) =>
     element.textContent?.includes(label),
@@ -33,7 +37,7 @@ const preset_button = (label: string): HTMLButtonElement => {
 }
 const table_header = (label: string): HTMLTableCellElement => {
   const header = [...document.querySelectorAll<HTMLTableCellElement>(`thead th`)].find(
-    (candidate) => candidate.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim() === label,
+    (candidate) => header_name(candidate) === label,
   )
   if (!header) throw new Error(`no table header labeled ${label}`)
   return header
@@ -58,7 +62,7 @@ describe(`Landing Page`, () => {
     await tick()
   }
 
-  it(`renders Discovery metrics by default`, () => {
+  it(`keeps the full table, plots, score weights and About visible with table help collapsed`, async () => {
     const preset_labels = toggle_buttons(`Discovery`).map((button) =>
       button.textContent?.trim(),
     )
@@ -75,11 +79,63 @@ describe(`Landing Page`, () => {
         el.getAttribute(`aria-label`),
       ),
     ).toEqual(expect.arrayContaining([`Column presets`, `Discovery test set`]))
-    expect(header_text()).toContain(`DAF`)
-    expect(header_text()).toContain(`Params`)
-    expect(header_text()).toContain(`rcut`)
-    expect(doc_query(`#best-report`).textContent).toContain(`Discovery view`)
-    expect(doc_query(`#best-report`).textContent).toContain(`F1`)
+    expect([...document.querySelectorAll(`thead th`)].map(header_name)).toEqual([
+      `#`,
+      `Model`,
+      `CPS`,
+      `Acc`,
+      `F1`,
+      `DAF`,
+      `Prec`,
+      `MAE`,
+      `R2`,
+      `κSRME`,
+      `RMSD`,
+      `CMDS`,
+      `CDS`,
+      `Params`,
+      `Targets`,
+      `Date Added`,
+      `Links`,
+      `rcut`,
+      `Training Set`,
+      `Org`,
+    ])
+    expect(document.querySelectorAll(`div.scatter`)).toHaveLength(2)
+
+    const plots = [...document.querySelectorAll(`.plot-section`)]
+    expect(plots.map((section) => section.getAttribute(`aria-labelledby`))).toEqual([
+      `cps-progress-over-time`,
+      `github-activity`,
+    ])
+    expect(plots[0].nextElementSibling).toBe(plots[1])
+    const details = [...document.querySelectorAll<HTMLDetailsElement>(`.page-details`)]
+    expect(
+      details.map((element) => element.querySelector(`summary`)?.textContent),
+    ).toEqual([`How to read the table`])
+    expect(details.map(({ open }) => open)).toEqual([false])
+    expect(doc_query(`#score-weights`).closest(`details`)).toBeNull()
+    expect(doc_query(`#score-weights-heading`).textContent).toBe(`Adjust score weights`)
+    expect(doc_query(`#score-weights svg[aria-label^="Radar chart"]`)).toBeDefined()
+    expect(doc_query(`#table-guide`).textContent).toContain(`missing-result explanations`)
+    const about = doc_query(`#about-benchmark`)
+    expect(about.closest(`details`)).toBeNull()
+    expect(doc_query(`h2`, about).textContent).toBe(`About Matbench Discovery`)
+    expect(
+      [...about.querySelectorAll<HTMLAnchorElement>(`p:first-of-type a`)].map((link) => [
+        link.textContent,
+        link.getAttribute(`href`),
+      ]),
+    ).toEqual([
+      [`crystal discovery`, `/tasks/discovery`],
+      [`geometry optimization`, `/tasks/geo-opt`],
+      [`phonons`, `/tasks/phonons`],
+      [`molecular dynamics`, `/tasks/md`],
+      [`diatomics`, `/tasks/diatomics`],
+    ])
+    expect(doc_query(`#about-benchmark a[href^="https://doi.org/"]`)).toBeDefined()
+    expect(doc_query(`figcaption a[href="/rss.xml"]`).textContent?.trim()).toBe(`RSS`)
+    expect(doc_query(`button[aria-label="Export"]`)).toBeDefined()
   })
 
   it.each([
@@ -111,38 +167,35 @@ describe(`Landing Page`, () => {
 
   // Each non-default task preset reveals one of its signature columns.
   it.each([
-    [`Phonons`, [`κSRE`, `κSRME`, `κSRD`, `κ failed`, `Im(ω)`, `W1(ω)`], `κSRME`], // all six phonon metrics
-    [`Geo Opt`, [`Σ`], `RMSD`], // symmetry metrics (Σ= / Σ↓ / Σ↑)
-    [`MD`, [`vDOS`], `CMDS`], // vDOS err (RDF is hidden from leaderboards as redundant)
-    [`Diatomics`, [`E jump`], `CDS`],
+    [`Phonons`, [`κSRE`, `κSRME`, `κSRD`, `κ failed`, `Im(ω)`, `W1(ω)`]], // all six phonon metrics
+    [`Geo Opt`, [`Σ`]], // symmetry metrics (Σ= / Σ↓ / Σ↑)
+    [`MD`, [`vDOS`]], // vDOS err (RDF is hidden from leaderboards as redundant)
+    [`Diatomics`, [`E jump`]],
   ])(
-    `%s preset updates task metrics, headlines and best model`,
-    async (preset, signature_columns, primary_metric) => {
+    `%s preset reveals task metrics and keeps headline metrics`,
+    async (preset, signature_columns) => {
       expect(header_text()).not.toContain(signature_columns[0])
 
       await select_preset(preset)
       const headers = header_text()
-      const best_report = doc_query(`#best-report`).textContent
       for (const signature_column of signature_columns) {
         expect(headers).toContain(signature_column)
       }
       for (const headline of [`CPS`, `F1`, `RMSD`, `CMDS`, `CDS`]) {
         expect(headers).toContain(headline)
       }
-      expect(best_report).toContain(`${preset} view`)
-      expect(best_report).toContain(primary_metric)
     },
   )
 
-  it(`surfaces a beta warning for the MD metrics`, async () => {
-    const beta_warning_count = () =>
-      [...document.querySelectorAll(`blockquote`)].filter((blockquote) =>
-        blockquote.textContent?.toLowerCase().includes(`interpret with caution`),
-      ).length
-    expect(beta_warning_count()).toBe(1) // always shown in the page's MD note
-
+  it(`shows a concise beta note only when the MD task is selected`, async () => {
+    expect(document.querySelector(`.task-note`)).toBeNull()
     await select_preset(`MD`)
-    expect(beta_warning_count()).toBe(2) // + contextual warning above the MD table
+    const note = doc_query(`.task-note`)
+    expect(note.textContent).toContain(`MD is in beta.`)
+    expect(note.textContent).toContain(`preliminary and may change`)
+    expect(doc_query(`a`, note).getAttribute(`href`)).toBe(`/tasks/md`)
+    await select_preset(`Discovery`)
+    expect(document.querySelector(`.task-note`)).toBeNull()
   })
 
   it(`toggles the discovery set and hides it outside Discovery`, async () => {
@@ -245,7 +298,10 @@ describe(`Landing Page`, () => {
 
   it(`filters models via the training-data dropdown`, async () => {
     const selected_scatter_label = () =>
-      doc_query(`span.selected-label`).textContent?.replaceAll(/\s+/g, ` `)
+      [...document.querySelectorAll(`.property-picker`)]
+        .find((picker) => picker.querySelector(`label`)?.textContent === `Marker size`)
+        ?.querySelector(`.selected-label`)
+        ?.textContent?.replaceAll(/\s+/g, ` `)
     const model_count_on_load = document.querySelectorAll(`tbody tr`).length
     expect(selected_scatter_label()).toContain(`Params`)
     expect(selected_scatter_label()).toContain(`${model_count_on_load} models`)
@@ -265,25 +321,6 @@ describe(`Landing Page`, () => {
     const filtered_model_count = document.querySelectorAll(`tbody tr`).length
     expect(filtered_model_count).toBeLessThan(model_count_on_load)
     expect(selected_scatter_label()).toContain(`${filtered_model_count} models`)
-  })
-
-  it(`surfaces export failures in the UI`, async () => {
-    vi.spyOn(console, `error`).mockImplementation(() => {})
-    doc_query(`section.full-bleed table`).remove()
-    doc_query(`.download-btn`).click() // CSV export
-    await tick()
-    await tick()
-    expect(document.querySelector(`.export-error`)?.textContent).toContain(
-      `Failed to generate CSV`,
-    )
-  })
-
-  it(`renders table downloads section`, () => {
-    expect(
-      [...doc_query(`.downloads`).querySelectorAll(`.download-btn`)].map((button) =>
-        button.textContent?.trim(),
-      ),
-    ).toStrictEqual([`CSV`, `RSS`])
   })
 })
 
@@ -324,16 +361,25 @@ describe(`Landing Page URL state`, () => {
     expect(new URLSearchParams(location.search).get(`preset`)).toBe(`Geo Opt`)
   })
 
-  it(`restores the heatmap toggle from the URL and omits it at default`, async () => {
-    await mount_with_url(Page, `http://localhost/?heatmap=0`)
+  it(`restores heatmap and score settings from the URL`, async () => {
+    await mount_with_url(Page, `http://localhost/?heatmap=0&weights=1,0,0`)
+
+    const first_row = doc_query(`tbody tr`)
+    const cps_cell = doc_query(`td[data-col="CPS"]`, first_row)
+    // With all weight on discovery, CPS is the model's F1 score.
+    expect(cps_cell.textContent).toBe(
+      doc_query(`td[data-col="F1"]`, first_row).textContent,
+    )
 
     const heatmap_toggle = doc_query<HTMLInputElement>(
       `input[aria-label="Toggle heatmap colors"]`,
     )
     expect(heatmap_toggle.checked).toBe(false)
+    expect(cps_cell.style.getPropertyValue(`--cell-bg`)).toBe(``)
 
     heatmap_toggle.click()
     await tick()
     expect(location.search).not.toContain(`heatmap=`)
+    expect(cps_cell.style.getPropertyValue(`--cell-bg`)).not.toBe(``)
   })
 })

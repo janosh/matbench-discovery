@@ -4,10 +4,6 @@ import { untrack } from 'svelte'
 type ModelSelectionConfig<T extends ObjectOption> = {
   options: T[] // canonical order, option.value = page's model identifier
   defaults: string[] // values selected when the URL has no `models` param
-  // URL token -> value; return undefined to drop unknown tokens (default: identity)
-  from_url?: (token: string) => string | undefined
-  // value -> URL token, e.g. display name -> model key (default: identity)
-  to_url?: (value: string) => string
 }
 
 // Multi-select model choice encoded in a `models` URL query param as a comma list of
@@ -27,16 +23,10 @@ export class UrlModelSelection<T extends ObjectOption = ObjectOption> {
   }
 
   read = (params: URLSearchParams): void => {
-    const { defaults, from_url = (token: string) => token } = this.config()
     const model_param = params.get(`models`)
-    const values =
-      model_param === null
-        ? defaults
-        : model_param
-            .split(`,`)
-            .map(from_url)
-            .filter((value): value is string => value !== undefined)
-    this.selected = this.options_for(values)
+    this.selected = this.options_for(
+      model_param === null ? this.config().defaults : model_param.split(`,`),
+    )
   }
 
   get url_entry(): [key: string, value: string, default_value: string] {
@@ -49,11 +39,8 @@ export class UrlModelSelection<T extends ObjectOption = ObjectOption> {
   }
 
   private param_value(values: string[]): string {
-    const { options, to_url = (value: string) => value } = this.config()
-    return options
+    return this.options_for(values)
       .map((opt) => String(opt.value))
-      .filter((value) => values.includes(value))
-      .map(to_url)
       .join(`,`)
   }
 }

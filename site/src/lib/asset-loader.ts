@@ -108,6 +108,22 @@ export function load_json_asset<T>(url: string): Promise<T> {
   return asset as Promise<T>
 }
 
+// Validate the identity shared by both parity and phonon-mode model assets.
+export async function load_model_asset<TModel extends ParityModel>(
+  kind: string,
+  url: string,
+  model_key: string,
+): Promise<TModel> {
+  const { model } = await load_json_asset<ModelAsset<TModel>>(url)
+  if (!model) throw new Error(`No ${kind} model ${model_key} in its asset`)
+  if (model.model_key !== model_key) {
+    throw new Error(
+      `Invalid ${kind} model: expected ${model_key}, got ${model.model_key}`,
+    )
+  }
+  return model
+}
+
 // Keys of TModel whose values are arrays, e.g. the per-row prediction columns. Excludes
 // scalar fields like model_key so only row-aligned fields can be validated.
 type ArrayKeys<TModel> = {
@@ -124,13 +140,7 @@ export async function load_parity_model<TModel extends ParityModel>(
   pred_field: ArrayKeys<TModel>,
   row_count: number,
 ): Promise<TModel> {
-  const { model } = await load_json_asset<ModelAsset<TModel>>(url)
-  if (!model) throw new Error(`No ${kind} parity model ${model_key} in its asset`)
-  if (model.model_key !== model_key) {
-    throw new Error(
-      `Invalid ${kind} parity model: expected ${model_key}, got ${model.model_key}`,
-    )
-  }
+  const model = await load_model_asset<TModel>(`${kind} parity`, url, model_key)
   assert_array_length(
     `${kind} parity ${model_key}.${pred_field}`,
     model[pred_field],

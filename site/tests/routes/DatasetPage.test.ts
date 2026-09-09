@@ -1,4 +1,5 @@
-import { arr_to_str, DATASETS } from '$lib'
+import DATASETS from '$data/datasets.yml'
+import { arr_to_str } from '$lib'
 import type { Dataset } from '$lib/types'
 import Page from '$routes/data/[slug]/+page.svelte'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -10,7 +11,7 @@ describe(`Dataset Detail Page`, () => {
   })
 
   // MP 2022 has all optional fields set, NOMAD is a minimal dataset entry
-  it.each([`MP 2022`, `NOMAD`, `ELEMENTA`])(
+  it.each([`MP 2022`, `NOMAD`, `ELEMENTA`, `MPtrj`])(
     `renders %s dataset correctly`,
     (dataset_key) => {
       const dataset = DATASETS[dataset_key]
@@ -27,6 +28,14 @@ describe(`Dataset Detail Page`, () => {
 
       expect(doc_query(`.links`).querySelectorAll(`a`).length).toBeGreaterThan(0)
       expect(doc_query(`.description`).textContent).toMatch(/\S/)
+      if (dataset_key === `MPtrj`) {
+        expect(doc_query(`#target-distributions`).textContent).toBe(
+          `Target Distributions`,
+        )
+        for (const count of [`1,580,395`, `7,944,833`, `49,295,660`, `14,223,555`]) {
+          expect(document.body.textContent).toContain(count)
+        }
+      }
       if (dataset_key === `ELEMENTA`) {
         const description = doc_query(`.description`)
         expect(description.textContent).toContain(

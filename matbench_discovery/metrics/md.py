@@ -690,23 +690,6 @@ def evaluate_md_system(
     return metrics
 
 
-def combine_per_system_metrics(frames: Sequence[pd.DataFrame]) -> pd.DataFrame:
-    """Concatenate already-read per-system MD metric rows (one row each, as written by
-    parallel single-system runs) into a single DataFrame indexed by system.
-
-    Takes pre-read DataFrames rather than paths so callers that already read each CSV
-    (e.g. to filter out multi-system files) don't read it twice. Deduplicates on the
-    system column keeping the last occurrence, so re-running a system (e.g. a timed-out
-    rollout finished in a later job) overrides the earlier row, not double-counting it.
-    """
-    if not frames:
-        raise ValueError("No per-system metric frames given")
-    df_all = pd.concat(frames, ignore_index=True)
-    if "system" not in df_all:
-        raise ValueError(f"per-system metrics lack a 'system' column, got {[*df_all]}")
-    return df_all.drop_duplicates(subset="system", keep="last").set_index("system")
-
-
 def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, float | str]:
     """Aggregate per-system MD metric rows (one row per system with a subset of
     PER_SYSTEM_METRIC_COLS columns) into model-level metrics.
@@ -787,7 +770,16 @@ def write_metrics_to_yaml(
             block[key] = int(value)
         else:
             block[key] = value if isinstance(value, str) else float(round(value, 4))
-    yaml_metrics = commented_map_with_units(block, METRIC_UNITS)
 
-    update_yaml_file(model.yaml_path, "metrics.md", yaml_metrics)
-    return yaml_metrics
+    def replace_metrics(existing: dict[str, Any]) -> dict[str, Any]:
+        """Retain source metadata on recompute, never stale calculated metrics."""
+        provenance = {
+            key: value
+            for key, value in existing.items()
+            if pred_file_path is None and key in ("pred_file", *COST_PROVENANCE_KEYS)
+        }
+        return commented_map_with_units(provenance | block, METRIC_UNITS)
+
+    return update_yaml_file(model.yaml_path, "metrics.md", replace_metrics)["metrics"][
+        "md"
+    ]

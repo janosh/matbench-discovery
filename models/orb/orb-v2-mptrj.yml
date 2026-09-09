@@ -104,6 +104,11 @@ metrics:
     force_total_variation: 109.0
     force_jump: 0.23
     pbe_force_mae: 1.43
+    pbe_vib_freq_coverage:
+      n_valid: 73
+      n_eligible: 73
+      failed_elements: []
+      missing_elements: []
   discovery:
     pred_file:
       name: models/orb/orb-v2-mptrj/2024-10-14-discovery.csv.gz

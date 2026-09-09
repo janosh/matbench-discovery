@@ -15,7 +15,6 @@
   bind:selected
   label="Discovery test set"
   options={discovery_set_toggle_options}
-  tooltip_options={{ allow_html: true }}
   {...rest}
 >
   {#snippet option_suffix({ option })}

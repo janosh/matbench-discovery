@@ -29,22 +29,26 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up node
-        uses: actions/setup-node@v7
-        with:
-          node-version: 24
-
       - name: Set up uv
         uses: astral-sh/setup-uv@v9.0.0
         with:
           python-version: "3.14"
 
-      - name: Install dependencies
-        run: corepack enable && npm_config_legacy_peer_deps=true pnpm install --config.dangerously-allow-all-builds=true --config.block-exotic-subdeps=false
+      - uses: ./.github/actions/setup-site
+        with:
+          api-docs: "true"
+
+      - name: Cache parity assets
+        id: parity-cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            site/static/energy-parity/assets
+            site/static/kappa-parity/assets
+          key: parity-assets-${{ hashFiles('site/src/lib/parity/*-parity-manifest.json') }}
 
       - name: Download parity assets
-        env:
-          GH_TOKEN: ${{ github.token }}
+        if: steps.parity-cache.outputs.cache-hit != 'true'
         run: |
           for kind in energy kappa; do
             manifest="src/lib/parity/$kind-parity-manifest.json"
@@ -58,29 +62,22 @@ jobs:
                 and test("^[A-Za-z0-9._-]+-[0-9a-f]{16}\\.json\\.gz$"))
                 then .[] else error("invalid parity asset manifest") end' \
               "$manifest" > "$assets_file"
-            mapfile -t assets < "$assets_file"
-            patterns=()
-            for asset in "${assets[@]}"; do
-              patterns+=(--pattern "$asset")
-            done
-            gh release download v1.0.0 \
-              --repo janosh/matbench-discovery \
-              "${patterns[@]}" \
-              --dir "$asset_dir" \
-              --clobber
-            for asset in "${assets[@]}"; do
+            # Retry each failed download rather than restarting the whole batch.
+            xargs -P 8 -I '{}' curl --fail --location --silent --show-error \
+              --retry 3 --connect-timeout 15 --max-time 120 \
+              --output "$asset_dir/{}" \
+              'https://github.com/janosh/matbench-discovery/releases/download/v1.0.0/{}' \
+              < "$assets_file"
+            while IFS= read -r asset; do
               [ -f "$asset_dir/$asset" ] || {
                 echo "::error::$manifest references missing release asset $asset"
                 exit 1
               }
-            done
+            done < "$assets_file"
           done
 
       - name: Build site
-        run: |
-          # API docs import phono3py at module scope.
-          uv run --with-editable "..[phonons]" ../scripts/make_api_docs.py
-          npm run build
+        run: pnpm build
 
       - name: Upload build artifact
         uses: actions/upload-pages-artifact@v5

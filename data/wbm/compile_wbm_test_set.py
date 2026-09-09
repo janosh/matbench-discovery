@@ -33,7 +33,7 @@ try:
     import gdown
 except ImportError as exc:
     exc.add_note(
-        "pip install gdown. Needed for downloading WBM initial + relaxed structures "
+        "uv pip install gdown. Needed for downloading WBM initial + relaxed structures "
         "from Google Drive."
     )
     raise

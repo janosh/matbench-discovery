@@ -7,7 +7,7 @@ const plot_mocks = vi.hoisted(() => ({
   ScatterPlot: vi.fn(),
 }))
 
-vi.mock(`matterviz`, () => ({ ScatterPlot: plot_mocks.ScatterPlot }))
+vi.mock(`matterviz/plot`, () => ({ ScatterPlot: plot_mocks.ScatterPlot }))
 
 type PlotSeries = { id: string; x: number[]; y: number[] }
 

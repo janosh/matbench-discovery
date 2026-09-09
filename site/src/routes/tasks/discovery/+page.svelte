@@ -1,27 +1,28 @@
 <script lang="ts">
-  import { MetricsTable, ACTIVE_MODELS, DiscoverySetToggle } from '$lib'
-  import { make_table_filters } from '$lib/models.svelte'
-  import { DynamicScatter } from '$lib/plot'
-  import type { SortState } from '$lib/url-state.svelte'
-  import {
-    bind_url_params,
-    sort_from_query,
-    sort_url_entries,
-  } from '$lib/url-state.svelte'
+  import MetricsTable from '$lib/table/MetricsTable.svelte'
+  import DiscoverySetToggle from '$lib/DiscoverySetToggle.svelte'
+  import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
+  import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
+  import { bind_url_params, UrlPlotState } from '$lib/url-state.svelte'
   import { valid_query_param } from 'svelte-widgets/url-params'
   import * as labels from '$lib/labels'
   import { DISCOVERY_SETS, type DiscoverySet } from '$lib/types'
   import HullConstructionNote from './hull-construction-note.md'
 
   const default_discovery_set: DiscoverySet = `unique_prototypes`
-  const default_scatter_x = labels.HYPERPARAMS.model_params.key
-  const default_scatter_y = labels.ALL_METRICS.F1.key
-  const default_sort: SortState = { column: default_scatter_y, dir: `desc` }
+  // Axis selections also drive the model-comparison section title.
+  const plot = new UrlPlotState(
+    {
+      x: labels.HYPERPARAMS.model_params.key,
+      y: labels.ALL_METRICS.F1.key,
+      sort: { column: labels.ALL_METRICS.F1.key, dir: `desc` },
+    },
+    labels.scatter_options_by_key,
+  )
   const discovery_sets = new Set<DiscoverySet>(DISCOVERY_SETS)
 
   let discovery_set: DiscoverySet = $state(default_discovery_set)
   const filters = make_table_filters()
-  let sort = $state({ ...default_sort })
   let scatter_path_overrides = $derived(
     Object.fromEntries(
       Object.values(labels.DISCOVERY_METRICS).map(({ key }) => [
@@ -37,12 +38,6 @@
     ),
   )
 
-  // axis selections for the model-comparison scatter, bound so the section title
-  // tracks whatever properties the user picks
-  let scatter_x = $state(default_scatter_x)
-  let scatter_y = $state(default_scatter_y)
-
-  const scatter_keys = labels.scatter_option_keys
   const read_url_params = (params: URLSearchParams) => {
     discovery_set = valid_query_param(
       params,
@@ -51,20 +46,16 @@
       discovery_sets,
     )
     filters.read(params)
-    sort = sort_from_query(params, default_sort)
-    scatter_x = valid_query_param(params, `x`, default_scatter_x, scatter_keys)
-    scatter_y = valid_query_param(params, `y`, default_scatter_y, scatter_keys)
+    plot.read(params)
   }
   bind_url_params(read_url_params, () => [
     [`set`, discovery_set, default_discovery_set],
     ...filters.url_entries,
-    ...sort_url_entries(sort, default_sort),
-    [`x`, scatter_x, default_scatter_x],
-    [`y`, scatter_y, default_scatter_y],
+    ...plot.url_entries,
   ])
 </script>
 
-<h1>Crystal Stability Prediction Metrics</h1>
+<h1 id="crystal-stability-prediction-metrics">Crystal Stability Prediction Metrics</h1>
 
 <p>
   This task measures how effectively a model can triage hypothetical WBM crystals for DFT
@@ -96,14 +87,12 @@
     {discovery_set}
     model_filter={(model) => model.metrics?.discovery?.[discovery_set] != null}
     {filters}
-    bind:sort
+    bind:sort={plot.sort}
   />
 </section>
 
-<h2>
-  {@html labels.scatter_axis_label(scatter_y)} vs {@html labels.scatter_axis_label(
-    scatter_x,
-  )}
+<h2 id="model-comparison">
+  {@html labels.scatter_axis_label(plot.y)} vs {@html labels.scatter_axis_label(plot.x)}
 </h2>
 
 The F1 score is the harmonic mean of precision and recall. It is a measure of the model's
@@ -115,8 +104,8 @@ models across any pair of metrics and metadata.
 already the y-axis here, so it wastes the color channel) -->
 <DynamicScatter
   models={visible_models}
-  bind:x_key={scatter_x}
-  bind:y_key={scatter_y}
+  bind:x_key={plot.x}
+  bind:y_key={plot.y}
   color_key={labels.ALL_METRICS.MAE.key}
   label_path_overrides={scatter_path_overrides}
   style="height: 800px"

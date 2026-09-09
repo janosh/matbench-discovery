@@ -2,7 +2,7 @@ import type { ModelData } from '$lib/types'
 import { MODELS } from '$lib/models.svelte'
 import DiatomicsPage from '$routes/tasks/diatomics/+page.svelte'
 import { tick } from 'svelte'
-import { PLOT_COLORS } from 'matterviz'
+import { PLOT_COLORS } from 'matterviz/colors'
 import { describe, expect, it } from 'vitest'
 import { doc_query, mount_with_url, sorted_header } from '../index'
 
@@ -94,10 +94,11 @@ describe(`Diatomics Page URL state`, () => {
   })
 
   it(`restores selected curve models from the models query param`, async () => {
-    await mount_page(`?models=model-b`)
+    await mount_page(`?models=unknown,model-b,model-b`)
 
     const selected = selected_options()
     expect(selected_labels()).toEqual([`Model B`])
+    expect(new URL(location.href).searchParams.get(`models`)).toBe(`model-b`)
     const selected_item = selected?.querySelector<HTMLLIElement>(`li`)
     // Model B is the second model, so it takes the second palette entry
     expect(selected_item?.style.background).toContain(PLOT_COLORS[1])

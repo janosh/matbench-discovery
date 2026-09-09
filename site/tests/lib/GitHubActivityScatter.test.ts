@@ -8,7 +8,7 @@ const plot_mocks = vi.hoisted(() => ({
   ScatterPlot: vi.fn(),
 }))
 
-vi.mock(`matterviz`, () => ({ format_num: vi.fn(String) }))
+vi.mock(`matterviz/labels`, () => ({ format_num: vi.fn(String) }))
 vi.mock(`matterviz/plot`, () => ({ ScatterPlot: plot_mocks.ScatterPlot }))
 
 type ScatterPlotProps = {

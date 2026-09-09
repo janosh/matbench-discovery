@@ -140,7 +140,6 @@ def test_corrected_model_factory_contracts() -> None:
         ]
         assert value == expected or str(value).endswith(expected)
     assert "orb-v3-conservative-inf-mpa" in Model.orb_v3.metadata["checkpoint_url"]
-    assert {"md", "diatomics"}.isdisjoint(Model.orb_v3.metrics)
     # superseded TACE models pin torch 2.9.1 while AOTI export needs >=2.11, so they
     # must stay eager, while the active ones opt into the OEQ/AOTI path
     for model_key, expected_accelerate in {

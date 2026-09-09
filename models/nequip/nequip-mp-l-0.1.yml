@@ -122,6 +122,12 @@ metrics:
     force_total_variation: 372.5
     force_jump: 2.188
     pbe_force_mae: 3.278
+    pbe_vib_freq_coverage:
+      n_valid: 72
+      n_eligible: 73
+      failed_elements:
+      - Ac
+      missing_elements: []
   discovery:
     pred_file:
       name: models/nequip/nequip-mp-l-0.1/2025-08-27-discovery.csv.gz

@@ -87,7 +87,7 @@ export const DEFAULT_CMDS_CONFIG = {
   run_time_sec: {
     ...MD_METRICS.md_run_time_sec,
     label: `Speed`,
-    description: `Wall time to roll out all 17 DynaMat v1.0 NVT trajectories, scored on a log scale from 9,000 s (subscore 1) to 300,000 s (subscore 0). All timings to date were measured on one NVIDIA H200 per system; models without recorded timings get no CMDS unless this weight is zeroed`,
+    description: `Wall time to roll out all 17 DynaMat v1.0 NVT trajectories, scored on a log scale from 9,000 s (subscore 1) to 300,000 s (subscore 0). H100/H200 backfills assume equal speed; actual GPUs are recorded in prediction files. Models without recorded timings get no CMDS unless this weight is zeroed`,
     weight: 0.2,
   },
   pressure_error: { ...MD_METRICS.md_pressure_error, weight: 0.3 },

@@ -1,4 +1,8 @@
-import { arr_to_str, data_files, DATASETS, MODELS, format_date } from '$lib'
+import data_files from '$pkg/data-files.yml'
+import DATASETS from '$data/datasets.yml'
+import { arr_to_str, format_date } from '$lib'
+import { MODELS } from '$lib/models.svelte'
+import { scatter_options_by_key } from '$lib/labels'
 import { render_data_markdown } from '../../scripts/markdown-data'
 import {
   apply_weights_param,
@@ -96,7 +100,12 @@ describe(`$lib data includes rendered YAML Markdown`, () => {
     async (description, expected) => {
       const data = { example: { description, description_html: `` } }
       await render_data_markdown(data, `/repo/data/datasets.yml`)
-      expect(data.example.description_html).toBe(expected)
+      const rendered = document.createElement(`div`)
+      rendered.innerHTML = data.example.description_html
+      rendered
+        .querySelectorAll(`[data-heading-anchor]`)
+        .forEach((anchor) => anchor.remove())
+      expect(rendered.innerHTML).toBe(expected)
     },
   )
 
@@ -150,11 +159,17 @@ describe(`format_date`, () => {
 
 describe(`valid_query_param`, () => {
   it.each([
-    [`direct key`, new URLSearchParams({ key: `valid` }), `valid`],
-    [`prototype key`, new URLSearchParams({ key: `constructor` }), `fallback`],
-    [`absent key`, new URLSearchParams(), `fallback`],
-  ])(`returns expected value for %s`, (_case_name, params, expected) => {
-    expect(valid_query_param(params, `key`, `fallback`, { valid: true })).toBe(expected)
+    [`F1`, `F1`],
+    [`rmsd`, `rmsd`],
+    [`model_params`, `model_params`],
+    [`constructor`, `CPS`],
+    [`__proto__`, `CPS`],
+    [`md_time_multiplier`, `CPS`], // Table-only metric, not a scatter axis
+    [``, `CPS`],
+    [null, `CPS`],
+  ])(`validates scatter axis %s against the option catalog`, (value, expected) => {
+    const params = new URLSearchParams(value === null ? {} : { x: value })
+    expect(valid_query_param(params, `x`, `CPS`, scatter_options_by_key)).toBe(expected)
   })
 })
 

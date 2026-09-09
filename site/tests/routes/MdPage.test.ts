@@ -1,4 +1,4 @@
-import { ACTIVE_MODELS } from '$lib'
+import { ACTIVE_MODELS } from '$lib/models.svelte'
 import { MD_METRICS } from '$lib/labels'
 import MdPage from '$routes/tasks/md/+page.svelte'
 import { describe, expect, it } from 'vitest'

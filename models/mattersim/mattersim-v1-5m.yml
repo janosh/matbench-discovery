@@ -154,6 +154,12 @@ metrics:
     force_total_variation: 225.4
     force_jump: 2.414
     pbe_force_mae: 1.1
+    pbe_vib_freq_coverage:
+      n_valid: 72
+      n_eligible: 73
+      failed_elements:
+      - F
+      missing_elements: []
   discovery:
     pred_file:
       name: models/mattersim/mattersim-v1-5m/2024-12-16-discovery.csv.gz

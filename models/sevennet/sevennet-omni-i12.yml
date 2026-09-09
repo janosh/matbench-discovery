@@ -140,6 +140,15 @@ metrics:
     force_total_variation: 630.6
     force_jump: 15.8
     pbe_force_mae: 1.775
+    pbe_vib_freq_coverage:
+      n_valid: 69
+      n_eligible: 73
+      failed_elements:
+      - Bi
+      - Cs
+      - K
+      - Rb
+      missing_elements: []
   discovery:
     pred_file:
       name: models/sevennet/sevennet-omni-i12/2026-01-12-discovery.csv.gz

@@ -2,17 +2,13 @@
   import { MultiSelect } from 'svelte-widgets'
   import type { MultiSelectProps, Option } from 'svelte-widgets'
 
-  // only the bound props need the precise T; pass-through props (handlers etc.) use the
-  // base Option generic so spreading them onto MultiSelect type-checks without a cast
   let {
     options,
-    selected = $bindable([]),
-    value = $bindable(null),
+    value = $bindable([]),
     placeholder = `Select models to plot`,
     style = `width: fit-content; max-width: min(48rem, 100%); min-width: min(19rem, 100%); border: 1px solid var(--border)`,
     ...rest
-  }: Pick<MultiSelectProps<T>, `options` | `selected` | `value`> &
-    Omit<MultiSelectProps<Option>, `options` | `selected` | `value`> = $props()
+  }: Extract<MultiSelectProps<T>, { mode?: `multiple` }> = $props()
 </script>
 
-<MultiSelect {options} bind:selected bind:value {placeholder} {style} {...rest} />
+<MultiSelect {options} bind:value {placeholder} {style} {...rest} />

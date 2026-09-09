@@ -1,28 +1,27 @@
 <script lang="ts">
-  import { MetricsTable, type ModelData, ACTIVE_MODELS, MODELS } from '$lib'
+  import MetricsTable from '$lib/table/MetricsTable.svelte'
+  import type { ModelData } from '$lib/types'
+  import { ACTIVE_MODELS, MODELS, make_table_filters } from '$lib/models.svelte'
   import {
     MD_METRICS,
     METADATA_COLS,
     scatter_axis_label,
-    scatter_option_keys,
+    scatter_options_by_key,
     task_page_visible_cols,
   } from '$lib/labels'
-  import type { SortState } from '$lib/url-state.svelte'
   import {
     CMDS_CONFIG,
     DEFAULT_CMDS_CONFIG,
     update_models_cmds,
   } from '$lib/combined-scores.svelte'
-  import { DynamicScatter, RadarChart } from '$lib/plot'
-  import { make_table_filters } from '$lib/models.svelte'
+  import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
+  import RadarChart from '$lib/plot/RadarChart.svelte'
   import {
     apply_weights_param,
     bind_url_params,
-    sort_from_query,
-    sort_url_entries,
+    UrlPlotState,
     weights_to_param,
   } from '$lib/url-state.svelte'
-  import { valid_query_param } from 'svelte-widgets/url-params'
   import MdNote from './md-note.md'
 
   // show only MD metrics and metadata columns
@@ -34,37 +33,37 @@
   // wall time (x) vs CMDS (y), with marker size = model params and color = training-set
   // size (the two scaling levers). All-public axes (force_rmse is a maintainer-only
   // diagnostic future public submissions lack, which would leave the plot mostly empty)
-  const default_scatter_x = MD_METRICS.md_run_time_sec.key
-  const default_scatter_y = MD_METRICS.md_combined_score.key
-  const default_sort: SortState = {
-    column: MD_METRICS.md_combined_score.key,
-    dir: `desc`,
-  }
-
-  let scatter_x = $state(default_scatter_x)
-  let scatter_y = $state(default_scatter_y)
   // default-sort by the combined MD score (CMDS), best (highest) first
-  let sort = $state({ ...default_sort })
+  const plot = new UrlPlotState(
+    {
+      x: MD_METRICS.md_run_time_sec.key,
+      y: MD_METRICS.md_combined_score.key,
+      sort: {
+        column: MD_METRICS.md_combined_score.key,
+        dir: `desc`,
+      },
+    },
+    scatter_options_by_key,
+  )
+
   const filters = make_table_filters()
 
   const read_url_params = (params: URLSearchParams) => {
-    scatter_x = valid_query_param(params, `x`, default_scatter_x, scatter_option_keys)
-    scatter_y = valid_query_param(params, `y`, default_scatter_y, scatter_option_keys)
-    sort = sort_from_query(params, default_sort)
+    plot.read(params)
     filters.read(params)
     apply_weights_param(params.get(`weights`), CMDS_CONFIG, DEFAULT_CMDS_CONFIG)
   }
   bind_url_params(read_url_params, () => [
-    [`x`, scatter_x, default_scatter_x],
-    [`y`, scatter_y, default_scatter_y],
-    ...sort_url_entries(sort, default_sort),
+    ...plot.url_entries,
     ...filters.url_entries,
     // custom CMDS weights (vDOS,ADF,speed,pressure); omitted at defaults
     [`weights`, weights_to_param(CMDS_CONFIG, DEFAULT_CMDS_CONFIG)],
   ])
 </script>
 
-<h1>Molecular Dynamics Metrics <span class="beta-badge">beta</span></h1>
+<h1 id="molecular-dynamics-metrics">
+  Molecular Dynamics Metrics <span class="beta-badge">beta</span>
+</h1>
 
 <p>
   This task evaluates how well ML force fields reproduce structural, thermodynamic and
@@ -104,12 +103,14 @@
   <MetricsTable
     model_filter={has_md_metrics}
     col_filter={(col) => visible_cols[col.key] ?? true}
-    bind:sort
+    bind:sort={plot.sort}
     {filters}
   />
 </section>
 
-<h2>{@html scatter_axis_label(scatter_y)} vs {@html scatter_axis_label(scatter_x)}</h2>
+<h2 id="model-comparison">
+  {@html scatter_axis_label(plot.y)} vs {@html scatter_axis_label(plot.x)}
+</h2>
 <p>
   This defaults to a cost-vs-fidelity Pareto: each model's total rollout wall time against
   its CMDS, with marker size showing model parameters and color the training-set size. Use
@@ -121,8 +122,8 @@
 <DynamicScatter
   models={ACTIVE_MODELS}
   model_filter={has_md_metrics}
-  bind:x_key={scatter_x}
-  bind:y_key={scatter_y}
+  bind:x_key={plot.x}
+  bind:y_key={plot.y}
   color_key={METADATA_COLS.n_training_materials.key}
   show_pareto_frontier
   style="height: 800px"

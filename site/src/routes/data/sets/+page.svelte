@@ -1,9 +1,10 @@
 <script lang="ts">
-  import { arr_to_str, DATASETS } from '$lib'
+  import DATASETS from '$data/datasets.yml'
+  import { arr_to_str } from '$lib'
   import { DATASET_METADATA_COLS, title_case } from '$lib/labels'
   import pkg from '$site/package.json'
-  import type { CellSnippetArgs, RowData } from 'matterviz'
-  import { HeatmapTable } from 'matterviz'
+  import type { CellSnippet, CellSnippetArgs, RowData } from 'matterviz'
+  import { HeatmapTable } from 'matterviz/table'
   import { Icon } from 'svelte-widgets'
   import {
     API,
@@ -35,6 +36,12 @@
     [`doi`, `DOI`, DOI],
   ] as const
   type LinkRecord = Partial<Record<string, string | null>>
+  const cells: Record<string, CellSnippet> = {
+    Open: bool_cell,
+    Static: bool_cell,
+    API: api_cell,
+    Links: links_cell,
+  }
   // some API fields hold notes rather than URLs; only link actual http(s) URLs
   const http_url = (url: string | null | undefined): string | null =>
     url?.startsWith(`http`) ? url : null
@@ -106,7 +113,7 @@
   {@render icon_links(val, resource_links)}
 {/snippet}
 
-<h1>
+<h1 id="datasets">
   <Icon icon={Databases} style="vertical-align: -3pt" /> Datasets
 </h1>
 
@@ -117,15 +124,13 @@
 <section class="full-bleed">
   <HeatmapTable
     data={table_data}
-    columns={Object.values(DATASET_METADATA_COLS)}
+    columns={Object.values(DATASET_METADATA_COLS).map((col) => ({
+      ...col,
+      id: col.key,
+      cell: cells[col.key],
+    }))}
     initial_sort={{ column: `Created`, direction: `desc` }}
     sort_hint=""
-    special_cells={{
-      [DATASET_METADATA_COLS.open.label]: bool_cell,
-      [DATASET_METADATA_COLS.static.label]: bool_cell,
-      [DATASET_METADATA_COLS.api.label]: api_cell,
-      [DATASET_METADATA_COLS.links.label]: links_cell,
-    }}
   />
 </section>
 

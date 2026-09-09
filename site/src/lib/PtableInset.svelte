@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { ChemicalElement, ElementSymbol } from 'matterviz'
-  import { format_num } from 'matterviz'
+  import { format_num } from 'matterviz/labels'
   import type { HTMLAttributes } from 'svelte/elements'
   import { sum } from 'd3-array'
 

@@ -1,0 +1,40 @@
+name: Set up site
+description: Install site dependencies with a shared pnpm store cache.
+inputs:
+  api-docs:
+    description: Generate Python API docs while pnpm installs dependencies.
+    default: "false"
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+
+    - name: Enable pnpm
+      shell: bash
+      run: corepack enable
+
+    - name: Cache pnpm store
+      uses: actions/cache@v6
+      with:
+        path: ~/.local/share/pnpm/store
+        key: pnpm-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('site/package.json') }}-${{ github.sha }}
+        restore-keys: pnpm-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('site/package.json') }}-
+
+    # Always resolve dependencies: the GitHub dependencies follow moving branches.
+    - name: Install site dependencies
+      shell: bash
+      working-directory: site
+      env:
+        npm_config_legacy_peer_deps: true
+        BUILD_API_DOCS: ${{ inputs.api-docs }}
+      run: |
+        if [[ "$BUILD_API_DOCS" == true ]]; then
+          uv run --with-editable "..[phonons]" ../scripts/make_api_docs.py &
+          docs_pid=$!
+        fi
+        pnpm install --lockfile=false --prefer-offline --config.dangerously-allow-all-builds=true --config.block-exotic-subdeps=false
+        if [[ "$BUILD_API_DOCS" == true ]]; then
+          wait "$docs_pid"
+        fi

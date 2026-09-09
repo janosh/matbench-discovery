@@ -1,7 +1,6 @@
 import kappa_103_analysis from '$figs/kappa-103-analysis.jsonl'
-import { ACTIVE_MODELS } from '$lib'
-import { make_table_filters } from '$lib/models.svelte'
-import type * as KappaAnalysis from '$lib/parity/kappa-analysis'
+import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
+import type * as KappaParity from '$lib/parity/kappa-parity'
 import PhononsPage from '$routes/tasks/phonons/+page.svelte'
 import { tick } from 'svelte'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -16,8 +15,8 @@ import {
 
 // per-test override of the analysis payload's model list (null = real payload)
 const analysis_mock = vi.hoisted(() => ({ models: null as unknown[] | null }))
-vi.mock(`$lib/parity/kappa-analysis`, async (import_original) => {
-  const actual = await import_original<typeof KappaAnalysis>()
+vi.mock(`$lib/parity/kappa-parity`, async (import_original) => {
+  const actual = await import_original<typeof KappaParity>()
   return {
     ...actual,
     load_kappa_analysis: async () => {
@@ -240,22 +239,25 @@ describe(`Phonons Task Page`, () => {
     expect(new URL(location.href).searchParams.get(`model`)).toBe(target_model.model_key)
   })
 
-  it(`restores URL state for diagnostics, table sort, and filters`, async () => {
-    const url = `http://localhost/tasks/phonons?model=mace-mp-0&model_sort=name&x=F1&y=κ_SRE&sort=κ_SRE&dir=asc&openness=OSOD&heatmap=0`
-    await mount_with_url(PhononsPage, url)
+  it.each([`name`, `constructor`])(
+    `restores URL state with model_sort=%s`,
+    async (mode) => {
+      const url = `http://localhost/tasks/phonons?model=mace-mp-0&model_sort=${mode}&x=F1&y=κ_SRE&sort=κ_SRE&dir=asc&openness=OSOD&heatmap=0`
+      await mount_with_url(PhononsPage, url)
 
-    expect(kappa_sort_select().value).toBe(`name`)
-    const mace_name = ACTIVE_MODELS.find(
-      (model) => model.model_key === `mace-mp-0`,
-    )?.model_name
-    if (!mace_name) throw new Error(`mace-mp-0 not found in ACTIVE_MODELS`)
-    expect(kappa_selected_model()).toContain(mace_name)
-    expect(heading_texts()).toContain(`Model Comparison: κSRE vs F1`)
+      expect(kappa_sort_select().value).toBe(mode === `name` ? `name` : `kappa`)
+      const mace_name = ACTIVE_MODELS.find(
+        (model) => model.model_key === `mace-mp-0`,
+      )?.model_name
+      if (!mace_name) throw new Error(`mace-mp-0 not found in ACTIVE_MODELS`)
+      expect(kappa_selected_model()).toContain(mace_name)
+      expect(heading_texts()).toContain(`Model Comparison: κSRE vs F1`)
 
-    const header = sorted_header()
-    expect(header?.textContent).toContain(`κSRE`)
-    expect(header?.getAttribute(`aria-sort`)).toBe(`ascending`)
-    expect(filter_summary_badge(`Openness`)).toContain(`(1/4)`)
-    expect(checkbox_for(`Heatmap`).checked).toBe(false)
-  })
+      const header = sorted_header()
+      expect(header?.textContent).toContain(`κSRE`)
+      expect(header?.getAttribute(`aria-sort`)).toBe(`ascending`)
+      expect(filter_summary_badge(`Openness`)).toContain(`(1/4)`)
+      expect(checkbox_for(`Heatmap`).checked).toBe(false)
+    },
+  )
 })

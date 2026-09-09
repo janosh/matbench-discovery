@@ -693,7 +693,7 @@ def _nequix(model_key: str) -> Callable[..., Calculator]:
 
         # NequixCalculator auto-downloads by name via figshare (WAF can serve 0 bytes);
         # stage our checkpoint and pass model_path so it loads ours directly.
-        # use_kernel=False avoids the openequivariance extension (needs a separate pip)
+        # use_kernel=False avoids the openequivariance extension (installed separately)
         dest = os.path.expanduser(f"~/.cache/nequix/{model_key}.nqx")
         _stage_checkpoint(model_key, dest, ext=".nqx", source_path=checkpoint)
         return NequixCalculator(model_path=dest, backend="jax", use_kernel=False)

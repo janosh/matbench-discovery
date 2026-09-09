@@ -8,7 +8,8 @@
   import { Info, Reset } from 'svelte-widgets/icons'
   import { ALL_METRICS } from '$lib/labels'
   import type { Label } from '$lib/types'
-  import { format_num, type Point } from 'matterviz'
+  import { format_num } from 'matterviz/labels'
+  import type { Point } from 'matterviz/plot'
   import { tooltip } from 'svelte-widgets/attachments'
   import { MODELS, update_models_cps } from '$lib/models.svelte'
 

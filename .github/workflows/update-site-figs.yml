@@ -8,6 +8,16 @@ name: Update site figures
 # SECURITY: never execute PR code. PRs that change payload-generating code must
 # regenerate payloads locally; they fail here before archival or push credentials.
 on:
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Pull request number to ingest
+        type: number
+        required: true
+      head_sha:
+        description: Reviewed full PR head SHA
+        type: string
+        required: true
   pull_request_target:
     types: [labeled]
 
@@ -16,18 +26,33 @@ permissions:
   pull-requests: read # inspect the PR diff
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  group: ${{ github.workflow }}-${{ inputs.pr || github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
   update-site-figs:
-    if: github.event.label.name == 'ingest-model'
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'ingest-model'
     runs-on: ubuntu-latest
     timeout-minutes: 150
     steps:
+      - name: Resolve reviewed pull request
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ inputs.pr || github.event.pull_request.number }}
+          EXPECTED_SHA: ${{ inputs.head_sha || github.event.pull_request.head.sha }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" > "$RUNNER_TEMP/pr.json"
+          jq -e --arg sha "$EXPECTED_SHA" '.state == "open" and .head.sha == $sha' "$RUNNER_TEMP/pr.json" > /dev/null || {
+            echo "::error::PR #$PR is closed or its head differs from reviewed SHA $EXPECTED_SHA."
+            exit 1
+          }
+          jq -r '"number=\(.number)", "changed_files=\(.changed_files)", "head_sha=\(.head.sha)", "head_repo=\(.head.repo.full_name)", "head_ref=\(.head.ref)"' "$RUNNER_TEMP/pr.json" >> "$GITHUB_OUTPUT"
+
       - name: Check out trusted repo
         uses: actions/checkout@v7
         with:
+          ref: ${{ github.event.repository.default_branch }}
           persist-credentials: false
 
       - name: Set up uv
@@ -46,10 +71,10 @@ jobs:
 
       - name: Validate submission diff
         env:
-          CHANGED_FILES: ${{ github.event.pull_request.changed_files }}
+          CHANGED_FILES: ${{ steps.pr.outputs.changed_files }}
           GH_TOKEN: ${{ github.token }}
-          LABELED_SHA: ${{ github.event.pull_request.head.sha }}
-          PR: ${{ github.event.pull_request.number }}
+          LABELED_SHA: ${{ steps.pr.outputs.head_sha }}
+          PR: ${{ steps.pr.outputs.number }}
         run: |
           if (( CHANGED_FILES > 3000 )); then
             echo "::error::PR has $CHANGED_FILES changed files; GitHub's API exposes at most 3000."
@@ -103,8 +128,8 @@ jobs:
         id: detect
         env:
           GH_TOKEN: ${{ github.token }}
-          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
-          LABELED_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_REPO: ${{ steps.pr.outputs.head_repo }}
+          LABELED_SHA: ${{ steps.pr.outputs.head_sha }}
         run: |
           mapfile -t CHANGED_YML < "$RUNNER_TEMP/changed-model-yamls"
           mapfile -t REMOVED_YML < "$RUNNER_TEMP/removed-model-yamls"
@@ -122,8 +147,8 @@ jobs:
           uv run --with-editable . scripts/apply_pr_models_overlay.py \
             "$PR_MODELS" "${CHANGED_YML[@]}" --remove "${REMOVED_YML[@]}"
           if (( ${#CHANGED_YML[@]} )); then
-            uv pip install 'check-jsonschema==0.37.4' --system
-            check-jsonschema --schemafile tests/model-schema.yml "${CHANGED_YML[@]}"
+            uv tool run --from 'check-jsonschema==0.37.4' check-jsonschema \
+              --schemafile tests/model-schema.yml "${CHANGED_YML[@]}"
           fi
           uv run --with-editable . scripts/generate_model_enum.py
           CLASSIFICATION=$(uv run --with-editable . scripts/ingest_model.py \
@@ -142,7 +167,7 @@ jobs:
             models/**/*.csv.gz
             models/**/*.json.gz
             models/**/*.jsonl.gz
-          key: ingest-preds-pr${{ github.event.pull_request.number }}-${{ hashFiles('models/**/*.yml') }}
+          key: ingest-preds-pr${{ steps.pr.outputs.number }}-${{ hashFiles('models/**/*.yml') }}
 
       - name: Validate submitted models without secrets
         env:
@@ -180,9 +205,9 @@ jobs:
       - name: Recheck submission head before archival
         env:
           GH_TOKEN: ${{ github.token }}
-          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
-          LABELED_SHA: ${{ github.event.pull_request.head.sha }}
-          PR: ${{ github.event.pull_request.number }}
+          HEAD_REPO: ${{ steps.pr.outputs.head_repo }}
+          LABELED_SHA: ${{ steps.pr.outputs.head_sha }}
+          PR: ${{ steps.pr.outputs.number }}
           SITE_FIGS_PAT: ${{ secrets.SITE_FIGS_PAT }}
         run: |
           [ -n "$SITE_FIGS_PAT" ] || { echo "::error::secrets.SITE_FIGS_PAT is not set"; exit 1; }
@@ -216,16 +241,16 @@ jobs:
       - name: Check out PR head for commit
         uses: actions/checkout@v7
         with:
-          ref: refs/pull/${{ github.event.pull_request.number }}/head
+          ref: refs/pull/${{ steps.pr.outputs.number }}/head
           path: pr-tree
           persist-credentials: false
 
       - name: Commit updated assets to the PR
         env:
           GH_TOKEN: ${{ secrets.SITE_FIGS_PAT }}
-          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
-          HEAD_REF: ${{ github.event.pull_request.head.ref }}
-          LABELED_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_REPO: ${{ steps.pr.outputs.head_repo }}
+          HEAD_REF: ${{ steps.pr.outputs.head_ref }}
+          LABELED_SHA: ${{ steps.pr.outputs.head_sha }}
         run: |
           if [ "$(git -C pr-tree rev-parse HEAD)" != "$LABELED_SHA" ]; then
             echo "::error::PR head moved since the ingest-model label was applied."

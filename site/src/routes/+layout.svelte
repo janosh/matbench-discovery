@@ -2,8 +2,8 @@
   import { goto } from '$app/navigation'
   import { page } from '$app/state'
   import { MODELS } from '$lib/models.svelte'
-  import { bind_comparison_url } from '$lib/model-comparison.svelte'
-  import ModelComparison from '$lib/model/ModelComparison.svelte'
+  import { bind_comparison_url, comparison } from '$lib/model-comparison.svelte'
+  import { get_error_message } from '$lib/asset-loader'
   import {
     CommandMenu,
     CopyButton,
@@ -30,6 +30,12 @@
   let find_bar = $state<ReturnType<typeof FindBar>>()
   let main_element = $state<HTMLElement>()
   bind_comparison_url()
+  // Load on first use, then retain the dialog's axis/picker state across reopenings.
+  let comparison_module =
+    $state.raw<Promise<typeof import('$lib/model/ModelComparison.svelte')>>()
+  $effect(() => {
+    if (comparison.open) comparison_module ??= import(`$lib/model/ModelComparison.svelte`)
+  })
 
   const footer_links: FooterLink[] = [
     { href: `${pkg.repository}/issues`, label: `Issues`, icon: GitHub },
@@ -136,6 +142,7 @@
 {#if ![`/`, `/models`, `/tasks/diatomics`, `/tasks/geo-opt`].includes(url)}
   <Toc
     {heading_selector}
+    dynamic
     breakpoint={1350}
     min_items={3}
     hide_on_intersect="section.full-bleed .table-container, .bleed-1400"
@@ -203,7 +210,7 @@
 <main
   bind:this={main_element}
   class:bleed-1400={url === `/tasks/diatomics`}
-  {@attach heading_anchors()}
+  {@attach heading_anchors({ selector: `h1, h2, h3, h4, h5, h6` })}
 >
   {#if find_open}
     <FindBar
@@ -217,7 +224,11 @@
   {@render children?.()}
 </main>
 
-<ModelComparison />
+{#await comparison_module then module}
+  {#if module}<module.default />{/if}
+{:catch error}
+  <p role="alert">Could not load model comparison: {get_error_message(error)}</p>
+{/await}
 
 <Footer links={footer_links} style="--footer-bg: var(--nav-bg)">
   <img src="/favicon.svg" alt="Logo" width="30px" style="vertical-align: middle" />

@@ -2,7 +2,7 @@
   import { ButtonGroup } from 'svelte-widgets'
   import { bind_url_params } from '$lib/url-state.svelte'
   import { valid_query_param } from 'svelte-widgets/url-params'
-  import { ScatterPlot } from 'matterviz'
+  import { ScatterPlot } from 'matterviz/plot'
   import { element_data } from 'matterviz/element'
   import { SvelteSet } from 'svelte/reactivity'
   import type { PageData } from './$types'
@@ -79,7 +79,9 @@
       )
 </script>
 
-<h1>Diatomics TMI: DFT Reference Spin States</h1>
+<h1 id="diatomics-tmi-dft-reference-spin-states">
+  Diatomics TMI: DFT Reference Spin States
+</h1>
 
 <p>
   Site-projected magnetic moment of each atom (VASP <code>LORBIT=11</code>, in μB) versus
