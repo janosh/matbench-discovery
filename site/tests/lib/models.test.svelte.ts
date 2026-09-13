@@ -24,14 +24,24 @@ import { afterEach, describe, expect, it } from 'vitest'
 describe(`calculate_training_sizes`, () => {
   it.each([
     { training_sets: [], total_materials: 0, total_structures: 0 },
-    { training_sets: [`MP 2022`], total_materials: 154_719, total_structures: 154_719 },
+    { training_sets: [`MP 2022`], total_materials: 154_718, total_structures: 154_718 },
     {
       training_sets: [`MP 2022`, `MPtrj`],
-      total_materials: 300_642,
-      total_structures: 1_735_114,
+      total_materials: 300_641,
+      total_structures: 1_735_113,
     },
-    // MPF has no n_materials, so n_structures is used as n_materials
     { training_sets: [`MPF`], total_materials: 62_783, total_structures: 188_349 },
+    {
+      training_sets: [`MPF`, `MAD-1.6`],
+      total_materials: null,
+      total_structures: 550_995,
+    },
+    {
+      training_sets: [`MAD-1.6`, `MPF`],
+      total_materials: null,
+      total_structures: 550_995,
+    },
+    { training_sets: [`MPF`, `OCx24`], total_materials: 82_189, total_structures: null },
   ])(
     `sums $training_sets to $total_materials materials / $total_structures structures`,
     ({ training_sets, total_materials, total_structures }) => {

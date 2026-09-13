@@ -6,7 +6,7 @@ import { model_metric_ranks, RANKED_METRICS } from '$lib/rankings'
 import { format_num } from 'matterviz/labels'
 import type { ComponentProps } from 'svelte'
 import { describe, expect, it } from 'vitest'
-import { mount } from '../index'
+import { doc_query, mount } from '../index'
 
 describe(`ModelCard`, () => {
   const found_model = MODELS.find((model) => model.model_key === `mace-mp-0`)
@@ -69,24 +69,19 @@ describe(`ModelCard`, () => {
     })
   })
 
-  it(`handles training set display`, () => {
-    mount_card()
+  it.each([
+    [`MPtrj`, `1,580,395 structures from 145,923 materials`],
+    [`OC22`, `9,854,504 structures from 4,286 materials`],
+    [`MAD-1.6`, `362,646 structures; material count not reported`],
+    [`OCx24`, `unknown number of structures from 19,406 materials`],
+  ])(`handles training set display for %s`, (dataset_key, expected_counts) => {
+    mount_card({ model: { ...model, training_sets: [dataset_key] } })
 
-    const training_set = [...document.querySelectorAll(`section.metadata span`)].find(
-      (span) => span.textContent?.includes(`Training data`),
-    )
-    expect(training_set?.textContent).toContain(`Training data:`)
-
-    const training_set_links = training_set?.querySelectorAll(`a`)
-    const dataset_key = model.training_sets[0]
     const dataset = DATASETS[dataset_key]
-
-    // links to the internal data page
-    expect(training_set_links?.[0]?.href).toContain(`/data/${dataset.slug}`)
-
-    // structure count is shown in the tooltip
-    const formatted_structures = format_num(dataset.n_structures)
-    expect(training_set_links?.[0]?.title).toContain(`${formatted_structures} structures`)
+    const link = doc_query<HTMLAnchorElement>(`.metadata a[href="/data/${dataset.slug}"]`)
+    expect(link.textContent).toBe(dataset_key)
+    expect(link.parentElement?.textContent).toContain(`Training data:`)
+    expect(link.title).toBe(`${dataset.name}: ${expected_counts}`)
   })
 
   describe(`Metrics Display`, () => {

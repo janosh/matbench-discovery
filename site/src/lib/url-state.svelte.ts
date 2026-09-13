@@ -222,6 +222,7 @@ export class UrlTableFilters {
   })
   fs_mode = $state<FsMode>(`any`)
   show_heatmap = $state(true)
+  show_selected_only = $state(false)
   private readonly training_entries = $derived(Object.entries(this.training))
   private readonly target_entries = $derived(Object.entries(this.targets))
 
@@ -345,6 +346,7 @@ export class UrlTableFilters {
     this.fs_mode = fs_mode
 
     this.show_heatmap = bool_from_param(params, `heatmap`, true)
+    this.show_selected_only = bool_from_param(params, `selected_only`)
   }
 
   // canonical serialization of the targets + fs_mode constraints (F,-M,direct)
@@ -370,6 +372,7 @@ export class UrlTableFilters {
       [`openness`, openness],
       [`targets`, this.targets_param, DEFAULT_TARGETS_PARAM],
       bool_url_entry(`heatmap`, this.show_heatmap, true),
+      bool_url_entry(`selected_only`, this.show_selected_only),
     ]
   }
 }

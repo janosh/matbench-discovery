@@ -163,7 +163,7 @@
   />
 </section>
 
-<h2 id="model-comparison">
+<h2 id="model-comparison" style="text-align: center">
   Model Comparison: {@html scatter_axis_label(plot.y)} vs {@html scatter_axis_label(
     plot.x,
   )}

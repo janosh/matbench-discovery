@@ -3,7 +3,6 @@ import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import { Meta, Microsoft } from 'svelte-widgets/icons'
 
 import type {
-  DatasetMetadataLabels,
   DiscoveryMetricsLabels,
   GeoOptSymmetryMetricsLabels,
   HyperparamLabels,
@@ -287,66 +286,6 @@ export const HYPERPARAMS: HyperparamLabels = {
     key: `n_estimators`,
     label: `Estimators`,
     description: `Number of estimators`,
-  },
-} as const
-
-export const DATASET_METADATA_COLS: DatasetMetadataLabels = {
-  name: { key: `Name`, label: `Name`, description: `Name of the dataset`, sticky: true },
-  structures: {
-    key: `Structures`,
-    label: `Structures`,
-    description: `Number of structures in the dataset. Any system with atomic positions and energy/force/stress labels is counted as a structure incl. successive ionic steps in MD/geometry optimization trajectories.`,
-    better: `higher`,
-    scale_type: `log`,
-    format: `.3s`,
-  },
-  materials: {
-    key: `Materials`,
-    label: `Materials`,
-    description: `Number of unique materials/prototypes in the dataset.`,
-    better: `higher`,
-    scale_type: `log`,
-    format: `.3s`,
-  },
-  created: {
-    key: `Created`,
-    label: `Created`,
-    description: `Date the dataset was created/started`,
-  },
-  open: {
-    key: `Open`,
-    label: `Open`,
-    description: `Whether the dataset is openly available`,
-    style: `text-align: center;`,
-  },
-  static: {
-    key: `Static`,
-    label: `Static`,
-    description: `Whether the dataset is static (fixed version) or dynamic (continuously updated).`,
-    style: `text-align: center;`,
-  },
-  license: {
-    key: `License`,
-    label: `License`,
-    description: `License under which the dataset is published`,
-  },
-  method: {
-    key: `Method`,
-    label: `Method`,
-    description: `Method(s) used to generate the data`,
-    style: `max-width: 5em;`,
-  },
-  api: {
-    key: `API`,
-    label: `API`,
-    description: `API docs (OPTIMADE or native)`,
-    sortable: false,
-  },
-  links: {
-    key: `Links`,
-    label: `Links`,
-    description: `Relevant links for the dataset`,
-    sortable: false,
   },
 } as const
 

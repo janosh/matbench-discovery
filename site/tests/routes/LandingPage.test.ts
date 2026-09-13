@@ -1,4 +1,8 @@
 import { OPENNESS_OPTIONS } from '$lib/url-state.svelte'
+import { comparison } from '$lib/model-comparison.svelte'
+import { afterNavigate } from '$app/navigation'
+import { page } from '$app/state'
+import type { AfterNavigate } from '@sveltejs/kit'
 import Page from '$routes/+page.svelte'
 import { flushSync, tick } from 'svelte'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -109,6 +113,9 @@ describe(`Landing Page`, () => {
       `github-activity`,
     ])
     expect(plots[0].nextElementSibling).toBe(plots[1])
+    expect(doc_query(`p`, plots[1]).querySelector(`a`)).toBeNull()
+    expect(document.querySelectorAll(`a[href="/tasks"]`)).toHaveLength(1)
+    expect(document.querySelectorAll(`a[href="/contribute"]`)).toHaveLength(1)
     const details = [...document.querySelectorAll<HTMLDetailsElement>(`.page-details`)]
     expect(
       details.map((element) => element.querySelector(`summary`)?.textContent),
@@ -262,6 +269,14 @@ describe(`Landing Page`, () => {
     await select_preset(`Geo Opt`)
     expect(header_text()).toMatch(/F1 [↑↓]/)
     expect(header_text()).not.toContain(`RMSD ↓`)
+
+    preset_button(`Geo Opt`).focus()
+    preset_button(`Geo Opt`).dispatchEvent(
+      new KeyboardEvent(`keydown`, { key: `ArrowRight`, bubbles: true }),
+    )
+    await tick()
+    expect(pressed_toggle(`Discovery`)).toBe(`Phonons`)
+    expect(header_text()).toMatch(/F1 [↑↓]/)
   })
 
   it(`updates column visibility when toggling checkboxes`, async () => {
@@ -297,6 +312,7 @@ describe(`Landing Page`, () => {
   })
 
   it(`filters models via the training-data dropdown`, async () => {
+    comparison.set([])
     const selected_scatter_label = () =>
       [...document.querySelectorAll(`.property-picker`)]
         .find((picker) => picker.querySelector(`label`)?.textContent === `Marker size`)
@@ -321,6 +337,24 @@ describe(`Landing Page`, () => {
     const filtered_model_count = document.querySelectorAll(`tbody tr`).length
     expect(filtered_model_count).toBeLessThan(model_count_on_load)
     expect(selected_scatter_label()).toContain(`${filtered_model_count} models`)
+    const model_count = doc_query(`.table-footer p`)
+    expect(model_count.textContent?.trim()).toBe(`${filtered_model_count} models`)
+
+    doc_query(`tbody tr`).dispatchEvent(new MouseEvent(`dblclick`, { bubbles: true }))
+    await tick()
+    const selected_only = doc_query<HTMLInputElement>(
+      `input[aria-label="Toggle between showing only selected models and all models"]`,
+    )
+    selected_only.click()
+    await tick()
+    expect(document.querySelectorAll(`tbody tr`)).toHaveLength(1)
+    expect(model_count.textContent?.trim()).toBe(`1 model`)
+    comparison.set([])
+    await tick()
+    expect(model_count.textContent?.trim()).toBe(`0 models`)
+    selected_only.click()
+    await tick()
+    expect(model_count.textContent?.trim()).toBe(`${filtered_model_count} models`)
   })
 })
 
@@ -359,9 +393,30 @@ describe(`Landing Page URL state`, () => {
     ).click()
     await tick()
     expect(new URLSearchParams(location.search).get(`preset`)).toBe(`Geo Opt`)
+
+    const read_url = vi.mocked(afterNavigate).mock.calls.at(-1)?.[0]
+    if (!read_url) throw new Error(`Missing URL navigation handler`)
+    for (const preset of [`MD`, `MD`]) {
+      doc_query<HTMLInputElement>(
+        `.column-menu input[type="checkbox"]:not(:disabled)`,
+      ).click()
+      await tick()
+      page.url.search = `?preset=${preset}`
+      history.replaceState(null, ``, `/${page.url.search}`)
+      read_url({ type: `link` } as AfterNavigate)
+      await tick()
+      expect(location.search).toBe(`?preset=${preset}`)
+      expect(header_text()).toContain(`vDOS`)
+      expect(header_text()).toContain(`Model`)
+      expect(
+        doc_query<HTMLInputElement>(`.column-menu input[type="checkbox"]:not(:disabled)`)
+          .checked,
+      ).toBe(true)
+      expect_sort(`CMDS`, `descending`)
+    }
   })
 
-  it(`restores heatmap and score settings from the URL`, async () => {
+  it(`restores filters, heatmap, and score settings on initial and later navigation`, async () => {
     await mount_with_url(Page, `http://localhost/?heatmap=0&weights=1,0,0`)
 
     const first_row = doc_query(`tbody tr`)
@@ -381,5 +436,34 @@ describe(`Landing Page URL state`, () => {
     await tick()
     expect(location.search).not.toContain(`heatmap=`)
     expect(cps_cell.style.getPropertyValue(`--cell-bg`)).not.toBe(``)
+
+    const read_url = vi.mocked(afterNavigate).mock.calls.at(-1)?.[0]
+    if (!read_url) throw new Error(`Missing URL navigation handler`)
+    for (const query of [
+      `?train=MPtrj&openness=OSOD&targets=S&set=full_test_set&preset=MD&heatmap=0`,
+      ``,
+    ]) {
+      page.url.search = query
+      history.replaceState(null, ``, `/${query}`)
+      read_url({ type: `popstate` } as AfterNavigate)
+      await tick()
+      expect(heatmap_toggle.checked).toBe(!query)
+      expect(
+        doc_query<HTMLInputElement>(`.desktop-filters [aria-label="require MPtrj"]`)
+          .checked,
+      ).toBe(Boolean(query))
+      expect(
+        doc_query<HTMLInputElement>(`.desktop-filters [aria-label="require stress"]`)
+          .checked,
+      ).toBe(Boolean(query))
+      expect(new URLSearchParams(location.search).get(`set`)).toBe(
+        query ? `full_test_set` : null,
+      )
+      expect(pressed_toggle(`Discovery`)).toBe(query ? `MD` : `Discovery`)
+      expect_sort(query ? `CMDS` : `CPS`, `descending`)
+      expect(new URLSearchParams(location.search).get(`train`)).toBe(
+        query ? `MPtrj` : null,
+      )
+    }
   })
 })

@@ -37,6 +37,7 @@ export type ModelMetadata = {
       | 'MIT'
       | 'Apache-2.0'
       | 'CC-BY-4.0'
+      | 'CC0-1.0'
       | 'CC-BY-SA-4.0'
       | 'CC-BY-NC-4.0'
       | 'GPL-3.0'
@@ -54,6 +55,7 @@ export type ModelMetadata = {
       | 'MIT'
       | 'Apache-2.0'
       | 'CC-BY-4.0'
+      | 'CC0-1.0'
       | 'CC-BY-SA-4.0'
       | 'CC-BY-NC-4.0'
       | 'GPL-3.0'
@@ -258,6 +260,7 @@ export type MdMetrics = {
  * License type:
  * - MIT: Massachusetts Institute of Technology
  * - CC-BY-4.0: Creative Commons Attribution 4.0 International
+ * - CC0-1.0: Creative Commons Zero public domain dedication
  * - CC-BY-NC-4.0: Creative Commons Attribution-NonCommercial 4.0 International
  * - CC-BY-SA-4.0: Creative Commons Attribution-ShareAlike 4.0 International
  * - GPL-3.0: GNU General Public v3.0
@@ -274,6 +277,7 @@ export type LicenseEnum =
   | 'MIT'
   | 'Apache-2.0'
   | 'CC-BY-4.0'
+  | 'CC0-1.0'
   | 'CC-BY-SA-4.0'
   | 'CC-BY-NC-4.0'
   | 'GPL-3.0'

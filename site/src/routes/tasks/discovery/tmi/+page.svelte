@@ -100,7 +100,9 @@
 Discovery diagnostics that didn't make the cut into the
 <a href="/tasks/discovery">task page</a>.
 
-<h2 id="per-element-model-error-heatmaps">Per-Element Model Error Heatmaps</h2>
+<h2 id="per-element-model-error-heatmaps" style="text-align: center">
+  Per-Element Model Error Heatmaps
+</h2>
 
 <ElementErrorsPtableHeatmap />
 
@@ -108,7 +110,10 @@ Discovery diagnostics that didn't make the cut into the
 
 <DiscoveryMetricFigs />
 
-<h2 id="does-error-correlate-with-element-prevalence-in-training-set">
+<h2
+  id="does-error-correlate-with-element-prevalence-in-training-set"
+  style="text-align: center"
+>
   Does error correlate with element prevalence in training set?
 </h2>
 
@@ -147,7 +152,7 @@ dependent on geometry than chemistry.
   {/snippet}
 </ScatterPlot>
 
-<h2 id="does-error-correlate-with-relaxation-change">
+<h2 id="does-error-correlate-with-relaxation-change" style="text-align: center">
   Does error correlate with relaxation change?
 </h2>
 

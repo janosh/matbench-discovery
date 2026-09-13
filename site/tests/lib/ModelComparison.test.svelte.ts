@@ -15,12 +15,7 @@ import ModelPage from '$routes/models/[slug]/+page.svelte'
 import type { ModelData } from '$lib/types'
 import { flushSync, tick } from 'svelte'
 import { afterEach, beforeEach, describe, expect, it, test, vi } from 'vitest'
-import {
-  choose_scatter_property,
-  doc_query,
-  get_scatter_plot_props,
-  mount,
-} from '../index'
+import { doc_query, get_scatter_plot_props, mount } from '../index'
 
 // happy-dom never measures the plot, so capture ScatterPlot's props instead of its SVG
 const plot_mocks = vi.hoisted(() => ({ ScatterPlot: vi.fn() }))
@@ -33,13 +28,14 @@ type PlotProps = {
     id?: string
     markers: string
     point_style?: { stroke?: string; fill_opacity?: number }
-    point_label?: unknown[]
+    point_label?: { text: string }
   }[]
   x_axis: {
     label: string
     scale_type: string
   }
   y_axis: { label: string }
+  on_axis_change: (axis: `x` | `y`, key: string) => void
   point_events: {
     onclick: (payload: { point: { metadata: { model_key: string } } }) => void
   }
@@ -393,14 +389,15 @@ describe(`ModelComparison dialog`, () => {
     const highlighted = model_series.filter((trace) => trace.point_style?.stroke)
     expect(highlighted.map((trace) => trace.id)).toEqual(compared)
     expect(model_series.slice(-2)).toEqual(highlighted)
-    expect(highlighted.every((trace) => trace.point_label?.length === 1)).toBe(true)
+    expect(highlighted.every((trace) => trace.point_label?.text)).toBe(true)
     const dimmed = model_series.slice(0, -2)
     expect(dimmed.every((trace) => trace.point_style?.fill_opacity === 0.3)).toBe(true)
-    expect(dimmed.every((trace) => trace.point_label?.length === 0)).toBe(true)
+    expect(dimmed.every((trace) => trace.point_label === undefined)).toBe(true)
 
     // Axis selections update the derived series; clicking a point toggles the model.
-    await choose_scatter_property(`X axis`, `Training Materials`)
-    await choose_scatter_property(`Y axis`, `F1`)
+    plot().on_axis_change(`x`, `n_training_materials`)
+    plot().on_axis_change(`y`, `F1`)
+    await tick()
     expect(plot().x_axis.label).toBe(`Training Materials`)
     expect(plot().y_axis.label).toBe(`F1`)
     plot().point_events.onclick({ point: { metadata: { model_key: compared[0] } } })

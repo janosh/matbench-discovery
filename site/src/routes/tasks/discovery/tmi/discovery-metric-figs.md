@@ -272,6 +272,9 @@ style="height: 700px"
 > @label:fig:hist-clf-pred-hull-dist-models Distribution of model-predicted hull distance colored by stability classification. Models are sorted from top to bottom by F1 score. The thickness of the red and yellow bands shows how often models misclassify as a function of how far away from the convex hull they place a material. While CHGNet and M3GNet perform almost equally well overall, these plots reveal that they do so via different trade-offs. M3GNet commits fewer false negatives but more false positives predictions compared to CHGNet. In a real discovery campaign, false positives have a higher opportunity cost than false negatives, since they result in wasted DFT relaxations or even synthesis time in the lab. A false negative by contrast is just one missed opportunity out of many. For this reason, models with high true positive rate (TPR) even at the expense of lower true negative rate (TNR) are generally preferred.
 
 <style>
+  h2 {
+    text-align: center;
+  }
   .fig-grid {
     display: grid;
     gap: 1em 1.5em;

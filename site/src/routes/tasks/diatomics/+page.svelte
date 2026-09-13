@@ -1,7 +1,12 @@
 <script lang="ts">
   import MetricsTable from '$lib/table/MetricsTable.svelte'
   import ModelSelect from '$lib/ModelSelect.svelte'
-  import { ACTIVE_MODELS, MODELS, has_diatomics_curves } from '$lib/models.svelte'
+  import {
+    ACTIVE_MODELS,
+    MODELS,
+    has_diatomics_curves,
+    make_table_filters,
+  } from '$lib/models.svelte'
   import { ButtonGroup } from 'svelte-widgets'
   import {
     CDS_CONFIG,
@@ -51,6 +56,7 @@
 
   const homo_nuc_key = `homo-nuclear`
   const visible_cols = task_page_visible_cols(...Object.values(DIATOMICS_METRICS))
+  const filters = make_table_filters()
   // default-sort by the combined diatomics score (CDS), best (highest) first
   const plot = new UrlPlotState(
     {
@@ -147,12 +153,14 @@
       element_group_keys,
     )
     plot.read(params)
+    filters.read(params)
     apply_weights_param(params.get(`weights`), CDS_CONFIG, DEFAULT_CDS_CONFIG)
   }
   bind_url_params(read_url_params, () => [
     model_selection.url_entry,
     [`elements`, selected_element_group, `all`],
     ...plot.url_entries,
+    ...filters.url_entries,
     // custom CDS pillar weights (accuracy,geometry,speed,physicality); omitted at defaults
     [`weights`, weights_to_param(CDS_CONFIG, DEFAULT_CDS_CONFIG)],
   ])
@@ -203,9 +211,10 @@
   model_filter={has_diatomics_curves}
   col_filter={(col) => visible_cols[col.key] ?? true}
   bind:sort={plot.sort}
+  {filters}
 />
 
-<h2 id="model-comparison">
+<h2 id="model-comparison" style="text-align: center">
   {@html scatter_axis_label(plot.y)} vs {@html scatter_axis_label(plot.x)}
 </h2>
 <p>
@@ -224,7 +233,7 @@
   style="height: 800px"
 />
 
-<h2 id="diatomic-energy-curves">Diatomic Energy Curves</h2>
+<h2 id="diatomic-energy-curves" style="text-align: center">Diatomic Energy Curves</h2>
 
 {#if error_entries.length > 0}
   <p class="error-summary" role="alert" title={error_title}>

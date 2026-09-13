@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { page } from '$app/state'
   import DiscoverySetToggle from '$lib/DiscoverySetToggle.svelte'
   import MetricsTable from '$lib/table/MetricsTable.svelte'
   import { DISCOVERY_SETS } from '$lib/types'
@@ -19,6 +18,7 @@
   import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined-scores.svelte'
   import { is_finite_num, metric_value } from '$lib/metrics'
   import { make_table_filters, ACTIVE_MODELS } from '$lib/models.svelte'
+  import { comparison } from '$lib/model-comparison.svelte'
   import {
     apply_weights_param,
     bind_url_params,
@@ -30,7 +30,6 @@
   import type { DiscoverySet, Label, ModelData, SortDir } from '$lib/types'
   import { ButtonGroup, Icon } from 'svelte-widgets'
   import { RSS } from 'svelte-widgets/icons'
-  import { onMount } from 'svelte'
   import { slide } from 'svelte/transition'
   import { tooltip } from 'svelte-widgets/attachments'
   import type { Snapshot } from './$types'
@@ -99,18 +98,9 @@
   let sort = $state({ ...preset_default_sorts[default_col_preset] })
   let auto_sort_enabled = $state(true)
   let custom_col_config = $state(false)
-  let previous_col_preset: ColPreset = default_col_preset
   const sortable_header_selector = `thead th[role="button"]`
   const column_toggle_input_selector = `.column-menu input[type="checkbox"]`
   const reset_columns_selector = `button[aria-label="Reset all columns to defaults"]`
-
-  $effect(() => {
-    if (col_preset === previous_col_preset) return
-    previous_col_preset = col_preset
-    custom_col_config = false
-    if (!auto_sort_enabled) return
-    sort = { ...preset_default_sorts[col_preset] }
-  })
 
   function handle_table_event(event: Event) {
     if (event instanceof KeyboardEvent && ![`Enter`, ` `].includes(event.key)) return
@@ -122,8 +112,7 @@
   }
 
   const valid_sets = new Set(DISCOVERY_SETS)
-  onMount(() => {
-    const params = page.url.searchParams
+  const read_url_params = (params: URLSearchParams) => {
     const next_preset =
       col_preset_names.find((preset) => preset === params.get(`preset`)) ??
       default_col_preset
@@ -135,28 +124,23 @@
 
     discovery_set = valid_query_param(params, `set`, `unique_prototypes`, valid_sets)
     filters.read(params)
+    custom_col_config = false
     col_preset = next_preset
-    previous_col_preset = next_preset
-  })
+    // Reapply the preset even when only its columns were customized.
+    preset_metric_keys = new Set(preset_metric_keys)
+    apply_weights_param(params.get(`weights`), CPS_CONFIG, DEFAULT_CPS_CONFIG)
+  }
 
-  // Sync table state back to URL query params after the initial URL read (table state
-  // is read once in onMount above; weights re-read on every navigation so same-route
-  // navs to a weights-less `/` reset them like the MD page does).
-  bind_url_params(
-    (params) => {
-      apply_weights_param(params.get(`weights`), CPS_CONFIG, DEFAULT_CPS_CONFIG)
-    },
-    () => [
-      // omit `preset` for the default and when the user customized
-      // columns (a preset no longer describes the visible column set)
-      [`preset`, custom_col_config ? default_col_preset : col_preset, default_col_preset],
-      [`set`, discovery_set, `unique_prototypes`],
-      ...sort_url_entries(sort, preset_default_sorts[col_preset]),
-      ...filters.url_entries,
-      // custom CPS weights (F1,κ_SRME,RMSD); omitted at defaults
-      [`weights`, weights_to_param(CPS_CONFIG, DEFAULT_CPS_CONFIG)],
-    ],
-  )
+  bind_url_params(read_url_params, () => [
+    // omit `preset` for the default and when the user customized
+    // columns (a preset no longer describes the visible column set)
+    [`preset`, custom_col_config ? default_col_preset : col_preset, default_col_preset],
+    [`set`, discovery_set, `unique_prototypes`],
+    ...sort_url_entries(sort, preset_default_sorts[col_preset]),
+    ...filters.url_entries,
+    // custom CPS weights (F1,κ_SRME,RMSD); omitted at defaults
+    [`weights`, weights_to_param(CPS_CONFIG, DEFAULT_CPS_CONFIG)],
+  ])
 
   // Each task view includes only models with its headline metric.
   let has_preset_data = $derived((model: ModelData) =>
@@ -164,6 +148,9 @@
   )
   let in_cohort = $derived(
     (model: ModelData) => has_preset_data(model) && filters.matches(model),
+  )
+  const visible_model_count = $derived(
+    comparison.filter(ACTIVE_MODELS.filter(in_cohort), filters.show_selected_only).length,
   )
 
   export const snapshot: Snapshot = {
@@ -188,7 +175,6 @@
       if (valid_sets.has(values.discovery_set)) discovery_set = values.discovery_set
       col_preset =
         col_preset_names.find((preset) => preset === values.col_preset) ?? col_preset
-      previous_col_preset = col_preset
       // apply() drops unknown dataset keys, targets and openness values itself
       if (values.filters) filters.apply(values.filters)
       filters.show_heatmap = values.show_heatmap ?? filters.show_heatmap
@@ -217,6 +203,10 @@
       label="Column presets"
       options={col_preset_options}
       tooltip_options={{ placement: `top` }}
+      on_change={() => {
+        custom_col_config = false
+        if (auto_sort_enabled) sort = { ...preset_default_sorts[col_preset] }
+      }}
     />
   </div>
   <!-- the test-set selector only affects discovery metrics, so only show it in the
@@ -255,7 +245,7 @@
 
   <figcaption>
     <div class="table-footer">
-      <p>{ACTIVE_MODELS.filter(in_cohort).length} models</p>
+      <p>{visible_model_count} model{visible_model_count === 1 ? `` : `s`}</p>
       <div style="display: flex; align-items: center; gap: 1em">
         <a href="/contribute">Submit a model</a>
         <a
@@ -293,7 +283,6 @@
         instead.
         <code>(N=x)</code> beside Params gives the number of estimators in an ensemble.
       </p>
-      <p><a href="/tasks">Task definitions and methodology →</a></p>
     </details>
   </figcaption>
 </figure>
@@ -313,10 +302,7 @@
 
 <section class="plot-section" aria-labelledby="github-activity">
   <h2 id="github-activity">GitHub Activity</h2>
-  <p>
-    Explore <a href="/models">model communities</a>. Larger dots mean more contributors;
-    color shows recent commits.
-  </p>
+  <p>Larger dots mean more contributors; color shows recent commits.</p>
   <GitHubActivityScatter github_data={github_activity_data} />
 </section>
 
@@ -349,10 +335,6 @@
       A framework to evaluate machine learning crystal stability predictions.</a
     >
     <i>Nature Machine Intelligence</i> 7, 836–847 (2025).
-  </p>
-  <p>
-    <a href="/tasks">Explore the tasks</a> ·
-    <a href="/contribute">Contribute predictions</a>
   </p>
 </section>
 
@@ -425,6 +407,7 @@
     margin-block-start: 2.5em;
     > h2 {
       margin-block-end: 0.4em;
+      text-align: center;
     }
     > p {
       text-align: center;

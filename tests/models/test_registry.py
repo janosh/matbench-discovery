@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import re
 from contextlib import nullcontext
+from datetime import date
 from functools import cache
 from glob import glob
 from typing import Any
@@ -26,7 +27,7 @@ MODEL_YAML_PATHS = sorted(glob(f"{ROOT}/models/[!_]*/[!_]*.yml"))
 OPEN_DATASETS = {
     dataset["name"]
     for dataset in DATASETS.values()
-    if isinstance(dataset, dict) and dataset.get("open")
+    if isinstance(dataset, dict) and dataset.get("access") == "public"
 }
 TEST_TASK_NAMES = {"IP2E", "IS2E", "IS2RE", "IS2RE_SR"}
 
@@ -106,10 +107,38 @@ def test_modeling_tasks_align_with_schema() -> None:
 
 
 def test_datasets_yaml_matches_python_registry() -> None:
-    """Training-set keys cannot drift between data/datasets.yml and Python."""
+    """Dataset metadata validates and matches the Python registry."""
     with open(f"{DATA_DIR}/datasets.yml", encoding="utf-8") as file:
         datasets_from_file = yaml.safe_load(file)
     assert set(datasets_from_file) == set(DATASETS)
+    with open(f"{ROOT}/tests/dataset-schema.yml", encoding="utf-8") as file:
+        schema = yaml.safe_load(file)
+    for key in ("person", "http_url", "license_enum"):
+        schema["definitions"][key] = MODEL_SCHEMA["definitions"][key]
+    validate_against_schema(
+        {
+            key: {
+                field: value.isoformat() if isinstance(value, date) else value
+                for field, value in dataset.items()
+            }
+            for key, dataset in datasets_from_file.items()
+        },
+        schema,
+        "data/datasets.yml",
+    )
+    for dataset in datasets_from_file.values():
+        assert set(dataset.get("contains", [])) <= set(DATASETS)
+    slug_schema = schema["definitions"]["dataset"]["properties"]["slug"]
+    for dataset_key, slug in (
+        ("MP 2022", "mp-2022"),
+        ("MAD-1.6", "mad-1.6"),
+        ("MDR-MP PBE ω_q", "mdr-mp-pbe-ω-q"),
+    ):
+        validate_against_schema(slug, slug_schema, dataset_key)
+        with pytest.raises(AssertionError, match="n_structures"):
+            validate_against_schema(
+                {dataset_key: {"n_structures": -1}}, schema, dataset_key
+            )
 
 
 @pytest.mark.parametrize(

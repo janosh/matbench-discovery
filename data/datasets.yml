@@ -6,7 +6,8 @@ WBM:
   n_materials: 215488 # based on number of unique Aflow-style structure prototypes
   n_stable_materials: 42825
   n_uniq_stable_materials: 32942
-  open: true
+  access: public
+  role: test
   static: true
   optimade_api: null
   native_api: null
@@ -37,8 +38,10 @@ MP 2022:
   name: MP v2022.10.28
   url: https://docs.materialsproject.org/changes/database-versions#v2022.10.28
   download_url: https://figshare.com/files/40344436
-  n_structures: 154719
-  open: true
+  n_structures: 154718
+  n_materials: 154718
+  access: public
+  role: training
   static: true
   compliant: true
   optimade_api: null
@@ -47,6 +50,8 @@ MP 2022:
   license: CC-BY-4.0
   doi: https://doi.org/10.1063/1.4812323
   description: Entire Materials Project dataset from October 2022.
+  notes:
+    Size: The [frozen computed-entry archive](https://figshare.com/files/40344436) contains 154,718 entries with distinct material IDs, matching the [energy table](https://figshare.com/files/49083124). Each entry represents one relaxed material.
   method: DFT
   params:
     code: VASP
@@ -63,7 +68,8 @@ MPtrj:
   doi: https://doi.org/10.1038/s42256-023-00716-3
   n_structures: 1580395
   n_materials: 145923
-  open: true
+  access: public
+  role: training
   static: true
   compliant: true
   optimade_api: null
@@ -94,7 +100,8 @@ MPF:
   doi: https://doi.org/10.1038/s43588-022-00349-3
   n_structures: 188349
   n_materials: 62783
-  open: true
+  access: public
+  role: training
   static: true
   compliant: true
   optimade_api: null
@@ -121,7 +128,9 @@ MP Graphs:
   download_url: https://figshare.com/ndownloader/articles/8097992/versions/2
   doi: https://doi.org/10.1021/acs.chemmater.9b01294
   n_structures: 133420
-  open: true
+  n_materials: 133420
+  access: public
+  role: training
   static: true
   compliant: true
   optimade_api: null
@@ -129,6 +138,8 @@ MP Graphs:
   date_created: 2019-06-06
   license: MIT
   description: Contains 133,420 graph-target pairs for Materials Project structures which were used to train the MEGNet formation energy model.
+  notes:
+    Size: Counted 133,420 graph records with distinct material_id values in [mp.2019.04.01.json.zip](https://figshare.com/files/15108200), one per material. The separately distributed elastic-property graphs are not added to this count.
   method: DFT
   params:
     code: VASP
@@ -144,11 +155,14 @@ MP Graphs:
 
 GNoME:
   name: GNoME
+  notes:
+    Access: Only a subset of near-stable structures and their properties is [publicly released](https://github.com/google-deepmind/materials_discovery#dataset); the full training corpus counted here is unavailable.
   url: https://github.com/google-deepmind/materials_discovery
   doi: https://doi.org/10.1038/s41586-023-06735-9
   n_structures: 89000000
   n_materials: 6000000
-  open: false
+  access: partial
+  role: training
   static: true
   optimade_api: https://optimade-gnome.odbx.science
   native_api: null
@@ -180,12 +194,15 @@ GNoME:
 
 MatterSim:
   name: MatterSim
+  notes:
+    Access: The training corpus is unreleased. The [public repository](https://github.com/microsoft/mattersim) provides model checkpoints and inference/training code.
   url: https://github.com/microsoft/mattersim # https://microsoft.github.io/mattersim
   doi: https://doi.org/10.48550/arXiv.2405.04967
   n_structures: 17000000
   temperature_range: 0-5000 K
   pressure_range: 0-1000 GPa
-  open: false
+  access: unreleased
+  role: training
   static: true
   optimade_api: null
   native_api: null
@@ -208,7 +225,8 @@ Alex:
   doi: https://doi.org/10.1002/adma.202210788
   n_structures: 30497628
   n_materials: 3100000
-  open: true
+  access: public
+  role: training
   static: true
   optimade_api: https://optimade.org/providers-dashboard/providers/alexandria
   native_api: null
@@ -252,7 +270,8 @@ OMat24:
   # if all were indeed picked so this is an upper bound on the number of materials
   n_materials: 3227606
   n_structures: 100824585
-  open: true
+  access: public
+  role: training
   static: true
   optimade_api: null
   native_api: null
@@ -299,7 +318,8 @@ sAlex:
   doi: https://doi.org/10.48550/arXiv.2410.12771
   n_materials: 3227606
   n_structures: 10447765
-  open: true
+  access: public
+  role: training
   static: true
   optimade_api: https://optimade.org/providers-dashboard/providers/alexandria
   native_api: null
@@ -326,7 +346,8 @@ sAlex Validation:
   doi: https://doi.org/10.48550/arXiv.2410.12771
   n_materials: 170905 # approximate value! TODO confirm this
   n_structures: 553218
-  open: true
+  access: public
+  role: validation
   static: true
   optimade_api: https://optimade.org/providers-dashboard/providers/alexandria
   native_api: null
@@ -347,13 +368,14 @@ sAlex Validation:
 
 OpenLAM:
   name: OpenLAM dataset v1
-  # strictly speaking contains Alex2D, not the Alex in this file which refers to Alex3D
-  contains: [OMat24, MPtrj, Alex]
+  # Alex2D is not linked here: Alex in this registry refers to Alex3D.
+  contains: [OMat24, MPtrj, OC20, SPICE 2]
   url: https://aissquare.com/datasets/detail?pageType=datasets&name=LAMBench-TrainingSet-v1&id=308
   download_url: https://aissquare.com/datasets/detail?pageType=datasets&name=LAMBench-TrainingSet-v1&id=308 # will be combined for downloading soon
   doi: https://doi.org/10.48550/arXiv.2501.16358
   n_structures: 162507178
-  open: true
+  access: public
+  role: training
   static: true
   optimade_api: null
   native_api: null
@@ -361,9 +383,9 @@ OpenLAM:
   license: CC-BY-4.0
   method: DFT
   params:
-    code: VASP
-    functional: PBE+U
-    pseudopotentials: [PBE, PBE_54]
+    code: Various
+    functional: Various
+    pseudopotentials: Various
   created_by:
     - name: AISI
       email: pengay@aisi.ac.cn
@@ -380,6 +402,8 @@ OpenLAM:
     This dataset integrates multidisciplinary DFT data sourced from Deep Modeling community (https://github.com/deepmodeling)
     and other open repositories to pre-train large atomic models (LAMs),
     while intentionally excluding overlap with WBM benchmark systems (e.g., Alex3D structures).
+  notes:
+    Method: The 31 source datasets use different DFT settings, including those of OMat24, OC20 and SPICE 2; there is no single shared code, functional or pseudopotential setup. See [the DPA3 paper, section 2.4](https://arxiv.org/html/2506.01686v1#S2.SS4).
 
 COSMOSDataset:
   name: COSMOSDataset
@@ -388,7 +412,8 @@ COSMOSDataset:
   download_url: https://figshare.com/articles/software/SevenNet-Omni_checkpoint/30399814
   doi: https://doi.org/10.48550/arXiv.2510.11241
   n_structures: 242788218
-  open: true
+  access: public
+  role: training
   static: true
   optimade_api: null
   native_api: null
@@ -415,11 +440,13 @@ COSMOSDataset:
 
 OC20:
   name: Open Catalyst 2020
-  url: https://opencatalystproject.org/leaderboard.html
-  download_url: https://fair-chem.github.io/catalysts/datasets/oc20.html#per-adsorbate-trajectories-optional-download
+  url: https://github.com/facebookresearch/fairchem/blob/main/docs/catalysts/datasets/oc20.md
+  download_url: https://github.com/facebookresearch/fairchem/blob/main/docs/catalysts/datasets/oc20.md#download-and-preprocess-the-dataset
   doi: https://doi.org/10.1021/acscatal.0c04525
   n_structures: 133934018
-  open: true
+  n_materials: 11500
+  access: public
+  role: training
   static: true
   optimade_api: null
   native_api: null
@@ -428,7 +455,7 @@ OC20:
   method: DFT
   params:
     code: VASP
-    functional: PBE+U
+    functional: RPBE
     pseudopotentials: PBE
   created_by:
     - name: Open Catalyst Project Team
@@ -436,6 +463,8 @@ OC20:
   description: |
     A dataset for catalysis research containing DFT relaxations of adsorbates on catalyst surfaces,
     specifically designed for training ML models to predict adsorption energies and atomic forces.
+  notes:
+    Size: Materials counts the approximately 11,500 parent bulks documented in the [OC20 mappings](https://github.com/facebookresearch/fairchem/blob/main/docs/catalysts/datasets/oc20.md#data-mapping-information). Different surfaces, adsorbates, and relaxation frames share these bulk IDs.
 
 NOMAD:
   name: NOMAD Repository
@@ -443,7 +472,8 @@ NOMAD:
   doi: https://joss.theoj.org/papers/10.21105/joss.05388
   n_structures: 19111098 # as of 2025-04-04
   n_materials: 4335728
-  open: true
+  access: public
+  role: repository
   static: false
   contains: [Alex, OQMD]
   optimade_api: https://optimade.org/providers-dashboard/providers/nmd
@@ -524,7 +554,8 @@ AFLOW:
   doi: https://doi.org/10.1016/j.commatsci.2012.02.005
   n_structures: 3530330 # as of 2025-04-04
   n_materials: 3530330 # unsure how number of materials and structures differ for AFLOW
-  open: true
+  access: public
+  role: repository
   static: false
   optimade_api: https://optimade.org/providers-dashboard/providers/aflow
   native_api: https://aflow.org/documentation
@@ -561,7 +592,8 @@ OQMD:
   download_url: https://static.oqmd.org/static/downloads/qmdb__v1_6__112023.sql.gz
   n_materials: 1226781 # as of 2025-04-04
   n_structures: 1226781
-  open: true
+  access: public
+  role: repository
   static: true # since download link points to the specific version v1.6
   optimade_api: https://optimade.org/providers-dashboard/providers/oqmd
   native_api: https://static.oqmd.org/static/docs/restful.html
@@ -592,7 +624,9 @@ MatPES PBE:
   url: https://matpes.ai
   download_url: https://s3.us-east-1.amazonaws.com/materialsproject-contribs/MatPES_2025_1/MatPES-PBE-2025.1.json.gz
   n_structures: 434712 # as of 2025-04-04
-  open: true
+  n_materials: 110317
+  access: public
+  role: training
   static: true
   optimade_api: null
   native_api: null
@@ -618,13 +652,17 @@ MatPES PBE:
   description: |
     A dataset containing 434,712 structures from ~300K molecular dynamics simulations,
     providing potential energy surfaces that are valuable for training ML interatomic potentials.
+  notes:
+    Size: Counted 434,712 distinct matpes_id records and 110,317 distinct provenance.original_mp_id values in [MatPES-PBE-2025.1.json.gz](https://s3.us-east-1.amazonaws.com/materialsproject-contribs/MatPES_2025_1/MatPES-PBE-2025.1.json.gz). Materials counts the parent MP materials across the sampled MD frames.
 
 MatPES r2SCAN:
   name: MatPES v1.0 r2SCAN
   url: https://matpes.ai
   download_url: https://s3.us-east-1.amazonaws.com/materialsproject-contribs/MatPES_2025_1/MatPES-R2SCAN-2025.1.json.gz
   n_structures: 387897 # as of 2025-04-04
-  open: true
+  n_materials: 89719
+  access: public
+  role: training
   static: true
   optimade_api: null
   native_api: null
@@ -650,14 +688,18 @@ MatPES r2SCAN:
   description: |
     A dataset containing 387,897 structures from ~300K molecular dynamics simulations,
     providing potential energy surfaces that are valuable for training ML interatomic potentials.
+  notes:
+    Size: Counted 387,897 distinct matpes_id records and 89,719 distinct provenance.original_mp_id values in [MatPES-R2SCAN-2025.1.json.gz](https://s3.us-east-1.amazonaws.com/materialsproject-contribs/MatPES_2025_1/MatPES-R2SCAN-2025.1.json.gz). Materials counts the parent MP materials across the sampled MD frames.
 
 MDR Phonon PBE:
   name: MDR Phonon PBE
   url: https://alexandria.icams.rub.de/data/phonon_benchmark/pbe
   download_url: https://alexandria.icams.rub.de/data/phonon_benchmark/
   doi: https://doi.org/10.48550/arXiv.2412.16551
-  n_structures: 9959
-  open: true
+  n_structures: 9958
+  n_materials: 9958
+  access: public
+  role: test
   static: true
   optimade_api: null
   native_api: null
@@ -679,6 +721,8 @@ MDR Phonon PBE:
     (https://mdr.nims.go.jp/collections/d7aab932-8512-4b9a-b93d-b61f6e5e7019),
     introduced in the paper "Universal Machine Learning Interatomic Potentials
     are Ready for Phonons".
+  notes:
+    Size: Counted 9,958 distinct mp-ID files in the [PBE release directory](https://alexandria.icams.rub.de/data/phonon_benchmark/pbe/) on 2026-09-13, one reference material per phonon calculation; the PFT paper reports 9,959. Displaced supercells are not added to this count.
 
 MDR-MP PBE ω_q:
   name: MDR PBE Phonons in MPtrj
@@ -687,7 +731,9 @@ MDR-MP PBE ω_q:
   download_url: https://figshare.com/files/60964675
   doi: https://doi.org/10.48550/arXiv.2601.07742
   n_structures: 8510
-  open: true
+  n_materials: 8510
+  access: public
+  role: training
   static: true
   compliant: true
   date_created: 2026-01-08
@@ -700,15 +746,20 @@ MDR-MP PBE ω_q:
     Potentials". This dataset was constructed by randomly sampling 8,510
     structures with overlapping mp-id's with MPtrj and preprocessing into
     .aselmbd files with the Hessian stored in atoms.info["hessian"].
+  notes:
+    Size: Counts 8,510 training materials, each represented by one reference cell and Hessian. The [release](https://figshare.com/articles/dataset/Preprocessed_data_for_Phonon_Fine-tuning_PFT_/31049869) splits by mp-ID; validation and the 1,000-material test set are separate.
 
 ELEMENTA:
   name: ELEMENTA
+  notes:
+    Access: The [public release](https://huggingface.co/datasets/kairosmaterial/ELEMENTA) contains nearly 39M core frames and 4.7M Spin frames. The full 210M-frame core corpus counted here is not public.
   url: https://www.kairosmaterials.com/papers/ELEMENTA.pdf
   download_url: https://huggingface.co/datasets/kairosmaterial/ELEMENTA
   doi: https://doi.org/10.5281/zenodo.22638068
   n_structures: 210656285
   n_materials: 9781175
-  open: false
+  access: partial
+  role: training
   static: true
   optimade_api: null
   native_api: null
@@ -726,3 +777,525 @@ ELEMENTA:
     - name: Kairos Materials Team
       email: research@kairosmaterials.com
       url: https://www.kairosmaterials.com
+
+SMAX:
+  name: SMAX Maximum Entropy Dataset
+  url: https://arxiv.org/abs/2602.23489
+  doi: https://doi.org/10.48550/arXiv.2602.23489
+  n_structures: 1693386
+  access: unreleased
+  role: training
+  static: true
+  date_created: 2026-02-26
+  license: unreleased
+  method: DFT
+  params:
+    code: VASP
+    code_version: '6.3.0'
+    functional: PBE
+    cutoff_energy: 500 eV
+  created_by:
+    - name: Anton Bochkarev
+    - name: Yury Lysogorskiy
+    - name: Aparna Subramanyam
+    - name: Ralf Drautz
+    - name: Danny Perez
+  description: |
+    Chemistry-agnostic maximum-entropy configurations for robust interatomic potentials under extreme thermodynamic conditions, augmented with relaxed structures and lower-energy environments. Used to train the GRACE SMAX models.
+  notes:
+    Size: The [paper](https://arxiv.org/html/2602.23489v1) reports 1,660,322 training and 33,064 test configurations, totaling 1,693,386 structures.
+    Access: As checked on 2026-09-13, the paper's data-availability statement promises the dataset on manuscript acceptance. [Pretrained SMAX models](https://gracemaker.readthedocs.io/en/latest/gracemaker/foundation/#smax-models) are listed separately; their availability does not establish a public dataset release.
+
+OC22:
+  name: Open Catalyst 2022
+  url: https://github.com/facebookresearch/fairchem/blob/main/docs/catalysts/datasets/oc22.md
+  download_url: https://dl.fbaipublicfiles.com/opencatalystproject/data/oc22/s2ef_total_train_val_test_lmdbs.tar.gz
+  doi: https://doi.org/10.1021/acscatal.2c05426
+  n_structures: 9854504
+  n_materials: 4286
+  access: public
+  role: training
+  static: true
+  date_created: 2022-06-17
+  license: CC-BY-4.0
+  method: DFT
+  params:
+    code: VASP
+    functional: PBE+U
+  description: |
+    Oxide electrocatalysts with varying surfaces, adsorbates, and coverages. Includes total energies and forces for training potentials that must handle magnetic and electrostatic interactions in oxide surfaces.
+  notes:
+    Size: The [paper](https://arxiv.org/abs/2206.08917) reports 9,854,504 configurations from 62,331 relaxations. Materials counts 4,286 distinct bulk_id values in the [released metadata](https://dl.fbaipublicfiles.com/opencatalystproject/data/oc22/oc22_metadata.pkl), whose checksum matches the project documentation.
+
+OC25:
+  name: Open Catalyst 2025
+  url: https://github.com/facebookresearch/fairchem/blob/main/docs/catalysts/datasets/oc25.md
+  download_url: https://huggingface.co/facebook/OC25
+  doi: https://doi.org/10.48550/arXiv.2509.17862
+  n_structures: 7801261
+  access: public
+  role: training
+  static: true
+  date_created: 2025-09-22
+  license: CC-BY-4.0
+  method: DFT
+  params:
+    code: VASP
+    functional: RPBE
+    dispersion: D3
+  description: |
+    Solid-liquid interfaces for electrocatalysis, including metal and oxide surfaces, explicit solvents, ions, and adsorbates across 88 elements. Provides energies and forces for off-equilibrium interfacial configurations.
+  notes:
+    Size: The [dataset paper](https://arxiv.org/html/2509.17862v1) reports 7,801,261 calculations across 1,511,270 solvent environments. Its main split comprises 7,395,512 training, 203,630 validation, and 202,119 test structures; additional out-of-distribution evaluations are listed separately.
+    Access: Downloads are distributed through the official Hugging Face page; account access conditions may apply. The dataset uses CC-BY-4.0, separately from the model-checkpoint license.
+
+ODAC23:
+  name: Open Direct Air Capture 2023
+  url: https://github.com/facebookresearch/fairchem/blob/main/docs/dac/datasets/odac23.md
+  download_url: https://dl.fbaipublicfiles.com/large_objects/dac/datasets/odac23_s2ef.tar.gz
+  doi: https://doi.org/10.48550/arXiv.2311.00341
+  n_structures: 38983748
+  n_materials: 8412
+  access: public
+  role: training
+  static: true
+  date_created: 2023-11-01
+  license: CC-BY-4.0
+  method: DFT
+  params:
+    code: VASP
+    functional: PBE
+    dispersion: D3
+  description: |
+    CO2 and water adsorption in metal-organic frameworks for direct air capture, including defective frameworks and structural relaxation trajectories with energies and forces.
+  notes:
+    Size: The [paper's Table 1](https://arxiv.org/html/2311.00341v2#S2.T1) reports 38,983,748 DFT configurations across 8,412 frameworks (4,942 pristine and 3,470 defective MOFs), including all training, validation, and test splits.
+    Successor: >-
+      [ODAC25](/data/odac25) expands chemical coverage and corrects aspects of the original adsorption energies and k-point sampling. Do not combine their labels as if the computational conventions were identical.
+
+ODAC25:
+  name: Open Direct Air Capture 2025
+  url: https://github.com/facebookresearch/fairchem/blob/main/docs/dac/datasets/odac25.md
+  download_url: https://huggingface.co/facebook/ODAC25
+  doi: https://doi.org/10.48550/arXiv.2508.03162
+  n_structures: 70000000
+  n_materials: 15000
+  access: public
+  role: training
+  static: true
+  date_created: 2025-08-05
+  license: CC-BY-4.0
+  method: DFT
+  params:
+    code: VASP
+    functional: PBE
+    dispersion: D3
+  description: |
+    CO2, water, nitrogen, and oxygen adsorption in MOFs, with functionalized and synthetic frameworks and configurations sampled by grand canonical Monte Carlo. Updates ODAC23's adsorption references and convergence treatment.
+  notes:
+    Size: Approximately 70 million DFT calculations across 15,000 MOFs, as reported in the [current project documentation](https://github.com/facebookresearch/fairchem/blob/main/docs/dac/datasets/odac25.md). This is a rounded corpus size, not an exact file-row count.
+    Access: The official Hugging Face download requires an account and access request. Dataset licensing is CC-BY-4.0; model weights have separate terms.
+
+OMol25:
+  name: Open Molecules 2025
+  url: https://github.com/facebookresearch/fairchem/blob/main/docs/molecules/datasets/omol25.md
+  download_url: https://huggingface.co/facebook/OMol25
+  doi: https://doi.org/10.48550/arXiv.2505.08762
+  n_structures: 101666280
+  access: public
+  role: training
+  static: true
+  date_created: 2025-05-13
+  license: CC-BY-4.0
+  method: DFT
+  params:
+    code: ORCA
+    code_version: '6'
+    functional: wB97M-V
+    basis: def2-TZVPD
+  description: |
+    Molecular energies and forces spanning neutral organics, biomolecules, electrolytes, and metal complexes across 83 elements. Configurations include varying total charges and spin multiplicities, with structures up to roughly 350 atoms.
+  notes:
+    Size: Counts the 101,666,280-structure training split in [Table 1](https://arxiv.org/html/2505.08762v1#S2.T1). The 4M and neutral subsets overlap it; validation and evaluation splits are additional.
+    Access: Dataset downloads require a Hugging Face account and access request. The data use CC-BY-4.0, not the separate FAIR Chemistry license for model weights.
+    Related data: >-
+      [OPoly26](/data/opoly26) extends coverage to polymers. The [electronic-structure subset](/data/omol25-electronic) provides richer ORCA outputs for approximately four million existing OMol25 configurations.
+
+OMol25 Electronic:
+  name: Open Molecules 2025 Electronic-Structure Subset
+  contains: [OMol25]
+  url: https://github.com/facebookresearch/fairchem/blob/main/docs/molecules/datasets/omol25_elec.md
+  download_url: https://github.com/facebookresearch/fairchem/blob/main/docs/molecules/datasets/omol25_elec.md
+  doi: https://doi.org/10.48550/arXiv.2505.08762
+  n_structures: 4000000
+  access: public
+  role: training
+  static: true
+  date_created: 2025-05-13
+  license: CC-BY-4.0
+  method: DFT
+  params:
+    code: ORCA
+    functional: wB97M-V
+    basis: def2-TZVPD
+  description: |
+    Rich electronic-structure outputs for an approximately four-million-configuration subset of OMol25, including wavefunction files, density matrices, and raw ORCA outputs for learning properties beyond energies and forces.
+  notes:
+    Size: Rounded subset size reported by the project. These configurations overlap [OMol25](/data/omol25); they are not additional structures.
+    Access: The documented subset is distributed through Argonne's application process and Globus. The much larger full-corpus electronic-output archive is available only on request and is not counted here.
+
+OMC25:
+  name: Open Molecular Crystals 2025
+  url: https://github.com/facebookresearch/fairchem/blob/main/docs/molecules/datasets/omc25.md
+  download_url: https://huggingface.co/datasets/facebook/OMC25
+  doi: https://doi.org/10.48550/arXiv.2508.02651
+  n_structures: 26257042
+  n_materials: 218841
+  access: public
+  role: training
+  static: true
+  date_created: 2025-08-04
+  license: CC-BY-4.0
+  method: DFT
+  params:
+    code: VASP
+    functional: PBE
+    dispersion: D3
+  description: |
+    Molecular-crystal relaxation trajectories with energies, forces, and stresses. Random crystal packings generated with Genarris from OE62 molecules cover 12 elements and cells containing up to 300 atoms.
+  notes:
+    Size: The [released training and validation splits](https://huggingface.co/datasets/facebook/OMC25) contain 26,257,042 frames from 218,841 distinct starting crystal packings of 46,870 molecules. Materials counts those starting crystals, not individual relaxation frames. Verified against omc25-starting-crystals.csv; the paper's larger total also includes test data.
+
+OPoly26:
+  name: Open Polymers 2026
+  url: https://arxiv.org/abs/2512.23117
+  download_url: https://huggingface.co/facebook/OMol25
+  doi: https://doi.org/10.48550/arXiv.2512.23117
+  n_structures: 6570542
+  access: public
+  role: training
+  static: true
+  date_created: 2025-12-28
+  license: CC-BY-4.0
+  method: DFT
+  params:
+    code: ORCA
+    functional: wB97M-V
+    basis: def2-TZVPD
+  description: |
+    Polymer-derived clusters with varying monomers, chain lengths, architectures, and solvation, including configurations with up to 360 atoms. Uses the OMol25 level of theory to extend molecular potentials to polymer environments.
+  notes:
+    Size: The [paper](https://arxiv.org/html/2512.23117v1) lists 6,099,878 training, 210,924 validation, and 259,740 test structures, totaling 6,570,542 configurations.
+    Access: Distributed from the OMol25 Hugging Face page under CC-BY-4.0. Account and access-request requirements apply there.
+
+OC20-mAds:
+  name: Open Catalyst 2020 Multiple Adsorbates
+  contains: [OC20]
+  url: https://github.com/facebookresearch/fairchem/blob/main/docs/catalysts/datasets/oc20_mads.md
+  download_url: https://dl.fbaipublicfiles.com/opencatalystproject/data/oc20mAds/oc20_multiads_train.tar.gz
+  doi: https://doi.org/10.48550/arXiv.2506.23971
+  n_structures: 21804758
+  access: public
+  role: training
+  static: true
+  date_created: 2025-06-30
+  license: CC-BY-4.0
+  method: DFT
+  description: |
+    OC20 extension for coadsorption and coverage effects, with up to five adsorbates on a surface. The project lists 21,804,758 training frames and introduced the dataset with the UMA models.
+
+OC20-Slabs:
+  name: Open Catalyst 2020 Clean Slabs
+  contains: [OC20]
+  url: https://github.com/facebookresearch/fairchem/blob/main/docs/catalysts/datasets/oc20_slabs.md
+  download_url: https://dl.fbaipublicfiles.com/opencatalystproject/data/oc20/oc20_slabs.tar.gz
+  doi: https://doi.org/10.48550/arXiv.2506.23971
+  n_structures: 18323074
+  access: public
+  role: training
+  static: true
+  date_created: 2025-06-30
+  license: CC-BY-4.0
+  method: DFT
+  description: |
+    Clean catalyst-surface structures used for UMA training. The released training and validation corpus contains 18,323,074 frames; surfaces appearing in any OC20 test split are excluded.
+
+OC20-Dense:
+  name: Open Catalyst 2020 Dense Adsorbate Sampling
+  contains: [OC20]
+  url: https://github.com/facebookresearch/fairchem/blob/main/docs/catalysts/datasets/oc20dense.md
+  download_url: https://dl.fbaipublicfiles.com/opencatalystproject/data/adsorbml/oc20_dense_data.tar.gz
+  doi: https://doi.org/10.48550/arXiv.2211.16486
+  n_structures: 85658
+  n_materials: 833
+  access: public
+  role: validation
+  static: true
+  date_created: 2022-11-29
+  license: CC-BY-4.0
+  method: DFT
+  description: |
+    AdsorbML validation dataset for finding low-energy adsorption configurations, using dense initial placement sampling for roughly 1,000 adsorbate-surface systems.
+  notes:
+    Size: Counts 85,658 initial atomic configurations, not all relaxation frames. Materials counts 833 distinct parent mp-IDs in oc20dense_mapping.pkl from the [released mappings](https://github.com/facebookresearch/fairchem/blob/main/docs/catalysts/datasets/oc20dense.md). Multiple adsorbate-surface combinations share a parent material.
+
+OC20NEB:
+  name: Open Catalyst 2020 Nudged Elastic Band Benchmark
+  contains: [OC20]
+  url: https://github.com/facebookresearch/fairchem/blob/main/docs/catalysts/datasets/oc20neb.md
+  download_url: https://dl.fbaipublicfiles.com/opencatalystproject/data/oc20neb/oc20neb_dft_trajectories_04_23_24.tar.gz
+  doi: https://doi.org/10.48550/arXiv.2405.02078
+  n_structures: 1375930
+  n_materials: 821
+  access: public
+  role: validation
+  static: true
+  date_created: 2024-05-03
+  license: CC-BY-4.0
+  method: DFT
+  params:
+    code: VASP
+    functional: RPBE
+  description: |
+    CatTSunami validation set of 932 nudged elastic band reaction paths covering desorption, dissociation, and transfer reactions on catalyst surfaces. Tests transition-state predictions from potentials trained on adsorption relaxations.
+  notes:
+    Size: Counted 1,375,930 stored ASE frames across all 932 trajectories in the [checksum-verified release](https://github.com/facebookresearch/fairchem/blob/main/docs/catalysts/datasets/oc20neb.md). This includes the two fixed endpoints saved at each NEB iteration. Materials counts 821 distinct parent bulk IDs encoded in the trajectory filenames.
+
+OCx24:
+  name: Open Catalyst Experiments 2024
+  url: https://github.com/facebookresearch/fairchem/blob/main/docs/catalysts/datasets/ocx24.md
+  download_url: https://github.com/facebookresearch/fairchem/tree/main/src/fairchem/applications/ocx/data/experimental_data
+  doi: https://doi.org/10.48550/arXiv.2411.11783
+  n_structures: null
+  n_materials: 19406
+  access: public
+  role: test
+  static: true
+  date_created: 2024-11-18
+  license: CC-BY-4.0
+  method: [experiment, DFT, ML]
+  description: |
+    Experimental catalyst characterization and electrochemical measurements for hydrogen evolution and CO2 reduction, paired with computational adsorption screening. Includes 572 synthesized samples and testing of 441 gas-diffusion electrodes, including replicates.
+  notes:
+    Size: Materials counts the [paper's 19,406 deduplicated computational candidates](https://arxiv.org/html/2411.11783v1#S4.SS1). Experimental samples and electrodes are not atomic configurations. The released screening tables do not provide a complete structure archive for the roughly 20 million DFT single points and 685 million ML relaxations.
+    Computational data: The [project download guide](https://github.com/facebookresearch/fairchem/blob/main/docs/catalysts/datasets/ocx24.md) also links the computational screening CSV and explains its relationship to experimental results.
+
+MAD:
+  name: Massive Atomic Diversity
+  url: https://www.nature.com/articles/s41597-025-06109-y
+  download_url: https://doi.org/10.24435/materialscloud:fe-1p
+  doi: https://doi.org/10.24435/materialscloud:fe-1p
+  n_structures: 95595
+  access: public
+  role: training
+  static: true
+  date_created: 2025-09-25
+  license: CC-BY-4.0
+  method: DFT
+  params:
+    code: FHI-aims
+    functional: PBEsol
+  description: |
+    Compact training corpus spanning 85 elements, including bulk and two-dimensional crystals, surfaces, clusters, molecular crystals, and molecular fragments. Uses consistent all-electron DFT calculations for PET-MAD potentials.
+  notes:
+    Size: The [PET-MAD paper](https://www.nature.com/articles/s41467-025-65662-7) reports 95,595 configurations after filtering. The Materials Cloud release includes training, validation, and test splits and AiiDA provenance.
+
+MAD-1.5:
+  name: Massive Atomic Diversity 1.5
+  contains: [MAD]
+  url: https://archive.materialscloud.org/records/18tke-tt476
+  download_url: https://archive.materialscloud.org/records/18tke-tt476
+  doi: https://doi.org/10.24435/materialscloud:jc-9f
+  n_structures: 216803
+  access: public
+  role: training
+  static: true
+  version: '1.5'
+  date_created: 2026-03-03
+  license: CC-BY-4.0
+  method: DFT
+  params:
+    code: FHI-aims
+    code_version: '250806'
+    functional: r2SCAN
+  description: |
+    Extends MAD to 102 elements with isolated atoms, dimers, trimers, and additional crystals and binary configurations. Recomputes targets consistently with r2SCAN and removes outliers using uncertainty estimates.
+  notes:
+    Size: Counts the 216,803 cleaned r2SCAN configurations in [Table 1](https://arxiv.org/html/2603.02089v1). The 8,244 rejected configurations and PBE relabeling of a subset are distributed separately and are not added to this count.
+
+MAD-1.6:
+  name: Massive Atomic Diversity 1.6
+  contains: [MAD-1.5]
+  url: https://archive.materialscloud.org/records/wtpqr-2cj66
+  download_url: https://archive.materialscloud.org/records/wtpqr-2cj66
+  doi: https://doi.org/10.24435/materialscloud:vm-51
+  n_structures: 362646
+  access: public
+  role: training
+  static: true
+  version: '1.6'
+  date_created: 2026-08-29
+  license: CC-BY-4.0
+  method: DFT
+  params:
+    code: FHI-aims
+    functional: r2SCAN
+  description: |
+    Updated MAD release covering 102 elements, extending structural diversity to molecular clusters and adsorbed molecules. Provides r2SCAN training, validation, and test files, plus a separately labeled PBE subset.
+  notes:
+    Size: Counted 315,314 training, 23,661 validation, and 23,671 test configurations in the [versioned r2SCAN XYZ files](https://archive.materialscloud.org/records/wtpqr-2cj66), with distinct subset/frame_id pairs and matching release checksums. Excludes the 8,244 rejected structures and overlapping PBE relabelings.
+    Labels: The [release README](https://archive.materialscloud.org/api/records/wtpqr-2cj66/files/README.md/content) states that r2SCAN stresses are available only for the mc3d_rattled subset; other structures should not be assumed to carry stress labels.
+
+MP-ALOE:
+  name: Materials Project Active Learning of Off-Equilibrium Structures
+  url: https://docs.materialsproject.org/services/ml-and-ai-applications/matpes
+  download_url: https://doi.org/10.6084/m9.figshare.29452190.v2
+  doi: https://doi.org/10.48550/arXiv.2507.05559
+  n_structures: 909792
+  access: public
+  role: training
+  static: true
+  date_created: 2025-07-01
+  license: CC-BY-4.0
+  method: DFT
+  params:
+    code: VASP
+    functional: r2SCAN
+  description: |
+    Active-learning configurations across 89 elements, targeting high-energy structures, large forces, and pressures beyond equilibrium materials. Provides energies, forces, stresses, magnetic moments, and origin metadata with MatPES-compatible DFT settings.
+  notes:
+    Size: The [paper's dataset comparison](https://arxiv.org/html/2507.05559v1) lists 909,792 structures. MatPES is compatible companion data and is not included in this count.
+
+SPICE 2:
+  name: Small-Molecule/Protein Interaction Chemical Energies 2
+  url: https://github.com/openmm/spice-dataset
+  download_url: https://zenodo.org/records/10975225
+  doi: https://doi.org/10.5281/zenodo.10975225
+  n_structures: 2000000
+  access: public
+  role: training
+  static: true
+  version: '2.0.1'
+  date_created: 2024-04-15
+  license: CC0-1.0
+  method: DFT
+  params:
+    code: Psi4
+    functional: wB97M-D3BJ
+    basis: def2-TZVPPD
+  description: |
+    Molecular conformations for learning energies, forces, charges, and multipoles across 17 elements. Covers drug-like molecules, peptides, solvated species, ion pairs, water clusters, and noncovalent interactions.
+  notes:
+    Size: Approximately two million conformations. The [version-2 table](https://github.com/openmm/spice-dataset#spice-a-dataset-for-training-machine-learning-potentials) lists 2,008,628, but version 2.0.1 removes configurations with broken bonds. The count is rounded rather than presenting the older total as an exact size for the corrected release.
+    Licensing: The dataset is CC0; the accompanying generation scripts have a separate MIT license.
+
+QMOF:
+  name: Quantum Metal-Organic Framework Database
+  url: https://github.com/Andrew-S-Rosen/QMOF
+  download_url: https://doi.org/10.6084/m9.figshare.13147324
+  doi: https://doi.org/10.1038/s41524-022-00796-6
+  n_structures: 20372
+  n_materials: 20372
+  access: public
+  role: repository
+  static: false
+  date_created: 2020-10-29
+  license: CC-BY-4.0
+  method: DFT
+  params:
+    code: VASP
+    functional: [PBE, HSE06]
+  description: |
+    Quantum-chemical properties of metal-organic frameworks and coordination polymers, including optimized structures and electronic properties. Provides data for materials screening and property prediction across multiple levels of theory.
+  notes:
+    Size: Counted 20,372 distinct qmof_id records in qmof.csv from the [released database archive](https://figshare.com/files/59573735). Each record represents one framework; relaxation trajectories and the separate thermochemistry archive are not included.
+
+rMD17:
+  name: Revised Molecular Dynamics 17
+  url: https://figshare.com/articles/dataset/Revised_MD17_dataset_rMD17_/12672038
+  download_url: https://doi.org/10.6084/m9.figshare.12672038.v4
+  doi: https://doi.org/10.48550/arXiv.2007.09593
+  n_structures: 999988
+  n_materials: 10
+  access: public
+  role: test
+  static: true
+  date_created: 2020-07-18
+  license: CC0-1.0
+  method: DFT
+  params:
+    functional: PBE
+    basis: def2-SVP
+  description: |
+    Molecular-dynamics configurations of ten molecules with energies and forces recomputed using tight convergence and dense integration grids. Provides fixed training and test splits for evaluating molecular force-field learning.
+  notes:
+    Size: Materials counts the ten molecules in the [release](https://doi.org/10.6084/m9.figshare.12672038.v4). Nine have 100,000 configurations each; azobenzene has 99,988 after failed calculations, giving 999,988 total structures.
+    Sampling: Frames come from correlated time series. The authors recommend using the supplied small training splits rather than treating large random frame samples as independent data.
+
+JARVIS-DFT:
+  name: JARVIS Density Functional Theory 3D Database
+  url: https://pages.nist.gov/jarvis/databases/
+  download_url: https://ndownloader.figshare.com/files/38521619
+  doi: https://doi.org/10.1038/s41524-020-00440-1
+  n_structures: 75993
+  n_materials: 75993
+  access: public
+  role: repository
+  static: false
+  date_created: 2018-07-13
+  license: CC-BY-4.0
+  method: DFT
+  params:
+    code: VASP
+    functional: [optB88-vdW, TB-mBJ]
+  optimade_api: https://jarvis.nist.gov/optimade/jarvisdft/
+  native_api: https://pages.nist.gov/jarvis/databases/
+  description: |
+    NIST's computed materials properties for bulk crystals, including formation energies, electronic structure, elastic and vibrational properties, and response functions. Individual properties have different calculation coverage.
+  notes:
+    Size: Counted 75,993 records with distinct jid values in [jdft_3d-12-12-2022.json](https://figshare.com/files/38521619), one per material. This frozen snapshot excludes relaxation frames and the separate two-dimensional dataset.
+
+ANI-1x:
+  name: ANI-1x Active-Learning Molecular Dataset
+  url: https://github.com/aiqm/ANI1x_datasets
+  download_url: https://springernature.figshare.com/articles/dataset/ANI-1x_Dataset_Release/10047041
+  doi: https://doi.org/10.1038/s41597-020-0473-z
+  n_structures: 5000000
+  n_materials: 64000
+  access: public
+  role: training
+  static: true
+  date_created: 2020-04-23
+  license: CC0-1.0
+  method: DFT
+  params:
+    functional: wB97X
+    basis: [6-31G*, def2-TZVPP]
+  elements: [H, C, N, O]
+  description: |
+    Active-learning molecular configurations sampled with dynamics, normal modes, torsions, and dimers. Provides energies, forces, charges, and multipoles for organic molecules containing hydrogen, carbon, nitrogen, and oxygen.
+  notes:
+    Size: Approximately five million configurations of 64,000 molecules and molecular complexes, following the [authors' ANI-1x description](https://pmc.ncbi.nlm.nih.gov/articles/PMC6602931/). Both counts are rounded. Label availability varies across methods and properties; missing HDF5 values are not computed results.
+    Higher-level subset: The same archive includes ANI-1ccx, approximately 500,000 selected configurations relabeled with an approximate CCSD(T)/CBS scheme. They overlap ANI-1x and are not added to its structure count.
+
+QM9:
+  name: Quantum Chemistry of 134 Thousand Small Organic Molecules
+  url: https://springernature.figshare.com/collections/Quantum_chemistry_structures_and_properties_of_134_kilo_molecules/978904
+  download_url: https://springernature.figshare.com/articles/dataset/Data_for_133885_GDB-9_molecules/1057646
+  doi: https://doi.org/10.1038/sdata.2014.22
+  n_structures: 133885
+  n_materials: 133885
+  access: public
+  role: training
+  static: true
+  date_created: 2014-07-31
+  license: CC0-1.0
+  method: DFT
+  params:
+    functional: B3LYP
+    basis: 6-31G(2df,p)
+  elements: [H, C, N, O, F]
+  description: |
+    Equilibrium geometries and quantum-chemical properties of small organic molecules with up to nine heavy atoms. Includes energies, harmonic frequencies, dipoles, polarizabilities, and thermochemical properties, rather than off-equilibrium force trajectories.
+  notes:
+    Coverage: Counts the full 133,885-molecule archive. The [authors' README](https://springernature.figshare.com/articles/dataset/Readme_file_Data_description_for_Quantum_chemistry_structures_and_properties_of_134_kilo_molecules_/1057641) flags 3,054 structures failing a geometry-to-SMILES consistency check; filtered benchmark variants should state their exclusions.

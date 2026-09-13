@@ -302,7 +302,7 @@ export default {
   },
 
   resolve: {
-    dedupe: [`svelte`],
+    dedupe: [`svelte`, `svelte-widgets`],
     conditions: process.env.VITEST ? [`browser`] : undefined,
     // Keep bare Three imports on Matterviz's WebGPU-compatible build to avoid duplicates.
     alias: [{ find: /^three$/, replacement: three_compat }],

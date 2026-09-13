@@ -1,8 +1,9 @@
 <script lang="ts">
-  import AuthorBrief from '$lib/model/ModelAuthor.svelte'
+  import Logo from '$lib/Logo.svelte'
+  import type { Author } from '$lib/types'
   import { comparison } from '$lib/model-comparison.svelte'
   import DATASETS from '$data/datasets.yml'
-  import ModelRankCard from '$lib/model/ModelRankCard.svelte'
+  import { model_metric_ranks, rank_color, RANKED_METRICS } from '$lib/rankings'
   import PtableInset from '$lib/PtableInset.svelte'
   import {
     discovery_task_tooltips,
@@ -13,10 +14,10 @@
   import { has_kappa_parity_model } from '$lib/parity/kappa-parity'
   import EnergyParityPlot from '$lib/plot/EnergyParityPlot.svelte'
   import KappaParityPlot from '$lib/plot/KappaParityPlot.svelte'
-  import { get_pred_file_urls } from '$lib/models.svelte'
+  import { ACTIVE_MODELS, get_pred_file_urls } from '$lib/models.svelte'
   import pkg from '$site/package.json'
   import type { ChemicalElement } from 'matterviz'
-  import { ButtonGroup, CopyButton, Icon, JsonTree } from 'svelte-widgets'
+  import { ButtonGroup, CopyButton, Icon, JsonTree, Popover } from 'svelte-widgets'
   import {
     Calendar,
     CalendarCheck,
@@ -24,7 +25,10 @@
     Docs,
     DOI,
     Download,
+    Email,
     Forest,
+    Globe,
+    ORCID,
     GitHub,
     Graph,
     MissingMetadata,
@@ -35,7 +39,7 @@
     Scale,
     Versions,
   } from 'svelte-widgets/icons'
-  import { format_relative_time } from '$lib/labels'
+  import { format_relative_time, get_org_logo } from '$lib/labels'
   import { format_num } from 'matterviz/labels'
   import { HeatmapTable } from 'matterviz/table'
   import { ColorBar } from 'matterviz/plot'
@@ -123,6 +127,8 @@
     () => [[`energy_tab`, energy_parity_tab, default_energy_tab]],
   )
   let { model } = $derived(data)
+  // Rank against the active leaderboard cohort and track live score weights.
+  let ranks = $derived(model_metric_ranks(model.model_key, ACTIVE_MODELS, RANKED_METRICS))
   let comparing = $derived(comparison.keys.has(model.model_key))
   let n_others = $derived(comparison.keys.size - (comparing ? 1 : 0))
   let env_packages = $derived(model.environment.dependencies.map(parse_dependency_spec))
@@ -158,6 +164,32 @@
 
   let missing_preds = $derived(model.metrics?.discovery?.unique_prototypes?.missing_preds)
 </script>
+
+{#snippet author_brief(author: Author)}
+  {@const { name, email, orcid, affiliation, url, github } = author}
+  {@const org_logo = affiliation ? get_org_logo(affiliation) : undefined}
+  {@const author_links = [
+    [email ? `mailto:${email}` : undefined, `Email`, Email],
+    [orcid, `Orcid`, ORCID],
+    [url, `Website`, Globe],
+    [github, `GitHub`, GitHub],
+  ] as const}
+  <span>
+    <span title={affiliation}>{name}</span>
+    {#if affiliation}&ensp;<small>{affiliation}</small>{/if}
+    {#if org_logo}&nbsp;<Logo logo={org_logo} />{/if}
+    {#each author_links as [href, label, icon] (label)}
+      {#if href}
+        <a
+          {href}
+          aria-label={label}
+          style={label === `Email` ? `font-size: 1.1em; padding-right: 0.2em` : undefined}
+          ><Icon {icon} /></a
+        >
+      {/if}
+    {/each}
+  </span>
+{/snippet}
 
 <div class="model-detail">
   <h1 style="font-size: 2.5em; margin: 0">{model.model_name}</h1>
@@ -251,10 +283,31 @@
     {/if}
   </section>
 
-  <ModelRankCard model_key={model.model_key} />
+  {#if ranks.length}
+    <section class="rank-card">
+      <span class="rank-card-label">Leaderboard ranks</span>
+      {#each ranks as rank_entry (rank_entry.metric.key)}
+        {@const { metric, rank, n_models, value } = rank_entry}
+        <Popover trigger_mode="hover" trap_focus={false} aria-label="Metric rank">
+          {#snippet trigger(trigger_props)}
+            <a href={metric.rank_href} {...trigger_props}>
+              <span class="metric-label">{@html metric.label}</span>
+              <strong style:color={rank_color(rank, n_models)}>#{rank}</strong>
+              <small>/{n_models}</small>
+            </a>
+          {/snippet}
+          Ranked {rank} of {n_models} models with a {@html metric.label} of {format_num(
+            value,
+            metric.format ?? `.3`,
+          )}{@html metric.unit ? ` ${metric.unit}` : ``}.<br />
+          {@html metric.description ?? ``}
+        </Popover>
+      {/each}
+    </section>
+  {/if}
 
   <section class="discovery-detail">
-    <h2 id="discovery-energy-and-convex-hull-diagnostics">
+    <h2 id="discovery-energy-and-convex-hull-diagnostics" style="text-align: center">
       <a href="/tasks/discovery">Discovery</a>: energy and convex hull diagnostics
     </h2>
     <!-- segmented tab bar controls the parity plot; the active button shows a
@@ -272,7 +325,7 @@
             energy_parity_statuses[option.value] !== `error`,
         }))}
       />
-      {#if missing_preds != undefined}
+      {#if missing_preds != undefined && DATASETS.WBM.n_structures !== null}
         <span
           class="missing-preds"
           {@attach tooltip({
@@ -374,7 +427,7 @@
     <ol>
       {#each model.authors as author (author.name)}
         <li>
-          <AuthorBrief {author} show_affiliation />
+          {@render author_brief(author)}
         </li>
       {/each}
     </ol>
@@ -386,7 +439,7 @@
       <ol>
         {#each model.trained_by as author (author.name)}
           <li>
-            <AuthorBrief {author} show_affiliation />
+            {@render author_brief(author)}
           </li>
         {/each}
       </ol>
@@ -415,8 +468,15 @@
       {@const { n_structures, name, slug, n_materials } = DATASETS[dataset_key]}
       <p>
         <a href="/data/{slug}">{name}</a>:
-        <span title={n_structures.toLocaleString()} {@attach tooltip()}>
-          <strong>{format_num(n_structures)}</strong>
+        <span
+          title={n_structures?.toLocaleString() ?? `Structure count not reported`}
+          {@attach tooltip()}
+        >
+          <strong
+            >{n_structures === null
+              ? `Unknown number of`
+              : format_num(n_structures)}</strong
+          >
         </span>
         structures
         {#if typeof n_materials == `number`}
@@ -472,10 +532,36 @@
 </div>
 
 <style>
+  .rank-card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: center;
+    gap: 3pt 1.4em;
+    margin: 1em auto;
+    :is(.rank-card-label, .metric-label) {
+      font-size: 0.9em;
+    }
+    :is(.rank-card-label, .metric-label, a small) {
+      color: var(--text-secondary);
+    }
+    a {
+      display: inline-flex;
+      align-items: baseline;
+      color: var(--text-color);
+    }
+    a strong {
+      font-size: smaller;
+      margin-left: 4pt;
+    }
+    a:hover .metric-label {
+      text-decoration: underline;
+    }
+  }
   h2 {
     margin: 2ex auto 0;
   }
-  section {
+  section:not(.rank-card) {
     text-wrap: balance;
   }
   section:is(.deps, .model-info) ul {

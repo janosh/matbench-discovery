@@ -2,6 +2,7 @@ import { goto } from '$app/navigation'
 import { MODELS } from '$lib/models.svelte'
 import { comparison } from '$lib/model-comparison.svelte'
 import Layout from '$routes/+layout.svelte'
+import pkg from '$site/package.json'
 import { createRawSnippet, tick } from 'svelte'
 import { expect, it, vi } from 'vitest'
 import { doc_query, mount, mount_with_url } from '../index'
@@ -10,6 +11,9 @@ it(`loads comparison on demand and retains its controls between openings`, async
   comparison.keys.clear()
   comparison.open = false
   await mount_with_url(Layout, `http://localhost/`)
+  expect(
+    doc_query(`footer a[href="${pkg.repository}/blob/main/license"]`).textContent,
+  ).toBe(`2022`)
   expect(document.querySelector(`dialog[aria-label="Model comparison"]`)).toBeNull()
   comparison.open_with(MODELS[0].model_key)
   const dialog = await vi.waitFor(

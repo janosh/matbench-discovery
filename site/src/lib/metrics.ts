@@ -65,7 +65,7 @@ export const discovery_task_tooltips: Record<
 
 // Paths come from the fixed metric/metadata labels; reuse their parsed segments on redraw.
 const data_paths = new Map<string, string[]>()
-export function get_nested_value(model: ModelData, dotted_path: string): unknown {
+export function get_nested_value(model: object, dotted_path: string): unknown {
   let keys = data_paths.get(dotted_path)
   if (!keys) {
     keys = dotted_path.split(`.`).filter(Boolean)
@@ -235,33 +235,47 @@ export function metric_better_as(metric: string): `higher` | `lower` | null {
   return all_lower_better_metrics.has(metric) ? `lower` : null
 }
 
-export function format_train_set(model_train_sets: string[], model: ModelData): string {
-  const { n_training_structures = 0, n_training_materials = 0 } = model
-
-  const data_urls: Record<string, string> = {}
-  const tooltip: string[] = []
-
-  for (const data_name of model_train_sets) {
-    if (!(data_name in DATASETS)) {
-      throw new Error(`Training set ${data_name} not found in DATASETS`)
-    }
-    const { name, slug, n_structures, n_materials = n_structures } = DATASETS[data_name]
-    data_urls[data_name] = `/data/${slug}`
-
-    const structures_note =
-      n_materials !== n_structures ? ` (${format_num(n_structures, `,`)} structures)` : ``
-    tooltip.push(`${name}: ${format_num(n_materials, `,`)} materials${structures_note}`)
+export function training_set_link(key: string) {
+  if (!Object.hasOwn(DATASETS, key)) {
+    throw new Error(`Training set ${key} not found in DATASETS`)
   }
+  const { name, slug, n_structures, n_materials } = DATASETS[key]
+  const structures =
+    n_structures === null ? `unknown number of` : format_num(n_structures, `,`)
+  const materials =
+    n_materials == null
+      ? `; material count not reported`
+      : ` from ${format_num(n_materials, `,`)} materials`
+  return {
+    text: key,
+    href: `/data/${slug}`,
+    title: `${name}: ${structures} structures${materials}`,
+  }
+}
+
+export function format_train_set(
+  model_train_sets: string[],
+  model: Pick<ModelData, `n_training_structures` | `n_training_materials`>,
+): string {
+  const { n_training_structures, n_training_materials } = model
+
+  const links = model_train_sets.map(training_set_link)
+  const tooltip = links.map(({ title }) => escape_html(title))
 
   // render `_x` dataset-key suffixes as subscripts, e.g. ω_q -> ω<sub>q</sub>
   const sub = (key: string) =>
     key.replaceAll(/_(?<subscript>\w+)/g, `<sub>$<subscript></sub>`)
-  const dataset_links = Object.entries(data_urls)
-    .map(([key, href]) => `<a href="${href}">${sub(key)}</a>`)
+  const dataset_links = links
+    .map(
+      ({ text, href }) => `<a href="${escape_html(href)}">${sub(escape_html(text))}</a>`,
+    )
     .join(`+`)
   const new_line = `&#013;` // Line break that works in title attribute
   const dataset_tooltip =
     tooltip.length > 1 ? `${new_line}• ${tooltip.join(`${new_line}• `)}` : ``
+  if (n_training_materials == null || n_training_structures == null) {
+    return `<span title="Training set size not fully reported${new_line}${tooltip.join(new_line)}">n/a <small>${dataset_links}</small></span>`
+  }
 
   const same_count = n_training_materials === n_training_structures
   const title = same_count

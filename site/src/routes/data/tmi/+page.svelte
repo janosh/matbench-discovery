@@ -120,6 +120,9 @@
 />
 
 <style>
+  h2 {
+    text-align: center;
+  }
   span {
     display: flex;
     gap: 1ex;

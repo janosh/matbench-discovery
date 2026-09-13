@@ -2,32 +2,40 @@ import DATASETS from '$data/datasets.yml'
 import { arr_to_str } from '$lib'
 import type { Dataset } from '$lib/types'
 import Page from '$routes/data/[slug]/+page.svelte'
-import { beforeEach, describe, expect, it } from 'vitest'
+import pkg from '$site/package.json'
+import { describe, expect, it } from 'vitest'
 import { doc_query, mount } from '../index'
 
 describe(`Dataset Detail Page`, () => {
-  beforeEach(() => {
-    document.body.innerHTML = ``
-  })
-
   // MP 2022 has all optional fields set, NOMAD is a minimal dataset entry
-  it.each([`MP 2022`, `NOMAD`, `ELEMENTA`, `MPtrj`])(
+  it.each([`MP 2022`, `NOMAD`, `ELEMENTA`, `MPtrj`, `SMAX`, `OMol25`, `OCx24`])(
     `renders %s dataset correctly`,
     (dataset_key) => {
       const dataset = DATASETS[dataset_key]
-      if (!dataset) throw new Error(`Dataset ${dataset_key} not found in DATASETS`)
-
       mount(Page, { target: document.body, props: { data: { dataset } } })
 
       expect(document.querySelector(`h1`)?.textContent).toBe(dataset.name)
 
       const meta_info = doc_query(`.meta-info`)
       expect(meta_info.textContent).toContain(`structures`)
-      expect(meta_info.textContent).toContain(dataset.open ? `Open` : `Closed`)
+      expect(meta_info.textContent?.toLowerCase()).toContain(`${dataset.access} access`)
+      expect(meta_info.textContent?.toLowerCase()).toContain(dataset.role)
       expect(meta_info.textContent).toContain(dataset.license)
+      if (dataset.n_structures === null) {
+        expect(meta_info.textContent).toContain(`Unknown number of structures`)
+        expect(doc_query(`details`).textContent).toContain(
+          `Experimental samples and electrodes are not atomic configurations.`,
+        )
+      }
 
       expect(doc_query(`.links`).querySelectorAll(`a`).length).toBeGreaterThan(0)
       expect(doc_query(`.description`).textContent).toMatch(/\S/)
+      expect(document.querySelector(`.description p p`)).toBeNull()
+      expect(
+        document.querySelectorAll(
+          `a[href="${pkg.repository}/blob/main/data/datasets.yml"]`,
+        ),
+      ).toHaveLength(2)
       if (dataset_key === `MPtrj`) {
         expect(doc_query(`#target-distributions`).textContent).toBe(
           `Target Distributions`,
@@ -50,9 +58,8 @@ describe(`Dataset Detail Page`, () => {
   )
 
   // values used to be re-split on `:` after joining, truncating anything past a colon
-  it(`lists method params with title-cased keys and colon-safe values`, () => {
+  it.each([true, false])(`renders method parameters when present: %s`, (has_params) => {
     const dataset = DATASETS.WBM
-    if (!dataset) throw new Error(`WBM not found in DATASETS`)
     const params: Dataset[`params`] = {
       code: `VASP`,
       cutoff_energy: `520 eV: hard`,
@@ -60,7 +67,9 @@ describe(`Dataset Detail Page`, () => {
     }
     mount(Page, {
       target: document.body,
-      props: { data: { dataset: { ...dataset, params } } },
+      props: {
+        data: { dataset: { ...dataset, params: has_params ? params : undefined } },
+      },
     })
 
     const items = [...doc_query(`.method-info`).querySelectorAll(`li`)].map((item) =>
@@ -69,9 +78,9 @@ describe(`Dataset Detail Page`, () => {
     // scalar values go through arr_to_str (JSON-quoted), arrays are comma-joined
     expect(items).toEqual([
       `Method: ${arr_to_str(dataset.method)}`,
-      `Code: "VASP"`,
-      `Cutoff Energy: "520 eV: hard"`,
-      `Pseudopotentials: PBE`,
+      ...(has_params
+        ? [`Code: "VASP"`, `Cutoff Energy: "520 eV: hard"`, `Pseudopotentials: PBE`]
+        : []),
     ])
   })
 })

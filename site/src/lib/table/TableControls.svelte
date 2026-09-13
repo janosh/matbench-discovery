@@ -52,12 +52,10 @@
   let {
     columns = $bindable([]),
     filters = make_table_filters(),
-    show_selected_only = $bindable(false),
     ...rest
   }: HTMLAttributes<HTMLDivElement> & {
     columns?: Column[]
     filters?: UrlTableFilters
-    show_selected_only?: boolean
   } = $props()
   let selected_count = $derived(comparison.keys.size)
 
@@ -282,14 +280,14 @@
   >
     <Icon icon={Scale} /> Compare{selected_count ? ` (${selected_count})` : ``}
   </button>
-  {#if selected_count > 0 || show_selected_only}
+  {#if selected_count > 0 || filters.show_selected_only}
     <label>
       <input
         type="checkbox"
-        bind:checked={show_selected_only}
+        bind:checked={filters.show_selected_only}
         aria-label="Toggle between showing only selected models and all models"
       />
-      {show_selected_only ? `Show all` : `Show only ${selected_count} selected`}
+      {filters.show_selected_only ? `Show all` : `Show only ${selected_count} selected`}
     </label>
   {/if}
 

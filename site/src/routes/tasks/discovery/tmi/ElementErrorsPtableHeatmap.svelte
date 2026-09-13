@@ -1,25 +1,21 @@
 <script lang="ts">
   import ModelSelect from '$lib/ModelSelect.svelte'
-  import PtableInset from '$lib/PtableInset.svelte'
   import { ACTIVE_MODELS } from '$lib/models.svelte'
-  import type { ModelData } from '$lib/types'
   import { max } from 'd3-array'
-  import type { ChemicalElement, ElementSymbol } from 'matterviz'
   import { ColorBar } from 'matterviz/plot'
   import { format_num } from 'matterviz/labels'
   import { PeriodicTable, TableInset } from 'matterviz/periodic-table'
-  import type { D3InterpolateName } from 'matterviz/colors'
-  import type { ComponentProps } from 'svelte'
   import { per_element_each_errors as each_errors } from '$lib/per-element-errors'
+  import { bind_url_params } from '$lib/url-state.svelte'
+  import { bool_from_param, bool_url_entry } from 'svelte-widgets/url-params'
 
-  const models_with_errors = ACTIVE_MODELS.filter(
-    (model): model is ModelData & { model_key: string } =>
-      typeof model.model_key === `string` && model.model_key in each_errors,
-  )
-  type ModelOption = { label: string; value: string }
-  const model_options = models_with_errors.map(
-    ({ model_key, model_name }): ModelOption => ({ label: model_name, value: model_key }),
-  )
+  const model_options = ACTIVE_MODELS.filter(
+    ({ model_key }) => model_key in each_errors,
+  ).map(({ model_key, model_name }) => ({ label: model_name, value: model_key }))
+  let selected_models = $state(model_options.slice(0, 1))
+  let manual_cbar_max = $state(false)
+  let normalized = $state(true)
+  let cbar_max = $state(0.3)
 
   // where each model's value lands in a split tile, keyed by selection count
   // (matches matterviz ElementTile's auto layouts: 2=diagonal, 3=horizontal, 4=quadrant)
@@ -29,66 +25,58 @@
     4: [`top left`, `top right`, `bottom left`, `bottom right`],
   }
 
-  let {
-    color_scale = $bindable(`interpolateViridis`),
-    active_element = $bindable(null),
-    models = $bindable(model_options),
-    current_model = $bindable(models.slice(0, 1)),
-    manual_cbar_max = $bindable(false),
-    normalized = $bindable(true),
-    cbar_max = $bindable(0.3),
-    ...rest
-  }: ComponentProps<typeof PeriodicTable> & {
-    color_scale?: D3InterpolateName | ((num: number) => string)
-    active_element?: ChemicalElement | null
-    models?: ModelOption[]
-    current_model?: ModelOption[]
-    manual_cbar_max?: boolean
-    normalized?: boolean
-    cbar_max?: number | null
-  } = $props()
+  bind_url_params(
+    (params) => {
+      const keys = new Set(params.get(`element_models`)?.split(`,`))
+      selected_models = [...keys]
+        .flatMap((key) => model_options.find(({ value }) => value === key) ?? [])
+        .slice(0, 4)
+      if (!selected_models.length) selected_models = model_options.slice(0, 1)
+      normalized = bool_from_param(params, `element_normalized`, true)
+      manual_cbar_max = bool_from_param(params, `element_manual_max`)
+      const maximum = Number(params.get(`element_max`))
+      cbar_max = maximum >= 0.01 && maximum <= 0.7 ? maximum : 0.3
+    },
+    () => [
+      [
+        `element_models`,
+        selected_models.map(({ value }) => value).join(`,`),
+        model_options[0]?.value ?? ``,
+      ],
+      bool_url_entry(`element_normalized`, normalized, true),
+      bool_url_entry(`element_manual_max`, manual_cbar_max),
+      [`element_max`, String(cbar_max), `0.3`],
+    ],
+  )
 
   const test_set_std = each_errors[`Test set standard deviation`]
 
-  // selected models resolved in selection order (drives segment order in split tiles)
-  let selected_models = $derived.by(() => {
-    const resolved = current_model
-      .map(({ value }) => models_with_errors.find((model) => model.model_key === value))
-      .filter((model) => model !== undefined)
-    return resolved.length > 0 ? resolved : models_with_errors.slice(0, 1)
-  })
-
-  // null = no data (null error, or null std in normalized mode). Tiles coerce null to
-  // 0 (rendered with the missing style); the hover inset shows n/a instead so missing data
-  // can't read as a perfect score
-  const norm_error = (model_key: string, element: string): number | null => {
-    const val = each_errors[model_key]?.[element]
-    const denom = normalized ? test_set_std[element] : 1
-    return val == null || !denom ? null : val / denom
-  }
-
-  // single model: scalar per element; multiple: array per element -> split tiles
+  // Selection order determines segment order; one value paints a solid tile.
   let heatmap_values = $derived(
     Object.fromEntries(
-      Object.keys(test_set_std).map((element) => {
-        const errors = selected_models.map(
-          (model) => norm_error(model.model_key, element) ?? 0,
-        )
-        return [element, errors.length === 1 ? errors[0] : errors]
-      }),
-    ) as Record<ElementSymbol, number | number[]>,
+      Object.entries(test_set_std).map(([element, std]) => [
+        element,
+        selected_models.map(({ value }) => {
+          const error = each_errors[value][element]
+          const denom = normalized ? std : 1
+          return error == null || !denom ? `n/a` : error / denom
+        }),
+      ]),
+    ),
   )
-  let current_data_max = $derived(max(Object.values(heatmap_values).flat()) ?? 0)
+  // Non-numeric labels use the table's missing style and never enter the color scale.
+  let current_data_max = $derived(
+    max(Object.values(heatmap_values).flat(), (value) =>
+      typeof value === `number` ? value : undefined,
+    ) ?? 0,
+  )
   let cs_range = $derived<[number, number]>([
     0,
-    manual_cbar_max ? (cbar_max ?? 0) : current_data_max,
+    manual_cbar_max ? cbar_max : current_data_max,
   ])
-  // selected_models (not current_model) so the title tracks the fallback model when
-  // the bound selection doesn't resolve, e.g. a stale externally bound model name
+  let error_unit = $derived(normalized ? `normalized` : `eV/atom`)
   let cbar_title = $derived(
-    selected_models.length === 1
-      ? `${selected_models[0].model_name} (${normalized ? `normalized` : `eV/atom`})`
-      : `Element-projected error (${normalized ? `normalized` : `eV/atom`})`,
+    `${selected_models.length === 1 ? selected_models[0].label : `Element-projected error`} (${error_unit})`,
   )
 </script>
 
@@ -101,13 +89,18 @@
   each element tile splits into one segment per model.
 </p>
 
-<ModelSelect bind:value={current_model} options={models} max_select={4} min_select={1} />
+<ModelSelect
+  bind:value={selected_models}
+  options={model_options}
+  max_select={4}
+  min_select={1}
+/>
 
 {#if selected_models.length > 1}
   <div class="split-legend">
-    {#each selected_models as model, idx (model.model_key)}
+    {#each selected_models as model, idx (model.value)}
       <span>
-        <strong>{model.model_name}</strong>
+        <strong>{model.label}</strong>
         <small>({split_positions[selected_models.length]?.[idx]})</small>
       </span>
     {/each}
@@ -141,42 +134,31 @@
 
 <PeriodicTable
   {heatmap_values}
-  {color_scale}
-  bind:active_element
+  color_scale="interpolateViridis"
   color_scale_range={cs_range}
   tile_props={{ float_fmt: `.2` }}
   show_photo={false}
   missing={{ color: `rgba(255,255,255,0.3)` }}
-  {...rest}
 >
-  {#snippet inset()}
+  {#snippet inset({ active_element })}
     {#if active_element}
       <TableInset style="align-content: center">
-        {#if selected_models.length === 1}
-          <PtableInset
-            element={active_element}
-            elem_counts={heatmap_values as Record<ElementSymbol, number>}
-            show_percent={false}
-            unit="<small style='font-weight: lighter;'>eV / atom</small>"
-          />
-        {:else}
-          <strong class="multi-model-inset">
-            {active_element.name}: {#each selected_models as model, idx (model.model_key)}
-              {#if idx > 0}&ensp;{/if}
-              {@const elem_error = norm_error(model.model_key, active_element.symbol)}
-              <span>
-                {model.model_name}
-                <b>{elem_error == null ? `n/a` : format_num(elem_error)}</b>
-              </span>
-            {/each}
-          </strong>
-        {/if}
+        <strong class="model-errors">
+          {active_element.name}: {#each selected_models as model, idx (model.value)}
+            {#if idx > 0}&ensp;{/if}
+            {@const elem_error = heatmap_values[active_element.symbol]?.[idx] ?? `n/a`}
+            <span>
+              {#if selected_models.length > 1}{model.label}{/if}
+              <b>{typeof elem_error === `number` ? format_num(elem_error) : elem_error}</b
+              >
+            </span>
+          {/each}
+          <small>{error_unit}</small>
+        </strong>
         <ColorBar
           title={cbar_title}
           title_side="top"
-          scale={typeof color_scale === `string`
-            ? color_scale
-            : { interpolator: color_scale }}
+          scale="interpolateViridis"
           tick_labels={5}
           range={cs_range}
           style="width: 85%; margin: 0 2em"
@@ -213,12 +195,13 @@
   .split-legend small {
     color: var(--text-secondary);
   }
-  .multi-model-inset {
+  .model-errors {
     display: block;
     text-align: center;
     min-height: 18pt;
   }
-  .multi-model-inset span {
+  .model-errors span,
+  .model-errors small {
     font-weight: lighter;
   }
 </style>

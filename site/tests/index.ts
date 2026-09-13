@@ -242,19 +242,30 @@ export async function choose_scatter_property(
   label: string,
   query: string,
 ): Promise<void> {
-  const picker = [...document.querySelectorAll(`.property-picker`)].find(
-    (element) => element.querySelector(`label`)?.textContent === label,
-  )
-  if (!picker) throw new Error(`Missing property picker: ${label}`)
-  const input = doc_query<HTMLInputElement>(`input[role="combobox"]`, picker)
-  input.focus()
-  input.value = query
-  input.dispatchEvent(new InputEvent(`input`, { bubbles: true }))
+  const is_size = label === `Marker size`
+  const picker = is_size ? doc_query(`.property-picker`) : document
+  if (is_size) {
+    const input = doc_query<HTMLInputElement>(`input[role="combobox"]`, picker)
+    input.focus()
+    input.value = query
+    input.dispatchEvent(new InputEvent(`input`, { bubbles: true }))
+  } else {
+    doc_query<HTMLButtonElement>(
+      label === `Color`
+        ? `.colorbar .property-select`
+        : `.${label[0].toLowerCase()}-label button`,
+    ).click()
+  }
   await tick()
-  const option = [
-    ...picker.querySelectorAll<HTMLElement>(`ul.options li[aria-posinset]`),
-  ].find(
-    (element) => element.querySelector(`span`)?.firstChild?.textContent?.trim() === query,
+  const options = picker.querySelectorAll<HTMLElement>(
+    is_size ? `ul.options li[aria-posinset]` : `.portal-select-dropdown [role="option"]`,
+  )
+  const option = [...options].find(
+    (element) =>
+      (is_size
+        ? element.querySelector(`span`)?.firstChild?.textContent
+        : element.textContent
+      )?.trim() === query,
   )
   if (!option) throw new Error(`Missing option ${query} in ${label}`)
   option.click()
