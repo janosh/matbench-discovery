@@ -787,6 +787,7 @@ const org_logos = {
   'ICAMS, Ruhr University Bochum': `/logos/interdisciplinary-centre-for-advanced-materials-simulation-bochum.svg`,
   'Incheon National University': `/logos/incheon-national-university.svg`,
   'Institute of Computing Technology, Chinese Academy of Science, Beijing': `/logos/institute-of-computing-technology-chinese-academy-of-sciences-beijing.svg`,
+  'Kairos Materials': `/logos/kairos-materials.png`,
   'Massachusetts Institute of Technology': `/logos/massachusetts-institute-of-technology.svg`,
   'Microsoft Research': Microsoft,
   'MIR Group, Harvard University': `/logos/materials-intelligence-research-group-harvard-university.svg`,

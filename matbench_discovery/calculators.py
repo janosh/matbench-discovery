@@ -634,13 +634,22 @@ def _hienet(model_key: str) -> Callable[..., Calculator]:
 
 
 def _prophet(model_key: str) -> Callable[..., Calculator]:
+    """Build Prophet calculators on the device selected by the shared runner."""
+
     def make_calc(device: str, checkpoint: str | None = None) -> Calculator:
+        """Load the checkpoint and override upstream's automatic CUDA selection."""
+        import torch
         from prophet import KairosCalculator
 
         checkpoint = checkpoint or download_checkpoint(model_key, ext=".pt")
-        return KairosCalculator(
-            model_path=checkpoint, use_kernel=device != "cpu", use_compile=False
+        calc = KairosCalculator(
+            model_path=checkpoint,
+            use_kernel=device.startswith("cuda"),
+            use_compile=False,
         )
+        calc.device = torch.device(device)
+        calc.model = calc.model.to(calc.device)
+        return calc
 
     return make_calc
 

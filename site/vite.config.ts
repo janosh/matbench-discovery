@@ -269,6 +269,8 @@ export default {
     json_payload_plugin(),
     unchanged_generated_hmr_plugin(),
   ],
+  // Worker bundles need their own loader for Matterviz's compressed element data.
+  worker: { plugins: () => [json_payload_plugin()] },
 
   server: {
     fs: { allow: [`../..`] }, // Needed to import from $root

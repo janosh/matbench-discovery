@@ -27,11 +27,17 @@ describe(`Model Detail Page`, () => {
       training: { learning_rate: 0.001 },
       upstream_config: { layers: [32, 64], enabled: true },
     }
-    mount_page({ ...test_page_data, model: { ...test_model, hyperparams, pypi } })
+    const notes = {
+      html: { description: `<p>Model description</p><ul><li>Run notes</li></ul>` },
+    }
+    mount_page({ ...test_page_data, model: { ...test_model, hyperparams, pypi, notes } })
 
     expect(document.querySelector(`h1`)?.textContent).toBe(test_model.model_name)
     expect(document.body.textContent).toContain(test_model.model_version)
     expect(document.body.textContent).toContain(test_model.dates.benchmark_added)
+    expect(document.querySelector(`.notes p`)?.textContent).toBe(`Model description`)
+    expect(document.querySelector(`.notes li`)?.textContent).toBe(`Run notes`)
+    expect(document.querySelector(`.notes p p, .notes p ul`)).toBeNull()
     if (test_model.dates.paper_published)
       expect(document.body.textContent).toContain(test_model.dates.paper_published)
 
@@ -51,6 +57,9 @@ describe(`Model Detail Page`, () => {
     expect(
       discovery_detail?.querySelector(`.energy-parity-controls`)?.textContent,
     ).toContain(`Missing preds`)
+    expect(discovery_detail?.querySelector(`.missing-preds`)?.textContent).toContain(
+      `Missing preds: ${test_model.metrics?.discovery?.full_test_set?.missing_preds}`,
+    )
 
     const links = document.querySelectorAll(`.links a`)
     const expected_link_count = [

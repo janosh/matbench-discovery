@@ -156,7 +156,7 @@
     [`Discovery Test Task`, model.test_task, discovery_task_tooltips[model.test_task]],
   ])
 
-  let missing_preds = $derived(model.metrics?.discovery?.unique_prototypes?.missing_preds)
+  let missing_preds = $derived(model.metrics?.discovery?.full_test_set?.missing_preds)
 </script>
 
 <div class="model-detail">
@@ -276,7 +276,7 @@
         <span
           class="missing-preds"
           {@attach tooltip({
-            content: `Out of ${format_num(DATASETS.WBM.n_structures, `,`)} WBM structures, ${format_num(missing_preds, `,`)} are missing predictions. This refers only to the discovery task of predicting WBM convex hull distances.`,
+            content: `Out of ${format_num(DATASETS.WBM.n_structures, `,`)} WBM structures, ${format_num(missing_preds, `,`)} have missing or filtered-out discovery predictions.`,
           })}
         >
           <Icon icon={MissingMetadata} />
@@ -432,7 +432,7 @@
     <section class="notes">
       {#each Object.entries(model.notes.html) as [key, note] (key)}
         <h2>{key}</h2>
-        <p>{@html note}</p>
+        <div>{@html note}</div>
       {/each}
     </section>
   {/if}

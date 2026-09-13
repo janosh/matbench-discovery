@@ -283,6 +283,12 @@
         "sha256": "119b23eda000d66b00ff5c3c337a794d527cc991641fe3553cd76d3d2f6d57bb"
       }
     },
+    "prophet-oame-mbd": {
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-prophet-oame-mbd-7fb4b8194137f7ca.json.gz",
+        "sha256": "7f2641030d2559e15514a9c51ca9f7f8499a07407918148df51bf370acb7d7c5"
+      }
+    },
     "sevennet-l3i5": {
       "parity": {
         "asset": "energy-parity-wbm-v1-model-sevennet-l3i5-566d407f1f8a6679.json.gz",

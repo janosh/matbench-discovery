@@ -2,8 +2,8 @@ model_name: Prophet-OAME-MBD
 model_key: prophet-oame-mbd
 model_version: v1.0.0
 dates:
-  benchmark_added: 'TODO'
-  paper_published: null
+  benchmark_added: '2026-09-13'
+  paper_published:
 lifecycle: active
 authors:
 - name: Junfu Tan
@@ -30,10 +30,10 @@ trained_by:
   corresponding: true
 
 repo: https://github.com/kairosmaterial/prophet
-doi: null
+doi:
 paper: https://www.kairosmaterials.com/papers/Prophet.pdf
 docs: https://github.com/kairosmaterial/prophet
-pr_url: TODO
+pr_url: https://github.com/janosh/matbench-discovery/pull/397
 checkpoint_url: https://huggingface.co/kairosmaterial/prophet/resolve/main/prophet-oame-mbd.pt
 license:
   code: MIT
@@ -44,15 +44,10 @@ license:
 environment:
   dependencies:
   - prophet-mlip @ git+https://github.com/kairosmaterial/prophet.git
-  - torch==2.7.1
-  - e3nn==0.6.0
-  - torch_geometric==2.7.0
-  - openequivariance==0.6.8
-  - ase==3.29.0
-  - phono3py==3.30.1
-  - moyopy==0.7.9
-  - pymatgen
-  python_version: '3.11'
+  - openequivariance>=0.6.8; platform_system == "Linux"
+  - phono3py==3.30.0
+  - moyopy>=0.12
+  python_version: '3.14'
 openness: OSCD
 architecture_types: [gnn]
 train_task: S2EFS
@@ -133,80 +128,78 @@ hyperparams:
       ema_decay: 0.999
       replay_ratio_per_100_steps: MPtrj 35 / sAlex 35 / ELEMENTA 30
 notes:
-  description: Prophet is an equivariant machine-learning interatomic potential by
-    Kairos Materials (62.3M parameters), built on Multi-Cutoff Spectral Decomposition,
-    which models atomic interactions across nested cutoff scales.
+  description: Prophet is an equivariant machine-learning interatomic potential by Kairos Materials (62.3M parameters), built on Multi-Cutoff Spectral Decomposition, which models atomic interactions across nested cutoff scales.
 
 metrics:
   discovery:
     pred_file:
       name: models/prophet/prophet-oame-mbd/2026-09-03-discovery.csv.gz
-      url: https://figshare.com/files/68503873
-      size: 3093671
-      md5: 277f7e6a09078dc4a2ac26c406591860
+      size: 3093641
+      md5: d0c5052a8911f4386305af963900ae86
+      url: https://figshare.com/files/68516800
     full_test_set:
-      F1: 0.9095
-      DAF: 5.4205
-      Precision: 0.9034
-      Recall: 0.9156
-      Accuracy: 0.9696
-      TP: 39212
-      FP: 4194
-      TN: 209942
-      FN: 3613
-      MAE: 0.0179
-      RMSE: 0.0668
-      R2: 0.8621
-      missing_preds: 2
+      F1: 0.91 # fraction
+      DAF: 5.286 # dimensionless
+      Precision: 0.907 # fraction
+      Recall: 0.913 # fraction
+      Accuracy: 0.969 # fraction
+      TP: 40266.0 # count
+      FP: 4128.0 # count
+      TN: 208743.0 # count
+      FN: 3826.0 # count
+      MAE: 0.018 # eV/atom
+      RMSE: 0.067 # eV/atom
+      R2: 0.862 # dimensionless
+      missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.9275
-      DAF: 6.0636
-      Precision: 0.927
-      Recall: 0.928
-      Accuracy: 0.9778
-      TP: 30570
-      FP: 2409
-      TN: 180137
-      FN: 2372
-      MAE: 0.0181
-      RMSE: 0.0667
-      R2: 0.8686
-      missing_preds: 0
+      F1: 0.928 # fraction
+      DAF: 6.065 # dimensionless
+      Precision: 0.927 # fraction
+      Recall: 0.928 # fraction
+      Accuracy: 0.978 # fraction
+      TP: 30981.0 # count
+      FP: 2432.0 # count
+      TN: 179682.0 # count
+      FN: 2393.0 # count
+      MAE: 0.018 # eV/atom
+      RMSE: 0.067 # eV/atom
+      R2: 0.869 # dimensionless
+      missing_preds: 0 # count
   geo_opt:
     pred_file:
       name: models/prophet/prophet-oame-mbd/2026-09-03-geo-opt.jsonl.gz
-      url: https://figshare.com/files/68503885
+      url: https://figshare.com/files/68516830
       size: 117605743
       md5: 1f4fc63eab4d022ed9f1155c56b917fa
     symprec=1e-5:
-      rmsd: 0.0591
-      n_sym_ops_mae: 3.1329
-      symmetry_decrease: 0.1784
-      symmetry_match: 0.6071
-      symmetry_increase: 0.205
-      n_structures: 256963
+      rmsd: 0.0591 # unitless
+      n_sym_ops_mae: 3.1329 # unitless
+      symmetry_decrease: 0.1784 # fraction
+      symmetry_match: 0.6071 # fraction
+      symmetry_increase: 0.205 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/prophet/prophet-oame-mbd/2026-09-03-geo-opt-symprec=1e-5-moyo=0.7.9.csv.gz
-        url: https://figshare.com/files/68503879
-        size: 3352333
-        md5: c3f91bd82e7a484c4af0be1dfb7709d3
+        name: models/prophet/prophet-oame-mbd/2026-09-03-geo-opt-symprec=1e-5-moyo=0.15.0.csv.gz
+        url: https://figshare.com/files/68516974
+        size: 7999567
+        md5: 38647c4e2a1073fa7f54069995cd124f
     symprec=1e-2:
-      rmsd: 0.0591
-      n_sym_ops_mae: 1.7733
-      symmetry_decrease: 0.0559
-      symmetry_match: 0.8148
-      symmetry_increase: 0.1222
-      n_structures: 256963
+      rmsd: 0.0591 # unitless
+      n_sym_ops_mae: 1.7733 # unitless
+      symmetry_decrease: 0.0559 # fraction
+      symmetry_match: 0.8148 # fraction
+      symmetry_increase: 0.1222 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/prophet/prophet-oame-mbd/2026-09-03-geo-opt-symprec=1e-2-moyo=0.7.9.csv.gz
-        url: https://figshare.com/files/68503876
-        size: 3238562
-        md5: ca76ad60aa0e2439639cceff465b9abe
+        name: models/prophet/prophet-oame-mbd/2026-09-03-geo-opt-symprec=1e-2-moyo=0.15.0.csv.gz
+        url: https://figshare.com/files/68516977
+        size: 7995341
+        md5: 6aaa7925eb7fee7fead8b960f59652d1
   phonons:
     kappa_103:
       pred_file:
         name: models/prophet/prophet-oame-mbd/2026-09-07-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/68503888
+        url: https://figshare.com/files/68516806
         size: 8400872
         md5: f986422aa02d82e9bf4bc32be1132608
       κ_SRME: 0.0648
@@ -218,35 +211,40 @@ metrics:
   diatomics:
     pred_file:
       name: models/prophet/prophet-oame-mbd/2026-09-03-diatomics.json.gz
-      url: https://figshare.com/files/68503870
+      url: https://figshare.com/files/68516809
       size: 246984
       md5: 56ac2c0279c4ca45f0764b566e857715
+    pbe_wall_dist_mae: 0.235
+    pbe_energy_mae: 1.103
+    pbe_bond_length_error: 0.06076
+    pbe_well_depth_error: 0.3479
+    pbe_vib_freq_error: 41.12
     tortuosity: 1.225
-    energy_diff_flips: 2.5402
-    energy_jump: 1.4656
-    force_flips: 2.7471
+    energy_diff_flips: 2.54
+    energy_jump: 1.466
+    force_flips: 2.747
     force_total_variation: 344.6
     force_jump: 275.5
-    pbe_wall_dist_mae: 0.235
-    pbe_energy_mae: 1.1029
-    pbe_bond_length_error: 0.0608
-    pbe_well_depth_error: 0.3479
-    pbe_vib_freq_error: 41.121
-    pbe_force_mae: 2.0009
+    pbe_force_mae: 2.001
+    pbe_vib_freq_coverage:
+      n_valid: 73
+      n_eligible: 73
+      failed_elements: []
+      missing_elements: []
   md:
     pred_file:
       name: models/prophet/prophet-oame-mbd/2026-09-03-md-metrics.csv.gz
-      url: https://figshare.com/files/68503882
+      url: https://figshare.com/files/68516815
       size: 1524
       md5: a6e64c134ce283238173762e81c1be7b
-    hardware: NVIDIA A800 SXM4 80GB
-    run_time_sec: 586900
-    max_rss_gb: 3.788
-    max_gpu_mem_gb: 18.39
-    rdf_error: 3.397
-    adf_error: 1.41
-    vdos_error: 21.88
-    pressure_mae: 0.7619
-    pressure_wasserstein: 0.7722
-    pressure_error: 51.2
-    n_systems: 17
+    hardware: NVIDIA A800-SXM4-80GB
+    run_time_sec: 586863.69 # s
+    max_rss_gb: 3.788 # GB
+    max_gpu_mem_gb: 18.395 # GB
+    rdf_error: 3.3966 # %
+    adf_error: 1.4097 # %
+    vdos_error: 21.8767 # %
+    pressure_mae: 0.7619 # GPa
+    pressure_wasserstein: 0.7722 # GPa
+    pressure_error: 51.2027 # %
+    n_systems: 17 # count
