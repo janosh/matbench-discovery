@@ -102,7 +102,6 @@ describe(`MetricsTable`, () => {
       }
 
       const org_cell = doc_query(`td[data-col="Org"]:has(.org-preview)`)
-      expect(doc_query(`.org-preview`, org_cell)).toBeDefined()
       expect(org_cell.getAttribute(`style`)).not.toContain(`min-width:`)
       const cps_header = header_cells().find((header) => header_name(header) === `CPS`)
       if (!cps_header) throw new Error(`CPS header is missing`)

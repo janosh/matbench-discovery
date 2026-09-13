@@ -43,7 +43,7 @@ license:
 
 environment:
   dependencies:
-  - prophet-mlip @ git+https://github.com/kairosmaterial/prophet.git@v1.0.1
+  - prophet-mlip @ git+https://github.com/kairosmaterial/prophet.git@dcfdc0b143978652d573630f1d2a6ce09e0c610a
   - openequivariance>=0.6.8; platform_system == "Linux"
   - phono3py==3.30.0
   - moyopy>=0.12
@@ -57,18 +57,10 @@ training_sets: [MPtrj, OMat24, sAlex, ELEMENTA]
 model_params: 62296064
 training_cost:
   entries:
-  - hardware: NVIDIA A800 SXM4 80GB
-    count: 120
-    hours_per_device: 36
-  - hardware: NVIDIA A800 SXM4 80GB
-    count: 120
-    hours_per_device: 76
-  - hardware: NVIDIA A800 SXM4 80GB
-    count: 120
-    hours_per_device: 28
-  - hardware: NVIDIA A800 SXM4 80GB
-    count: 120
-    hours_per_device: 7.25
+  - {hardware: NVIDIA A800 SXM4 80GB, count: 120, hours_per_device: 36}
+  - {hardware: NVIDIA A800 SXM4 80GB, count: 120, hours_per_device: 76}
+  - {hardware: NVIDIA A800 SXM4 80GB, count: 120, hours_per_device: 28}
+  - {hardware: NVIDIA A800 SXM4 80GB, count: 120, hours_per_device: 7.25}
 hyperparams:
   evaluation:
     max_force: 0.02

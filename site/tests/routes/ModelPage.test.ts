@@ -5,7 +5,7 @@ import { RANKED_METRICS } from '$lib/rankings'
 import ModelPage from '$routes/models/[slug]/+page.svelte'
 import { type ComponentProps, tick } from 'svelte'
 import { describe, expect, it, vi } from 'vitest'
-import { mount, mount_with_url } from '../index'
+import { doc_query, mount, mount_with_url } from '../index'
 
 const test_model = MODELS.find((model) =>
   model.authors.some((author) => author.affiliation === `Mirror Physics`),
@@ -28,7 +28,9 @@ describe(`Model Detail Page`, () => {
       upstream_config: { layers: [32, 64], enabled: true },
     }
     const notes = {
-      html: { description: `<p>Model description</p><ul><li>Run notes</li></ul>` },
+      html: {
+        description: `<h3>Model notes</h3><p>Model description</p><ul><li>Run notes</li></ul>`,
+      },
     }
     mount_page({ ...test_page_data, model: { ...test_model, hyperparams, pypi, notes } })
 
@@ -38,6 +40,10 @@ describe(`Model Detail Page`, () => {
     expect(document.querySelector(`.notes p`)?.textContent).toBe(`Model description`)
     expect(document.querySelector(`.notes li`)?.textContent).toBe(`Run notes`)
     expect(document.querySelector(`.notes p p, .notes p ul`)).toBeNull()
+    const note_heading = doc_query(`.notes h3`)
+    expect(note_heading.textContent).toBe(`Model notes`)
+    expect(getComputedStyle(note_heading).textAlign).not.toBe(`center`)
+    expect(getComputedStyle(doc_query(`.discovery-detail h3`)).textAlign).toBe(`center`)
     if (test_model.dates.paper_published)
       expect(document.body.textContent).toContain(test_model.dates.paper_published)
 
@@ -54,10 +60,7 @@ describe(`Model Detail Page`, () => {
     expect(discovery_detail?.querySelector(`h2`)?.textContent).toContain(
       `Discovery: energy and convex hull diagnostics`,
     )
-    expect(
-      discovery_detail?.querySelector(`.energy-parity-controls`)?.textContent,
-    ).toContain(`Missing preds`)
-    expect(discovery_detail?.querySelector(`.missing-preds`)?.textContent).toContain(
+    expect(doc_query(`.energy-parity-controls .missing-preds`).textContent).toContain(
       `Missing preds: ${test_model.metrics?.discovery?.full_test_set?.missing_preds}`,
     )
 

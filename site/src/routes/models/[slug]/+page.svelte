@@ -595,7 +595,7 @@
     white-space: nowrap;
     text-overflow: ellipsis;
   }
-  div.model-detail :not(section.notes) :global(h3) {
+  div.model-detail > :not(section.notes) :global(h3) {
     text-align: center;
     margin: 2em auto 0;
   }

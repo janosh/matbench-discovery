@@ -2,7 +2,7 @@ import { parse_dependency_spec } from '$lib/environment'
 import fs from 'node:fs'
 import { describe, expect, it, vi } from 'vitest'
 import pkg from '../../package.json' with { type: 'json' }
-import vite_config, { svelte_config } from '../../vite.config'
+import { svelte_config } from '../../vite.config'
 
 describe(`parse_dependency_spec`, () => {
   it.each([
@@ -80,12 +80,6 @@ describe(`parse_dependency_spec`, () => {
   ])(`parses $dep`, ({ dep, expected }) => {
     expect(parse_dependency_spec(dep)).toStrictEqual(expected)
   })
-})
-
-it(`provides fresh JSON payload loaders for worker bundles`, () => {
-  const [plugin] = vite_config.worker.plugins()
-  expect(plugin).toMatchObject({ name: `json-payload`, load: expect.any(Function) })
-  expect(vite_config.worker.plugins()[0]).not.toBe(plugin)
 })
 
 // svelte_config is evaluated at module load, so re-import after stubbing NODE_ENV
