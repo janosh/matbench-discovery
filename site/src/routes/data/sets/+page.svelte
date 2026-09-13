@@ -55,6 +55,7 @@
   const datasets = Object.entries(DATASETS).map(([key, dataset]) => ({
     ...dataset,
     key,
+    search_text: `${key} ${dataset.name} ${dataset.description}`.toLowerCase(),
     n_models: ACTIVE_MODELS.filter((model) => model.training_sets.includes(key)).length,
     release:
       dataset.static == null ? `Unknown` : dataset.static ? `Fixed release` : `Updated`,
@@ -194,17 +195,14 @@
   ])
   const search_words = $derived(filters.q.toLowerCase().trim().split(/\s+/))
   const filtered = $derived(
-    datasets.filter((dataset) => {
-      const search_text =
-        `${dataset.key} ${dataset.name} ${dataset.description}`.toLowerCase()
-      return (
+    datasets.filter(
+      (dataset) =>
         filter_options.every(
           ([key]) =>
             !filters[key] ||
             [dataset[key]].flat().some((value) => value === filters[key]),
-        ) && search_words.every((word) => search_text.includes(word))
-      )
-    }),
+        ) && search_words.every((word) => dataset.search_text.includes(word)),
+    ),
   )
   const has_filters = $derived(Object.values(filters).some(Boolean))
   const reset_filters = () => {

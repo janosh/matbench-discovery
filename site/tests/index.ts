@@ -176,6 +176,8 @@ export async function mount_with_url(
   return instance
 }
 
+export const query_param = (key: string) => new URLSearchParams(location.search).get(key)
+
 export const sorted_header = (): HTMLTableCellElement | null =>
   document.querySelector(`thead th[aria-sort]:not([aria-sort="none"])`)
 

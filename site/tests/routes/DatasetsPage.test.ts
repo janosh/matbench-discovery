@@ -10,6 +10,7 @@ import {
   doc_query,
   mount,
   mount_with_url,
+  query_param,
   sorted_header,
 } from '../index'
 
@@ -19,6 +20,8 @@ vi.mock(`matterviz/plot`, async (import_original) => ({
   ScatterPlot: plot_mock,
 }))
 
+const mount_query = (query: string) =>
+  mount_with_url(Page, `http://localhost/data/sets?${query}`)
 const rows = () => [
   ...document.querySelectorAll<HTMLTableRowElement>(`.heatmap tbody tr[data-row-idx]`),
 ]
@@ -149,8 +152,8 @@ describe(`Datasets Page`, () => {
       [`COSMOSDataset`, `OMol25`, `OMol25 Electronic`, `OPoly26`],
     ],
     [`q=%20PROJECT%20trajectories&access=public&role=training&method=DFT`, [`MPtrj`]],
-  ])(`restores intersecting filters: %s`, async (params, expected) => {
-    await mount_with_url(Page, `http://localhost/data/sets?${params}`)
+  ] as const)(`restores intersecting filters: %s`, async (params, expected) => {
+    await mount_query(params)
     expect(names()).toEqual(expected)
     expect(doc_query(`[role="status"]`).textContent).toContain(
       `${expected.length} of ${Object.keys(DATASETS).length}`,
@@ -159,7 +162,7 @@ describe(`Datasets Page`, () => {
 
   it(`keeps unknown-size datasets searchable without plotting invented counts`, async () => {
     plot_mock.mockClear()
-    await mount_with_url(Page, `http://localhost/data/sets?q=OCx24`)
+    await mount_query(`q=OCx24`)
     expect(names()).toEqual([`OCx24`])
     expect(plot_props().series).toEqual([])
     expect(document.body.textContent).toContain(
@@ -171,9 +174,8 @@ describe(`Datasets Page`, () => {
   })
 
   it(`syncs controls and sort, handles empty results, and resets only filters`, async () => {
-    await mount_with_url(
-      Page,
-      `http://localhost/data/sets?access=invalid&role=invalid&method=invalid&sort=Links&dir=bad&color=invalid&x=role&y=invalid&size=access`,
+    await mount_query(
+      `access=invalid&role=invalid&method=invalid&sort=Links&dir=bad&color=invalid&x=role&y=invalid&size=access`,
     )
     expect(location.search).toBe(``)
     const search = doc_query<HTMLInputElement>(`[aria-label="Search datasets"]`)
@@ -182,7 +184,7 @@ describe(`Datasets Page`, () => {
     await tick()
     expect(rows()).toHaveLength(0)
     expect(document.body.textContent).toContain(`No datasets match`)
-    expect(new URL(location.href).searchParams.get(`q`)).toBe(`no-such-dataset`)
+    expect(query_param(`q`)).toBe(`no-such-dataset`)
     doc_query<HTMLButtonElement>(`.empty button`).click()
     await tick()
     expect(rows()).toHaveLength(Object.keys(DATASETS).length)
@@ -197,11 +199,11 @@ describe(`Datasets Page`, () => {
       vi.spyOn(select, `querySelector`).mockReturnValueOnce(select.selectedOptions[0])
       select.dispatchEvent(new Event(`change`, { bubbles: true }))
       await tick()
-      expect(new URLSearchParams(location.search).get(key)).toBe(value)
+      expect(query_param(key)).toBe(value)
     }
     plot_props().color_bar?.on_property_change?.(`role`)
     await tick()
-    expect(new URLSearchParams(location.search).get(`color`)).toBe(`role`)
+    expect(query_param(`color`)).toBe(`role`)
     const header = [...document.querySelectorAll<HTMLTableCellElement>(`th`)].find(
       (candidate) => candidate.textContent?.trim() === `Name`,
     )
@@ -209,21 +211,21 @@ describe(`Datasets Page`, () => {
     await tick()
     header?.click()
     await tick()
-    expect(new URL(location.href).searchParams.get(`sort`)).toBe(`Name`)
+    expect(query_param(`sort`)).toBe(`Name`)
     search.value = `MPtrj`
     search.dispatchEvent(new Event(`input`, { bubbles: true }))
     await tick()
     doc_query<HTMLButtonElement>(`.filters button`).click()
     await tick()
     expect(names()[0]).toBe(`AFLOW`)
-    expect(new URL(location.href).searchParams.get(`sort`)).toBe(`Name`)
+    expect(query_param(`sort`)).toBe(`Name`)
     for (const key of [`q`, `access`, `role`, `method`]) {
-      expect(new URLSearchParams(location.search).has(key)).toBe(false)
+      expect(query_param(key)).toBeNull()
     }
-    expect(new URLSearchParams(location.search).get(`color`)).toBe(`role`)
+    expect(query_param(`color`)).toBe(`role`)
     header?.click()
     await tick()
-    expect(new URL(location.href).searchParams.get(`sort`)).toBe(`Name`)
+    expect(query_param(`sort`)).toBe(`Name`)
     expect(sorted_header()?.getAttribute(`aria-sort`)).toBe(`descending`)
   })
 
@@ -316,10 +318,7 @@ describe(`Datasets Page`, () => {
   ])(
     `colors filtered datasets by %s and opens selected datasets`,
     async (color_by, label, color) => {
-      await mount_with_url(
-        Page,
-        `http://localhost/data/sets?access=partial&color=${color_by}`,
-      )
+      await mount_query(`access=partial&color=${color_by}`)
       const props = plot_props()
       expect(props).toMatchObject({
         x_axis: { scale_type: `time` },
@@ -356,10 +355,7 @@ describe(`Datasets Page`, () => {
     [`color`, `Color`, `color_values`],
     [`size`, `Marker size`, `size_values`],
   ] as const)(`selects and restores the %s column`, async (dim, label, series_key) => {
-    await mount_with_url(
-      Page,
-      `http://localhost/data/sets?x=n_models&y=date_created&color=n_structures&size=n_models`,
-    )
+    await mount_query(`x=n_models&y=date_created&color=n_structures&size=n_models`)
     expect(plot_props().x_axis?.label).toBe(`Models`)
     expect(plot_props().y_axis).toMatchObject({
       label: `Created`,
@@ -376,7 +372,7 @@ describe(`Datasets Page`, () => {
       await tick()
       expect(plot_props().color_bar?.selected_property_key).toBe(`n_materials`)
     } else await choose_scatter_property(label, `Materials`)
-    expect(new URLSearchParams(location.search).get(dim)).toBe(`n_materials`)
+    expect(query_param(dim)).toBe(`n_materials`)
     const series = plot_props().series ?? []
     const entries = Object.entries(DATASETS).filter(
       ([, dataset]) =>

@@ -24,10 +24,11 @@
     bind_url_params,
     sort_from_query,
     sort_url_entries,
+    type SortState,
     weights_to_param,
   } from '$lib/url-state.svelte'
   import { valid_query_param } from 'svelte-widgets/url-params'
-  import type { DiscoverySet, Label, ModelData, SortDir } from '$lib/types'
+  import type { DiscoverySet, Label, ModelData } from '$lib/types'
   import { ButtonGroup, Icon } from 'svelte-widgets'
   import { RSS } from 'svelte-widgets/icons'
   import { slide } from 'svelte/transition'
@@ -71,18 +72,11 @@
       (metric) => metric.key,
     ),
   )
-  const preset_default_sorts = Object.fromEntries(
-    Object.entries(preset_primary_metrics).map(([preset, primary_metric]) => {
-      const sort_metric = preset === `Discovery` ? ALL_METRICS.CPS : primary_metric
-      return [
-        preset,
-        {
-          column: sort_metric.key,
-          dir: sort_metric.better === `lower` ? `asc` : `desc`,
-        },
-      ]
-    }),
-  ) as Record<ColPreset, { column: string; dir: SortDir }>
+  const default_sort_for = (preset: ColPreset): SortState => {
+    const metric =
+      preset === `Discovery` ? ALL_METRICS.CPS : preset_primary_metrics[preset]
+    return { column: metric.key, dir: metric.better === `lower` ? `asc` : `desc` }
+  }
   const filters = make_table_filters()
   const col_preset_options = col_preset_names.map((name) => ({
     value: name,
@@ -95,7 +89,7 @@
     new Set([...headline_metric_keys, ...col_presets[col_preset].map((col) => col.key)]),
   )
   let discovery_set: DiscoverySet = $state(`unique_prototypes`)
-  let sort = $state({ ...preset_default_sorts[default_col_preset] })
+  let sort = $state(default_sort_for(default_col_preset))
   let auto_sort_enabled = $state(true)
   let custom_col_config = $state(false)
   const sortable_header_selector = `thead th[role="button"]`
@@ -116,7 +110,7 @@
     const next_preset =
       col_preset_names.find((preset) => preset === params.get(`preset`)) ??
       default_col_preset
-    const default_sort = preset_default_sorts[next_preset]
+    const default_sort = default_sort_for(next_preset)
     const next_sort = sort_from_query(params, default_sort)
     auto_sort_enabled =
       next_sort.column === default_sort.column && next_sort.dir === default_sort.dir
@@ -137,7 +131,7 @@
     return [
       [`preset`, url_preset, default_col_preset],
       [`set`, discovery_set, `unique_prototypes`],
-      ...sort_url_entries(sort, preset_default_sorts[url_preset]),
+      ...sort_url_entries(sort, default_sort_for(url_preset)),
       ...filters.url_entries,
       // custom CPS weights (F1,κ_SRME,RMSD); omitted at defaults
       [`weights`, weights_to_param(CPS_CONFIG, DEFAULT_CPS_CONFIG)],
@@ -207,7 +201,7 @@
       tooltip_options={{ placement: `top` }}
       on_change={() => {
         custom_col_config = false
-        if (auto_sort_enabled) sort = { ...preset_default_sorts[col_preset] }
+        if (auto_sort_enabled) sort = default_sort_for(col_preset)
       }}
     />
   </div>

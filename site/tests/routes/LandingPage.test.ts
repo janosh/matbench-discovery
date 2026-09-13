@@ -12,6 +12,7 @@ import {
   mount,
   mount_with_url,
   POPOVER_OPEN_ATTR,
+  query_param,
   sorted_header,
 } from '../index'
 
@@ -359,6 +360,17 @@ describe(`Landing Page`, () => {
 })
 
 describe(`Landing Page URL state`, () => {
+  const column_checkbox = () =>
+    doc_query<HTMLInputElement>(`.column-menu input[type="checkbox"]:not(:disabled)`)
+  const navigate = async (query: string, type: AfterNavigate[`type`] = `link`) => {
+    const read_url = vi.mocked(afterNavigate).mock.calls.at(-1)?.[0]
+    if (!read_url) throw new Error(`Missing URL navigation handler`)
+    page.url.search = query
+    history.replaceState(null, ``, `/${query}`)
+    read_url({ type } as AfterNavigate)
+    await tick()
+  }
+
   it.each([
     [`http://localhost/?preset=MD&sort=F1`, `F1`, `descending`],
     [`http://localhost/?preset=MD&sort=combined_score&dir=asc`, `CMDS`, `ascending`],
@@ -393,57 +405,28 @@ describe(`Landing Page URL state`, () => {
       await tick()
       expect_sort(sorted_column, direction)
 
-      doc_query<HTMLInputElement>(
-        `.column-menu input[type="checkbox"]:not(:disabled)`,
-      ).click()
+      column_checkbox().click()
       await tick()
       const custom_query = location.search
-      const custom_params = new URLSearchParams(custom_query)
-      expect(custom_params.has(`preset`)).toBe(false)
-      expect(custom_params.get(`sort`)).toBe(sort_key)
-      expect(custom_params.get(`dir`)).toBe(direction === `ascending` ? `asc` : null)
+      expect(query_param(`preset`)).toBeNull()
+      expect(query_param(`sort`)).toBe(sort_key)
+      expect(query_param(`dir`)).toBe(direction === `ascending` ? `asc` : null)
 
       doc_query<HTMLButtonElement>(
         `button[aria-label="Reset all columns to defaults"]`,
       ).click()
       await tick()
-      const reset_params = new URLSearchParams(location.search)
-      expect(reset_params.get(`preset`)).toBe(preset === `Discovery` ? null : preset)
-      expect(reset_params.has(`sort`)).toBe(false)
-      expect(reset_params.has(`dir`)).toBe(false)
+      expect(query_param(`preset`)).toBe(preset === `Discovery` ? null : preset)
+      expect(query_param(`sort`)).toBeNull()
+      expect(query_param(`dir`)).toBeNull()
 
-      const read_url = vi.mocked(afterNavigate).mock.calls.at(-1)?.[0]
-      if (!read_url) throw new Error(`Missing URL navigation handler`)
-      page.url.search = custom_query
-      history.replaceState(null, ``, `/${custom_query}`)
-      read_url({ type: `link` } as AfterNavigate)
-      await tick()
+      await navigate(custom_query)
       expect(pressed_toggle(`Discovery`)).toBe(`Discovery`)
       expect_sort(sorted_column, direction)
-
-      for (const next_preset of [`MD`, `MD`]) {
-        doc_query<HTMLInputElement>(
-          `.column-menu input[type="checkbox"]:not(:disabled)`,
-        ).click()
-        await tick()
-        page.url.search = `?preset=${next_preset}`
-        history.replaceState(null, ``, `/${page.url.search}`)
-        read_url({ type: `link` } as AfterNavigate)
-        await tick()
-        expect(location.search).toBe(`?preset=${next_preset}`)
-        expect(header_text()).toContain(`vDOS`)
-        expect(header_text()).toContain(`Model`)
-        expect(
-          doc_query<HTMLInputElement>(
-            `.column-menu input[type="checkbox"]:not(:disabled)`,
-          ).checked,
-        ).toBe(true)
-        expect_sort(`CMDS`, `descending`)
-      }
     },
   )
 
-  it(`restores filters, heatmap, and score settings on initial and later navigation`, async () => {
+  it(`restores columns, filters, heatmap, and scores on initial and later navigation`, async () => {
     await mount_with_url(Page, `http://localhost/?heatmap=0&weights=1,0,0`)
 
     const first_row = doc_query(`tbody tr`)
@@ -464,16 +447,16 @@ describe(`Landing Page URL state`, () => {
     expect(location.search).not.toContain(`heatmap=`)
     expect(cps_cell.style.getPropertyValue(`--cell-bg`)).not.toBe(``)
 
-    const read_url = vi.mocked(afterNavigate).mock.calls.at(-1)?.[0]
-    if (!read_url) throw new Error(`Missing URL navigation handler`)
-    for (const query of [
-      `?train=MPtrj&openness=OSOD&targets=S&set=full_test_set&preset=MD&heatmap=0`,
-      ``,
-    ]) {
-      page.url.search = query
-      history.replaceState(null, ``, `/${query}`)
-      read_url({ type: `popstate` } as AfterNavigate)
+    const filtered_query = `?train=MPtrj&openness=OSOD&targets=S&set=full_test_set&preset=MD&heatmap=0`
+    // Revisit the same preset as well as a different one after customizing columns.
+    for (const query of [filtered_query, filtered_query, ``]) {
+      column_checkbox().click()
       await tick()
+      await navigate(query, `popstate`)
+      expect(location.search).toBe(query)
+      expect(column_checkbox().checked).toBe(true)
+      expect(header_text()).toContain(`Model`)
+      if (query) expect(header_text()).toContain(`vDOS`)
       expect(heatmap_toggle.checked).toBe(!query)
       expect(
         doc_query<HTMLInputElement>(`.desktop-filters [aria-label="require MPtrj"]`)
@@ -483,14 +466,8 @@ describe(`Landing Page URL state`, () => {
         doc_query<HTMLInputElement>(`.desktop-filters [aria-label="require stress"]`)
           .checked,
       ).toBe(Boolean(query))
-      expect(new URLSearchParams(location.search).get(`set`)).toBe(
-        query ? `full_test_set` : null,
-      )
       expect(pressed_toggle(`Discovery`)).toBe(query ? `MD` : `Discovery`)
       expect_sort(query ? `CMDS` : `CPS`, `descending`)
-      expect(new URLSearchParams(location.search).get(`train`)).toBe(
-        query ? `MPtrj` : null,
-      )
     }
   })
 })
