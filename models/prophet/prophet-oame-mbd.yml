@@ -203,9 +203,9 @@ metrics:
   diatomics:
     pred_file:
       name: models/prophet/prophet-oame-mbd/2026-09-03-diatomics.json.gz
-      url: https://figshare.com/files/68516809
-      size: 246984
-      md5: 56ac2c0279c4ca45f0764b566e857715
+      url: https://figshare.com/files/68520235
+      size: 246939
+      md5: 4fb4e3c584c115d7b4139f8e3a5662e1
     pbe_wall_dist_mae: 0.235
     pbe_energy_mae: 1.103
     pbe_bond_length_error: 0.06076
