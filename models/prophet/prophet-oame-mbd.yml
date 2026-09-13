@@ -120,7 +120,7 @@ hyperparams:
       ema_decay: 0.999
       replay_ratio_per_100_steps: MPtrj 35 / sAlex 35 / ELEMENTA 30
 notes:
-  description: Prophet is an equivariant machine-learning interatomic potential by Kairos Materials (62.3M parameters), built on Multi-Cutoff Spectral Decomposition, which models atomic interactions across nested cutoff scales.
+  description: Prophet is a family of atomistic foundation models for materials simulation and discovery, trained on large-scale first-principles data to model energies, forces and stresses across diverse chemical systems, with extensions that explicitly incorporate spin as a fundamental physical degree of freedom. Prophet-OAME-MBD is a 62.3M-parameter model pretrained on Omat24 and ELEMENTA, including the ELEMENTA Vib expansion, and aligned on MPtrj and sAlex to the Materials Project energy reference used by Matbench Discovery. Structures and trajectories in ELEMENTA overlapping with the WBM test set were removed during post-processing.
 
 metrics:
   discovery:

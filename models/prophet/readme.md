@@ -1,6 +1,6 @@
 # Kairos Materials
 
-Prophet is an equivariant message-passing interatomic potential by Kairos Materials (62.3M parameters, 10 layers, lmax 4) built on Multi-Cutoff Spectral Decomposition, which models atomic interactions across nested cutoff scales (3/7 A) and recombines them linearly. It is pretrained on MPtrj, OMat24, sAlex and ELEMENTA, and fine-tuned for lattice thermal conductivity on Gaussian-displacement fc2/fc3 frames with full-set replay.
+Prophet is a family of atomistic foundation models for materials simulation and discovery, trained on large-scale first-principles data to model energies, forces and stresses across diverse chemical systems, with extensions that explicitly incorporate spin as a fundamental physical degree of freedom. Prophet-OAME-MBD is a 62.3M-parameter model pretrained on Omat24 and ELEMENTA, including the ELEMENTA Vib expansion, and aligned on MPtrj and sAlex to the Materials Project energy reference used by Matbench Discovery. Structures and trajectories in ELEMENTA overlapping with the WBM test set were removed during post-processing.
 
 Paper: [Prophet](https://www.kairosmaterials.com/papers/Prophet.pdf)
 Code: [kairosmaterial/prophet](https://github.com/kairosmaterial/prophet)
