@@ -372,49 +372,76 @@ describe(`Landing Page URL state`, () => {
     },
   )
 
-  it(`canonicalizes preset URL across default and customized columns`, async () => {
-    await mount_with_url(Page, `http://localhost/?preset=MD&sort=combined_score&dir=desc`)
+  it.each([
+    [`Discovery`, `CPS`, null, `descending`],
+    [`Geo Opt`, `RMSD`, `rmsd`, `ascending`],
+    [`Phonons`, `κSRME`, `κ_SRME`, `ascending`],
+    [`MD`, `CMDS`, `combined_score`, `descending`],
+    [`Diatomics`, `CDS`, `diatomics_combined_score`, `descending`],
+  ] as const)(
+    `canonicalizes %s URLs and preserves sorting after customizing columns`,
+    async (preset, sorted_column, sort_key, direction) => {
+      await mount_with_url(
+        Page,
+        `http://localhost/?preset=MD&sort=combined_score&dir=desc`,
+      )
 
-    expect(location.search).toBe(`?preset=MD`)
-    expect_sort(`CMDS`, `descending`)
+      expect(location.search).toBe(`?preset=MD`)
+      expect_sort(`CMDS`, `descending`)
 
-    preset_button(`Geo Opt`).click()
-    await tick()
-    expect_sort(`RMSD`, `ascending`)
+      preset_button(preset).click()
+      await tick()
+      expect_sort(sorted_column, direction)
 
-    doc_query<HTMLInputElement>(
-      `.column-menu input[type="checkbox"]:not(:disabled)`,
-    ).click()
-    await tick()
-    expect(new URLSearchParams(location.search).has(`preset`)).toBe(false)
-
-    doc_query<HTMLButtonElement>(
-      `button[aria-label="Reset all columns to defaults"]`,
-    ).click()
-    await tick()
-    expect(new URLSearchParams(location.search).get(`preset`)).toBe(`Geo Opt`)
-
-    const read_url = vi.mocked(afterNavigate).mock.calls.at(-1)?.[0]
-    if (!read_url) throw new Error(`Missing URL navigation handler`)
-    for (const preset of [`MD`, `MD`]) {
       doc_query<HTMLInputElement>(
         `.column-menu input[type="checkbox"]:not(:disabled)`,
       ).click()
       await tick()
-      page.url.search = `?preset=${preset}`
-      history.replaceState(null, ``, `/${page.url.search}`)
+      const custom_query = location.search
+      const custom_params = new URLSearchParams(custom_query)
+      expect(custom_params.has(`preset`)).toBe(false)
+      expect(custom_params.get(`sort`)).toBe(sort_key)
+      expect(custom_params.get(`dir`)).toBe(direction === `ascending` ? `asc` : null)
+
+      doc_query<HTMLButtonElement>(
+        `button[aria-label="Reset all columns to defaults"]`,
+      ).click()
+      await tick()
+      const reset_params = new URLSearchParams(location.search)
+      expect(reset_params.get(`preset`)).toBe(preset === `Discovery` ? null : preset)
+      expect(reset_params.has(`sort`)).toBe(false)
+      expect(reset_params.has(`dir`)).toBe(false)
+
+      const read_url = vi.mocked(afterNavigate).mock.calls.at(-1)?.[0]
+      if (!read_url) throw new Error(`Missing URL navigation handler`)
+      page.url.search = custom_query
+      history.replaceState(null, ``, `/${custom_query}`)
       read_url({ type: `link` } as AfterNavigate)
       await tick()
-      expect(location.search).toBe(`?preset=${preset}`)
-      expect(header_text()).toContain(`vDOS`)
-      expect(header_text()).toContain(`Model`)
-      expect(
-        doc_query<HTMLInputElement>(`.column-menu input[type="checkbox"]:not(:disabled)`)
-          .checked,
-      ).toBe(true)
-      expect_sort(`CMDS`, `descending`)
-    }
-  })
+      expect(pressed_toggle(`Discovery`)).toBe(`Discovery`)
+      expect_sort(sorted_column, direction)
+
+      for (const next_preset of [`MD`, `MD`]) {
+        doc_query<HTMLInputElement>(
+          `.column-menu input[type="checkbox"]:not(:disabled)`,
+        ).click()
+        await tick()
+        page.url.search = `?preset=${next_preset}`
+        history.replaceState(null, ``, `/${page.url.search}`)
+        read_url({ type: `link` } as AfterNavigate)
+        await tick()
+        expect(location.search).toBe(`?preset=${next_preset}`)
+        expect(header_text()).toContain(`vDOS`)
+        expect(header_text()).toContain(`Model`)
+        expect(
+          doc_query<HTMLInputElement>(
+            `.column-menu input[type="checkbox"]:not(:disabled)`,
+          ).checked,
+        ).toBe(true)
+        expect_sort(`CMDS`, `descending`)
+      }
+    },
+  )
 
   it(`restores filters, heatmap, and score settings on initial and later navigation`, async () => {
     await mount_with_url(Page, `http://localhost/?heatmap=0&weights=1,0,0`)

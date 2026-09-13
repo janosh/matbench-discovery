@@ -116,8 +116,8 @@
     const next_preset =
       col_preset_names.find((preset) => preset === params.get(`preset`)) ??
       default_col_preset
-    const next_sort = sort_from_query(params, preset_default_sorts[next_preset])
     const default_sort = preset_default_sorts[next_preset]
+    const next_sort = sort_from_query(params, default_sort)
     auto_sort_enabled =
       next_sort.column === default_sort.column && next_sort.dir === default_sort.dir
     sort = next_sort
@@ -131,16 +131,18 @@
     apply_weights_param(params.get(`weights`), CPS_CONFIG, DEFAULT_CPS_CONFIG)
   }
 
-  bind_url_params(read_url_params, () => [
-    // omit `preset` for the default and when the user customized
-    // columns (a preset no longer describes the visible column set)
-    [`preset`, custom_col_config ? default_col_preset : col_preset, default_col_preset],
-    [`set`, discovery_set, `unique_prototypes`],
-    ...sort_url_entries(sort, preset_default_sorts[col_preset]),
-    ...filters.url_entries,
-    // custom CPS weights (F1,κ_SRME,RMSD); omitted at defaults
-    [`weights`, weights_to_param(CPS_CONFIG, DEFAULT_CPS_CONFIG)],
-  ])
+  bind_url_params(read_url_params, () => {
+    // Customized columns omit the preset; sort defaults must match the restored preset.
+    const url_preset = custom_col_config ? default_col_preset : col_preset
+    return [
+      [`preset`, url_preset, default_col_preset],
+      [`set`, discovery_set, `unique_prototypes`],
+      ...sort_url_entries(sort, preset_default_sorts[url_preset]),
+      ...filters.url_entries,
+      // custom CPS weights (F1,κ_SRME,RMSD); omitted at defaults
+      [`weights`, weights_to_param(CPS_CONFIG, DEFAULT_CPS_CONFIG)],
+    ]
+  })
 
   // Each task view includes only models with its headline metric.
   let has_preset_data = $derived((model: ModelData) =>
