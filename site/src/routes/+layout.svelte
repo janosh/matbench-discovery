@@ -170,15 +170,10 @@
 
 <GitHubCorner href={pkg.repository} id="github-corner" />
 
-<!-- menu_props: the svelte-widgets mobile menu hugs its content and anchors to the start
-     edge, so page text shows beside the open menu; spanning the viewport fixes that.
-     `max-width` clears its 90vw cap. The desktop gap lives in the style block below since an
-     inline gap would also override the mobile menu's tight row spacing. -->
 <Nav
   {page}
   routes={[`/`, ...ordered_routes, [pkg.paper, `Paper`]]}
   style="margin-block: 1em 0"
-  menu_props={{ style: `inset-inline: 0.5rem; width: auto; max-width: none` }}
   route_labels={{
     '/': `Home`,
     '/api': `API`,
