@@ -637,19 +637,16 @@ def _prophet(model_key: str) -> Callable[..., Calculator]:
     """Build Prophet calculators on the device selected by the shared runner."""
 
     def make_calc(device: str, checkpoint: str | None = None) -> Calculator:
-        """Load the checkpoint and override upstream's automatic CUDA selection."""
-        import torch
+        """Load the checkpoint on the runner-selected device."""
         from prophet import KairosCalculator
 
         checkpoint = checkpoint or download_checkpoint(model_key, ext=".pt")
-        calc = KairosCalculator(
+        return KairosCalculator(
             model_path=checkpoint,
             use_kernel=device.startswith("cuda"),
             use_compile=False,
+            device=device,
         )
-        calc.device = torch.device(device)
-        calc.model = calc.model.to(calc.device)
-        return calc
 
     return make_calc
 

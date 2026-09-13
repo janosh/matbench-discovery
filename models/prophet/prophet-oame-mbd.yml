@@ -34,7 +34,7 @@ doi:
 paper: https://www.kairosmaterials.com/papers/Prophet.pdf
 docs: https://github.com/kairosmaterial/prophet
 pr_url: https://github.com/janosh/matbench-discovery/pull/397
-checkpoint_url: https://huggingface.co/kairosmaterial/prophet/resolve/main/prophet-oame-mbd.pt
+checkpoint_url: https://huggingface.co/kairosmaterial/prophet/resolve/f9a54df874ba52b8b35e7d3f7f348b46e0135563/prophet-oame-mbd.pt
 license:
   code: MIT
   code_url: https://github.com/kairosmaterial/prophet/blob/main/LICENSE
@@ -43,7 +43,7 @@ license:
 
 environment:
   dependencies:
-  - prophet-mlip @ git+https://github.com/kairosmaterial/prophet.git
+  - prophet-mlip @ git+https://github.com/kairosmaterial/prophet.git@v1.0.1
   - openequivariance>=0.6.8; platform_system == "Linux"
   - phono3py==3.30.0
   - moyopy>=0.12
