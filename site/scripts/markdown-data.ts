@@ -59,7 +59,20 @@ export async function render_data_markdown(
       `${filename}: ${key}.description`,
       references,
     )
-    if (datasets) entry.slug = key.toLowerCase().replaceAll(/[\s_]+/g, `-`)
+    if (datasets) {
+      entry.slug = key.toLowerCase().replaceAll(/[\s_]+/g, `-`)
+      if (entry.notes) {
+        const notes = record(entry.notes, `${filename}: ${key}.notes`)
+        entry.notes_html = Object.fromEntries(
+          await Promise.all(
+            Object.entries(notes).map(async ([title, note]) => [
+              title,
+              await render_text(note, `${filename}: ${key}.notes.${title}`),
+            ]),
+          ),
+        )
+      }
+    }
   }
   return data
 }

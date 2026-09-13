@@ -1,5 +1,4 @@
 import { page } from '$app/state'
-import DATASETS from '$data/datasets.yml'
 import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from '$lib/labels'
 import {
   discovery_task_tooltips,
@@ -7,6 +6,7 @@ import {
   metric_value,
   openness_tooltips,
   targets_tooltips,
+  training_set_link,
 } from '$lib/metrics'
 import { ACTIVE_MODELS, MODELS } from '$lib/models.svelte'
 import { competition_rank } from '$lib/rankings'
@@ -28,6 +28,11 @@ class Comparison {
   get models(): ModelData[] {
     return [...this.keys].flatMap((key) => model_by_key.get(key) ?? [])
   }
+  filter = <Model extends { model_key: string }>(
+    models: Model[],
+    selected_only: boolean,
+  ): Model[] =>
+    models.filter(({ model_key }) => !selected_only || this.keys.has(model_key))
   toggle = (key: string): void => {
     if (!this.keys.delete(key)) this.keys.add(key)
   }
@@ -46,7 +51,7 @@ class Comparison {
 }
 export const comparison = new Comparison()
 
-// Leaderboard table hooks shared by MetricsTable and GeoOptMetricsTable: double-clicking
+// Leaderboard table hooks: double-clicking
 // a row toggles its model; `show_only` drops non-compared rows, else they get highlighted.
 // HeatmapTable exposes neither its sorted rows nor row data on DOM events, so DOM-side
 // code resolves a <tr> to its model via the model-page link every row carries.
@@ -64,13 +69,10 @@ export function mark_compared_rows<R extends { model_key: string; class?: string
   rows: R[],
   show_only: boolean,
 ): R[] {
-  return rows
-    .filter((row) => !show_only || comparison.keys.has(row.model_key))
-    .map((row) => {
-      row.class =
-        !show_only && comparison.keys.has(row.model_key) ? `highlight` : undefined
-      return row
-    })
+  return comparison.filter(rows, show_only).map((row) => {
+    row.class = !show_only && comparison.keys.has(row.model_key) ? `highlight` : undefined
+    return row
+  })
 }
 
 // Mirror the selection into a `compare` URL param (comma-joined model keys) so comparisons
@@ -196,19 +198,7 @@ export const COMPARE_GROUPS: CompareGroup[] = [
         `training_sets`,
         `Training data`,
         `Datasets the model was trained on (linked to their data pages)`,
-        ({ training_sets }) =>
-          join_parts(
-            training_sets.map((key) => {
-              const { name, slug, n_structures, n_materials } = DATASETS[key]
-              const from = n_materials ? ` from ${format_num(n_materials)} materials` : ``
-              return {
-                text: key,
-                href: `/data/${slug}`,
-                title: `${name}: ${format_num(n_structures)} structures${from}`,
-              }
-            }),
-            ` + `,
-          ),
+        ({ training_sets }) => join_parts(training_sets.map(training_set_link), ` + `),
       ),
       text_row(
         `authors`,

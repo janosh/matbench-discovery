@@ -1,7 +1,6 @@
 <script lang="ts">
   import type { Label, ModelData } from '$lib/types'
-  import DATASETS from '$data/datasets.yml'
-  import { get_nested_number, label_data_path } from '$lib/metrics'
+  import { get_nested_number, label_data_path, training_set_link } from '$lib/metrics'
   import { ACTIVE_MODELS } from '$lib/models.svelte'
   import { model_metric_ranks, rank_color, RANKED_METRICS } from '$lib/rankings'
   import pkg from '$site/package.json'
@@ -67,15 +66,8 @@
       {#if idx > 0}
         &nbsp;+&nbsp;
       {/if}
-      {@const { n_structures, name, slug, n_materials } = DATASETS[train_set_key]}
-      {@const n_mat_str = n_materials ? ` from ${format_num(n_materials)} materials` : ``}
-      <a
-        href="/data/{slug}"
-        title="{name}: {format_num(n_structures)} structures{n_mat_str}"
-        {@attach tooltip()}
-      >
-        {train_set_key}
-      </a>
+      {@const { text, href, title } = training_set_link(train_set_key)}
+      <a {href} {title} {@attach tooltip()}>{text}</a>
     {/each}
   </span>
   <span title="Date added">

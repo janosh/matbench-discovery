@@ -106,15 +106,12 @@
     column_order?: string[]
     sort?: { column: string; dir: SortDir }
   } = $props()
-  // toggled from TableControls; no page binds it, so plain local state
-  let show_selected_only = $state(false)
-
   let pred_files_dropdown = $state<PredFilesDropdown | null>(null)
 
   let metrics_data = $derived(
     mark_compared_rows(
       assemble_row_data(discovery_set, model_filter, filters.matches),
-      show_selected_only,
+      filters.show_selected_only,
     ),
   )
   let columns = $derived(
@@ -274,7 +271,7 @@
   root_style={METRICS_TABLE_ROOT_STYLE}
 >
   {#snippet controls()}
-    <TableControls bind:columns bind:show_selected_only {filters} />
+    <TableControls bind:columns {filters} />
   {/snippet}
 </HeatmapTable>
 

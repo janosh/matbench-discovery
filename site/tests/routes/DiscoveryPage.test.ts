@@ -1,10 +1,12 @@
 import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
 import DiscoveryPage from '$routes/tasks/discovery/+page.svelte'
-import { tick } from 'svelte'
+import type { ScatterPlot } from 'matterviz/plot'
+import { tick, type ComponentProps } from 'svelte'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   checkbox_for,
   filter_summary_badge,
+  get_scatter_plot_props,
   header_name,
   mount,
   mount_with_url,
@@ -18,29 +20,12 @@ vi.mock(`matterviz/plot`, async (import_original) => ({
   ScatterPlot: plot_mocks.ScatterPlot,
 }))
 
-interface ScatterPlotProps {
-  series: {
-    x: number[]
-    y: number[]
-    metadata?: { model_key?: string }[]
-  }[]
-  style?: string
-}
-
-const comparison_scatter_props = (): ScatterPlotProps | undefined =>
-  plot_mocks.ScatterPlot.mock.calls
-    .flat()
-    .findLast(
-      (call_arg): call_arg is ScatterPlotProps =>
-        typeof call_arg === `object` &&
-        call_arg !== null &&
-        `series` in call_arg &&
-        call_arg.style === `height: 800px`,
-    )
+const comparison_scatter_props = () =>
+  get_scatter_plot_props(plot_mocks.ScatterPlot) as ComponentProps<typeof ScatterPlot>
 
 const scatter_y_for = (model_key: string): number | undefined =>
-  comparison_scatter_props()?.series.find(
-    (series) => series.metadata?.[0]?.model_key === model_key,
+  comparison_scatter_props().series?.find(
+    ({ metadata }) => !Array.isArray(metadata) && metadata?.model_key === model_key,
   )?.y[0]
 
 const active_toggle = (): string | undefined =>

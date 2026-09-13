@@ -33,111 +33,79 @@ describe(`metric_better_as`, () => {
 })
 
 describe(`format_train_set`, () => {
-  const dataset_keys = Object.keys(DATASETS)
-  const mp2022_key = dataset_keys.find((key) => key.includes(`MP 2022`))
-  if (!mp2022_key) throw new Error(`No MP 2022 key found in DATASETS`)
-  const mptrj_key = dataset_keys.find((key) => key.includes(`MPtrj`))
-  if (!mptrj_key) throw new Error(`No MPtrj key found in DATASETS`)
+  const mp2022 = DATASETS[`MP 2022`]
+  const mptrj = DATASETS.MPtrj
 
-  const mp2022 = DATASETS[mp2022_key]
+  it.each([`MP 2022`, `OC22`, `MAD-1.6`, `OCx24`])(
+    `formats single training set %s correctly`,
+    (key) => {
+      const dataset = DATASETS[key]
+      const result = format_train_set([key], {
+        n_training_structures: dataset.n_structures,
+        n_training_materials: dataset.n_materials,
+      })
 
-  it(`formats single training set correctly`, () => {
-    const mock_model = {
-      n_training_structures: mp2022.n_structures,
-      n_training_materials: mp2022.n_materials,
-    }
-    const result = format_train_set([mp2022_key], mock_model as ModelData)
-
-    expect(result).toContain(
-      `data-sort-value="${mp2022.n_materials ?? mp2022.n_structures}"`,
-    )
-    expect(result).toContain(mp2022_key)
-    expect(result).toContain(`materials in training set`)
-  })
+      expect(result).toContain(`/data/${dataset.slug}`)
+      if (dataset.n_structures === null || dataset.n_materials == null) {
+        expect(result).toContain(`size not fully reported`)
+        expect(result).toContain(
+          dataset.n_structures === null
+            ? `unknown number of structures`
+            : `material count not reported`,
+        )
+        expect(result).toContain(`n/a`)
+        expect(result).not.toContain(`data-sort-value=`)
+        return
+      }
+      expect(result).toContain(`data-sort-value="${dataset.n_materials}"`)
+      expect(result).toContain(key)
+      expect(result).toContain(`materials in training set`)
+    },
+  )
 
   it(`renders _x dataset-key suffixes as subscripts`, () => {
-    const result = format_train_set([`MDR-MP PBE ω_q`], {} as ModelData)
+    const result = format_train_set([`MDR-MP PBE ω_q`], {})
     expect(result).toContain(`ω<sub>q</sub>`)
     expect(result).not.toContain(`ω_q`)
   })
 
   it(`formats multiple training sets correctly`, () => {
-    const mptrj = DATASETS[mptrj_key]
-    const mock_model = {
+    const model = {
       n_training_structures: (mp2022.n_structures ?? 0) + (mptrj.n_structures ?? 0),
       n_training_materials: (mp2022.n_materials ?? 0) + (mptrj.n_materials ?? 0),
     }
-    const result = format_train_set([mp2022_key, mptrj_key], mock_model as ModelData)
+    const result = format_train_set([`MP 2022`, `MPtrj`], model)
 
-    // data-sort-value uses model.n_training_materials (the combined total)
-    expect(result).toContain(`data-sort-value="${mock_model.n_training_materials}"`)
+    expect(result).toContain(`data-sort-value="${model.n_training_materials}"`)
     expect(result).toContain(mp2022.name)
-    expect(result).toContain(mptrj.name ?? mptrj_key)
+    expect(result).toContain(mptrj.name)
   })
 
   it(`shows materials and structures when they differ`, () => {
-    const dataset_with_both = Object.entries(DATASETS).find(
-      ([, dataset]) =>
-        dataset.n_materials &&
-        dataset.n_structures &&
-        dataset.n_materials !== dataset.n_structures,
-    )
-
-    if (!dataset_with_both) {
-      throw new Error(`No dataset with different n_materials and n_structures found`)
-    }
-
-    const [key, _dataset] = dataset_with_both
-    const mock_model = {
-      n_training_structures: _dataset.n_structures,
-      n_training_materials: _dataset.n_materials,
-    }
-    const result = format_train_set([key], mock_model as ModelData)
-
+    const result = format_train_set([`MPtrj`], {
+      n_training_structures: mptrj.n_structures,
+      n_training_materials: mptrj.n_materials,
+    })
     expect(result).toContain(`<small>(`)
     expect(result).toContain(`materials in training set (`)
     expect(result).toContain(`structures`)
   })
 
   it(`throws for unknown training sets`, () => {
-    const mock_model = {
-      n_training_structures: mp2022.n_structures,
-      n_training_materials: mp2022.n_materials,
-    }
-
-    expect(() =>
-      format_train_set([mp2022_key, `NonExistent`], mock_model as ModelData),
-    ).toThrow(`Training set NonExistent not found in DATASETS`)
+    expect(() => format_train_set([`MP 2022`, `NonExistent`], {})).toThrow(
+      `Training set NonExistent not found in DATASETS`,
+    )
   })
 
-  it(`formats training sets without n_materials correctly using n_structures`, () => {
-    const mptrj = { ...DATASETS[mptrj_key] }
-    const n_structures = mptrj.n_structures
-    const { slug } = mptrj
-    delete mptrj.n_materials
-
-    const mock_model_struct_only = {
-      n_training_structures: n_structures,
-      // No n_training_materials explicitly set
-    }
-
-    Object.defineProperty(DATASETS, `Modified_MPtrj`, {
-      value: mptrj,
-      configurable: true,
-    })
-
-    try {
-      const result = format_train_set(
-        [`Modified_MPtrj`],
-        mock_model_struct_only as ModelData,
-      )
-
-      // falls back to n_structures as data-sort-value
-      expect(result).toContain(`data-sort-value="${n_structures}"`)
-      expect(result).toContain(`<a href="/data/${slug}"`)
-    } finally {
-      delete DATASETS.Modified_MPtrj
-    }
+  it(`never presents structures as materials when the material count is absent`, () => {
+    const { n_structures, n_materials, slug } = DATASETS[`MAD-1.6`]
+    expect(n_materials).toBeUndefined()
+    const result = format_train_set([`MAD-1.6`], { n_training_structures: n_structures })
+    expect(result).toContain(`362,646 structures; material count not reported`)
+    expect(result).not.toContain(`362,646 materials`)
+    expect(result).not.toContain(`0 materials`)
+    expect(result).not.toContain(`data-sort-value=`)
+    expect(result).toContain(`<a href="/data/${slug}"`)
   })
 })
 

@@ -61,6 +61,9 @@
 <MPtrjElemCountsPtable />
 
 <style>
+  h2 {
+    text-align: center;
+  }
   ul {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));

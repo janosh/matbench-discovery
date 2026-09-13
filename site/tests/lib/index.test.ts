@@ -20,7 +20,13 @@ describe(`$lib data includes rendered YAML Markdown`, () => {
     for (const [key, dataset] of entries) {
       for (const field of [`slug`, `description_html`] as const)
         expect(dataset[field]?.length, `${key} missing ${field}`).toBeGreaterThan(0)
+      expect(Object.keys(dataset.notes_html ?? {})).toEqual(
+        Object.keys(dataset.notes ?? {}),
+      )
     }
+    expect(DATASETS.ELEMENTA.notes_html?.Access).toContain(
+      `href="https://huggingface.co/datasets/kairosmaterial/ELEMENTA"`,
+    )
   })
 
   it(`data_files entries expose computed html`, () => {
@@ -112,6 +118,11 @@ describe(`$lib data includes rendered YAML Markdown`, () => {
   it.each([
     [`/repo/matbench_discovery/data-files.yml`, {}, `_links must be a string`],
     [`/repo/data/datasets.yml`, { bad: { description: 7 } }, `bad.description`],
+    [
+      `/repo/data/datasets.yml`,
+      { bad: { description: ``, notes: { Access: 7 } } },
+      `bad.notes.Access`,
+    ],
     [`/repo/models/example/model.yml`, { notes: `bad` }, `notes: expected a mapping`],
   ])(`rejects invalid Markdown data in %s`, async (filename, data, message) => {
     await expect(render_data_markdown(data, filename)).rejects.toThrow(message)

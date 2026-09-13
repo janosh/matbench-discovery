@@ -408,9 +408,10 @@ describe(`MetricsTable`, () => {
       {
         col_key: `Training Set`,
         header: `Training Set`,
-        // mirrors format_train_set: materials count, falling back to structures count
-        sort_key: ({ n_training_materials = 0, n_training_structures = 0 }: ModelData) =>
-          n_training_materials > 0 ? n_training_materials : n_training_structures,
+        sort_key: ({ n_training_materials, n_training_structures }: ModelData) =>
+          n_training_materials == null || n_training_structures == null
+            ? null
+            : n_training_materials,
       },
       {
         col_key: HYPERPARAMS.model_params.key,
@@ -427,14 +428,17 @@ describe(`MetricsTable`, () => {
         const sort_header = header_cells().find((th) => th.textContent?.includes(header))
         if (!sort_header) throw new Error(`${header} column not found`)
 
-        const cell_values = () => row_models().map(sort_key)
+        const cell_values = () =>
+          row_models()
+            .map(sort_key)
+            .filter((value) => value != null)
 
         sort_header.click()
         await tick()
 
         const values = cell_values()
         expect(values.length).toBeGreaterThan(1)
-        // rows must be fully sorted (either direction) after the click
+        // Known counts must be numerically sorted in either direction.
         const ascending = [...values].toSorted((val_1, val_2) => val_1 - val_2)
         expect([ascending, ascending.toReversed()]).toContainEqual(values)
 
@@ -911,7 +915,8 @@ describe(`MetricsTable`, () => {
       `filters selected rows and updates toggle labels and highlighting`,
       { timeout: 30_000 },
       async () => {
-        mount_table({ col_filter: () => true })
+        const filters = make_table_filters()
+        mount_table({ col_filter: () => true, filters })
         const initial_count = get_rows().length
         expect(initial_count).toBeGreaterThan(1)
 
@@ -929,6 +934,16 @@ describe(`MetricsTable`, () => {
         expect(label?.textContent).toContain(`Show all`)
         expect(get_rows()).toHaveLength(1)
         expect(get_rows()[0].classList.contains(`highlight`)).toBe(false)
+        expect(filters.url_entries).toContainEqual([`selected_only`, `1`])
+
+        filters.read(new URLSearchParams())
+        await tick()
+        expect(toggle.checked).toBe(false)
+        expect(get_rows()).toHaveLength(initial_count)
+        filters.read(new URLSearchParams(`selected_only=1`))
+        await tick()
+        expect(toggle.checked).toBe(true)
+        expect(get_rows()).toHaveLength(1)
 
         toggle.click()
         await tick()
@@ -936,6 +951,7 @@ describe(`MetricsTable`, () => {
         expect(label?.textContent).toContain(`Show only 1 selected`)
         expect(get_rows()).toHaveLength(initial_count)
         expect(get_rows()[0].classList.contains(`highlight`)).toBe(true)
+        expect(filters.url_entries).toContainEqual([`selected_only`, ``])
       },
     )
   })

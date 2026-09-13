@@ -2,7 +2,8 @@
   import spg_sankeys from '$figs/spg-sankeys.jsonl'
   import struct_rmsd_cdf from '$figs/struct-rmsd-cdf.jsonl'
   import sym_ops_diff from '$figs/sym-ops-diff-bar.jsonl'
-  import GeoOptMetricsTable from '$lib/table/GeoOptMetricsTable.svelte'
+  import MetricsTable from '$lib/table/MetricsTable.svelte'
+  import type { Label } from '$lib/types'
   import ModelSelect from '$lib/ModelSelect.svelte'
   import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
   import { by_benchmark_added_desc } from '$lib'
@@ -10,6 +11,7 @@
   import {
     ALL_METRICS,
     GEO_OPT_SYMMETRY_METRICS,
+    HYPERPARAMS,
     METADATA_COLS,
     scatter_axis_label,
     scatter_options_by_key,
@@ -22,6 +24,35 @@
   import { pick_contrast_color } from 'matterviz/colors'
   import { BarPlot, Sankey, sankey_from_links, ScatterPlot } from 'matterviz/plot'
   import GeoOptReadme from './geo-opt-readme.md'
+
+  const columns: Label[] = [
+    METADATA_COLS.model_name,
+    ALL_METRICS.RMSD,
+    ...Object.values(GEO_OPT_SYMMETRY_METRICS).map((col) => ({
+      ...col,
+      group: `Symmetry`,
+      visible: true,
+    })),
+    ...[
+      HYPERPARAMS.ase_optimizer,
+      HYPERPARAMS.max_steps,
+      HYPERPARAMS.max_force,
+      HYPERPARAMS.cell_filter,
+      HYPERPARAMS.n_layers,
+      HYPERPARAMS.graph_construction_radius,
+    ].map((col, idx) => ({
+      ...col,
+      group: `Hyperparams`,
+      sortable: true,
+      visible: idx < 4,
+    })),
+  ].map((col) => ({
+    ...col,
+    // Geometry hyperparameters show their units in the header.
+    label: col.unit
+      ? `${col.label} <span style="font-weight: 200">(${col.unit})</span>`
+      : col.label,
+  }))
 
   // payload models arrive pre-styled (colors + discovery-F1-desc leaderboard order) from the
   // json_payload plugin; re-rank the two that want a different order (struct-rmsd by AUC
@@ -111,14 +142,21 @@
 <GeoOptReadme>
   {#snippet geo_opt_metrics_table()}
     <section class="full-bleed">
-      <GeoOptMetricsTable {filters} bind:sort={plot.sort} />
+      <MetricsTable
+        {filters}
+        discovery_set="full_test_set"
+        model_filter={(model) => model.metrics?.geo_opt != null}
+        column_labels={columns}
+        show_row_numbers={false}
+        bind:sort={plot.sort}
+      />
     </section>
   {/snippet}
   {#snippet min_relaxed_structures()}
     <span>{format_num(n_min_relaxed_structures)}</span>
   {/snippet}
   {#snippet model_comparison_scatter()}
-    <h3 id="metric-comparison">
+    <h3 id="metric-comparison" style="text-align: center">
       {@html scatter_axis_label(plot.y)} vs {@html scatter_axis_label(plot.x)}
     </h3>
     <p>

@@ -17,13 +17,14 @@ definitions:
 
   dft_code_enum:
     type: string
-    enum: [VASP, Quantum ESPRESSO, CASTEP, AbInit, FHI-aims, CP2K, Various]
+    enum: [VASP, Quantum ESPRESSO, CASTEP, AbInit, FHI-aims, CP2K, ORCA, Psi4, Various]
     description: DFT code used for calculations
 
   functional_enum:
     type: string
     enum:
       - PBE
+      - RPBE
       - PBEsol
       - PBE+U
       - SCAN
@@ -33,6 +34,12 @@ definitions:
       - HSE
       - HSE06
       - PBE0
+      - wB97M-V
+      - wB97M-D3BJ
+      - wB97X
+      - B3LYP
+      - optB88-vdW
+      - TB-mBJ
       - Various
     description: Exchange-correlation functional used in DFT calculations
 
@@ -50,7 +57,8 @@ definitions:
       - description
       - url
       - n_structures
-      - open
+      - access
+      - role
       - license
       - date_created
       - doi
@@ -62,7 +70,7 @@ definitions:
       slug:
         type: string
         description: Slugified name of the dataset
-        pattern: ^[a-z0-9-]+$
+        pattern: ^[^\s/?#]+$
         readOnly: true
       version:
         type: string
@@ -77,19 +85,21 @@ definitions:
         description: HTML version of the dataset description
       notes:
         type: object
-        additionalProperties: true
-        # all keys should be markdown
-        patternProperties:
-          ^[a-zA-Z0-9_-]+$:
-            type: string
-            format: markdown
-            description: Note about the dataset
+        additionalProperties:
+          type: string
+          format: markdown
+      notes_html:
+        type: object
+        readOnly: true
+        additionalProperties:
+          type: string
+          format: html
 
       # Dataset size and content
       n_structures:
-        type: integer
+        type: [integer, 'null']
         minimum: 1
-        description: Number of structures in the dataset
+        description: Number of atomic configurations, or null when no comparable count is reported; explain counting scope in notes
       n_materials:
         type: integer
         minimum: 1
@@ -135,9 +145,14 @@ definitions:
         description: Other datasets this dataset contains or is derived from
 
       # Licensing and openness
-      open:
-        type: boolean
-        description: Whether the dataset is openly available
+      access:
+        type: string
+        enum: [public, partial, unreleased]
+        description: Availability of the full corpus counted in this entry, independent of license restrictions
+      role:
+        type: string
+        enum: [training, validation, test, repository]
+        description: Primary purpose of this dataset entry; subsets may be used for other purposes
       static:
         type: boolean
         description: Whether the dataset is a static release or dynamically updated
@@ -215,6 +230,5 @@ definitions:
 
 # Main schema definition
 type: object
-patternProperties:
-  ^[a-zA-Z0-9 ]+$: # allow alphanumeric names with spaces
-    $ref: '#/definitions/dataset'
+additionalProperties:
+  $ref: '#/definitions/dataset'

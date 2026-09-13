@@ -133,11 +133,31 @@ describe(`Diatomics Page URL state`, () => {
     expect(params.get(`elements`)).toBe(`nonmetal`)
   })
 
-  it(`restores metrics-table sort from sort and dir query params`, async () => {
-    await mount_page(`?sort=pbe_force_mae&dir=desc`)
+  it(`restores metrics-table sort and filters and syncs filter changes`, async () => {
+    await mount_page(`?sort=pbe_force_mae&dir=desc&train=MPtrj&heatmap=0&selected_only=1`)
 
     expect(sorted_header()?.textContent).toContain(`PBE F MAE`)
     expect(sorted_header()?.getAttribute(`aria-sort`)).toBe(`descending`)
+    const training_filter = doc_query<HTMLInputElement>(
+      `.desktop-filters [aria-label="require MPtrj"]`,
+    )
+    const heatmap = doc_query<HTMLInputElement>(`[aria-label="Toggle heatmap colors"]`)
+    const selected_only = doc_query<HTMLInputElement>(
+      `[aria-label="Toggle between showing only selected models and all models"]`,
+    )
+    expect(training_filter.checked).toBe(true)
+    expect(heatmap.checked).toBe(false)
+    expect(selected_only.checked).toBe(true)
+
+    training_filter.click()
+    heatmap.click()
+    selected_only.click()
+    await tick()
+    const params = new URL(location.href).searchParams
+    for (const key of [`train`, `heatmap`, `selected_only`])
+      expect(params.has(key)).toBe(false)
+    expect(params.get(`sort`)).toBe(`pbe_force_mae`)
+    expect(document.querySelectorAll(`tbody tr`).length).toBeGreaterThan(0)
   })
 
   it(`preserves metrics-table sort params when other controls update the URL`, async () => {

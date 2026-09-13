@@ -16,9 +16,7 @@
     Globe,
     Lattice,
     License,
-    Lock,
     ORCID,
-    Unlock,
   } from 'svelte-widgets/icons'
   import pkg from '$site/package.json'
   import { tooltip } from 'svelte-widgets/attachments'
@@ -28,6 +26,7 @@
   let { data }: { data: PageData } = $props()
   let dataset = $derived(data.dataset)
   const link_props = { target: `_blank`, rel: `noopener noreferrer` }
+  const source_url = `${pkg.repository}/blob/main/data/datasets.yml`
 
   let created_ago = $derived(format_relative_time(dataset.date_created))
   let added_ago = $derived(format_relative_time(dataset.date_added))
@@ -35,22 +34,8 @@
     [dataset.url, `Website`, Globe, `View dataset website`],
     [dataset.download_url, `Download`, Download, `Download dataset`],
     [dataset.doi, `DOI`, DOI, `Digital Object Identifier`],
-    [
-      `${pkg.repository}/blob/main/data/datasets.yml`,
-      `Source`,
-      Code,
-      `View source YAML file`,
-    ],
+    [source_url, `Source`, Code, `View source YAML file`],
   ] as const)
-
-  // params object -> [label, value] pairs
-  const format_params = (
-    params: Record<string, unknown> | undefined,
-  ): [string, string][] =>
-    Object.entries(params ?? {}).map(([key, value]) => [
-      title_case(key),
-      arr_to_str(value),
-    ])
 </script>
 
 <h1 style="font-size: 2.5em">{dataset.name}</h1>
@@ -70,9 +55,14 @@
     </span>
   {/if}
 
-  <span title={dataset.n_structures.toLocaleString()} {@attach tooltip()}>
+  <span
+    title={dataset.n_structures?.toLocaleString() ?? `Structure count not reported`}
+    {@attach tooltip()}
+  >
     <Icon icon={Database} />
-    {format_num(dataset.n_structures, `.3~s`)} structures
+    {dataset.n_structures === null
+      ? `Unknown number of`
+      : format_num(dataset.n_structures, `.3~s`)} structures
   </span>
 
   {#if dataset.n_materials}
@@ -82,13 +72,9 @@
     </span>
   {/if}
 
-  <span
-    title="The dataset is {dataset.open ? `freely ` : `in`}accessible"
-    {@attach tooltip()}
-  >
-    <Icon icon={dataset.open ? Unlock : Lock} />
-    {dataset.open ? `Open` : `Closed`}
-  </span>
+  <span>{title_case(dataset.access)} access</span>
+
+  <span>{title_case(dataset.role)}</span>
 
   <span><Icon icon={License} /> {dataset.license}</span>
 </section>
@@ -106,8 +92,15 @@
 
 <section class="description">
   <h2 id="description">Description</h2>
-  <p>{@html dataset.description_html}</p>
+  {@html dataset.description_html}
 </section>
+
+{#each Object.entries(dataset.notes_html ?? {}) as [title, note] (title)}
+  <details>
+    <summary>{title}</summary>
+    {@html note}
+  </details>
+{/each}
 
 {#if dataset.temperature_range || dataset.pressure_range}
   <section class="conditions">
@@ -148,13 +141,9 @@
       <li>
         Method: <strong>{arr_to_str(dataset.method)}</strong>
       </li>
-      {#if dataset.params}
-        {#each format_params(dataset.params) as [key, value] (key)}
-          <li>
-            {key}: <strong>{value}</strong>
-          </li>
-        {/each}
-      {/if}
+      {#each Object.entries(dataset.params ?? {}) as [key, value] (key)}
+        <li>{title_case(key)}: <strong>{arr_to_str(value)}</strong></li>
+      {/each}
     </ul>
   </section>
 {/if}
@@ -199,7 +188,7 @@
 
 <p>
   See incorrect or missing data? Suggest an edit to
-  <a href="{pkg.repository}/blob/-/data/datasets.yml" {...link_props}> datasets.yml </a>
+  <a href={source_url} {...link_props}>datasets.yml</a>
 </p>
 
 <style>

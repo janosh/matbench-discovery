@@ -7,6 +7,36 @@
  */
 export type HttpUrl = string
 /**
+ * License type:
+ * - MIT: Massachusetts Institute of Technology
+ * - CC-BY-4.0: Creative Commons Attribution 4.0 International
+ * - CC0-1.0: Creative Commons Zero public domain dedication
+ * - CC-BY-NC-4.0: Creative Commons Attribution-NonCommercial 4.0 International
+ * - CC-BY-SA-4.0: Creative Commons Attribution-ShareAlike 4.0 International
+ * - GPL-3.0: GNU General Public v3.0
+ * - BSD-3-Clause: Berkeley Software Distribution 3-Clause
+ * - LGPL-3.0: GNU Lesser General Public License v3.0
+ * - ASL: Academic Software License
+ * - unreleased: No license since not released
+ *
+ *
+ * This interface was referenced by `DatasetRecord`'s JSON-Schema
+ * via the `definition` "license_enum".
+ */
+export type LicenseEnum =
+  | 'MIT'
+  | 'Apache-2.0'
+  | 'CC-BY-4.0'
+  | 'CC0-1.0'
+  | 'CC-BY-SA-4.0'
+  | 'CC-BY-NC-4.0'
+  | 'GPL-3.0'
+  | 'BSD-3-Clause'
+  | 'LGPL-3.0'
+  | 'Meta Research'
+  | 'ASL'
+  | 'unreleased'
+/**
  * Computational or experimental method used to generate the data
  *
  * This interface was referenced by `DatasetRecord`'s JSON-Schema
@@ -26,6 +56,8 @@ export type DftCodeEnum =
   | 'AbInit'
   | 'FHI-aims'
   | 'CP2K'
+  | 'ORCA'
+  | 'Psi4'
   | 'Various'
 /**
  * Exchange-correlation functional used in DFT calculations
@@ -35,6 +67,7 @@ export type DftCodeEnum =
  */
 export type FunctionalEnum =
   | 'PBE'
+  | 'RPBE'
   | 'PBEsol'
   | 'PBE+U'
   | 'SCAN'
@@ -44,6 +77,12 @@ export type FunctionalEnum =
   | 'HSE'
   | 'HSE06'
   | 'PBE0'
+  | 'wB97M-V'
+  | 'wB97M-D3BJ'
+  | 'wB97X'
+  | 'B3LYP'
+  | 'optB88-vdW'
+  | 'TB-mBJ'
   | 'Various'
 /**
  * Pseudopotentials used in DFT calculations
@@ -52,40 +91,22 @@ export type FunctionalEnum =
  * via the `definition` "pseudo_potentials_enum".
  */
 export type PseudoPotentialsEnum = 'PBE' | 'PBE_52' | 'PBE_54' | 'PBE_64' | 'Various'
-/**
- * License type:
- * - MIT: Massachusetts Institute of Technology
- * - CC-BY-4.0: Creative Commons Attribution 4.0 International
- * - CC-BY-NC-4.0: Creative Commons Attribution-NonCommercial 4.0 International
- * - CC-BY-SA-4.0: Creative Commons Attribution-ShareAlike 4.0 International
- * - GPL-3.0: GNU General Public v3.0
- * - BSD-3-Clause: Berkeley Software Distribution 3-Clause
- * - LGPL-3.0: GNU Lesser General Public License v3.0
- * - ASL: Academic Software License
- * - unreleased: No license since not released
- *
- *
- * This interface was referenced by `DatasetRecord`'s JSON-Schema
- * via the `definition` "license_enum".
- */
-export type LicenseEnum =
-  | 'MIT'
-  | 'Apache-2.0'
-  | 'CC-BY-4.0'
-  | 'CC-BY-SA-4.0'
-  | 'CC-BY-NC-4.0'
-  | 'GPL-3.0'
-  | 'BSD-3-Clause'
-  | 'LGPL-3.0'
-  | 'Meta Research'
-  | 'ASL'
-  | 'unreleased'
 
 export type DatasetRecord = Record<string, Dataset>
 /**
- * This interface was referenced by `DatasetRecord`'s JSON-Schema definition
- * via the `patternProperty` "^[a-zA-Z0-9 ]+$".
- *
+ * This interface was referenced by `DatasetRecord`'s JSON-Schema
+ * via the `definition` "person".
+ */
+export interface Person {
+  name: string
+  affiliation?: string
+  email?: string
+  url?: HttpUrl
+  orcid?: HttpUrl
+  github?: HttpUrl
+  corresponding?: boolean
+}
+/**
  * This interface was referenced by `DatasetRecord`'s JSON-Schema
  * via the `definition` "dataset".
  */
@@ -110,11 +131,12 @@ export interface Dataset {
    * HTML version of the dataset description
    */
   description_html?: string
-  notes?: Record<string, unknown>
+  notes?: Record<string, string>
+  notes_html?: Record<string, string>
   /**
-   * Number of structures in the dataset
+   * Number of atomic configurations, or null when no comparable count is reported; explain counting scope in notes
    */
-  n_structures: number
+  n_structures: number | null
   /**
    * Number of unique materials in the dataset
    */
@@ -156,9 +178,13 @@ export interface Dataset {
    */
   contains?: string[]
   /**
-   * Whether the dataset is openly available
+   * Availability of the full corpus counted in this entry, independent of license restrictions
    */
-  open: boolean
+  access: 'public' | 'partial' | 'unreleased'
+  /**
+   * Primary purpose of this dataset entry; subsets may be used for other purposes
+   */
+  role: 'training' | 'validation' | 'test' | 'repository'
   /**
    * Whether the dataset is a static release or dynamically updated
    */
@@ -174,6 +200,7 @@ export interface Dataset {
     | 'MIT'
     | 'Apache-2.0'
     | 'CC-BY-4.0'
+    | 'CC0-1.0'
     | 'CC-BY-SA-4.0'
     | 'CC-BY-NC-4.0'
     | 'GPL-3.0'
@@ -228,17 +255,4 @@ export interface Dataset {
     pseudopotentials?: PseudoPotentialsEnum | PseudoPotentialsEnum[]
     [k: string]: unknown
   }
-}
-/**
- * This interface was referenced by `DatasetRecord`'s JSON-Schema
- * via the `definition` "person".
- */
-export interface Person {
-  name: string
-  affiliation?: string
-  email?: string
-  url?: HttpUrl
-  orcid?: HttpUrl
-  github?: HttpUrl
-  corresponding?: boolean
 }

@@ -23,14 +23,6 @@
 
   let discovery_set: DiscoverySet = $state(default_discovery_set)
   const filters = make_table_filters()
-  let scatter_path_overrides = $derived(
-    Object.fromEntries(
-      Object.values(labels.DISCOVERY_METRICS).map(({ key }) => [
-        key,
-        `metrics.discovery.${discovery_set}.${key}`,
-      ]),
-    ),
-  )
   let visible_models = $derived(
     ACTIVE_MODELS.filter(
       (model) =>
@@ -91,7 +83,7 @@
   />
 </section>
 
-<h2 id="model-comparison">
+<h2 id="model-comparison" style="text-align: center">
   {@html labels.scatter_axis_label(plot.y)} vs {@html labels.scatter_axis_label(plot.x)}
 </h2>
 
@@ -107,6 +99,6 @@ already the y-axis here, so it wastes the color channel) -->
   bind:x_key={plot.x}
   bind:y_key={plot.y}
   color_key={labels.ALL_METRICS.MAE.key}
-  label_path_overrides={scatter_path_overrides}
+  {discovery_set}
   style="height: 800px"
 />

@@ -1,3 +1,4 @@
+import { goto } from '$app/navigation'
 import { HYPERPARAMS, METADATA_COLS } from '$lib/labels'
 import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
 import type { ModelData } from '$lib/types'
@@ -22,6 +23,10 @@ const scatter_props = {
   color_key: METADATA_COLS.n_training_structures.key,
   show_model_labels: false,
 }
+const marker_color = (marker: Element) =>
+  marker
+    .closest<SVGElement>(`[style*="--point-fill-color"]`)
+    ?.style.getPropertyValue(`--point-fill-color`)
 
 beforeEach(() => {
   vi.spyOn(HTMLElement.prototype, `clientWidth`, `get`).mockReturnValue(800)
@@ -129,7 +134,7 @@ it.each([
   [`color`, `Color`],
   [`size`, `Marker size`],
 ] as const)(
-  `searches the %s picker and updates its data binding and rendered plot`,
+  `selects the %s property and updates its data binding and rendered plot`,
   async (dim, label) => {
     const models = [1, 4, 10].map((value, idx) => ({
       ...make_models(value, value)[0],
@@ -157,11 +162,12 @@ it.each([
     await tick()
     expect(
       document.querySelectorAll(`.property-picker input[role="combobox"]`),
-    ).toHaveLength(4)
+    ).toHaveLength(1)
+    expect(document.querySelectorAll(`.interactive-axis-label button`)).toHaveLength(2)
     const rendered_values = () =>
       dim === `color` || dim === `size`
         ? [...document.querySelectorAll(`path.marker`)].map((marker) =>
-            marker.getAttribute(dim === `color` ? `fill` : `d`),
+            dim === `color` ? marker_color(marker) : marker.getAttribute(`d`),
           )
         : [...document.querySelectorAll(`.${dim}-axis .tick text`)].map(
             (tick_label) => tick_label.textContent,
@@ -206,6 +212,79 @@ it(`keeps duplicate-label series distinct and collapses their legend`, async () 
   doc_query(`.collapsible-legend .controls-row`).dispatchEvent(click())
   await tick()
   expect(document.querySelector(`button.models-toggle`)).not.toBeNull()
+})
+
+it(`renders category colors and dataset links without model metadata`, async () => {
+  const datasets = [
+    { slug: `public-set`, name: `Public set`, count: 100, access: `public` },
+    { slug: `partial-set`, name: `Partial set`, count: 200, access: `partial` },
+    { slug: `unknown-access`, name: `Unknown access`, count: 300, access: `unknown` },
+    { slug: `missing-count`, name: `Missing count`, count: null, access: `public` },
+  ]
+  const categories = { public: `#25836d`, partial: `#b16c00` }
+  const props = {
+    models: datasets,
+    get_identity: ({ slug, name }: (typeof datasets)[number]) => ({
+      key: slug,
+      name,
+      href: `/data/${slug}`,
+    }),
+    options: [
+      { key: `count`, label: `Count`, description: `Structure count` },
+      { key: `unreported`, label: `Unreported`, description: `No values available` },
+      {
+        key: `access`,
+        label: `Access`,
+        description: `Corpus availability`,
+        categories,
+      },
+    ],
+    x_key: `count`,
+    y_key: `count`,
+    color_key: `access`,
+    size_key: `count`,
+    legend: null,
+    hovered: true,
+  }
+  mount<typeof props, Record<string, unknown>>(DynamicScatter, {
+    target: document.body,
+    props,
+  })
+  await tick()
+  const markers = [...document.querySelectorAll<SVGPathElement>(`path.marker`)]
+  expect(markers).toHaveLength(2)
+  expect(doc_query(`.property-picker .selected-label small`).textContent).toMatch(
+    /3\s+models/,
+  )
+  const category_fills = markers.map(marker_color)
+  expect(doc_query(`.colorbar .property-select`).textContent).toContain(`Access`)
+  expect(doc_query(`.colorbar-wrapper`).getAttribute(`role`)).toBe(`group`)
+  expect(document.querySelector(`.colorbar .bar`)).toBeNull()
+  for (const [idx, color] of Object.values(categories).entries()) {
+    expect(category_fills[idx]).toBe(color)
+  }
+  markers[1].dispatchEvent(new MouseEvent(`click`, { bubbles: true }))
+  expect(goto).toHaveBeenCalledWith(`/data/partial-set`)
+  await choose_scatter_property(`Color`, `Count`)
+  expect(document.querySelector(`.category-legend`)).toBeNull()
+  expect(document.querySelector(`.colorbar .bar`)).not.toBeNull()
+  expect(document.querySelectorAll(`path.marker`)).toHaveLength(3)
+  expect(markers.map(marker_color)).not.toEqual(category_fills)
+  doc_query<SVGPathElement>(`path.marker`).dispatchEvent(
+    new MouseEvent(`click`, { bubbles: true }),
+  )
+  await tick()
+  await choose_scatter_property(`Color`, `Access`)
+  expect(document.querySelectorAll(`path.marker`)).toHaveLength(2)
+  await choose_scatter_property(`Color`, `Unreported`)
+  expect(document.querySelectorAll(`path.marker`)).toHaveLength(0)
+  expect(document.querySelector(`.colorbar .bar`)).toBeNull()
+  expect(doc_query(`.colorbar .property-select`).textContent).toContain(`Unreported`)
+  await choose_scatter_property(`Color`, `Access`)
+  expect(document.querySelectorAll(`path.marker`)).toHaveLength(2)
+  expect([...document.querySelectorAll(`path.marker`)].map(marker_color)).toEqual(
+    category_fills,
+  )
 })
 
 it(`dims and unlabels models outside highlight_keys, drawing highlighted ones last`, async () => {

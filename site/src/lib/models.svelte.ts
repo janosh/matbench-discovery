@@ -44,22 +44,25 @@ const MODEL_COLORS = [
 
 // Calculate the total number of materials and structures in a model's training set
 export function calculate_training_sizes(model_train_sets: string[]): {
-  total_materials: number
-  total_structures: number
+  total_materials: number | null
+  total_structures: number | null
 } {
-  let total_materials = 0
-  let total_structures = 0
-
-  for (const data_name of model_train_sets) {
+  const datasets = model_train_sets.map((data_name) => {
     if (!(data_name in DATASETS)) {
       throw new Error(`Training set ${data_name} not found in DATASETS`)
     }
-    const { n_structures, n_materials = n_structures } = DATASETS[data_name]
-    total_materials += n_materials
-    total_structures += n_structures
+    return DATASETS[data_name]
+  })
+  const total = (field: `n_materials` | `n_structures`): number | null => {
+    const counts = datasets.map((dataset) => dataset[field])
+    return counts.every((count) => count != null)
+      ? counts.reduce((sum, count) => sum + count, 0)
+      : null
   }
-
-  return { total_materials, total_structures }
+  return {
+    total_materials: total(`n_materials`),
+    total_structures: total(`n_structures`),
+  }
 }
 
 function to_model_data([key, metadata]: [string, ModelData], index: number): ModelData {
