@@ -206,6 +206,8 @@ metrics:
       url: https://figshare.com/files/68520235
       size: 246939
       md5: 4fb4e3c584c115d7b4139f8e3a5662e1
+    hardware: NVIDIA A800 SXM4 80GB # single GPU, confirmed in PR #397
+    run_time_sec: 3739.2 # s, from prediction run_metadata
     pbe_wall_dist_mae: 0.235
     pbe_energy_mae: 1.103
     pbe_bond_length_error: 0.06076
