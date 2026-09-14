@@ -58,11 +58,11 @@ describe(`model_metric_ranks`, () => {
       RANKED_METRICS.map(({ label, rank_href }) => [label, rank_href]),
     ).toStrictEqual([
       [`CPS`, `/`],
-      [`Discovery F1`, `/tasks/discovery`],
-      [`Geo Opt RMSD`, `/tasks/geo-opt`],
-      [`Phonons κ<sub>SRME</sub>`, `/tasks/phonons`],
-      [`MD CMDS`, `/tasks/md`],
-      [`Diatomics CDS`, `/tasks/diatomics`],
+      [`Discovery F1`, `/benchmarks/discovery`],
+      [`Geo Opt RMSD`, `/benchmarks/geo-opt`],
+      [`Phonons κ<sub>SRME</sub>`, `/benchmarks/phonons`],
+      [`MD CMDS`, `/benchmarks/md`],
+      [`Diatomics CDS`, `/benchmarks/diatomics`],
     ])
   })
 })

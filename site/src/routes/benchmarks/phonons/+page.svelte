@@ -1,4 +1,6 @@
 <script lang="ts">
+  import TestSet from '$lib/benchmark/TestSet.svelte'
+  import TaskNavigation from '$lib/benchmark/TaskNavigation.svelte'
   import MetricsTable from '$lib/table/MetricsTable.svelte'
   import { by_benchmark_added_desc } from '$lib'
   import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
@@ -7,14 +9,9 @@
   import { load_kappa_analysis, type KappaAnalysis } from '$lib/parity/kappa-parity'
   import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
   import KappaParityPlot from '$lib/plot/KappaParityPlot.svelte'
-  import { bind_url_params, UrlPlotState } from '$lib/url-state.svelte'
+  import { bind_url_params } from '$lib/url-state.svelte'
   import { valid_query_param } from 'svelte-widgets/url-params'
-  import {
-    PHONON_METRICS,
-    scatter_axis_label,
-    scatter_options_by_key,
-    task_page_visible_cols,
-  } from '$lib/labels'
+  import { PHONON_METRICS, scatter_axis_label, task_page_visible_cols } from '$lib/labels'
   import { format_num } from 'matterviz/labels'
   import { MultiSelect, Spinner } from 'svelte-widgets'
   import { onMount } from 'svelte'
@@ -47,17 +44,10 @@
   ]
   const default_sort_mode: SortMode = `kappa`
   // Axis selections also drive the model-comparison section title.
-  const plot = new UrlPlotState(
-    {
-      x: PHONON_METRICS.κ_SRE.key,
-      y: PHONON_METRICS.κ_SRME.key,
-      sort: {
-        column: PHONON_METRICS.κ_SRME.key,
-        dir: `asc`,
-      },
-    },
-    scatter_options_by_key,
-  )
+  let plot = $state({
+    x: PHONON_METRICS.κ_SRE.key,
+    y: PHONON_METRICS.κ_SRME.key,
+  })
   const model_keys = new Set(leaderboard_models.map((model) => model.model_key))
 
   let sort_mode = $state<SortMode>(default_sort_mode)
@@ -73,9 +63,9 @@
   let kappa_analysis = $state.raw<KappaAnalysis>()
   let analysis_error = $state(``)
   onMount(() => {
-    void load_kappa_analysis()
+    load_kappa_analysis()
       .then((analysis) => (kappa_analysis = analysis))
-      .catch((error) => (analysis_error = get_error_message(error)))
+      .catch((error: unknown) => (analysis_error = get_error_message(error)))
   })
   // per-material diagnostics (SRME scatter + frequency parity) for the selected model
   let selected_diagnostics = $derived(
@@ -102,13 +92,11 @@
   const read_url_params = (params: URLSearchParams) => {
     selected_key = valid_query_param(params, `model`, default_selected_key, model_keys)
     sort_mode = valid_query_param(params, `model_sort`, default_sort_mode, sort_compare)
-    plot.read(params)
     filters.read(params)
   }
   bind_url_params(read_url_params, () => [
     [`model`, selected_key, default_selected_key],
     [`model_sort`, sort_mode, default_sort_mode],
-    ...plot.url_entries,
     ...filters.url_entries,
   ])
 
@@ -118,34 +106,17 @@
 
 <h1 id="mlff-phonon-modeling-metrics">MLFF Phonon Modeling Metrics</h1>
 
-<div class="task-intro">
-  <div>
-    <p>
-      This benchmark evaluates 300 K lattice thermal conductivity for 103 Materials
-      Project crystals from the <a href={phonon_url}>PhononDB PBE test set</a>. After one
-      simultaneous cell-and-site relaxation, finite-displacement forces yield second- and
-      third-order force constants and each material's conductivity.
-    </p>
-    <p>
-      κ<sub>SRME</sub> compares mode contributions before summation, while κ<sub>SRE</sub>
-      compares only the final scalar conductivity, where cancellation can hide errors. Both
-      range from 0 (perfect) to 2 (maximum error), with lower values better. κ<sub
-        >SRD</sub
-      > retains the sign of the scalar error to show systematic under- or overprediction.
-    </p>
-  </div>
-</div>
+<p>
+  This task evaluates how well ML force fields reproduce phonons and lattice thermal
+  conductivity at 300 K.
+</p>
+<p>
+  Reference data: <a href="#test-set">PhononDB PBE</a>. The headline κ<sub>SRME</sub> metric
+  compares mode contributions before summation, from 0 (perfect) to 2 (maximum error); lower
+  is better.
+</p>
 
-<blockquote style="margin-block: 1em 2em">
-  κ<sub>SRME</sub> follows the method of
-  <a href="https://arxiv.org/abs/2408.00755v4">Póta et al.</a>. See the implementations
-  for
-  <a href="{github_src_url}/phonons/thermal_conductivity.py">
-    phonon and conductivity prediction</a
-  >
-  and
-  <a href="{github_src_url}/metrics/phonons.py">metric evaluation</a>.
-</blockquote>
+<TaskNavigation />
 
 <h2 id="leaderboard">Leaderboard</h2>
 <p>
@@ -158,7 +129,7 @@
   <MetricsTable
     model_filter={has_phonon_metrics}
     col_filter={(col) => visible_cols[col.key] ?? true}
-    bind:sort={plot.sort}
+    default_sort={{ column: PHONON_METRICS.κ_SRME.key, dir: `asc` }}
     {filters}
   />
 </section>
@@ -238,7 +209,11 @@
       />
     </div>
   {:else if analysis_error}
-    <p role="alert">{analysis_error}</p>
+    <div class="diagnostics-error" role="alert" style="overflow-wrap: anywhere">
+      <p>Could not load per-material phonon diagnostics.</p>
+      <button onclick={() => location.reload()}>Reload page</button>
+      <details><summary>Asset details</summary>{analysis_error}</details>
+    </div>
   {:else if kappa_analysis}
     <!-- analysis loaded but has no entry for this model: don't spin forever -->
     <p style="text-align: center; color: var(--text-muted)">
@@ -248,6 +223,30 @@
     <Spinner text="Loading per-material phonon diagnostics..." />
   {/if}
 {/if}
+
+<TestSet task="phonons" />
+
+<h2 id="methodology">Methodology</h2>
+<p>
+  The <a href={phonon_url}>PhononDB PBE test set</a> contains 103 Materials Project crystals.
+  After one simultaneous cell-and-site relaxation, finite-displacement forces yield second-
+  and third-order force constants and each material's conductivity.
+</p>
+<p>
+  κ<sub>SRME</sub> compares mode contributions before summation, while κ<sub>SRE</sub>
+  compares only the final scalar conductivity, where cancellation can hide errors. Both range
+  from 0 (perfect) to 2 (maximum error), with lower values better. κ<sub>SRD</sub>
+  retains the sign of the scalar error to show systematic under- or overprediction.
+</p>
+<p>
+  κ<sub>SRME</sub> follows the method of
+  <a href="https://arxiv.org/abs/2408.00755v4">Póta et al.</a>. See the implementations
+  for
+  <a href="{github_src_url}/phonons/thermal_conductivity.py"
+    >phonon and conductivity prediction</a
+  >
+  and <a href="{github_src_url}/metrics/phonons.py">metric evaluation</a>.
+</p>
 
 <style>
   .kappa-model-select {

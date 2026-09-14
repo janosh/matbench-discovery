@@ -1,8 +1,5 @@
 import { OPENNESS_OPTIONS } from '$lib/url-state.svelte'
 import { comparison } from '$lib/model-comparison.svelte'
-import { afterNavigate } from '$app/navigation'
-import { page } from '$app/state'
-import type { AfterNavigate } from '@sveltejs/kit'
 import Page from '$routes/+page.svelte'
 import { flushSync, tick } from 'svelte'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -11,6 +8,7 @@ import {
   header_name,
   mount,
   mount_with_url,
+  navigate,
   POPOVER_OPEN_ATTR,
   query_param,
   sorted_header,
@@ -115,7 +113,7 @@ describe(`Landing Page`, () => {
     ])
     expect(plots[0].nextElementSibling).toBe(plots[1])
     expect(doc_query(`p`, plots[1]).querySelector(`a`)).toBeNull()
-    expect(document.querySelectorAll(`a[href="/tasks"]`)).toHaveLength(1)
+    expect(document.querySelectorAll(`a[href="/benchmarks"]`)).toHaveLength(1)
     expect(document.querySelectorAll(`a[href="/contribute"]`)).toHaveLength(1)
     const details = [...document.querySelectorAll<HTMLDetailsElement>(`.page-details`)]
     expect(
@@ -135,15 +133,27 @@ describe(`Landing Page`, () => {
         link.getAttribute(`href`),
       ]),
     ).toEqual([
-      [`crystal discovery`, `/tasks/discovery`],
-      [`geometry optimization`, `/tasks/geo-opt`],
-      [`phonons`, `/tasks/phonons`],
-      [`molecular dynamics`, `/tasks/md`],
-      [`diatomics`, `/tasks/diatomics`],
+      [`crystal discovery`, `/benchmarks/discovery`],
+      [`geometry optimization`, `/benchmarks/geo-opt`],
+      [`phonons`, `/benchmarks/phonons`],
+      [`molecular dynamics`, `/benchmarks/md`],
+      [`diatomics`, `/benchmarks/diatomics`],
     ])
     expect(doc_query(`#about-benchmark a[href^="https://doi.org/"]`)).toBeDefined()
-    expect(doc_query(`figcaption a[href="/rss.xml"]`).textContent?.trim()).toBe(`RSS`)
-    expect(doc_query(`button[aria-label="Export"]`)).toBeDefined()
+    expect(document.querySelector(`.table-footer`)).toBeNull()
+    for (const [href, label] of [
+      [`/contribute`, `Submit a model`],
+      [`/rss.xml`, `RSS`],
+    ]) {
+      const link = doc_query(`.control-buttons a[href="${href}"]`)
+      expect(link.textContent?.trim()).toBe(label)
+      expect(link.compareDocumentPosition(doc_query(`table`))).toBe(
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      )
+    }
+    expect(
+      doc_query(`.control-buttons button[aria-haspopup="menu"]`).textContent?.trim(),
+    ).toBe(`Export`)
   })
 
   it.each([
@@ -201,7 +211,7 @@ describe(`Landing Page`, () => {
     const note = doc_query(`.task-note`)
     expect(note.textContent).toContain(`MD is in beta.`)
     expect(note.textContent).toContain(`preliminary and may change`)
-    expect(doc_query(`a`, note).getAttribute(`href`)).toBe(`/tasks/md`)
+    expect(doc_query(`a`, note).getAttribute(`href`)).toBe(`/benchmarks/md`)
     await select_preset(`Discovery`)
     expect(document.querySelector(`.task-note`)).toBeNull()
   })
@@ -248,37 +258,47 @@ describe(`Landing Page`, () => {
     expect(document.querySelectorAll(`tbody tr`)).toHaveLength(model_count)
   })
 
-  it(`auto-sorts presets until the user manually sorts the table`, async () => {
-    const cps_values = [...document.querySelectorAll(`td[data-col="CPS"]`)]
-      .map((cell) => Number(cell.textContent?.trim()))
-      .filter(Number.isFinite)
-    expect(cps_values.length).toBeGreaterThan(1)
-    expect(cps_values).toStrictEqual(
-      [...cps_values].toSorted((value_1, value_2) => value_2 - value_1),
-    )
-    expect_sort(`CPS`, `descending`)
+  it.each([`click`, `Enter`, ` `])(
+    `auto-sorts presets until manual sorting with %j`,
+    async (event_type) => {
+      const cps_values = [...document.querySelectorAll(`td[data-col="CPS"]`)]
+        .map((cell) => Number(cell.textContent?.trim()))
+        .filter(Number.isFinite)
+      expect(cps_values.length).toBeGreaterThan(1)
+      expect(cps_values).toStrictEqual(
+        [...cps_values].toSorted((value_1, value_2) => value_2 - value_1),
+      )
+      expect_sort(`CPS`, `descending`)
 
-    doc_query(`section.full-bleed`).click()
-    await tick()
-    await select_preset(`MD`)
-    expect(header_text()).toContain(`CMDS ↑`)
+      doc_query(`section.full-bleed`).click()
+      await tick()
+      await select_preset(`MD`)
+      expect(header_text()).toContain(`CMDS ↑`)
 
-    table_header(`F1`).click()
-    await tick()
-    expect(header_text()).toMatch(/F1 [↑↓]/)
+      const f1_header = table_header(`F1`)
+      // Sortable headers retain their column-header semantics.
+      f1_header.setAttribute(`role`, `columnheader`)
+      if (event_type === `click`) f1_header.click()
+      else
+        f1_header.dispatchEvent(
+          new KeyboardEvent(`keydown`, { key: event_type, bubbles: true }),
+        )
+      await tick()
+      expect(header_text()).toMatch(/F1 [↑↓]/)
 
-    await select_preset(`Geo Opt`)
-    expect(header_text()).toMatch(/F1 [↑↓]/)
-    expect(header_text()).not.toContain(`RMSD ↓`)
+      await select_preset(`Geo Opt`)
+      expect(header_text()).toMatch(/F1 [↑↓]/)
+      expect(header_text()).not.toContain(`RMSD ↓`)
 
-    preset_button(`Geo Opt`).focus()
-    preset_button(`Geo Opt`).dispatchEvent(
-      new KeyboardEvent(`keydown`, { key: `ArrowRight`, bubbles: true }),
-    )
-    await tick()
-    expect(pressed_toggle(`Discovery`)).toBe(`Phonons`)
-    expect(header_text()).toMatch(/F1 [↑↓]/)
-  })
+      preset_button(`Geo Opt`).focus()
+      preset_button(`Geo Opt`).dispatchEvent(
+        new KeyboardEvent(`keydown`, { key: `ArrowRight`, bubbles: true }),
+      )
+      await tick()
+      expect(pressed_toggle(`Discovery`)).toBe(`Phonons`)
+      expect(header_text()).toMatch(/F1 [↑↓]/)
+    },
+  )
 
   it(`updates column visibility when toggling checkboxes`, async () => {
     const columns_button = doc_query<HTMLButtonElement>(`details.column-toggles summary`)
@@ -338,8 +358,10 @@ describe(`Landing Page`, () => {
     const filtered_model_count = document.querySelectorAll(`tbody tr`).length
     expect(filtered_model_count).toBeLessThan(model_count_on_load)
     expect(selected_scatter_label()).toContain(`${filtered_model_count} models`)
-    const model_count = doc_query(`.table-footer p`)
-    expect(model_count.textContent?.trim()).toBe(`${filtered_model_count} models`)
+    const model_count = doc_query(`.ranking-context strong`)
+    expect(model_count.textContent).toMatch(
+      new RegExp(`^${filtered_model_count} of \\d+ eligible models$`),
+    )
 
     doc_query(`tbody tr`).dispatchEvent(new MouseEvent(`dblclick`, { bubbles: true }))
     await tick()
@@ -349,27 +371,21 @@ describe(`Landing Page`, () => {
     selected_only.click()
     await tick()
     expect(document.querySelectorAll(`tbody tr`)).toHaveLength(1)
-    expect(model_count.textContent?.trim()).toBe(`1 model`)
+    expect(model_count.textContent).toMatch(/^1 of \d+ eligible models$/)
     comparison.set([])
     await tick()
-    expect(model_count.textContent?.trim()).toBe(`0 models`)
+    expect(model_count.textContent).toMatch(/^0 of \d+ eligible models$/)
     selected_only.click()
     await tick()
-    expect(model_count.textContent?.trim()).toBe(`${filtered_model_count} models`)
+    expect(model_count.textContent).toMatch(
+      new RegExp(`^${filtered_model_count} of \\d+ eligible models$`),
+    )
   })
 })
 
 describe(`Landing Page URL state`, () => {
   const column_checkbox = () =>
     doc_query<HTMLInputElement>(`.column-menu input[type="checkbox"]:not(:disabled)`)
-  const navigate = async (query: string, type: AfterNavigate[`type`] = `link`) => {
-    const read_url = vi.mocked(afterNavigate).mock.calls.at(-1)?.[0]
-    if (!read_url) throw new Error(`Missing URL navigation handler`)
-    page.url.search = query
-    history.replaceState(null, ``, `/${query}`)
-    read_url({ type } as AfterNavigate)
-    await tick()
-  }
 
   it.each([
     [`http://localhost/?preset=MD&sort=F1`, `F1`, `descending`],
@@ -392,7 +408,7 @@ describe(`Landing Page URL state`, () => {
     [`Diatomics`, `CDS`, `diatomics_combined_score`, `descending`],
   ] as const)(
     `canonicalizes %s URLs and preserves sorting after customizing columns`,
-    async (preset, sorted_column, sort_key, direction) => {
+    async (preset, sorted_column, _sort_key, direction) => {
       await mount_with_url(
         Page,
         `http://localhost/?preset=MD&sort=combined_score&dir=desc`,
@@ -408,9 +424,12 @@ describe(`Landing Page URL state`, () => {
       column_checkbox().click()
       await tick()
       const custom_query = location.search
-      expect(query_param(`preset`)).toBeNull()
-      expect(query_param(`sort`)).toBe(sort_key)
-      expect(query_param(`dir`)).toBe(direction === `ascending` ? `asc` : null)
+      const custom_headers = [...document.querySelectorAll(`thead th`)].map(header_name)
+      const cohort_size = document.querySelectorAll(`tbody tr`).length
+      expect(query_param(`preset`)).toBe(preset === `Discovery` ? null : preset)
+      expect(query_param(`columns`)).not.toBeNull()
+      expect(query_param(`sort`)).toBeNull()
+      expect(query_param(`dir`)).toBeNull()
 
       doc_query<HTMLButtonElement>(
         `button[aria-label="Reset all columns to defaults"]`,
@@ -421,21 +440,31 @@ describe(`Landing Page URL state`, () => {
       expect(query_param(`dir`)).toBeNull()
 
       await navigate(custom_query)
-      expect(pressed_toggle(`Discovery`)).toBe(`Discovery`)
+      expect(pressed_toggle(`Discovery`)).toBe(preset)
       expect_sort(sorted_column, direction)
+      expect([...document.querySelectorAll(`thead th`)].map(header_name)).toEqual(
+        custom_headers,
+      )
+      expect(document.querySelectorAll(`tbody tr`)).toHaveLength(cohort_size)
     },
   )
 
+  it(`renders unknown URL sort labels as text`, async () => {
+    const unknown_metric = `<b>unknown metric</b>`
+    await mount_with_url(
+      Page,
+      `http://localhost/?sort=${encodeURIComponent(unknown_metric)}&columns=Model,F1`,
+    )
+    const context = doc_query(`.ranking-context`)
+    expect(context.textContent).toContain(unknown_metric)
+    expect(context.querySelector(`b`)).toBeNull()
+  })
+
   it(`restores columns, filters, heatmap, and scores on initial and later navigation`, async () => {
-    await mount_with_url(Page, `http://localhost/?heatmap=0&weights=1,0,0`)
+    await mount_with_url(Page, `http://localhost/?heatmap=0`)
 
     const first_row = doc_query(`tbody tr`)
     const cps_cell = doc_query(`td[data-col="CPS"]`, first_row)
-    // With all weight on discovery, CPS is the model's F1 score.
-    expect(cps_cell.textContent).toBe(
-      doc_query(`td[data-col="F1"]`, first_row).textContent,
-    )
-
     const heatmap_toggle = doc_query<HTMLInputElement>(
       `input[aria-label="Toggle heatmap colors"]`,
     )

@@ -1,4 +1,4 @@
-"""Export per-material kappa-103 diagnostics for the /tasks/phonons page.
+"""Export per-material kappa-103 diagnostics for the /benchmarks/phonons page.
 
 Writes site/src/figs/kappa-103-analysis.jsonl with, for every model with kappa_103
 predictions:

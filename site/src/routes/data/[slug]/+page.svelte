@@ -14,22 +14,50 @@
     Email,
     GitHub,
     Globe,
+    Key,
     Lattice,
     License,
     ORCID,
+    Tag,
   } from 'svelte-widgets/icons'
   import pkg from '$site/package.json'
   import { tooltip } from 'svelte-widgets/attachments'
   import type { PageData } from './$types'
   import MPtrjTargetDistros from './MPtrjTargetDistros.svelte'
+  import WbmDetails from './WbmDetails.svelte'
 
   let { data }: { data: PageData } = $props()
   let dataset = $derived(data.dataset)
   const link_props = { target: `_blank`, rel: `noopener noreferrer` }
   const source_url = `${pkg.repository}/blob/main/data/datasets.yml`
 
-  let created_ago = $derived(format_relative_time(dataset.date_created))
-  let added_ago = $derived(format_relative_time(dataset.date_added))
+  const metadata = $derived([
+    [Tag, dataset.version ? `Version: ${dataset.version}` : null],
+    [
+      Calendar,
+      `Created: ${format_date(dataset.date_created)}`,
+      format_relative_time(dataset.date_created),
+    ],
+    [
+      CalendarPlus,
+      dataset.date_added ? `Added: ${format_date(dataset.date_added)}` : null,
+      format_relative_time(dataset.date_added),
+    ],
+    [
+      Database,
+      dataset.n_structures === null
+        ? `Unknown number of structures`
+        : `${format_num(dataset.n_structures, `.3~s`)} structures`,
+      dataset.n_structures?.toLocaleString() ?? `Structure count not reported`,
+    ],
+    [
+      Lattice,
+      dataset.n_materials ? `${format_num(dataset.n_materials, `.3~s`)} materials` : null,
+      dataset.n_materials?.toLocaleString(),
+    ],
+    [Key, `${title_case(dataset.access)} access`],
+    [License, dataset.license],
+  ] as const)
   let dataset_links = $derived([
     [dataset.url, `Website`, Globe, `View dataset website`],
     [dataset.download_url, `Download`, Download, `Download dataset`],
@@ -41,42 +69,14 @@
 <h1 style="font-size: 2.5em">{dataset.name}</h1>
 
 <section class="meta-info">
-  {#if dataset.version}
-    <span>Version: {dataset.version}</span>
-  {/if}
-
-  <span title={created_ago} {@attach tooltip()}>
-    <Icon icon={Calendar} /> Created: {format_date(dataset.date_created)}
-  </span>
-
-  {#if dataset.date_added}
-    <span title={added_ago} {@attach tooltip()}>
-      <Icon icon={CalendarPlus} /> Added: {format_date(dataset.date_added)}
-    </span>
-  {/if}
-
-  <span
-    title={dataset.n_structures?.toLocaleString() ?? `Structure count not reported`}
-    {@attach tooltip()}
-  >
-    <Icon icon={Database} />
-    {dataset.n_structures === null
-      ? `Unknown number of`
-      : format_num(dataset.n_structures, `.3~s`)} structures
-  </span>
-
-  {#if dataset.n_materials}
-    <span title={dataset.n_materials.toLocaleString()} {@attach tooltip()}>
-      <Icon icon={Lattice} />
-      {format_num(dataset.n_materials, `.3~s`)} materials
-    </span>
-  {/if}
-
-  <span>{title_case(dataset.access)} access</span>
-
-  <span>{title_case(dataset.role)}</span>
-
-  <span><Icon icon={License} /> {dataset.license}</span>
+  {#each metadata as [icon, label, title] (icon)}
+    {#if label !== null}
+      <span {title} {@attach title ? tooltip() : undefined}>
+        <Icon {icon} />
+        {label}
+      </span>
+    {/if}
+  {/each}
 </section>
 
 <section class="links">
@@ -184,6 +184,8 @@
 
 {#if dataset.slug === `mptrj`}
   <MPtrjTargetDistros />
+{:else if dataset.slug === `wbm`}
+  <WbmDetails />
 {/if}
 
 <p>
@@ -202,6 +204,10 @@
     gap: 3ex;
     place-content: center;
     margin: 2em auto;
+    :global(svg) {
+      width: 1.2em;
+      transform: translateY(-2px);
+    }
   }
   section.method-info ul {
     display: flex;

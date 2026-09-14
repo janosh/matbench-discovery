@@ -1,29 +1,3 @@
-<script module lang="ts">
-  import { ACTIVE_MODELS } from '$lib/models.svelte'
-  import { parse_targets, TARGET_OUTPUTS, type TargetOutput } from '$lib/url-state.svelte'
-
-  const target_outputs = Object.entries(TARGET_OUTPUTS) as [TargetOutput, string][]
-  // static per-category model tallies shown in the filter panels. Semantics mirror
-  // UrlTableFilters.matches: targets use the same parser, and fs_mode `any` counts
-  // every model.
-  const openness_counts: Record<string, number> = {}
-  const training_counts: Record<string, number> = {}
-  const target_counts: Record<string, number> = {}
-  const fs_mode_counts: Record<string, number> = { any: ACTIVE_MODELS.length }
-  for (const model of ACTIVE_MODELS) {
-    const openness = model.openness
-    openness_counts[openness] = (openness_counts[openness] ?? 0) + 1
-    for (const dataset of model.training_sets) {
-      training_counts[dataset] = (training_counts[dataset] ?? 0) + 1
-    }
-    const { outputs, fs_mode } = parse_targets(model.targets)
-    for (const output of outputs) {
-      target_counts[output] = (target_counts[output] ?? 0) + 1
-    }
-    if (fs_mode) fs_mode_counts[fs_mode] = (fs_mode_counts[fs_mode] ?? 0) + 1
-  }
-</script>
-
 <script lang="ts">
   import type { Column } from 'matterviz/table'
   import {
@@ -34,14 +8,18 @@
   } from '$lib/filter-presets.svelte'
   import { openness_tooltips } from '$lib/metrics'
   import { comparison, row_model_key } from '$lib/model-comparison.svelte'
-  import { make_table_filters } from '$lib/models.svelte'
+  import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
+  import type { ModelData } from '$lib/types'
   import {
     DEFAULT_TARGETS_PARAM,
     FS_MODES,
     OPENNESS_OPTIONS,
     TRAIN_FILTER_MODES,
+    parse_targets,
+    TARGET_OUTPUTS,
+    type TargetOutput,
+    type UrlTableFilters,
   } from '$lib/url-state.svelte'
-  import type { UrlTableFilters } from '$lib/url-state.svelte'
   import { Icon, Sheet } from 'svelte-widgets'
   import { Cross, Filter, Scale } from 'svelte-widgets/icons'
   import { ToggleMenu } from 'matterviz/table'
@@ -52,12 +30,47 @@
   let {
     columns = $bindable([]),
     filters = make_table_filters(),
+    models = ACTIVE_MODELS,
+    leading,
+    trailing,
     ...rest
   }: HTMLAttributes<HTMLDivElement> & {
     columns?: Column[]
     filters?: UrlTableFilters
+    models?: ModelData[]
+    leading?: Snippet
+    trailing?: Snippet
   } = $props()
   let selected_count = $derived(comparison.keys.size)
+  const target_outputs = Object.entries(TARGET_OUTPUTS) as [TargetOutput, string][]
+  const counts = $derived.by(() => {
+    const openness: Record<string, number> = {}
+    const training: Record<string, number> = {}
+    const targets: Record<string, number> = {}
+    const fs_modes: Record<string, number> = { any: 0 }
+    for (const model of models) {
+      if (filters.show_selected_only && !comparison.keys.has(model.model_key)) continue
+      if (filters.matches_except(model, { openness: true })) {
+        openness[model.openness] = (openness[model.openness] ?? 0) + 1
+      }
+      for (const dataset of model.training_sets) {
+        if (filters.matches_except(model, { training: dataset })) {
+          training[dataset] = (training[dataset] ?? 0) + 1
+        }
+      }
+      const { outputs, fs_mode } = parse_targets(model.targets)
+      for (const [output] of target_outputs) {
+        if (outputs.has(output) && filters.matches_except(model, { target: output })) {
+          targets[output] = (targets[output] ?? 0) + 1
+        }
+      }
+      if (filters.matches_except(model, { fs_mode: true })) {
+        fs_modes.any += 1
+        if (fs_mode) fs_modes[fs_mode] = (fs_modes[fs_mode] ?? 0) + 1
+      }
+    }
+    return { openness, training, targets, fs_modes }
+  })
 
   // Nothing selected yet: seed the comparison with the table's top rows in its current
   // sort order so the dialog opens on a real comparison instead of an empty picker
@@ -87,7 +100,7 @@
   const training_sets_by_model_count = $derived(
     filters.training_sets.toSorted(
       (dataset_left, dataset_right) =>
-        (training_counts[dataset_right] ?? 0) - (training_counts[dataset_left] ?? 0),
+        (counts.training[dataset_right] ?? 0) - (counts.training[dataset_left] ?? 0),
     ),
   )
   // badge shows the active constraints when they differ from the default (require F)
@@ -118,15 +131,22 @@
   {/each}
 {/snippet}
 
+{#snippet filter_chip(label: string, remove: () => void)}
+  <button onclick={remove} aria-label="Remove {label} filter">
+    {label}<Icon icon={Cross} />
+  </button>
+{/snippet}
+
 {#snippet training_filters()}
   <div class="filter-content train-grid">
     <span class="hint">
       <em>require</em> = model's training set must include this dataset,
-      <em>exclude</em> = hide models trained on it
+      <em>exclude</em> = hide models trained on it. Counts show models trained on each dataset
+      after all other filters in this view.
     </span>
     {@render filter_mode_headers()}
     {#each training_sets_by_model_count as dataset_key (dataset_key)}
-      <span>{dataset_key} ({training_counts[dataset_key] ?? 0})</span>
+      <span>{dataset_key} ({counts.training[dataset_key] ?? 0})</span>
       {#each TRAIN_FILTER_MODES as mode (mode)}
         <input
           type="checkbox"
@@ -141,6 +161,7 @@
 
 {#snippet openness_filters()}
   <div class="filter-content">
+    <span class="hint">Counts apply all filters except openness in this view.</span>
     {#each OPENNESS_OPTIONS as openness (openness)}
       <label class="filter-row" title={openness_tooltips[openness]} {@attach tooltip()}>
         <input
@@ -152,7 +173,7 @@
             event.currentTarget.checked = filters.openness.includes(openness)
           }}
         />
-        {openness} ({openness_counts[openness] ?? 0})
+        {openness} ({counts.openness[openness] ?? 0})
       </label>
     {/each}
   </div>
@@ -162,11 +183,12 @@
   <div class="filter-content train-grid">
     <span class="hint">
       Every model predicts energy (E). <em>require</em>/<em>exclude</em> filter by the other
-      predicted outputs; forces are required by default (hides energy-only models)
+      predicted outputs; forces are required by default (hides energy-only models). Counts apply
+      all other filters in this view.
     </span>
     {@render filter_mode_headers()}
     {#each target_outputs as [key, label] (key)}
-      <span>{label} ({key}) ({target_counts[key] ?? 0})</span>
+      <span>{label} ({key}) ({counts.targets[key] ?? 0})</span>
       {#each TRAIN_FILTER_MODES as mode (mode)}
         <input
           type="checkbox"
@@ -181,7 +203,7 @@
       <span class="fs-mode-options">
         {#each FS_MODES as mode (mode)}
           <label>
-            {mode} ({fs_mode_counts[mode] ?? 0})
+            {mode} ({counts.fs_modes[mode] ?? 0})
             <input
               type="radio"
               checked={filters.fs_mode === mode}
@@ -269,6 +291,42 @@
   )}
 {/snippet}
 
+{#if n_train || filters.openness.length < OPENNESS_OPTIONS.length || target_outputs.some(([key]) => filters.targets[key]) || filters.fs_mode !== `any` || filters.show_selected_only}
+  <div class="active-filters" aria-label="Active model filters">
+    <span>Filters:</span>
+    {#each Object.entries(filters.training) as [dataset, mode] (dataset)}
+      {@render filter_chip(`${mode} ${dataset}`, () =>
+        filters.set_training(dataset, mode),
+      )}
+    {/each}
+    {#if filters.openness.length < OPENNESS_OPTIONS.length}
+      {@render filter_chip(
+        `Openness: ${filters.openness.join(`, `)}`,
+        () => (filters.openness = [...OPENNESS_OPTIONS]),
+      )}
+    {/if}
+    {#each target_outputs as [key, label] (key)}
+      {@const mode = filters.targets[key]}
+      {#if mode}
+        {@render filter_chip(`${mode} ${label}`, () => filters.set_target(key, mode))}
+      {/if}
+    {/each}
+    {#if filters.fs_mode !== `any`}
+      {@render filter_chip(
+        `Forces/stress: ${filters.fs_mode}`,
+        () => (filters.fs_mode = `any`),
+      )}
+    {/if}
+    {#if filters.show_selected_only}
+      {@render filter_chip(
+        `Selected models only`,
+        () => (filters.show_selected_only = false),
+      )}
+    {/if}
+  </div>
+{/if}
+
+{@render leading?.()}
 <div class="table-controls" {...rest}>
   <button
     class="compare"
@@ -324,10 +382,10 @@
     <button
       class="clear-filters"
       onclick={() => filters.clear()}
-      title="Reset training-data, openness and target filters"
+      title="Reset filters to defaults, including required forces"
       {@attach tooltip()}
     >
-      <Icon icon={Cross} /> clear filters
+      <Icon icon={Cross} /> Reset filters
     </button>
   {/if}
 
@@ -344,20 +402,38 @@
     <ToggleMenu bind:columns />
   {/if}
 </div>
+{@render trailing?.()}
 
 <style>
   .table-controls {
     position: relative;
     z-index: 5;
     display: inline-flex;
+    flex: 1;
     flex-wrap: wrap;
     justify-content: end;
     gap: 4pt 12pt;
-    align-items: center;
+    align-items: baseline;
     font-size: clamp(9pt, 1.4cqw, 11pt);
   }
   .mobile-filters {
     display: none;
+  }
+  .active-filters {
+    flex-basis: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 0.4em;
+    font-size: clamp(9pt, 1.4cqw, 11pt);
+    button {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3em;
+      padding: 0.1em 0.5em;
+      border-radius: 1em;
+    }
   }
   .desktop-filters {
     display: contents;
@@ -444,8 +520,11 @@
   :is(button.clear-filters, button.filter-sheet-trigger, button.compare) {
     display: inline-flex;
     gap: 3pt;
-    align-items: center;
+    align-items: baseline;
     color: var(--link-color);
+    :global(svg) {
+      align-self: center;
+    }
   }
   button.clear-filters {
     background: none;
@@ -513,11 +592,30 @@
     }
   }
   @media (max-width: 600px) {
+    .table-controls {
+      flex-basis: 100%;
+      order: 1;
+      align-items: center;
+      :is(button.clear-filters, button.filter-sheet-trigger, button.compare) {
+        align-items: center;
+      }
+    }
     .mobile-filters {
       display: contents;
     }
     .desktop-filters {
       display: none;
+    }
+  }
+  @media (pointer: coarse), (max-width: 600px) {
+    .table-controls :is(button, summary, label),
+    .active-filters button {
+      min-height: 36px;
+      align-content: center;
+    }
+    .filter-content input {
+      min-width: 24px;
+      min-height: 24px;
     }
   }
 </style>

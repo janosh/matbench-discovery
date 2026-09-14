@@ -336,6 +336,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     orb_v2_mptrj = auto(), "orb/orb-v2-mptrj.yml"
     orb_v3 = auto(), "orb/orb-v3.yml"
     pet_oam_xl_1_0_0 = auto(), "pet/pet-oam-xl-1.0.0.yml"
+    prophet_oame_mbd = auto(), "prophet/prophet-oame-mbd.yml"
     sevennet_0 = auto(), "sevennet/sevennet-0.yml"
     sevennet_l3i5 = auto(), "sevennet/sevennet-l3i5.yml"
     sevennet_mf_ompa = auto(), "sevennet/sevennet-mf-ompa.yml"
@@ -514,6 +515,7 @@ class DataFiles(Files):
     wbm_dft_geo_opt_symprec_1e_2 = auto()
     wbm_dft_geo_opt_symprec_1e_5 = auto()
     dynamat_v1_0_md_trajectories = auto()
+    diatomics_dft_reference = auto()
 
     @functools.cached_property
     def yaml(self) -> dict[str, dict[str, str]]:

@@ -312,8 +312,16 @@ def test_workflows_refresh_and_deploy_exact_parity_assets(
         "((.structure_bundles // [])[] | .asset)" in deploy
     )
     assert "jq -er" in deploy
-    assert 'startswith($prefix + "-")' in deploy
-    assert "[0-9a-f]{16}\\\\.json\\\\.gz" in deploy
+    build_commands = [
+        step.get("run") for step in yaml.safe_load(deploy)["jobs"]["build"]["steps"]
+    ]
+    assert build_commands.index("pnpm fetch:parity") < build_commands.index(
+        "pnpm build"
+    )
+    with open(f"{ROOT}/site/package.json", encoding="utf-8") as file:
+        assert json.load(file)["scripts"]["fetch:parity"] == (
+            "node scripts/fetch-parity-assets.ts"
+        )
     assert "-*.json.gz" not in deploy
     assert "cancel-in-progress: ${{ github.event_name == 'pull_request' }}" in deploy
     cleanup = deploy.split("prune-parity-assets:", 1)[1]
@@ -366,64 +374,6 @@ def test_site_setup_overlaps_docs_and_propagates_failures(
     assert result.returncode == (install_exit or docs_exit), result.stderr
     assert (tmp_path / "installed").is_file()
     assert (tmp_path / "docs").is_file() == api_docs
-
-
-@pytest.mark.skipif(
-    sys.platform == "win32",
-    reason="runs the Ubuntu download step under /bin/bash with a fake curl",
-)
-@pytest.mark.parametrize("failure", ["", "download", "missing", "unsafe"])
-def test_parity_download_requires_valid_names_and_complete_files(
-    tmp_path: Path, failure: str
-) -> None:
-    """Parallel downloads reject unsafe names, HTTP failures and missing files."""
-    with open(f"{ROOT}/.github/workflows/gh-pages.yml", encoding="utf-8") as file:
-        workflow = yaml.safe_load(file)
-    download = next(
-        step["run"]
-        for step in workflow["jobs"]["build"]["steps"]
-        if step.get("name") == "Download parity assets"
-    )
-    manifest_dir = tmp_path / "src/lib/parity"
-    manifest_dir.mkdir(parents=True)
-    expected_files = []
-    for kind in ("energy", "kappa"):
-        prefix = f"{kind}-parity-test"
-        asset = f"{prefix}-base-{'0' * 16}.json.gz"
-        manifest = {
-            "asset_prefix": prefix,
-            "base": {"asset": "../escape.json.gz" if failure == "unsafe" else asset},
-            "model_assets": {},
-        }
-        (manifest_dir / f"{kind}-parity-manifest.json").write_text(json.dumps(manifest))
-        expected_files.append(tmp_path / f"static/{kind}-parity/assets/{asset}")
-    fake_curl = tmp_path / "curl"
-    fake_curl.write_text(
-        "#!/bin/bash\nset -eu\n"
-        'while [[ "$1" != "--output" ]]; do shift; done\n'
-        '[[ "$FAILURE" != download ]] || exit 22\n'
-        '[[ "$FAILURE" == missing ]] || touch "$2"\n'
-    )
-    fake_curl.chmod(0o755)
-    result = subprocess.run(
-        ["/bin/bash", "-e", "-o", "pipefail", "-c", download],
-        cwd=tmp_path,
-        env=os.environ
-        | {
-            "FAILURE": failure,
-            "RUNNER_TEMP": str(tmp_path),
-            "PATH": f"{tmp_path}:{os.environ['PATH']}",
-        },
-        capture_output=True,
-        check=False,
-        text=True,
-    )
-    if failure:
-        assert result.returncode != 0, result.stdout
-        assert not any(path.is_file() for path in expected_files)
-    else:
-        assert result.returncode == 0, result.stderr
-        assert all(path.is_file() for path in expected_files)
 
 
 @pytest.mark.skipif(

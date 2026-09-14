@@ -16,10 +16,20 @@ import type { EnergyParityBase, EnergyParityModel } from '$lib/parity/energy-par
 import * as energy_parity from '$lib/parity/energy-parity'
 import EnergyParityPlot from '$lib/plot/EnergyParityPlot.svelte'
 import { MODELS } from '$lib/models.svelte'
+import * as matterviz_plot from 'matterviz/plot'
 import { clear_asset_cache, load_json_asset } from '$lib/asset-loader'
 import { gzipSync } from 'node:zlib'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { doc_query, gzipped_json_response, mount, request_url } from '../index'
+import {
+  doc_query,
+  get_scatter_plot_props,
+  gzipped_json_response,
+  mount,
+  request_url,
+} from '../index'
+
+const popup_mock = vi.hoisted(() => vi.fn())
+vi.mock(`matterviz/convex-hull`, () => ({ StructurePopup: popup_mock }))
 
 beforeEach(clear_asset_cache)
 
@@ -51,25 +61,53 @@ if (!first_structure_bundle) {
 }
 
 it(`renders parity statistics through the plot's automatic annotation placement`, async () => {
+  const scatter = vi.spyOn(matterviz_plot, `BinnedScatterPlot`)
   const build_series = vi.spyOn(energy_parity, `build_energy_parity_series`)
+  const structure = { sites: [] }
+  const load_structure = vi
+    .spyOn(energy_parity, `load_wbm_structure`)
+    .mockRejectedValueOnce(new Error(`HTTP 503: structure asset`))
+    .mockResolvedValue(structure)
   vi.spyOn(HTMLElement.prototype, `clientWidth`, `get`).mockReturnValue(800)
   vi.spyOn(HTMLElement.prototype, `clientHeight`, `get`).mockReturnValue(520)
   vi.spyOn(energy_parity, `load_energy_parity_base`).mockResolvedValue(base)
-  vi.spyOn(energy_parity, `load_energy_parity_model`).mockResolvedValue({
-    ...model,
-    model_key: first_model_key,
-  })
+  vi.spyOn(energy_parity, `load_energy_parity_model`)
+    .mockRejectedValueOnce(new Error(`HTTP 503: parity asset`))
+    .mockResolvedValue({
+      ...model,
+      model_key: first_model_key,
+    })
   mount(EnergyParityPlot, {
     target: document.body,
     props: { model: { ...MODELS[0], model_key: first_model_key }, energy_kind: `e-form` },
   })
+  await vi.waitFor(() =>
+    expect(doc_query(`[role="alert"]`).textContent).toContain(`Could not load`),
+  )
+  expect(doc_query(`details`).textContent).toContain(`HTTP 503: parity asset`)
+  doc_query<HTMLButtonElement>(`.plot-state button`).click()
   const badge = await vi.waitFor(() => doc_query(`.annotation .plot-annotation`))
+  expect(document.querySelector(`[role="alert"]`)).toBeNull()
   expect(badge.textContent).toContain(`MAE = 150`)
   expect(badge.textContent).toContain(`R2`)
   expect(badge.style.position).toBe(`static`)
   expect(badge.parentElement?.dataset.decorationLocation).toBeDefined()
   // Loaded arrays are immutable snapshots, not hundreds of thousands of reactive proxies.
   expect(build_series.mock.calls.at(-1)?.[0]).toBe(base)
+  const props = get_scatter_plot_props(scatter) as {
+    on_point_click: (event: { point: { point_id: number } }) => void
+  }
+  props.on_point_click({ point: { point_id: 0 } })
+  await vi.waitFor(() =>
+    expect(doc_query(`.structure-status[role="alert"] details`).textContent).toContain(
+      `HTTP 503: structure asset`,
+    ),
+  )
+  doc_query<HTMLButtonElement>(`.structure-status button`).click()
+  await vi.waitFor(() => expect(popup_mock).toHaveBeenCalled())
+  expect(load_structure).toHaveBeenCalledTimes(2)
+  expect(popup_mock.mock.lastCall?.[1]).toMatchObject({ structure })
+  expect(document.querySelector(`.structure-status`)).toBeNull()
 })
 
 function manifest_sized_base(
@@ -232,9 +270,16 @@ describe(`energy parity data helpers`, () => {
       load: () => load_energy_parity_model(first_model_key),
       error: `Invalid energy parity model: expected ${first_model_key}, got other-model`,
     },
-  ])(`rejects $kind assets ($case)`, async ({ response, load, error }) => {
-    vi.stubGlobal(`fetch`, vi.fn(response))
+  ])(`retries rejected $kind assets ($case)`, async ({ kind, response, load, error }) => {
+    const valid = kind === `base` ? manifest_sized_base() : manifest_sized_model()
+    const fetch_mock = vi
+      .fn(() => gzipped_json_response(kind === `base` ? valid : { model: valid }))
+      .mockImplementationOnce(response)
+    vi.stubGlobal(`fetch`, fetch_mock)
     await expect(load()).rejects.toThrow(error)
+    await expect(load()).resolves.toEqual(valid)
+    await expect(load()).resolves.toEqual(valid)
+    expect(fetch_mock).toHaveBeenCalledTimes(2)
   })
 
   it(`reports a clear error for a stale base asset missing a field`, async () => {

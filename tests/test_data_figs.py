@@ -2,7 +2,10 @@
 
 import gzip
 import json
+from pathlib import Path
 
+import ase.io
+import h5py
 import pandas as pd
 import pymatviz as pmv
 import pytest
@@ -23,6 +26,68 @@ from matbench_discovery.data_figs import (
 )
 from matbench_discovery.energy import mp_elem_ref_entries
 from matbench_discovery.enums import DataFiles, MbdKey
+
+
+def test_export_benchmark_element_counts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Occurrence counts ignore atom multiplicity, frames, and duplicate functionals."""
+    from scripts import export_data_fig_payloads as exporter
+
+    monkeypatch.setattr(
+        DataFiles, "path", property(lambda file: str(tmp_path / file.name))
+    )
+    monkeypatch.setattr(exporter, "ROUTE_DATA_DIR", str(tmp_path))
+    ase.io.write(
+        DataFiles.phonondb_pbe_103_structures.path,
+        [ase.Atoms("H2O"), ase.Atoms("H2")],
+        format="extxyz",
+    )
+    with h5py.File(DataFiles.dynamat_v1_0_md_trajectories.path, "w") as file:
+        for name, numbers in {"water": [1, 1, 8], "hydrogen": [1, 1]}.items():
+            group = file.create_group(name)
+            group["atomic_numbers"] = numbers
+            group.create_dataset("positions", shape=(10, len(numbers), 3))
+            group.attrs["temperature_kelvin"] = 300
+            group.attrs["dt_fs"] = 2
+    with gzip.open(DataFiles.diatomics_dft_reference.path, "wt") as file:
+        json.dump({"PBE": {"H-H": {}}, "r2SCAN": {"H-H": {}, "He-He": {}}}, file)
+
+    exporter.export_benchmark_element_counts()
+    assert json.loads((tmp_path / "benchmark-element-counts.json").read_text()) == {
+        "phonondb": {"H": 2, "O": 1},
+        "dynamat": {"H": 2, "O": 1},
+        "diatomics": {"H": 1, "He": 1},
+    }
+    pd.DataFrame({"n_sites": [2, 2, 3]}).to_csv(DataFiles.wbm_summary.path, index=False)
+    with gzip.open(DataFiles.phonondb_pbe_103_kappa_no_nac.path, "wt") as file:
+        json.dump(
+            [
+                {"temperatures": [600, 300], "kappa_tot_avg": [100, 2]},
+                {"temperatures": [300], "kappa_tot_avg": [8]},
+            ],
+            file,
+        )
+    exporter.export_benchmark_summary()
+    summary = json.loads((tmp_path / "benchmark-reference-summary.json").read_text())
+    assert summary["wbm_n_sites"] == {"x": [2, 3], "y": [2, 1]}
+    assert summary["phonondb_kappa"] == [2, 8]
+    assert summary["md_systems"] == [
+        {
+            "name": "hydrogen",
+            "formula": "H2",
+            "n_atoms": 2,
+            "temperature": 300,
+            "duration_ps": 0.018,
+        },
+        {
+            "name": "water",
+            "formula": "H2O",
+            "n_atoms": 3,
+            "temperature": 300,
+            "duration_ps": 0.018,
+        },
+    ]
 
 
 def test_build_wbm_hull_dist_hist() -> None:

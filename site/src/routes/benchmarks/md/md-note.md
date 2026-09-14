@@ -1,0 +1,3 @@
+The [DynaMat reference set](/benchmarks/md#test-set) spans pure metals, alloys, high-entropy alloys, transition-metal dichalcogenides, perovskites, and molecular crystals at finite temperature. Contributions to expand its coverage are welcome. The public reference data intentionally omits energies and forces. Use the shared runner, [`models/run_md.py`](https://github.com/janosh/matbench-discovery/blob/main/models/run_md.py), to evaluate your model and submit its metrics via [PR](https://github.com/janosh/matbench-discovery/blob/HEAD/contributing.md).
+
+For details on the MD modeling task, the DynaMat reference set and the CMDS metric, refer to [arXiv:2607.03433](https://arxiv.org/abs/2607.03433).

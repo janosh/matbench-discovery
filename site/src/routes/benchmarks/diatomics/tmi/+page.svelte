@@ -86,10 +86,10 @@
 <p>
   Site-projected magnetic moment of each atom (VASP <code>LORBIT=11</code>, in μB) versus
   dimer separation for the
-  <a href="/tasks/diatomics">bundled PBE/r2SCAN DFT reference curves</a>. Solid lines show
-  atom 1, dashed lines atom 2 (they overlap for ferromagnetically coupled branches and
-  mirror each other for broken-symmetry AFM ones). The per-distance spin-ladder winner is
-  shown in the tooltip. Discontinuities in these atom-wise moments flag SCF spin-state
+  <a href="/benchmarks/diatomics">bundled PBE/r2SCAN DFT reference curves</a>. Solid lines
+  show atom 1, dashed lines atom 2 (they overlap for ferromagnetically coupled branches
+  and mirror each other for broken-symmetry AFM ones). The per-distance spin-ladder winner
+  is shown in the tooltip. Discontinuities in these atom-wise moments flag SCF spin-state
   hops that the total energy curve can hide &mdash; a debugging view suggested by
   <a href="https://cbe.princeton.edu/people/andrew-rosen">Andrew Rosen</a>. Full
   provenance in the

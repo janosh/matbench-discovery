@@ -120,6 +120,7 @@ describe(`get_org_logo`, () => {
       ),
     ],
     [`DeePMD`, src_logo(`DeePMD`, `/logos/deepmd.svg`)],
+    [`Kairos Materials`, src_logo(`Kairos Materials`, `/logos/kairos-materials.png`)],
   ])(`returns correct logo data for '%s'`, (input: string, expected: unknown) => {
     expect(get_org_logo(input)).toStrictEqual(expected)
   })

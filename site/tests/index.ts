@@ -1,5 +1,6 @@
 import { gzipSync } from 'node:zlib'
 import type { ModelData } from '$lib/types'
+import type { AfterNavigate } from '@sveltejs/kit'
 import { mount as svelte_mount, tick, unmount } from 'svelte'
 import { afterEach, beforeAll, beforeEach, vi } from 'vitest'
 
@@ -100,6 +101,7 @@ const app_mocks = vi.hoisted(() => ({
     preloadData: vi.fn(),
     preloadCode: vi.fn(),
     beforeNavigate: vi.fn(),
+    onNavigate: vi.fn(),
     afterNavigate: vi.fn((callback: AfterNavigateCallback) => {
       after_navigate_callbacks.push(callback)
     }),
@@ -177,6 +179,22 @@ export async function mount_with_url(
 }
 
 export const query_param = (key: string) => new URLSearchParams(location.search).get(key)
+
+export async function navigate(
+  url: string,
+  type: AfterNavigate[`type`] = `link`,
+): Promise<void> {
+  const destination = new URL(url, location.origin)
+  app_mocks.state.page.url = destination
+  history.replaceState(
+    null,
+    ``,
+    `${destination.pathname}${destination.search}${destination.hash}`,
+  )
+  for (const [callback] of app_mocks.navigation.afterNavigate.mock.calls)
+    callback({ type, from: null, to: { url: destination } })
+  await tick()
+}
 
 export const sorted_header = (): HTMLTableCellElement | null =>
   document.querySelector(`thead th[aria-sort]:not([aria-sort="none"])`)

@@ -45,6 +45,8 @@
   // per-material κ_SRME from the kappa-103 analysis payload (null = not computable);
   // undefined until loaded or when the model has no analysis entry
   let srme_by_id = $state<Map<string, number | null>>()
+  let srme_error = $state(``)
+  let spectral_failed = $state(false)
   let color_metric = $state<`srme` | `sre`>(`srme`)
 
   // precomputed phonon metrics: κ_SRME (mode-resolved symmetric relative mean error)
@@ -115,7 +117,11 @@
   let has_selection = $derived(selected !== null)
   // matterviz/spectral is a barrel whose PhononThermalPlot and PhononModeExplorer drag
   // in the three.js stack, so it loads on first selection
-  const load_spectral = () => import(`matterviz/spectral`)
+  const load_spectral = () =>
+    import(`matterviz/spectral`).catch((error: unknown) => {
+      spectral_failed = true
+      throw error
+    })
   let spectral_promise = $derived(has_selection ? load_spectral() : null)
   // several-MB asset, so it loads on first selection; the promise tracks only whether
   // anything is selected (not which point) so clicking between points doesn't refetch.
@@ -123,9 +129,11 @@
   // prop changes a render earlier than the asset, which would otherwise pair one
   // model's modes with another's points. The spectral chunk is awaited alongside the
   // asset so the "no modes" branch means missing data, never a chunk still in flight.
+  const load_modes = (model_key: string) =>
+    Promise.all([load_spectral(), load_kappa_modes(model_key)])
   let modes_promise = $derived(
     has_selection && parity_model && has_kappa_modes(parity_model.model_key)
-      ? Promise.all([load_spectral(), load_kappa_modes(parity_model.model_key)])
+      ? load_modes(parity_model.model_key)
       : null,
   )
   async function load_data(model_key: string) {
@@ -135,15 +143,20 @@
       return
     }
     await load_controller.run(async (is_current) => {
+      let analysis_error = ``
       const [base_asset, model_asset, srme_map] = await Promise.all([
         load_kappa_parity_base(),
         load_kappa_parity_model(model_key),
-        load_kappa_srme_map(model_key).catch(() => undefined),
+        load_kappa_srme_map(model_key).catch((error: unknown) => {
+          analysis_error = get_error_message(error)
+          return undefined
+        }),
       ])
       if (!is_current()) return
       base = base_asset
       parity_model = model_asset
       srme_by_id = srme_map
+      srme_error = analysis_error
       if (!srme_map) color_metric = `sre` // no per-material SRME -> only SRE offered
     })
   }
@@ -160,14 +173,25 @@
   </h2>
 
   {#if load_controller.status === `error`}
-    <p class="plot-state" role="alert" style="min-height: 0; margin: 0">
-      {load_controller.error_message}
-    </p>
+    <div class="plot-state" style="min-height: 0">
+      <p role="alert">Could not load {model.model_name}'s thermal conductivity plot.</p>
+      <button onclick={() => load_data(model.model_key)}
+        >Retry thermal conductivity plot</button
+      >
+      <details><summary>Asset details</summary>{load_controller.error_message}</details>
+    </div>
   {:else if load_controller.status !== `ready` || !parity}
     <div class="plot-state">
       <Spinner text="Loading κ parity data..." />
     </div>
   {:else}
+    {#if srme_error}
+      <div class="plot-state" role="alert" style="min-height: 0">
+        <p>Could not load per-material κ<sub>SRME</sub> colors.</p>
+        <button onclick={() => location.reload()}>Reload page</button>
+        <details><summary>Asset details</summary>{srme_error}</details>
+      </div>
+    {/if}
     {#if srme_by_id}
       <label
         style="display: flex; align-items: center; justify-content: center; gap: 0.5em"
@@ -316,9 +340,13 @@
                 {/each}
               {/if}
             {:catch error}
-              <p class="plot-state" role="alert">
-                Failed to load thermal plots: {get_error_message(error)}
-              </p>
+              <div class="plot-state" role="alert">
+                <p>Could not load thermal plots.</p>
+                <button onclick={() => location.reload()}>Reload page</button>
+                <details>
+                  <summary>Asset details</summary>{get_error_message(error)}
+                </details>
+              </div>
             {/await}
           {:else}
             <p class="plot-state">No phonon DOS available for this material.</p>
@@ -347,9 +375,19 @@
                   <p class="plot-state">No phonon modes stored for this material.</p>
                 {/if}
               {:catch error}
-                <p class="plot-state" role="alert">
-                  Failed to load phonon modes: {get_error_message(error)}
-                </p>
+                <div class="plot-state" role="alert">
+                  <p>Could not load phonon modes.</p>
+                  <button
+                    onclick={() => {
+                      if (spectral_failed) location.reload()
+                      else if (parity_model)
+                        modes_promise = load_modes(parity_model.model_key)
+                    }}>{spectral_failed ? `Reload page` : `Retry phonon modes`}</button
+                  >
+                  <details>
+                    <summary>Asset details</summary>{get_error_message(error)}
+                  </details>
+                </div>
               {/await}
             </div>
           {/if}

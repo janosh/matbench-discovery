@@ -1,4 +1,4 @@
-import DiatomicsTmiPage from '$routes/tasks/diatomics/tmi/+page.svelte'
+import DiatomicsTmiPage from '$routes/benchmarks/diatomics/tmi/+page.svelte'
 import { tick } from 'svelte'
 import { afterEach, expect, it, vi } from 'vitest'
 import { get_scatter_plot_props, mount_with_url } from '../index'
@@ -33,7 +33,7 @@ it(`filters TMI elements and functionals while preserving curve gaps`, async () 
   }
   await mount_with_url(
     DiatomicsTmiPage,
-    `http://localhost/tasks/diatomics/tmi?elements=halogen`,
+    `http://localhost/benchmarks/diatomics/tmi?elements=halogen`,
     {
       props: {
         data: {

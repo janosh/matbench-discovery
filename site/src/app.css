@@ -56,6 +56,8 @@
   --border: light-dark(rgba(0, 0, 0, 0.2), rgba(255, 255, 255, 0.125));
   --highlight: light-dark(seagreen, mediumseagreen);
   --table-odd: light-dark(rgba(0, 0, 0, 0.03), rgba(0, 0, 0, 0.5));
+  --heatmap-sticky-cell-odd-bg:
+    linear-gradient(var(--table-odd), var(--table-odd)), var(--page-bg);
   --nav-bg: light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.08));
   --card-bg: light-dark(rgba(255, 255, 255, 0.4), rgba(0, 0, 0, 0.3));
   --chip-bg: light-dark(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.08));
@@ -257,6 +259,16 @@ button are primary navigation, so keep theirs visible */
 .table-container.leaderboard > .control-buttons {
   opacity: 1;
   pointer-events: auto;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: baseline;
+  gap: 0.5em 0.75em;
+  /* Size the container from the table, not the toolbar's unwrapped contents. */
+  contain: inline-size;
+}
+.table-container.leaderboard > .control-buttons > :is(button, a, .dropdown-wrapper) {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 h1 {
@@ -371,19 +383,15 @@ kbd {
   /* Calculate padding: min page margin, grows to center content within max-width */
   padding-inline: max(var(--margin), calc(50vw - 1400px / 2));
 }
+@media (max-width: 600px) {
+  .full-bleed,
+  .bleed-1400 {
+    --margin: 1rem;
+  }
+}
 
-/* Shared task-page intro with a flexible note and fixed-width score chart. */
-.task-intro {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1em 2em;
-  align-items: center;
-}
-.task-intro > div {
-  flex: 1 1 30em;
-}
 .task-weights {
-  flex: 0 1 22em;
+  max-width: 22em;
   margin-inline: auto;
 }
 .task-weights figcaption {
@@ -439,6 +447,7 @@ kbd {
 }
 /* Centered loading/error state shown while parity plot data loads */
 .plot-state {
+  overflow-wrap: anywhere;
   display: grid;
   min-height: 180px;
   place-items: center;

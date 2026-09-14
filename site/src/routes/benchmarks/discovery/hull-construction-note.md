@@ -1,14 +1,14 @@
-## Convex Hull Construction in Matbench Discovery
+### Convex Hull Construction in Matbench Discovery
 
 In Matbench Discovery, **the convex hull is always constructed from DFT reference energies**, not from the ML model's predicted energies. This is an important methodological choice that differs from some other benchmarking approaches and has several implications. Understanding how the convex hull is constructed is important for correctly interpreting the energy metrics in Matbench Discovery.
 
-### What This Means
+#### What This Means
 
 - **DFT-based hull:** When we calculate the distance to the convex hull (E<sub>hull dist</sub>) for a material, we compare the model's predicted formation energy against the DFT-computed convex hull built from Materials Project reference structures.
 - **Fixed reference:** The hull does not change based on the model's predictions. All models are evaluated against the same DFT reference hull.
 - **Discovery criterion:** A material is counted as a "discovery" if the model correctly predicts it to be lower in energy than all known DFT-computed competing phases with the same (reduced) composition in Materials Project. The reference data was pulled on 2023-03-16 (14 GB), database release [v2022.10.28](https://docs.materialsproject.org/changes/database-versions#v2022.10.28).
 
-### Why This Matters
+#### Why This Matters
 
 This approach means that:
 

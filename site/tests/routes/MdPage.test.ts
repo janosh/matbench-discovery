@@ -1,6 +1,6 @@
 import { ACTIVE_MODELS } from '$lib/models.svelte'
 import { MD_METRICS } from '$lib/labels'
-import MdPage from '$routes/tasks/md/+page.svelte'
+import MdPage from '$routes/benchmarks/md/+page.svelte'
 import { describe, expect, it } from 'vitest'
 import {
   checkbox_for,
@@ -41,7 +41,21 @@ describe(`MD Task Page`, () => {
     const headings = [...document.querySelectorAll<HTMLHeadingElement>(`h2`)].map((h2) =>
       h2.textContent?.replaceAll(/\s+/g, ` `).trim(),
     )
-    expect(headings).toContain(`CMDS vs Speed`)
+    expect(headings).toEqual([
+      `Leaderboard`,
+      `CMDS vs Speed`,
+      `Test set: DynaMat v1.0`,
+      `Methodology`,
+    ])
+    const methodology = doc_query<HTMLDetailsElement>(`#methodology + details`)
+    expect(methodology.open).toBe(false)
+    expect(table.compareDocumentPosition(methodology)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    )
+    expect(methodology.textContent).toContain(`same initial structures`)
+    expect(doc_query(`a[href="#test-set"]`).compareDocumentPosition(table)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    )
 
     const scatter = doc_query<HTMLDivElement>(`div.scatter`)
     expect(scatter.getAttribute(`style`)).toContain(`height: 800px`)
@@ -62,10 +76,12 @@ describe(`MD Task Page`, () => {
   it(`restores URL state for scatter axes, table sort and filters`, async () => {
     await mount_with_url(
       MdPage,
-      `http://localhost/tasks/md?x=combined_score&y=force_rmse&sort=vdos_error&dir=asc&train=-OMat24&heatmap=0`,
+      `http://localhost/benchmarks/md?x=combined_score&y=force_rmse&sort=vdos_error&dir=asc&train=-OMat24&heatmap=0`,
     )
 
-    const heading = document.querySelector(`h2`)?.textContent?.replaceAll(/\s+/g, ` `)
+    const heading = document
+      .querySelector(`#model-comparison`)
+      ?.textContent?.replaceAll(/\s+/g, ` `)
     expect(heading).toContain(`FRMSE vs CMDS`)
     const header = sorted_header()
     expect(header?.textContent).toContain(`vDOS`)

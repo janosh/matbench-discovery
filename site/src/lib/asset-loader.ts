@@ -11,7 +11,7 @@ export const get_error_message = (error: unknown): string =>
 
 // per-model asset files wrap their payload as { model: ... }
 interface ModelAsset<TModel> {
-  model?: TModel
+  model: TModel
 }
 // fields shared by every parity base asset (per-material id + formula columns)
 export interface ParityBase {
@@ -94,18 +94,32 @@ export function assert_array_length(name: string, values: unknown, length: numbe
   }
 }
 
-export function load_json_asset<T>(url: string): Promise<T> {
+export function load_json_asset<T>(
+  url: string,
+  validate?: (value: T) => void,
+): Promise<T> {
   let asset = asset_cache.get(url)
+  const discard_failed = (error: unknown): never => {
+    if (asset_cache.get(url) === asset) asset_cache.delete(url)
+    throw error
+  }
   if (!asset) {
     asset = read_asset_text(url)
       .then((text) => JSON.parse(text) as T)
-      .catch((error: unknown) => {
-        if (asset_cache.get(url) === asset) asset_cache.delete(url)
-        throw error
-      })
+      .catch(discard_failed)
     asset_cache.set(url, asset)
   }
-  return asset as Promise<T>
+  const result = asset as Promise<T>
+  // Validate cached responses too, and evict only the failed request so retries
+  // refetch corrected data without throwing away other successful downloads.
+  return validate
+    ? result
+        .then((value) => {
+          validate(value)
+          return value
+        })
+        .catch(discard_failed)
+    : result
 }
 
 // Validate the identity shared by both parity and phonon-mode model assets.
@@ -113,15 +127,18 @@ export async function load_model_asset<TModel extends ParityModel>(
   kind: string,
   url: string,
   model_key: string,
+  validate?: (model: TModel) => void,
 ): Promise<TModel> {
-  const { model } = await load_json_asset<ModelAsset<TModel>>(url)
-  if (!model) throw new Error(`No ${kind} model ${model_key} in its asset`)
-  if (model.model_key !== model_key) {
-    throw new Error(
-      `Invalid ${kind} model: expected ${model_key}, got ${model.model_key}`,
-    )
-  }
-  return model
+  const payload = await load_json_asset<ModelAsset<TModel>>(url, ({ model }) => {
+    if (!model) throw new Error(`No ${kind} model ${model_key} in its asset`)
+    if (model.model_key !== model_key) {
+      throw new Error(
+        `Invalid ${kind} model: expected ${model_key}, got ${model.model_key}`,
+      )
+    }
+    validate?.(model)
+  })
+  return payload.model
 }
 
 // Keys of TModel whose values are arrays, e.g. the per-row prediction columns. Excludes
@@ -133,18 +150,18 @@ type ArrayKeys<TModel> = {
 
 // Load a per-model parity asset and validate its model key and the row count of its
 // primary prediction column. `kind` (e.g. `energy`/`kappa`) only affects error messages.
-export async function load_parity_model<TModel extends ParityModel>(
+export function load_parity_model<TModel extends ParityModel>(
   kind: string,
   url: string,
   model_key: string,
   pred_field: ArrayKeys<TModel>,
   row_count: number,
 ): Promise<TModel> {
-  const model = await load_model_asset<TModel>(`${kind} parity`, url, model_key)
-  assert_array_length(
-    `${kind} parity ${model_key}.${pred_field}`,
-    model[pred_field],
-    row_count,
+  return load_model_asset<TModel>(`${kind} parity`, url, model_key, (model) =>
+    assert_array_length(
+      `${kind} parity ${model_key}.${pred_field}`,
+      model[pred_field],
+      row_count,
+    ),
   )
-  return model
 }

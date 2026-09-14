@@ -18,21 +18,11 @@
   import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined-scores.svelte'
   import { is_finite_num, metric_value } from '$lib/metrics'
   import { make_table_filters, ACTIVE_MODELS } from '$lib/models.svelte'
-  import { comparison } from '$lib/model-comparison.svelte'
-  import {
-    apply_weights_param,
-    bind_url_params,
-    sort_from_query,
-    sort_url_entries,
-    type SortState,
-    weights_to_param,
-  } from '$lib/url-state.svelte'
+  import { bind_url_params, sort_from_query, type SortState } from '$lib/url-state.svelte'
   import { valid_query_param } from 'svelte-widgets/url-params'
   import type { DiscoverySet, Label, ModelData } from '$lib/types'
-  import { ButtonGroup, Icon } from 'svelte-widgets'
-  import { RSS } from 'svelte-widgets/icons'
+  import { ButtonGroup } from 'svelte-widgets'
   import { slide } from 'svelte/transition'
-  import { tooltip } from 'svelte-widgets/attachments'
   import type { Snapshot } from './$types'
   import github_activity_data from './models/mlip-github-activity.json'
 
@@ -91,18 +81,12 @@
   let discovery_set: DiscoverySet = $state(`unique_prototypes`)
   let sort = $state(default_sort_for(default_col_preset))
   let auto_sort_enabled = $state(true)
-  let custom_col_config = $state(false)
-  const sortable_header_selector = `thead th[role="button"]`
-  const column_toggle_input_selector = `.column-menu input[type="checkbox"]`
-  const reset_columns_selector = `button[aria-label="Reset all columns to defaults"]`
 
   function handle_table_event(event: Event) {
     if (event instanceof KeyboardEvent && ![`Enter`, ` `].includes(event.key)) return
     const target = event.target
     if (!(target instanceof Element)) return
-    if (target.closest(sortable_header_selector)) auto_sort_enabled = false
-    if (target.closest(reset_columns_selector)) custom_col_config = false
-    if (target.matches(column_toggle_input_selector)) custom_col_config = true
+    if (target.closest(`thead th[tabindex="0"]`)) auto_sort_enabled = false
   }
 
   const valid_sets = new Set(DISCOVERY_SETS)
@@ -118,25 +102,16 @@
 
     discovery_set = valid_query_param(params, `set`, `unique_prototypes`, valid_sets)
     filters.read(params)
-    custom_col_config = false
     col_preset = next_preset
     // Reapply the preset even when only its columns were customized.
     preset_metric_keys = new Set(preset_metric_keys)
-    apply_weights_param(params.get(`weights`), CPS_CONFIG, DEFAULT_CPS_CONFIG)
   }
 
-  bind_url_params(read_url_params, () => {
-    // Customized columns omit the preset; sort defaults must match the restored preset.
-    const url_preset = custom_col_config ? default_col_preset : col_preset
-    return [
-      [`preset`, url_preset, default_col_preset],
-      [`set`, discovery_set, `unique_prototypes`],
-      ...sort_url_entries(sort, default_sort_for(url_preset)),
-      ...filters.url_entries,
-      // custom CPS weights (F1,κ_SRME,RMSD); omitted at defaults
-      [`weights`, weights_to_param(CPS_CONFIG, DEFAULT_CPS_CONFIG)],
-    ]
-  })
+  bind_url_params(read_url_params, () => [
+    [`preset`, col_preset, default_col_preset],
+    [`set`, discovery_set, `unique_prototypes`],
+    ...filters.url_entries,
+  ])
 
   // Each task view includes only models with its headline metric.
   let has_preset_data = $derived((model: ModelData) =>
@@ -145,15 +120,11 @@
   let in_cohort = $derived(
     (model: ModelData) => has_preset_data(model) && filters.matches(model),
   )
-  const visible_model_count = $derived(
-    comparison.filter(ACTIVE_MODELS.filter(in_cohort), filters.show_selected_only).length,
-  )
 
   export const snapshot: Snapshot = {
     capture: () => ({
       discovery_set,
       col_preset,
-      custom_col_config,
       sort,
       auto_sort_enabled,
       filters: filters.as_preset,
@@ -165,7 +136,6 @@
     // see why. So each value is only restored if it still names something real,
     // otherwise the freshly-mounted default stands as if no snapshot existed.
     restore: (values) => {
-      custom_col_config = values.custom_col_config ?? custom_col_config
       auto_sort_enabled = values.auto_sort_enabled ?? auto_sort_enabled
       sort = values.sort ?? sort
       if (valid_sets.has(values.discovery_set)) discovery_set = values.discovery_set
@@ -178,16 +148,13 @@
   }
 </script>
 
-<!-- MatterViz portals column toggle inputs to document.body, outside the table section. -->
-<svelte:document onclickcapture={handle_table_event} />
-
 <h1 id="matbench-discovery">
   <img src="/favicon.svg" alt="Matbench Discovery Logo" width="60px" />
   Matbench Discovery
 </h1>
 
 <p class="intro">
-  Compare machine-learning models across <a href="/tasks">five materials-science tasks</a
+  Compare machine-learning models across <a href="/benchmarks">materials-science tasks</a
   >.
 </p>
 
@@ -200,7 +167,6 @@
       options={col_preset_options}
       tooltip_options={{ placement: `top` }}
       on_change={() => {
-        custom_col_config = false
         if (auto_sort_enabled) sort = default_sort_for(col_preset)
       }}
     />
@@ -218,13 +184,13 @@
   {#if col_preset === `MD`}
     <p class="task-note">
       <strong>MD is in beta.</strong> These metrics are preliminary and may change.
-      <a href="/tasks/md">About this task →</a>
+      <a href="/benchmarks/md">About this task →</a>
     </p>
   {/if}
 
   <section
     class="full-bleed"
-    onchangecapture={handle_table_event}
+    onclickcapture={handle_table_event}
     onkeydowncapture={handle_table_event}
   >
     <MetricsTable
@@ -233,6 +199,8 @@
           ? col.visible !== false
           : preset_metric_keys.has(col.key) && !supplementary_hidden.has(col.key)}
       {discovery_set}
+      column_preset={col_preset}
+      default_sort={default_sort_for(col_preset)}
       model_filter={has_preset_data}
       bind:sort
       {filters}
@@ -240,28 +208,19 @@
   </section>
 
   <figcaption>
-    <div class="table-footer">
-      <p>{visible_model_count} model{visible_model_count === 1 ? `` : `s`}</p>
-      <div style="display: flex; align-items: center; gap: 1em">
-        <a href="/contribute">Submit a model</a>
-        <a
-          href="/rss.xml"
-          title="Follow new model submissions in your RSS reader"
-          {@attach tooltip()}
-        >
-          <Icon icon={RSS} /> RSS
-        </a>
-      </div>
-    </div>
-    <section id="score-weights" aria-labelledby="score-weights-heading">
+    <section
+      id="score-weights"
+      aria-labelledby="score-weights-heading"
+      style="padding-block: 0.65em"
+    >
       <h3 id="score-weights-heading">Adjust score weights</h3>
       <div class="score-guide">
         <p>
-          CPS combines <a href="/tasks/discovery">discovery (F1)</a>,
-          <a href="/tasks/geo-opt">geometry optimization (RMSD)</a>, and
-          <a href="/tasks/phonons">thermal conductivity (κ<sub>SRME</sub>)</a>. Drag the
-          dot to change their importance; scores and rankings update immediately. Custom
-          weights are included in the page URL so you can share your view.
+          CPS combines <a href="/benchmarks/discovery">discovery (F1)</a>,
+          <a href="/benchmarks/geo-opt">geometry optimization (RMSD)</a>, and
+          <a href="/benchmarks/phonons">thermal conductivity (κ<sub>SRME</sub>)</a>. Drag
+          the dot to change their importance; scores and rankings update immediately.
+          Custom weights are included in the page URL so you can share your view.
         </p>
         <RadarChart size={260} />
       </div>
@@ -306,16 +265,16 @@
   <h2 id="about-matbench-discovery">About Matbench Discovery</h2>
   <p>
     This benchmark compares accuracy, robustness, and computational cost across
-    <a href="/tasks/discovery">crystal discovery</a>,
-    <a href="/tasks/geo-opt">geometry optimization</a>,
-    <a href="/tasks/phonons">phonons</a>,
-    <a href="/tasks/md">molecular dynamics</a>, and
-    <a href="/tasks/diatomics">diatomics</a>. Rankings help you explore trade-offs; they
-    are not a complete assessment or an endorsement of a model.
+    <a href="/benchmarks/discovery">crystal discovery</a>,
+    <a href="/benchmarks/geo-opt">geometry optimization</a>,
+    <a href="/benchmarks/phonons">phonons</a>,
+    <a href="/benchmarks/md">molecular dynamics</a>, and
+    <a href="/benchmarks/diatomics">diatomics</a>. Rankings help you explore trade-offs;
+    they are not a complete assessment or an endorsement of a model.
   </p>
   <p>
     Crystal stability is evaluated against a
-    <a href="/tasks/discovery#convex-hull-construction-in-matbench-discovery"
+    <a href="/benchmarks/discovery#convex-hull-construction-in-matbench-discovery"
       >convex hull</a
     >
     built from
@@ -351,15 +310,14 @@
   figure {
     margin: 0;
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 1ex;
   }
-  :is(.toggle-row, .table-footer) {
+  .toggle-row {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: center;
-  }
-  .toggle-row {
     gap: 8pt;
     font-size: smaller;
   }
@@ -371,16 +329,6 @@
   figcaption {
     font-size: 0.9em;
   }
-  .table-footer {
-    justify-content: space-between;
-    gap: 0 1em;
-    > p {
-      flex: 1 1 25em;
-      color: var(--text-muted);
-      margin-block: 0.75em;
-    }
-  }
-  #score-weights,
   .page-details {
     border-top: 1px solid var(--border);
     padding-block: 0.65em;

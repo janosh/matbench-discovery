@@ -2,8 +2,10 @@ import TableControls from '$lib/table/TableControls.svelte'
 import type { Column } from 'matterviz/table'
 import { ACTIVE_MODELS, ALL_TRAINING_SETS, make_table_filters } from '$lib/models.svelte'
 import { OPENNESS_OPTIONS, type Openness } from '$lib/url-state.svelte'
+import { comparison } from '$lib/model-comparison.svelte'
+import type { ModelData } from '$lib/types'
 import { tick } from 'svelte'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, onTestFinished, vi } from 'vitest'
 import { doc_query, mount } from '../index'
 
 describe(`TableControls`, () => {
@@ -22,9 +24,9 @@ describe(`TableControls`, () => {
     return summary
   }
 
-  const mount_with_filters = async () => {
+  const mount_with_filters = async (models?: ModelData[]) => {
     const filters = make_table_filters()
-    mount(TableControls, { target: document.body, props: { filters } })
+    mount(TableControls, { target: document.body, props: { filters, models } })
     await tick()
     return filters
   }
@@ -81,8 +83,8 @@ describe(`TableControls`, () => {
       box.getAttribute(`aria-label`)?.slice(`require `.length) ?? ``
     const usage_counts = require_boxes.map((box) => {
       const dataset = dataset_for(box)
-      return ACTIVE_MODELS.filter((model) =>
-        model.training_sets.some((training_dataset) => training_dataset === dataset),
+      return ACTIVE_MODELS.filter(
+        (model) => filters.matches(model) && model.training_sets.includes(dataset),
       ).length
     })
     expect(usage_counts).toStrictEqual(
@@ -110,6 +112,82 @@ describe(`TableControls`, () => {
     doc_query<HTMLButtonElement>(`button.clear-filters`).click()
     await tick()
     expect(filters.n_active).toBe(0)
+  })
+
+  it(`counts the current cohort with other constraints and exposes removable filter chips`, async () => {
+    onTestFinished(() => comparison.keys.clear())
+    const models = [
+      [`facet-a`, [`MPtrj`, `OMat24`], `OSOD`, `EFS_G`],
+      [`facet-b`, [`MPtrj`], `OSOD`, `EF_D`],
+      [`facet-c`, [`OMat24`], `OSCD`, `EF_G`],
+      [`facet-d`, [`MPtrj`, `OMat24`], `OSOD`, `E`],
+    ].map(([model_key, training_sets, openness, targets]) => ({
+      ...ACTIVE_MODELS[0],
+      model_key,
+      training_sets,
+      openness,
+      targets,
+    })) as ModelData[]
+    const filters = await mount_with_filters(models)
+    const panel_text = (name: string) =>
+      summary_for(name).closest(`details`)?.textContent?.replaceAll(/\s+/g, ` `)
+    const remove_filter = async (label: string) => {
+      doc_query<HTMLButtonElement>(`button[aria-label="Remove ${label} filter"]`).click()
+      await tick()
+    }
+    expect(panel_text(`Training data`)).toContain(`MPtrj (2)`)
+    expect(panel_text(`Targets`)).toContain(`forces (F) (3)`)
+    await remove_filter(`require forces`)
+    expect(filters.targets).toEqual({})
+    expect(document.querySelector(`.active-filters`)).toBeNull()
+    expect(panel_text(`Training data`)).toContain(`MPtrj (3)`)
+
+    filters.set_target(`F`, `require`)
+    filters.set_training(`MPtrj`, `require`)
+    filters.set_training(`OMat24`, `exclude`)
+    filters.openness = [`OSOD`]
+    await tick()
+    // OMat24 ignores its own exclusion but retains MPtrj, required forces and OSOD.
+    expect(panel_text(`Training data`)).toContain(`OMat24 (1)`)
+    expect(panel_text(`Training data`)).toContain(`MPtrj (1)`)
+    expect(panel_text(`Openness`)).toContain(`OSOD (1)`)
+    expect(panel_text(`Openness`)).toContain(`OSCD (0)`)
+    expect(panel_text(`Targets`)).toContain(`stress (S) (0)`)
+    await remove_filter(`exclude OMat24`)
+    expect(filters.training).toEqual({ MPtrj: `require` })
+    expect(panel_text(`Targets`)).toContain(`stress (S) (1)`)
+
+    filters.fs_mode = `gradient`
+    await tick()
+    expect(panel_text(`Training data`)).toContain(`MPtrj (1)`)
+    // Mode counts ignore gradient itself, retaining the other constraints.
+    expect(panel_text(`Targets`)).toContain(`direct (1)`)
+    expect(panel_text(`Targets`)).toContain(`gradient (1)`)
+    await remove_filter(`Forces/stress: gradient`)
+    await remove_filter(`Openness: OSOD`)
+    await remove_filter(`require MPtrj`)
+    expect(filters.fs_mode).toBe(`any`)
+    expect(filters.openness).toEqual(OPENNESS_OPTIONS)
+    expect(filters.training).toEqual({})
+
+    comparison.keys.add(`facet-c`)
+    filters.show_selected_only = true
+    await tick()
+    expect(panel_text(`Training data`)).toContain(`MPtrj (0)`)
+    expect(panel_text(`Training data`)).toContain(`OMat24 (1)`)
+    await remove_filter(`Selected models only`)
+    expect(filters.show_selected_only).toBe(false)
+    filters.set_target(`F`, `exclude`)
+    filters.set_training(`MPtrj`, `require`)
+    await tick()
+    filters.set_training(`MPtrj`, `exclude`)
+    await tick()
+    await remove_filter(`exclude forces`)
+    await remove_filter(`exclude MPtrj`)
+    expect(filters.targets).toEqual({})
+    expect(filters.training).toEqual({})
+    expect(document.querySelector(`.active-filters`)).toBeNull()
+    comparison.keys.clear()
   })
 
   it(`applies the built-in Compliant preset (old compliant cohort in one click)`, async () => {

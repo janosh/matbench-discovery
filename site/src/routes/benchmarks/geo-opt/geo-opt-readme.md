@@ -1,18 +1,18 @@
 # MLFF Geometry Optimization
 
-This task measures how closely machine-learning force-field relaxations reproduce DFT-relaxed crystal structures across the 257k-material [WBM test set](https://nature.com/articles/s41524-020-00481-6). It compares normalized structure-matching RMSD, retained symmetry, and the relaxation settings used by each model.
+This task measures how closely machine-learning force-field relaxations reproduce DFT-relaxed crystal structures and retain their symmetry.
 
-Not all models relaxed every structure, but each reported model was evaluated on at least <slot name="min_relaxed_structures" /> relaxations. Symmetry detection uses [`moyopy`](https://github.com/spglib/moyo), a Rust successor to [`spglib`](https://spglib.readthedocs.io).
+Reference data: the [WBM test set](/benchmarks/geo-opt#test-set). The headline metric is normalized structure-matching RMSD (unitless, lower is better).
+
+<slot name="task_navigation" />
 
 ## Leaderboard
 
-The table ranks current model-YAML results and exposes training-data, openness, output, and column filters.
+Not all models relaxed every structure, but each reported model was evaluated on at least <slot name="min_relaxed_structures" /> relaxations.
 
 > **Symmetry-tolerance caveat:** RMSD is `symprec`-invariant. The leaderboard shows symmetry metrics at both `symprec=1e-2` and `symprec=1e-5`, while Aggregate Diagnostics use `symprec=1e-5`. Compare symmetry values within a single view.
 
 <slot name="geo_opt_metrics_table" />
-
-> **RMSD** measures the normalized, unitless structure-matching RMSD between ML- and DFT-relaxed ground state structures, as returned by `pymatgen`'s `StructureMatcher` after matching. **Optimizer**, **Steps**, **f<sub>max</sub>**, and **Filter** show the ASE optimizer, maximum relaxation steps, force convergence criterion (eV/Å), and cell filter used during structure relaxation. Σ<sub>=</sub> / Σ<sub>↓</sub> / Σ<sub>↑</sub> denote the fraction of structures that retain, increase, or decrease the symmetry of the DFT-relaxed structure during MLFF relaxation. The match criterion is for the ML ground state to have identical spacegroup as DFT. For Σ<sub>↓</sub> / Σ<sub>↑</sub>, the number of symmetry operations for a structure decreased / increased during MLFF relaxation. Note that the symmetry metrics are sensitive to the `symprec` value passed to `spglib` so we show results for multiple values. See the [`spglib` docs](https://spglib.readthedocs.io/en/latest/variable.html#symprec) and [paper](https://arxiv.org/html/1808.01590v2) for details.
 
 ## Model Comparison
 
@@ -44,8 +44,16 @@ The Sankey diagrams show corresponding spacegroups of DFT-relaxed and MLFF-relax
 
 <slot name="spg_sankeys" />
 
+<slot name="test_set" />
+
+## Methodology
+
 <details>
-<summary>Relaxation-protocol caveat</summary>
+<summary>Structure matching, symmetry, and relaxation protocol</summary>
+
+**RMSD** measures the normalized, unitless structure-matching RMSD between ML- and DFT-relaxed ground state structures, as returned by `pymatgen`'s `StructureMatcher` after matching. **Optimizer**, **Steps**, **f<sub>max</sub>**, and **Filter** show the ASE optimizer, maximum relaxation steps, force convergence criterion (eV/Å), and cell filter used during structure relaxation.
+
+Symmetry detection uses [`moyopy`](https://github.com/spglib/moyo), a Rust successor to [`spglib`](https://spglib.readthedocs.io). Σ<sub>=</sub> denotes the fraction of structures with identical ML- and DFT-relaxed spacegroups. Σ<sub>↓</sub> / Σ<sub>↑</sub> denote the fractions whose numbers of symmetry operations decreased / increased during MLFF relaxation. Symmetry metrics depend on the `symprec` tolerance, so results are shown at multiple values. See the [`spglib` docs](https://spglib.readthedocs.io/en/latest/variable.html#symprec) and [paper](https://arxiv.org/html/1808.01590v2) for details.
 
 The WBM DFT references were generated with `MPRelaxSet`: [`ISYM=2`](https://vasp.at/wiki/index.php/ISYM), [`ISIF=3`](https://vasp.at/wiki/index.php/ISIF), and `IBRION=2` (conjugate gradient). Most MLFF relaxations instead use `FIRE`. Different symmetry constraints and optimizers can reach different minima, so a lower symmetry-match rate can occasionally indicate a valid symmetry-broken structure rather than a model error. See [`MPRelaxSet.yaml`](https://github.com/materialsproject/pymatgen/blob/bf2cd24b647a33/src/pymatgen/io/vasp/MPRelaxSet.yaml#L10). Thanks to [Alex Ganose](https://scholar.google.co.uk/citations?user=nVJFXWwAAAAJ) for highlighting this distinction.
 

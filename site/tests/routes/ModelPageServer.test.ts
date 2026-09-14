@@ -32,7 +32,10 @@ describe(`model-key routes`, () => {
     async (name) => {
       model.metrics = { md: { pred_file: name ? { name } : undefined } }
       expect(entries()).toEqual([{ slug: `model-key` }])
-      expect(await load_model()).toEqual({ model, md_per_system: null })
+      expect(await load_model()).toEqual({
+        model_key: model.model_key,
+        md_per_system: null,
+      })
     },
   )
 
@@ -56,7 +59,7 @@ describe(`model-key routes`, () => {
       }
 
       expect(await load_model()).toEqual({
-        model,
+        model_key: model.model_key,
         md_per_system: [
           {
             system: `CsSnI3_500K_Ivor_VASP`,

@@ -6,7 +6,7 @@ import { ACTIVE_MODELS, make_table_filters, MODELS } from '$lib/models.svelte'
 import { GEO_OPT_SYMMETRY_METRICS, HYPERPARAMS } from '$lib/labels'
 import type { ModelData } from '$lib/types'
 import { tick } from 'svelte'
-import GeoOptPage from '$routes/tasks/geo-opt/+page.svelte'
+import GeoOptPage from '$routes/benchmarks/geo-opt/+page.svelte'
 import { describe, expect, it } from 'vitest'
 import {
   checkbox_for,
@@ -49,9 +49,13 @@ const sankey_labels = (): string[] =>
 
 describe(`Geo Opt Task Page`, () => {
   it(`renders intro, leaderboard, comparison, and diagnostics in order`, async () => {
-    await mount_with_url(GeoOptPage, `http://localhost/tasks/geo-opt`)
+    await mount_with_url(GeoOptPage, `http://localhost/benchmarks/geo-opt`)
 
     expect(doc_query(`h1`).textContent).toContain(`MLFF Geometry Optimization`)
+    expect(doc_query(`a[href="/benchmarks/geo-opt#test-set"]`).textContent).toBe(
+      `WBM test set`,
+    )
+    expect(doc_query(`#test-set`).textContent).toContain(`WBM`)
     const section_headings = [...document.querySelectorAll(`h2`)].map((heading) =>
       heading.textContent?.trim(),
     )
@@ -59,7 +63,10 @@ describe(`Geo Opt Task Page`, () => {
       `Leaderboard`,
       `Model Comparison`,
       `Aggregate Diagnostics`,
+      `Test set: WBM`,
+      `Methodology`,
     ])
+    expect(doc_query<HTMLDetailsElement>(`#methodology + details`).open).toBe(false)
     expect(document.body.textContent).toContain(`RMSD is symprec-invariant`)
     expect(doc_query(`.collapsible-legend .scatter`)).toBeInstanceOf(HTMLElement)
     expect(cdf_labels().length).toBeGreaterThan(0)
@@ -67,7 +74,7 @@ describe(`Geo Opt Task Page`, () => {
 
   // default selection = the 5 most recently added models among those with plot payloads
   it(`preselects the newest models by benchmark_added`, async () => {
-    await mount_with_url(GeoOptPage, `http://localhost/tasks/geo-opt`)
+    await mount_with_url(GeoOptPage, `http://localhost/benchmarks/geo-opt`)
 
     const payload_keys = new Set(
       [...struct_rmsd_cdf.models, ...sym_ops_diff.models, ...spg_sankeys.models].map(
@@ -103,7 +110,7 @@ describe(`Geo Opt Task Page`, () => {
     const { model_key, label } = shared_model
     await mount_with_url(
       GeoOptPage,
-      `http://localhost/tasks/geo-opt?models=unknown,${model_key},${model_key}`,
+      `http://localhost/benchmarks/geo-opt?models=unknown,${model_key},${model_key}`,
     )
 
     expect(selected_text()).toContain(label_by_model_key.get(model_key) ?? label)
@@ -117,7 +124,10 @@ describe(`Geo Opt Task Page`, () => {
     `keeps empty states for aggregate diagnostics with models=%s`,
     { timeout: 30_000 },
     async (models) => {
-      await mount_with_url(GeoOptPage, `http://localhost/tasks/geo-opt?models=${models}`)
+      await mount_with_url(
+        GeoOptPage,
+        `http://localhost/benchmarks/geo-opt?models=${models}`,
+      )
 
       expect(document.querySelectorAll(`.empty-note`)).toHaveLength(3)
       expect(document.querySelector(`.rmsd-cdf`)).toBeNull()
@@ -127,7 +137,7 @@ describe(`Geo Opt Task Page`, () => {
   it(`restores scatter, sort, and metrics-table filters from URL params`, async () => {
     await mount_with_url(
       GeoOptPage,
-      `http://localhost/tasks/geo-opt?x=model_params&y=symmetry_match_1e-5&sort=Model&dir=desc&train=MPtrj&openness=OSOD,OSCD&heatmap=0`,
+      `http://localhost/benchmarks/geo-opt?x=model_params&y=symmetry_match_1e-5&sort=Model&dir=desc&train=MPtrj&openness=OSOD,OSCD&heatmap=0`,
     )
 
     const scatter_heading = [...document.querySelectorAll(`h3`)].find((heading) =>
@@ -143,7 +153,7 @@ describe(`Geo Opt Task Page`, () => {
   })
 
   it(`renders table with correct structure, columns, groups, and units`, async () => {
-    await mount_with_url(GeoOptPage, `http://localhost/tasks/geo-opt?models=`)
+    await mount_with_url(GeoOptPage, `http://localhost/benchmarks/geo-opt?models=`)
 
     const table = doc_query(`table`)
     doc_query(`thead`, table)
@@ -215,7 +225,7 @@ describe(`Geo Opt Task Page`, () => {
     } as unknown as ModelData)
 
     try {
-      await mount_with_url(GeoOptPage, `http://localhost/tasks/geo-opt?models=`)
+      await mount_with_url(GeoOptPage, `http://localhost/benchmarks/geo-opt?models=`)
 
       expect(document.body.textContent).not.toContain(model_key)
 
@@ -243,7 +253,7 @@ describe(`Geo Opt Task Page`, () => {
   })
 
   it(`toggles heatmap colors`, async () => {
-    await mount_with_url(GeoOptPage, `http://localhost/tasks/geo-opt?models=`)
+    await mount_with_url(GeoOptPage, `http://localhost/benchmarks/geo-opt?models=`)
 
     const checkbox = doc_query<HTMLInputElement>(
       `input[type="checkbox"][aria-label="Toggle heatmap colors"]`,
@@ -260,7 +270,7 @@ describe(`Geo Opt Task Page`, () => {
   })
 
   it(`opens column visibility panel with checkboxes`, async () => {
-    await mount_with_url(GeoOptPage, `http://localhost/tasks/geo-opt?models=`)
+    await mount_with_url(GeoOptPage, `http://localhost/benchmarks/geo-opt?models=`)
 
     const toggle_btn = doc_query(`.column-toggles summary`)
     toggle_btn.click()
@@ -278,7 +288,7 @@ describe(`Geo Opt Task Page`, () => {
   })
 
   it.each([`RMSD`, `Model`])(`sorts by %s when header is clicked`, async (col_name) => {
-    await mount_with_url(GeoOptPage, `http://localhost/tasks/geo-opt?models=`)
+    await mount_with_url(GeoOptPage, `http://localhost/benchmarks/geo-opt?models=`)
 
     const headers = [...document.querySelectorAll(`th`)]
     const header = headers.find((candidate) =>
@@ -320,7 +330,7 @@ describe(`Geo Opt Task Page`, () => {
       .join(`,`)
     await mount_with_url(
       GeoOptPage,
-      `http://localhost/tasks/geo-opt?models=&train=${train}`,
+      `http://localhost/benchmarks/geo-opt?models=&train=${train}`,
     )
 
     doc_query(`thead`, doc_query(`table`))

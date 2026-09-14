@@ -1,6 +1,7 @@
-import { afterNavigate, replaceState } from '$app/navigation'
+import { afterNavigate, onNavigate, replaceState } from '$app/navigation'
 import { page } from '$app/state'
 import type { AfterNavigate } from '@sveltejs/kit'
+import { untrack } from 'svelte'
 import * as d3_sc from 'd3-scale-chromatic'
 import type { D3InterpolateName } from 'matterviz/colors'
 import type { SortDir } from './types'
@@ -39,42 +40,9 @@ export const sort_url_entries = (
   [`dir`, sort.dir, default_sort.dir],
 ]
 
-// Shared task-page axis and table-sort state. Pages compose its URL entries with
-// their task-specific filters, weights, and model selections.
-export class UrlPlotState {
-  x = $state(``)
-  y = $state(``)
-  sort = $state<SortState>({ column: ``, dir: `asc` })
-
-  constructor(
-    private readonly defaults: { x: string; y: string; sort: SortState },
-    private readonly options: ValidQueryValues<string>,
-  ) {
-    this.x = defaults.x
-    this.y = defaults.y
-    this.sort = { ...defaults.sort }
-  }
-
-  read = (params: URLSearchParams): void => {
-    this.x = valid_query_param(params, `x`, this.defaults.x, this.options)
-    this.y = valid_query_param(params, `y`, this.defaults.y, this.options)
-    this.sort = sort_from_query(params, this.defaults.sort)
-  }
-
-  get url_entries(): UrlParamEntry[] {
-    return [
-      [`x`, this.x, this.defaults.x],
-      [`y`, this.y, this.defaults.y],
-      ...sort_url_entries(this.sort, this.defaults.sort),
-    ]
-  }
-}
-
 // -- Weighted-score radar weights as a single URL param ------------------------
 // Serialized as comma-joined values in config-key order, e.g. weights=0.5,0.4,0.1.
 type WeightsConfig = Record<string, { weight: number }>
-
-const round_weight = (weight: number): number => Math.round(weight * 1000) / 1000
 
 // Empty string when weights match the defaults (so sync_url_params drops the param)
 export function weights_to_param(
@@ -83,11 +51,9 @@ export function weights_to_param(
 ): string {
   const keys = Object.keys(config)
   const is_default = keys.every(
-    (key) =>
-      round_weight(config[key].weight) ===
-      round_weight(default_config[key]?.weight ?? NaN),
+    (key) => config[key].weight === default_config[key]?.weight,
   )
-  return is_default ? `` : keys.map((key) => round_weight(config[key].weight)).join(`,`)
+  return is_default ? `` : keys.map((key) => config[key].weight).join(`,`)
 }
 
 // Parse a weights param and write it into config (normalized to sum 1). A missing
@@ -114,7 +80,10 @@ export function apply_weights_param(
       Number.isFinite(total) &&
       total > 0
     ) {
-      for (const [idx, key] of keys.entries()) config[key].weight = values[idx] / total
+      // Summing normalized f64 weights can differ from 1 by n * epsilon. Preserve
+      // those values exactly so reopening a shared view doesn't change its scores.
+      const divisor = Math.abs(total - 1) <= values.length * Number.EPSILON ? 1 : total
+      for (const [idx, key] of keys.entries()) config[key].weight = values[idx] / divisor
       return
     }
   }
@@ -237,17 +206,33 @@ export class UrlTableFilters {
     )
   }
 
-  matches = (model: FilterableModel): boolean => {
-    if (!this.openness.includes(model.openness)) return false
+  matches = (model: FilterableModel): boolean => this.matches_except(model, {})
+
+  // Facet counts retain every other constraint, including other entries in the
+  // same training/target filter, so they describe the current view.
+  matches_except = (
+    model: FilterableModel,
+    ignored: {
+      training?: string
+      target?: TargetOutput
+      openness?: boolean
+      fs_mode?: boolean
+    },
+  ): boolean => {
+    if (!ignored.openness && !this.openness.includes(model.openness)) return false
     const { outputs, fs_mode } = parse_targets(model.targets)
     const outputs_ok = this.target_entries.every(
-      ([key, mode]) => outputs.has(key) === (mode === `require`),
+      ([key, mode]) =>
+        key === ignored.target || outputs.has(key) === (mode === `require`),
     )
     if (!outputs_ok) return false
     // direct/gradient also drops models without any force/stress prediction
-    if (this.fs_mode !== `any` && fs_mode !== this.fs_mode) return false
+    if (!ignored.fs_mode && this.fs_mode !== `any` && fs_mode !== this.fs_mode)
+      return false
     return this.training_entries.every(
-      ([key, mode]) => model.training_sets.includes(key) === (mode === `require`),
+      ([key, mode]) =>
+        key === ignored.training ||
+        model.training_sets.includes(key) === (mode === `require`),
     )
   }
 
@@ -381,25 +366,42 @@ export function sync_url_params(entries: UrlParamEntry[], state: PageState): voi
   sync_params(entries, location, (url) => replaceState(url, state))
 }
 
-// Two-way URL query-param binding shared by all task pages. Reads state from the URL in
-// afterNavigate (fires after the router is initialized, both on hydration and later
-// navigations), then keeps the URL in sync with page state via replaceState. Gating
-// writes on the first afterNavigate ensures the sync $effect never runs during the
-// initial mount flush, which would throw "before router is initialized". Must be
-// called during component init. read_params also receives the navigation (e.g. to tell
-// a shared-link `enter` from in-app navigation).
+let last_navigation: AfterNavigate | undefined
+const popstate_queries = new WeakMap<Promise<void>, URLSearchParams>()
+
+// Bind during component init. Wait for the router's first navigation before writing;
+// late-mounted components read immediately, since Kit does not replay afterNavigate
+// for them. Readers receive the latest navigation as well as the current query params.
 export function bind_url_params(
   read_params: ((params: URLSearchParams, navigation: AfterNavigate) => void) | null,
   entries: () => UrlParamEntry[],
 ): void {
   let url_ready = $state(false)
 
-  afterNavigate((navigation) => {
-    read_params?.(page.url.searchParams, navigation)
-    url_ready = true
+  // Kit's history metadata retains the original router URL after shallow edits.
+  // Capture the browser's restored query before destination components can write.
+  onNavigate(({ type, complete }) => {
+    if (type === `popstate` && !popstate_queries.has(complete)) {
+      popstate_queries.set(complete, new URLSearchParams(location.search))
+    }
   })
+  const read_url = (
+    navigation: AfterNavigate,
+    params = popstate_queries.get(navigation.complete) ?? page.url.searchParams,
+  ) => {
+    last_navigation = navigation
+    read_params?.(params, navigation)
+    url_ready = true
+  }
+  afterNavigate(read_url)
 
   $effect(() => {
+    const navigation = last_navigation
+    // Normal navigations read the router's original query, before any URL writes.
+    // Late mounts read shallow edits, which Kit's replaceState omits from page.url.
+    if (!url_ready && navigation) {
+      untrack(() => read_url(navigation, new URLSearchParams(location.search)))
+    }
     if (!url_ready) return
     sync_url_params(entries(), page.state)
   })

@@ -1,5 +1,11 @@
 /// <reference types="@sveltejs/kit" />
 
+declare const BENCHMARK_REVISION: {
+  commit: string
+  modified: boolean
+  captured_at: string
+}
+
 declare module '*.md'
 
 declare module '*.json.gz' {

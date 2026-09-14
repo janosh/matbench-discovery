@@ -88,22 +88,25 @@ export const {
   import.meta.env.VITE_KAPPA_PARITY_ASSET_BASE_URL,
 )
 
-export async function load_kappa_parity_base(): Promise<KappaParityBase> {
-  const base = await load_json_asset<KappaParityBase>(
+export const load_kappa_parity_base = (): Promise<KappaParityBase> =>
+  load_json_asset<KappaParityBase>(
     kappa_parity_asset_url(kappa_parity_manifest.base.asset),
+    (base) => {
+      for (const key of [
+        `material_ids`,
+        `formulas`,
+        `kappa_dft`,
+        `n_sites`,
+        `spacegroups`,
+      ] as const) {
+        assert_array_length(
+          `kappa parity ${key}`,
+          base[key],
+          kappa_parity_manifest.row_count,
+        )
+      }
+    },
   )
-  const { row_count } = kappa_parity_manifest
-  for (const key of [
-    `material_ids`,
-    `formulas`,
-    `kappa_dft`,
-    `n_sites`,
-    `spacegroups`,
-  ] as const) {
-    assert_array_length(`kappa parity ${key}`, base[key], row_count)
-  }
-  return base
-}
 
 export const load_kappa_parity_model = (model_key: string): Promise<KappaParityModel> =>
   load_parity_model<KappaParityModel>(

@@ -10,6 +10,7 @@ import {
   doc_query,
   mount,
   mount_with_url,
+  navigate,
   query_param,
   sorted_header,
 } from '../index'
@@ -57,7 +58,8 @@ describe(`Datasets Page`, () => {
     expect(
       document.querySelectorAll(`.property-picker input[role="combobox"]`),
     ).toHaveLength(1)
-    for (const axis of [plot_props().x_axis, plot_props().y_axis]) {
+    const plot = plot_props()
+    for (const axis of [plot.x_axis, plot.y_axis]) {
       expect(axis?.options?.map(({ label }) => label)).toEqual([
         `Created`,
         `Structures`,
@@ -65,14 +67,24 @@ describe(`Datasets Page`, () => {
         `Models`,
       ])
     }
-    expect(plot_props().series?.flatMap(({ x }) => x)).toHaveLength(
+    expect(plot.series?.flatMap(({ x }) => x)).toHaveLength(
       Object.values(DATASETS).filter(({ n_structures }) => n_structures !== null).length,
     )
-    expect(
-      plot_props()
-        .series?.flatMap(({ y }) => y)
-        .every(Number.isFinite),
-    ).toBe(true)
+    expect(plot.series?.every(({ y }) => y.every(Number.isFinite))).toBe(true)
+    expect(plot).toMatchObject({
+      color_bar: { title: `Models`, selected_property_key: `n_models` },
+      color_scale: { type: { type: `arcsinh`, threshold: 0.25 } },
+    })
+    const plotted_counts = plot.series?.flatMap(({ color_values }) => color_values)
+    expect(plotted_counts).toContain(0)
+    expect(plotted_counts).toContain(
+      ACTIVE_MODELS.filter(({ training_sets }) => training_sets.includes(`MPtrj`)).length,
+    )
+    const color_toggle = doc_query<HTMLInputElement>(
+      `[aria-label="Arcsinh scales"] input`,
+    )
+    expect(color_toggle.parentElement?.textContent?.trim()).toBe(`Color`)
+    expect(color_toggle.checked).toBe(true)
     for (const [key, role, access, release] of [
       [`WBM`, `Test`, `Public`, `Fixed release`],
       [`sAlex Validation`, `Validation`, `Public`, `Fixed release`],
@@ -383,5 +395,15 @@ describe(`Datasets Page`, () => {
       entries.map(([, dataset]) => dataset.n_materials),
     )
     if (dim === `color`) expect(plot_props().color_bar?.categories).toBeUndefined()
+
+    const shared_query = location.search
+    const shared_heading = doc_query(`#dataset-growth h2`).textContent
+    for (const query of [``, shared_query]) {
+      await navigate(`/data/sets${query}`, `popstate`)
+      expect(query_param(dim)).toBe(query ? `n_materials` : null)
+      expect(doc_query(`#dataset-growth h2`).textContent).toBe(
+        query ? shared_heading : `Dataset Sizes Over Time`,
+      )
+    }
   })
 })

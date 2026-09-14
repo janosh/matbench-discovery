@@ -1,10 +1,11 @@
 import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
-import DiscoveryPage from '$routes/tasks/discovery/+page.svelte'
+import DiscoveryPage from '$routes/benchmarks/discovery/+page.svelte'
 import type { ScatterPlot } from 'matterviz/plot'
 import { tick, type ComponentProps } from 'svelte'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   checkbox_for,
+  doc_query,
   filter_summary_badge,
   get_scatter_plot_props,
   header_name,
@@ -70,7 +71,14 @@ describe(`Discovery Task Page`, () => {
     expect(sorted_header()?.textContent).toContain(`F1`)
     expect(sorted_header()?.getAttribute(`aria-sort`)).toBe(`descending`)
 
-    expect(heading_texts()).toContain(`F1 vs Params`)
+    expect(heading_texts()).toEqual([
+      `Leaderboard`,
+      `F1 vs Params`,
+      `Diagnostics`,
+      `Test set: WBM`,
+      `Methodology`,
+    ])
+    expect(doc_query(`#methodology + h3`).closest(`details`)).toBeNull()
     expect(comparison_scatter_props()).toBeDefined()
     expect(document.body.textContent).toContain(`Convex Hull Construction`)
   })
@@ -127,7 +135,7 @@ describe(`Discovery Task Page`, () => {
   })
 
   it(`restores and syncs URL state`, async () => {
-    const url = `http://localhost/tasks/discovery?set=full_test_set&targets=F,S,gradient&x=F1&y=rmsd&sort=F1&dir=asc&train=MPtrj,-OMat24&heatmap=0`
+    const url = `http://localhost/benchmarks/discovery?set=full_test_set&targets=F,S,gradient&x=F1&y=rmsd&sort=F1&dir=asc&train=MPtrj,-OMat24&heatmap=0`
     await mount_with_url(DiscoveryPage, url)
 
     expect(active_toggle()).toBe(`Full Test Set`)

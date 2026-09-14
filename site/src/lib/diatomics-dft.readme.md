@@ -2,6 +2,8 @@
 
 `diatomics-dft.json.gz` contains VASP reference potential-energy curves for homonuclear dimers `X2` with `X = H...U` (`Z = 1...92`) at PBE and r2SCAN. The site uses this file for the DFT overlays on the Diatomics page and the Python metrics code uses the PBE subset for reference-relative model metrics.
 
+Download the curves from [Figshare](https://figshare.com/files/68541277), or use `DataFiles.diatomics_dft_reference.path` to download, verify, and cache them in Python. The bundled copy keeps site builds independent of Figshare availability. When regenerating it, publish the updated file and update the registry URL and checksum together.
+
 After decompression, the schema is:
 
 ```ts

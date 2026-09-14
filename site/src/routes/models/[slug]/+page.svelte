@@ -7,6 +7,10 @@
   import PtableInset from '$lib/PtableInset.svelte'
   import {
     discovery_task_tooltips,
+    get_nested_value,
+    is_finite_num,
+    metric_value,
+    missing_metric_reason,
     model_role_from_targets,
     openness_tooltips,
     targets_tooltips,
@@ -14,10 +18,11 @@
   import { has_kappa_parity_model } from '$lib/parity/kappa-parity'
   import EnergyParityPlot from '$lib/plot/EnergyParityPlot.svelte'
   import KappaParityPlot from '$lib/plot/KappaParityPlot.svelte'
-  import { ACTIVE_MODELS, get_pred_file_urls } from '$lib/models.svelte'
+  import { ACTIVE_MODELS, get_pred_file_urls, MODELS } from '$lib/models.svelte'
+  import { error } from '@sveltejs/kit'
   import pkg from '$site/package.json'
   import type { ChemicalElement } from 'matterviz'
-  import { ButtonGroup, CopyButton, Icon, JsonTree, Popover } from 'svelte-widgets'
+  import { ButtonGroup, CopyButton, Icon, Popover } from 'svelte-widgets'
   import {
     Calendar,
     CalendarCheck,
@@ -42,6 +47,7 @@
   import { format_relative_time, get_org_logo } from '$lib/labels'
   import { format_num } from 'matterviz/labels'
   import { HeatmapTable } from 'matterviz/table'
+  import { JsonTree } from 'matterviz/layout'
   import { ColorBar } from 'matterviz/plot'
   import { PeriodicTable, TableInset } from 'matterviz/periodic-table'
   import type { D3InterpolateName } from 'matterviz/colors'
@@ -54,7 +60,7 @@
   import { per_element_each_errors as per_elem_each_errors } from '$lib/per-element-errors'
   import type { PageData } from './$types'
 
-  type ModelInfoItem = readonly [key: string, value: string, title?: string | null]
+  type ModelInfoItem = readonly [label: string, value: string, notation?: string]
 
   let { data }: { data: PageData } = $props()
 
@@ -94,7 +100,7 @@
     md_col_defs.filter((col) => md_rows.some((row) => col.id in row)),
   )
 
-  // static: this page has no color-scale picker (see /tasks/discovery/tmi for one)
+  // static: this page has no color-scale picker (see /benchmarks/discovery/tmi for one)
   const color_scale: D3InterpolateName = `interpolateViridis`
   let active_element: ChemicalElement | null = $state(null)
   // energy-parity tab bar: only the active plot is visible; a tab's plot mounts on
@@ -115,6 +121,17 @@
   $effect(() => {
     mounted_energy_tabs.add(energy_parity_tab)
   })
+  let model = $derived(
+    MODELS.find(({ model_key }) => model_key === data.model_key) ??
+      error(404, { message: `Model "${data.model_key}" not found` }),
+  )
+  const task_metrics = RANKED_METRICS.filter((metric) => metric.rank_href !== `/`)
+  const task_key = (href: string) => href.replace(`/benchmarks/`, ``)
+  const diagnostic_values = new Set([
+    ``,
+    ...task_metrics.map((metric) => task_key(metric.rank_href)),
+  ])
+  let diagnostic_task = $state(``)
   bind_url_params(
     (params) => {
       energy_parity_tab = valid_query_param(
@@ -123,10 +140,30 @@
         default_energy_tab,
         energy_tab_values,
       )
+      diagnostic_task = valid_query_param(params, `diagnostic`, ``, diagnostic_values)
     },
-    () => [[`energy_tab`, energy_parity_tab, default_energy_tab]],
+    () => [
+      [`energy_tab`, energy_parity_tab, default_energy_tab],
+      [`diagnostic`, diagnostic_task, ``],
+    ],
   )
-  let { model } = $derived(data)
+  const has_task_results = (task: string) => {
+    const results = get_nested_value(model, `metrics.${task.replaceAll(`-`, `_`)}`)
+    return Boolean(
+      results &&
+      typeof results === `object` &&
+      Object.keys(results).some((key) => ![`status`, `reason`].includes(key)),
+    )
+  }
+  let selected_metric = $derived(
+    task_metrics.find((metric) => task_key(metric.rank_href) === diagnostic_task),
+  )
+  // Registry tests enforce a shared calculator for every declared phonon protocol.
+  let runner_command = $derived(
+    model.hyperparams?.evaluation?.kappa
+      ? `uv run models/run_kappa.py --model ${model.model_key} --print-cmd --dry-run`
+      : undefined,
+  )
   // Rank against the active leaderboard cohort and track live score weights.
   let ranks = $derived(model_metric_ranks(model.model_key, ACTIVE_MODELS, RANKED_METRICS))
   let comparing = $derived(comparison.keys.has(model.model_key))
@@ -152,17 +189,19 @@
     [model.checkpoint_url, `Checkpoint`, Download, `Download model checkpoint`],
   ] as const)
   let model_role = $derived(model_role_from_targets(model.targets))
-  let model_info_items: ModelInfoItem[] = $derived([
-    [`Version`, model.model_version ?? `Unknown`],
-    [`Role`, model_role.label, model_role.title],
-    [`Architecture`, model.architecture_types.join(`, `)],
-    [`Targets`, model.targets, targets_tooltips[model.targets]],
-    [`Openness`, model.openness, openness_tooltips[model.openness]],
-    [`Discovery Train Task`, model.train_task, discovery_task_tooltips[model.train_task]],
-    [`Discovery Test Task`, model.test_task, discovery_task_tooltips[model.test_task]],
-  ])
+  let model_info_groups: Record<string, ModelInfoItem[]> = $derived({
+    Specifications: [
+      [`Architecture`, model.architecture_types.join(`, `)],
+      [`Outputs`, targets_tooltips[model.targets], model.targets],
+      [`Openness`, openness_tooltips[model.openness], model.openness],
+    ],
+    'Discovery protocol': [
+      [`Training`, discovery_task_tooltips[model.train_task], model.train_task],
+      [`Evaluation`, discovery_task_tooltips[model.test_task], model.test_task],
+    ],
+  })
 
-  let missing_preds = $derived(model.metrics?.discovery?.unique_prototypes?.missing_preds)
+  let missing_preds = $derived(model.metrics?.discovery?.full_test_set?.missing_preds)
 </script>
 
 {#snippet author_brief(author: Author)}
@@ -283,144 +322,324 @@
     {/if}
   </section>
 
-  {#if ranks.length}
-    <section class="rank-card">
-      <span class="rank-card-label">Leaderboard ranks</span>
-      {#each ranks as rank_entry (rank_entry.metric.key)}
-        {@const { metric, rank, n_models, value } = rank_entry}
-        <Popover trigger_mode="hover" trap_focus={false} aria-label="Metric rank">
-          {#snippet trigger(trigger_props)}
-            <a href={metric.rank_href} {...trigger_props}>
-              <span class="metric-label">{@html metric.label}</span>
-              <strong style:color={rank_color(rank, n_models)}>#{rank}</strong>
-              <small>/{n_models}</small>
-            </a>
-          {/snippet}
-          Ranked {rank} of {n_models} models with a {@html metric.label} of {format_num(
-            value,
-            metric.format ?? `.3`,
-          )}{@html metric.unit ? ` ${metric.unit}` : ``}.<br />
-          {@html metric.description ?? ``}
-        </Popover>
-      {/each}
-    </section>
-  {/if}
-
-  <section class="discovery-detail">
-    <h2 id="discovery-energy-and-convex-hull-diagnostics" style="text-align: center">
-      <a href="/tasks/discovery">Discovery</a>: energy and convex hull diagnostics
-    </h2>
-    <!-- segmented tab bar controls the parity plot; the active button shows a
-    spinner while its plot's data is still loading -->
-    <div class="energy-parity-controls">
-      <ButtonGroup
-        class="energy-parity-tabs"
-        bind:selected={energy_parity_tab}
-        label="Energy parity diagnostics"
-        options={energy_parity_options.map((option) => ({
-          ...option,
-          loading:
-            energy_parity_tab === option.value &&
-            energy_parity_statuses[option.value] !== `ready` &&
-            energy_parity_statuses[option.value] !== `error`,
-        }))}
-      />
-      {#if missing_preds != undefined && DATASETS.WBM.n_structures !== null}
-        <span
-          class="missing-preds"
-          {@attach tooltip({
-            content: `Out of ${format_num(DATASETS.WBM.n_structures, `,`)} WBM structures, ${format_num(missing_preds, `,`)} are missing predictions. This refers only to the discovery task of predicting WBM convex hull distances.`,
-          })}
-        >
-          <Icon icon={MissingMetadata} />
-          Missing preds: {format_num(missing_preds, `,.0f`)}
-          {#if missing_preds != 0}
-            <small>
-              ({format_num(missing_preds / DATASETS.WBM.n_structures, `.3~%`)})
-            </small>
-          {/if}
-        </span>
-      {/if}
-    </div>
-    {#each energy_parity_options as { value: energy_kind } (energy_kind)}
-      {#if mounted_energy_tabs.has(energy_kind)}
-        <EnergyParityPlot
-          hidden={energy_parity_tab !== energy_kind}
-          {model}
-          {energy_kind}
-          onstatus={(status) => (energy_parity_statuses[energy_kind] = status)}
-        />
-      {/if}
-    {/each}
-
-    {#if model.model_key && model.model_key in per_elem_each_errors}
-      {@const raw_heatmap = per_elem_each_errors[model.model_key]}
-      {@const heatmap_values = Object.fromEntries(
-        Object.entries(raw_heatmap).filter(
-          (entry): entry is [string, number] => entry[1] !== null,
-        ),
-      )}
-      <h3 id="per-element-convex-hull-distance-errors" class="toc-exclude">
-        Per-element convex hull distance errors
-      </h3>
-      <PeriodicTable
-        {heatmap_values}
-        {color_scale}
-        bind:active_element
-        tile_props={{ float_fmt: `.2f` }}
-        show_photo={false}
-        missing={{
-          color: `light-dark(rgba(255,255,255,0.3), rgba(255,255,255,0.5))`,
-        }}
-      >
-        {#snippet inset()}
-          <TableInset style="align-content: center">
-            <div style="height: 2em">
-              {#if active_element}
-                <PtableInset
-                  element={active_element}
-                  elem_counts={heatmap_values}
-                  show_percent={false}
-                  unit="<small style='font-weight: lighter;'>eV / atom</small>"
-                />
-              {/if}
-            </div>
-            <ColorBar
-              title="|E<sub>ML,hull</sub> - E<sub>DFT,hull</sub>| (eV / atom)"
-              title_side="top"
-              scale={color_scale}
-              range={[0, Math.max(0, ...Object.values(heatmap_values))]}
-              style="width: 80%; margin: 0 2em"
-            />
-          </TableInset>
-        {/snippet}
-      </PeriodicTable>
+  <section class="overview" aria-labelledby="model-overview">
+    <h2 id="model-overview">Model overview</h2>
+    <p>{model_role.label}: {targets_tooltips[model.targets]}.</p>
+    {#if is_finite_num(model.CPS)}
+      <p>
+        <a href="/">CPS {format_num(model.CPS, `.3`)}</a> combines discovery, geometry optimization,
+        and phonons. Inspect individual task results below.
+      </p>
     {/if}
+    <dl class="licenses">
+      {#each [`code`, `checkpoint`] as const as kind (kind)}
+        {@const license_url = model.license[`${kind}_url`]}
+        <div>
+          <dt>{kind === `code` ? `Code` : `Checkpoint`} license</dt>
+          <dd>
+            {#if license_url}
+              <a href={license_url}>{model.license[kind]}</a>
+            {:else}
+              {model.license[kind]}
+            {/if}
+          </dd>
+        </div>
+      {/each}
+    </dl>
+    <p class="license-note">
+      Licenses are as declared by the submitter. Training dataset terms are listed
+      separately below.
+    </p>
   </section>
 
-  {#if has_kappa_parity_model(model.model_key)}
-    <KappaParityPlot {model} />
-  {/if}
+  <section class="rank-card" aria-label="Task evaluations">
+    {#each task_metrics as metric (metric.key)}
+      {@const task = task_key(metric.rank_href)}
+      {@const available = has_task_results(task)}
+      {@const value = metric_value(model, metric)}
+      {@const rank_entry = ranks.find((entry) => entry.metric.key === metric.key)}
+      <Popover trigger_mode="hover" trap_focus={false} aria-label="Metric rank">
+        {#snippet trigger(trigger_props)}
+          <a
+            href={available ? `?diagnostic=${task}#diagnostics` : metric.rank_href}
+            aria-current={available && diagnostic_task === task ? `true` : undefined}
+            onclick={(event) => {
+              if (
+                !available ||
+                event.metaKey ||
+                event.ctrlKey ||
+                event.shiftKey ||
+                event.altKey
+              )
+                return
+              event.preventDefault()
+              diagnostic_task = task
+              document.getElementById(`diagnostics`)?.scrollIntoView()
+            }}
+            {...trigger_props}
+          >
+            <span class="metric-label">{@html metric.label}</span>
+            {#if is_finite_num(value)}
+              <strong>{format_num(value, metric.format ?? `.3`)}</strong>
+              {#if rank_entry}
+                <small style:color={rank_color(rank_entry.rank, rank_entry.n_models)}
+                  >#{rank_entry.rank}/{rank_entry.n_models}</small
+                >
+              {/if}
+            {:else}
+              <small>{available ? `Score unavailable` : `No results`}</small>
+            {/if}
+          </a>
+        {/snippet}
+        {#if rank_entry}
+          Ranked {rank_entry.rank} of {rank_entry.n_models} active models with this metric.<br
+          />
+        {/if}
+        {#if is_finite_num(value)}
+          {@html metric.description ?? ``}
+        {:else}
+          {@html missing_metric_reason(model, metric)}
+        {/if}
+      </Popover>
+    {/each}
+  </section>
 
-  {#if md_rows.length > 0}
-    <section class="md-per-system">
-      <h2 id="molecular-dynamics-per-system-breakdown" style="text-align: center">
-        Molecular dynamics: per-system breakdown
-      </h2>
+  <section class="model-info" aria-labelledby="model-info">
+    <h2 id="model-info">Model Info</h2>
+    <div class="info-grid">
+      {#each Object.entries(model_info_groups) as [label, items] (label)}
+        <div>
+          <h3 class="toc-exclude">{label}</h3>
+          <dl aria-label={label}>
+            {#each items as [key, value, notation] (key)}
+              <div>
+                <dt>{key}</dt>
+                <dd>
+                  {value}
+                  {#if notation}
+                    <span class="notation"
+                      >{@html notation.replace(/_(.)/g, `<sub>$1</sub>`)}</span
+                    >
+                  {/if}
+                </dd>
+              </div>
+            {/each}
+          </dl>
+        </div>
+      {/each}
+    </div>
+  </section>
+
+  <h2 id="training-set">Training Set</h2>
+  <section class="training-set">
+    {#each model.training_sets as dataset_key (dataset_key)}
+      {@const { n_structures, name, slug, n_materials, license } = DATASETS[dataset_key]}
       <p>
-        Errors of this model's NVT rollouts against each DynaMat v1.0 ab-initio reference
-        trajectory (see the <a href="/tasks/md">MD task page</a> for metric definitions). Reveals
-        which chemistries a model struggles with, which the leaderboard's cross-system means
-        hide.
+        <a href="/data/{slug}">{name}</a>:
+        <span
+          title={n_structures?.toLocaleString() ?? `Structure count not reported`}
+          {@attach tooltip()}
+        >
+          <strong
+            >{n_structures === null
+              ? `Unknown number of`
+              : format_num(n_structures)}</strong
+          >
+        </span>
+        structures
+        {#if typeof n_materials == `number`}
+          from <span title={n_materials.toLocaleString()} {@attach tooltip()}>
+            <strong>{format_num(n_materials)}</strong>
+          </span> materials
+        {/if}
+        <small> · {license}</small>
       </p>
-      <HeatmapTable
-        data={md_rows}
-        columns={md_cols}
-        initial_sort="system"
-        default_num_format=".3~f"
-      />
-    </section>
-  {/if}
+    {/each}
+  </section>
+
+  <details class="run-model">
+    <summary>Run this model</summary>
+    <p>
+      Use the <a href="#dependencies">submitted environment</a> with the
+      {#if model.docs || model.repo}
+        <a href={model.docs || model.repo || ``}>upstream instructions</a>.
+      {:else}
+        <a href="{pkg.repository}/tree/HEAD/models/{model.dirname}">submission files</a>.
+      {/if}
+    </p>
+    {#if runner_command}
+      <p>
+        From a repository checkout, run <code
+          >uv run models/run_kappa.py --list-models</code
+        >
+        to check checkpoint requirements. If this model requires one, add
+        <code>--checkpoint /path/to/checkpoint</code> below. Then execute the printed command
+        for a phonon smoke test in the model's isolated environment.
+      </p>
+      <div class="runner-command">
+        <code>{runner_command}</code><CopyButton content={runner_command} />
+      </div>
+    {/if}
+  </details>
+
+  <section id="diagnostics" aria-label="Task diagnostics">
+    {#if selected_metric && has_task_results(diagnostic_task)}
+      <p class="diagnostic-context">
+        <a
+          href="{selected_metric.rank_href}?{diagnostic_task === `phonons`
+            ? `model`
+            : `models`}={model.model_key}"
+          >Open {@html selected_metric.label} leaderboard and task details</a
+        >
+      </p>
+      {#if diagnostic_task === `discovery`}
+        <section class="discovery-detail">
+          <h2
+            id="discovery-energy-and-convex-hull-diagnostics"
+            style="text-align: center"
+          >
+            <a href="/benchmarks/discovery">Discovery</a>: energy and convex hull
+            diagnostics
+          </h2>
+          <!-- segmented tab bar controls the parity plot; the active button shows a
+          spinner while its plot's data is still loading -->
+          <div class="energy-parity-controls">
+            <ButtonGroup
+              class="energy-parity-tabs"
+              bind:selected={energy_parity_tab}
+              label="Energy parity diagnostics"
+              options={energy_parity_options.map((option) => ({
+                ...option,
+                loading:
+                  (energy_parity_tab === option.value &&
+                    energy_parity_statuses[option.value] !== `ready` &&
+                    energy_parity_statuses[option.value] !== `error`) ||
+                  undefined,
+              }))}
+            />
+            {#if missing_preds != undefined && DATASETS.WBM.n_structures !== null}
+              <span
+                class="missing-preds"
+                {@attach tooltip({
+                  content: `Out of ${format_num(DATASETS.WBM.n_structures, `,`)} WBM structures, ${format_num(missing_preds, `,`)} have missing or filtered-out discovery predictions.`,
+                })}
+              >
+                <Icon icon={MissingMetadata} />
+                Missing preds: {format_num(missing_preds, `,.0f`)}
+                {#if missing_preds != 0}
+                  <small>
+                    ({format_num(missing_preds / DATASETS.WBM.n_structures, `.3~%`)})
+                  </small>
+                {/if}
+              </span>
+            {/if}
+          </div>
+          {#each energy_parity_options as { value: energy_kind } (energy_kind)}
+            {#if mounted_energy_tabs.has(energy_kind)}
+              <EnergyParityPlot
+                hidden={energy_parity_tab !== energy_kind}
+                {model}
+                {energy_kind}
+                onstatus={(status) => (energy_parity_statuses[energy_kind] = status)}
+              />
+            {/if}
+          {/each}
+
+          {#if model.model_key && model.model_key in per_elem_each_errors}
+            {@const raw_heatmap = per_elem_each_errors[model.model_key]}
+            {@const heatmap_values = Object.fromEntries(
+              Object.entries(raw_heatmap).filter(
+                (entry): entry is [string, number] => entry[1] !== null,
+              ),
+            )}
+            <h3 id="per-element-convex-hull-distance-errors" class="toc-exclude">
+              Per-element convex hull distance errors
+            </h3>
+            <PeriodicTable
+              {heatmap_values}
+              {color_scale}
+              bind:active_element
+              tile_props={{ float_fmt: `.2f` }}
+              show_photo={false}
+              missing={{
+                color: `light-dark(rgba(255,255,255,0.3), rgba(255,255,255,0.5))`,
+              }}
+            >
+              {#snippet inset()}
+                <TableInset style="align-content: center">
+                  <div style="height: 2em">
+                    {#if active_element}
+                      <PtableInset
+                        element={active_element}
+                        elem_counts={heatmap_values}
+                        show_percent={false}
+                        unit="<small style='font-weight: lighter;'>eV / atom</small>"
+                      />
+                    {/if}
+                  </div>
+                  <ColorBar
+                    title="|E<sub>ML,hull</sub> - E<sub>DFT,hull</sub>| (eV / atom)"
+                    title_side="top"
+                    scale={color_scale}
+                    range={[0, Math.max(0, ...Object.values(heatmap_values))]}
+                    style="width: 80%; margin: 0 2em"
+                  />
+                </TableInset>
+              {/snippet}
+            </PeriodicTable>
+          {/if}
+        </section>
+      {:else if diagnostic_task === `geo-opt`}
+        <h2>Geometry optimization</h2>
+        <p>
+          Relaxed-structure agreement with the WBM DFT references. Explore structure
+          errors and symmetry changes on the task page.
+        </p>
+      {:else if diagnostic_task === `phonons`}
+        {#if has_kappa_parity_model(model.model_key)}
+          <KappaParityPlot {model} />
+        {:else}
+          <p>
+            Phonon metrics are available on the task page; this model has no per-material
+            parity plot.
+          </p>
+        {/if}
+      {:else if diagnostic_task === `md`}
+        {#if md_rows.length > 0}
+          <section class="md-per-system">
+            <h2 id="molecular-dynamics-per-system-breakdown" style="text-align: center">
+              Molecular dynamics: per-system breakdown
+            </h2>
+            <p>
+              Errors of this model's NVT rollouts against each DynaMat v1.0 ab-initio
+              reference trajectory (see the <a href="/benchmarks/md">MD task page</a> for metric
+              definitions). Reveals which chemistries a model struggles with, which the leaderboard's
+              cross-system means hide.
+            </p>
+            <HeatmapTable
+              data={md_rows}
+              columns={md_cols}
+              initial_sort="system"
+              default_num_format=".3~f"
+            />
+          </section>
+        {:else}
+          <p>
+            MD metrics are available on the task page; this model has no per-system
+            breakdown.
+          </p>
+        {/if}
+      {:else if diagnostic_task === `diatomics`}
+        <h2>Diatomics</h2>
+        <p>
+          Compare energy and force curves with DFT references on the task page, with this
+          model selected.
+        </p>
+      {/if}
+    {:else}
+      <p>Select an available task above to inspect this model's results.</p>
+    {/if}
+  </section>
 
   <section class="authors">
     <h2 id="model-authors">Model Authors</h2>
@@ -446,53 +665,11 @@
     </section>
   {/if}
 
-  <section class="model-info">
-    <h2 id="model-info">Model Info</h2>
-    <ul>
-      {#each model_info_items as [key, value, title = null] (key)}
-        <li {title} {@attach tooltip()}>
-          {key}
-          {#if key === `Targets`}
-            <strong>{@html value.replace(/_(.)/g, `<sub>$1</sub>`)}</strong>
-          {:else}
-            <strong>{value}</strong>
-          {/if}
-        </li>
-      {/each}
-    </ul>
-  </section>
-
-  <h2 id="training-set">Training Set</h2>
-  <section class="training-set">
-    {#each model.training_sets as dataset_key (dataset_key)}
-      {@const { n_structures, name, slug, n_materials } = DATASETS[dataset_key]}
-      <p>
-        <a href="/data/{slug}">{name}</a>:
-        <span
-          title={n_structures?.toLocaleString() ?? `Structure count not reported`}
-          {@attach tooltip()}
-        >
-          <strong
-            >{n_structures === null
-              ? `Unknown number of`
-              : format_num(n_structures)}</strong
-          >
-        </span>
-        structures
-        {#if typeof n_materials == `number`}
-          from <span title={n_materials.toLocaleString()} {@attach tooltip()}>
-            <strong>{format_num(n_materials)}</strong>
-          </span> materials
-        {/if}
-      </p>
-    {/each}
-  </section>
-
   {#if model.notes?.html}
     <section class="notes">
       {#each Object.entries(model.notes.html) as [key, note] (key)}
         <h2>{key}</h2>
-        <p>{@html note}</p>
+        <div>{@html note}</div>
       {/each}
     </section>
   {/if}
@@ -500,7 +677,11 @@
   {#if model.hyperparams}
     <section class="hyperparams">
       <h2 id="hyperparams">Hyperparams</h2>
-      <JsonTree value={model.hyperparams} />
+      <JsonTree
+        value={model.hyperparams}
+        ui={{ header: false, path: false, node_actions: false, size_hints: false }}
+        default_fold_level={Infinity}
+      />
     </section>
   {/if}
 
@@ -535,24 +716,31 @@
   .rank-card {
     display: flex;
     flex-wrap: wrap;
-    align-items: baseline;
+    align-items: center;
     justify-content: center;
-    gap: 3pt 1.4em;
+    gap: 0.5em;
     margin: 1em auto;
-    :is(.rank-card-label, .metric-label) {
+    .metric-label {
       font-size: 0.9em;
     }
-    :is(.rank-card-label, .metric-label, a small) {
+    :is(.metric-label, a small) {
       color: var(--text-secondary);
     }
     a {
       display: inline-flex;
       align-items: baseline;
       color: var(--text-color);
+      gap: 0.3em;
+      padding: 0.25em 0.5em;
+      flex-wrap: wrap;
+      border-radius: 0.3em;
+      background: var(--chip-bg);
+      &[aria-current='true'] {
+        box-shadow: inset 0 0 0 1px var(--link-color);
+      }
     }
     a strong {
       font-size: smaller;
-      margin-left: 4pt;
     }
     a:hover .metric-label {
       text-decoration: underline;
@@ -561,16 +749,102 @@
   h2 {
     margin: 2ex auto 0;
   }
-  section:not(.rank-card) {
+  .model-detail {
+    min-width: 0;
+    > h1 {
+      overflow-wrap: anywhere;
+    }
+  }
+  .licenses {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1em 3em;
+    margin: 1em 0;
+    dt {
+      font-size: 0.9em;
+      color: var(--text-secondary);
+    }
+    dd {
+      margin: 0;
+      font-weight: bold;
+    }
+  }
+  .license-note {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+  }
+  .run-model {
+    margin: 1em 0;
+    summary {
+      padding-block: 0.5em;
+    }
+  }
+  .runner-command {
+    display: flex;
+    align-items: start;
+    gap: 0.5em;
+    code {
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+  }
+  #diagnostics {
+    margin-block: 2em;
+    scroll-margin-top: 5em;
+  }
+  section:not(.rank-card, .model-info) {
     text-wrap: balance;
   }
-  section:is(.deps, .model-info) ul {
+  .model-info {
+    text-wrap: pretty;
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 21rem), 1fr));
+      gap: 1em 1.5em;
+      margin-block: 0.6em;
+      > div {
+        min-width: 0;
+      }
+    }
+    h3 {
+      font-size: 1em;
+      margin: 0 0 0.5em;
+      text-align: left;
+    }
+    dl {
+      margin: 0;
+      > div {
+        display: grid;
+        grid-template-columns: 6em minmax(0, 1fr);
+        gap: 0.6em;
+        padding-block: 0.35em;
+        border-top: 1px solid var(--border);
+        align-items: baseline;
+      }
+    }
+    dt {
+      color: var(--text-secondary);
+      font-size: 0.9em;
+    }
+    dd {
+      margin: 0;
+      overflow-wrap: anywhere;
+    }
+    .notation {
+      display: inline-block;
+      margin-inline-start: 0.35em;
+      white-space: nowrap;
+      color: var(--text-secondary);
+      font-size: 0.8em;
+    }
+  }
+  section.deps ul {
     display: flex;
     flex-wrap: wrap;
     gap: 1em;
     padding: 0;
   }
-  section:is(.deps, .model-info) ul li {
+  section.deps ul li {
     background-color: var(--chip-bg);
     padding: 2pt 6pt;
     border-radius: 3pt;
@@ -579,7 +853,7 @@
     font-weight: lighter;
     max-width: 12em;
   }
-  section:is(.deps, .model-info) ul li :is(a, strong) {
+  section.deps ul li :is(a, strong) {
     display: block;
     font-weight: bold;
   }
@@ -646,7 +920,7 @@
     display: inline-flex;
     place-items: center;
     gap: 5px;
-    padding: 0 5pt;
+    padding: 2pt 5pt;
     background-color: var(--chip-bg);
     border-radius: 5px;
   }
@@ -681,7 +955,7 @@
     white-space: nowrap;
     text-overflow: ellipsis;
   }
-  div.model-detail :not(section.notes) :global(h3) {
+  div.model-detail > :not(section.notes, section.model-info) :global(h3) {
     text-align: center;
     margin: 2em auto 0;
   }

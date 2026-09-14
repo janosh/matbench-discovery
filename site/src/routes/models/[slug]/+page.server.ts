@@ -12,5 +12,5 @@ export const load: PageServerLoad = async ({ params }) => {
   if (!model) {
     error(404, { message: `Model "${params.slug}" not found` })
   }
-  return { model, md_per_system: await read_md_per_system(model) }
+  return { model_key: model.model_key, md_per_system: await read_md_per_system(model) }
 }

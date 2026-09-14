@@ -1,7 +1,13 @@
-import { afterNavigate } from '$app/navigation'
+import { afterNavigate, onNavigate } from '$app/navigation'
 import { page } from '$app/state'
+import type { AfterNavigate } from '@sveltejs/kit'
 import DATASETS from '$data/datasets.yml'
-import { ACTIVE_MODELS, MODELS } from '$lib/models.svelte'
+import {
+  ACTIVE_MODELS,
+  bind_score_weights,
+  MODELS,
+  score_weight_records,
+} from '$lib/models.svelte'
 import {
   bind_comparison_url,
   COMPARE_GROUPS,
@@ -10,12 +16,22 @@ import {
   mark_compared_rows,
   type CompareRow,
 } from '$lib/model-comparison.svelte'
+import { bind_url_params } from '$lib/url-state.svelte'
 import ModelComparison from '$lib/model/ModelComparison.svelte'
 import ModelPage from '$routes/models/[slug]/+page.svelte'
 import type { ModelData } from '$lib/types'
 import { flushSync, tick } from 'svelte'
-import { afterEach, beforeEach, describe, expect, it, test, vi } from 'vitest'
-import { doc_query, get_scatter_plot_props, mount } from '../index'
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  onTestFinished,
+  test,
+  vi,
+} from 'vitest'
+import { doc_query, get_scatter_plot_props, mount, query_param } from '../index'
 
 // happy-dom never measures the plot, so capture ScatterPlot's props instead of its SVG
 const plot_mocks = vi.hoisted(() => ({ ScatterPlot: vi.fn() }))
@@ -34,7 +50,7 @@ type PlotProps = {
     label: string
     scale_type: string
   }
-  y_axis: { label: string }
+  y_axis: { label: string; scale_type: string }
   on_axis_change: (axis: `x` | `y`, key: string) => void
   point_events: {
     onclick: (payload: { point: { metadata: { model_key: string } } }) => void
@@ -184,22 +200,74 @@ describe(`comparison store`, () => {
   })
 })
 
+it(`reads shallow edits on late mount but the original router query on navigation`, () => {
+  const navigation = { type: `link` } as AfterNavigate
+  onTestFinished(
+    $effect.root(() => {
+      bind_url_params(null, () => [[`columns`, `Model,CPS`]])
+    }),
+  )
+  vi.mocked(afterNavigate).mock.calls.at(-1)?.[0](navigation)
+  flushSync()
+  expect(location.search).toBe(`?columns=Model,CPS`)
+  expect(page.url.search).toBe(``)
+
+  const reads: (string | null)[] = []
+  onTestFinished(
+    $effect.root(() => {
+      bind_url_params(
+        (params) => {
+          reads.push(params.get(`columns`))
+        },
+        () => [],
+      )
+    }),
+  )
+  flushSync()
+  expect(reads).toEqual([`Model,CPS`])
+
+  // Another binding has already written its automatic defaults. The navigation
+  // callback must not mistake those writes for explicit columns from a shared URL.
+  vi.mocked(afterNavigate).mock.calls.at(-1)?.[0](navigation)
+  flushSync()
+  expect(reads).toEqual([`Model,CPS`, null])
+
+  // Back restores shallow edits in location, but Kit's router URL is still original.
+  const popped = { type: `popstate`, complete: Promise.resolve() } as AfterNavigate
+  history.replaceState(null, ``, `/?columns=Model,F1`)
+  for (const [callback] of vi.mocked(onNavigate).mock.calls) {
+    void callback(popped as Parameters<Parameters<typeof onNavigate>[0]>[0])
+  }
+  // A destination binding may write defaults before the remaining readers run.
+  history.replaceState(null, ``, `/?columns=Model,CPS`)
+  vi.mocked(afterNavigate).mock.calls.at(-1)?.[0](popped)
+  flushSync()
+  expect(reads.at(-1)).toBe(`Model,F1`)
+  vi.mocked(afterNavigate).mock.calls.at(-1)?.[0](navigation)
+  expect(reads.at(-1)).toBeNull()
+})
+
 describe(`bind_comparison_url`, () => {
   // simulate SvelteKit: its page.url is a $state.raw holding a fresh URL object per navigation
   // (kit/src/runtime/client/client.js), so swap the object, mirror it into location, then
-  // fire the afterNavigate hooks registered by bind_comparison_url
+  // fire the afterNavigate callback registered by bind_comparison_url
   let kit_url = $state.raw(new URL(`http://localhost/`))
-  const hooks = vi.mocked(afterNavigate).mock.calls
-  const navigate = (url: string, type: `enter` | `link`, from_hook = 0) => {
-    kit_url = new URL(url, `http://localhost`)
-    history.replaceState(null, ``, `${kit_url.pathname}${kit_url.search}`)
-    for (const [callback] of hooks.slice(from_hook)) callback({ type } as never)
+  let on_navigation: Parameters<typeof afterNavigate>[0]
+  const navigate = (url: string, type: `enter` | `link`) => {
+    kit_url = new URL(url, location.origin)
+    history.replaceState(null, ``, kit_url.href)
+    on_navigation({ type } as never)
     flushSync()
   }
   let cleanup = () => {}
 
   beforeEach(() => {
+    kit_url = page.url
     Object.defineProperty(page, `url`, { get: () => kit_url, configurable: true })
+    vi.mocked(afterNavigate).mockImplementationOnce((callback) => {
+      on_navigation = callback
+    })
+    cleanup = $effect.root(() => bind_comparison_url())
   })
   afterEach(() => {
     cleanup() // tear down the effect root even when an assertion above it failed
@@ -212,22 +280,57 @@ describe(`bind_comparison_url`, () => {
     })
   })
 
+  it.each([
+    [`/`, true],
+    [`/models`, true],
+    [`/models/${key_a}`, true],
+    [`/models/unknown-model`, false],
+    [`/models/${key_a}/extra`, false],
+    [`/benchmarks/discovery`, true],
+    [`/benchmarks/geo-opt`, true],
+    [`/benchmarks/phonons`, true],
+    [`/benchmarks/md`, true],
+    [`/benchmarks/diatomics`, true],
+    [`/data`, false],
+    [`/data/sets`, false],
+    [`/data/wbm`, false],
+    [`/data/tmi`, false],
+    [`/api`, false],
+    [`/contribute`, false],
+    [`/changelog`, false],
+    [`/benchmarks`, false],
+    [`/benchmarks/diatomics/tmi`, false],
+    [`/benchmarks/discovery/tmi`, false],
+  ])(`scopes shared comparison links on %s (enabled=%s)`, (route, enabled) => {
+    navigate(`${route}?compare=${key_a},${key_b}&keep=1#section`, `enter`)
+
+    expect(comparison.open).toBe(enabled)
+    expect([...comparison.keys]).toEqual(enabled ? [key_a, key_b] : [])
+    expect(location.search).toBe(
+      enabled ? `?compare=${key_a},${key_b}&keep=1` : `?keep=1`,
+    )
+    expect(location.hash).toBe(`#section`)
+  })
+
   it(`reads shared links, keeps the selection across in-app navigation and re-applies it`, () => {
-    const n_hooks = hooks.length
-    cleanup = $effect.root(() => bind_comparison_url())
-    navigate(`/?compare=${key_a},no-such-model,${key_b}`, `enter`, n_hooks)
+    navigate(`/?compare=${key_a},no-such-model,${key_b}`, `enter`)
     expect([...comparison.keys]).toEqual([key_a, key_b])
     expect(comparison.open).toBe(true) // shared link with >1 model opens the dialog
     expect(location.search).toBe(`?compare=${key_a},${key_b}`) // stale key dropped
 
-    navigate(`/tasks/md`, `link`, n_hooks) // absent param: selection follows the user, dialog closes
+    navigate(`/data?compare=${key_c}&keep=1`, `link`)
+    expect([...comparison.keys]).toEqual([key_a, key_b])
+    expect(comparison.open).toBe(false)
+    expect(location.search).toBe(`?keep=1`)
+
+    navigate(`/benchmarks/md`, `link`) // absent param: selection follows the user, dialog closes
     expect([...comparison.keys]).toEqual([key_a, key_b])
     expect(comparison.open).toBe(false)
     expect(location.search).toBe(`?compare=${key_a},${key_b}`)
 
     // same-path navigation that only drops the query (nav link of the current page) must
     // re-apply the param too
-    navigate(`/tasks/md`, `link`, n_hooks)
+    navigate(`/benchmarks/md`, `link`)
     expect(location.search).toBe(`?compare=${key_a},${key_b}`)
 
     comparison.toggle(key_b)
@@ -237,13 +340,48 @@ describe(`bind_comparison_url`, () => {
     flushSync()
     expect(location.search).toBe(``)
 
-    navigate(`/?compare=${key_c}`, `enter`, n_hooks) // a single model is nothing to compare yet
+    navigate(`/?compare=${key_c}`, `enter`) // a single model is nothing to compare yet
     expect([...comparison.keys]).toEqual([key_c])
+    expect(comparison.open).toBe(false)
+
+    comparison.set([key_a, key_b])
+    navigate(`/`, `enter`) // cached selection alone is not a shared link
     expect(comparison.open).toBe(false)
   })
 })
 
 describe(`ModelComparison dialog`, () => {
+  let kit_url = $state.raw(new URL(`http://localhost/`))
+  let callback_start_idx = 0
+  const navigate = async (path: string) => {
+    kit_url = new URL(path, location.origin)
+    history.replaceState(null, ``, path)
+    for (const [callback] of vi
+      .mocked(afterNavigate)
+      .mock.calls.slice(callback_start_idx)) {
+      callback({ type: `link`, from: null, to: { url: kit_url } } as AfterNavigate)
+    }
+    await tick()
+  }
+  beforeEach(() => {
+    kit_url = page.url
+    callback_start_idx = vi.mocked(afterNavigate).mock.calls.length
+    Object.defineProperty(page, `url`, {
+      get: () => kit_url,
+      set: (url: URL) => {
+        kit_url = url
+      },
+      configurable: true,
+    })
+  })
+  afterEach(() => {
+    Object.defineProperty(page, `url`, {
+      value: kit_url,
+      writable: true,
+      configurable: true,
+    })
+  })
+
   it(`opens with a single selected model without looping and lists it`, async () => {
     comparison.toggle(key_a)
     mount(ModelComparison, { target: document.body })
@@ -269,7 +407,7 @@ describe(`ModelComparison dialog`, () => {
   it(`the model page opens comparison without deselecting the current model`, async () => {
     mount(ModelPage, {
       target: document.body,
-      props: { data: { model: MODELS[0], md_per_system: null } },
+      props: { data: { model_key: key_a, md_per_system: null } },
     })
     const button = doc_query<HTMLButtonElement>(`.links > button`)
     expect(button.textContent?.trim()).toBe(`Compare with…`)
@@ -362,7 +500,7 @@ describe(`ModelComparison dialog`, () => {
   })
 
   it(`plots cost vs accuracy via DynamicScatter, y defaulting to the current task page's metric`, async () => {
-    Object.assign(page, { url: new URL(`http://localhost/tasks/phonons`) })
+    Object.assign(page, { url: new URL(`http://localhost/benchmarks/phonons`) })
     const with_kappa = MODELS.filter((model) => model.metrics?.phonons?.kappa_103?.κ_SRME)
     const compared = with_kappa.slice(0, 2).map((model) => model.model_key)
     comparison.set(compared)
@@ -400,7 +538,70 @@ describe(`ModelComparison dialog`, () => {
     await tick()
     expect(plot().x_axis.label).toBe(`Training Materials`)
     expect(plot().y_axis.label).toBe(`F1`)
+    expect(query_param(`compare_plot_x`)).toBe(`n_training_materials`)
+    comparison.open = false
+    await tick()
+    comparison.open = true
+    await tick()
+    expect(plot().x_axis.label).toBe(`Training Materials`)
+
+    // A retained dialog follows the new task's default, while explicit shared axes win.
+    await navigate(`/benchmarks/md?compare_plot_x=n_training_materials`)
+    expect(plot().y_axis.label).toBe(`CMDS`)
+    expect(query_param(`compare_plot_y`)).toBeNull()
+    expect(query_param(`compare_plot_x`)).toBe(`n_training_materials`)
+
+    // Emptying the selection destroys the scatter; rebuilding it must not turn the
+    // current x selection into a new default and silently erase it from the URL.
+    comparison.keys.clear()
+    await tick()
+    const callback_idx = vi.mocked(afterNavigate).mock.calls.length
+    comparison.set(compared)
+    await tick()
+    for (const [callback] of vi.mocked(afterNavigate).mock.calls.slice(callback_idx)) {
+      callback({ type: `enter`, from: null, to: { url: page.url } } as AfterNavigate)
+    }
+    await tick()
+    expect(plot().x_axis.label).toBe(`Training Materials`)
+    expect(query_param(`compare_plot_x`)).toBe(`n_training_materials`)
     plot().point_events.onclick({ point: { metadata: { model_key: compared[0] } } })
     expect([...comparison.keys]).toEqual([compared[1]])
+  })
+
+  it(`restores a late-mounted plot's shared linear axes and preserves them across score changes`, async () => {
+    const cleanup = $effect.root(() => bind_score_weights())
+    try {
+      await navigate(
+        `/?cps_weights=1,0,0&compare_plot_y=model_params&compare_plot_x_scale=linear&compare_plot_y_scale=linear`,
+      )
+      comparison.set([key_a, key_b])
+      comparison.open = true
+      // Kit registers late components for future navigations without replaying the
+      // initial event. Suppress tracked_mount's eager replay to match that lifecycle.
+      vi.mocked(afterNavigate).mockImplementationOnce(() => {})
+      mount(ModelComparison, { target: document.body })
+      await tick()
+      const plot = () => get_scatter_plot_props(plot_mocks.ScatterPlot) as PlotProps
+      expect(score_weight_records().CPS).toEqual({ F1: 1, κ_SRME: 0, RMSD: 0 })
+      for (const axis of [`x`, `y`] as const) {
+        expect(plot()[`${axis}_axis`]).toMatchObject({
+          label: `Params`,
+          scale_type: `linear`,
+        })
+        expect(query_param(`compare_plot_${axis}_scale`)).toBe(`linear`)
+      }
+      await navigate(
+        `/?cps_weights=0,1,0&compare_plot_y=model_params&compare_plot_x_scale=linear&compare_plot_y_scale=linear`,
+      )
+      expect(score_weight_records().CPS).toEqual({ F1: 0, κ_SRME: 1, RMSD: 0 })
+      expect([plot().x_axis.scale_type, plot().y_axis.scale_type]).toEqual([
+        `linear`,
+        `linear`,
+      ])
+      expect(query_param(`cps_weights`)).toBe(`0,1,0`)
+    } finally {
+      await navigate(`/`)
+      cleanup()
+    }
   })
 })

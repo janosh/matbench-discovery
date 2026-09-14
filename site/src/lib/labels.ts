@@ -377,7 +377,7 @@ export const MD_METRICS: MdMetricsLabels = metric_group(
     md_combined_score: {
       key: `combined_score`,
       label: `CMDS`,
-      description: `Combined MD score in [0,1] (higher is better): weighted mean of the ΔvDOS (30%), ΔADF (20%), ΔP (30%) subscores (1 − error/100) and Speed (summed rollout wall time, log-scaled, 20%), reweightable on the MD task page. Computed on the fly like CPS/CDS, never stored with submissions. ΔRDF is excluded as redundant (0.9+ correlation with ΔvDOS/ΔADF); models without recorded timings get no CMDS unless the Speed weight is zeroed. Higher = closer to ab-initio dynamics.`,
+      description: `Combined MD score in [0,1] (higher is better): weighted mean of the ΔvDOS (30%), ΔADF (20%), ΔP (30%) subscores (1 − error/100) and Speed (summed rollout wall time, log-scaled, 20%), reweightable on the MD task page. Computed on the fly like CPS/CDS, never stored with submissions. ΔRDF is excluded because it overlaps with ΔvDOS/ΔADF; models without recorded timings get no CMDS unless the Speed weight is zeroed. Higher = closer to ab-initio dynamics.`,
       range: [0, 1],
       better: `higher`,
       format: `.3f`,
@@ -385,7 +385,7 @@ export const MD_METRICS: MdMetricsLabels = metric_group(
     md_run_time_sec: {
       property: `run_time_sec`,
       label: `Speed`,
-      description: `MD wall time in seconds to roll out all 17 DynaMat v1.0 NVT trajectories (20 ps each), summed over systems, excluding metric evaluation. All timings to date were measured on a single NVIDIA H200 per system (recorded in the model YAML's hardware field); blank for submissions without recorded timings`,
+      description: `MD wall time in seconds to roll out all 17 DynaMat v1.0 NVT trajectories (20 ps each), summed over systems, excluding metric evaluation. Hardware is recorded per model in its YAML; blank for submissions without recorded timings`,
       unit: `s`,
       format: `.3~s`,
     },
@@ -726,6 +726,7 @@ const org_logos = {
   'ICAMS, Ruhr University Bochum': `/logos/interdisciplinary-centre-for-advanced-materials-simulation-bochum.svg`,
   'Incheon National University': `/logos/incheon-national-university.svg`,
   'Institute of Computing Technology, Chinese Academy of Science, Beijing': `/logos/institute-of-computing-technology-chinese-academy-of-sciences-beijing.svg`,
+  'Kairos Materials': `/logos/kairos-materials.png`,
   'Massachusetts Institute of Technology': `/logos/massachusetts-institute-of-technology.svg`,
   'Microsoft Research': Microsoft,
   'MIR Group, Harvard University': `/logos/materials-intelligence-research-group-harvard-university.svg`,

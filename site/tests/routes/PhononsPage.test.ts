@@ -1,7 +1,7 @@
 import kappa_103_analysis from '$figs/kappa-103-analysis.jsonl'
 import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
 import type * as KappaParity from '$lib/parity/kappa-parity'
-import PhononsPage from '$routes/tasks/phonons/+page.svelte'
+import PhononsPage from '$routes/benchmarks/phonons/+page.svelte'
 import { tick } from 'svelte'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -14,12 +14,13 @@ import {
 } from '../index'
 
 // per-test override of the analysis payload's model list (null = real payload)
-const analysis_mock = vi.hoisted(() => ({ models: null as unknown[] | null }))
+const analysis_mock = vi.hoisted(() => ({ models: null as unknown[] | null, error: `` }))
 vi.mock(`$lib/parity/kappa-parity`, async (import_original) => {
   const actual = await import_original<typeof KappaParity>()
   return {
     ...actual,
     load_kappa_analysis: async () => {
+      if (analysis_mock.error) throw new Error(analysis_mock.error)
       const analysis = await actual.load_kappa_analysis()
       return analysis_mock.models
         ? { ...analysis, models: analysis_mock.models }
@@ -29,6 +30,7 @@ vi.mock(`$lib/parity/kappa-parity`, async (import_original) => {
 })
 afterEach(() => {
   analysis_mock.models = null
+  analysis_mock.error = ``
 })
 
 const default_filters = make_table_filters()
@@ -75,7 +77,17 @@ describe(`Phonons Task Page`, () => {
     expect(document.body.textContent).toMatch(/censored\s+to 2 because/)
 
     const headings = heading_texts()
-    expect(headings).toContain(`Model Comparison: κSRME vs κSRE`)
+    expect(headings).toEqual([
+      `Leaderboard`,
+      `Model Comparison: κSRME vs κSRE`,
+      `Model Inspector`,
+      `ML vs DFT Lattice Thermal Conductivity`,
+      `Test set: PhononDB PBE`,
+      `Methodology`,
+    ])
+    const methodology = doc_query(`#methodology + p`)
+    expect(methodology.textContent).toContain(`PhononDB PBE test set`)
+    expect(methodology.closest(`details`)).toBeNull()
 
     const scatter = doc_query<HTMLDivElement>(`div.scatter`)
     expect(scatter.getAttribute(`style`)).toContain(`height: 800px`)
@@ -99,20 +111,36 @@ describe(`Phonons Task Page`, () => {
   })
 
   // a leaderboard model absent from kappa-103-analysis.jsonl used to leave the spinner up forever
-  it(`tells the user when the analysis payload has no diagnostics for the selected model`, async () => {
-    analysis_mock.models = []
-    mount(PhononsPage, { target: document.body })
+  it.each([false, true])(
+    `distinguishes missing diagnostics from module failure (%s)`,
+    async (failed) => {
+      analysis_mock.models = []
+      if (failed) analysis_mock.error = `Failed to load /assets/analysis.js: HTTP 503`
+      mount(PhononsPage, { target: document.body })
+      if (failed) {
+        await vi.waitFor(() =>
+          expect(doc_query(`.diagnostics-error details`).textContent).toContain(
+            analysis_mock.error,
+          ),
+        )
+        const reload = vi.spyOn(location, `reload`).mockImplementation(() => {})
+        doc_query<HTMLButtonElement>(`.diagnostics-error button`).click()
+        expect(reload).toHaveBeenCalledOnce()
+        return
+      }
 
-    await vi.waitFor(() =>
-      expect(document.body.textContent).toContain(
-        `No per-material phonon diagnostics available for`,
-      ),
-    )
-    expect(document.body.textContent).not.toContain(
-      `Loading per-material phonon diagnostics`,
-    )
-    expect(document.querySelector(`.diagnostics-grid`)).toBeNull()
-  })
+      await vi.waitFor(() =>
+        expect(document.body.textContent).toContain(
+          `No per-material phonon diagnostics available for`,
+        ),
+      )
+      expect(document.body.textContent).not.toContain(
+        `Loading per-material phonon diagnostics`,
+      )
+      expect(document.querySelector(`.diagnostics-grid`)).toBeNull()
+      expect(document.querySelector(`.diagnostics-error`)).toBeNull()
+    },
+  )
 
   it(`shows only phonon leaderboard columns and rows with phonon metrics`, () => {
     mount(PhononsPage, { target: document.body })
@@ -199,7 +227,7 @@ describe(`Phonons Task Page`, () => {
   })
 
   it(`orders Compare models by κSRME and updates the model URL`, async () => {
-    await mount_with_url(PhononsPage, `http://localhost/tasks/phonons`)
+    await mount_with_url(PhononsPage, `http://localhost/benchmarks/phonons`)
 
     // sort control offers alphabetical, κSRME, and date-added modes
     expect([...kappa_sort_select().options].map((option) => option.value)).toEqual([
@@ -242,7 +270,7 @@ describe(`Phonons Task Page`, () => {
   it.each([`name`, `constructor`])(
     `restores URL state with model_sort=%s`,
     async (mode) => {
-      const url = `http://localhost/tasks/phonons?model=mace-mp-0&model_sort=${mode}&x=F1&y=κ_SRE&sort=κ_SRE&dir=asc&openness=OSOD&heatmap=0`
+      const url = `http://localhost/benchmarks/phonons?model=mace-mp-0&model_sort=${mode}&x=F1&y=κ_SRE&sort=κ_SRE&dir=asc&openness=OSOD&heatmap=0`
       await mount_with_url(PhononsPage, url)
 
       expect(kappa_sort_select().value).toBe(mode === `name` ? `name` : `kappa`)

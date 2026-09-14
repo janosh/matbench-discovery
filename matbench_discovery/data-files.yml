@@ -101,6 +101,12 @@ dynamat_v1_0_md_trajectories:
   md5: 09d32104888b9639599a15d3ecb124cb
   url: https://figshare.com/files/66309926
 
+diatomics_dft_reference:
+  path: diatomics/diatomics-dft.json.gz
+  description: Homonuclear DFT diatomic reference curves for 92 elements (H–U) at PBE and r2SCAN, including distances, energies, forces, site-projected magnetic moments, and winning spin candidates. The diatomics benchmark uses the PBE curves for reference-relative metrics. [Reference provenance](https://github.com/janosh/matbench-discovery/blob/main/site/src/lib/diatomics-dft.readme.md).
+  md5: d090dcf5d208ad94c188e017d0e0b149
+  url: https://figshare.com/files/68541277
+
 _private_reference_data:
   article_id: 32900105
   article_url: https://figshare.com/account/articles/32900105

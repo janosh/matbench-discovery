@@ -94,6 +94,7 @@
   let selected_point = $state<EnergyParityPoint | null>(null)
   let selected_structure = $state<AnyStructure | null>(null)
   let structure_error = $state(``)
+  let structure_module_failed = $state(false)
   let structure_loading = $state(false)
   let plot_wrap = $state<HTMLElement>()
   // three.js stack (~MBs) loads only when a structure is first clicked, keeping it
@@ -225,9 +226,13 @@
       const [structure] = await Promise.all([
         load_wbm_structure(base, point.row_idx, point.material_id),
         StructurePopup ??
-          import('matterviz/convex-hull').then((mod) => {
-            StructurePopup = mod.StructurePopup
-          }),
+          import('matterviz/convex-hull').then(
+            (mod) => (StructurePopup = mod.StructurePopup),
+            (error: unknown) => {
+              structure_module_failed = true
+              throw error
+            },
+          ),
       ])
       if (selection_is_current()) selected_structure = structure
     } catch (error) {
@@ -256,9 +261,11 @@ title, so label the section for screen readers instead -->
   }}
 >
   {#if load_controller.status === `error`}
-    <p class="plot-state" role="alert" style="min-height: 0; margin: 0">
-      {load_controller.error_message}
-    </p>
+    <div class="plot-state" style="min-height: 0">
+      <p role="alert">Could not load {model.model_name}'s energy plot.</p>
+      <button onclick={() => load_plot_data(model.model_key)}>Retry energy plot</button>
+      <details><summary>Asset details</summary>{load_controller.error_message}</details>
+    </div>
   {:else if !parity || parity_model?.model_key !== model.model_key}
     <div class="plot-state">
       <Spinner
@@ -363,7 +370,14 @@ title, so label the section for screen readers instead -->
                 style={loading_spinner_style}
               />
             {:else}
-              {structure_error}
+              <p>Could not load the structure for {point.material_id}.</p>
+              <button
+                onclick={() => {
+                  if (structure_module_failed) location.reload()
+                  else void show_structure(point.row_idx)
+                }}>{structure_module_failed ? `Reload page` : `Retry structure`}</button
+              >
+              <details><summary>Asset details</summary>{structure_error}</details>
             {/if}
           </div>
         {/if}
@@ -393,7 +407,8 @@ title, so label the section for screen readers instead -->
     border: 1px solid var(--border);
     border-radius: 4px;
     box-shadow: 0 16px 24px var(--shadow);
-    min-width: 220px;
+    width: 220px;
+    overflow-wrap: anywhere;
     padding: 0.75em 1em;
     position: absolute;
     top: 50%;

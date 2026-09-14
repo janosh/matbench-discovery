@@ -1,8 +1,41 @@
 import { parse_dependency_spec } from '$lib/environment'
 import fs from 'node:fs'
+import os from 'node:os'
+import zlib from 'node:zlib'
+import { build } from 'vite'
 import { describe, expect, it, vi } from 'vitest'
 import pkg from '../../package.json' with { type: 'json' }
-import { svelte_config } from '../../vite.config'
+import vite_config, { svelte_config } from '../../vite.config'
+
+it(`bundles compressed JSON imports in production workers`, async () => {
+  const root = fs.mkdtempSync(`${os.tmpdir()}/mbd-worker-build-`)
+  try {
+    fs.writeFileSync(`${root}/data.json.gz`, zlib.gzipSync(`{"symbol":"Cu"}`))
+    fs.writeFileSync(
+      `${root}/worker.js`,
+      `import data from './data.json.gz'; postMessage(data.symbol)`,
+    )
+    fs.writeFileSync(
+      `${root}/main.js`,
+      `new Worker(new URL('./worker.js', import.meta.url), { type: 'module' })`,
+    )
+    await build({
+      configFile: false,
+      root,
+      logLevel: `silent`,
+      worker: vite_config.worker,
+      build: { rolldownOptions: { input: `${root}/main.js` } },
+    })
+    const assets_dir = `${root}/dist/assets`
+    const worker_file = fs
+      .readdirSync(assets_dir)
+      .find((file) => file.startsWith(`worker-`))
+    expect(worker_file).toBeDefined()
+    expect(fs.readFileSync(`${assets_dir}/${worker_file}`, `utf8`)).toContain(`Cu`)
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true })
+  }
+})
 
 describe(`parse_dependency_spec`, () => {
   it.each([
@@ -107,7 +140,7 @@ it(`first svelte preprocessor rewrites pkg.homepage links to site-internal paths
 
 it(`manuscript preprocessing numbers figure labels and resolves forward references`, async () => {
   const figure_markup = svelte_config.preprocess.at(-1)?.markup
-  const filename = `site/src/routes/tasks/discovery/tmi/discovery-metric-figs.md`
+  const filename = `site/src/routes/benchmarks/discovery/tmi/discovery-metric-figs.md`
   const content = fs.readFileSync(`../${filename}`, `utf8`)
   const result = await figure_markup?.({ content, filename })
   const labels = [...content.matchAll(/@label:(?<id>fig:[^\s]+)/g)]

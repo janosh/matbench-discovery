@@ -368,6 +368,12 @@
         "sha256": "d9c0e08dc3bbdcd2919c968ab4df2e0803963a31aeafa460e4c4edcaceac4b93"
       }
     },
+    "prophet-oame-mbd": {
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-prophet-oame-mbd-ef724473dc8a52f6.json.gz",
+        "sha256": "b775924ca84711da04040e363a143d69fab344c471805c81b9b185bb43dc59f1"
+      }
+    },
     "sevennet-l3i5": {
       "parity": {
         "asset": "kappa-parity-phonondb-v1-model-sevennet-l3i5-0f8c60ee6fb86480.json.gz",

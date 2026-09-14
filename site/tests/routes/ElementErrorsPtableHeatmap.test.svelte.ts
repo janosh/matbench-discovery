@@ -1,5 +1,5 @@
 import { ACTIVE_MODELS } from '$lib/models.svelte'
-import ElementErrorsPtableHeatmap from '$routes/tasks/discovery/tmi/ElementErrorsPtableHeatmap.svelte'
+import ElementErrorsPtableHeatmap from '$routes/benchmarks/discovery/tmi/ElementErrorsPtableHeatmap.svelte'
 import { per_element_each_errors as per_elem_each_errors } from '$lib/per-element-errors'
 import { describe, expect, it } from 'vitest'
 import { tick } from 'svelte'
@@ -21,7 +21,7 @@ describe(`ElementErrorsPtableHeatmap`, () => {
     async (keys, normalized) => {
       await mount_with_url(
         ElementErrorsPtableHeatmap,
-        `http://localhost/tasks/discovery/tmi?element_models=${keys}&element_normalized=${Number(normalized)}`,
+        `http://localhost/benchmarks/discovery/tmi?element_models=${keys}&element_normalized=${Number(normalized)}`,
       )
       const helium = doc_query(`[data-element-symbol="He"]`)
       helium.dispatchEvent(new MouseEvent(`mouseenter`))
@@ -53,7 +53,7 @@ describe(`ElementErrorsPtableHeatmap`, () => {
     async (query) => {
       await mount_with_url(
         ElementErrorsPtableHeatmap,
-        `http://localhost/tasks/discovery/tmi${query}`,
+        `http://localhost/benchmarks/discovery/tmi${query}`,
       )
 
       const chips = document.querySelectorAll(`ul[aria-label="selected options"] li`)
@@ -68,7 +68,7 @@ describe(`ElementErrorsPtableHeatmap`, () => {
     const keys = models.map(({ model_key }) => model_key)
     await mount_with_url(
       ElementErrorsPtableHeatmap,
-      `http://localhost/tasks/discovery/tmi?element_models=${keys[0]},unknown,${keys.join(`,`)}&element_normalized=0&element_manual_max=1&element_max=0.4`,
+      `http://localhost/benchmarks/discovery/tmi?element_models=${keys[0]},unknown,${keys.join(`,`)}&element_normalized=0&element_manual_max=1&element_max=0.4`,
     )
     const chips = [...document.querySelectorAll(`ul[aria-label="selected options"] li`)]
     expect(chips.map((chip) => chip.textContent?.trim())).toEqual(

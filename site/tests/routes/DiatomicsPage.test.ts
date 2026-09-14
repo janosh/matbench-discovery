@@ -1,6 +1,6 @@
 import type { ModelData } from '$lib/types'
 import { MODELS } from '$lib/models.svelte'
-import DiatomicsPage from '$routes/tasks/diatomics/+page.svelte'
+import DiatomicsPage from '$routes/benchmarks/diatomics/+page.svelte'
 import { tick } from 'svelte'
 import { PLOT_COLORS } from 'matterviz/colors'
 import { describe, expect, it } from 'vitest'
@@ -54,7 +54,7 @@ const button_for = (text: string): HTMLButtonElement => {
 const model_select = () => doc_query(`.controls .multiselect`)
 
 const mount_page = async (search = ``): Promise<void> => {
-  await mount_with_url(DiatomicsPage, `http://localhost/tasks/diatomics${search}`, {
+  await mount_with_url(DiatomicsPage, `http://localhost/benchmarks/diatomics${search}`, {
     props: { data: page_data },
   })
 }
@@ -82,6 +82,19 @@ describe(`Diatomics Page URL state`, () => {
   it(`defaults to the top three CDS models with curves plus DFT references`, async () => {
     await mount_page()
 
+    expect([...document.querySelectorAll(`h2`)].map((heading) => heading.id)).toEqual([
+      `leaderboard`,
+      `model-comparison`,
+      `test-set`,
+      `diatomic-energy-curves`,
+      `methodology`,
+    ])
+    expect(doc_query<HTMLDetailsElement>(`#methodology + details`).open).toBe(false)
+    const error_details = doc_query<HTMLDetailsElement>(`.error-summary details`)
+    expect(error_details.open).toBe(false)
+    expect(error_details.textContent).toContain(`Curve unavailable`)
+    expect(doc_query(`a`, error_details).getAttribute(`href`)).toBe(`/models/model-e`)
+    expect(doc_query(`a`, error_details).textContent).toBe(`Model E`)
     expect(selected_labels()).toEqual([
       `PBE (DFT)`,
       `r2SCAN (DFT)`,
@@ -91,6 +104,12 @@ describe(`Diatomics Page URL state`, () => {
     ])
     await select_model_option(`Model A`)
     expect(selected_options()?.textContent).toContain(`Model A`)
+    doc_query<HTMLAnchorElement>(
+      `section[aria-labelledby="test-set"] a[href="#diatomic-energy-curves"]`,
+    ).click()
+    await tick()
+    expect(selected_labels()).toEqual([`PBE (DFT)`, `r2SCAN (DFT)`])
+    expect(new URL(location.href).searchParams.get(`models`)).toBe(`PBE,r2SCAN`)
   })
 
   it(`restores selected curve models from the models query param`, async () => {

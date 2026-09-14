@@ -98,7 +98,7 @@
 <h1 id="discovery-too-much-information">Discovery: Too Much Information</h1>
 
 Discovery diagnostics that didn't make the cut into the
-<a href="/tasks/discovery">task page</a>.
+<a href="/benchmarks/discovery">task page</a>.
 
 <h2 id="per-element-model-error-heatmaps" style="text-align: center">
   Per-Element Model Error Heatmaps

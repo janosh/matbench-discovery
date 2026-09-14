@@ -9,18 +9,18 @@ import type { Label, ModelData } from '$lib/types'
 // labels carry their task name for context on model detail pages
 export const RANKED_METRICS: (Label & { rank_href: string })[] = [
   { ...ALL_METRICS.CPS, rank_href: `/` },
-  { ...ALL_METRICS.F1, label: `Discovery F1`, rank_href: `/tasks/discovery` },
-  { ...ALL_METRICS.RMSD, label: `Geo Opt RMSD`, rank_href: `/tasks/geo-opt` },
+  { ...ALL_METRICS.F1, label: `Discovery F1`, rank_href: `/benchmarks/discovery` },
+  { ...ALL_METRICS.RMSD, label: `Geo Opt RMSD`, rank_href: `/benchmarks/geo-opt` },
   {
     ...ALL_METRICS.κ_SRME,
     label: `Phonons κ<sub>SRME</sub>`,
-    rank_href: `/tasks/phonons`,
+    rank_href: `/benchmarks/phonons`,
   },
-  { ...MD_METRICS.md_combined_score, label: `MD CMDS`, rank_href: `/tasks/md` },
+  { ...MD_METRICS.md_combined_score, label: `MD CMDS`, rank_href: `/benchmarks/md` },
   {
     ...ALL_METRICS.diatomics_combined_score,
     label: `Diatomics CDS`,
-    rank_href: `/tasks/diatomics`,
+    rank_href: `/benchmarks/diatomics`,
   },
 ]
 

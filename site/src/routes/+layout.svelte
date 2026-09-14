@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import { page } from '$app/state'
-  import { MODELS } from '$lib/models.svelte'
+  import { bind_score_weights, MODELS } from '$lib/models.svelte'
   import { bind_comparison_url, comparison } from '$lib/model-comparison.svelte'
   import { get_error_message } from '$lib/asset-loader'
   import {
@@ -30,6 +30,7 @@
   let find_bar = $state<ReturnType<typeof FindBar>>()
   let main_element = $state<HTMLElement>()
   bind_comparison_url()
+  bind_score_weights()
   // Load on first use, then retain the dialog's axis/picker state across reopenings.
   let comparison_module =
     $state.raw<Promise<typeof import('$lib/model/ModelComparison.svelte')>>()
@@ -55,33 +56,10 @@
 
   // show full task titles from modeling-tasks.yml instead of capitalized URL slugs
   const task_labels = Object.fromEntries(
-    Object.entries(MODELING_TASKS).map(([key, task]) => [
-      `/tasks/${key.replaceAll(`_`, `-`)}`,
-      task.label,
-    ]),
+    Object.entries(MODELING_TASKS)
+      .filter(([key]) => key !== `cps`)
+      .map(([key, task]) => [`/benchmarks/${key.replaceAll(`_`, `-`)}`, task.label]),
   )
-  // Static child pages render as dropdowns under their top-level parent route.
-  const child_routes = Object.keys(import.meta.glob(`./*/*/**/+page.{svelte,md}`))
-    .filter((filename) => !filename.includes(`[`))
-    .map((filename) => `/${filename.split(`/`).slice(1, -1).join(`/`)}`)
-    .filter((route) => !(route.startsWith(`/tasks/`) && route.includes(`/tmi`)))
-  const routes = Object.keys(import.meta.glob(`./*/+page.{svelte,md}`))
-    .map((filename) => `/${filename.split(`/`)[1]}`)
-    .map((route) => {
-      const sub_routes = child_routes.filter((child) => child.startsWith(`${route}/`))
-      // include the parent route itself so Nav keeps it a clickable link (its own
-      // +page) above the dropdown; Nav filters the duplicate out of the submenu
-      return sub_routes.length ? { href: route, children: [route, ...sub_routes] } : route
-    })
-  const route_href = (route: string | { href: string }) =>
-    typeof route === `string` ? route : route.href
-  const nav_order: Record<string, number> = { [`/tasks`]: 0, [`/models`]: 1 }
-  const ordered_routes = routes
-    .filter((route) => route_href(route) !== `/changelog`)
-    .toSorted(
-      (route_a, route_b) =>
-        (nav_order[route_href(route_a)] ?? 2) - (nav_order[route_href(route_b)] ?? 2),
-    )
 
   let url = $derived(page.url.pathname)
   let heading_selector = $derived(`main :is(${url === `/api` ? `h1, ` : ``}h2, h3, h4)`)
@@ -101,18 +79,19 @@
   const base_description = `Matbench Discovery - ${pkg.description}`
   const descriptions: Record<string, string> = {
     '/': base_description,
-    '/data': `Details about provenance, chemistry and energies in the benchmark's train and test set.`,
-    '/data/tmi': `Too much information on the benchmark's data.`,
+    '/data': `Benchmark test sets have moved to the benchmark task pages.`,
+    '/data/sets': `Explore datasets, access terms, licenses, and model training data.`,
+    '/data/tmi': `Additional chemical-diversity analysis of the WBM test set.`,
     '/api': `API docs for the Matbench Discovery PyPI package.`,
     '/contribute': `Steps for contributing a new model to the benchmark.`,
     '/models': `Details on each model sortable by metrics.`,
-    '/tasks': `Overview of all benchmark tasks for ML force fields.`,
-    '/tasks/discovery': `Metrics and analysis of crystal stability prediction on the WBM test set.`,
-    '/tasks/discovery/tmi': `Detailed diagnostics for the crystal discovery task.`,
-    '/tasks/diatomics': `Metrics and analysis of predicting diatomic energies.`,
-    '/tasks/phonons': `Metrics and analysis of predicting phonon modes and frequencies.`,
-    '/tasks/geo-opt': `Metrics and analysis of predicting ground state geometries.`,
-    '/tasks/md': `Metrics and analysis of molecular dynamics observables vs ab-initio reference trajectories.`,
+    '/benchmarks': `Benchmark tasks, test sets, reference data, and model results for ML force fields.`,
+    '/benchmarks/discovery': `Metrics and analysis of crystal stability prediction on the WBM test set.`,
+    '/benchmarks/discovery/tmi': `Detailed diagnostics for the crystal discovery task.`,
+    '/benchmarks/diatomics': `Metrics and analysis of predicting diatomic energies.`,
+    '/benchmarks/phonons': `Metrics and analysis of predicting phonon modes and frequencies.`,
+    '/benchmarks/geo-opt': `Metrics and analysis of predicting ground state geometries.`,
+    '/benchmarks/md': `Metrics and analysis of molecular dynamics observables vs ab-initio reference trajectories.`,
   }
   let description = $derived(descriptions[url] ?? base_description)
   let title = $derived(url === `/` ? `` : `${url} • `)
@@ -120,9 +99,10 @@
   const actions: CmdAction[] = Object.keys(import.meta.glob(`./**/+page.{svelte,md}`))
     .filter((filename) => !filename.includes(`[`))
     .map((filename) => {
-      const parts = filename.split(`/`).filter((part) => !part.startsWith(`(`)) // Remove hidden route segments
+      const parts = filename.split(`/`).filter((part) => !part.startsWith(`(`))
       return `/${parts.slice(1, -1).join(`/`)}`
     })
+    .filter((route) => route !== `/data`)
     .concat(MODELS.map(({ model_key }) => `/models/${model_key}`))
     .map((route) => ({ id: route, label: route, action: () => goto(route) }))
 </script>
@@ -139,7 +119,7 @@
   <meta name="description" content={description} />
 </svelte:head>
 
-{#if ![`/`, `/models`, `/tasks/diatomics`, `/tasks/geo-opt`].includes(url)}
+{#if ![`/`, `/models`, `/benchmarks/geo-opt`].includes(url)}
   <Toc
     {heading_selector}
     dynamic
@@ -170,21 +150,27 @@
 
 <GitHubCorner href={pkg.repository} id="github-corner" />
 
-<!-- menu_props: the svelte-widgets mobile menu hugs its content and anchors to the start
-     edge, so page text shows beside the open menu; spanning the viewport fixes that.
-     `max-width` clears its 90vw cap. The desktop gap lives in the style block below since an
-     inline gap would also override the mobile menu's tight row spacing. -->
 <Nav
   {page}
-  routes={[`/`, ...ordered_routes, [pkg.paper, `Paper`]]}
+  routes={[
+    `/`,
+    {
+      href: `/benchmarks`,
+      // Including the parent keeps the Benchmarks label clickable.
+      children: [`/benchmarks`, ...Object.keys(task_labels).toSorted()],
+    },
+    `/models`,
+    `/api`,
+    `/contribute`,
+    `/data/sets`,
+    [pkg.paper, `Paper`],
+  ]}
   style="margin-block: 1em 0"
-  menu_props={{ style: `inset-inline: 0.5rem; width: auto; max-width: none` }}
   route_labels={{
     '/': `Home`,
     '/api': `API`,
+    '/benchmarks': `Benchmarks`,
     '/data/sets': `Datasets`,
-    '/data/tmi': `TMI`,
-    '/tasks/discovery/tmi': `TMI`,
     ...task_labels,
   }}
   --nav-item-padding="0 3pt"
@@ -209,7 +195,6 @@
 
 <main
   bind:this={main_element}
-  class:bleed-1400={url === `/tasks/diatomics`}
   {@attach heading_anchors({ selector: `h1, h2, h3, h4, h5, h6` })}
 >
   {#if find_open}
@@ -227,7 +212,14 @@
 {#await comparison_module then module}
   {#if module}<module.default />{/if}
 {:catch error}
-  <p role="alert">Could not load model comparison: {get_error_message(error)}</p>
+  {#if comparison.open}
+    <div style="padding: 1rem; text-align: center">
+      <p role="alert">Could not load model comparison.</p>
+      <button onclick={() => location.reload()}>Reload comparison</button>
+      <button onclick={() => (comparison.open = false)}>Dismiss</button>
+      <details><summary>Asset details</summary>{get_error_message(error)}</details>
+    </div>
+  {/if}
 {/await}
 
 <Footer links={footer_links} style="--footer-bg: var(--nav-bg)">

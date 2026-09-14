@@ -69,10 +69,11 @@
   ]
   let x_key = $state(HYPERPARAMS.model_params.key)
   // the y-axis follows the task page the dialog was opened on until the user picks one
-  let y_key = $derived(
+  const default_y_key = $derived(
     RANKED_METRICS.find((metric) => metric.rank_href === page.url.pathname)?.key ??
       ALL_METRICS.CPS.key,
   )
+  let y_key = $derived(default_y_key)
 </script>
 
 <Dialog
@@ -202,7 +203,7 @@
                   {#if cell.rank && cell.n}
                     <small
                       style:color={rank_color(cell.rank, cell.n)}
-                      title="Ranked {cell.rank} of {cell.n} leaderboard models"
+                      title="Global rank {cell.rank} of {cell.n} models with this metric (this model and active models); independent of table filters"
                     >
                       #{cell.rank}
                     </small>
@@ -221,6 +222,8 @@
       the Pareto frontier. Click a point to add or remove its model.
     </p>
     <DynamicScatter
+      url_prefix="compare_plot"
+      url_defaults={{ x: HYPERPARAMS.model_params.key, y: default_y_key }}
       models={[...new Set([...ACTIVE_MODELS, ...models])]}
       options={scatter_axis_options}
       highlight_keys={comparison.keys}

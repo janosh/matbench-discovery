@@ -80,6 +80,7 @@ export const svelte_config = {
   ],
 
   adapter: adapter(),
+  prerender: { entries: [`*`, `/tasks`] },
   // Date.now() diverges across Vite+ SSR/client config loads and breaks hydration.
   version: process.env.NODE_ENV === `production` ? undefined : { name: `dev` },
 
@@ -91,7 +92,7 @@ export const svelte_config = {
     $figs: `src/figs`,
     $routes: `src/routes`,
   },
-}
+} satisfies NonNullable<Parameters<typeof sveltekit>[0]>
 
 // Load committed data payloads as parsed ES modules. Figure payloads in site/src/figs
 // are typed per payload in src/figs/payloads.d.ts. Two formats: <name>.json.gz
@@ -258,6 +259,17 @@ const three_compat = path.resolve(matterviz_dist, `scene/three-compat.js`)
 
 export default {
   ...config, // shared lint/fmt/build
+  define: {
+    BENCHMARK_REVISION: JSON.stringify({
+      commit: execFileSync(`git`, [`rev-parse`, `HEAD`], { encoding: `utf8` }).trim(),
+      modified: Boolean(
+        execFileSync(`git`, [`status`, `--porcelain`], {
+          encoding: `utf8`,
+        }).trim(),
+      ),
+      captured_at: new Date().toISOString(),
+    }),
+  },
   fmt: {
     ...config.fmt,
     ignorePatterns: [`src/routes/**/*.json`],
@@ -269,6 +281,7 @@ export default {
     json_payload_plugin(),
     unchanged_generated_hmr_plugin(),
   ],
+  worker: { plugins: () => [json_payload_plugin()] },
 
   server: {
     fs: { allow: [`../..`] }, // Needed to import from $root

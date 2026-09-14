@@ -56,7 +56,7 @@
 
 <h1 id="too-much-information">Too Much Information</h1>
 
-<p>Stuff that didn't make the cut into the main page describing the WBM test set.</p>
+<p>Additional analysis of the <a href="/data/wbm">WBM test set</a>.</p>
 
 <h2 id="wbm-element-counts-for">WBM Element Counts for <code>{filter}</code></h2>
 

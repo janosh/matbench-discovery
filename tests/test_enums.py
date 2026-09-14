@@ -11,7 +11,7 @@ import pytest
 import requests
 
 import scripts.generate_model_enum as model_enum_generator
-from matbench_discovery import DATA_DIR, ROOT
+from matbench_discovery import DATA_DIR, ROOT, file_digest
 from matbench_discovery.data import file_ref_name
 from matbench_discovery.enums import (
     ArchitectureType,
@@ -139,6 +139,13 @@ def test_data_files_enum() -> None:
     assert DataFiles.wbm_summary.rel_path == "wbm/2023-12-13-wbm-summary.csv.gz"
     assert DataFiles.wbm_summary.path == f"{DATA_DIR}/wbm/2023-12-13-wbm-summary.csv.gz"
     assert DataFiles.wbm_summary.url.startswith("https://figshare.com/files/")
+
+    diatomics = DataFiles.diatomics_dft_reference
+    assert diatomics.rel_path == "diatomics/diatomics-dft.json.gz"
+    assert diatomics.url.startswith("https://figshare.com/files/")
+    assert diatomics.yaml[diatomics.name]["md5"] == file_digest(
+        f"{ROOT}/site/src/lib/diatomics-dft.json.gz", "md5"
+    )
 
 
 def test_data_files_members_match_yaml_registry() -> None:

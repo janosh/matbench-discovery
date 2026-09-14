@@ -9,6 +9,7 @@ import tomllib
 import zipfile
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
 from ase.calculators.emt import EMT
@@ -184,6 +185,26 @@ def test_alphanet_factory_honors_requested_dtype(
         "cpu", dtype="float64", checkpoint=str(tmp_path / "model.ckpt")
     )
     assert vars(calculator)["precision"] == "64"
+
+
+@pytest.mark.parametrize("device", ["cpu", "cuda", "cuda:1"])
+def test_prophet_factory_honors_requested_device(
+    device: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Prophet receives the requested device before allocating its model."""
+    constructor = Mock()
+    monkeypatch.setitem(
+        sys.modules, "prophet", SimpleNamespace(KairosCalculator=constructor)
+    )
+    checkpoint = "model.pt"
+    calc = CALCULATORS["prophet_oame_mbd"].make_calc(device, checkpoint=checkpoint)
+    constructor.assert_called_once_with(
+        model_path=checkpoint,
+        use_kernel=device.startswith("cuda"),
+        use_compile=False,
+        device=device,
+    )
+    assert calc is constructor.return_value
 
 
 def test_pet_factory_casts_exported_model(

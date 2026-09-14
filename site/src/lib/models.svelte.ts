@@ -5,13 +5,21 @@ import type { CpsConfig } from '$lib/combined-scores.svelte'
 import {
   calculate_cps,
   CPS_CONFIG,
+  DEFAULT_CPS_CONFIG,
   CDS_CONFIG,
+  DEFAULT_CDS_CONFIG,
   update_models_cds,
   CMDS_CONFIG,
+  DEFAULT_CMDS_CONFIG,
   update_models_cmds,
 } from './combined-scores.svelte'
 import { get_org_logo } from './labels'
-import { UrlTableFilters } from './url-state.svelte'
+import {
+  apply_weights_param,
+  bind_url_params,
+  UrlTableFilters,
+  weights_to_param,
+} from './url-state.svelte'
 
 export const MODEL_METADATA_PATHS = import.meta.glob<ModelData>(
   `$root/models/[^_]**/[^_]*.yml`,
@@ -127,6 +135,49 @@ update_models_cmds(MODELS, CMDS_CONFIG)
 // Calculate initial CDS (combined diatomics score) for all models, same on-the-fly
 // semantics as CPS/CMDS
 update_models_cds(MODELS, CDS_CONFIG)
+
+const score_configs = {
+  CPS: { config: CPS_CONFIG, defaults: DEFAULT_CPS_CONFIG },
+  CMDS: { config: CMDS_CONFIG, defaults: DEFAULT_CMDS_CONFIG },
+  CDS: { config: CDS_CONFIG, defaults: DEFAULT_CDS_CONFIG },
+}
+
+// Plain copies for exports: include every live score, even on a different task page.
+export const score_weight_records = (): Record<string, Record<string, number>> =>
+  Object.fromEntries(
+    Object.entries(score_configs).map(([score, { config }]) => [
+      score,
+      Object.fromEntries(
+        Object.entries(config).map(([key, { weight }]) => [key, weight]),
+      ),
+    ]),
+  )
+
+// Mounted once in the root layout so model pages and comparisons restore scores
+// without depending on a task's weight-adjustment chart being present.
+export function bind_score_weights(): void {
+  bind_url_params(
+    (params) => {
+      for (const [score, { config, defaults }] of Object.entries(score_configs)) {
+        apply_weights_param(
+          params.get(`${score.toLowerCase()}_weights`),
+          config,
+          defaults,
+        )
+      }
+    },
+    () =>
+      Object.entries(score_configs).map(([score, { config, defaults }]) => [
+        `${score.toLowerCase()}_weights`,
+        weights_to_param(config, defaults),
+      ]),
+  )
+  $effect(() => {
+    update_models_cps(MODELS, CPS_CONFIG)
+    update_models_cmds(MODELS, CMDS_CONFIG)
+    update_models_cds(MODELS, CDS_CONFIG)
+  })
+}
 
 // All dataset keys used by at least one model's training_sets, in datasets.yml
 // declaration order — the roster for the table's training-data filter dropdown

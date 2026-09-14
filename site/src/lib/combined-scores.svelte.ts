@@ -244,7 +244,7 @@ export const DEFAULT_CDS_CONFIG: CdsConfig = {
 export const CDS_CONFIG: CdsConfig = $state(structuredClone(DEFAULT_CDS_CONFIG))
 
 // CDS is the weighted mean of the pillar subscores, each pillar a fixed-weight mean
-// of its component subscores, multiplied by the fraction of the 87 benchmark elements
+// of its component subscores, multiplied by the fraction of benchmark elements
 // the model completed. Any missing/NaN component in a non-zero-weight pillar invalidates
 // the score (matches calculate_cps/calculate_cmds).
 export function calculate_cds(values: CdsValues, cds_config: CdsConfig): number | null {

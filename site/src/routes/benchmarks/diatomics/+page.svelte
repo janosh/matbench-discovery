@@ -1,35 +1,26 @@
 <script lang="ts">
+  import TestSet from '$lib/benchmark/TestSet.svelte'
+  import TaskNavigation from '$lib/benchmark/TaskNavigation.svelte'
   import MetricsTable from '$lib/table/MetricsTable.svelte'
   import ModelSelect from '$lib/ModelSelect.svelte'
   import {
     ACTIVE_MODELS,
-    MODELS,
     has_diatomics_curves,
     make_table_filters,
   } from '$lib/models.svelte'
   import { ButtonGroup } from 'svelte-widgets'
-  import {
-    CDS_CONFIG,
-    DEFAULT_CDS_CONFIG,
-    update_models_cds,
-  } from '$lib/combined-scores.svelte'
+  import { CDS_CONFIG, DEFAULT_CDS_CONFIG } from '$lib/combined-scores.svelte'
   import {
     DIATOMICS_METRICS,
     METADATA_COLS,
     scatter_axis_label,
-    scatter_options_by_key,
     task_page_visible_cols,
   } from '$lib/labels'
   import DiatomicCurve from '$lib/plot/DiatomicCurve.svelte'
   import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
   import RadarChart from '$lib/plot/RadarChart.svelte'
   import { UrlModelSelection } from '$lib/model-selection.svelte'
-  import {
-    apply_weights_param,
-    bind_url_params,
-    UrlPlotState,
-    weights_to_param,
-  } from '$lib/url-state.svelte'
+  import { bind_url_params } from '$lib/url-state.svelte'
   import { valid_query_param } from 'svelte-widgets/url-params'
   import DiatomicsNote from './diatomics-note.md'
   import { element_data } from 'matterviz/element'
@@ -50,25 +41,15 @@
     diatomic_models[model_idx_by_key[key] ?? -1]?.model_name ?? key
   let errors = $derived(data?.errors ?? {})
   let error_entries = $derived(Object.entries(errors))
-  let error_title = $derived(
-    error_entries.map(([key, error]) => `${label_for(key)}: ${error}`).join(`\n`),
-  )
 
   const homo_nuc_key = `homo-nuclear`
   const visible_cols = task_page_visible_cols(...Object.values(DIATOMICS_METRICS))
   const filters = make_table_filters()
   // default-sort by the combined diatomics score (CDS), best (highest) first
-  const plot = new UrlPlotState(
-    {
-      x: DIATOMICS_METRICS.diatomics_run_time_sec.key,
-      y: DIATOMICS_METRICS.diatomics_combined_score.key,
-      sort: {
-        column: DIATOMICS_METRICS.diatomics_combined_score.key,
-        dir: `desc`,
-      },
-    },
-    scatter_options_by_key,
-  )
+  let plot = $state({
+    x: DIATOMICS_METRICS.diatomics_run_time_sec.key,
+    y: DIATOMICS_METRICS.diatomics_combined_score.key,
+  })
 
   // cost-vs-fidelity Pareto: sweep wall time (x) vs CDS (y), size = model params,
   // color = training-set size (the two scaling levers)
@@ -152,17 +133,12 @@
       `all`,
       element_group_keys,
     )
-    plot.read(params)
     filters.read(params)
-    apply_weights_param(params.get(`weights`), CDS_CONFIG, DEFAULT_CDS_CONFIG)
   }
   bind_url_params(read_url_params, () => [
     model_selection.url_entry,
     [`elements`, selected_element_group, `all`],
-    ...plot.url_entries,
     ...filters.url_entries,
-    // custom CDS pillar weights (accuracy,geometry,speed,physicality); omitted at defaults
-    [`weights`, weights_to_param(CDS_CONFIG, DEFAULT_CDS_CONFIG)],
   ])
 
   const curves_for_formula = (formula: string) =>
@@ -186,33 +162,50 @@
 
 <h1 id="diatomics">Diatomics</h1>
 
-<div class="task-intro" style="margin-bottom: 1em">
-  <!-- wrapper div: the markdown renders multiple top-level elements which would
-  otherwise each become their own flex item -->
-  <div><DiatomicsNote /></div>
+<p>
+  This task tests diatomic potential-energy curves for agreement with DFT, bond geometry,
+  and physical consistency across interatomic separations.
+</p>
+<p>
+  Reference data: <a href="#test-set">PBE and r2SCAN diatomic curves</a>. The combined
+  diatomics score (CDS, higher is better) combines Accuracy, Geometry, Speed, and
+  Physicality. Reference-relative scores use PBE.
+</p>
+
+<TaskNavigation />
+
+<h2 id="leaderboard">Leaderboard</h2>
+<p>
+  <strong>Interpret with caution:</strong> PBE can be unreliable for stretched diatomics,
+  and speed compares heterogeneous hardware. Models marked * lack curves and are scored on
+  their remaining elements. See <a href="#methodology">methodology</a> for reference quality
+  checks and scoring exclusions.
+</p>
+
+<section class="full-bleed">
+  <MetricsTable
+    model_filter={has_diatomics_curves}
+    col_filter={(col) => visible_cols[col.key] ?? true}
+    default_sort={{ column: DIATOMICS_METRICS.diatomics_combined_score.key, dir: `desc` }}
+    {filters}
+  />
+</section>
+
+<details style="margin-block: 1em">
+  <summary>Adjust score weights</summary>
   <figure class="task-weights">
     <RadarChart
       size={260}
       config={CDS_CONFIG}
       default_config={DEFAULT_CDS_CONFIG}
       title_label={DIATOMICS_METRICS.diatomics_combined_score}
-      on_change={(cfg) => update_models_cds(MODELS, cfg as typeof CDS_CONFIG)}
     />
     <figcaption>
-      Drag the knob to reweight the four CDS pillars (see &#9432; for definitions); the
-      table updates live. Caveats: Accuracy and Geometry score agreement with PBE, which
-      is itself unreliable for stretched diatomics, and Speed compares wall times measured
-      on heterogeneous hardware.
+      Drag the knob to reweight the CDS pillars (see &#9432; for definitions); the table
+      and plots update live.
     </figcaption>
   </figure>
-</div>
-
-<MetricsTable
-  model_filter={has_diatomics_curves}
-  col_filter={(col) => visible_cols[col.key] ?? true}
-  bind:sort={plot.sort}
-  {filters}
-/>
+</details>
 
 <h2 id="model-comparison" style="text-align: center">
   {@html scatter_axis_label(plot.y)} vs {@html scatter_axis_label(plot.x)}
@@ -233,13 +226,37 @@
   style="height: 800px"
 />
 
+<TestSet task="diatomics">
+  <p>
+    <a
+      href="#diatomic-energy-curves"
+      onclick={() => {
+        model_selection.selected = selectable_options.filter((option) =>
+          reference_names.includes(option.value),
+        )
+        selected_element_group = `all`
+      }}>Explore DFT reference curves</a
+    > using the curve viewer below. Select models there to compare predictions.
+  </p>
+</TestSet>
+
 <h2 id="diatomic-energy-curves" style="text-align: center">Diatomic Energy Curves</h2>
 
 {#if error_entries.length > 0}
-  <p class="error-summary" role="alert" title={error_title}>
-    Failed to load diatomics data for {error_entries.length}
-    {error_entries.length === 1 ? `model` : `models`}.
-  </p>
+  <div class="error-summary" role="alert">
+    <p>
+      Failed to load diatomics data for {error_entries.length}
+      {error_entries.length === 1 ? `model` : `models`}.
+    </p>
+    <details>
+      <summary>Asset details</summary>
+      <ul>
+        {#each error_entries as [key, error] (key)}
+          <li><a href="/models/{key}">{label_for(key)}</a>: {error}</li>
+        {/each}
+      </ul>
+    </details>
+  </div>
 {/if}
 
 <div class="controls">
@@ -272,6 +289,12 @@
   {/each}
 </div>
 
+<h2 id="methodology">Methodology</h2>
+<details>
+  <summary>Reference provenance, scoring exclusions, and contributions</summary>
+  <DiatomicsNote />
+</details>
+
 <style>
   h1 {
     margin: 0;
@@ -284,6 +307,7 @@
     padding: 1em;
   }
   .error-summary {
+    overflow-wrap: anywhere;
     margin: 1em auto;
     max-width: 80ch;
     padding: 0.75em 1em;

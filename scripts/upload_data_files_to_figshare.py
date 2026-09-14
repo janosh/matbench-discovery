@@ -43,20 +43,18 @@ def main(
             article_id = None
 
     description = """
-    These are the Matbench Discovery data files, a benchmark for machine learning
-    interatomic potentials (MLIP) on inorganic crystals. We evaluate models on
-    multiple tasks including crystal stability prediction from unrelaxed structures,
-    geometry optimization, modeling of harmonic and anharmonic phonons with more
-    soon to come.
+    Matbench Discovery evaluates machine learning interatomic potentials across
+    materials-science tasks, from crystal stability prediction to finite-temperature
+    dynamics.
 
-    The data files include relaxed structures of the MP training set, initial+relaxed
-    structures of the WBM test set, both in pymatgen.Structure and ase.Atoms format.
+    These files provide training-set structures, benchmark inputs, and reference
+    data for task-specific evaluations.
 
     For a description of each file, see
-    https://matbench-discovery.materialsproject.org/data#--direct-download.
+    https://matbench-discovery.materialsproject.org/data.
 
-    The original MPtrj training set containing 1.3M structures with their energies,
-    forces, stresses and (partial) magmoms is available at https://figshare.com/articles/dataset/23713842.
+    The original MPtrj training set, with energies, forces, stresses and (partial)
+    magmoms, is available at https://figshare.com/articles/dataset/23713842.
     """.replace("\n", " ").strip()
     metadata = {
         "title": "Matbench Discovery - Data Files",

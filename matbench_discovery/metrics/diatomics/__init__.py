@@ -210,9 +210,8 @@ def find_low_quality_dft_refs(
     energy jump at sign-flip points >= min_energy_jump AND number of energy-difference
     sign flips >= min_energy_flips. Requiring both avoids flagging curves with a few
     large but possibly physical features (e.g. Cr2's shelf) or many tiny numerical
-    wiggles. On the current PBE reference, this flags 8 lanthanides (Pr, Pm, Sm,
-    Tb, Dy, Ho, Er, Tm) whose f-electron SCF convergence issues produce eV-scale
-    discontinuities, next to which any model error signal drowns.
+    wiggles. SCF convergence issues can produce discontinuities that overwhelm
+    the model error signal; exclusions are recomputed from the supplied curves.
 
     Args:
         ref_curves (DiatomicCurves): DFT reference curves keyed by element symbol.

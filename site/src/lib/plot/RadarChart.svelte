@@ -1,9 +1,5 @@
 <script lang="ts">
-  import {
-    CPS_CONFIG,
-    type CpsConfig,
-    DEFAULT_CPS_CONFIG,
-  } from '$lib/combined-scores.svelte'
+  import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined-scores.svelte'
   import { Icon } from 'svelte-widgets'
   import { Info, Reset } from 'svelte-widgets/icons'
   import { ALL_METRICS } from '$lib/labels'
@@ -11,7 +7,6 @@
   import { format_num } from 'matterviz/labels'
   import type { Point } from 'matterviz/plot'
   import { tooltip } from 'svelte-widgets/attachments'
-  import { MODELS, update_models_cps } from '$lib/models.svelte'
 
   // any weighted score with >= 3 components works (CPS is the default; CMDS and CDS
   // use the same UI with 3 and 4 corners respectively)
@@ -22,13 +17,11 @@
     config = CPS_CONFIG,
     default_config = DEFAULT_CPS_CONFIG,
     title_label = ALL_METRICS.CPS,
-    on_change = (cfg: WeightsConfig) => update_models_cps(MODELS, cfg as CpsConfig),
   }: {
     size?: number
     config?: WeightsConfig
     default_config?: WeightsConfig
     title_label?: Label
-    on_change?: (config: WeightsConfig) => void
   } = $props()
 
   // A pointer interaction that starts on the knob makes the browser fire a
@@ -97,14 +90,12 @@
     }),
   )
 
-  // Keep knob + model scores in sync when weights change (drag end, reset,
-  // or edits from elsewhere)
+  // Keep the knob in sync with weight edits from this chart or shared URLs.
   $effect(() => {
     point = point_from_weights(config)
-    on_change(config)
   })
 
-  // Reset to initial weights (the effect above re-derives knob position + scores).
+  // Reset to initial weights (the effect above re-derives the knob position).
   // Skip keys absent from default_config so a divergent config pair can't crash.
   function reset_weights() {
     for (const key of Object.keys(config) as (keyof typeof config)[]) {

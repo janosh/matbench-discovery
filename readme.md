@@ -17,13 +17,13 @@
 
 Matbench Discovery is an [interactive leaderboard](https://janosh.github.io/matbench-discovery) that ranks ML interatomic potentials across crystal stability prediction, geometry optimization, phonons and thermal conductivity, molecular dynamics, and diatomic potential-energy curves.
 
-We rank <slot name="model_count">20+</slot> models covering multiple methodologies including graph neural network (GNN) interatomic potentials, GNN one-shot predictors, iterative Bayesian optimizers and random forests with shallow-learning structure fingerprints.
+The leaderboard covers methodologies including graph neural network (GNN) interatomic potentials, GNN one-shot predictors, iterative Bayesian optimizers and random forests with shallow-learning structure fingerprints.
 
 <slot name="best_report" />
 
 The benchmark exposes accuracy, robustness, and computational-cost trade-offs across these tasks to help users choose models for static and finite-temperature materials simulations.
 
-> 📖 **Important:** In Matbench Discovery, the convex hull used to evaluate stability is constructed from DFT reference energies, not from model predictions. This differs from some other benchmarking approaches and has important implications for metric interpretation. See [`/tasks/discovery`](https://janosh.github.io/matbench-discovery/tasks/discovery#convex-hull-construction-in-matbench-discovery) for more information.
+> 📖 **Important:** In Matbench Discovery, the convex hull used to evaluate stability is constructed from DFT reference energies, not from model predictions. This differs from some other benchmarking approaches and has important implications for metric interpretation. See [`/benchmarks/discovery`](https://janosh.github.io/matbench-discovery/benchmarks/discovery#convex-hull-construction-in-matbench-discovery) for more information.
 
 To cite Matbench Discovery, use:
 
@@ -31,4 +31,4 @@ To cite Matbench Discovery, use:
 
 Are you submitting a new model? Follow the [contributing guide](https://janosh.github.io/matbench-discovery/contribute), including its branch-specific PR instructions for loading the model checklist. For other changes, use GitHub's documented [branch selector](https://github.com/janosh/matbench-discovery/compare) to open a regular PR with a blank description. Ask support questions via [GitHub discussion](https://github.com/janosh/matbench-discovery/discussions).
 
-> Disclaimer: We evaluate how accurately ML models predict several material properties like thermodynamic stability, thermal conductivity, and atomic positions, in all cases using PBE DFT as reference data. Although these properties are important for high-throughput materials discovery, the ranking cannot give a complete picture of a model's overall ability to drive materials research. A high ranking does not constitute endorsement by the Materials Project.
+> Disclaimer: We evaluate how accurately ML models predict material properties like thermodynamic stability, thermal conductivity, and atomic positions using task-specific reference data. Although these properties are important for high-throughput materials discovery, the ranking cannot give a complete picture of a model's overall ability to drive materials research. A high ranking does not constitute endorsement by the Materials Project.

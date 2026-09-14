@@ -633,6 +633,18 @@ def _hienet(model_key: str) -> Callable[..., Calculator]:
     return make_calc
 
 
+def _prophet(device: str, checkpoint: str | None = None) -> Calculator:
+    """Load Prophet on the runner-selected device."""
+    from prophet import KairosCalculator
+
+    return KairosCalculator(
+        model_path=checkpoint or download_checkpoint("prophet_oame_mbd", ext=".pt"),
+        use_kernel=device.startswith("cuda"),
+        use_compile=False,
+        device=device,
+    )
+
+
 def _nequip(model_key: str) -> Callable[[str], Calculator]:
     def make_calc(device: str) -> Calculator:
         from nequip.ase import NequIPCalculator
@@ -885,6 +897,7 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
         ),
         "chgnet_0_3_0": _runtime_calc_spec("chgnet_0_3_0", _chgnet),
         "hienet": _named_spec(_hienet, "hienet", checkpoint=True),
+        "prophet_oame_mbd": _checkpoint_spec("prophet_oame_mbd", _prophet, ext=".pt"),
         "nequip_mp_l_0_1": _named_spec(_nequip, "nequip_mp_l_0_1"),
         "nequip_oam_l_0_1": _named_spec(_nequip, "nequip_oam_l_0_1"),
         "nequip_oam_xl_0_1": _named_spec(_nequip, "nequip_oam_xl_0_1"),

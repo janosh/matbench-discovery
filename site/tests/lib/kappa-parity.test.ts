@@ -13,11 +13,12 @@ import {
 import type { KappaParityBase, KappaParityModel } from '$lib/parity/kappa-parity'
 import { clear_asset_cache } from '$lib/asset-loader'
 import * as kappa_parity from '$lib/parity/kappa-parity'
+import * as kappa_modes from '$lib/parity/kappa-modes'
 import KappaParityPlot from '$lib/plot/KappaParityPlot.svelte'
 import { MODELS } from '$lib/models.svelte'
 import { tick } from 'svelte'
 import type { AnyStructure } from 'matterviz/structure'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import {
   doc_query,
   get_scatter_plot_props,
@@ -67,8 +68,15 @@ const first_model_key = Object.keys(kappa_parity_manifest.model_assets)[0]
 if (!first_model_key) throw new Error(`kappa parity manifest has no model assets`)
 
 it(`loads spectral plots only after selecting a material and renders both DOS sources`, async () => {
+  vi.spyOn(kappa_modes, `has_kappa_modes`).mockReturnValue(true)
+  const modes_load = vi
+    .spyOn(kappa_modes, `load_kappa_modes`)
+    .mockRejectedValueOnce(new Error(`HTTP 503: modes asset`))
+    .mockResolvedValue({ model_key: model.model_key, materials: {} })
   vi.spyOn(kappa_parity, `load_kappa_parity_base`).mockResolvedValue(base)
-  vi.spyOn(kappa_parity, `load_kappa_parity_model`).mockResolvedValue(model)
+  vi.spyOn(kappa_parity, `load_kappa_parity_model`)
+    .mockRejectedValueOnce(new Error(`HTTP 503: kappa asset`))
+    .mockResolvedValue(model)
   vi.spyOn(kappa_parity, `load_kappa_srme_map`).mockResolvedValue(
     new Map([[`mp-1`, 0.4]]),
   )
@@ -76,6 +84,11 @@ it(`loads spectral plots only after selecting a material and renders both DOS so
     target: document.body,
     props: { model: { ...MODELS[0], model_key: first_model_key } },
   })
+  await vi.waitFor(() =>
+    expect(doc_query(`[role="alert"]`).textContent).toContain(`Could not load`),
+  )
+  expect(doc_query(`details`).textContent).toContain(`HTTP 503: kappa asset`)
+  doc_query<HTMLButtonElement>(`.plot-state button`).click()
   const props = (await vi.waitFor(() =>
     get_scatter_plot_props(plot_mocks.ScatterPlot),
   )) as {
@@ -100,10 +113,70 @@ it(`loads spectral plots only after selecting a material and renders both DOS so
   await vi.waitFor(() => expect(plot_mocks.Dos).toHaveBeenCalledOnce())
   expect(plot_mocks.PhononThermalPlot).toHaveBeenCalledTimes(2)
   expect(document.querySelector(`.detail-panel`)?.textContent).toContain(`mp-1`)
+  await vi.waitFor(() =>
+    expect(doc_query(`.modes [role="alert"] details`).textContent).toContain(
+      `HTTP 503: modes asset`,
+    ),
+  )
+  doc_query<HTMLButtonElement>(`.modes .plot-state button`).click()
+  await vi.waitFor(() =>
+    expect(doc_query(`.modes`).textContent).toContain(
+      `No phonon modes stored for this material`,
+    ),
+  )
+  expect(modes_load).toHaveBeenCalledTimes(2)
+  expect(document.querySelector(`.modes [role="alert"]`)).toBeNull()
   doc_query<HTMLButtonElement>(`button[aria-label="Close"]`).click()
   await tick()
   expect(document.querySelector(`.detail-panel`)).toBeNull()
 })
+
+it.each([`analysis`, `spectral`])(
+  `offers a page reload after the %s module fails`,
+  async (module) => {
+    const failure = new Error(`Failed to load ${module}.js`)
+    vi.spyOn(kappa_parity, `load_kappa_parity_base`).mockResolvedValue(base)
+    vi.spyOn(kappa_parity, `load_kappa_parity_model`).mockResolvedValue(model)
+    const srme_load = vi
+      .spyOn(kappa_parity, `load_kappa_srme_map`)
+      .mockResolvedValue(undefined)
+    if (module === `analysis`) srme_load.mockRejectedValue(failure)
+    else {
+      vi.doMock(`matterviz/spectral`, () => {
+        throw failure
+      })
+      onTestFinished(() => {
+        vi.doMock(`matterviz/spectral`, () => plot_mocks)
+      })
+    }
+    mount(KappaParityPlot, {
+      target: document.body,
+      props: { model: { ...MODELS[0], model_key: first_model_key } },
+    })
+    if (module === `spectral`) {
+      const props = (await vi.waitFor(() =>
+        get_scatter_plot_props(plot_mocks.ScatterPlot),
+      )) as {
+        on_point_click: (event: {
+          point: { series_idx: number; point_idx: number }
+        }) => void
+      }
+      props.on_point_click({ point: { series_idx: 0, point_idx: 0 } })
+    }
+    await vi.waitFor(() =>
+      expect(doc_query(`[role="alert"]`).textContent).toContain(
+        module === `analysis` ? failure.message : `Could not load thermal plots`,
+      ),
+    )
+    // Vitest wraps deliberate module-factory failures; either path must expose details.
+    expect(doc_query(`[role="alert"] details`).textContent).not.toBe(`Asset details`)
+    const reload = vi.spyOn(location, `reload`).mockImplementation(() => {})
+    const button = doc_query<HTMLButtonElement>(`[role="alert"] button`)
+    expect(button.textContent).toBe(`Reload page`)
+    button.click()
+    expect(reload).toHaveBeenCalledOnce()
+  },
+)
 
 function manifest_sized_base(overrides: Partial<KappaParityBase> = {}): KappaParityBase {
   const row_count = kappa_parity_manifest.row_count
@@ -230,13 +303,18 @@ describe(`kappa parity data helpers`, () => {
   it.each([`kappa_dft`, `n_sites`, `spacegroups`] as const)(
     `rejects base %s with the wrong row count`,
     async (field) => {
-      vi.stubGlobal(
-        `fetch`,
-        vi.fn(() => gzipped_json_response(manifest_sized_base({ [field]: [1] }))),
-      )
+      const valid_base = manifest_sized_base()
+      const fetch_mock = vi
+        .fn(() => gzipped_json_response(valid_base))
+        .mockImplementationOnce(() =>
+          gzipped_json_response(manifest_sized_base({ [field]: [1] })),
+        )
+      vi.stubGlobal(`fetch`, fetch_mock)
       await expect(load_kappa_parity_base()).rejects.toThrow(
         `Invalid kappa parity ${field}: expected ${kappa_parity_manifest.row_count} rows`,
       )
+      await expect(load_kappa_parity_base()).resolves.toEqual(valid_base)
+      expect(fetch_mock).toHaveBeenCalledTimes(2)
     },
   )
 

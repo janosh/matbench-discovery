@@ -139,7 +139,7 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
         interpolator: (fraction) =>
           interpolateRdBu(lower_is_better ? 1 - fraction : fraction),
       }}
-      style="min-width: min(70vw, 400px)"
+      style="min-width: 0; flex: 1"
       bar_style="height: 14pt;"
       range={lower_is_better ? [worst_val, best_val] : [best_val, worst_val]}
     />
@@ -178,6 +178,7 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
     font-weight: lighter;
     align-items: end;
     transition: opacity 0.4s;
+    width: min(100%, 32em);
   }
   legend span {
     transform: translateY(4px);
@@ -195,6 +196,7 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
   }
   ul > li button {
     transition: 0.2s;
+    padding: 0.15em 0.45em;
   }
   /* plain --btn-bg was invisible here since it's already every button's default
   background; blue tint + inset ring (theme link color) marks the active sort */
@@ -205,7 +207,7 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
   ol {
     display: grid;
     gap: 1em;
-    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
   }
   ol > li {
     background-color: light-dark(#eee, rgba(255, 255, 255, 0.05));
@@ -217,12 +219,14 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
     grid-row: span 4;
     position: relative;
     gap: 1em;
+    min-width: 0;
   }
   span {
     display: flex;
     gap: 5pt;
     place-items: center;
     place-content: center;
+    flex-wrap: wrap;
   }
   input[type='number'] {
     text-align: center;

@@ -9,7 +9,7 @@ import {
   training_set_link,
 } from '$lib/metrics'
 import { ACTIVE_MODELS, MODELS } from '$lib/models.svelte'
-import { competition_rank } from '$lib/rankings'
+import { competition_rank, RANKED_METRICS } from '$lib/rankings'
 import type { Author, Label, ModelData } from '$lib/types'
 import { bind_url_params } from '$lib/url-state.svelte'
 import { format_num } from 'matterviz/labels'
@@ -76,25 +76,25 @@ export function mark_compared_rows<R extends { model_key: string; class?: string
 }
 
 // Mirror the selection into a `compare` URL param (comma-joined model keys) so comparisons
-// are shareable and survive reloads. Unlike other URL-bound state, an absent param keeps
-// the in-memory selection (it follows the user across pages) and is re-applied to every
-// navigated-to URL. Call once during layout init.
+// are shareable and survive reloads on leaderboard and model pages. Other pages keep
+// the in-memory selection but omit it from their URLs. Call once during layout init.
 export function bind_comparison_url(): void {
+  const comparison_paths = new Set([
+    `/models`,
+    ...MODELS.map(({ model_key }) => `/models/${model_key}`),
+    ...RANKED_METRICS.map(({ rank_href }) => rank_href),
+  ])
+  const supports_comparison = () => comparison_paths.has(page.url.pathname)
   bind_url_params(
     (params, { type }) => {
-      const param = params.get(`compare`)
+      const param = supports_comparison() ? params.get(`compare`) : null
       if (param !== null) comparison.set(param.split(`,`))
       // a shared link opens the dialog; in-app navigation (e.g. a model link inside the
       // dialog) closes it
-      comparison.open = type === `enter` && comparison.keys.size > 1
+      comparison.open = param !== null && type === `enter` && comparison.keys.size > 1
     },
-    () => {
-      // re-sync after navigations whose target URL lacked the param: SvelteKit assigns a
-      // fresh URL object to page.url per navigation (also same-path ones that only drop the
-      // query), so reading it re-runs this write-back
-      void page.url.href
-      return [[`compare`, [...comparison.keys].join(`,`)]]
-    },
+    // The page.url read also re-syncs same-path navigations that drop the query.
+    () => [[`compare`, supports_comparison() ? [...comparison.keys].join(`,`) : ``]],
   )
 }
 
@@ -275,7 +275,7 @@ export const COMPARE_GROUPS: CompareGroup[] = [
   { title: `Cost`, rows: COST_ROWS },
   {
     title: `Discovery`,
-    href: `/tasks/discovery`,
+    href: `/benchmarks/discovery`,
     rows: [
       ...metrics(`F1`, `DAF`, `Precision`, `Accuracy`, `MAE`, `RMSE`, `R2`),
       text_row(
@@ -290,7 +290,7 @@ export const COMPARE_GROUPS: CompareGroup[] = [
   },
   {
     title: `Geometry optimization`,
-    href: `/tasks/geo-opt`,
+    href: `/benchmarks/geo-opt`,
     rows: [
       ...metrics(`RMSD`, `symmetry_match_1e-2`, `symmetry_decrease_1e-2`),
       text_row(
@@ -309,12 +309,12 @@ export const COMPARE_GROUPS: CompareGroup[] = [
   },
   {
     title: `Phonons`,
-    href: `/tasks/phonons`,
+    href: `/benchmarks/phonons`,
     rows: metrics(`κ_SRME`, `κ_SRE`, `κ_failure_rate`, `imaginary_mode_rate`),
   },
   {
     title: `Molecular dynamics`,
-    href: `/tasks/md`,
+    href: `/benchmarks/md`,
     rows: [
       ...metrics(
         `md_combined_score`,
@@ -332,7 +332,7 @@ export const COMPARE_GROUPS: CompareGroup[] = [
   },
   {
     title: `Diatomics`,
-    href: `/tasks/diatomics`,
+    href: `/benchmarks/diatomics`,
     rows: [
       ...metrics(
         `diatomics_combined_score`,

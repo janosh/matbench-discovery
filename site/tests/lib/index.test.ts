@@ -205,7 +205,7 @@ describe(`sort_from_query`, () => {
 
 describe(`sync_url_params`, () => {
   it(`preserves unrelated params and omits defaults`, () => {
-    history.replaceState(null, ``, `/tasks/md?keep=1&x=old&y=default#matrix`)
+    history.replaceState(null, ``, `/benchmarks/md?keep=1&x=old&y=default#matrix`)
 
     sync_url_params(
       [
@@ -220,7 +220,7 @@ describe(`sync_url_params`, () => {
   })
 
   it(`does not replace URL when params are unchanged`, () => {
-    history.replaceState(null, ``, `/tasks/md?x=force_rmse`)
+    history.replaceState(null, ``, `/benchmarks/md?x=force_rmse`)
     const replace_spy = vi.spyOn(history, `replaceState`)
 
     sync_url_params([[`x`, `force_rmse`]], {})
@@ -250,7 +250,11 @@ describe(`weights_to_param / apply_weights_param`, () => {
   it.each([
     [`defaults serialize to empty string`, [0.5, 0.4, 0.1], ``],
     [`custom weights serialize in key order`, [0.7, 0.2, 0.1], `0.7,0.2,0.1`],
-    [`weights are rounded to 3 decimals`, [1 / 3, 1 / 3, 1 / 3], `0.333,0.333,0.333`],
+    [
+      `weights retain full precision`,
+      [1 / 3, 1 / 3, 1 / 3],
+      `0.3333333333333333,0.3333333333333333,0.3333333333333333`,
+    ],
   ] as const)(`%s`, (_name, weights, expected) => {
     expect(weights_to_param(make_config([...weights]), defaults)).toBe(expected)
   })
@@ -276,13 +280,22 @@ describe(`weights_to_param / apply_weights_param`, () => {
     }
   })
 
-  it(`round-trips through serialize -> parse`, () => {
-    const config = make_config([0.62, 0.25, 0.13])
-    const param = weights_to_param(config, defaults)
-    const restored = make_config([0.5, 0.4, 0.1])
-    apply_weights_param(param, restored, defaults)
-    for (const key of Object.keys(config) as (keyof typeof config)[]) {
-      expect(restored[key].weight).toBeCloseTo(config[key].weight, 3)
+  it.each(
+    [
+      [0.62, 0.25, 0.13],
+      [1 / 3, 1 / 3, 1 / 3],
+      [0.7, 0.2, 0.1],
+      [0.12345678901234566, 0.2, 0.6765432109876544],
+      [1, 0, 0],
+      [1 - Number.EPSILON, Number.EPSILON, 0],
+    ].map((weights) => ({ weights })),
+  )(`round-trips normalized weights $weights without drift`, ({ weights }) => {
+    let config = make_config(weights)
+    for (let round_trip = 0; round_trip < 5; round_trip += 1) {
+      const restored = make_config([0.5, 0.4, 0.1])
+      apply_weights_param(weights_to_param(config, defaults), restored, defaults)
+      expect(Object.values(restored).map(({ weight }) => weight)).toEqual(weights)
+      config = restored
     }
   })
 })

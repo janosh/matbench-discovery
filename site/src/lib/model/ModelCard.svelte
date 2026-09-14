@@ -151,6 +151,7 @@
   }
   h2 a {
     color: inherit;
+    overflow-wrap: anywhere;
   }
   nav {
     font-weight: 250;
@@ -167,7 +168,7 @@
   section.metadata {
     display: grid;
     gap: 9pt 5pt;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     font-size: 0.95em;
     align-content: center;
   }
@@ -177,7 +178,7 @@
   }
   section.metrics > ul {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(11em, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 11em), 1fr));
     justify-content: space-between;
     gap: 3pt 1em;
     list-style: none;

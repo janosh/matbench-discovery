@@ -130,7 +130,8 @@ function assert_energy_parity_base(base: EnergyParityBase): EnergyParityBase {
 export const load_energy_parity_base = (): Promise<EnergyParityBase> =>
   load_json_asset<EnergyParityBase>(
     energy_parity_asset_url(energy_parity_manifest.base.asset),
-  ).then(assert_energy_parity_base)
+    assert_energy_parity_base,
+  )
 
 export const load_energy_parity_model = (model_key: string): Promise<EnergyParityModel> =>
   load_parity_model<EnergyParityModel>(

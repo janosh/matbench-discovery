@@ -1,12 +1,26 @@
 import { goto } from '$app/navigation'
-import { DIATOMICS_METRICS, HYPERPARAMS } from '$lib/labels'
+import { page } from '$app/state'
+import data_files from '$pkg/data-files.yml'
+import { DIATOMICS_METRICS, DISCOVERY_SET_LABELS, HYPERPARAMS } from '$lib/labels'
 import { comparison } from '$lib/model-comparison.svelte'
-import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
+import {
+  ACTIVE_MODELS,
+  get_pred_file_urls,
+  make_table_filters,
+  score_weight_records,
+} from '$lib/models.svelte'
 import MetricsTable from '$lib/table/MetricsTable.svelte'
 import type { DiscoverySet, Label, ModelData } from '$lib/types'
 import { tick, type ComponentProps } from 'svelte'
 import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
-import { doc_query, header_name, mount } from '../index'
+import {
+  doc_query,
+  header_name,
+  mount,
+  mount_with_url,
+  navigate,
+  query_param,
+} from '../index'
 import app_css from '$site/src/app.css?raw'
 
 const mount_table = (props: ComponentProps<typeof MetricsTable> = {}) =>
@@ -18,6 +32,15 @@ const header_cells = () => [
   ...document.querySelectorAll<HTMLTableCellElement>(`th:not(.row-num-col)`),
 ]
 const header_names = () => header_cells().map(header_name)
+const ranking_context = () =>
+  doc_query(`.ranking-context`).textContent?.replaceAll(/\s+/g, ` `)
+const column_checkbox = (name: string): HTMLInputElement => {
+  const label = [...document.querySelectorAll(`.column-menu label`)].find(
+    (candidate) => candidate.textContent?.trim() === name,
+  )
+  if (!label) throw new Error(`No column checkbox labeled ${name}`)
+  return doc_query<HTMLInputElement>(`input`, label)
+}
 
 // table filters restricted to models trained (at least in part) on MPtrj
 const mptrj_only_filters = () => {
@@ -46,9 +69,8 @@ describe(`MetricsTable`, () => {
   })
   // model behind each rendered row, resolved from its Model-cell link
   const row_models = (): ModelData[] =>
-    [
-      ...document.querySelectorAll(`tbody tr td[data-col="Model"] a[href^="/models/"]`),
-    ].map((link) => {
+    [...document.querySelectorAll(`tbody td[data-col="Model"]`)].map((cell) => {
+      const link = doc_query(`a[href^="/models/"]`, cell)
       const model_key = link.getAttribute(`href`)?.slice(`/models/`.length)
       const model = ACTIVE_MODELS.find((md) => md.model_key === model_key)
       if (!model) throw new Error(`no model for row link ${link.outerHTML}`)
@@ -71,6 +93,9 @@ describe(`MetricsTable`, () => {
       expect(table.querySelector(`thead`)).not.toBeNull()
       expect(table.querySelector(`tbody`)).not.toBeNull()
       const table_container = doc_query(`.table-container`)
+      expect(table_container.style.getPropertyValue(`--heatmap-column-max-width`)).toBe(
+        `14.4em`,
+      )
       expect(
         table_container.style.getPropertyValue(`--heatmap-sticky-cell-odd-bg`),
       ).toContain(`linear-gradient`)
@@ -88,9 +113,15 @@ describe(`MetricsTable`, () => {
       expect(metric_order).toStrictEqual([...metric_order].toSorted((n1, n2) => n1 - n2))
 
       const initial_rows = [...table.querySelectorAll(`tbody tr`)]
+      expect(ranking_context()).toContain(`Sorted by CPS (descending)`)
+      expect(ranking_context()).toContain(`MD and diatomics are excluded`)
+      expect(ranking_context()).toContain(`CPS uses unique-prototype discovery scores`)
       for (const subset of [`full_test_set`, `unique_prototypes`] as const) {
         discovery_set = subset
         await tick()
+        expect(ranking_context()).toContain(
+          `Discovery: ${DISCOVERY_SET_LABELS[subset].label}`,
+        )
         const models = row_models()
         for (const [idx, row] of [...table.querySelectorAll(`tbody tr`)].entries()) {
           expect(row).toBe(initial_rows[idx])
@@ -101,8 +132,7 @@ describe(`MetricsTable`, () => {
         }
       }
 
-      const org_cell = doc_query(`td[data-col="Org"]`)
-      expect(doc_query(`.org-preview`, org_cell)).toBeDefined()
+      const org_cell = doc_query(`td[data-col="Org"]:has(.org-preview)`)
       expect(org_cell.getAttribute(`style`)).not.toContain(`min-width:`)
       const cps_header = header_cells().find((header) => header_name(header) === `CPS`)
       if (!cps_header) throw new Error(`CPS header is missing`)
@@ -112,6 +142,15 @@ describe(`MetricsTable`, () => {
       document.body.append(style)
       cps_header.style.fontWeight = `700`
       await tick()
+      expect(getComputedStyle(doc_query(`.control-buttons`)).alignItems).toBe(`baseline`)
+      expect(doc_query(`.control-buttons`).firstElementChild).toBe(
+        doc_query(`.control-buttons > [aria-label="Active model filters"]`),
+      )
+      for (const action of document.querySelectorAll(
+        `.control-buttons > :is(button, a)`,
+      )) {
+        expect(getComputedStyle(action).whiteSpace).toBe(`nowrap`)
+      }
       const trigger = doc_query<HTMLButtonElement>(`button[aria-haspopup]`, cps_header)
       trigger.dispatchEvent(new MouseEvent(`mouseenter`))
       await vi.waitFor(() => {
@@ -314,6 +353,9 @@ describe(`MetricsTable`, () => {
       const expected_models = ACTIVE_MODELS.filter(
         (model) => default_matches(model) && matches(model),
       )
+      expect(ranking_context()).toContain(
+        `${expected_models.length} of ${ACTIVE_MODELS.filter(matches).length} eligible models`,
+      )
       expect(
         row_models()
           .map(({ model_key }) => model_key)
@@ -424,6 +466,7 @@ describe(`MetricsTable`, () => {
         mount_table({
           col_filter: (col: Label) => [`Model`, col_key].includes(col.key ?? col.label),
         })
+        await tick()
 
         const sort_header = header_cells().find((th) => th.textContent?.includes(header))
         if (!sort_header) throw new Error(`${header} column not found`)
@@ -435,6 +478,9 @@ describe(`MetricsTable`, () => {
 
         sort_header.click()
         await tick()
+        expect(ranking_context()).toContain(`Sorted by ${header}`)
+        expect(ranking_context()).not.toContain(`Discovery:`)
+        expect(document.querySelector(`.cps-context`)).toBeNull()
 
         const values = cell_values()
         expect(values.length).toBeGreaterThan(1)
@@ -465,6 +511,12 @@ describe(`MetricsTable`, () => {
         expect(cell.hasAttribute(`data-sort-value`)).toBe(false)
         expect(cell.querySelector(`a[href^="/data/"]`)).not.toBeNull()
       }
+      const clipped = doc_query(
+        `tr:has(a[href="/models/prophet-oame-mbd"]) td[data-col="Training Set"] .middle-ellipsis-html`,
+      )
+      expect(clipped.textContent).toBe(`16.4M (324M) MPtrj+OMat24+sAlex+ELEMENTA`)
+      expect(clipped.lastElementChild?.textContent).toBe(`ELEMENTA`)
+      expect(clipped.querySelector(`a[href="/data/elementa"]`)).not.toBeNull()
     })
 
     it.each([
@@ -487,6 +539,7 @@ describe(`MetricsTable`, () => {
       { timeout: 30_000 }, // happy-dom renders of the full-column table are slow in CI
       async ({ props }) => {
         mount_table(props)
+        await tick()
 
         const headers = header_cells()
         const model_header = headers.find((h) => h.textContent?.includes(`Model`))
@@ -971,19 +1024,50 @@ describe(`MetricsTable`, () => {
         return `blob:table-export`
       })
       vi.spyOn(HTMLAnchorElement.prototype, `click`).mockImplementation(() => {})
-      mount_table({
-        discovery_set,
-        filters,
-        model_filter: (model: ModelData) => keys.has(model.model_key),
-        col_filter: (col: Label) => [`Model`, `F1`, `DAF`].includes(col.key),
-        column_order: [`Model`, `DAF`, `F1`],
-        sort: { column: `F1`, dir: `asc` },
+      const copy = vi.spyOn(navigator.clipboard, `writeText`).mockResolvedValue()
+      await mount_with_url(MetricsTable, `http://localhost/?sort=F1&dir=asc`, {
+        props: {
+          discovery_set,
+          filters,
+          model_filter: (model: ModelData) => keys.has(model.model_key),
+          col_filter: (col: Label) => [`Model`, `F1`, `DAF`].includes(col.key),
+          column_order: [`Model`, `DAF`, `F1`],
+          default_sort: { column: `DAF`, dir: `desc` },
+        },
       })
       await tick()
-      doc_query<HTMLButtonElement>(`.dropdown-wrapper > button`).click()
-      await tick()
-      doc_query<HTMLButtonElement>(`.dropdown-pane .dropdown-option`).click()
+      const export_buttons = document.querySelectorAll<HTMLButtonElement>(
+        `.control-buttons button[aria-haspopup="menu"]`,
+      )
+      expect(export_buttons).toHaveLength(1)
+      expect(export_buttons[0].textContent?.trim()).toBe(`Export`)
+      expect(
+        doc_query(`.control-buttons`).lastElementChild?.contains(export_buttons[0]),
+      ).toBe(true)
+      expect(
+        document.querySelector(
+          `button[title^="Download visible results"], [aria-label="Copy link to this view"]`,
+        ),
+      ).toBeNull()
+      const choose_export = async (label: string): Promise<void> => {
+        export_buttons[0].click()
+        await tick()
+        const menu = doc_query(`menu[aria-labelledby]`)
+        const items = [...menu.querySelectorAll<HTMLButtonElement>(`[role="menuitem"]`)]
+        expect(items.map((item) => item.textContent?.trim())).toEqual([
+          `CSV`,
+          `JSON with provenance`,
+          `Copy table`,
+        ])
+        const item = items.find((candidate) => candidate.textContent?.trim() === label)
+        if (!item) throw new Error(`Missing export option: ${label}`)
+        item.click()
+        await tick()
+        expect(document.querySelector(`menu[aria-labelledby]`)).toBeNull()
+      }
+      await choose_export(`CSV`)
       expect(exported_blob).toBeDefined()
+      expect(exported_blob?.type).toBe(`text/csv`)
       const csv = await exported_blob?.text()
       const sorted = models.toSorted(
         (left, right) =>
@@ -1000,10 +1084,201 @@ describe(`MetricsTable`, () => {
           return `${model.model_name}${excluded ? `*` : ``},${metrics?.DAF},${metrics?.F1}`
         }),
       ])
+      await choose_export(`Copy table`)
+      expect(copy).toHaveBeenLastCalledWith(csv?.replaceAll(`,`, `\t`))
+
+      // Changing this view uses shallow URL writes: page.url intentionally stays stale.
+      for (const name of [`Params`, `Training Set`, `Org`]) {
+        column_checkbox(name).click()
+        await tick()
+      }
+      const shift_click = async (id: string): Promise<void> => {
+        doc_query(`th[data-col-id="${id}"]`).dispatchEvent(
+          new MouseEvent(`click`, { bubbles: true, shiftKey: true }),
+        )
+        await tick()
+      }
+      await shift_click(`F1`)
+      await shift_click(`model_params`)
+      expect(query_param(`multi_sort`)).toBe(`-F1,-model_params`)
+      const shared_url = location.href
+      expect(page.url.href).not.toBe(shared_url)
+
+      // Restore the shared view after clearing its custom columns and multiple sorts.
+      const visible_ids = header_cells().map((header) => header.dataset.colId)
+      const ordered_keys = row_models().map((model) => model.model_key)
+      await navigate(``, `popstate`)
+      expect(ranking_context()).toContain(`DAF (descending)`)
+      expect(query_param(`sort`)).toBeNull()
+      expect(query_param(`multi_sort`)).toBeNull()
+      await navigate(new URL(shared_url).search, `popstate`)
+      expect(header_cells().map((header) => header.dataset.colId)).toEqual(visible_ids)
+      expect(row_models().map((model) => model.model_key)).toEqual(ordered_keys)
+      expect(ranking_context()).toContain(`F1 (descending), then Params (descending)`)
+
+      await choose_export(`JSON with provenance`)
+      expect(exported_blob?.type).toBe(`application/json`)
+      const exported_models = sorted.toSorted(
+        (left, right) =>
+          (right.metrics?.discovery?.[discovery_set]?.F1 ?? 0) -
+            (left.metrics?.discovery?.[discovery_set]?.F1 ?? 0) ||
+          (right.model_params ?? 0) - (left.model_params ?? 0),
+      )
+      expect(ordered_keys).toEqual(exported_models.map((model) => model.model_key))
+      expect(JSON.parse((await exported_blob?.text()) ?? `null`)).toEqual({
+        url: location.href,
+        benchmark_revision: { ...BENCHMARK_REVISION, development: import.meta.env.DEV },
+        exported_at: expect.any(String),
+        discovery_set,
+        cps_discovery_set: `unique_prototypes`,
+        filters: { ...filters.as_preset, selected_only: false },
+        weights: score_weight_records(),
+        sort: [
+          { column: `F1`, ascending: false },
+          { column: `model_params`, ascending: false },
+        ],
+        columns: visible_ids.map((id) => expect.objectContaining({ id })),
+        models: exported_models.map((model) => ({
+          model_key: model.model_key,
+          model_version: model.model_version,
+          prediction_files: get_pred_file_urls(model),
+        })),
+        rows: exported_models.map((model) => ({
+          Model: model.model_name,
+          DAF: model.metrics?.discovery?.[discovery_set]?.DAF,
+          F1: model.metrics?.discovery?.[discovery_set]?.F1,
+          model_params: model.model_params,
+          'Training Set': {
+            datasets: model.training_sets,
+            materials: model.n_training_materials,
+            structures: model.n_training_structures,
+          },
+          Org: { logos: model.org_logos, authors: model.authors },
+        })),
+        references: Object.fromEntries(
+          [
+            `wbm_summary`,
+            `wbm_initial_atoms`,
+            `wbm_relaxed_atoms`,
+            `wbm_dft_geo_opt_symprec_1e_2`,
+            `wbm_dft_geo_opt_symprec_1e_5`,
+            `phonondb_pbe_103_structures`,
+            `phonondb_pbe_103_kappa_no_nac`,
+            `dynamat_v1_0_md_trajectories`,
+            `diatomics_dft_reference`,
+          ].map((key) => {
+            const entry = data_files[key]
+            if (typeof entry === `string`)
+              throw new Error(`Invalid reference file: ${key}`)
+            const { url, path, md5 } = entry
+            return [key, { url, path, md5 }]
+          }),
+        ),
+      })
+
+      // Every format also honors selected-only filtering, including an empty selection.
+      filters.show_selected_only = true
+      comparison.keys.add(exported_models[0].model_key)
+      await tick()
+      await choose_export(`Copy table`)
+      expect(copy.mock.lastCall?.[0].split(`\n`)).toHaveLength(2)
+      expect(copy.mock.lastCall?.[0]).toContain(exported_models[0].model_name)
+      comparison.keys.clear()
+      await tick()
+      await choose_export(`CSV`)
+      expect((await exported_blob?.text())?.split(`\n`)).toHaveLength(1)
+      await choose_export(`JSON with provenance`)
+      expect(JSON.parse((await exported_blob?.text()) ?? `null`)).toMatchObject({
+        filters: { selected_only: true },
+        models: [],
+        rows: [],
+      })
     },
   )
 
   describe(`Column Reordering`, () => {
+    it.each([
+      [`?columns=Model,F1&column_order=F1,Model`, [`F1`, `Model`]],
+      [`?columns=Model,F1,F1&column_order=F1,F1,Model`, [`F1`, `Model`]],
+      [
+        `?columns=Model,missing&column_order=missing&multi_sort=-missing`,
+        [`Model`, `DAF`, `F1`],
+      ],
+      [`?columns=none`, []],
+    ])(`restores and validates custom columns from %s`, async (query, expected) => {
+      await mount_with_url(MetricsTable, `http://localhost/${query}`, {
+        props: {
+          model_filter: (model: ModelData) => model === ACTIVE_MODELS[0],
+          col_filter: (col: Label) => [`Model`, `F1`, `DAF`].includes(col.key),
+          column_order: [`Model`, `DAF`, `F1`],
+        },
+      })
+      expect(header_names()).toEqual(expected)
+      expect(query_param(`multi_sort`)).toBeNull()
+      await navigate(``, `popstate`)
+      expect(header_names()).toEqual([`Model`, `DAF`, `F1`])
+      expect(query_param(`columns`)).toBeNull()
+      expect(query_param(`column_order`)).toBeNull()
+    })
+
+    it.each([false, true])(
+      `keeps labels and explicit columns consistent across mobile=%s and resizing`,
+      async (initial_mobile) => {
+        let is_mobile = initial_mobile
+        const media = Object.assign(new EventTarget(), {
+          matches: is_mobile,
+          media: `(max-width: 600px)`,
+          onchange: null,
+          addListener: () => {},
+          removeListener: () => {},
+        }) as MediaQueryList
+        Object.defineProperty(media, `matches`, { get: () => is_mobile })
+        const match_media = window.matchMedia
+        vi.spyOn(window, `matchMedia`).mockImplementation((query) =>
+          query === media.media ? media : match_media(query),
+        )
+        const resize = async (mobile: boolean): Promise<void> => {
+          is_mobile = mobile
+          media.dispatchEvent(new Event(`change`))
+          await tick()
+        }
+        const diatomics_keys = new Set([
+          `Model`,
+          ...Object.values(DIATOMICS_METRICS).map((col) => col.key),
+          `model_params`,
+        ])
+        mount_table({
+          model_filter: (model: ModelData) => model === ACTIVE_MODELS[0],
+          col_filter: (col: Label) => diatomics_keys.has(col.key),
+          default_sort: { column: `diatomics_combined_score`, dir: `desc` },
+        })
+        // The first client render must match server HTML before onMount compacts it.
+        expect(header_cells().length).toBeGreaterThan(5)
+        await tick()
+        await resize(true)
+        expect(header_names()).toEqual([`Model`, `τ`, `E flips`, `CDS`, `Params`])
+        expect(header_cells().map((header) => header.dataset.colId)).toEqual(
+          query_param(`columns`)?.split(`,`),
+        )
+        const mobile_query = location.search
+        await resize(false)
+        expect(header_cells().length).toBeGreaterThan(5)
+        expect(query_param(`columns`)).toBeNull()
+
+        // The shared mobile view also restores those exact columns on desktop.
+        await navigate(mobile_query, `popstate`)
+        expect(header_names()).toEqual([`Model`, `τ`, `E flips`, `CDS`, `Params`])
+        column_checkbox(`Org`).click()
+        await tick()
+        const custom_headers = header_names()
+        expect(custom_headers).toContain(`Org`)
+        await resize(true)
+        expect(header_names()).toEqual(custom_headers)
+        await resize(false)
+        expect(header_names()).toEqual(custom_headers)
+      },
+    )
+
     it(`initializes all columns and displays visible columns in column_order`, async () => {
       const state = { column_order: [] as string[] }
       mount_table({

@@ -1,0 +1,244 @@
+model_name: Prophet-OAME-MBD
+model_key: prophet-oame-mbd
+model_version: v1.0.0
+dates:
+  benchmark_added: '2026-09-13'
+  paper_published:
+lifecycle: active
+authors:
+- name: Junfu Tan
+  affiliation: Kairos Materials
+  email: junfu.tan@connect.hku.hk
+  corresponding: false
+- name: Yemin Yu
+  affiliation: Kairos Materials
+  email: yuyemin@kairosmaterials.com
+  corresponding: false
+- name: Kejie Bao
+  affiliation: Kairos Materials
+  email: kjbao@kairosmaterials.com
+  corresponding: false
+- name: Ziheng Lu
+  affiliation: Kairos Materials
+  email: zihenglu@kairosmaterials.com
+  corresponding: true
+
+trained_by:
+- name: Ziheng Lu
+  affiliation: Kairos Materials
+  email: zihenglu@kairosmaterials.com
+  corresponding: true
+
+repo: https://github.com/kairosmaterial/prophet
+doi:
+paper: https://www.kairosmaterials.com/papers/Prophet.pdf
+docs: https://github.com/kairosmaterial/prophet
+pr_url: https://github.com/janosh/matbench-discovery/pull/397
+checkpoint_url: https://huggingface.co/kairosmaterial/prophet/resolve/f9a54df874ba52b8b35e7d3f7f348b46e0135563/prophet-oame-mbd.pt
+license:
+  code: MIT
+  code_url: https://github.com/kairosmaterial/prophet/blob/main/LICENSE
+  checkpoint: CC-BY-4.0
+  checkpoint_url: https://github.com/kairosmaterial/prophet/blob/main/LICENSE-WEIGHTS
+
+environment:
+  dependencies:
+  - prophet-mlip @ git+https://github.com/kairosmaterial/prophet.git@dcfdc0b143978652d573630f1d2a6ce09e0c610a
+  - openequivariance>=0.6.8; platform_system == "Linux"
+  - phono3py==3.30.0
+  - moyopy>=0.12
+  python_version: '3.14'
+openness: OSCD
+architecture_types: [gnn]
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+training_sets: [MPtrj, OMat24, sAlex, ELEMENTA]
+model_params: 62296064
+training_cost:
+  entries:
+  - {hardware: NVIDIA A800 SXM4 80GB, count: 120, hours_per_device: 36}
+  - {hardware: NVIDIA A800 SXM4 80GB, count: 120, hours_per_device: 76}
+  - {hardware: NVIDIA A800 SXM4 80GB, count: 120, hours_per_device: 28}
+  - {hardware: NVIDIA A800 SXM4 80GB, count: 120, hours_per_device: 7.25}
+hyperparams:
+  evaluation:
+    max_force: 0.02
+    max_steps: 500
+    ase_optimizer: FIRE
+    cell_filter: FrechetCellFilter
+    kappa:
+      protocol: phonondb-v1
+      displacement_distance: 0.03
+      save_forces: true
+  architecture:
+    graph_construction_radius: 7.0
+  upstream_config:
+    num_layers: 10
+    lmax: 4
+    irreps: 256x0e+96x1o+64x2e+32x3o+32x4e
+    radial_basis_size: 64
+    radial_mlp_size: 64
+    radial_mlp_layers: 2
+    cutoffs: [3.0, 7.0]
+    pretrain:
+      data: OMat24
+      optimizer: Muon
+      learning_rate: 0.01
+      warmup_epochs: 0.1
+      weight_decay: 1e-3
+      batch_size_per_device: 32
+      epochs: 3
+      loss: MAE, E/F/S weights 20/20/5
+      grad_clip_norm: 100.0
+      ema_decay: 0.999
+    fine_tune_stage_1:
+      data: ELEMENTA
+      hyperparameters: identical to pretrain
+      epochs: 3
+    fine_tune_stage_2:
+      data: MPtrj + sAlex
+      optimizer: Muon
+      learning_rate: 0.01
+      warmup_epochs: 0.1
+      weight_decay: 1e-3
+      batch_size_per_device: 32
+      epochs: 10
+      loss: MAE, E/F/S weights 20/20/5
+      grad_clip_norm: 100.0
+      ema_decay: 0.999
+    fine_tune_stage_3:
+      data: ELEMENTA Vib with full-set MPtrj + sAlex streaming replay
+      optimizer: AdamW (AMSGrad)
+      learning_rate: 1e-4 -> 1e-6
+      warmup_steps: 50
+      weight_decay: 1e-6
+      batch_size_per_device: 3
+      steps: 50000
+      loss: MAE, E/F/S weights 20/20/5, thermal sources force-only
+      grad_clip_norm: 10.0
+      ema_decay: 0.999
+      replay_ratio_per_100_steps: MPtrj 35 / sAlex 35 / ELEMENTA 30
+notes:
+  description: Prophet is a family of atomistic foundation models for materials simulation and discovery, trained on large-scale first-principles data to model energies, forces and stresses across diverse chemical systems, with extensions that explicitly incorporate spin as a fundamental physical degree of freedom. Prophet-OAME-MBD is a 62.3M-parameter model pretrained on Omat24 and ELEMENTA, including the ELEMENTA Vib expansion, and aligned on MPtrj and sAlex to the Materials Project energy reference used by Matbench Discovery. Structures and trajectories in ELEMENTA overlapping with the WBM test set were removed during post-processing.
+
+metrics:
+  discovery:
+    pred_file:
+      name: models/prophet/prophet-oame-mbd/2026-09-03-discovery.csv.gz
+      size: 3093641
+      md5: d0c5052a8911f4386305af963900ae86
+      url: https://figshare.com/files/68516800
+    full_test_set:
+      F1: 0.91 # fraction
+      DAF: 5.286 # dimensionless
+      Precision: 0.907 # fraction
+      Recall: 0.913 # fraction
+      Accuracy: 0.969 # fraction
+      TP: 40266.0 # count
+      FP: 4128.0 # count
+      TN: 208743.0 # count
+      FN: 3826.0 # count
+      MAE: 0.018 # eV/atom
+      RMSE: 0.067 # eV/atom
+      R2: 0.862 # dimensionless
+      missing_preds: 2 # count
+    unique_prototypes:
+      F1: 0.928 # fraction
+      DAF: 6.065 # dimensionless
+      Precision: 0.927 # fraction
+      Recall: 0.928 # fraction
+      Accuracy: 0.978 # fraction
+      TP: 30981.0 # count
+      FP: 2432.0 # count
+      TN: 179682.0 # count
+      FN: 2393.0 # count
+      MAE: 0.018 # eV/atom
+      RMSE: 0.067 # eV/atom
+      R2: 0.869 # dimensionless
+      missing_preds: 0 # count
+  geo_opt:
+    pred_file:
+      name: models/prophet/prophet-oame-mbd/2026-09-03-geo-opt.jsonl.gz
+      url: https://figshare.com/files/68516830
+      size: 117605743
+      md5: 1f4fc63eab4d022ed9f1155c56b917fa
+    symprec=1e-5:
+      rmsd: 0.0591 # unitless
+      n_sym_ops_mae: 3.1329 # unitless
+      symmetry_decrease: 0.1784 # fraction
+      symmetry_match: 0.6071 # fraction
+      symmetry_increase: 0.205 # fraction
+      n_structures: 256963 # count
+      analysis_file:
+        name: models/prophet/prophet-oame-mbd/2026-09-03-geo-opt-symprec=1e-5-moyo=0.15.0.csv.gz
+        url: https://figshare.com/files/68516974
+        size: 7999567
+        md5: 38647c4e2a1073fa7f54069995cd124f
+    symprec=1e-2:
+      rmsd: 0.0591 # unitless
+      n_sym_ops_mae: 1.7733 # unitless
+      symmetry_decrease: 0.0559 # fraction
+      symmetry_match: 0.8148 # fraction
+      symmetry_increase: 0.1222 # fraction
+      n_structures: 256963 # count
+      analysis_file:
+        name: models/prophet/prophet-oame-mbd/2026-09-03-geo-opt-symprec=1e-2-moyo=0.15.0.csv.gz
+        url: https://figshare.com/files/68516977
+        size: 7995341
+        md5: 6aaa7925eb7fee7fead8b960f59652d1
+  phonons:
+    kappa_103:
+      pred_file:
+        name: models/prophet/prophet-oame-mbd/2026-09-07-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/68516806
+        size: 8400872
+        md5: f986422aa02d82e9bf4bc32be1132608
+      κ_SRME: 0.0648
+      κ_SRE: 0.0283
+      κ_SRD: -0.0008
+      κ_failure_rate: 0.0
+      imaginary_mode_rate: 0.0
+      spectrum_w1: 0.0191
+  diatomics:
+    pred_file:
+      name: models/prophet/prophet-oame-mbd/2026-09-03-diatomics.json.gz
+      url: https://figshare.com/files/68520235
+      size: 246939
+      md5: 4fb4e3c584c115d7b4139f8e3a5662e1
+    hardware: NVIDIA A800 SXM4 80GB # single GPU, confirmed in PR #397
+    run_time_sec: 3739.2 # s, from prediction run_metadata
+    pbe_wall_dist_mae: 0.235
+    pbe_energy_mae: 1.103
+    pbe_bond_length_error: 0.06076
+    pbe_well_depth_error: 0.3479
+    pbe_vib_freq_error: 41.12
+    tortuosity: 1.225
+    energy_diff_flips: 2.54
+    energy_jump: 1.466
+    force_flips: 2.747
+    force_total_variation: 344.6
+    force_jump: 275.5
+    pbe_force_mae: 2.001
+    pbe_vib_freq_coverage:
+      n_valid: 73
+      n_eligible: 73
+      failed_elements: []
+      missing_elements: []
+  md:
+    pred_file:
+      name: models/prophet/prophet-oame-mbd/2026-09-03-md-metrics.csv.gz
+      url: https://figshare.com/files/68516815
+      size: 1524
+      md5: a6e64c134ce283238173762e81c1be7b
+    hardware: NVIDIA A800-SXM4-80GB
+    run_time_sec: 586863.69 # s
+    max_rss_gb: 3.788 # GB
+    max_gpu_mem_gb: 18.395 # GB
+    rdf_error: 3.3966 # %
+    adf_error: 1.4097 # %
+    vdos_error: 21.8767 # %
+    pressure_mae: 0.7619 # GPa
+    pressure_wasserstein: 0.7722 # GPa
+    pressure_error: 51.2027 # %
+    n_systems: 17 # count

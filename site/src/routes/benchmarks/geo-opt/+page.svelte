@@ -1,4 +1,6 @@
 <script lang="ts">
+  import TestSet from '$lib/benchmark/TestSet.svelte'
+  import TaskNavigation from '$lib/benchmark/TaskNavigation.svelte'
   import spg_sankeys from '$figs/spg-sankeys.jsonl'
   import struct_rmsd_cdf from '$figs/struct-rmsd-cdf.jsonl'
   import sym_ops_diff from '$figs/sym-ops-diff-bar.jsonl'
@@ -14,11 +16,10 @@
     HYPERPARAMS,
     METADATA_COLS,
     scatter_axis_label,
-    scatter_options_by_key,
   } from '$lib/labels'
   import { UrlModelSelection } from '$lib/model-selection.svelte'
   import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
-  import { bind_url_params, UrlPlotState } from '$lib/url-state.svelte'
+  import { bind_url_params } from '$lib/url-state.svelte'
   import { min } from 'd3-array'
   import { format_num } from 'matterviz/labels'
   import { pick_contrast_color } from 'matterviz/colors'
@@ -60,17 +61,10 @@
   const struct_rmsd_sorted = order_models(struct_rmsd_cdf.models, (mdl) => -mdl.auc)
   const sym_ops_sorted = order_models(sym_ops_diff.models, (mdl) => mdl.sigma)
   const default_n_models = 5
-  const plot = new UrlPlotState(
-    {
-      x: ALL_METRICS.RMSD.key,
-      y: GEO_OPT_SYMMETRY_METRICS[`symmetry_match_1e-2`].key,
-      sort: {
-        column: ALL_METRICS.RMSD.key,
-        dir: `asc`,
-      },
-    },
-    scatter_options_by_key,
-  )
+  let plot = $state({
+    x: ALL_METRICS.RMSD.key,
+    y: GEO_OPT_SYMMETRY_METRICS[`symmetry_match_1e-2`].key,
+  })
   const model_by_key = new Map(ACTIVE_MODELS.map((model) => [model.model_key, model]))
   const plot_label_by_key = new Map([
     ...struct_rmsd_cdf.models.map(({ model_key, label }) => [model_key, label] as const),
@@ -124,12 +118,10 @@
   const read_url_params = (params: URLSearchParams) => {
     model_selection.read(params)
     filters.read(params)
-    plot.read(params)
   }
   bind_url_params(read_url_params, () => [
     model_selection.url_entry,
     ...filters.url_entries,
-    ...plot.url_entries,
   ])
 
   const n_min_relaxed_structures =
@@ -140,6 +132,8 @@
 </script>
 
 <GeoOptReadme>
+  {#snippet task_navigation()}<TaskNavigation />{/snippet}
+  {#snippet test_set()}<TestSet task="geo-opt" />{/snippet}
   {#snippet geo_opt_metrics_table()}
     <section class="full-bleed">
       <MetricsTable
@@ -148,7 +142,7 @@
         model_filter={(model) => model.metrics?.geo_opt != null}
         column_labels={columns}
         show_row_numbers={false}
-        bind:sort={plot.sort}
+        default_sort={{ column: ALL_METRICS.RMSD.key, dir: `asc` }}
       />
     </section>
   {/snippet}
@@ -262,7 +256,7 @@
     gap: 2em;
   }
   .spg-sankeys {
-    padding: 0;
+    padding-block: 0;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
     gap: 3em 2em;

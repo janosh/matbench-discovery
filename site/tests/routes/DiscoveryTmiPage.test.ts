@@ -2,7 +2,7 @@ import elem_prev from '$figs/element-prevalence-vs-error.jsonl'
 import fp_diff from '$figs/scatter-largest-fp-diff-each-error.jsonl'
 import each_errors from '$figs/scatter-largest-each-errors-fp-diff.jsonl'
 import hist_largest from '$figs/hist-largest-each-errors-fp-diff.jsonl'
-import DiscoveryTmiPage from '$routes/tasks/discovery/tmi/+page.svelte'
+import DiscoveryTmiPage from '$routes/benchmarks/discovery/tmi/+page.svelte'
 import { describe, expect, it } from 'vitest'
 import { mount_with_url } from '../index'
 
@@ -23,7 +23,7 @@ describe(`Discovery TMI Page`, () => {
           : `?models=${value}&fp_model=${value}&each_model=${value}&hist_model=${value}`
       await mount_with_url(
         DiscoveryTmiPage,
-        `http://localhost/tasks/discovery/tmi${query}`,
+        `http://localhost/benchmarks/discovery/tmi${query}`,
       )
 
       const [elem_prev_text, ...single_texts] = selected_texts()
@@ -48,7 +48,7 @@ describe(`Discovery TMI Page`, () => {
       each_model: single_models[1].model_key,
       hist_model: single_models[2].model_key,
     })
-    const url = `http://localhost/tasks/discovery/tmi?${query}`
+    const url = `http://localhost/benchmarks/discovery/tmi?${query}`
     await mount_with_url(DiscoveryTmiPage, url)
 
     const [elem_prev_text, ...single_texts] = selected_texts()

@@ -157,6 +157,7 @@
     key: column_defs[label].key,
     label,
     description: column_defs[label].description,
+    ...(label === `Models` && { scale_type: `log` as const }),
     ...(label === `Access` || label === `Role`
       ? { categories: colors[column_defs[label].key] }
       : { format: label === `Created` ? `%Y` : label === `Models` ? `d` : `.3~s` }),
@@ -164,33 +165,19 @@
   const default_plot = {
     x: `date_created`,
     y: `n_structures`,
-    color: `access`,
+    color: `n_models`,
     size: `n_models`,
   }
   let plot = $state({ ...default_plot })
-  const plot_dims = [`x`, `y`, `color`, `size`] as const
-  const plot_keys = new Set(plot_options.map(({ key }) => key))
-  const numeric_keys = new Set(
-    plot_options.filter((option) => !(`categories` in option)).map(({ key }) => key),
-  )
   const read_url = (params: URLSearchParams) => {
     filters.q = params.get(`q`) ?? ``
     for (const [key, options] of filter_options) {
       filters[key] = valid_query_param(params, key, ``, options)
     }
-    for (const dim of plot_dims) {
-      plot[dim] = valid_query_param(
-        params,
-        dim,
-        default_plot[dim],
-        dim === `color` ? plot_keys : numeric_keys,
-      )
-    }
     sort = sort_from_query(params, default_sort, sortable_columns)
   }
   bind_url_params(read_url, () => [
     ...Object.entries(filters),
-    ...plot_dims.map((dim) => [dim, plot[dim], default_plot[dim]] as const),
     ...sort_url_entries(sort, default_sort),
   ])
   const search_words = $derived(filters.q.toLowerCase().trim().split(/\s+/))

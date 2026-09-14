@@ -1,4 +1,3 @@
-import { MODELS, update_models_cps } from '$lib/models.svelte'
 import RadarChart from '$lib/plot/RadarChart.svelte'
 import app_css from '../../src/app.css?raw'
 import {
@@ -9,14 +8,8 @@ import {
 } from '$lib/combined-scores.svelte'
 import { ALL_METRICS } from '$lib/labels'
 import { flushSync } from 'svelte'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { doc_query, mount } from '../index'
-
-// stub update_models_cps to avoid side effects on shared module state
-vi.mock(`$lib/models.svelte`, async () => {
-  const actual = await vi.importActual(`$lib/models.svelte`)
-  return { ...actual, update_models_cps: vi.fn() }
-})
 
 describe(`RadarChart`, () => {
   it(`renders with default props`, () => {
@@ -104,7 +97,6 @@ describe(`RadarChart`, () => {
     expect(CPS_CONFIG.κ_SRME.weight).toBe(DEFAULT_CPS_CONFIG.κ_SRME.weight)
     expect(CPS_CONFIG.RMSD.weight).toBe(DEFAULT_CPS_CONFIG.RMSD.weight)
 
-    expect(update_models_cps).toHaveBeenCalledWith(MODELS, CPS_CONFIG)
     expect(document.querySelector(`.reset-button`)).toBeNull()
     expect(document.activeElement).toBe(doc_query(`.metric-name`))
   })
@@ -183,7 +175,6 @@ describe(`RadarChart`, () => {
         config: CDS_CONFIG,
         default_config: DEFAULT_CDS_CONFIG,
         title_label: ALL_METRICS.diatomics_combined_score,
-        on_change: () => {},
       },
     })
     flushSync()
@@ -251,7 +242,6 @@ describe(`RadarChart`, () => {
           config: CDS_CONFIG,
           default_config: DEFAULT_CDS_CONFIG,
           title_label: ALL_METRICS.diatomics_combined_score,
-          on_change: () => {},
         },
       })
       flushSync()

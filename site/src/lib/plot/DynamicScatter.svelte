@@ -24,6 +24,9 @@
   } from '$lib/metrics'
   import { make_models_legend } from '$lib/fig-helpers'
   import { pareto_staircase, sota_frontier_indices, sota_step_line } from '$lib/sota'
+  import { bind_url_params } from '$lib/url-state.svelte'
+  import { valid_query_param } from 'svelte-widgets/url-params'
+  import { untrack } from 'svelte'
 
   // Keep size-select labels short by dropping discovery-set segments and abbreviating
   // "Geometry Optimization" to "Geo Opt".
@@ -83,6 +86,8 @@
     size_key = $bindable(HYPERPARAMS.model_params.key),
     legend = models_legend,
     bleed = true,
+    url_prefix = ``,
+    url_defaults,
     ...rest
   }: ComponentProps<typeof ScatterPlot> & {
     models: T[]
@@ -104,11 +109,18 @@
     size_key?: string
     // span the full viewport width (the default on task pages, off inside dialogs)
     bleed?: boolean
+    // Separate a comparison dialog's plot controls from the page beneath it.
+    url_prefix?: string
+    // Defaults can follow the active task when this plot survives navigation.
+    url_defaults?: Partial<Record<'x' | 'y' | 'color' | 'size', string>>
   } = $props()
 
-  const log_dims = [`x`, `y`, `color`, `size`] as const
-  const log_dim_labels = { x: `X`, y: `Y`, color: `Color`, size: `Size` } as const
+  const scale_dims = [`x`, `y`, `color`, `size`] as const
+  const dim_labels = { x: `X`, y: `Y`, color: `Color`, size: `Size` } as const
+  const scale_types = [`log`, `arcsinh`] as const
   let options_by_key = $derived(Object.fromEntries(options.map((opt) => [opt.key, opt])))
+  const numeric_options = $derived(options.filter((option) => !option.categories))
+  const numeric_keys = $derived(new Set(numeric_options.map(({ key }) => key)))
   let axes = $derived({
     x: options_by_key[x_key],
     y: options_by_key[y_key],
@@ -162,30 +174,66 @@
   )
   type PointMetadata = (typeof plot_data)[number][`metadata`]
 
-  // Log scales need positive values spanning at least two decades.
-  const supports_log = (
-    prop: Label | undefined,
-    value_key: `x` | `y` | `color_value` | `size_value`,
-  ): boolean => {
+  // Auto-log spans two decades; explicit log preferences use arcsinh across zero.
+  const default_scale = (value_key: keyof typeof axes): 'linear' | 'log' | 'arcsinh' => {
+    const prop = axes[value_key]
+    if (prop?.categories || label_data_path(prop).includes(`date`)) return `linear`
     const [min, max] = extent(plot_data, (point) => point[value_key])
-    return (
-      !label_data_path(prop).includes(`date`) &&
-      min !== undefined &&
-      min > 0 &&
-      100 * min <= max
-    )
+    if (min === undefined || max === undefined) return `linear`
+    if (prop?.scale_type === `log`) return min > 0 ? `log` : `arcsinh`
+    return prop?.scale_type ?? (min > 0 && 100 * min <= max ? `log` : `linear`)
   }
-  let can_log = $derived({
-    x: supports_log(axes.x, `x`),
-    y: supports_log(axes.y, `y`),
-    color: supports_log(axes.color_value, `color_value`),
-    size: supports_log(axes.size_value, `size_value`),
+  let default_scales = $derived({
+    x: default_scale(`x`),
+    y: default_scale(`y`),
+    color: default_scale(`color_value`),
+    size: default_scale(`size_value`),
   })
-  let supported_log_dims = $derived(log_dims.filter((dim) => can_log[dim]))
-  // Initialize automatically; manual toggles reset when data or dimensions change.
-  let log = $derived({ ...can_log })
-  const scale_of = (dim: keyof typeof log) =>
-    log[dim] ? (`log` as const) : (`linear` as const)
+  const axis_keys = $derived({ x: x_key, y: y_key, color: color_key, size: size_key })
+  // Keep linear choices through data updates, but forget them when a property changes.
+  let linear_keys = $state<Partial<Record<(typeof scale_dims)[number], string>>>({})
+  $effect(() => {
+    for (const dim of scale_dims) {
+      if (linear_keys[dim] !== axis_keys[dim]) linear_keys[dim] = undefined
+    }
+  })
+  const scales = $derived({
+    x: linear_keys.x === x_key ? `linear` : default_scales.x,
+    y: linear_keys.y === y_key ? `linear` : default_scales.y,
+    color: linear_keys.color === color_key ? `linear` : default_scales.color,
+    size: linear_keys.size === size_key ? `linear` : default_scales.size,
+  })
+  const initial_keys = untrack(() => axis_keys)
+  const default_keys = $derived({ ...initial_keys, ...url_defaults })
+  const param_key = (key: string): string => (url_prefix ? `${url_prefix}_${key}` : key)
+  bind_url_params(
+    (params) => {
+      x_key = valid_query_param(params, param_key(`x`), default_keys.x, numeric_keys)
+      y_key = valid_query_param(params, param_key(`y`), default_keys.y, numeric_keys)
+      color_key = valid_query_param(
+        params,
+        param_key(`color`),
+        default_keys.color,
+        options_by_key,
+      )
+      size_key = valid_query_param(
+        params,
+        param_key(`size`),
+        default_keys.size,
+        numeric_keys,
+      )
+      linear_keys = Object.fromEntries(
+        scale_dims
+          .filter((dim) => params.get(param_key(`${dim}_scale`)) === `linear`)
+          .map((dim) => [dim, axis_keys[dim]]),
+      )
+    },
+    () =>
+      scale_dims.flatMap((dim) => [
+        [param_key(dim), axis_keys[dim], default_keys[dim]] as const,
+        [param_key(`${dim}_scale`), scales[dim], default_scales[dim]] as const,
+      ]),
+  )
 
   // Staircase through the non-dominated models, tracing the boundary of the dominated
   // region. With a date on the x-axis it becomes the running best over time (records
@@ -274,13 +322,12 @@
     ...(pareto_series ? [pareto_series] : []),
   ])
 
-  const numeric_options = $derived(options.filter((option) => !option.categories))
   const axis_config = (dim: 'x' | 'y'): AxisConfig => ({
     options: numeric_options,
     selected_key: axes[dim]?.key,
     label: axes[dim]?.label,
     format: axes[dim]?.format,
-    scale_type: label_data_path(axes[dim]).includes(`date`) ? `time` : scale_of(dim),
+    scale_type: label_data_path(axes[dim]).includes(`date`) ? `time` : scales[dim],
     ticks: 5,
   })
   const picker_id = $props.id()
@@ -304,7 +351,7 @@
         on_change={(event) => {
           if (event.type === `add` && event.option) size_key = event.option.key
         }}
-        style="flex: 1; min-width: 0; margin: 0; --sms-min-height: 28px"
+        style="flex: none; width: 200px; min-width: 0; margin: 0; --sms-min-height: 28px"
         ul_selected_style="flex-wrap: nowrap; overflow: hidden; min-width: 0;"
         li_selected_style="font-size: 14px; min-width: 0; max-width: 100%; overflow: hidden;"
       >
@@ -319,21 +366,30 @@
         {/snippet}
       </MultiSelect>
     </div>
-    {#if supported_log_dims.length}
-      <div class="log-controls" role="group" aria-label="Logarithmic scales">
-        <strong>Log Scale</strong>
-        {#each supported_log_dims as dim (dim)}
-          <label>
-            <input
-              type="checkbox"
-              checked={log[dim]}
-              onchange={(event) => (log = { ...log, [dim]: event.currentTarget.checked })}
-            />
-            {log_dim_labels[dim]}
-          </label>
-        {/each}
-      </div>
-    {/if}
+    {#each scale_types as scale_type (scale_type)}
+      {@const dims = scale_dims.filter((dim) => default_scales[dim] === scale_type)}
+      {#if dims.length}
+        <div
+          class="log-controls"
+          role="group"
+          aria-label={scale_type === `log` ? `Logarithmic scales` : `Arcsinh scales`}
+        >
+          <strong>{scale_type === `log` ? `Log Scale` : `Arcsinh`}</strong>
+          {#each dims as dim (dim)}
+            <label>
+              <input
+                type="checkbox"
+                bind:checked={
+                  () => scales[dim] === scale_type,
+                  (checked) => (linear_keys[dim] = checked ? undefined : axis_keys[dim])
+                }
+              />
+              {dim_labels[dim]}
+            </label>
+          {/each}
+        </div>
+      {/if}
+    {/each}
     {#if legend && models_legend.collapsed_groups?.has(legend_group)}
       <button
         type="button"
@@ -363,10 +419,15 @@
       else if (axis === `y`) y_key = key
     }}
     bind:display
-    color_scale={{ scheme: `interpolateViridis`, type: scale_of(`color`) }}
+    color_scale={{
+      scheme: `interpolateViridis`,
+      // Compress below one so small counts get more of the color range.
+      type:
+        scales.color === `arcsinh` ? { type: `arcsinh`, threshold: 0.25 } : scales.color,
+    }}
     size_scale={{
       radius_range: [5, 10],
-      type: scale_of(`size`),
+      type: scales.size,
     }}
     color_bar={{
       title: format_label_title(axes.color_value),
@@ -483,9 +544,7 @@
   }
   .property-picker {
     gap: 0.5em;
-    flex: 1 1 220px;
     min-width: 0;
-    max-width: 360px;
     label {
       white-space: nowrap;
     }
