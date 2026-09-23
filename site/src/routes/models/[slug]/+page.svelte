@@ -51,7 +51,7 @@
   import { ColorBar } from 'matterviz/plot'
   import { PeriodicTable, TableInset } from 'matterviz/periodic-table'
   import type { D3InterpolateName } from 'matterviz/colors'
-  import { click_outside, tooltip } from 'svelte-widgets/attachments'
+  import { tooltip } from 'svelte-widgets/attachments'
   import { SvelteSet } from 'svelte/reactivity'
   import { bind_url_params } from '$lib/url-state.svelte'
   import { valid_query_param } from 'svelte-widgets/url-params'
@@ -172,21 +172,22 @@
   let added_ago = $derived(
     model.dates.benchmark_added ? format_relative_time(model.dates.benchmark_added) : ``,
   )
-  // rendered in order; links whose href isn't an http(s) URL are skipped
+  // rendered in order; links whose href isn't an http(s) URL are skipped. Tooltips only
+  // where the label alone doesn't say it (acronyms)
   let external_links = $derived([
-    [model.repo, `Repo`, GitHub, `View source code repository`],
-    [model.paper, `Paper`, Paper, `Read model paper`],
-    [model.docs, `Docs`, Docs, `View model documentation`],
+    [model.repo, `Repo`, GitHub, undefined],
+    [model.paper, `Paper`, Paper, undefined],
+    [model.docs, `Docs`, Docs, undefined],
     [model.doi, `DOI`, DOI, `Digital Object Identifier`],
     [
       model.dirname ? `${pkg.repository}/tree/HEAD/models/${model.dirname}` : undefined,
       `Files`,
       Directory,
-      `Browse model submission files`,
+      undefined,
     ],
-    [model.pypi, `PyPI`, PyPI, `Python package on PyPI`],
+    [model.pypi, `PyPI`, PyPI, undefined],
     [model.pr_url, `PR`, PullRequest, `View pull request`],
-    [model.checkpoint_url, `Checkpoint`, Download, `Download model checkpoint`],
+    [model.checkpoint_url, `Checkpoint`, Download, undefined],
   ] as const)
   let model_role = $derived(model_role_from_targets(model.targets))
   let model_info_groups: Record<string, ModelInfoItem[]> = $derived({
@@ -282,7 +283,6 @@
   <section class="links" {@attach tooltip()}>
     <button
       class:selected={comparing}
-      title="Open the side-by-side comparison with this model"
       onclick={() => comparison.open_with(model.model_key)}
     >
       <Icon icon={Scale} />
@@ -303,21 +303,23 @@
     {#if model.metrics}
       {@const pred_files = get_pred_file_urls(model)}
       {#if pred_files.length > 0}
-        <details
-          class="pred-files"
-          {@attach click_outside({ callback: (node) => (node.open = false) })}
-        >
-          <summary>
-            <Icon icon={Graph} /> Predictions
-          </summary>
-          <div class="dropdown">
-            {#each pred_files as { name, url } (url)}
-              <a href={url} target="_blank" rel="noopener noreferrer">
-                {@html name}
-              </a>
-            {/each}
-          </div>
-        </details>
+        <Popover class="pred-files" aria-label="Prediction files">
+          {#snippet trigger(trigger_props)}
+            <button type="button" {...trigger_props}
+              ><Icon icon={Graph} /> Predictions</button
+            >
+          {/snippet}
+          {#each pred_files as { name, url } (url)}
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style="display: block"
+            >
+              {@html name}
+            </a>
+          {/each}
+        </Popover>
       {/if}
     {/if}
   </section>
@@ -398,7 +400,7 @@
         {#if is_finite_num(value)}
           {@html metric.description ?? ``}
         {:else}
-          {@html missing_metric_reason(model, metric)}
+          {missing_metric_reason(model, metric)}
         {/if}
       </Popover>
     {/each}
@@ -457,30 +459,33 @@
     {/each}
   </section>
 
-  <details class="run-model">
-    <summary>Run this model</summary>
-    <p>
-      Use the <a href="#dependencies">submitted environment</a> with the
-      {#if model.docs || model.repo}
-        <a href={model.docs || model.repo || ``}>upstream instructions</a>.
-      {:else}
-        <a href="{pkg.repository}/tree/HEAD/models/{model.dirname}">submission files</a>.
-      {/if}
-    </p>
-    {#if runner_command}
+  {#if model.license.checkpoint !== `unreleased`}
+    <details class="run-model">
+      <summary>Run this model</summary>
       <p>
-        From a repository checkout, run <code
-          >uv run models/run_kappa.py --list-models</code
-        >
-        to check checkpoint requirements. If this model requires one, add
-        <code>--checkpoint /path/to/checkpoint</code> below. Then execute the printed command
-        for a phonon smoke test in the model's isolated environment.
+        Use the <a href="#dependencies">submitted environment</a> with the
+        {#if model.docs || model.repo}
+          <a href={model.docs || model.repo || ``}>upstream instructions</a>.
+        {:else}
+          <a href="{pkg.repository}/tree/HEAD/models/{model.dirname}">submission files</a
+          >.
+        {/if}
       </p>
-      <div class="runner-command">
-        <code>{runner_command}</code><CopyButton content={runner_command} />
-      </div>
-    {/if}
-  </details>
+      {#if runner_command}
+        <p>
+          From a repository checkout, run <code
+            >uv run models/run_kappa.py --list-models</code
+          >
+          to check checkpoint requirements. If this model requires one, add
+          <code>--checkpoint /path/to/checkpoint</code> below. Then execute the printed command
+          for a phonon smoke test in the model's isolated environment.
+        </p>
+        <div class="runner-command">
+          <code>{runner_command}</code><CopyButton content={runner_command} />
+        </div>
+      {/if}
+    </details>
+  {/if}
 
   <section id="diagnostics" aria-label="Task diagnostics">
     {#if selected_metric && has_task_results(diagnostic_task)}
@@ -506,7 +511,7 @@
           <div class="energy-parity-controls">
             <ButtonGroup
               class="energy-parity-tabs"
-              bind:selected={energy_parity_tab}
+              bind:value={energy_parity_tab}
               label="Energy parity diagnostics"
               options={energy_parity_options.map((option) => ({
                 ...option,
@@ -688,7 +693,8 @@
   {#if env_packages.length}
     <section class="deps">
       <h2 id="dependencies">Dependencies</h2>
-      <ul>
+      <!-- widgets tooltip, not the native one: it only shows versions cut off by the ellipsis -->
+      <ul {@attach tooltip()}>
         {#each env_packages as { name, detail, href } (name + detail)}
           <li>
             {name}
@@ -924,28 +930,13 @@
     background-color: var(--chip-bg);
     border-radius: 5px;
   }
-  .links > button {
+  .links button {
     font: inherit;
     color: inherit;
     &.selected {
       color: var(--link-color);
       box-shadow: inset 0 0 0 1px var(--link-color);
     }
-  }
-  .links details {
-    position: relative;
-  }
-  .links .dropdown {
-    position: absolute;
-    background-color: var(--page-bg);
-    border: 1px solid var(--border);
-    border-radius: 5px;
-    z-index: 3;
-    min-width: max-content;
-    box-shadow: 0 0 10px var(--shadow);
-  }
-  .links .dropdown a {
-    display: block;
   }
   li {
     margin: 1ex 0;

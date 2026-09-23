@@ -3,8 +3,7 @@
   import MetricsTable from '$lib/table/MetricsTable.svelte'
   import { DISCOVERY_SETS } from '$lib/types'
   import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
-  import GitHubActivityScatter from '$lib/plot/GitHubActivityScatter.svelte'
-  import RadarChart from '$lib/plot/RadarChart.svelte'
+  import ScoreWeights from '$lib/ScoreWeights.svelte'
   import {
     ALL_METRICS,
     DIATOMICS_METRICS,
@@ -18,13 +17,14 @@
   import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined-scores.svelte'
   import { is_finite_num, metric_value } from '$lib/metrics'
   import { make_table_filters, ACTIVE_MODELS } from '$lib/models.svelte'
-  import { bind_url_params, sort_from_query, type SortState } from '$lib/url-state.svelte'
+  import { bind_url_params } from '$lib/url-state.svelte'
+  import type { TableSort } from 'matterviz/table'
+  import { sort_from_query } from 'matterviz/url-params'
   import { valid_query_param } from 'svelte-widgets/url-params'
   import type { DiscoverySet, Label, ModelData } from '$lib/types'
   import { ButtonGroup } from 'svelte-widgets'
   import { slide } from 'svelte/transition'
   import type { Snapshot } from './$types'
-  import github_activity_data from './models/mlip-github-activity.json'
 
   // landing hid TPR; keep its Recall replacement supplementary too
   const supplementary_hidden = new Set(
@@ -62,7 +62,7 @@
       (metric) => metric.key,
     ),
   )
-  const default_sort_for = (preset: ColPreset): SortState => {
+  const default_sort_for = (preset: ColPreset): TableSort => {
     const metric =
       preset === `Discovery` ? ALL_METRICS.CPS : preset_primary_metrics[preset]
     return { column: metric.key, dir: metric.better === `lower` ? `asc` : `desc` }
@@ -91,9 +91,12 @@
 
   const valid_sets = new Set(DISCOVERY_SETS)
   const read_url_params = (params: URLSearchParams) => {
-    const next_preset =
-      col_preset_names.find((preset) => preset === params.get(`preset`)) ??
-      default_col_preset
+    const next_preset = valid_query_param(
+      params,
+      `preset`,
+      default_col_preset,
+      col_presets,
+    )
     const default_sort = default_sort_for(next_preset)
     const next_sort = sort_from_query(params, default_sort)
     auto_sort_enabled =
@@ -127,7 +130,7 @@
       col_preset,
       sort,
       auto_sort_enabled,
-      filters: filters.as_preset,
+      filters: filters.config,
       show_heatmap: filters.show_heatmap,
     }),
     // Snapshots outlive deploys, so a stored discovery set, column preset or dataset
@@ -154,7 +157,7 @@
 </h1>
 
 <p class="intro">
-  Compare machine-learning models across <a href="/benchmarks">materials-science tasks</a
+  Compare machine-learning models across <a href="/benchmarks">atomistic modeling tasks</a
   >.
 </p>
 
@@ -162,7 +165,7 @@
   <div class="toggle-row">
     <span>Column presets:</span>
     <ButtonGroup
-      bind:selected={col_preset}
+      bind:value={col_preset}
       label="Column presets"
       options={col_preset_options}
       tooltip_options={{ placement: `top` }}
@@ -208,37 +211,9 @@
   </section>
 
   <figcaption>
-    <section
-      id="score-weights"
-      aria-labelledby="score-weights-heading"
-      style="padding-block: 0.65em"
-    >
-      <h3 id="score-weights-heading">Adjust score weights</h3>
-      <div class="score-guide">
-        <p>
-          CPS combines <a href="/benchmarks/discovery">discovery (F1)</a>,
-          <a href="/benchmarks/geo-opt">geometry optimization (RMSD)</a>, and
-          <a href="/benchmarks/phonons">thermal conductivity (κ<sub>SRME</sub>)</a>. Drag
-          the dot to change their importance; scores and rankings update immediately.
-          Custom weights are included in the page URL so you can share your view.
-        </p>
-        <RadarChart size={260} />
-      </div>
+    <section id="score-weights" aria-label="Adjust score weights">
+      <ScoreWeights />
     </section>
-    <details class="page-details" id="table-guide">
-      <summary>How to read the table</summary>
-      <p>
-        Select a column heading to sort. Hover labels for definitions and n/a cells for
-        missing-result explanations. Use Compare or double-click model rows to compare
-        models side by side.
-      </p>
-      <p>
-        <a href="/data/sets">Training Set</a> counts distinct materials, with relaxation
-        frames in parentheses. When only frame counts are available, those are shown
-        instead.
-        <code>(N=x)</code> beside Params gives the number of estimators in an ensemble.
-      </p>
-    </details>
   </figcaption>
 </figure>
 
@@ -253,12 +228,6 @@
     y_key={ALL_METRICS.CPS.key}
     show_pareto_frontier
   />
-</section>
-
-<section class="plot-section" aria-labelledby="github-activity">
-  <h2 id="github-activity">GitHub Activity</h2>
-  <p>Larger dots mean more contributors; color shows recent commits.</p>
-  <GitHubActivityScatter github_data={github_activity_data} />
 </section>
 
 <section id="about-benchmark" aria-labelledby="about-matbench-discovery">
@@ -328,24 +297,6 @@
   }
   figcaption {
     font-size: 0.9em;
-  }
-  .page-details {
-    border-top: 1px solid var(--border);
-    padding-block: 0.65em;
-    > summary {
-      color: var(--link-color);
-      width: fit-content;
-    }
-  }
-  .score-guide {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    gap: 1em;
-    > p {
-      flex: 1 1 18em;
-    }
   }
   .plot-section {
     margin-block-start: 2.5em;

@@ -21,7 +21,7 @@ import ModelPage from '$routes/models/[slug]/+page.svelte'
 import { load } from '$routes/models/[slug]/+page.server'
 import { format_num } from 'matterviz/labels'
 import { type ComponentProps, tick } from 'svelte'
-import { describe, expect, it, onTestFinished, vi } from 'vitest'
+import { describe, expect, it, onTestFinished, vi } from 'vite-plus/test'
 import { doc_query, mount, mount_with_url } from '../index'
 
 const test_model = MODELS.find((model) =>
@@ -310,22 +310,30 @@ describe(`Model Detail Page`, () => {
     )
   })
 
-  it.each([true, false])(
-    `shows shared-runner instructions only with declared phonon settings: %s`,
-    (configured) => {
+  it.each([
+    [true, `MIT`],
+    [false, `MIT`],
+    [true, `unreleased`],
+    [false, `unreleased`],
+  ] as const)(
+    `gates run instructions on phonon settings (%s) and checkpoint availability (%s)`,
+    (configured, checkpoint) => {
       mount_page({
         ...test_model,
+        license: { ...test_model.license, checkpoint },
         hyperparams: configured
           ? { evaluation: { kappa: { protocol: `phonondb-v1` } } }
           : undefined,
       })
       const command = document.querySelector(`.runner-command code`)
-      expect(Boolean(command)).toBe(configured)
+      expect(Boolean(command)).toBe(configured && checkpoint !== `unreleased`)
       if (command)
         expect(command.textContent).toBe(
           `uv run models/run_kappa.py --model ${test_model.model_key} --print-cmd --dry-run`,
         )
-      expect(doc_query(`.run-model a[href="#dependencies"]`)).not.toBeNull()
+      expect(Boolean(document.querySelector(`.run-model a[href="#dependencies"]`))).toBe(
+        checkpoint !== `unreleased`,
+      )
     },
   )
 
@@ -350,7 +358,11 @@ describe(`Model Detail Page`, () => {
       props: {
         data: fixture_data({
           ...test_model,
-          metrics: { ...test_model.metrics, md: undefined, diatomics: undefined },
+          metrics: {
+            ...test_model.metrics,
+            md: { status: `not_available`, reason: `Missing <reference> & metadata.` },
+            diatomics: undefined,
+          },
         }),
       },
     })
@@ -368,6 +380,14 @@ describe(`Model Detail Page`, () => {
       ),
     )
     expect(document.querySelector(`.popover br`)).not.toBeNull()
+    rank_links[0].dispatchEvent(new MouseEvent(`mouseleave`))
+    rank_links[3].dispatchEvent(new MouseEvent(`mouseenter`))
+    await vi.waitFor(() =>
+      expect(document.querySelector(`.popover`)?.textContent).toContain(
+        `Missing <reference> & metadata.`,
+      ),
+    )
+    expect(document.querySelector(`.popover reference`)).toBeNull()
     for (const [idx, link] of rank_links.entries()) {
       if (link.textContent?.includes(`No results`))
         expect(link.getAttribute(`href`)).toMatch(/^\/benchmarks\//)

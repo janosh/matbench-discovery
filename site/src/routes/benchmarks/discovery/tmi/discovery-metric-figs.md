@@ -4,10 +4,15 @@
   import hist_clf from '$figs/hist-clf-pred-hull-dist.jsonl'
   import roc from '$figs/roc-models.jsonl'
   import rolling_mae from '$figs/rolling-mae-vs-hull-dist.jsonl'
+  import ModelSelect from '$lib/ModelSelect.svelte'
+  import { bind_url_params } from '$lib/url-state.svelte'
   import { dashed, labeled_vline, model_mae, order_models, wide_legend } from '$lib/fig-helpers'
   import { format_num } from 'matterviz/labels'
   import { BarPlot, BoxPlot, PlotLegend, ScatterPlot } from 'matterviz/plot'
   import type { DataSeries, FillRegion, LegendItem } from 'matterviz/plot'
+  import { MediaQuery } from 'svelte/reactivity'
+
+  const narrow_screen = new MediaQuery(`(max-width: 600px)`)
 
   // payload models arrive pre-styled (stable MODELS colors + discovery-F1-desc leaderboard
   // order) from the json_payload plugin. cumulative P/R keeps that default order; the rest
@@ -17,6 +22,21 @@
   const box_styled = order_models(box_data.models, model_mae)
   const roc_styled = order_models(roc.models, (mdl) => -mdl.auc)
   const hist_clf_styled = order_models(hist_clf.models, (mdl) => -mdl.f1)
+  const hist_options = hist_clf_styled.map(({ model_key, label }) => ({ value: model_key, label }))
+  const default_hist_models = hist_options.slice(0, 4)
+  let hist_selected = $state(default_hist_models)
+  const hist_models = $derived(hist_clf_styled.filter(({ model_key }) =>
+    hist_selected.some(({ value }) => value === model_key)
+  ))
+  bind_url_params((params) => {
+    const keys = params.get(`hist_models`)?.split(`,`)
+    const selected = hist_options.filter(({ value }) => keys?.includes(value))
+    hist_selected = selected.length ? selected : default_hist_models
+  }, () => [[
+    `hist_models`,
+    hist_models.map(({ model_key }) => model_key).join(`,`),
+    default_hist_models.map(({ value }) => value).join(`,`),
+  ]])
   const rolling_styled = order_models(rolling_mae.models, model_mae).map(
     (mdl, idx) => ({ ...mdl, visible: idx < 6 }),
   )
@@ -124,7 +144,7 @@
   // stacked colors). pin it to the bin spacing so adjacent bars touch without overlap.
   const hist_bin_width = hist_clf.bin_centers[1] - hist_clf.bin_centers[0]
 
-  // one shared legend above all 9 histograms (the classes are identical across panels);
+  // one shared legend above all histograms (the classes are identical across panels);
   // square swatches match how BarPlot renders bar-series legend entries
   const clf_legend: LegendItem[] = clf_classes.map(({ label, color }, idx) => ({
     label,
@@ -237,17 +257,22 @@ style="height: 700px"
 
 ## Distribution of Model-Predicted Hull Distance
 
+<div class="histogram-selector">
+  <label for="histogram-models">Models</label>
+  <ModelSelect id="histogram-models" options={hist_options} bind:value={hist_selected} min_select={1} />
+</div>
+
 <PlotLegend
-  series_data={clf_legend}
-  layout="horizontal"
-  layout_tracks={4}
-  draggable={false}
-  filterable={false}
-  style="margin: 0 auto 1em"
+series_data={clf_legend}
+layout="horizontal"
+layout_tracks={narrow_screen.current ? 2 : 4}
+draggable={false}
+filterable={false}
+style="margin: 0 auto 1em"
 />
 
-<div class="fig-grid three-col">
-  {#each hist_clf_styled as model (model.model_key)}
+<div class="fig-grid histogram-panels">
+  {#each hist_models as model (model.model_key)}
   <figure>
     <figcaption>{model.label} · F1={model.f1}</figcaption>
     <BarPlot
@@ -269,7 +294,7 @@ style="height: 700px"
   {/each}
 </div>
 
-> @label:fig:hist-clf-pred-hull-dist-models Distribution of model-predicted hull distance colored by stability classification. Models are sorted from top to bottom by F1 score. The thickness of the red and yellow bands shows how often models misclassify as a function of how far away from the convex hull they place a material. While CHGNet and M3GNet perform almost equally well overall, these plots reveal that they do so via different trade-offs. M3GNet commits fewer false negatives but more false positives predictions compared to CHGNet. In a real discovery campaign, false positives have a higher opportunity cost than false negatives, since they result in wasted DFT relaxations or even synthesis time in the lab. A false negative by contrast is just one missed opportunity out of many. For this reason, models with high true positive rate (TPR) even at the expense of lower true negative rate (TNR) are generally preferred.
+> @label:fig:hist-clf-pred-hull-dist-models Predicted hull distance colored by stability classification. The four highest-F1 models are selected by default; choose models to compare in descending F1 order. Orange and salmon bands show false negatives and false positives. False positives can lead to wasted DFT relaxations or synthesis attempts; false negatives represent missed stable materials. All panels use the same axes.
 
 <style>
   h2 {
@@ -282,9 +307,18 @@ style="height: 700px"
   .fig-grid.two-col {
     grid-template-columns: 1fr 1fr;
   }
-  .fig-grid.three-col {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.4em 0.5em;
+  .histogram-selector {
+    display: grid;
+    gap: 0.4em;
+    margin-bottom: 1em;
+  }
+  .histogram-panels {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  @media (max-width: 600px) {
+    .histogram-panels {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
   .fig-grid figure {
     margin: 0;

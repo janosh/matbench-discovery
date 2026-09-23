@@ -4,14 +4,10 @@
   import { title_case } from '$lib/labels'
   import { ACTIVE_MODELS } from '$lib/models.svelte'
   import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
-  import {
-    bind_url_params,
-    sort_from_query,
-    sort_url_entries,
-    type SortState,
-  } from '$lib/url-state.svelte'
+  import { bind_url_params } from '$lib/url-state.svelte'
+  import { sort_from_query, sort_url_entries } from 'matterviz/url-params'
   import pkg from '$site/package.json'
-  import type { CellSnippetArgs, Column } from 'matterviz/table'
+  import type { CellSnippetArgs, Column, TableSort } from 'matterviz/table'
   import { HeatmapTable, middle_ellipsis_parts } from 'matterviz/table'
   import { format_num } from 'matterviz/labels'
   import { Icon, Popover } from 'svelte-widgets'
@@ -148,7 +144,7 @@
     columns.filter((col) => col.sortable !== false).map(({ id }) => id),
   )
   const default_sort = { column: `Models`, dir: `desc` as const }
-  let sort = $state<SortState>({ ...default_sort })
+  let sort = $state<TableSort>({ ...default_sort })
   const default_filters = { q: ``, access: ``, role: ``, method: `` }
   let filters = $state({ ...default_filters })
   const plot_options = (
@@ -354,6 +350,7 @@
   <DynamicScatter
     models={filtered}
     item_name="datasets"
+    model_selection={false}
     get_identity={({ key, slug }) => ({ key, name: key, href: `/data/${slug}` })}
     options={plot_options}
     bind:x_key={plot.x}

@@ -5,8 +5,9 @@ import data_files from '$pkg/data-files.yml'
 import TestSet from '$lib/benchmark/TestSet.svelte'
 import { benchmarks } from '$lib/benchmark/data'
 import { goto } from '$app/navigation'
+import { element_data } from 'matterviz/element'
 import { tick } from 'svelte'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vite-plus/test'
 import { doc_query, mount, mount_with_url } from '../index'
 
 it.each([
@@ -85,12 +86,15 @@ it.each([
     expect(table.querySelector(`.element-tile:not([data-element-symbol])`)).toBeNull()
     const tiles = [...table.querySelectorAll<HTMLElement>(`[data-element-symbol]`)]
     expect(tiles.filter((tile) => tile.style.opacity !== `0.15`)).toHaveLength(n_elements)
-    const ticks = [...table.querySelectorAll(`.tick-label`)].map((label) =>
-      Number(label.textContent),
+    const ticks = [...table.querySelectorAll(`.tick-label`)].map(
+      (label) => label.textContent,
     )
-    expect(ticks[0]).toBe(1)
-    expect(ticks.at(-1)).toBe(count)
-    expect(ticks.every(Number.isInteger)).toBe(true)
+    expect(ticks[0]).toBe(`1`)
+    if (dataset.id === `wbm`) expect(ticks).toEqual([`1`, `10`, `100`, `1k`, `10k`])
+    else
+      expect(
+        ticks.map(Number).every((value) => Number.isInteger(value) && value <= count),
+      ).toBe(true)
     expect(new Set(ticks).size).toBe(ticks.length)
     if (task === `diatomics`)
       expect(doc_query(`.colorbar`, table).textContent).not.toContain(`log`)
@@ -102,8 +106,12 @@ it.each([
       const tile = doc_query(`[data-element-symbol="${element}"]`, table)
       tile.dispatchEvent(new MouseEvent(`mouseenter`))
       await tick()
-      expect(doc_query(`.tooltip`, table).textContent).toContain(
-        `${dataset.count_unit} containing ${element}: ${expected_count.toLocaleString(`en-US`)}`,
+      const name = element_data.find(
+        ({ symbol: elem_symbol }) => elem_symbol === element,
+      )?.name
+      // one line: count unit, full element name, count
+      expect(doc_query(`.tooltip`, table).textContent?.trim()).toBe(
+        `${dataset.count_unit} containing ${name}: ${expected_count.toLocaleString(`en-US`)}`,
       )
       tile.dispatchEvent(new MouseEvent(`mouseleave`))
       await tick()

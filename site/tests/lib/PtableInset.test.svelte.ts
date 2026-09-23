@@ -1,6 +1,6 @@
 import PtableInset from '$lib/PtableInset.svelte'
 import type { ChemicalElement } from 'matterviz'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import { mount } from '../index'
 
 const mock_Fe = { symbol: `Fe`, name: `Iron`, number: 26 } as ChemicalElement

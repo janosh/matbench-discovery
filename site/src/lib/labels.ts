@@ -1,6 +1,7 @@
 import type { DiscoverySet, Label, OrgLogo } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import { Meta, Microsoft } from 'svelte-widgets/icons'
+import { format_datetime } from 'matterviz/table'
 
 import type {
   DiscoveryMetricsLabels,
@@ -22,45 +23,10 @@ export const format_power_ten = (text: string): string =>
     // collapse a bare mantissa of 1 (1×10^n -> 10^n) without touching e.g. 9.01×10^n
     .replaceAll(/(?<![\d.])1×10/g, `10`)
 
-// Vendored from matterviz <0.6 (src/lib/time.ts), which dropped format_relative_time.
-// Returns null if invalid. Strings without timezone are treated as UTC (Z appended).
-const parse_date = (date?: Date | string): Date | null => {
-  if (!date) return null
-  if (typeof date === `string`) {
-    // ISO without timezone: 2024-01-15T14:30:00 or 2024-01-15 14:30:00
-    const has_tz = /Z$|[+-]\d{2}:\d{2}$|[+-]\d{4}$/.test(date)
-    const normalized = has_tz ? date : `${date.replace(` `, `T`)}Z`
-    const parsed = new Date(normalized)
-    return isNaN(parsed.getTime()) ? null : parsed
-  }
-  return isNaN(date.getTime()) ? null : date
-}
-
-// Format date as relative time: "5 hours ago", "2 days ago".
-// Dates treated as UTC to avoid timezone issues. Future dates return absolute UTC time.
-export const format_relative_time = (
-  date?: Date | string,
-  reference_date?: Date | string,
-): string => {
-  const timestamp = parse_date(date)
-  const now = reference_date ? parse_date(reference_date) : new Date()
-  if (!timestamp || !now) return `N/A`
-
-  const diff_ms = now.getTime() - timestamp.getTime()
-  if (diff_ms < 0) {
-    return timestamp
-      .toISOString()
-      .replace(`T`, ` `)
-      .replace(/\.\d+Z$/, ` UTC`)
-  }
-
-  const diff_mins = Math.max(1, Math.floor(diff_ms / (1000 * 60)))
-  const diff_hours = Math.floor(diff_ms / (1000 * 60 * 60))
-  const diff_days = Math.floor(diff_ms / (1000 * 60 * 60 * 24))
-
-  if (diff_mins < 60) return `${diff_mins} minute${diff_mins === 1 ? `` : `s`} ago`
-  if (diff_hours < 24) return `${diff_hours} hour${diff_hours === 1 ? `` : `s`} ago`
-  return `${diff_days} day${diff_days === 1 ? `` : `s`} ago`
+// "1y 2mo ago" / "3d from now" via matterviz; missing or unparsable dates show N/A
+export const format_relative_time = (date?: string, now_ms?: number): string => {
+  const timestamp = Date.parse(date ?? ``)
+  return Number.isNaN(timestamp) ? `N/A` : format_datetime(timestamp, `relative`, now_ms)
 }
 
 // Declare shared task defaults once; an explicit undefined omits an inherited field.
@@ -726,7 +692,7 @@ const org_logos = {
   'ICAMS, Ruhr University Bochum': `/logos/interdisciplinary-centre-for-advanced-materials-simulation-bochum.svg`,
   'Incheon National University': `/logos/incheon-national-university.svg`,
   'Institute of Computing Technology, Chinese Academy of Science, Beijing': `/logos/institute-of-computing-technology-chinese-academy-of-sciences-beijing.svg`,
-  'Kairos Materials': `/logos/kairos-materials.png`,
+  'Kairos Materials': `/logos/kairos-materials.svg`,
   'Massachusetts Institute of Technology': `/logos/massachusetts-institute-of-technology.svg`,
   'Microsoft Research': Microsoft,
   'MIR Group, Harvard University': `/logos/materials-intelligence-research-group-harvard-university.svg`,

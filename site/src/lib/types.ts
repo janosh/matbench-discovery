@@ -35,8 +35,6 @@ export type Label = LabelType & Pick<Column, `color_scale`>
 export const DISCOVERY_SETS = [`full_test_set`, `unique_prototypes`] as const
 export type DiscoverySet = (typeof DISCOVERY_SETS)[number]
 
-export type SortDir = `asc` | `desc`
-
 export interface DiatomicsCurves {
   distances: number[]
   'homo-nuclear': Record<string, { energies: number[]; forces: number[][] }>

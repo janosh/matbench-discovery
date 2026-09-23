@@ -160,6 +160,7 @@
                   trigger_mode="hover"
                   trap_focus={false}
                   aria-label="Metric description"
+                  style="white-space: normal; overflow-wrap: anywhere"
                 >
                   {#snippet trigger(trigger_props)}<span
                       role="button"
@@ -190,6 +191,7 @@
                         trigger_mode="hover"
                         trap_focus={false}
                         aria-label="Metric details"
+                        style="white-space: normal; overflow-wrap: anywhere"
                       >
                         {#snippet trigger(trigger_props)}<span
                             role="button"
@@ -226,19 +228,12 @@
       url_defaults={{ x: HYPERPARAMS.model_params.key, y: default_y_key }}
       models={[...new Set([...ACTIVE_MODELS, ...models])]}
       options={scatter_axis_options}
-      highlight_keys={comparison.keys}
       show_pareto_frontier
       bleed={false}
       legend={null}
       style="height: 420px"
       bind:x_key
       bind:y_key
-      point_events={{
-        onclick: ({ point }) => {
-          const key = point.metadata?.model_key
-          if (typeof key === `string`) comparison.toggle(key)
-        },
-      }}
     />
   {/if}
 </Dialog>

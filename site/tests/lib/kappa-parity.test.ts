@@ -1,6 +1,5 @@
 import {
   as_phonon_dos,
-  dos_per_atom,
   build_kappa_parity_series,
   get_kappa_parity_point,
   has_kappa_parity_model,
@@ -18,7 +17,15 @@ import KappaParityPlot from '$lib/plot/KappaParityPlot.svelte'
 import { MODELS } from '$lib/models.svelte'
 import { tick } from 'svelte'
 import type { AnyStructure } from 'matterviz/structure'
-import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  onTestFinished,
+  vi,
+} from 'vite-plus/test'
 import {
   doc_query,
   get_scatter_plot_props,
@@ -31,6 +38,7 @@ const plot_mocks = vi.hoisted(() => ({
   ScatterPlot: vi.fn(),
   Dos: vi.fn(),
   PhononThermalPlot: vi.fn(),
+  density_divisor: vi.fn(() => 2),
   spectral_loaded: vi.fn(),
 }))
 vi.mock(`matterviz/plot`, () => ({ ScatterPlot: plot_mocks.ScatterPlot }))
@@ -112,6 +120,15 @@ it(`loads spectral plots only after selecting a material and renders both DOS so
   props.on_point_click({ point: { series_idx: 0, point_idx: 0 } })
   await vi.waitFor(() => expect(plot_mocks.Dos).toHaveBeenCalledOnce())
   expect(plot_mocks.PhononThermalPlot).toHaveBeenCalledTimes(2)
+  // thermal plots get each DOS rescaled to 3 modes per atom over its integral (stubbed: 2)
+  expect(
+    plot_mocks.PhononThermalPlot.mock.calls.map(
+      ([, thermal_props]) => thermal_props.dos.densities,
+    ),
+  ).toEqual([
+    [0, 1.5, 0],
+    [0, 0.75, 0],
+  ])
   expect(document.querySelector(`.detail-panel`)?.textContent).toContain(`mp-1`)
   await vi.waitFor(() =>
     expect(doc_query(`.modes [role="alert"] details`).textContent).toContain(
@@ -254,24 +271,6 @@ describe(`kappa parity data helpers`, () => {
     expect(as_phonon_dos(base.dft_dos[`mp-2`])).toBeNull()
     expect(as_phonon_dos(model.ml_dos[`mp-1`])?.type).toBe(`phonon`)
     expect(as_phonon_dos(model.ml_dos[`mp-3`])).toBeNull()
-  })
-
-  it(`rescales a peak-normalized DOS to 3 modes per atom for thermal properties`, () => {
-    // triangle DOS on a unit grid: trapezoid integral 2 -> scale factor 3/2
-    const per_atom = dos_per_atom({
-      type: `phonon`,
-      frequencies: [0, 1, 2, 3],
-      densities: [0, 1, 1, 0],
-    })
-    expect(per_atom.frequencies).toEqual([0, 1, 2, 3])
-    expect(per_atom.densities).toEqual([0, 1.5, 1.5, 0])
-    const integral = per_atom.densities
-      .slice(1)
-      .reduce((sum, density, idx) => sum + (density + per_atom.densities[idx]) / 2, 0)
-    expect(integral).toBeCloseTo(3, 12)
-    expect(() =>
-      dos_per_atom({ type: `phonon`, frequencies: [0, 1], densities: [0, 0] }),
-    ).toThrow(`integrates to 0`)
   })
 
   it(`maps model keys to per-model release assets`, () => {

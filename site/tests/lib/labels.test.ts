@@ -5,7 +5,7 @@ import {
   get_org_logo,
 } from '$lib/labels'
 import { Meta, Microsoft } from 'svelte-widgets/icons'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 
 describe(`format_power_ten`, () => {
   it.each([
@@ -120,7 +120,7 @@ describe(`get_org_logo`, () => {
       ),
     ],
     [`DeePMD`, src_logo(`DeePMD`, `/logos/deepmd.svg`)],
-    [`Kairos Materials`, src_logo(`Kairos Materials`, `/logos/kairos-materials.png`)],
+    [`Kairos Materials`, src_logo(`Kairos Materials`, `/logos/kairos-materials.svg`)],
   ])(`returns correct logo data for '%s'`, (input: string, expected: unknown) => {
     expect(get_org_logo(input)).toStrictEqual(expected)
   })
@@ -134,24 +134,13 @@ describe(`get_org_logo`, () => {
   })
 })
 
-describe(`format_relative_time`, () => {
-  const now = `2024-01-15T14:30:00Z`
-  it.each([
-    [`2024-01-15T14:29:30Z`, `1 minute ago`], // sub-minute clamps to 1
-    [`2024-01-15T14:25:00Z`, `5 minutes ago`],
-    [`2024-01-15T13:30:00Z`, `1 hour ago`],
-    [`2024-01-15 09:30:00`, `5 hours ago`], // no timezone -> treated as UTC
-    [`2024-01-14T14:30:00Z`, `1 day ago`],
-    [`2024-01-01`, `14 days ago`],
-    [`2024-02-01T08:05:00Z`, `2024-02-01 08:05:00 UTC`], // future -> absolute UTC
-    [new Date(`2024-01-13T14:30:00Z`), `2 days ago`],
-  ])(`formats %s relative to ${now} as '%s'`, (date, expected) => {
-    expect(format_relative_time(date, now)).toBe(expected)
-  })
-
-  it(`returns N/A for missing or invalid dates`, () => {
-    expect(format_relative_time(undefined, now)).toBe(`N/A`)
-    expect(format_relative_time(`not a date`, now)).toBe(`N/A`)
-    expect(format_relative_time(now, `garbage`)).toBe(`N/A`)
-  })
+it.each([
+  [`2024-01-15T14:25:00Z`, `5m ago`],
+  [`2024-01-01`, `2w 14h 30m ago`], // date-only strings parse as UTC midnight
+  [`2022-11-20`, `1y 1mo 3w ago`],
+  [`2024-02-01T08:05:00Z`, `2w 2d 17h from now`],
+  [undefined, `N/A`],
+  [`not a date`, `N/A`],
+])(`format_relative_time(%s) relative to 2024-01-15T14:30Z is '%s'`, (date, expected) => {
+  expect(format_relative_time(date, Date.parse(`2024-01-15T14:30:00Z`))).toBe(expected)
 })

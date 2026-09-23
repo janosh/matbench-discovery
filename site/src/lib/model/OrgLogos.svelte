@@ -36,6 +36,7 @@
     trap_focus={false}
     placement="left"
     aria-label="Authors and affiliations"
+    style="white-space: normal; overflow-wrap: anywhere"
   >
     {#snippet trigger(trigger_props)}
       <span class="org-preview" role="button" tabindex="0" {...trigger_props}>

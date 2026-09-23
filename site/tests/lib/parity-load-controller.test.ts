@@ -1,5 +1,5 @@
 import { ParityLoadController } from '$lib/parity/load-controller.svelte'
-import { expect, it } from 'vitest'
+import { expect, it } from 'vite-plus/test'
 
 it(`cancels an older request when cached data becomes ready`, async () => {
   const controller = new ParityLoadController()

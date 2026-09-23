@@ -2,7 +2,7 @@ import type { OrgLogo } from '$lib/types'
 import { Magnetic, Meta } from 'svelte-widgets/icons'
 import OrgLogos from '$lib/model/OrgLogos.svelte'
 import { flushSync, type ComponentProps } from 'svelte'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vite-plus/test'
 import { doc_query, mount } from '../index'
 
 describe(`OrgLogos.svelte`, () => {
@@ -15,7 +15,10 @@ describe(`OrgLogos.svelte`, () => {
   const open_popover = async (
     props: ComponentProps<typeof OrgLogos>,
   ): Promise<HTMLElement> => {
-    mount(OrgLogos, { target: document.body, props })
+    const target = document.createElement(`div`)
+    target.style.whiteSpace = `nowrap` // Match the leaderboard's table cells.
+    document.body.append(target)
+    mount(OrgLogos, { target, props })
     flushSync() // ensure the popover effect has run before hovering
     doc_query(`.org-preview`).dispatchEvent(new MouseEvent(`mouseenter`))
     return vi.waitFor(() => doc_query(`[role="dialog"]`))
@@ -41,7 +44,7 @@ describe(`OrgLogos.svelte`, () => {
   })
 
   it(`shows grouped authors with escaped affiliations on hover`, async () => {
-    const { innerHTML } = await open_popover({
+    const popover = await open_popover({
       org_logos: [mit_logo, { name: `FAIR at Meta`, icon: Meta }],
       authors: [
         { name: `Ada Lovelace`, affiliation: `Massachusetts Institute of Technology` },
@@ -51,6 +54,8 @@ describe(`OrgLogos.svelte`, () => {
         { name: `Sam Houston`, affiliation: `Texas A&M University` },
       ],
     })
+    const { innerHTML } = popover
+    expect(getComputedStyle(popover).whiteSpace).toBe(`normal`)
 
     // full affiliation names (not just logos) are shown
     expect(innerHTML).toContain(`Massachusetts Institute of Technology`)

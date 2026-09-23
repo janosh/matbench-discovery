@@ -2,7 +2,7 @@ import { gzipSync } from 'node:zlib'
 import type { ModelData } from '$lib/types'
 import type { AfterNavigate } from '@sveltejs/kit'
 import { mount as svelte_mount, tick, unmount } from 'svelte'
-import { afterEach, beforeAll, beforeEach, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, vi } from 'vite-plus/test'
 
 type AfterNavigateCallback = (navigation: unknown) => void
 
@@ -170,10 +170,10 @@ export async function mount_with_url(
   const next_url = new URL(url)
   app_mocks.state.page.url = next_url
   history.replaceState(null, ``, `${next_url.pathname}${next_url.search}${next_url.hash}`)
-  const instance = tracked_mount(
-    component as Parameters<typeof svelte_mount>[0],
-    { ...options, target: document.body } as Parameters<typeof svelte_mount>[1],
-  )
+  const instance = tracked_mount(component as Parameters<typeof svelte_mount>[0], {
+    ...options,
+    target: document.body,
+  })
   await tick()
   return instance
 }
@@ -209,13 +209,28 @@ export function header_name(header: Element): string {
   return (label.textContent ?? ``).trim().replace(/\s*[↓↑]\d*$/u, ``)
 }
 
-// text of a table-controls filter dropdown summary (e.g. `Training data (2)`)
-export function filter_summary_badge(menu_name: string): string {
-  const summary = [...document.querySelectorAll(`details.filter-menu summary`)].find(
-    (el) => el.textContent?.includes(menu_name),
-  )
-  if (!summary) throw new Error(`No filter menu found for ${menu_name}`)
-  return summary.textContent?.trim() ?? ``
+// table-controls filter dropdown trigger by its label (e.g. `Training data (2)`)
+export function filter_menu_trigger(menu_name: string): HTMLButtonElement {
+  const trigger = [
+    ...document.querySelectorAll<HTMLButtonElement>(`button.filter-menu-trigger`),
+  ].find((el) => el.textContent?.includes(menu_name))
+  if (!trigger) throw new Error(`No filter menu found for ${menu_name}`)
+  return trigger
+}
+export const filter_summary_badge = (menu_name: string): string =>
+  filter_menu_trigger(menu_name).textContent?.trim() ?? ``
+
+// open a filter dropdown (its Popover renders the panel only while open), return the panel
+export async function open_filter_menu(menu_name: string): Promise<HTMLElement> {
+  const trigger = filter_menu_trigger(menu_name)
+  if (trigger.getAttribute(`aria-expanded`) !== `true`) {
+    trigger.click()
+    await tick()
+  }
+  const panel_id = trigger.getAttribute(`aria-controls`)
+  const panel = document.querySelector<HTMLElement>(`[id="${panel_id}"]`)
+  if (!panel) throw new Error(`Filter menu ${menu_name} did not open`)
+  return panel
 }
 
 // find a checkbox by the text of its wrapping <label> (e.g. table-control toggles)

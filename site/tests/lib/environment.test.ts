@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import zlib from 'node:zlib'
 import { build } from 'vite'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vite-plus/test'
 import pkg from '../../package.json' with { type: 'json' }
 import vite_config, { svelte_config } from '../../vite.config'
 

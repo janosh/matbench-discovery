@@ -19,8 +19,8 @@ import {
   update_models_cmds,
 } from '$lib/combined-scores.svelte'
 import { RMSD_BASELINE } from '$lib/labels'
-import { apply_weights_param, weights_to_param } from '$lib/url-state.svelte'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { apply_weights_param, weights_to_param } from 'matterviz/url-params'
+import { afterEach, beforeEach, describe, expect, it } from 'vite-plus/test'
 
 const clone_config = (): CmdsConfig => structuredClone(DEFAULT_CMDS_CONFIG)
 // geometric midpoint of the speed scale (log-scored), subscore exactly 0.5

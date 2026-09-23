@@ -12,9 +12,17 @@
 </p>
 <div class="benchmark-grid bleed-1400">
   {#each Object.entries(benchmarks) as [task, { key, icon, dataset }] (task)}
+    {@const [first_word, ...remaining_words] = MODELING_TASKS[key].label.split(` `)}
     <article>
       <h2>
-        <a href="/benchmarks/{task}"><Icon {icon} /> {MODELING_TASKS[key].label}</a>
+        <a href="/benchmarks/{task}"
+          ><span style="white-space: nowrap"
+            ><Icon
+              {icon}
+              style="vertical-align: -0.125em; margin-right: 0.4em"
+            />{first_word}</span
+          >{remaining_words.length ? ` ${remaining_words.join(` `)}` : ``}</a
+        >
       </h2>
       <figure aria-label="{dataset.name} element occurrences">
         <ElementHeatmap {dataset} />
@@ -57,6 +65,9 @@
       max-width: 100%;
       font-size: 1.25em;
       line-height: 1.25;
+      :global([data-heading-anchor]) {
+        display: none;
+      }
     }
     h2,
     p {
@@ -68,11 +79,6 @@
     }
     figure + p {
       clear: left;
-    }
-    h2 a {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4em;
     }
     .dataset {
       color: var(--text-secondary);

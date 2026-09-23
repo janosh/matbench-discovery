@@ -16,10 +16,10 @@ import {
 } from '$lib/models.svelte'
 import type { ModelData } from '$lib/types'
 import { per_element_each_errors as per_elem_each_errors } from '$lib/per-element-errors'
-import { load as yaml_load } from 'js-yaml'
+import { parse_yaml } from 'svelte-widgets/yaml'
 import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vite-plus/test'
 
 describe(`calculate_training_sizes`, () => {
   it.each([
@@ -215,10 +215,10 @@ describe(`make_table_filters`, () => {
     expect(filters.n_active).toBe(0)
   })
 
-  it(`apply drops stale dataset keys and invalid modes from presets`, () => {
+  it(`apply drops stale dataset keys and invalid modes from snapshots`, () => {
     const filters = make_table_filters()
     filters.apply({
-      // deleted-dataset key and garbage mode could come from stale localStorage
+      // A browser-history snapshot can contain keys removed in a later deploy.
       training: {
         MPtrj: `require`,
         'Renamed Dataset': `exclude`,
@@ -396,7 +396,7 @@ function find_underscore_numbers(node: unknown, node_path: string): string[] {
 
 describe(`YAML data files use plain integers (no underscore separators)`, () => {
   it.each(yaml_files)(`%s`, (rel_path) => {
-    const data = yaml_load(readFileSync(path.join(repo_root, rel_path), `utf-8`))
+    const data = parse_yaml(readFileSync(path.join(repo_root, rel_path), `utf-8`))
     const offenders = find_underscore_numbers(data, ``)
     expect(offenders, `${rel_path} has underscore-separated numbers`).toEqual([])
   })

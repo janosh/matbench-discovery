@@ -3,7 +3,7 @@ import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
 import type * as KappaParity from '$lib/parity/kappa-parity'
 import PhononsPage from '$routes/benchmarks/phonons/+page.svelte'
 import { tick } from 'svelte'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 import {
   checkbox_for,
   doc_query,
@@ -285,7 +285,7 @@ describe(`Phonons Task Page`, () => {
       expect(header?.textContent).toContain(`κSRE`)
       expect(header?.getAttribute(`aria-sort`)).toBe(`ascending`)
       expect(filter_summary_badge(`Openness`)).toContain(`(1/4)`)
-      expect(checkbox_for(`Heatmap`).checked).toBe(false)
+      expect(checkbox_for(`Show heatmap`).checked).toBe(false)
     },
   )
 })

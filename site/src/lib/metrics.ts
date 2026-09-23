@@ -21,7 +21,8 @@ import type { DiscoverySet, Label, ModelData } from '$lib/types'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import { escape_html } from 'matterviz/utils'
 import { format_num } from 'matterviz/labels'
-import { is_invalid, type CellVal } from 'matterviz/table'
+import { is_invalid, sort_table_rows, type CellVal } from 'matterviz/table'
+import { resolve_path } from 'svelte-widgets/json-tree/path'
 
 export const targets_tooltips: Record<TargetType, string> = {
   E: `Energy`,
@@ -63,24 +64,9 @@ export const discovery_task_tooltips: Record<
   'IS2RE-SR': `initial structure to relaxed energy with structure relaxation`,
 } as const
 
-// Paths come from the fixed metric/metadata labels; reuse their parsed segments on redraw.
-const data_paths = new Map<string, string[]>()
-export function get_nested_value(model: object, dotted_path: string): unknown {
-  let keys = data_paths.get(dotted_path)
-  if (!keys) {
-    keys = dotted_path.split(`.`).filter(Boolean)
-    data_paths.set(dotted_path, keys)
-  }
-  if (keys.length === 0) return undefined // empty path returns undefined, not the whole model
-  let value: unknown = model
-
-  for (const key of keys) {
-    if (typeof value !== `object` || value === null) return undefined
-    value = Reflect.get(value, key) // absent properties already yield undefined
-  }
-
-  return value
-}
+// empty path returns undefined, not the whole model
+export const get_nested_value = (model: object, dotted_path: string): unknown =>
+  dotted_path ? resolve_path(model, dotted_path) : undefined
 
 export function get_nested_number(
   model: ModelData,
@@ -116,99 +102,94 @@ export const metric_value = (
   discovery_set: DiscoverySet = `unique_prototypes`,
 ): unknown => get_nested_value(model, metric_data_path(label, discovery_set))
 
-// Compose combined-score reasons without repeating the submission invitation.
-export const missing_metric_reason = (model: ModelData, label: Label): string =>
-  [...new Set(missing_metric_messages(model, label))]
-    .toSorted(
-      (left, right) =>
-        Number(left.startsWith(`Contributions welcome`)) -
-        Number(right.startsWith(`Contributions welcome`)),
+// Put shared availability notes after the task reasons, once per combined score.
+export function missing_metric_reason(model: ModelData, metric: Label): string {
+  const notes = new Set<string>()
+
+  // Explain absent results using declared task status before inferring capability.
+  function reasons_for(label: Label): string[] {
+    const is_cps = label.key === ALL_METRICS.CPS.key
+    const raw_task =
+      label.path?.split(`.`)[1] ??
+      (label.key === MD_METRICS.md_time_multiplier.key
+        ? `md`
+        : label.key === DIATOMICS_METRICS.diatomics_time_multiplier.key
+          ? `diatomics`
+          : undefined)
+    const task_key =
+      raw_task && Object.hasOwn(MODELINGS_TASKS, raw_task)
+        ? (raw_task as keyof NonNullable<ModelData['metrics']>)
+        : undefined
+    if (!task_key && !is_cps) {
+      return [`${label.label.replaceAll(/<[^>]*>/g, ``)}: not reported.`]
+    }
+
+    const task_name = task_key ? MODELINGS_TASKS[task_key].label : `CPS`
+    const task_data = task_key ? model.metrics?.[task_key] : undefined
+    const detail = task_data?.reason ? ` ${task_data.reason}` : ``
+    if (task_data?.status === `not_applicable`) {
+      return [`${task_name}: unsupported.${detail}`]
+    }
+    const requires_forces =
+      [`geo_opt`, `phonons`, `md`].includes(task_key ?? ``) ||
+      (task_key === `diatomics` &&
+        (label.key.includes(`force`) ||
+          label.key === DIATOMICS_METRICS.diatomics_combined_score.key))
+    if (model.targets === `E` && requires_forces) {
+      return [`${task_name} requires forces; this model predicts only energies.${detail}`]
+    }
+
+    const property = label.property ?? label.key
+    const cost_name = label.key.endsWith(`time_multiplier`)
+      ? `positive runtime`
+      : property === `run_time_sec`
+        ? `runtime`
+        : [`max_rss_gb`, `max_gpu_mem_gb`].includes(property)
+          ? `peak memory`
+          : undefined
+    const has_results =
+      task_data &&
+      Object.keys(task_data).some((key) => key !== `status` && key !== `reason`)
+    let status = has_results ? `incomplete results` : `no results reported`
+    if (cost_name) status = `${cost_name} not reported`
+    else if (task_data?.status === `pending`) status = `evaluation pending`
+    else if (task_data?.status === `not_available`) status = `results unavailable`
+    else if (is_cps || (has_results && property === `combined_score`)) {
+      const components: Label[] =
+        is_cps || task_key === `md`
+          ? Object.values(is_cps ? CPS_CONFIG : CMDS_CONFIG).filter(
+              ({ weight }) => weight > 0,
+            )
+          : Object.entries(CDS_COMPONENTS).flatMap(([pillar, entries]) =>
+              CDS_CONFIG[pillar as CdsPillar].weight > 0
+                ? entries.map(({ key }) => ({
+                    key,
+                    label: key,
+                    path: `metrics.diatomics`,
+                    description: ``,
+                  }))
+                : [],
+            )
+      const missing = components.filter((component) => {
+        const value = metric_value(model, component)
+        return (
+          !is_finite_num(value) ||
+          ((component.property ?? component.key) === `run_time_sec` && value <= 0)
+        )
+      })
+      return missing.length
+        ? missing.flatMap(reasons_for)
+        : [`${label.label}: invalid components or weights.${detail}`]
+    }
+    notes.add(
+      model.license.checkpoint === `unreleased`
+        ? `Model weights are not publicly available.`
+        : `Contributions welcome to add missing ${cost_name ? `timing or memory data` : `model predictions`}.`,
     )
-    .join(` `)
-
-// Explain absent results using declared task status before inferring capability.
-function missing_metric_messages(model: ModelData, label: Label): string[] {
-  const is_cps = label.key === ALL_METRICS.CPS.key
-  const raw_task =
-    label.path?.split(`.`)[1] ??
-    (label.key === MD_METRICS.md_time_multiplier.key
-      ? `md`
-      : label.key === DIATOMICS_METRICS.diatomics_time_multiplier.key
-        ? `diatomics`
-        : undefined)
-  const task_key =
-    raw_task && Object.hasOwn(MODELINGS_TASKS, raw_task)
-      ? (raw_task as keyof NonNullable<ModelData['metrics']>)
-      : undefined
-  if (!task_key && !is_cps) {
-    return [`${label.label.replaceAll(/<[^>]*>/g, ``)}: not reported.`]
+    return [`${task_name}: ${status}.${cost_name ? `` : detail}`]
   }
 
-  const task_name = task_key ? MODELINGS_TASKS[task_key].label : `CPS`
-  const task_data = task_key ? model.metrics?.[task_key] : undefined
-  const detail = task_data?.reason ? ` ${task_data.reason}` : ``
-  if (task_data?.status === `not_applicable`) {
-    return [`${task_name}: unsupported.${detail}`]
-  }
-  const requires_forces =
-    [`geo_opt`, `phonons`, `md`].includes(task_key ?? ``) ||
-    (task_key === `diatomics` &&
-      (label.key.includes(`force`) ||
-        label.key === DIATOMICS_METRICS.diatomics_combined_score.key))
-  if (model.targets === `E` && requires_forces) {
-    return [`${task_name} requires forces; this model predicts only energies.${detail}`]
-  }
-
-  const invite = `Contributions welcome to add missing model predictions.`
-  const property = label.property ?? label.key
-  if (
-    [`run_time_sec`, `max_rss_gb`, `max_gpu_mem_gb`].includes(property) ||
-    label.key.endsWith(`time_multiplier`)
-  ) {
-    return [
-      `${task_name}: ${label.key.endsWith(`time_multiplier`) ? `positive runtime` : property === `run_time_sec` ? `runtime` : `peak memory`} not reported.`,
-      `Contributions welcome to add missing timing or memory data.`,
-    ]
-  }
-  if (task_data?.status === `pending`) {
-    return [`${task_name}: evaluation pending.${detail}`, invite]
-  }
-  if (task_data?.status === `not_available`) {
-    return [`${task_name}: results unavailable.${detail}`, invite]
-  }
-  const has_results =
-    task_data &&
-    Object.keys(task_data).some((key) => key !== `status` && key !== `reason`)
-  if (is_cps || (has_results && property === `combined_score`)) {
-    const components: Label[] =
-      is_cps || task_key === `md`
-        ? Object.values(is_cps ? CPS_CONFIG : CMDS_CONFIG).filter(
-            ({ weight }) => weight > 0,
-          )
-        : Object.entries(CDS_COMPONENTS).flatMap(([pillar, entries]) =>
-            CDS_CONFIG[pillar as CdsPillar].weight > 0
-              ? entries.map(({ key }) => ({
-                  key,
-                  label: key,
-                  path: `metrics.diatomics`,
-                  description: ``,
-                }))
-              : [],
-          )
-    const missing = components.filter((component) => {
-      const value = metric_value(model, component)
-      return (
-        !is_finite_num(value) ||
-        ((component.property ?? component.key) === `run_time_sec` && value <= 0)
-      )
-    })
-    return missing.length
-      ? missing.flatMap((component) => missing_metric_messages(model, component))
-      : [`${label.label}: invalid components or weights.${detail}`]
-  }
-  return has_results
-    ? [`${task_name}: incomplete results.${detail}`, invite]
-    : [`${task_name}: not evaluated yet.${detail}`, invite]
+  return [...new Set(reasons_for(metric)), ...notes].join(` `)
 }
 
 // Append "(higher|lower)=better" hint to a column tooltip where applicable
@@ -460,40 +441,18 @@ export function assemble_row_data(
   })
 }
 
-// Sort models by a given metric (as dotted path sort_by) and order
-export const sort_models =
-  (sort_by: string, order: `asc` | `desc`) =>
-  (model_1: ModelData, model_2: ModelData): number => {
-    const sort_factor = order === `asc` ? 1 : -1
-
-    // Special case for Model sorting (by model_name): asc = alphabetical A->Z
-    if (sort_by === `Model`) {
-      return sort_factor * model_1.model_name.localeCompare(model_2.model_name)
-    }
-
-    const val_1 = get_nested_value(model_1, sort_by)
-    const val_2 = get_nested_value(model_2, sort_by)
-
-    // null/undefined/NaN sort last
-    const sorts_last = (val: unknown) =>
-      val == null || (typeof val === `number` && Number.isNaN(val))
-    if (sorts_last(val_1) && sorts_last(val_2)) return 0
-    if (sorts_last(val_1)) return 1
-    if (sorts_last(val_2)) return -1
-
-    if (typeof val_1 === `string` && typeof val_2 === `string`) {
-      return sort_factor * val_1.localeCompare(val_2)
-    }
-    if (typeof val_1 === `number` && typeof val_2 === `number`) {
-      // Interpret run_time === 0 as infinity
-      if (sort_by === `Run Time`) {
-        if (val_1 === 0 && val_2 === 0) return 0
-        if (val_1 === 0) return sort_factor
-        if (val_2 === 0) return -sort_factor
-      }
-      return sort_factor * (val_1 - val_2)
-    }
-    throw new TypeError(
-      `Unexpected type '${typeof val_1}' encountered sorting by key '${sort_by}'`,
-    )
-  }
+// Sort models by a dotted metric path (`Model` sorts by name); missing values sink either way
+export const sort_models = (
+  models: ModelData[],
+  sort_by: string,
+  order: `asc` | `desc`,
+): ModelData[] =>
+  sort_table_rows(
+    models.map((model) => ({
+      model,
+      value: (sort_by === `Model`
+        ? model.model_name
+        : get_nested_value(model, sort_by)) as CellVal,
+    })),
+    [{ key: `value`, ascending: order === `asc` }],
+  ).map(({ model }) => model)

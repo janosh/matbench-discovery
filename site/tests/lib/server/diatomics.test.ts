@@ -1,7 +1,7 @@
 import { fetch_diatomics_data } from '$lib/server/predictions'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { describe, expect, it, onTestFinished, vi } from 'vitest'
+import { describe, expect, it, onTestFinished, vi } from 'vite-plus/test'
 
 describe(`diatomics server data loader`, () => {
   it(`does not fall back to remote data when local pred_file is corrupt`, async () => {

@@ -1,6 +1,6 @@
 import DiatomicsTmiPage from '$routes/benchmarks/diatomics/tmi/+page.svelte'
 import { tick } from 'svelte'
-import { afterEach, expect, it, vi } from 'vitest'
+import { afterEach, expect, it, vi } from 'vite-plus/test'
 import { get_scatter_plot_props, mount_with_url } from '../index'
 
 const plot_mocks = vi.hoisted(() => ({

@@ -1,7 +1,7 @@
 import { ALL_METRICS } from '$lib/labels'
 import { model_metric_ranks, RANKED_METRICS } from '$lib/rankings'
 import type { Label, ModelData } from '$lib/types'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 
 // minimal model stub with just the fields the ranked metric paths read
 const make_model = (

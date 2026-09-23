@@ -65,7 +65,7 @@ export function calculate_cps(
 
 // Combined MD score (CMDS): like CPS/CDS, computed on the fly from the stored
 // components instead of being persisted in model YAMLs, so it can never go stale when
-// the formula changes and users can reweight the components live (e.g. via RadarChart).
+// the formula changes and users can reweight the components live through the weight controls.
 // RDF is excluded: 0.9+ cross-model correlation with vDOS/ADF would double-count
 // structural accuracy (see matbench_discovery/metrics/md-metrics-design.md).
 //
@@ -76,11 +76,8 @@ export function calculate_cps(
 // added.
 export const CMDS_SPEED = { baseline: 300_000, floor: 9000, log: true } as const
 
-// Key order = RadarChart corner order (cyclic; diagonals vDOS↔speed, ADF↔pressure).
-// Default weights must be knob-expressible (see DEFAULT_CDS_CONFIG): opposite-corner
-// products must match, which 30/20/20/30 satisfies (0.3·0.2 == 0.2·0.3). vDOS and
-// pressure get the emphasis: vDOS is the headline dynamical observable and pressure
-// the least correlated with the other components (see md-metrics-design.md).
+// vDOS and pressure get the emphasis: vDOS is the headline dynamical observable
+// and pressure the least correlated with the other components (see md-metrics-design.md).
 export const DEFAULT_CMDS_CONFIG = {
   vdos_error: { ...MD_METRICS.md_vdos_error, weight: 0.3 },
   adf_error: { ...MD_METRICS.md_adf_error, weight: 0.2 },
@@ -174,9 +171,7 @@ export const update_models_cmds = (models: ModelData[], config: CmdsConfig) =>
 // energy_diff_flips (near-duplicate of force_flips), force_total_variation and
 // force_jump (double-count smoothness already scored by energy_jump/force_flips and
 // can penalize physically sharp repulsive walls).
-// component weights sum to 1 within each pillar. Pillar (= RadarChart corner) order
-// is cyclic: accuracy and speed sit on opposite corners, as do geometry and
-// physicality - see DEFAULT_CDS_CONFIG for why that pairing matters
+// Component weights sum to 1 within each pillar.
 export const CDS_COMPONENTS = {
   accuracy: [
     { key: `pbe_energy_mae`, weight: 5 / 9, baseline: 4, floor: 0, log: false }, // eV
@@ -205,14 +200,7 @@ export type CdsValues = Partial<Record<CdsComponent[`key`], number>> & {
 }
 const N_SCORED_DIATOMIC_ELEMENTS = 87
 
-// Default weights MUST be a weight vector the RadarChart knob can express, else
-// Reset shows a knob position whose canonical reading disagrees with the displayed
-// percentages. A 2D knob has 2 degrees of freedom vs 3 for four weights: on a square
-// the reachable (Wachspress = bilinear) weights are exactly the products of two
-// marginal splits, so opposite-corner products must match:
-// w_accuracy·w_speed == w_geometry·w_physicality. 4/9·1/9 == 2/9·2/9 satisfies this
-// (marginal splits 2/3 toward accuracy on both axes), approximating the intended
-// 40/25/25/10 while keeping Reset, knob position and weights mutually consistent.
+// Preserve the established default weights used by published rankings.
 export const DEFAULT_CDS_CONFIG: CdsConfig = {
   accuracy: {
     key: `cds_accuracy`,

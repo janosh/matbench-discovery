@@ -14,12 +14,8 @@ import {
   update_models_cmds,
 } from './combined-scores.svelte'
 import { get_org_logo } from './labels'
-import {
-  apply_weights_param,
-  bind_url_params,
-  UrlTableFilters,
-  weights_to_param,
-} from './url-state.svelte'
+import { apply_weights_param, weights_to_param } from 'matterviz/url-params'
+import { bind_url_params, UrlTableFilters } from './url-state.svelte'
 
 export const MODEL_METADATA_PATHS = import.meta.glob<ModelData>(
   `$root/models/[^_]**/[^_]*.yml`,
@@ -169,7 +165,8 @@ export function bind_score_weights(): void {
     () =>
       Object.entries(score_configs).map(([score, { config, defaults }]) => [
         `${score.toLowerCase()}_weights`,
-        weights_to_param(config, defaults),
+        // full precision so a shared link reproduces its scores exactly
+        weights_to_param(config, defaults, { decimals: Infinity }),
       ]),
   )
   $effect(() => {

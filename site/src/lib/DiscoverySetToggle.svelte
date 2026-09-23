@@ -12,7 +12,7 @@
 </script>
 
 <ButtonGroup
-  bind:selected
+  bind:value={selected}
   label="Discovery test set"
   options={discovery_set_toggle_options}
   {...rest}

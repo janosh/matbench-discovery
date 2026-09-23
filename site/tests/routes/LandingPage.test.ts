@@ -2,13 +2,14 @@ import { OPENNESS_OPTIONS } from '$lib/url-state.svelte'
 import { comparison } from '$lib/model-comparison.svelte'
 import Page from '$routes/+page.svelte'
 import { flushSync, tick } from 'svelte'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import {
   doc_query,
   header_name,
   mount,
   mount_with_url,
   navigate,
+  open_filter_menu,
   POPOVER_OPEN_ATTR,
   query_param,
   sorted_header,
@@ -65,7 +66,7 @@ describe(`Landing Page`, () => {
     await tick()
   }
 
-  it(`keeps the full table, plots, score weights and About visible with table help collapsed`, async () => {
+  it(`keeps the table, plots, score weights and About visible with hover help beside RSS`, async () => {
     const preset_labels = toggle_buttons(`Discovery`).map((button) =>
       button.textContent?.trim(),
     )
@@ -104,26 +105,58 @@ describe(`Landing Page`, () => {
       `Training Set`,
       `Org`,
     ])
-    expect(document.querySelectorAll(`div.scatter`)).toHaveLength(2)
+    expect(document.querySelectorAll(`div.scatter`)).toHaveLength(1)
 
     const plots = [...document.querySelectorAll(`.plot-section`)]
     expect(plots.map((section) => section.getAttribute(`aria-labelledby`))).toEqual([
       `cps-progress-over-time`,
-      `github-activity`,
     ])
-    expect(plots[0].nextElementSibling).toBe(plots[1])
-    expect(doc_query(`p`, plots[1]).querySelector(`a`)).toBeNull()
+    expect(plots[0].nextElementSibling?.id).toBe(`about-benchmark`)
+    expect(document.querySelector(`#github-activity`)).toBeNull()
     expect(document.querySelectorAll(`a[href="/benchmarks"]`)).toHaveLength(1)
     expect(document.querySelectorAll(`a[href="/contribute"]`)).toHaveLength(1)
-    const details = [...document.querySelectorAll<HTMLDetailsElement>(`.page-details`)]
-    expect(
-      details.map((element) => element.querySelector(`summary`)?.textContent),
-    ).toEqual([`How to read the table`])
-    expect(details.map(({ open }) => open)).toEqual([false])
+    expect(document.querySelector(`.page-details`)).toBeNull()
+    const guide = doc_query<HTMLButtonElement>(`.control-buttons button.table-guide`)
+    expect(guide.previousElementSibling?.getAttribute(`href`)).toBe(`/rss.xml`)
+    expect(guide.textContent).toBe(`How to read the table`)
+    expect(guide.closest(`details`)).toBeNull()
+    expect(guide.compareDocumentPosition(doc_query(`table`))).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    )
+    expect(guide.hasAttribute(`aria-describedby`)).toBe(false)
+    flushSync()
+    guide.dispatchEvent(new PointerEvent(`pointerover`))
+    await vi.waitFor(() => expect(guide.hasAttribute(`aria-describedby`)).toBe(true))
+    const help = doc_query(`[id="${guide.getAttribute(`aria-describedby`)}"]`)
+    expect(help.getAttribute(`role`)).toBe(`tooltip`)
+    expect(help.hidden).toBe(false)
+    expect(help.textContent).toContain(`missing-result explanations`)
+    expect(help.textContent).toContain(`Training Set counts distinct materials`)
+    guide.dispatchEvent(new PointerEvent(`pointerout`))
+    await vi.waitFor(() => expect(help.hidden).toBe(true))
+    guide.focus()
+    await vi.waitFor(() => expect(help.hidden).toBe(false))
+    guide.dispatchEvent(new KeyboardEvent(`keydown`, { key: `Escape`, bubbles: true }))
+    await vi.waitFor(() => expect(help.hidden).toBe(true))
+    guide.blur()
+    guide.dispatchEvent(
+      new PointerEvent(`pointerover`, { pointerType: `touch`, bubbles: true }),
+    )
+    guide.dispatchEvent(
+      new PointerEvent(`pointerdown`, { pointerType: `touch`, bubbles: true }),
+    )
+    expect(help.hidden).toBe(true)
+    guide.focus()
+    await vi.waitFor(() => expect(help.hidden).toBe(false))
+    guide.blur()
+    await vi.waitFor(() => expect(help.hidden).toBe(true))
     expect(doc_query(`#score-weights`).closest(`details`)).toBeNull()
-    expect(doc_query(`#score-weights-heading`).textContent).toBe(`Adjust score weights`)
-    expect(doc_query(`#score-weights svg[aria-label^="Radar chart"]`)).toBeDefined()
-    expect(doc_query(`#table-guide`).textContent).toContain(`missing-result explanations`)
+    expect(doc_query(`#score-weights`).getAttribute(`aria-label`)).toBe(
+      `Adjust score weights`,
+    )
+    expect(document.querySelectorAll(`#score-weights input[type="number"]`)).toHaveLength(
+      3,
+    )
     const about = doc_query(`#about-benchmark`)
     expect(about.closest(`details`)).toBeNull()
     expect(doc_query(`h2`, about).textContent).toBe(`About Matbench Discovery`)
@@ -314,7 +347,7 @@ describe(`Landing Page`, () => {
     expect(header_text()).toContain(`F1`)
 
     const checkboxes = document.querySelectorAll<HTMLInputElement>(
-      `.column-menu input[type="checkbox"]`,
+      `.column-menu .toggle-label input[type="checkbox"]`,
     )
     const f1_checkbox = [...checkboxes].find((checkbox) =>
       checkbox.parentElement?.textContent?.includes(`F1`),
@@ -344,10 +377,7 @@ describe(`Landing Page`, () => {
     expect(selected_scatter_label()).toContain(`${model_count_on_load} models`)
 
     // Excluding OMat24 removes many otherwise visible models.
-    const training_menu = [...document.querySelectorAll(`details.filter-menu`)].find(
-      (menu) => menu.querySelector(`summary`)?.textContent?.includes(`Training`),
-    )
-    if (!training_menu) throw new Error(`Training data filter menu not found`)
+    const training_menu = await open_filter_menu(`Training`)
     const omat_exclude_checkbox = training_menu.querySelector<HTMLInputElement>(
       `input[aria-label="exclude OMat24"]`,
     )
@@ -385,7 +415,7 @@ describe(`Landing Page`, () => {
 
 describe(`Landing Page URL state`, () => {
   const column_checkbox = () =>
-    doc_query<HTMLInputElement>(`.column-menu input[type="checkbox"]:not(:disabled)`)
+    doc_query<HTMLInputElement>(`.column-menu .toggle-label input:not(:disabled)`)
 
   it.each([
     [`http://localhost/?preset=MD&sort=F1`, `F1`, `descending`],
@@ -487,14 +517,15 @@ describe(`Landing Page URL state`, () => {
       expect(header_text()).toContain(`Model`)
       if (query) expect(header_text()).toContain(`vDOS`)
       expect(heatmap_toggle.checked).toBe(!query)
-      expect(
-        doc_query<HTMLInputElement>(`.desktop-filters [aria-label="require MPtrj"]`)
-          .checked,
-      ).toBe(Boolean(query))
-      expect(
-        doc_query<HTMLInputElement>(`.desktop-filters [aria-label="require stress"]`)
-          .checked,
-      ).toBe(Boolean(query))
+      for (const [menu, box] of [
+        [`Training data`, `require MPtrj`],
+        [`Targets`, `require stress`],
+      ]) {
+        const panel = await open_filter_menu(menu)
+        expect(doc_query<HTMLInputElement>(`[aria-label="${box}"]`, panel).checked).toBe(
+          Boolean(query),
+        )
+      }
       expect(pressed_toggle(`Discovery`)).toBe(query ? `MD` : `Discovery`)
       expect_sort(query ? `CMDS` : `CPS`, `descending`)
     }

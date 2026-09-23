@@ -12,7 +12,7 @@
   } from '$lib/labels'
   import { CMDS_CONFIG, DEFAULT_CMDS_CONFIG } from '$lib/combined-scores.svelte'
   import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
-  import RadarChart from '$lib/plot/RadarChart.svelte'
+  import ScoreWeights from '$lib/ScoreWeights.svelte'
   import { bind_url_params } from '$lib/url-state.svelte'
   import MdNote from './md-note.md'
 
@@ -65,21 +65,11 @@
   />
 </section>
 
-<details style="margin-block: 1em">
-  <summary>Adjust score weights</summary>
-  <figure class="task-weights">
-    <RadarChart
-      size={260}
-      config={CMDS_CONFIG}
-      default_config={DEFAULT_CMDS_CONFIG}
-      title_label={MD_METRICS.md_combined_score}
-    />
-    <figcaption>
-      Drag the knob to reweight CMDS components; the table and plots update live. Hover
-      the ⓘ icon for how CMDS is computed.
-    </figcaption>
-  </figure>
-</details>
+<ScoreWeights
+  config={CMDS_CONFIG}
+  default_config={DEFAULT_CMDS_CONFIG}
+  title_label={MD_METRICS.md_combined_score}
+/>
 
 <h2 id="model-comparison" style="text-align: center">
   {@html scatter_axis_label(plot.y)} vs {@html scatter_axis_label(plot.x)}

@@ -4,6 +4,7 @@ import {
   discovery_task_tooltips,
   is_finite_num,
   metric_value,
+  missing_metric_reason,
   openness_tooltips,
   targets_tooltips,
   training_set_link,
@@ -13,6 +14,7 @@ import { competition_rank, RANKED_METRICS } from '$lib/rankings'
 import type { Author, Label, ModelData } from '$lib/types'
 import { bind_url_params } from '$lib/url-state.svelte'
 import { format_num } from 'matterviz/labels'
+import { escape_html } from 'matterviz/utils'
 import type { RowData } from 'matterviz/table'
 import { SvelteSet } from 'svelte/reactivity'
 
@@ -53,8 +55,8 @@ export const comparison = new Comparison()
 
 // Leaderboard table hooks: double-clicking
 // a row toggles its model; `show_only` drops non-compared rows, else they get highlighted.
-// HeatmapTable exposes neither its sorted rows nor row data on DOM events, so DOM-side
-// code resolves a <tr> to its model via the model-page link every row carries.
+// HeatmapTable passes row data to click handlers but not to contextmenu, so the row menu
+// resolves a <tr> to its model via the model-page link every row carries.
 export const row_model_key = (row: Element | null | undefined): string | undefined =>
   row
     ?.querySelector(`a[href^="/models/"]`)
@@ -379,7 +381,8 @@ export function compare_cells(
     if (!is_finite_num(value)) {
       const parts = row.parts?.(model) ?? []
       const text = parts.length > 0 ? parts.map((part) => part.text).join(``) : value
-      if (typeof text !== `string` || !text) return { text: `–` }
+      if (typeof text !== `string` || !text)
+        return { text: `–`, title: escape_html(missing_metric_reason(model, row)) }
       return parts.length > 0 ? { text, parts } : { text }
     }
     const text = format_num(value, row.format ?? `.3~g`)

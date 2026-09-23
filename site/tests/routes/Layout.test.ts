@@ -1,4 +1,5 @@
 import { goto } from '$app/navigation'
+import DATASETS from '$data/datasets.yml'
 import { MODELS, score_weight_records } from '$lib/models.svelte'
 import {
   calculate_cds,
@@ -10,8 +11,8 @@ import { comparison } from '$lib/model-comparison.svelte'
 import Layout from '$routes/+layout.svelte'
 import pkg from '$site/package.json'
 import { createRawSnippet, tick } from 'svelte'
-import { expect, it, vi } from 'vitest'
-import { doc_query, mount, mount_with_url, navigate, query_param } from '../index'
+import { expect, it, vi } from 'vite-plus/test'
+import { doc_query, mount_with_url, navigate, query_param } from '../index'
 
 it(`restores and shares every score's weights on model, task and comparison routes`, async () => {
   const model = MODELS.find(
@@ -130,40 +131,71 @@ it.each([`/api`, `/data`, `/benchmarks/diatomics`])(
 )
 
 it.each([
-  `/benchmarks`,
-  `/benchmarks/discovery/tmi`,
-  `/data/sets`,
-  `/data/tmi`,
-  `/models/${MODELS[0].model_key}`,
-])(`navigates to %s from the command menu`, async (route) => {
-  mount(Layout, { target: document.body })
-  await tick()
-  expect(
-    [...document.querySelectorAll(`nav[data-nav] a`)].map((link) =>
-      link.getAttribute(`href`),
-    ),
-  ).toEqual([
-    `/`,
-    `/benchmarks`,
-    ...[`diatomics`, `discovery`, `geo-opt`, `md`, `phonons`].map(
-      (task) => `/benchmarks/${task}`,
-    ),
-    `/models`,
-    `/api`,
-    `/contribute`,
-    `/data/sets`,
-    pkg.paper,
-  ])
-  expect(doc_query(`nav a[href="/benchmarks"]`).textContent).toContain(`Benchmarks`)
-  expect(doc_query(`nav a[href="/data/sets"]`).textContent).toContain(`Datasets`)
-  window.dispatchEvent(new KeyboardEvent(`keydown`, { key: `k`, ctrlKey: true }))
-  await tick()
-  const menu = document.querySelector(`dialog[aria-label="Command menu"]`)
-  const option = [...(menu?.querySelectorAll(`li[role="option"]`) ?? [])].find(
-    (element) => element.textContent?.trim() === route,
-  )
-  expect(option).toBeDefined()
-  option?.dispatchEvent(new MouseEvent(`click`, { bubbles: true }))
-  await tick()
-  expect(goto).toHaveBeenLastCalledWith(route)
-})
+  [`/`, [`/`], `Home`, `/`],
+  [`/benchmarks`, [`/benchmarks`], `Benchmarks`, `Benchmarks`],
+  [
+    `/benchmarks/discovery/tmi`,
+    [`/benchmarks`, `/benchmarks/discovery`],
+    `Discovery diagnostics`,
+    `/benchmarks/discovery/tmi`,
+  ],
+  [
+    `/benchmarks/diatomics/tmi`,
+    [`/benchmarks`, `/benchmarks/diatomics`],
+    `Diatomic DFT reference spin states`,
+    `spin states`,
+  ],
+  [`/data/sets`, [`/data/sets`], `Datasets`, `/data/sets`],
+  [`/data/tmi`, [], `WBM chemical diversity`, `chemical diversity`],
+  [
+    `/models/${MODELS[0].model_key}`,
+    [`/models`],
+    MODELS[0].model_name,
+    MODELS[0].model_key,
+  ],
+  [`/data/${DATASETS.WBM.slug}`, [], DATASETS.WBM.name, `WBM`],
+] as const)(
+  `labels the active navigation and opens %s from the command menu`,
+  async (route, active_hrefs, label, query) => {
+    await mount_with_url(Layout, `http://localhost${route}`)
+    expect(
+      [...document.querySelectorAll(`nav[data-nav] a`)].map((link) =>
+        link.getAttribute(`href`),
+      ),
+    ).toEqual([
+      `/`,
+      `/benchmarks`,
+      ...[`diatomics`, `discovery`, `geo-opt`, `md`, `phonons`].map(
+        (task) => `/benchmarks/${task}`,
+      ),
+      `/models`,
+      `/api`,
+      `/contribute`,
+      `/data/sets`,
+      pkg.paper,
+    ])
+    expect(doc_query(`nav a[href="/benchmarks"]`).textContent).toContain(`Benchmarks`)
+    expect(doc_query(`nav a[href="/data/sets"]`).textContent).toContain(`Datasets`)
+    expect(
+      [...document.querySelectorAll(`nav[data-nav] a[aria-current="page"]`)].map((link) =>
+        link.getAttribute(`href`),
+      ),
+    ).toEqual(active_hrefs)
+    if (route === `/`)
+      window.dispatchEvent(new KeyboardEvent(`keydown`, { key: `k`, ctrlKey: true }))
+    else doc_query(`button[aria-label="Search models, datasets, and pages"]`).click()
+    await tick()
+    const menu = doc_query(`dialog[aria-label="Command menu"]`)
+    const input = doc_query<HTMLInputElement>(`input`, menu)
+    input.value = query
+    input.dispatchEvent(new Event(`input`, { bubbles: true }))
+    await tick()
+    const option = [...menu.querySelectorAll(`li[role="option"]`)].find(
+      (element) => element.textContent?.trim() === label,
+    )
+    expect(option).toBeDefined()
+    option?.dispatchEvent(new MouseEvent(`click`, { bubbles: true }))
+    await tick()
+    expect(goto).toHaveBeenLastCalledWith(route)
+  },
+)

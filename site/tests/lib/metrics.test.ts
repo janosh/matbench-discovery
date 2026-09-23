@@ -9,7 +9,7 @@ import {
   sort_models,
 } from '$lib/metrics'
 import type { ModelData } from '$lib/types'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 
 describe(`metric_better_as`, () => {
   // guards metric orientation in modeling-tasks.yml, e.g. CMDS/combined_score
@@ -174,8 +174,8 @@ describe(`assemble_row_data`, () => {
   it.each([
     [ALL_METRICS.RMSD, {}, `predicts only energies`, false, `E`],
     [PHONON_METRICS.κ_SRME, {}, `requires forces`, false, `E`],
-    [MD_METRICS.md_combined_score, {}, `not evaluated yet`, true],
-    [DIATOMICS_METRICS.diatomics_combined_score, {}, `not evaluated yet`, true],
+    [MD_METRICS.md_combined_score, {}, `no results reported`, true],
+    [DIATOMICS_METRICS.diatomics_combined_score, {}, `no results reported`, true],
     [
       ALL_METRICS.RMSD,
       {
@@ -221,7 +221,7 @@ describe(`assemble_row_data`, () => {
       false,
     ],
     [ALL_METRICS.CPS, {}, `requires forces`, true, `E`],
-    [ALL_METRICS.CPS, {}, `not evaluated yet`, true],
+    [ALL_METRICS.CPS, {}, `no results reported`, true],
   ] as const)(
     `explains missing results (%#)`,
     (label, metrics, expected, invite, targets: ModelData['targets'] = `EFS_G`) => {
@@ -237,6 +237,23 @@ describe(`assemble_row_data`, () => {
         )
     },
   )
+
+  it.each([
+    ALL_METRICS.CPS,
+    ALL_METRICS.RMSD,
+    PHONON_METRICS.κ_SRME,
+    MD_METRICS.md_combined_score,
+    MD_METRICS.md_run_time_sec,
+    MD_METRICS.md_max_gpu_mem_gb,
+    DIATOMICS_METRICS.diatomics_combined_score,
+  ])(`explains GNoME's missing $label without soliciting predictions`, (label) => {
+    const gnome = MODELS.find(({ model_key }) => model_key === `gnome`)
+    if (!gnome) throw new Error(`Missing GNoME test fixture`)
+    const reason = missing_metric_reason(gnome, label)
+    expect(reason).not.toMatch(/Contributions welcome|not evaluated yet/)
+    expect(reason).toMatch(/Model weights are not publicly available\.$/)
+    expect(reason.match(/Model weights are not publicly available\./g)).toHaveLength(1)
+  })
 
   it.each([
     { task: `diatomics`, multiplier_key: `diatomics_time_multiplier` },
@@ -334,266 +351,19 @@ describe(`assemble_row_data`, () => {
   )
 })
 
-describe(`Model Sorting Logic`, () => {
-  const create_test_models = () =>
-    [
-      {
-        model_name: `AAA Model`,
-        model_key: `aaa_model`,
-        metrics: {
-          discovery: {
-            unique_prototypes: { F1: 0.9, Accuracy: 0.85, missing_preds: 0 },
-          },
-          phonons: { kappa_103: { κ_SRME: 0.9 } },
-        },
-      },
-      {
-        model_name: `MMM Model`,
-        model_key: `mmm_model`,
-        metrics: {
-          discovery: {
-            unique_prototypes: { F1: 0.7, Accuracy: NaN, missing_preds: 2 }, // NaN Accuracy + non-zero missing_preds
-          },
-          phonons: { kappa_103: { κ_SRME: 0.5 } },
-        },
-      },
-      {
-        model_name: `ZZZ Model`,
-        model_key: `zzz_model`,
-        metrics: {
-          discovery: {
-            unique_prototypes: { F1: 0.5, Accuracy: 0.6, missing_preds: 5 },
-          },
-          phonons: { kappa_103: { κ_SRME: 0.2 } },
-        },
-      },
-      {
-        model_name: `Missing Data Model`,
-        model_key: `missing_model`,
-        metrics: {
-          discovery: { unique_prototypes: { F1: 0.4 } },
-          phonons: `not applicable` as const,
-        },
-      },
-    ] as unknown as ModelData[]
-
-  const create_edge_case_models = () =>
-    [
-      // Model with completely missing metrics
-      {
-        model_name: `No Metrics Model`,
-        model_key: `no_metrics_model`,
-      },
-      // Model with empty metrics object
-      {
-        model_name: `Empty Metrics Model`,
-        model_key: `empty_metrics_model`,
-        metrics: {},
-      },
-      // Model with extreme values
-      {
-        model_name: `Extreme Values Model`,
-        model_key: `extreme_model`,
-        metrics: {
-          discovery: {
-            unique_prototypes: {
-              F1: Number.MAX_VALUE,
-              Accuracy: Number.MIN_VALUE,
-              R2: -Infinity,
-              RMSE: Infinity,
-            },
-          },
-          phonons: {
-            kappa_103: { κ_SRME: 0 },
-          },
-        },
-      },
-      // Model with all undefined values for metrics
-      {
-        model_name: `Undefined Metrics Model`,
-        model_key: `undefined_model`,
-        metrics: {
-          discovery: {
-            unique_prototypes: {
-              F1: undefined,
-              Accuracy: undefined,
-            },
-          },
-          phonons: {
-            kappa_103: { κ_SRME: undefined },
-          },
-        },
-      },
-    ] as unknown as ModelData[]
-
-  // mmm_model has NaN Accuracy and missing_model lacks metrics, so these cases also
-  // assert NaN/missing values sort last for every metric and direction (incl. symmetric
-  // Accuracy asc/desc). The last case appends the edge-case models: extreme_model's
-  // κ_SRME=0 sorts first and all metric-less models keep their input order at the end
-  it.each<[string, `asc` | `desc`, string[], boolean?]>([
-    [
-      `${ALL_METRICS.F1.path}.${ALL_METRICS.F1.key}`,
-      `desc`,
-      [`aaa_model`, `mmm_model`, `zzz_model`, `missing_model`],
-    ],
-    [
-      `${ALL_METRICS.Accuracy.path}.${ALL_METRICS.Accuracy.key}`,
-      `asc`,
-      [`zzz_model`, `aaa_model`, `mmm_model`, `missing_model`],
-    ],
-    [
-      `${ALL_METRICS.Accuracy.path}.${ALL_METRICS.Accuracy.key}`,
-      `desc`,
-      [`aaa_model`, `zzz_model`, `mmm_model`, `missing_model`],
-    ],
-    [
-      `${ALL_METRICS.κ_SRME.path}.${ALL_METRICS.κ_SRME.key}`,
-      `asc`,
-      [`zzz_model`, `mmm_model`, `aaa_model`, `missing_model`],
-    ],
-    [
-      `metrics.discovery.unique_prototypes.missing_preds`,
-      `asc`,
-      [`aaa_model`, `mmm_model`, `zzz_model`, `missing_model`],
-    ],
-    [
-      `${ALL_METRICS.κ_SRME.path}.${ALL_METRICS.κ_SRME.key}`,
-      `asc`,
-      [
-        `extreme_model`,
-        `zzz_model`,
-        `mmm_model`,
-        `aaa_model`,
-        `missing_model`,
-        `no_metrics_model`,
-        `empty_metrics_model`,
-        `undefined_model`,
-      ],
-      true,
-    ],
-  ])(
-    `sorts test models by %s (%s)`,
-    (metric, order, expected_order, with_edge_cases = false) => {
-      const models = [
-        ...create_test_models(),
-        ...(with_edge_cases ? create_edge_case_models() : []),
-      ]
-      const sorted = models.toSorted(sort_models(metric, order))
-      expect(sorted.map((model) => model.model_key)).toStrictEqual(expected_order)
-    },
-  )
-
-  it(`returns 0 for two models that both have NaN values (consistent comparator)`, () => {
-    // regression: NaN-vs-NaN returned 1 both ways, breaking antisymmetry -> order-dependent sort
-    const { Accuracy } = ALL_METRICS
-    const sort_by = `${Accuracy.path}.${Accuracy.key}`
-    const make_nan_model = (model_key: string) =>
-      ({
-        model_key,
-        metrics: { discovery: { unique_prototypes: { Accuracy: NaN } } },
-      }) as unknown as ModelData
-    const [nan_1, nan_2] = [make_nan_model(`nan_1`), make_nan_model(`nan_2`)]
-    const valid = {
-      model_key: `valid`,
-      metrics: { discovery: { unique_prototypes: { Accuracy: 0.5 } } },
-    } as unknown as ModelData
-
-    const compare = sort_models(sort_by, `desc`)
-    expect(compare(nan_1, nan_2)).toBe(0)
-    expect(compare(nan_2, nan_1)).toBe(0)
-    // NaN still sorts after real values in both argument orders
-    expect(compare(valid, nan_1)).toBeLessThan(0)
-    expect(compare(nan_1, valid)).toBeGreaterThan(0)
-
-    // sorting NaN-heavy arrays is now stable regardless of initial order
-    const models = [nan_1, valid, nan_2]
-    const fwd = models.toSorted(compare).map((model) => model.model_key)
-    const rev = models
-      .toReversed()
-      .toSorted(compare)
-      .map((model) => model.model_key)
-    expect(fwd[0]).toBe(`valid`)
-    expect(rev[0]).toBe(`valid`)
-  })
-
-  it(`sorts models by model_name correctly`, () => {
-    const asc_keys = create_test_models()
-      .toSorted(sort_models(`model_name`, `asc`))
-      .map((model) => model.model_key)
-    expect(asc_keys).toStrictEqual([
-      `aaa_model`,
-      `missing_model`,
-      `mmm_model`,
-      `zzz_model`,
-    ])
-
-    // descending is the exact reverse of ascending
-    const desc_keys = create_test_models()
-      .toSorted(sort_models(`model_name`, `desc`))
-      .map((model) => model.model_key)
-    expect(desc_keys).toStrictEqual(asc_keys.toReversed())
-  })
-
-  it.each([
-    { order: `asc`, expected: [`model_c`, `model_a`, `model_b`, `model_d`] },
-    { order: `desc`, expected: [`model_b`, `model_d`, `model_a`, `model_c`] },
-  ] as const)(
-    `sorts runtime in $order order, treating 0 as infinity`,
-    ({ order, expected }) => {
-      const models = Object.entries({ a: 10, b: 0, c: 5, d: 0 }).map(
-        ([model_key, run_time]) => ({
-          model_key: `model_${model_key}`,
-          'Run Time': run_time,
-        }),
-      ) as unknown as ModelData[]
-
-      // Equal zero runtimes retain their input order in the stable sort.
-      expect(
-        models.toSorted(sort_models(`Run Time`, order)).map((model) => model.model_key),
-      ).toStrictEqual(expected)
-    },
-  )
-
-  // sorting is stable: input order is preserved when values tie or are all missing
-  it.each([
-    [`all models missing the metric`, undefined],
-    [`identical values`, { discovery: { unique_prototypes: { F1: 0.8 } } }],
-  ])(`maintains original order for %s`, (_label, metrics) => {
-    const models = [1, 2, 3].map((idx) => ({
-      model_name: `Model ${idx}`,
-      model_key: `model_${idx}`,
-      metrics,
-    })) as unknown as ModelData[]
-
-    const sorted_keys = models
-      .toSorted(sort_models(`F1`, `desc`))
-      .map((model) => model.model_key)
-    expect(sorted_keys).toStrictEqual([`model_1`, `model_2`, `model_3`])
-  })
-
-  it(`throws an error when sorting by unexpected type`, () => {
-    const models_with_mixed_types = [
-      { model_name: `Model A`, model_key: `model_a`, some_metric: 1 },
-      { model_name: `Model B`, model_key: `model_b`, some_metric: `string` },
-    ] as unknown as ModelData[]
-
-    // Expect an error when trying to sort number and string
-    expect(() =>
-      models_with_mixed_types.toSorted(sort_models(`some_metric`, `desc`)),
-    ).toThrow(/Unexpected type.*encountered sorting by key/)
-  })
-
-  it.each([`asc`, `desc`] as const)(`sorts nulls last in %s order`, (order) => {
-    const models_with_null = [
-      { model_name: `Model Null 1`, model_key: `null_1`, metric: null },
-      { model_name: `Model Null 2`, model_key: `null_2`, metric: null },
-      { model_name: `Model Val`, model_key: `val_1`, metric: 10 },
-    ] as unknown as ModelData[]
-
-    expect(
-      models_with_null
-        .toSorted(sort_models(`metric`, order))
-        .map((model) => model.model_key),
-    ).toStrictEqual([`val_1`, `null_1`, `null_2`])
-  })
+// ordering rules are matterviz's sort_table_rows; this covers the site-side mapping
+it.each([
+  [`Model`, `asc`, [`a9`, `a10`, `b`, `c`]],
+  [`Model`, `desc`, [`c`, `b`, `a10`, `a9`]],
+  [`metrics.F1`, `asc`, [`b`, `a10`, `a9`, `c`]],
+  [`metrics.F1`, `desc`, [`a10`, `b`, `a9`, `c`]],
+] as const)(`sort_models by %s %s`, (sort_by, order, expected) => {
+  const models = [
+    { model_name: `b`, metrics: { F1: 0.2 } },
+    { model_name: `a10`, metrics: { F1: 0.9 } },
+    { model_name: `a9`, metrics: { F1: NaN } },
+    { model_name: `c`, metrics: {} },
+  ] as unknown as ModelData[]
+  const names = sort_models(models, sort_by, order).map(({ model_name }) => model_name)
+  expect(names).toStrictEqual(expected)
 })

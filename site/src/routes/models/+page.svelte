@@ -1,5 +1,6 @@
 <script lang="ts">
   import ModelCard from '$lib/model/ModelCard.svelte'
+  import GitHubActivityScatter from '$lib/plot/GitHubActivityScatter.svelte'
   import type { Label } from '$lib/types'
   import { Icon, Popover } from 'svelte-widgets'
   import { Info } from 'svelte-widgets/icons'
@@ -8,17 +9,18 @@
   import { MODELS } from '$lib/models.svelte'
   import { bind_url_params } from '$lib/url-state.svelte'
   import { valid_query_param } from 'svelte-widgets/url-params'
-  import { interpolateRdBu } from 'd3-scale-chromatic'
+  import { clamp_integer } from 'svelte-widgets/utils'
   import { ColorBar } from 'matterviz/plot'
-  import { pick_contrast_color } from 'matterviz/colors'
+  import { get_d3_interpolator, pick_contrast_color } from 'matterviz/colors'
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
+  import github_activity_data from './mlip-github-activity.json'
 
   let sort_by: Label = $state(ALL_METRICS.CPS)
   let order: `asc` | `desc` = $state(`desc`)
   const min_models = 2
   const clamp_model_count = (count: number) =>
-    Math.min(MODELS.length, Math.max(min_models, Math.trunc(count)))
+    clamp_integer(count, min_models, MODELS.length)
   let show_n_best = $state<number | null>(MODELS.length)
   const model_limit = $derived(clamp_model_count(show_n_best ?? min_models))
   // label_data_path honors `property` (e.g. CDS is stored as metrics.diatomics.combined_score)
@@ -50,16 +52,17 @@
     [`n_best`, `${model_limit}`, `${MODELS.length}`],
   ])
 
+  const rd_bu = get_d3_interpolator(`interpolateRdBu`)
   function bg_color(val: number, min: number, max: number) {
     if (isNaN(val)) return `rgba(255, 255, 255, 0.6)` // Default background for NaN values
-    return interpolateRdBu((val - min) / (max - min))
+    return rd_bu((val - min) / (max - min))
   }
 
   // labels carry `better` directly; metric_better_as() keys on yml names (RMSD), not
   // label keys (rmsd), so it would misreport RMSD as higher=better
   let lower_is_better = $derived(sort_by.better === `lower`)
 
-  let models = $derived(MODELS.toSorted(sort_models(sort_by_path, order)))
+  let models = $derived(sort_models(MODELS, sort_by_path, order))
 
   let [best_val, worst_val] = $derived.by(() => {
     if (!sort_by.better) return [NaN, NaN]
@@ -73,6 +76,7 @@
 </script>
 
 <h1 id="models">Models</h1>
+<p style="text-align: center"><a href="#github-activity">GitHub activity ↓</a></p>
 
 <!-- minmax(0, 1fr) prevents the full-bleed 100vw list from inflating its grid
 track, which would miscenter it and overflow at wider browser zoom levels. -->
@@ -95,35 +99,32 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
     {#each sort_options as prop (prop.key)}
       {@const { key, label, description } = prop}
       <li class:active={prop.key == sort_by.key}>
-        <button
-          id={prop.key}
-          onclick={() => {
-            sort_by = prop
-            // ascending for model name (alphabetical) and lower=better metrics
-            order = key === `Model` || prop.better === `lower` ? `asc` : `desc`
-          }}
-          style="position: relative"
-        >
-          {@html label}
-          {#if description}
-            <!-- round page-bg backing so the glyph's transparent cutouts don't show
-            the button's corner behind the badge (no opacity for the same reason) -->
-            <Popover
-              trigger_mode="hover"
-              trap_focus={false}
-              aria-label="Metric description"
+        <Popover trigger_mode="hover" trap_focus={false} aria-label="Metric description">
+          {#snippet trigger(trigger_props)}
+            <button
+              {...trigger_props}
+              id={prop.key}
+              onclick={() => {
+                sort_by = prop
+                // ascending for model name (alphabetical) and lower=better metrics
+                order = key === `Model` || prop.better === `lower` ? `asc` : `desc`
+              }}
+              style="position: relative"
             >
-              {#snippet trigger(trigger_props)}
+              {@html label}
+              {#if description}
+                <!-- round page-bg backing so the glyph's transparent cutouts don't show
+                the button's corner behind the badge (no opacity for the same reason) -->
                 <span
-                  {...trigger_props}
+                  aria-hidden="true"
                   style="width: 8pt; height: 8pt; position: absolute; top: -4pt; right: -4pt; background: var(--page-bg); border-radius: 50%"
                   ><Icon icon={Info} /></span
                 >
-              {/snippet}
-              {@html description}
-            </Popover>
-          {/if}
-        </button>
+              {/if}
+            </button>
+          {/snippet}
+          {@html description ?? ``}
+        </Popover>
       </li>
     {/each}
   </ul>
@@ -136,8 +137,7 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
       title="Card titles colored by {sort_by.label}"
       title_style="font-size: 1.5em;"
       scale={{
-        interpolator: (fraction) =>
-          interpolateRdBu(lower_is_better ? 1 - fraction : fraction),
+        interpolator: (fraction) => rd_bu(lower_is_better ? 1 - fraction : fraction),
       }}
       style="min-width: 0; flex: 1"
       bar_style="height: 14pt;"
@@ -168,6 +168,15 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
     {/each}
   </ol>
 </div>
+
+<section aria-labelledby="github-activity" style="margin-block-start: 2.5em">
+  <h2 id="github-activity" style="text-align: center">GitHub Activity</h2>
+  <p style="text-align: center">
+    Activity across model repositories. Larger dots mean more contributors; color shows
+    commits in the preceding year at the last data update.
+  </p>
+  <GitHubActivityScatter github_data={github_activity_data} />
+</section>
 
 <style>
   legend {

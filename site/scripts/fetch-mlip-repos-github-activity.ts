@@ -1,7 +1,7 @@
 // Auto-generates mlip-github-activity.json from models/*.yml (non-superseded only)
 // Usage: pnpm fetch:github-activity [--force-refresh]
 // Set GITHUB_TOKEN env var to avoid rate limits
-import { load as parseYAML } from 'js-yaml'
+import { parse_yaml } from 'svelte-widgets/yaml'
 import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import process from 'node:process'
@@ -51,7 +51,7 @@ const load_repos_from_models = async (): Promise<ModelInfo[]> => {
     for (const yml_file of yml_files) {
       try {
         const yml_content = await readFile(join(model_dir, yml_file), `utf-8`)
-        const data = parseYAML(yml_content) as {
+        const data = parse_yaml(yml_content) as {
           model_name?: string
           model_key?: string
           repo?: string

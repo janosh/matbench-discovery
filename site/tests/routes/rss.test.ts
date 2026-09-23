@@ -2,7 +2,7 @@ import { by_benchmark_added_desc } from '$lib'
 import { MODELS } from '$lib/models.svelte'
 import { GET } from '$routes/rss.xml/+server'
 import pkg from '$site/package.json'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 
 describe(`RSS feed endpoint`, () => {
   const extract_first_cdata = (xml: string): string => {

@@ -1,6 +1,6 @@
 import { load } from '$routes/changelog/+page.server'
 import Page from '$routes/changelog/+page.svelte'
-import { expect, it } from 'vitest'
+import { expect, it } from 'vite-plus/test'
 import { mount } from '../index'
 
 it(`renders changelog Markdown with release headings and linked code`, async () => {

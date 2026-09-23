@@ -1,9 +1,10 @@
 import { goto } from '$app/navigation'
+import { comparison, mark_compared_rows } from '$lib/model-comparison.svelte'
 import { HYPERPARAMS, METADATA_COLS } from '$lib/labels'
 import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
-import { interpolateViridis } from 'd3-scale-chromatic'
+import { get_d3_interpolator } from 'matterviz/colors'
 import { tick } from 'svelte'
-import { beforeEach, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, expect, it, vi } from 'vite-plus/test'
 import {
   choose_scatter_property,
   doc_query,
@@ -13,9 +14,11 @@ import {
   query_param,
 } from '../index'
 
+const viridis = get_d3_interpolator(`interpolateViridis`)
 const make_models = (...values: number[]) =>
   values.map((value) => ({
     model_key: `model-${value}`,
+    class: undefined as string | undefined,
     model_name: `Model ${value}`,
     dates: { benchmark_added: `2025-01-01` },
     model_params: value,
@@ -33,9 +36,11 @@ const marker_color = (marker: Element) =>
     ?.style.getPropertyValue(`--point-fill-color`)
 
 beforeEach(() => {
+  comparison.keys.clear()
   vi.spyOn(HTMLElement.prototype, `clientWidth`, `get`).mockReturnValue(800)
   vi.spyOn(HTMLElement.prototype, `clientHeight`, `get`).mockReturnValue(600)
 })
+afterEach(() => comparison.keys.clear())
 
 it.each([
   [1, 99, HYPERPARAMS.model_params.key, []],
@@ -149,14 +154,12 @@ it.each([
     expect(toggle.checked).toBe(true)
     const colors = () => [...document.querySelectorAll(`path.marker`)].map(marker_color)
     expect(colors()).toHaveLength(counts.length)
-    expect(colors()[1]).toBe(interpolateViridis(fraction))
+    expect(colors()[1]).toBe(viridis(fraction))
     toggle.click()
     await tick()
     expect(toggle.checked).toBe(false)
     const [min, value, , max] = counts
-    expect(colors()[1]).toBe(
-      interpolateViridis(max === min ? 0.5 : (value - min) / (max - min)),
-    )
+    expect(colors()[1]).toBe(viridis(max === min ? 0.5 : (value - min) / (max - min)))
     expect(colors()).toHaveLength(counts.length)
   },
 )
@@ -243,6 +246,14 @@ it(`keeps duplicate-label series distinct and collapses their legend`, async () 
     [...legend.querySelectorAll(`.legend-item`)].map((item) => item.textContent?.trim()),
   ).toEqual(models.map(({ model_name, model_key }) => `${model_name} (${model_key})`))
   expect(document.querySelector(`button.models-toggle`)).toBeNull()
+
+  // the group header only collapses the legend, it must not also hide the group's series
+  doc_query(`.legend-group-header`, legend).click()
+  await tick()
+  doc_query(`button.models-toggle`).click()
+  await tick()
+  expect(legend.querySelectorAll(`.legend-item`)).toHaveLength(models.length)
+  expect(legend.querySelectorAll(`.legend-item.hidden`)).toHaveLength(0)
 
   const click = () => new MouseEvent(`click`, { bubbles: true })
   doc_query(`.legend-item`, legend).dispatchEvent(click())
@@ -373,6 +384,7 @@ it(`renders category colors and dataset links without model metadata`, async () 
   const categories = { public: `#25836d`, partial: `#b16c00` }
   const props = {
     models: datasets,
+    model_selection: false,
     get_identity: ({ slug, name }: (typeof datasets)[number]) => ({
       key: slug,
       name,
@@ -436,21 +448,33 @@ it(`renders category colors and dataset links without model metadata`, async () 
   )
 })
 
-it(`dims and unlabels models outside highlight_keys, drawing highlighted ones last`, async () => {
+it(`shares model picks across plots and table rows while preserving point callbacks`, async () => {
   const models = make_models(1, 100)
-  mount(DynamicScatter, {
-    target: document.body,
-    props: {
-      models,
-      x_key: HYPERPARAMS.model_params.key,
-      highlight_keys: new Set([models[0].model_key]),
-      ...scatter_props,
-      show_model_labels: true,
-      bleed: false,
-      legend: null,
-    },
-  })
+  const onclick = vi.fn()
+  for (const url_prefix of [``, `second`])
+    mount(DynamicScatter, {
+      target: document.body,
+      props: {
+        models,
+        x_key: HYPERPARAMS.model_params.key,
+        url_prefix,
+        point_events: { onclick },
+        ...scatter_props,
+        show_model_labels: true,
+        bleed: false,
+        legend: null,
+      },
+    })
   await tick()
+  doc_query(`path.marker`).dispatchEvent(new MouseEvent(`click`, { bubbles: true }))
+  await tick()
+  expect(onclick).toHaveBeenCalledOnce()
+  expect([...comparison.keys]).toEqual([models[0].model_key])
+  expect(mark_compared_rows(models, false).map((row) => row.class)).toEqual([
+    `highlight`,
+    undefined,
+  ])
+  expect(goto).not.toHaveBeenCalled()
 
   const markers = [...document.querySelectorAll<SVGPathElement>(`path.marker`)]
   const style_of = (marker: SVGPathElement) => ({
@@ -461,12 +485,31 @@ it(`dims and unlabels models outside highlight_keys, drawing highlighted ones la
   expect(markers.map(style_of)).toEqual([
     { fill_opacity: `0.3`, stroke: `#000` },
     { fill_opacity: `1`, stroke: `currentColor` },
+    { fill_opacity: `0.3`, stroke: `#000` },
+    { fill_opacity: `1`, stroke: `currentColor` },
   ])
   const labels = [...document.querySelectorAll(`.scatter text`)]
     .map((text) => text.textContent?.trim())
     .filter((text) => text?.startsWith(`Model `))
-  expect(labels).toEqual([models[0].model_name])
+  expect(labels).toEqual([models[0].model_name, models[0].model_name])
   // no full-bleed wrapper and no collapsed-legend toggle inside dialogs
   expect(document.querySelector(`.bleed-1400`)).toBeNull()
   expect(document.querySelector(`button.models-toggle`)).toBeNull()
+  // Deselect in the second plot; both plots and table rows return to normal.
+  markers.at(-1)?.dispatchEvent(new MouseEvent(`click`, { bubbles: true }))
+  await tick()
+  expect(comparison.keys.size).toBe(0)
+  expect(mark_compared_rows(models, false).every((row) => !row.class)).toBe(true)
+  expect(
+    [...document.querySelectorAll(`path.marker`)].map((marker) =>
+      marker.getAttribute(`fill-opacity`),
+    ),
+  ).toEqual([`1`, `1`, `1`, `1`])
+  comparison.toggle(`absent-model`)
+  await tick()
+  expect(
+    [...document.querySelectorAll(`path.marker`)].every(
+      (marker) => marker.getAttribute(`fill-opacity`) === `1`,
+    ),
+  ).toBe(true)
 })

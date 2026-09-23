@@ -19,7 +19,7 @@ import { MODELS } from '$lib/models.svelte'
 import * as matterviz_plot from 'matterviz/plot'
 import { clear_asset_cache, load_json_asset } from '$lib/asset-loader'
 import { gzipSync } from 'node:zlib'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import {
   doc_query,
   get_scatter_plot_props,

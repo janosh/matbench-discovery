@@ -11,7 +11,7 @@ import {
 } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { setTimeout as sleep } from 'node:timers/promises'
-import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, expect, it, vi } from 'vite-plus/test'
 
 vi.mock(`node:timers/promises`, () => {
   const wait_mock = vi.fn(async () => {})

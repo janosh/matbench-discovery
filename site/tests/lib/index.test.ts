@@ -4,14 +4,9 @@ import { arr_to_str, format_date } from '$lib'
 import { MODELS } from '$lib/models.svelte'
 import { scatter_options_by_key } from '$lib/labels'
 import { render_data_markdown } from '../../scripts/markdown-data'
-import {
-  apply_weights_param,
-  sort_from_query,
-  weights_to_param,
-  sync_url_params,
-} from '$lib/url-state.svelte'
+import { sync_url_params } from '$lib/url-state.svelte'
 import { valid_query_param } from 'svelte-widgets/url-params'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vite-plus/test'
 
 describe(`$lib data includes rendered YAML Markdown`, () => {
   it(`DATASETS entries expose computed slug and description_html`, () => {
@@ -184,25 +179,6 @@ describe(`valid_query_param`, () => {
   })
 })
 
-describe(`sort_from_query`, () => {
-  const valid_cols = new Set([`F1`, `combined_score`])
-  it.each([
-    [`valid sort`, `?sort=rdf_error&dir=asc`, undefined, `rdf_error`, `asc`],
-    [`invalid dir`, `?sort=F1&dir=sideways`, undefined, `F1`, `desc`],
-    [`absent sort`, ``, undefined, `combined_score`, `desc`],
-    [`column in valid_columns kept`, `?sort=F1`, valid_cols, `F1`, `desc`],
-    [`unknown column falls back`, `?sort=nope`, valid_cols, `combined_score`, `desc`],
-  ] as const)(`returns expected state for %s`, (_name, query, cols, column, dir) => {
-    expect(
-      sort_from_query(
-        new URLSearchParams(query),
-        { column: `combined_score`, dir: `desc` },
-        cols,
-      ),
-    ).toStrictEqual({ column, dir })
-  })
-})
-
 describe(`sync_url_params`, () => {
   it(`preserves unrelated params and omits defaults`, () => {
     history.replaceState(null, ``, `/benchmarks/md?keep=1&x=old&y=default#matrix`)
@@ -236,66 +212,5 @@ describe(`sync_url_params`, () => {
     expect(location.search).toBe(`?weights=0.579,0.35,0.071`)
     // round-trip: literal commas parse back to the same value
     expect(new URLSearchParams(location.search).get(`weights`)).toBe(`0.579,0.35,0.071`)
-  })
-})
-
-describe(`weights_to_param / apply_weights_param`, () => {
-  const make_config = (weights: number[]) => ({
-    F1: { weight: weights[0] },
-    κ_SRME: { weight: weights[1] },
-    RMSD: { weight: weights[2] },
-  })
-  const defaults = make_config([0.5, 0.4, 0.1])
-
-  it.each([
-    [`defaults serialize to empty string`, [0.5, 0.4, 0.1], ``],
-    [`custom weights serialize in key order`, [0.7, 0.2, 0.1], `0.7,0.2,0.1`],
-    [
-      `weights retain full precision`,
-      [1 / 3, 1 / 3, 1 / 3],
-      `0.3333333333333333,0.3333333333333333,0.3333333333333333`,
-    ],
-  ] as const)(`%s`, (_name, weights, expected) => {
-    expect(weights_to_param(make_config([...weights]), defaults)).toBe(expected)
-  })
-
-  it.each([
-    [`valid param`, `0.7,0.2,0.1`, [0.7, 0.2, 0.1]],
-    [`unnormalized weights get normalized`, `2,1,1`, [0.5, 0.25, 0.25]],
-    // custom weights are shared module state; a weights-less URL must reset them,
-    // and so must a malformed one - keeping stale in-session weights would show
-    // wrong scores and launder them back into a valid-looking URL via the sync effect
-    [`null param resets to defaults`, null, [0.5, 0.4, 0.1]],
-    [`wrong count resets to defaults`, `0.5,0.5`, [0.5, 0.4, 0.1]],
-    [`negative weight resets to defaults`, `-1,1,1`, [0.5, 0.4, 0.1]],
-    [`non-numeric resets to defaults`, `a,b,c`, [0.5, 0.4, 0.1]],
-    [`all-zero resets to defaults`, `0,0,0`, [0.5, 0.4, 0.1]],
-    [`overflowing sum resets to defaults`, `1e308,1e308,1e308`, [0.5, 0.4, 0.1]],
-  ] as const)(`%s`, (_name, param, expected) => {
-    const config = make_config([0.2, 0.3, 0.5]) // start from non-default weights
-    apply_weights_param(param, config, defaults)
-    const weights = Object.values(config).map(({ weight }) => weight)
-    for (const [idx, weight] of weights.entries()) {
-      expect(weight).toBeCloseTo(expected[idx], 10)
-    }
-  })
-
-  it.each(
-    [
-      [0.62, 0.25, 0.13],
-      [1 / 3, 1 / 3, 1 / 3],
-      [0.7, 0.2, 0.1],
-      [0.12345678901234566, 0.2, 0.6765432109876544],
-      [1, 0, 0],
-      [1 - Number.EPSILON, Number.EPSILON, 0],
-    ].map((weights) => ({ weights })),
-  )(`round-trips normalized weights $weights without drift`, ({ weights }) => {
-    let config = make_config(weights)
-    for (let round_trip = 0; round_trip < 5; round_trip += 1) {
-      const restored = make_config([0.5, 0.4, 0.1])
-      apply_weights_param(weights_to_param(config, defaults), restored, defaults)
-      expect(Object.values(restored).map(({ weight }) => weight)).toEqual(weights)
-      config = restored
-    }
   })
 })

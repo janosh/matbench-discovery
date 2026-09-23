@@ -3,8 +3,8 @@ import { MODELS } from '$lib/models.svelte'
 import DiatomicsPage from '$routes/benchmarks/diatomics/+page.svelte'
 import { tick } from 'svelte'
 import { PLOT_COLORS } from 'matterviz/colors'
-import { describe, expect, it } from 'vitest'
-import { doc_query, mount_with_url, sorted_header } from '../index'
+import { describe, expect, it } from 'vite-plus/test'
+import { doc_query, mount_with_url, open_filter_menu, sorted_header } from '../index'
 
 const model_data: ModelData[] = (
   [
@@ -82,6 +82,11 @@ describe(`Diatomics Page URL state`, () => {
   it(`defaults to the top three CDS models with curves plus DFT references`, async () => {
     await mount_page()
 
+    expect(document.querySelectorAll(`.score-weights input[type="number"]`)).toHaveLength(
+      4,
+    )
+    expect(doc_query(`.score-weights`).closest(`details`)).toBeNull()
+
     expect([...document.querySelectorAll(`h2`)].map((heading) => heading.id)).toEqual([
       `leaderboard`,
       `model-comparison`,
@@ -158,7 +163,8 @@ describe(`Diatomics Page URL state`, () => {
     expect(sorted_header()?.textContent).toContain(`PBE F MAE`)
     expect(sorted_header()?.getAttribute(`aria-sort`)).toBe(`descending`)
     const training_filter = doc_query<HTMLInputElement>(
-      `.desktop-filters [aria-label="require MPtrj"]`,
+      `[aria-label="require MPtrj"]`,
+      await open_filter_menu(`Training data`),
     )
     const heatmap = doc_query<HTMLInputElement>(`[aria-label="Toggle heatmap colors"]`)
     const selected_only = doc_query<HTMLInputElement>(

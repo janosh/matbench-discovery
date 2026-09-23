@@ -4,7 +4,7 @@ import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
 import Page from '$routes/data/sets/+page.svelte'
 import type { ScatterPlot } from 'matterviz/plot'
 import { tick, type ComponentProps } from 'svelte'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vite-plus/test'
 import {
   choose_scatter_property,
   doc_query,

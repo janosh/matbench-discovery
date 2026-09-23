@@ -110,38 +110,13 @@ declare module '$figs/hist-clf-pred-hull-dist.jsonl' {
   export default data
 }
 
-// === tasks/discovery/tmi extras ===
+// === benchmarks/discovery/tmi extras ===
 declare module '$figs/element-prevalence-vs-error.jsonl' {
   const data: PayloadBase & {
     elements: string[] // element symbols, same order as occurrences
     occurrences: (number | null)[] // MP training-set occurrence count per element
     // mean error per element (color read by the per-element scatter)
     models: (KeyedModel & { y: (number | null)[] })[]
-  }
-  export default data
-}
-
-declare module '$figs/scatter-largest-fp-diff-each-error.jsonl' {
-  const data: PayloadBase & {
-    fp_diff: number[] // shared |SSFP_initial - SSFP_final| values
-    models: (KeyedModel & {
-      mae: number
-      y: (number | null)[]
-    })[]
-  }
-  export default data
-}
-
-declare module '$figs/scatter-largest-each-errors-fp-diff.jsonl' {
-  const data: PayloadBase & { models: (KeyedModel & LabeledXY & { mae: number })[] }
-  export default data
-}
-
-declare module '$figs/hist-largest-each-errors-fp-diff.jsonl' {
-  const data: PayloadBase & {
-    // fingerprint-diff histograms for each model's 100 worst (err_max) and best
-    // (err_min) hull-dist predictions
-    models: (KeyedModel & { err_min: HistBins; err_max: HistBins })[]
   }
   export default data
 }

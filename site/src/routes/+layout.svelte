@@ -1,6 +1,8 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import { page } from '$app/state'
+  import DATASETS from '$data/datasets.yml'
+  import { title_case } from '$lib/labels'
   import { bind_score_weights, MODELS } from '$lib/models.svelte'
   import { bind_comparison_url, comparison } from '$lib/model-comparison.svelte'
   import { get_error_message } from '$lib/asset-loader'
@@ -16,7 +18,7 @@
     Toc,
   } from 'svelte-widgets'
   import type { CmdAction, FooterLink } from 'svelte-widgets'
-  import { Changelog, Email, GitHub, RSS, Search } from 'svelte-widgets/icons'
+  import { Changelog, Email, GitHub, RSS, Search, TextSearch } from 'svelte-widgets/icons'
   import MODELING_TASKS from '$pkg/modeling-tasks.yml'
   import pkg from '$site/package.json'
   import { tick, type Snippet } from 'svelte'
@@ -27,6 +29,7 @@
   let { children }: { children?: Snippet } = $props()
   let toc_desktop = $state(true)
   let find_open = $state(false)
+  let search_open = $state(false)
   let find_bar = $state<ReturnType<typeof FindBar>>()
   let main_element = $state<HTMLElement>()
   bind_comparison_url()
@@ -55,11 +58,24 @@
   ]
 
   // show full task titles from modeling-tasks.yml instead of capitalized URL slugs
-  const task_labels = Object.fromEntries(
-    Object.entries(MODELING_TASKS)
-      .filter(([key]) => key !== `cps`)
-      .map(([key, task]) => [`/benchmarks/${key.replaceAll(`_`, `-`)}`, task.label]),
-  )
+  const task_links = Object.entries(MODELING_TASKS)
+    .filter(([key]) => key !== `cps`)
+    .map(([key, task]) => ({
+      href: `/benchmarks/${key.replaceAll(`_`, `-`)}`,
+      label: task.label,
+    }))
+    .toSorted((first_link, second_link) =>
+      first_link.href.localeCompare(second_link.href),
+    )
+  const nav_links = [
+    { href: `/`, label: `Home` },
+    { href: `/benchmarks`, label: `Benchmarks`, children: task_links },
+    { href: `/models`, label: `Models` },
+    { href: `/api`, label: `API` },
+    { href: `/contribute`, label: `Contribute` },
+    { href: `/data/sets`, label: `Datasets` },
+    { href: pkg.paper, label: `Paper` },
+  ]
 
   let url = $derived(page.url.pathname)
   let heading_selector = $derived(`main :is(${url === `/api` ? `h1, ` : ``}h2, h3, h4)`)
@@ -96,21 +112,61 @@
   let description = $derived(descriptions[url] ?? base_description)
   let title = $derived(url === `/` ? `` : `${url} • `)
 
-  const actions: CmdAction[] = Object.keys(import.meta.glob(`./**/+page.{svelte,md}`))
+  const page_labels = Object.fromEntries(
+    [
+      ...nav_links,
+      ...task_links,
+      { href: `/data/tmi`, label: `WBM chemical diversity` },
+      { href: `/benchmarks/discovery/tmi`, label: `Discovery diagnostics` },
+      { href: `/benchmarks/diatomics/tmi`, label: `Diatomic DFT reference spin states` },
+    ].map(({ href, label }) => [href, label]),
+  )
+  const page_routes = Object.keys(import.meta.glob(`./**/+page.{svelte,md}`))
     .filter((filename) => !filename.includes(`[`))
     .map((filename) => {
       const parts = filename.split(`/`).filter((part) => !part.startsWith(`(`))
       return `/${parts.slice(1, -1).join(`/`)}`
     })
     .filter((route) => route !== `/data`)
-    .concat(MODELS.map(({ model_key }) => `/models/${model_key}`))
-    .map((route) => ({ id: route, label: route, action: () => goto(route) }))
+  const link_action = (
+    href: string,
+    label: string,
+    group: string,
+    ...keywords: string[]
+  ): CmdAction => ({
+    id: href,
+    label,
+    group,
+    keywords: [href, ...keywords],
+    action: () => goto(href),
+  })
+  const actions: CmdAction[] = [
+    ...page_routes.map((route) =>
+      link_action(
+        route,
+        page_labels[route] ??
+          route.split(`/`).filter(Boolean).map(title_case).join(` · `),
+        `Pages`,
+      ),
+    ),
+    ...MODELS.map(({ model_key, model_name }) =>
+      link_action(`/models/${model_key}`, model_name, `Models`),
+    ),
+    ...Object.entries(DATASETS).map(([key, { name, slug }]) =>
+      link_action(`/data/${slug}`, name, `Datasets`, key),
+    ),
+  ]
 </script>
 
 <CommandMenu
   {actions}
-  placeholder="Go to..."
-  dialog_props={{ style: `top: 15vh; bottom: auto; overflow: visible` }}
+  bind:open={search_open}
+  placeholder="Search models, datasets, and pages…"
+  input_style="padding: 0.3em 0.6em"
+  style="overflow: hidden"
+  li_option_style="padding: 0.15em 0.6em"
+  li_group_header_style="padding: 0.2em 0.6em"
+  dialog_props={{ style: `top: 15vh` }}
 />
 <CopyButton global />
 
@@ -151,34 +207,24 @@
 <GitHubCorner href={pkg.repository} id="github-corner" />
 
 <Nav
-  {page}
-  routes={[
-    `/`,
-    {
-      href: `/benchmarks`,
-      // Including the parent keeps the Benchmarks label clickable.
-      children: [`/benchmarks`, ...Object.keys(task_labels).toSorted()],
-    },
-    `/models`,
-    `/api`,
-    `/contribute`,
-    `/data/sets`,
-    [pkg.paper, `Paper`],
-  ]}
+  pathname={url}
+  routes={nav_links}
   style="margin-block: 1em 0"
-  route_labels={{
-    '/': `Home`,
-    '/api': `API`,
-    '/benchmarks': `Benchmarks`,
-    '/data/sets': `Datasets`,
-    ...task_labels,
-  }}
   --nav-item-padding="0 3pt"
   --nav-dropdown-link-padding="2pt 4pt"
   --nav-link-active-color="var(--link-color)"
   --nav-mobile-z-index="50"
   --nav-toggle-btn-z-index="50"
 >
+  <button
+    aria-label="Search models, datasets, and pages"
+    class="find-page"
+    onclick={() => (search_open = true)}
+    title="Search (⌘K / Ctrl+K)"
+    type="button"
+  >
+    <Icon icon={Search} />
+  </button>
   {#if find_enabled}
     <button
       aria-label="Find in page"
@@ -187,7 +233,7 @@
       title="Find in page"
       type="button"
     >
-      <Icon icon={Search} />
+      <Icon icon={TextSearch} />
     </button>
   {/if}
   <ThemeToggle />
@@ -244,10 +290,12 @@
     }
   }
   button.find-page {
+    --icon-size: 1.25em;
     display: inline-grid;
     place-items: center;
     width: 1.8em;
     height: 1.8em;
+    font: inherit;
     padding: 0;
     border-radius: 50%;
     background: transparent;

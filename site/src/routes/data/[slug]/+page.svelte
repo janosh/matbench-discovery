@@ -59,8 +59,8 @@
     [License, dataset.license],
   ] as const)
   let dataset_links = $derived([
-    [dataset.url, `Website`, Globe, `View dataset website`],
-    [dataset.download_url, `Download`, Download, `Download dataset`],
+    [dataset.url, `Website`, Globe, undefined],
+    [dataset.download_url, `Download`, Download, undefined],
     [dataset.doi, `DOI`, DOI, `Digital Object Identifier`],
     [source_url, `Source`, Code, `View source YAML file`],
   ] as const)

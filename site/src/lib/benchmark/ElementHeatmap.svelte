@@ -20,15 +20,10 @@
     title: `${dataset.count_unit}${log_scale ? ` (log)` : ``}`,
     tick_labels: counts.length === 1 ? counts : 3,
     snap_ticks: false,
-    tick_format: `d`,
   }}
-  style="--ptable-min-tile-size: 0; --elem-symbol-font-size: 60cqw"
+  style="--ptable-min-tile-size: 0; --elem-symbol-font-size: 60cqw; --tooltip-max-width: none"
 >
   {#snippet tooltip({ element, value })}
-    <strong>{element.name}</strong><br />
-    {dataset.count_unit} containing {element.symbol}: {format_num(
-      Number(value ?? 0),
-      `,`,
-    )}
+    {dataset.count_unit} containing {element.name}: {format_num(Number(value ?? 0), `,`)}
   {/snippet}
 </PeriodicTable>

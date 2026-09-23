@@ -2,7 +2,7 @@ import PtableHeatmap from '$lib/PtableHeatmap.svelte'
 import { format_num } from 'matterviz/labels'
 import type { ElementSymbol } from 'matterviz/element'
 import { tick } from 'svelte'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import { checkbox_for, mount } from '../index'
 
 type ElemCounts = Record<ElementSymbol, number>

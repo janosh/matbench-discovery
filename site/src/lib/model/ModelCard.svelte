@@ -1,6 +1,12 @@
 <script lang="ts">
   import type { Label, ModelData } from '$lib/types'
-  import { get_nested_number, label_data_path, training_set_link } from '$lib/metrics'
+  import {
+    get_nested_number,
+    is_finite_num,
+    label_data_path,
+    missing_metric_reason,
+    training_set_link,
+  } from '$lib/metrics'
   import { ACTIVE_MODELS } from '$lib/models.svelte'
   import { model_metric_ranks, rank_color, RANKED_METRICS } from '$lib/rankings'
   import pkg from '$site/package.json'
@@ -70,12 +76,12 @@
       <a {href} {title} {@attach tooltip()}>{text}</a>
     {/each}
   </span>
-  <span title="Date added">
+  <span>
     <Icon icon={Calendar} />
     Added {model.dates.benchmark_added}
   </span>
   {#if model.dates.paper_published}
-    <span title="Date published">
+    <span>
       <Icon icon={CalendarCheck} />
       Published {model.dates.paper_published}
     </span>
@@ -106,6 +112,7 @@
       <!-- resolve by the label's own data path so any metric works (RMSD lives under
       metrics.geo_opt.symprec=1e-2, which a hardcoded section merge would miss) -->
       {@const value = get_nested_number(model, label_data_path(metric))}
+      {@const has_value = is_finite_num(value)}
       {@const rank_entry = ranks.find((entry) => entry.metric.key === key)}
       <li class:active={sort_by == key}>
         <Popover trigger_mode="hover" trap_focus={false} aria-label="Metric description">
@@ -115,9 +122,9 @@
               role="button"
               tabindex="0"
               {...trigger_props}
-              ><label for={key}>{@html label}</label>
+              ><span class="metric-label">{@html label}</span>
               <strong>
-                {#if value === undefined || isNaN(value)}
+                {#if !has_value}
                   n/a
                 {:else}
                   {format_num(value)}
@@ -126,9 +133,13 @@
               </strong></span
             >
           {/snippet}
-          {@html description}
+          {#if has_value}
+            {@html description}
+          {:else}
+            {missing_metric_reason(model, metric)}
+          {/if}
         </Popover>
-        {#if value !== undefined && !isNaN(value) && rank_entry}
+        {#if has_value && rank_entry}
           <a
             class="metric-rank"
             href={rank_entry.metric.rank_href}
@@ -191,11 +202,11 @@
     align-items: baseline;
     gap: 3pt;
   }
-  section.metrics > ul > li :is(label, strong) {
+  section.metrics > ul > li :is(.metric-label, strong) {
     padding: 0 4pt;
     border-radius: 3pt;
   }
-  section.metrics > ul > li.active label {
+  section.metrics > ul > li.active .metric-label {
     font-weight: bold;
   }
   .metric-rank {

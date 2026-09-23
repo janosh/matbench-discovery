@@ -3,10 +3,14 @@
   import { bind_url_params } from '$lib/url-state.svelte'
   import { valid_query_param } from 'svelte-widgets/url-params'
   import { ScatterPlot } from 'matterviz/plot'
-  import { element_data } from 'matterviz/element'
+  import {
+    element_data,
+    element_group_keys,
+    element_groups,
+    type ElementGroupKey,
+  } from 'matterviz/element'
   import { SvelteSet } from 'svelte/reactivity'
   import type { PageData } from './$types'
-  import { element_group_keys, element_groups } from '../element-groups'
   import { make_plot_observer } from '../observe-plot'
 
   let { data }: { data: PageData } = $props()
@@ -22,7 +26,7 @@
     spin_candidate: string | null
   }
 
-  let selected_element_group = $state(`all`)
+  let selected_element_group = $state<ElementGroupKey>(`all`)
   let selected_group = $derived(
     element_groups.find((group) => group.value === selected_element_group) ??
       element_groups[0],
@@ -118,7 +122,7 @@
 <ButtonGroup
   label="Element group filter"
   options={element_groups}
-  bind:selected={selected_element_group}
+  bind:value={selected_element_group}
   style="margin-block: 1em"
 />
 

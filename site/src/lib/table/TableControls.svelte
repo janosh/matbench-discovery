@@ -1,13 +1,9 @@
 <script lang="ts">
-  import type { Column } from 'matterviz/table'
-  import {
-    BUILTIN_PRESETS,
-    delete_user_preset,
-    save_user_preset,
-    user_presets,
-  } from '$lib/filter-presets.svelte'
+  import DATASETS from '$data/datasets.yml'
+  import { fit_toolbar_links } from './fit-toolbar-links'
+  import type { Column, RowData } from 'matterviz/table'
   import { openness_tooltips } from '$lib/metrics'
-  import { comparison, row_model_key } from '$lib/model-comparison.svelte'
+  import { comparison } from '$lib/model-comparison.svelte'
   import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
   import type { ModelData } from '$lib/types'
   import {
@@ -20,17 +16,18 @@
     type TargetOutput,
     type UrlTableFilters,
   } from '$lib/url-state.svelte'
-  import { Icon, Sheet } from 'svelte-widgets'
+  import { Icon, Popover, Sheet } from 'svelte-widgets'
   import { Cross, Filter, Scale } from 'svelte-widgets/icons'
   import { ToggleMenu } from 'matterviz/table'
   import type { Snippet } from 'svelte'
-  import { click_outside, tooltip } from 'svelte-widgets/attachments'
+  import { tooltip } from 'svelte-widgets/attachments'
   import type { HTMLAttributes } from 'svelte/elements'
 
   let {
     columns = $bindable([]),
     filters = make_table_filters(),
     models = ACTIVE_MODELS,
+    visible_rows = [],
     leading,
     trailing,
     ...rest
@@ -38,6 +35,8 @@
     columns?: Column[]
     filters?: UrlTableFilters
     models?: ModelData[]
+    // the table's rows in displayed order (HeatmapTable's bindable visible_rows)
+    visible_rows?: RowData[]
     leading?: Snippet
     trailing?: Snippet
   } = $props()
@@ -75,23 +74,16 @@
   // Nothing selected yet: seed the comparison with the table's top rows in its current
   // sort order so the dialog opens on a real comparison instead of an empty picker
   const N_SEED_MODELS = 3
-  const open_comparison = (event: MouseEvent & { currentTarget: HTMLElement }) => {
+  const open_comparison = () => {
     if (selected_count === 0) {
-      const rows = event.currentTarget
-        .closest(`.table-container`)
-        ?.querySelectorAll(`tbody tr`)
-      const keys = [...(rows ?? [])].flatMap((row) => row_model_key(row) ?? [])
+      const keys = visible_rows.flatMap(({ model_key }) =>
+        typeof model_key === `string` ? [model_key] : [],
+      )
       comparison.set(keys.slice(0, N_SEED_MODELS))
     }
     comparison.open = true
   }
 
-  const close_on_outside_click = click_outside({
-    callback: (node) => node.removeAttribute(`open`),
-  })
-
-  // summaries open their pane directly below, so tooltips go above the button
-  const summary_tooltip = tooltip({ placement: `top` })
   // Sheet open state is CSS-driven for layout; kept in sync so a resize from mobile
   // to desktop can dismiss an open dialog (display:none alone can leave it top-layered)
   let filter_sheet_open = $state(false)
@@ -110,14 +102,6 @@
       : ` (${filters.targets_param || `all`})`,
   )
 
-  let new_preset_name = $state(``)
-  function save_current_filters(event: SubmitEvent) {
-    event.preventDefault()
-    const name = new_preset_name.trim()
-    if (!name) return
-    save_user_preset(name, filters.as_preset)
-    new_preset_name = ``
-  }
   const close_sheet_on_desktop = (): void => {
     if (globalThis.innerWidth > 600) filter_sheet_open = false
   }
@@ -144,6 +128,20 @@
       <em>exclude</em> = hide models trained on it. Counts show models trained on each dataset
       after all other filters in this view.
     </span>
+    <button
+      style="grid-column: 1 / -1; justify-self: start"
+      title="Open source + open data models trained exclusively on MP-anchored datasets (the former compliant leaderboard cohort)"
+      {@attach tooltip()}
+      onclick={() =>
+        filters.apply({
+          training: Object.fromEntries(
+            filters.training_sets
+              .filter((key) => !DATASETS[key]?.compliant)
+              .map((key) => [key, `exclude`]),
+          ),
+          openness: [`OSOD`],
+        })}>Compliant models</button
+    >
     {@render filter_mode_headers()}
     {#each training_sets_by_model_count as dataset_key (dataset_key)}
       <span>{dataset_key} ({counts.training[dataset_key] ?? 0})</span>
@@ -216,40 +214,6 @@
   </div>
 {/snippet}
 
-{#snippet preset_filters()}
-  <div class="filter-content">
-    {#each Object.entries( { ...BUILTIN_PRESETS, ...user_presets } ) as [name, preset] (name)}
-      <span class="filter-row">
-        <button
-          class="preset"
-          onclick={() => filters.apply(preset)}
-          title={preset.description}
-          {@attach tooltip()}
-        >
-          {name}
-        </button>
-        {#if name in user_presets}
-          <button
-            class="delete-preset"
-            aria-label="Delete preset {name}"
-            onclick={() => delete_user_preset(name)}
-          >
-            <Icon icon={Cross} />
-          </button>
-        {/if}
-      </span>
-    {/each}
-    <form onsubmit={save_current_filters}>
-      <input
-        placeholder="Save current filters as…"
-        aria-label="New preset name"
-        bind:value={new_preset_name}
-      />
-      <button disabled={!new_preset_name.trim()}>Save</button>
-    </form>
-  </div>
-{/snippet}
-
 {#snippet filter_section(mobile: boolean, label: string, title: string, content: Snippet)}
   {#if mobile}
     <section class="sheet-section">
@@ -257,10 +221,25 @@
       {@render content()}
     </section>
   {:else}
-    <details class="filter-menu" {@attach close_on_outside_click}>
-      <summary {title} {@attach summary_tooltip}>{label}</summary>
+    <!-- no focus trap: focusing the first checkbox on open would pop its tooltip. The
+    trigger's tooltip sits above (the pane opens below) and is off while open, else it
+    would take the Escape meant for the menu -->
+    <Popover class="filter-menu" align="start" trap_focus={false} aria-label={label}>
+      {#snippet trigger(trigger_props)}
+        <button
+          class="filter-menu-trigger"
+          {title}
+          {@attach tooltip({
+            placement: `top`,
+            disabled: trigger_props[`aria-expanded`],
+          })}
+          {...trigger_props}
+        >
+          {label}
+        </button>
+      {/snippet}
       {@render content()}
-    </details>
+    </Popover>
   {/if}
 {/snippet}
 
@@ -283,15 +262,9 @@
     `Filter models by which quantities they predict and how forces/stress are computed`,
     target_filters,
   )}
-  {@render filter_section(
-    mobile,
-    `Presets`,
-    `Apply a saved filter combination or save the current one`,
-    preset_filters,
-  )}
 {/snippet}
 
-{#if n_train || filters.openness.length < OPENNESS_OPTIONS.length || target_outputs.some(([key]) => filters.targets[key]) || filters.fs_mode !== `any` || filters.show_selected_only}
+{#if n_train || filters.openness.length < OPENNESS_OPTIONS.length || filters.targets_param || filters.show_selected_only}
   <div class="active-filters" aria-label="Active model filters">
     <span>Filters:</span>
     {#each Object.entries(filters.training) as [dataset, mode] (dataset)}
@@ -327,7 +300,7 @@
 {/if}
 
 {@render leading?.()}
-<div class="table-controls" {...rest}>
+<div class="table-controls" {...rest} {@attach fit_toolbar_links}>
   <button
     class="compare"
     onclick={open_comparison}
@@ -350,7 +323,7 @@
   {/if}
 
   <!-- Both trees always mount; CSS media queries toggle visibility. A JS MediaQuery
-  branch (SSR fallback false → desktop <details>, mobile client → <Sheet>) hydrated
+  branch (SSR fallback false → desktop popovers, mobile client → <Sheet>) hydrated
   mismatched markup. -->
   <div class="mobile-filters">
     <Sheet
@@ -390,21 +363,34 @@
   {/if}
 
   {#if columns.length}
-    <label>
-      <input
-        type="checkbox"
-        bind:checked={filters.show_heatmap}
-        aria-label="Toggle heatmap colors"
-      />
-      Heatmap
-    </label>
-
-    <ToggleMenu bind:columns />
+    <ToggleMenu bind:columns>
+      {#snippet header()}
+        <label class="heatmap-toggle">
+          <input
+            type="checkbox"
+            bind:checked={filters.show_heatmap}
+            aria-label="Toggle heatmap colors"
+          />
+          Show heatmap
+        </label>
+      {/snippet}
+    </ToggleMenu>
   {/if}
 </div>
 {@render trailing?.()}
 
 <style>
+  .heatmap-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.35em;
+    margin: 0;
+    font: inherit;
+    white-space: nowrap;
+    input {
+      margin: 0;
+    }
+  }
   .table-controls {
     position: relative;
     z-index: 5;
@@ -438,31 +424,17 @@
   .desktop-filters {
     display: contents;
   }
-  details.filter-menu {
-    position: relative;
-    summary {
-      list-style: none;
-      padding: 1pt 6pt;
-      border-radius: 4px;
-      background: var(--btn-bg);
-    }
-    &[open] summary {
+  button.filter-menu-trigger {
+    padding: 1pt 6pt;
+    border-radius: 4px;
+    background: var(--btn-bg);
+    &[aria-expanded='true'] {
       background: color-mix(in srgb, var(--link-color) 25%, transparent);
     }
-    .filter-content {
-      position: absolute;
-      right: 0;
-      z-index: 6;
-      display: grid;
-      gap: 2pt;
-      min-width: max-content;
-      margin-top: 4px;
-      padding: 4pt 6pt;
-      background: var(--page-bg);
-      border: 1px solid var(--border);
-      border-radius: 5px;
-      box-shadow: 0 0 10px var(--shadow);
-    }
+  }
+  .desktop-filters .filter-content {
+    display: grid;
+    gap: 2pt;
   }
   .hint {
     font-size: 0.85em;
@@ -543,26 +515,6 @@
       border-left: 1px solid var(--border);
     }
   }
-  .filter-row button.preset {
-    flex: 1;
-    padding: 1pt 6pt;
-    text-align: left;
-  }
-  button.delete-preset {
-    background: none;
-    padding: 0 2pt;
-    opacity: 0.7;
-  }
-  .filter-content form {
-    display: flex;
-    gap: 4pt;
-    margin-top: 4pt;
-    input {
-      width: 13em;
-      font-size: inherit;
-      background: var(--btn-bg);
-    }
-  }
   .filter-sheet-header {
     display: flex;
     align-items: center;
@@ -608,7 +560,7 @@
     }
   }
   @media (pointer: coarse), (max-width: 600px) {
-    .table-controls :is(button, summary, label),
+    .table-controls :is(button, label),
     .active-filters button {
       min-height: 36px;
       align-content: center;

@@ -1,8 +1,9 @@
+import { discovery_set_toggle_options } from '$lib/labels'
 import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
 import DiscoveryPage from '$routes/benchmarks/discovery/+page.svelte'
 import type { ScatterPlot } from 'matterviz/plot'
 import { tick, type ComponentProps } from 'svelte'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import {
   checkbox_for,
   doc_query,
@@ -117,6 +118,18 @@ describe(`Discovery Task Page`, () => {
       // exact match so a resurrected discovery set can't slip in unnoticed
       expect(toggle_labels()).toEqual([`Full Test Set`, `Unique Prototypes`])
       expect(active_toggle()).toBe(`Unique Prototypes`)
+      // the pill's info icon shows the same tooltip as the option button beside it
+      doc_query(`a[aria-label="About Unique Prototypes"]`).dispatchEvent(
+        new PointerEvent(`pointerover`, { bubbles: true }),
+      )
+      const unique_tooltip = discovery_set_toggle_options.find(
+        ({ value }) => value === `unique_prototypes`,
+      )?.tooltip
+      await vi.waitFor(() =>
+        expect(doc_query(`.custom-tooltip .tooltip-content`).textContent).toBe(
+          unique_tooltip,
+        ),
+      )
       expect(scatter_y_for(model_key)).toBe(discovery.unique_prototypes?.F1)
 
       const table_text = () =>
@@ -142,7 +155,7 @@ describe(`Discovery Task Page`, () => {
     expect(filter_summary_badge(`Targets`)).toContain(`(F,S,gradient)`)
     expect(heading_texts()).toContainEqual(expect.stringContaining(`RMSD vs F1`))
     expect(filter_summary_badge(`Training data`)).toContain(`(2)`)
-    expect(checkbox_for(`Heatmap`).checked).toBe(false)
+    expect(checkbox_for(`Show heatmap`).checked).toBe(false)
     const header = sorted_header()
     expect(header?.textContent).toContain(`F1`)
     expect(header?.getAttribute(`aria-sort`)).toBe(`ascending`)

@@ -11,7 +11,7 @@ import {
   phonon_band_structure_from_modes,
 } from 'matterviz/spectral'
 import type { Complex, PhononQPointModes } from 'matterviz/spectral'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { gzipped_json_response } from '../index'
 
 beforeEach(clear_asset_cache)

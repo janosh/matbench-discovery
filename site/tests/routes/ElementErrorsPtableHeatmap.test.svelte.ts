@@ -1,7 +1,7 @@
 import { ACTIVE_MODELS } from '$lib/models.svelte'
 import ElementErrorsPtableHeatmap from '$routes/benchmarks/discovery/tmi/ElementErrorsPtableHeatmap.svelte'
 import { per_element_each_errors as per_elem_each_errors } from '$lib/per-element-errors'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import { tick } from 'svelte'
 import { format_num } from 'matterviz/labels'
 import { doc_query, mount_with_url } from '../index'

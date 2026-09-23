@@ -1,9 +1,6 @@
 // Shared ref-line idioms for the inline matterviz figures in site/src/routes.
 import { MODELS } from '$lib/models.svelte'
 import type { LegendConfig, RefLine } from 'matterviz/plot'
-import type { Attachment } from 'svelte/attachments'
-import { SvelteSet } from 'svelte/reactivity'
-import { dismiss_on_outside_press } from 'svelte-widgets/attachments'
 
 // === multi-model payload styling ===
 // .jsonl payloads hold position-independent data only (no color/order) so models merge
@@ -63,37 +60,6 @@ export const wide_legend: LegendConfig = {
   draggable: false,
   filterable: false, // hide the search input; the legend is a static reference
   style: `width: 100%; display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 14px;`,
-}
-
-// Collapsible per-model legend: group headers collapse/expand while items still toggle
-// individual model visibility. Attach `collapse_on_outside_click` to the plot wrapper.
-export const make_models_legend = (legend_group = `Toggle Models`) => {
-  const collapsed_groups = new SvelteSet([legend_group])
-  const toggle_group = (group: string) => {
-    if (!collapsed_groups.delete(group)) collapsed_groups.add(group)
-  }
-  const toggle = () => toggle_group(legend_group)
-  const legend: LegendConfig = {
-    ...wide_legend,
-    collapsed_groups,
-    // keep expanded legend readable over plot points
-    style: `${wide_legend.style} --plot-legend-bg-color: light-dark(rgb(255, 255, 255), rgb(40, 40, 40))`,
-    on_group_toggle: toggle_group,
-  }
-  // Only the legend counts as inside — a click on the plot or the controls above it
-  // collapses too — so pass the surface as `inside` rather than attaching to `node`
-  // (which click_outside would treat as inside). `scope` keeps a sibling figure's
-  // legend from counting. `release` listens for click, not pointerdown, matching the
-  // legend's own toggles, and the listener is capture-phase either way, so it still
-  // sees clicks whose inner handlers stop propagation.
-  const collapse_on_outside_click: Attachment = (node) =>
-    dismiss_on_outside_press({
-      inside: [`.legend`],
-      scope: node,
-      dismiss_on: `release`,
-      callback: () => collapsed_groups.add(legend_group),
-    })
-  return { legend_group, legend, collapse_on_outside_click, toggle }
 }
 
 // full-span y=x parity diagonal; a diagonal ref line is clipped to the axis range

@@ -9,7 +9,6 @@
   import {
     as_phonon_dos,
     build_kappa_parity_series,
-    dos_per_atom,
     has_imaginary_modes,
     has_kappa_parity_model,
     load_kappa_parity_base,
@@ -20,8 +19,8 @@
     KappaParityBase,
     KappaParityModel,
     KappaParityPoint,
-    PhononDos,
   } from '$lib/parity/kappa-parity'
+  import type { PhononDos } from 'matterviz/spectral'
   import { get_error_message } from '$lib/asset-loader'
   import { ParityLoadController } from '$lib/parity/load-controller.svelte'
   import { parity_diagonal } from '$lib/fig-helpers'
@@ -305,6 +304,11 @@
                 />
                 {@const PhononThermalPlot = spectral.PhononThermalPlot}
                 {#each dos_entries as [label, dos], plot_idx (label)}
+                  {@const divisor = spectral.density_divisor(
+                    [dos.densities],
+                    dos.frequencies,
+                    `integral`,
+                  )}
                   <div class="thermal">
                     <p class="caption">
                       {label} harmonic thermal properties (per atom)
@@ -318,8 +322,17 @@
                     <!-- both plots share series/colors, so only the last shows a legend; it sits
                   inside the plot (top-left is empty: F and U start near zero) to keep both
                   plot areas the same height -->
+                    <!-- the stored DOS is peak-normalized; thermal properties need 3 modes per
+                    atom. Integrate the full grid, imaginary modes included: matterviz then skips
+                    them without renormalizing (like phonopy), so unstable predictions show a
+                    high-T heat capacity below 3 k_B per atom -->
                     <PhononThermalPlot
-                      dos={dos_per_atom(dos)}
+                      dos={{
+                        ...dos,
+                        densities: dos.densities.map(
+                          (density) => (3 * density) / divisor,
+                        ),
+                      }}
                       style="height: 340px"
                       padding={{ t: 10, b: 60, l: 70, r: 70 }}
                       legend={plot_idx === dos_entries.length - 1

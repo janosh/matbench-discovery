@@ -3,14 +3,14 @@ import { ALL_METRICS } from '$lib/labels'
 import { sort_models } from '$lib/metrics'
 import ModelsPage from '$routes/models/+page.svelte'
 import { tick } from 'svelte'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vite-plus/test'
 import { doc_query, mount, mount_with_url } from '../index'
 
 // Outgoing cards become inert while their fade completes.
 const model_cards = () => document.querySelectorAll(`ol.models > li:not([inert])`)
 
 describe(`Models Page`, () => {
-  it(`renders sorting controls and the color legend`, () => {
+  it(`renders sorting controls and keyboard-accessible metric help`, async () => {
     mount(ModelsPage, { target: document.body })
 
     const n_best_input = doc_query<HTMLInputElement>(`input[type="number"]`)
@@ -38,6 +38,12 @@ describe(`Models Page`, () => {
     for (const card of model_cards()) {
       expect(doc_query(`h2`, card).style.backgroundColor).not.toBe(``)
     }
+    doc_query<HTMLButtonElement>(`button#CPS`).focus()
+    await vi.waitFor(() =>
+      expect(document.querySelector(`.popover`)?.textContent).toContain(
+        `Combined Performance Score`,
+      ),
+    )
   })
 
   it(`renders every card with its canonical model link, including duplicate names`, () => {
@@ -47,7 +53,7 @@ describe(`Models Page`, () => {
       mount(ModelsPage, { target: document.body })
       const cards = model_cards()
       expect(cards).toHaveLength(MODELS.length)
-      const expected_models = MODELS.toSorted(sort_models(ALL_METRICS.CPS.key, `desc`))
+      const expected_models = sort_models(MODELS, ALL_METRICS.CPS.key, `desc`)
       for (const [idx, card] of cards.entries()) {
         const { model_key, model_name } = expected_models[idx]
         const link = doc_query<HTMLAnchorElement>(`h2 a`, card)
@@ -57,6 +63,15 @@ describe(`Models Page`, () => {
       }
       expect(doc_query(`nav`, cards[0]).querySelectorAll(`a`).length).toBeGreaterThan(0)
       expect(cards[0].textContent).not.toContain(`Missing preds`)
+      const activity = doc_query(`section[aria-labelledby="github-activity"]`)
+      expect(doc_query(`a[href="#github-activity"]`).textContent).toContain(
+        `GitHub activity`,
+      )
+      expect(doc_query(`#github-activity`, activity).textContent).toBe(`GitHub Activity`)
+      expect(activity.querySelector(`div.scatter`)).not.toBeNull()
+      expect(doc_query(`ol.models`).compareDocumentPosition(activity)).toBe(
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      )
     } finally {
       MODELS[1].model_name = original_name
     }
@@ -74,7 +89,7 @@ describe(`Models Page`, () => {
       doc_query<HTMLButtonElement>(`button#${key}`).click()
       await tick()
 
-      const expected_models = MODELS.toSorted(sort_models(path, direction)).slice(0, 5)
+      const expected_models = sort_models(MODELS, path, direction).slice(0, 5)
       const cards = model_cards()
       expect(
         [...cards].map((card) => doc_query(`h2 a`, card).getAttribute(`href`)),
@@ -85,10 +100,14 @@ describe(`Models Page`, () => {
       )
       expect(doc_query<HTMLInputElement>(`input[type="number"]`).value).toBe(`5`)
       for (const card of cards) {
-        expect(card.querySelector(`.metrics li.active label`)?.getAttribute(`for`)).toBe(
-          key === `Model` ? undefined : key,
+        expect(card.querySelector(`.metrics li.active .metric-label`)?.innerHTML).toBe(
+          Object.values(ALL_METRICS).find((metric) => metric.key === key)?.label,
         )
       }
+      // Inspecting another metric must not activate the matching page-level sort button.
+      doc_query(`.metrics .metric-label`).click()
+      await tick()
+      expect(doc_query(`ul li.active button`).id).toBe(key)
       const params = new URL(location.href).searchParams
       expect(params.get(`sort`)).toBe(key)
       expect(params.get(`dir`)).toBe(direction === `desc` ? null : direction)

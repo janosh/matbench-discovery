@@ -2,6 +2,7 @@ import { afterNavigate, onNavigate } from '$app/navigation'
 import { page } from '$app/state'
 import type { AfterNavigate } from '@sveltejs/kit'
 import DATASETS from '$data/datasets.yml'
+import { ALL_METRICS } from '$lib/labels'
 import {
   ACTIVE_MODELS,
   bind_score_weights,
@@ -30,7 +31,7 @@ import {
   onTestFinished,
   test,
   vi,
-} from 'vitest'
+} from 'vite-plus/test'
 import { doc_query, get_scatter_plot_props, mount, query_param } from '../index'
 
 // happy-dom never measures the plot, so capture ScatterPlot's props instead of its SVG
@@ -92,9 +93,9 @@ describe(`compare_cells`, () => {
       [
         { text: `3`, rank: 4, n: 5, best: false },
         { text: `1`, rank: 2, n: 5, best: true },
-        { text: `–` },
+        { text: `–`, title: `Val: not reported.` },
         { text: `text` },
-        { text: `–` },
+        { text: `–`, title: `Val: not reported.` },
       ],
     ],
     // higher=better flips the rank; a lone numeric value is never "best"
@@ -127,7 +128,7 @@ describe(`compare_cells`, () => {
         text: `mptrj + `,
         parts: [{ text: `mptrj`, href: `/data/mptrj` }, { text: ` + ` }],
       },
-      { text: `–` }, // empty parts hide the cell rather than rendering an empty link
+      { text: `–`, title: `Val: not reported.` }, // empty parts don't create empty links
       { text: `3` }, // numbers still format even on a row with `parts`
     ])
     const titled_row: CompareRow = {
@@ -139,6 +140,25 @@ describe(`compare_cells`, () => {
       { text: `3`, title: `big`, rank: 4, n: 5, best: false },
       { text: `1`, rank: 2, n: 5, best: true },
     ])
+    const gnome = MODELS.find(({ model_key }) => model_key === `gnome`)
+    if (!gnome) throw new Error(`Missing GNoME test fixture`)
+    expect(compare_cells(ALL_METRICS.RMSD, [gnome])[0]).toEqual({
+      text: `–`,
+      title: `Geometry Optimization: no results reported. Model weights are not publicly available.`,
+    })
+    expect(
+      compare_cells(ALL_METRICS.RMSD, [
+        {
+          ...gnome,
+          metrics: {
+            geo_opt: {
+              status: `not_available`,
+              reason: `Missing <reference> & metadata.`,
+            },
+          },
+        },
+      ])[0].title,
+    ).toContain(`Missing &lt;reference&gt; &amp; metadata.`)
   })
 
   it(`links training sets, papers, repos and authors of real models`, () => {

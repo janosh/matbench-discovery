@@ -2,109 +2,22 @@ import { afterNavigate, onNavigate, replaceState } from '$app/navigation'
 import { page } from '$app/state'
 import type { AfterNavigate } from '@sveltejs/kit'
 import { untrack } from 'svelte'
-import * as d3_sc from 'd3-scale-chromatic'
-import type { D3InterpolateName } from 'matterviz/colors'
-import type { SortDir } from './types'
+import { is_d3_interpolate_name, type D3InterpolateName } from 'matterviz/colors'
 import {
   bool_from_param,
   bool_url_entry,
-  valid_query_param,
   sync_url_params as sync_params,
   type UrlParamEntry,
-  type ValidQueryValues,
 } from 'svelte-widgets/url-params'
 
 type PageState = Parameters<typeof replaceState>[1]
-export type SortState = { column: string; dir: SortDir }
-const sort_dirs = new Set<SortDir>([`asc`, `desc`])
-
-// valid_columns is optional: the sortable-column set lives inside the table component
-// (unknown columns are a harmless no-op there); pass it where known to reject garbage
-export const sort_from_query = (
-  params: URLSearchParams,
-  default_sort: SortState,
-  valid_columns?: ValidQueryValues<string>,
-): SortState => ({
-  column: valid_columns
-    ? valid_query_param(params, `sort`, default_sort.column, valid_columns)
-    : (params.get(`sort`) ?? default_sort.column),
-  dir: valid_query_param(params, `dir`, default_sort.dir, sort_dirs),
-})
-
-// write-side counterpart of sort_from_query
-export const sort_url_entries = (
-  sort: SortState,
-  default_sort: SortState,
-): UrlParamEntry[] => [
-  [`sort`, sort.column, default_sort.column],
-  [`dir`, sort.dir, default_sort.dir],
-]
-
-// -- Weighted-score radar weights as a single URL param ------------------------
-// Serialized as comma-joined values in config-key order, e.g. weights=0.5,0.4,0.1.
-type WeightsConfig = Record<string, { weight: number }>
-
-// Empty string when weights match the defaults (so sync_url_params drops the param)
-export function weights_to_param(
-  config: WeightsConfig,
-  default_config: WeightsConfig,
-): string {
-  const keys = Object.keys(config)
-  const is_default = keys.every(
-    (key) => config[key].weight === default_config[key]?.weight,
-  )
-  return is_default ? `` : keys.map((key) => config[key].weight).join(`,`)
-}
-
-// Parse a weights param and write it into config (normalized to sum 1). A missing
-// OR malformed param (wrong count, negative/non-finite, all-zero) resets to
-// default_config: weight configs are shared module state, so without the reset,
-// weights customized earlier in the session would survive navigating to a
-// weights-less (or mangled) URL while all other URL-bound page state (sort, axes)
-// resets - and the URL-sync effect would then launder those stale weights back into
-// a valid-looking URL.
-export function apply_weights_param(
-  param: string | null,
-  config: WeightsConfig,
-  default_config: WeightsConfig,
-): void {
-  const keys = Object.keys(config)
-  if (param) {
-    // empty segments parse to NaN (not Number(``) which is 0) so a mangled URL like
-    // weights=0.5,,0.5 is rejected by the finiteness check instead of zeroing a metric
-    const values = param.split(`,`).map((part) => (part.trim() ? Number(part) : NaN))
-    const total = values.reduce((sum, val) => sum + val, 0)
-    if (
-      values.length === keys.length &&
-      values.every((val) => Number.isFinite(val) && val >= 0) &&
-      Number.isFinite(total) &&
-      total > 0
-    ) {
-      // Summing normalized f64 weights can differ from 1 by n * epsilon. Preserve
-      // those values exactly so reopening a shared view doesn't change its scores.
-      const divisor = Math.abs(total - 1) <= values.length * Number.EPSILON ? 1 : total
-      for (const [idx, key] of keys.entries()) config[key].weight = values[idx] / divisor
-      return
-    }
-  }
-  for (const key of keys)
-    config[key].weight = default_config[key]?.weight ?? config[key].weight
-}
-
 // color_scale param: valid d3 interpolate names, defaulting to Viridis
-const d3_color_scale_names = new Set(
-  Object.keys(d3_sc).filter((key) => key.startsWith(`interpolate`)),
-) as Set<D3InterpolateName>
-
 export const url_color_scale = {
   default: `interpolateViridis` as D3InterpolateName,
-  read: (params: URLSearchParams): D3InterpolateName =>
-    valid_query_param(
-      params,
-      `color_scale`,
-      url_color_scale.default,
-      d3_color_scale_names,
-    ),
+  read: (params: URLSearchParams): D3InterpolateName => {
+    const value = params.get(`color_scale`) ?? ``
+    return is_d3_interpolate_name(value) ? value : url_color_scale.default
+  },
   entry: (value: D3InterpolateName): UrlParamEntry => [
     `color_scale`,
     value,
@@ -143,13 +56,12 @@ export const FS_MODES = [`any`, `direct`, `gradient`] as const
 export type FsMode = (typeof FS_MODES)[number]
 const DEFAULT_TARGETS = { F: `require` } as const
 export const DEFAULT_TARGETS_PARAM = `F`
-// a saved filter combination (see $lib/filter-presets.svelte.ts)
-export type FilterPreset = {
+// Filter configuration shared by browser-history snapshots and table exports.
+export type FilterConfig = {
   training: Record<string, TrainFilterMode>
   openness: readonly Openness[]
   targets?: Partial<Record<TargetOutput, TrainFilterMode>> // absent = default (require F)
   fs_mode?: FsMode
-  description?: string // tooltip, only set on built-in presets
 }
 // minimal structural model shape keeps this module decoupled from $lib/types
 type FilterableModel = {
@@ -264,31 +176,30 @@ export class UrlTableFilters {
     this.fs_mode = `any`
   }
 
-  apply = (preset: FilterPreset): void => {
-    // keep only known datasets + valid modes: stale localStorage presets (e.g. after a
-    // dataset rename) would otherwise filter models invisibly - unrepresentable in the
-    // URL (url_entries serializes canonical keys only) and not shown by any checkbox
+  apply = (config: FilterConfig): void => {
+    // Snapshots survive deploys; discard obsolete constraints that no current
+    // checkbox or URL parameter could represent.
     this.training = Object.fromEntries(
-      Object.entries(preset.training).filter(
+      Object.entries(config.training).filter(
         ([key, mode]) =>
           this.training_sets.includes(key) && is_one_of(TRAIN_FILTER_MODES, mode),
       ),
     )
-    // filter OPENNESS_OPTIONS (not spread the preset) to keep canonical order and
-    // drop invalid tokens from hand-edited localStorage
-    const shown = OPENNESS_OPTIONS.filter((op) => preset.openness.includes(op))
+    // filter OPENNESS_OPTIONS (not spread the config) to keep canonical order and
+    // drop invalid tokens from stale snapshots
+    const shown = OPENNESS_OPTIONS.filter((op) => config.openness.includes(op))
     this.openness = shown.length > 0 ? shown : [...OPENNESS_OPTIONS]
     this.targets = Object.fromEntries(
-      Object.entries(preset.targets ?? DEFAULT_TARGETS).filter(
+      Object.entries(config.targets ?? DEFAULT_TARGETS).filter(
         ([key, mode]) =>
           is_one_of(target_output_keys, key) && is_one_of(TRAIN_FILTER_MODES, mode),
       ),
     )
-    this.fs_mode = is_one_of(FS_MODES, preset.fs_mode) ? preset.fs_mode : `any`
+    this.fs_mode = is_one_of(FS_MODES, config.fs_mode) ? config.fs_mode : `any`
   }
 
-  // snapshot of the active filters, e.g. for saving as a preset
-  get as_preset(): FilterPreset {
+  // Copy active filters so snapshots do not change with subsequent UI edits.
+  get config(): FilterConfig {
     return {
       training: { ...this.training },
       openness: [...this.openness],

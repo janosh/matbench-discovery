@@ -1,5 +1,5 @@
 import { pareto_staircase, sota_frontier_indices, sota_step_line } from '$lib/sota'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 
 const day = (n: number) => n * 86_400_000
 

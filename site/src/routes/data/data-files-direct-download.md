@@ -19,7 +19,7 @@ Each task’s test-set section links its public inputs and explains reference av
 
 ### All public data files
 
-<ol class="data-files-list">
+<ol class="data-files-list" style="overflow-wrap: anywhere">
 {#each Object.entries(data_files).filter(([key]) => !key.startsWith(`_`)) as [key, { url, path, html }]}
     <li style="margin-top: 1ex;">
     <strong><code>{key}</code></strong>

@@ -5,7 +5,7 @@ import { ALL_METRICS } from '$lib/labels'
 import { model_metric_ranks, RANKED_METRICS } from '$lib/rankings'
 import { format_num } from 'matterviz/labels'
 import type { ComponentProps } from 'svelte'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vite-plus/test'
 import { doc_query, mount } from '../index'
 
 describe(`ModelCard`, () => {
@@ -119,14 +119,34 @@ describe(`ModelCard`, () => {
       expect(Number(displayed_kappa)).toBeCloseTo(kappa_value, 2)
     })
 
-    it(`handles missing metrics`, () => {
-      const model_without_metrics = { ...model, metrics: undefined }
+    it.each([undefined, NaN, Infinity, -Infinity])(
+      `explains unavailable metrics (%s)`,
+      async (value) => {
+        const kappa_metrics = model.metrics?.phonons?.kappa_103
+        if (!kappa_metrics)
+          throw new Error(`Missing phonon metrics for ${model.model_key}`)
+        mount_card({
+          model: {
+            ...model,
+            license: { ...model.license, checkpoint: `unreleased` },
+            metrics:
+              value === undefined
+                ? {}
+                : { phonons: { kappa_103: { ...kappa_metrics, κ_SRME: value } } },
+          },
+          metrics: [ALL_METRICS.κ_SRME],
+        })
 
-      mount_card({ model: model_without_metrics })
-
-      const metrics_li_strong = document.querySelectorAll(`.metrics li strong`)[0]
-      expect(metrics_li_strong.textContent?.trim()).toBe(`n/a`)
-      expect(document.querySelectorAll(`.metric-rank`)).toHaveLength(0)
-    })
+        const metrics_li_strong = document.querySelectorAll(`.metrics li strong`)[0]
+        expect(metrics_li_strong.textContent?.trim()).toBe(`n/a`)
+        expect(document.querySelectorAll(`.metric-rank`)).toHaveLength(0)
+        doc_query(`.metrics [role="button"]`).focus()
+        await vi.waitFor(() => {
+          const text = doc_query(`.popover`).textContent
+          expect(text).toContain(`Model weights are not publicly available.`)
+          expect(text).not.toContain(`Contributions welcome`)
+        })
+      },
+    )
   })
 })

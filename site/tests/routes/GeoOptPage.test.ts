@@ -7,7 +7,7 @@ import { GEO_OPT_SYMMETRY_METRICS, HYPERPARAMS } from '$lib/labels'
 import type { ModelData } from '$lib/types'
 import { tick } from 'svelte'
 import GeoOptPage from '$routes/benchmarks/geo-opt/+page.svelte'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import {
   checkbox_for,
   doc_query,
@@ -149,7 +149,7 @@ describe(`Geo Opt Task Page`, () => {
     expect(sorted_header()?.getAttribute(`aria-sort`)).toBe(`descending`)
     expect(filter_summary_badge(`Training data`)).toContain(`(1)`)
     expect(filter_summary_badge(`Openness`)).toContain(`(2/4)`)
-    expect(checkbox_for(`Heatmap`).checked).toBe(false)
+    expect(checkbox_for(`Show heatmap`).checked).toBe(false)
   })
 
   it(`renders table with correct structure, columns, groups, and units`, async () => {

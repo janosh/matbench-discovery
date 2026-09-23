@@ -1,6 +1,5 @@
 import adapter from '@sveltejs/adapter-static'
 import { sveltekit } from '@sveltejs/kit/vite'
-import { load as load_yaml } from 'js-yaml'
 import type { JSONSchema4 } from 'json-schema'
 import { compile as json_to_ts } from 'json-schema-to-typescript'
 import { create_markdown, markdown } from 'svelte-widgets/markdown'
@@ -12,7 +11,7 @@ import path from 'node:path'
 import zlib from 'node:zlib'
 import { default_highlighter } from 'svelte-widgets/highlight'
 import { make_config } from 'svelte-widgets/vite-config'
-import { yaml_plugin } from 'svelte-widgets/yaml'
+import { parse_yaml, yaml_plugin } from 'svelte-widgets/yaml'
 import type { Plugin } from 'vite'
 import pkg from './package.json' with { type: 'json' }
 import { render_data_markdown } from './scripts/markdown-data.ts'
@@ -182,7 +181,7 @@ function yaml_schema_to_typescript_plugin(): Plugin {
       const yaml_content = fs.readFileSync(file, `utf-8`)
       const file_dir = path.dirname(file)
 
-      const parsed_yaml = load_yaml(yaml_content) as JSONSchema4
+      const parsed_yaml = parse_yaml(yaml_content) as JSONSchema4
       const base_name = path.basename(file, `.yml`)
 
       const output = schema_map[base_name as keyof typeof schema_map]

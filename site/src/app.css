@@ -115,7 +115,7 @@
 html {
   scroll-behavior: smooth;
   /* Disable scroll anchoring: re-rendering dynamic content (e.g. the metrics
-     table when adjusting CPS weights via the radar chart) reflows content above
+     table when adjusting CPS weights via score controls) reflows content above
      the viewport, which would otherwise make the browser jump the scroll
      position to keep an anchor element in place. */
   overflow-anchor: none;
@@ -388,16 +388,6 @@ kbd {
   .bleed-1400 {
     --margin: 1rem;
   }
-}
-
-.task-weights {
-  max-width: 22em;
-  margin-inline: auto;
-}
-.task-weights figcaption {
-  margin-block-start: 1em;
-  font-size: 0.85em;
-  color: var(--text-muted);
 }
 
 /* Shared lazy-rendered grid for the diatomics task and spin-state detail page. */

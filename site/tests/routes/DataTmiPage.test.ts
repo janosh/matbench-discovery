@@ -1,6 +1,6 @@
 import DataTmiPage from '$routes/data/tmi/+page.svelte'
 import { tick } from 'svelte'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import { checkbox_for, doc_query, mount_with_url } from '../index'
 
 const checked_radio = (): HTMLInputElement | null =>

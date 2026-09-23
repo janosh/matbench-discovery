@@ -207,21 +207,6 @@ def check_element_prevalence() -> None:
         assert_num_list(model["y"], length=len(elements))
 
 
-def check_scatter_largest_fp_diff() -> None:
-    payload = load_payload("scatter-largest-fp-diff-each-error")
-    assert_num_list(payload["fp_diff"])
-    for model in assert_models(payload, "mae"):
-        assert_model_keys(model, "mae", "y")
-        assert_num_list(model["y"], length=len(payload["fp_diff"]))
-
-
-def check_hist_largest_each_errors() -> None:
-    for model in assert_models(load_payload("hist-largest-each-errors-fp-diff")):
-        assert_model_keys(model, "err_min", "err_max")
-        assert_xy(model["err_min"], bar_width=True)
-        assert_xy(model["err_max"], bar_width=True)
-
-
 def check_hist_wbm_e_form_per_atom() -> None:
     assert_xy(load_payload("hist-wbm-e-form-per-atom"), bar_width=True)
 
@@ -336,14 +321,11 @@ def test_kappa_103_analysis_row_flag(value: object, expected: bool | None) -> No
 def check_xy_models(name: str, *stat_keys: str) -> None:
     """Generic check: per-model x/y series plus data-derived stat fields."""
     for model in assert_models(load_payload(name), *stat_keys):
-        if name == "scatter-largest-each-errors-fp-diff":
-            assert_model_keys(model, "mae", "x", "y")
         assert_xy(model)
 
 
 # payloads whose models are plain x/y series with the given stat fields
 XY_MODEL_STATS = {
-    "scatter-largest-each-errors-fp-diff": ("mae",),
     "struct-rmsd-cdf": ("auc",),
     "sym-ops-diff-bar": ("sigma",),
 }
@@ -359,8 +341,6 @@ EXPECTED_PAYLOADS = {
     "rolling-mae-vs-hull-dist": check_rolling_mae,
     "hist-clf-pred-hull-dist": check_hist_clf,
     "element-prevalence-vs-error": check_element_prevalence,
-    "scatter-largest-fp-diff-each-error": check_scatter_largest_fp_diff,
-    "hist-largest-each-errors-fp-diff": check_hist_largest_each_errors,
     "hist-wbm-e-form-per-atom": check_hist_wbm_e_form_per_atom,
     "hist-wbm-hull-dist": check_hist_wbm_hull_dist,
     "spacegroup-sunbursts": check_spacegroup_sunbursts,
@@ -408,11 +388,6 @@ def test_discovery_payload_covers_active_models(name: str) -> None:
 
 
 GEO_OPT_PAYLOADS = ("spg-sankeys", "struct-rmsd-cdf", "sym-ops-diff-bar")
-TMI_PAYLOADS = (
-    "hist-largest-each-errors-fp-diff",
-    "scatter-largest-each-errors-fp-diff",
-    "scatter-largest-fp-diff-each-error",
-)
 ELEMENT_PAYLOADS = {"element-prevalence-vs-error", "per-element-each-errors"}
 PREDICTION_ROLES = {"generator", "payload_numerics"}
 ERROR_ROLES = PREDICTION_ROLES | {"prediction_error_loader"}
@@ -425,7 +400,6 @@ RECIPE_ROLES = {
     "spg-sankeys": {"generator", "payload_numerics"},
     "struct-rmsd-cdf": {"generator", "payload_numerics"},
     "sym-ops-diff-bar": {"generator"},
-    **dict.fromkeys(TMI_PAYLOADS, ERROR_ROLES),
     "element-prevalence-vs-error": ERROR_ROLES | {"element_error_analysis"},
     "per-element-each-errors": {"generator", "prediction_error_loader"},
     "kappa-103-analysis": {
@@ -464,14 +438,11 @@ def test_multi_model_payload_provenance_matches_computation() -> None:
         expected_roles = RECIPE_ROLES[name]
         roles = {source["role"] for source in sources}
         assert roles == expected_roles, name
-        if name in set(TMI_PAYLOADS) | ELEMENT_PAYLOADS:
-            is_element_payload = name in ELEMENT_PAYLOADS
+        if name in ELEMENT_PAYLOADS:
             benchmark_roles = {item["role"] for item in identity["benchmark_inputs"]}
-            expected_benchmarks = {"wbm_summary"} | (
-                {"mp_element_occurrences"} if is_element_payload else set()
-            )
+            expected_benchmarks = {"wbm_summary", "mp_element_occurrences"}
             assert benchmark_roles == expected_benchmarks, name
-            assert ("pymatgen" in audit["runtime"]["packages"]) is is_element_payload
+            assert "pymatgen" in audit["runtime"]["packages"]
 
 
 @pytest.mark.parametrize("name", GEO_OPT_PAYLOADS)
@@ -508,24 +479,3 @@ def test_kappa_payload_covers_active_models() -> None:
         "scripts/ingest_model.py <your-model> --payloads-only` to splice your "
         "model's entries into the committed payloads."
     )
-
-
-# Sibling figures from a shared data source must agree on their stable-key roster.
-PAYLOAD_FAMILIES = {
-    "tmi-extras": (
-        "element-prevalence-vs-error",
-        "scatter-largest-fp-diff-each-error",
-        "scatter-largest-each-errors-fp-diff",
-        "hist-largest-each-errors-fp-diff",
-    ),
-}
-
-
-@pytest.mark.parametrize("family", PAYLOAD_FAMILIES)
-def test_payload_family_roster_consistent(family: str) -> None:
-    """Payloads in a family share a model roster; a partial regen of one fails here."""
-    names = PAYLOAD_FAMILIES[family]
-    base = payload_model_keys(names[0])
-    for name in names[1:]:
-        roster = payload_model_keys(name)
-        assert roster == base, f"{name} roster drifts from {names[0]}: {roster ^ base}"
