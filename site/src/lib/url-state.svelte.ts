@@ -5,8 +5,8 @@ import { is_d3_interpolate_name, type D3InterpolateName } from 'matterviz/colors
 import {
   bool_from_param,
   bool_url_entry,
-  sync_url_params as sync_params,
   type UrlParamEntry,
+  url_with_params,
 } from 'svelte-widgets/url-params'
 
 // color_scale param: valid d3 interpolate names, defaulting to Viridis
@@ -271,9 +271,20 @@ export class UrlTableFilters {
   }
 }
 
+// Shallow goto() awaits route resolution before writing history, so bindings syncing in
+// the same flush would each build on a `location` that earlier writes haven't reached yet
+// and drop each other's params. Build on the latest requested URL until it has landed
+// or a router navigation (which brings its own query) supersedes it.
+let pending_url: URL | null = null
+
 export function sync_url_params(entries: UrlParamEntry[], state: App.PageState): void {
-  sync_params(entries, location, (url) => {
-    void goto(url, { shallow: true, replace: true, state })
+  const current_url = pending_url ?? location
+  const next_url = url_with_params(entries, current_url)
+  if (next_url === url_with_params([], current_url)) return
+  const requested_url = new URL(next_url, location.href)
+  pending_url = requested_url
+  void goto(next_url, { shallow: true, replace: true, state }).finally(() => {
+    if (pending_url === requested_url) pending_url = null
   })
 }
 
@@ -308,7 +319,9 @@ export function bind_url_params(
   // Skip shallow goto()s: they are this module's own URL writes (sync_url_params).
   // Shallow popstates still read, since they restore a previously written query.
   afterNavigate((navigation) => {
-    if (!(navigation.shallow && navigation.type === `goto`)) read_url(navigation)
+    if (navigation.shallow && navigation.type === `goto`) return
+    pending_url = null
+    read_url(navigation)
   })
 
   $effect(() => {

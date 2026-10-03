@@ -196,6 +196,7 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
   }
   ul {
     display: flex;
+    flex-wrap: wrap; /* fallback where balance is unsupported */
     flex-wrap: balance;
     gap: 9pt;
     margin: 2.5ex auto 3ex;

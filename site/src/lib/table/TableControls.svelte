@@ -408,6 +408,7 @@
   .active-filters {
     flex-basis: 100%;
     display: flex;
+    flex-wrap: wrap; /* fallback where balance is unsupported */
     flex-wrap: balance;
     justify-content: center;
     align-items: center;

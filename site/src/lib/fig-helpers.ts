@@ -59,7 +59,7 @@ export const series_red = `#ef553b`
 export const wide_legend: LegendConfig = {
   draggable: false,
   filterable: false, // hide the search input; the legend is a static reference
-  style: `width: 100%; display: flex; flex-wrap: balance; justify-content: center; gap: 2px 14px;`,
+  style: `width: 100%; display: flex; flex-wrap: wrap; flex-wrap: balance; justify-content: center; gap: 2px 14px;`,
 }
 
 // full-span y=x parity diagonal; a diagonal ref line is clipped to the axis range

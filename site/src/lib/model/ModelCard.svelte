@@ -168,6 +168,7 @@
     font-weight: 250;
     display: flex;
     gap: 5pt 1em;
+    flex-wrap: wrap; /* fallback where balance is unsupported */
     flex-wrap: balance;
     place-content: center;
   }

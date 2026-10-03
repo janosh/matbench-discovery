@@ -284,12 +284,18 @@
   }
   .toggle-row {
     display: flex;
+    flex-wrap: wrap; /* fallback where balance is unsupported */
     flex-wrap: balance;
-    --btn-group-flex-wrap: balance;
     align-items: center;
     justify-content: center;
     gap: 8pt;
     font-size: smaller;
+  }
+  /* a var() resolving to an unsupported value would compute to nowrap, so gate it */
+  @supports (flex-wrap: balance) {
+    .toggle-row {
+      --btn-group-flex-wrap: balance;
+    }
   }
   .intro {
     text-align: center;
