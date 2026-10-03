@@ -1,7 +1,7 @@
 import { goto } from '$app/navigation'
 import DATASETS from '$data/datasets.yml'
-import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
-import Page from '$routes/data/sets/+page.svelte'
+import { ACTIVE_MODELS, make_table_filters } from '#lib/models.svelte.js'
+import Page from '#routes/data/sets/+page.svelte'
 import type { ScatterPlot } from 'matterviz/plot'
 import { tick, type ComponentProps } from 'svelte'
 import { describe, expect, it, vi } from 'vite-plus/test'
@@ -13,7 +13,7 @@ import {
   navigate,
   query_param,
   sorted_header,
-} from '../index'
+} from '../index.js'
 
 const plot_mock = vi.hoisted(() => vi.fn())
 vi.mock(`matterviz/plot`, async (import_original) => ({

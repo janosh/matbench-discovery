@@ -2,7 +2,7 @@
   import { page } from '$app/state'
   import { Icon } from 'svelte-widgets'
   import { GitHub } from 'svelte-widgets/icons'
-  import pkg from '$site/package.json'
+  import pkg from '#site/package.json'
 
   let online: boolean = $state(true)
 </script>

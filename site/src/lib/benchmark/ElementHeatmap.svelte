@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { BenchmarkDataset } from './data'
+  import type { BenchmarkDataset } from './data.js'
   import { format_num } from 'matterviz/labels'
   import { PeriodicTable } from 'matterviz/periodic-table'
 

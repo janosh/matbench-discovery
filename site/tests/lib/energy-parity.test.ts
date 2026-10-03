@@ -11,13 +11,13 @@ import {
   structure_bundle_for_shard,
   structure_shard_idx,
   structure_popup_placement,
-} from '$lib/parity/energy-parity'
-import type { EnergyParityBase, EnergyParityModel } from '$lib/parity/energy-parity'
-import * as energy_parity from '$lib/parity/energy-parity'
-import EnergyParityPlot from '$lib/plot/EnergyParityPlot.svelte'
-import { MODELS } from '$lib/models.svelte'
+} from '#lib/parity/energy-parity.js'
+import type { EnergyParityBase, EnergyParityModel } from '#lib/parity/energy-parity.js'
+import * as energy_parity from '#lib/parity/energy-parity.js'
+import EnergyParityPlot from '#lib/plot/EnergyParityPlot.svelte'
+import { MODELS } from '#lib/models.svelte.js'
 import * as matterviz_plot from 'matterviz/plot'
-import { clear_asset_cache, load_json_asset } from '$lib/asset-loader'
+import { clear_asset_cache, load_json_asset } from '#lib/asset-loader.js'
 import { gzipSync } from 'node:zlib'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import {
@@ -26,7 +26,7 @@ import {
   gzipped_json_response,
   mount,
   request_url,
-} from '../index'
+} from '../index.js'
 
 const popup_mock = vi.hoisted(() => vi.fn())
 vi.mock(`matterviz/convex-hull`, () => ({ StructurePopup: popup_mock }))

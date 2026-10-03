@@ -1,9 +1,9 @@
-import type { OrgLogo } from '$lib/types'
+import type { OrgLogo } from '#lib/types.js'
 import { Magnetic, Meta } from 'svelte-widgets/icons'
-import OrgLogos from '$lib/model/OrgLogos.svelte'
+import OrgLogos from '#lib/model/OrgLogos.svelte'
 import { flushSync, type ComponentProps } from 'svelte'
 import { describe, expect, it, vi } from 'vite-plus/test'
-import { doc_query, mount } from '../index'
+import { doc_query, mount } from '../index.js'
 
 describe(`OrgLogos.svelte`, () => {
   const mit_logo = {

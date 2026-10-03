@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { benchmarks, type BenchmarkTask } from './data'
-  import summary from '$routes/data/benchmark-reference-summary.json'
-  import hull_dist from '$figs/hist-wbm-hull-dist.json.gz'
-  import spacegroups from '$figs/spacegroup-sunbursts.json.gz'
+  import { benchmarks, type BenchmarkTask } from './data.js'
+  import summary from '#routes/data/benchmark-reference-summary.json'
+  import hull_dist from '#figs/hist-wbm-hull-dist.json.gz'
+  import spacegroups from '#figs/spacegroup-sunbursts.json.gz'
   import { format_num } from 'matterviz/labels'
   import ElementHeatmap from './ElementHeatmap.svelte'
   import { BarPlot, Histogram } from 'matterviz/plot'

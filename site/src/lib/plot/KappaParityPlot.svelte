@@ -5,7 +5,7 @@
     build_phonon_mode_data,
     has_kappa_modes,
     load_kappa_modes,
-  } from '$lib/parity/kappa-modes'
+  } from '#lib/parity/kappa-modes.js'
   import {
     as_phonon_dos,
     build_kappa_parity_series,
@@ -14,18 +14,18 @@
     load_kappa_parity_base,
     load_kappa_parity_model,
     load_kappa_srme_map,
-  } from '$lib/parity/kappa-parity'
+  } from '#lib/parity/kappa-parity.js'
   import type {
     KappaParityBase,
     KappaParityModel,
     KappaParityPoint,
-  } from '$lib/parity/kappa-parity'
+  } from '#lib/parity/kappa-parity.js'
   import type { PhononDos } from 'matterviz/spectral'
-  import { get_error_message } from '$lib/asset-loader'
-  import { ParityLoadController } from '$lib/parity/load-controller.svelte'
-  import { parity_diagonal } from '$lib/fig-helpers'
-  import { get_nested_number, is_finite_num } from '$lib/metrics'
-  import type { ModelData } from '$lib/types'
+  import { get_error_message } from '#lib/asset-loader.js'
+  import { ParityLoadController } from '#lib/parity/load-controller.svelte.js'
+  import { parity_diagonal } from '#lib/fig-helpers.js'
+  import { get_nested_number, is_finite_num } from '#lib/metrics.js'
+  import type { ModelData } from '#lib/types.js'
   import { format_num } from 'matterviz/labels'
   import { sanitize_compact_formula, sanitize_html } from 'matterviz/sanitize'
   import { ScatterPlot } from 'matterviz/plot'

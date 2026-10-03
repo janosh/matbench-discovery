@@ -1,31 +1,27 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import data_files from '$pkg/data-files.yml'
-  import { bind_url_params, type UrlTableFilters } from '$lib/url-state.svelte'
+  import { bind_url_params, type UrlTableFilters } from '#lib/url-state.svelte.js'
   import { sort_from_query, sort_url_entries } from 'matterviz/url-params'
   import { MediaQuery } from 'svelte/reactivity'
   import { onMount, untrack } from 'svelte'
-  import { CPS_CONFIG } from '$lib/combined-scores.svelte'
-  import OrgLogos from '$lib/model/OrgLogos.svelte'
-  import TableControls from '$lib/table/TableControls.svelte'
-  import {
-    append_better_hint,
-    metric_better_as,
-    missing_metric_reason,
-  } from '$lib/metrics'
+  import { CPS_CONFIG } from '#lib/combined-scores.svelte.js'
+  import OrgLogos from '#lib/model/OrgLogos.svelte'
+  import TableControls from '#lib/table/TableControls.svelte'
+  import { append_better_hint, missing_metric_reason } from '#lib/metrics.js'
   import {
     comparison,
     mark_compared_rows,
     row_model_key,
     toggle_row_model,
-  } from '$lib/model-comparison.svelte'
+  } from '#lib/model-comparison.svelte.js'
   import {
     ACTIVE_MODELS,
     make_table_filters,
     MODELS,
     score_weight_records,
-  } from '$lib/models.svelte'
-  import type { DiscoverySet, Label, ModelData } from '$lib/types'
+  } from '#lib/models.svelte.js'
+  import type { DiscoverySet, Label, ModelData } from '#lib/types.js'
   import type {
     CellSnippet,
     CellSnippetArgs,
@@ -59,8 +55,9 @@
     DISCOVERY_SET_LABELS,
     HYPERPARAMS,
     METADATA_COLS,
-  } from '../labels'
-  import { assemble_row_data, metric_value } from '../metrics'
+    plain_label,
+  } from '../labels.js'
+  import { assemble_row_data, metric_value } from '../metrics.js'
 
   type MetricsRow = ReturnType<typeof assemble_row_data>[number]
   type LinkData = MetricsRow[`Links`]
@@ -151,21 +148,18 @@
     return []
   })
   const column_defaults = $derived(
-    column_labels.map((col): Column => {
-      const better = col.better ?? metric_better_as(col.label) ?? undefined
-      return {
-        ...col,
-        id: col.group ? `${col.key} (${col.group})` : col.key,
-        cell: cells[col.key],
-        ...(column_labels === default_columns && {
-          color_scale: heatmap_disabled_cols.has(col.key) ? null : col.color_scale,
-          ...(col === model_name && { style: `padding-left: 0;${col.style ?? ``}` }),
-        }),
-        better,
-        description: append_better_hint(col, better),
-        visible: col.visible !== false && col_filter(col),
-      }
-    }),
+    column_labels.map((col): Column => ({
+      ...col,
+      id: col.group ? `${col.key} (${col.group})` : col.key,
+      cell: cells[col.key],
+      ...(column_labels === default_columns && {
+        color_scale: heatmap_disabled_cols.has(col.key) ? null : col.color_scale,
+        ...(col === model_name && { style: `padding-left: 0;${col.style ?? ``}` }),
+      }),
+      better: col.better ?? undefined, // null (no direction) isn't a Column value
+      description: append_better_hint(col),
+      visible: col.visible !== false && col_filter(col),
+    })),
   )
   const default_column_order = $derived([
     ...new Set([...initial_column_order, ...column_defaults.map((col) => col.id)]),
@@ -287,7 +281,7 @@
     const rows = visible_rows as MetricsRow[]
     if (export_format !== `json`) {
       const matrix = {
-        headers: ordered_columns.map(({ label }) => strip_html(label)),
+        headers: ordered_columns.map(({ label }) => plain_label(label)),
         rows: rows.map((row) =>
           ordered_columns.map(({ id, key = id }) => cell_text(row[key])),
         ),
@@ -441,7 +435,8 @@
     col.key === ALL_METRICS.pbe_vib_freq_error.key
       ? (row as MetricsRow).model.metrics?.diatomics?.pbe_vib_freq_coverage
       : undefined}
-  {#if coverage}
+  <!-- the fit count only earns its width when some elements lack a valid fit -->
+  {#if coverage && coverage.n_valid < coverage.n_eligible}
     <span
       data-title={`Valid fits: ${coverage.n_valid}/${coverage.n_eligible} reference-eligible elements. No valid fit: ${format_element_count(coverage.failed_elements)}. Unavailable curves: ${format_element_count(coverage.missing_elements)}.`}
     >

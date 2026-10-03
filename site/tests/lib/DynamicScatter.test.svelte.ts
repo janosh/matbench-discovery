@@ -1,7 +1,7 @@
 import { goto } from '$app/navigation'
-import { comparison, mark_compared_rows } from '$lib/model-comparison.svelte'
-import { HYPERPARAMS, METADATA_COLS } from '$lib/labels'
-import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
+import { comparison, mark_compared_rows } from '#lib/model-comparison.svelte.js'
+import { HYPERPARAMS, METADATA_COLS } from '#lib/labels.js'
+import DynamicScatter from '#lib/plot/DynamicScatter.svelte'
 import { get_d3_interpolator } from 'matterviz/colors'
 import { tick } from 'svelte'
 import { afterEach, beforeEach, expect, it, vi } from 'vite-plus/test'
@@ -12,7 +12,7 @@ import {
   mount_with_url,
   navigate,
   query_param,
-} from '../index'
+} from '../index.js'
 
 const viridis = get_d3_interpolator(`interpolateViridis`)
 const make_models = (...values: number[]) =>
@@ -25,15 +25,19 @@ const make_models = (...values: number[]) =>
     n_training_materials: value,
     n_training_structures: value,
   }))
+// matterviz markers snap only within 500 ms (wall clock) of mount and tween for 600 ms after,
+// so on a loaded machine a post-mount change would read mid-animation. Assert final state.
+const no_tween = { point_tween: { duration: 0 } }
 const scatter_props = {
   y_key: METADATA_COLS.n_training_materials.key,
   color_key: METADATA_COLS.n_training_structures.key,
   show_model_labels: false,
+  ...no_tween,
 }
+// ScatterPoint paints fill="var(--point-fill-color, <color>)"
 const marker_color = (marker: Element) =>
-  marker
-    .closest<SVGElement>(`[style*="--point-fill-color"]`)
-    ?.style.getPropertyValue(`--point-fill-color`)
+  /^var\(--point-fill-color, (?<color>.+)\)$/.exec(marker.getAttribute(`fill`) ?? ``)
+    ?.groups?.color
 
 beforeEach(() => {
   comparison.keys.clear()
@@ -115,7 +119,7 @@ it(`re-evaluates manual log choices after an axis change`, async () => {
   expect(x_toggle?.checked).toBe(false)
   expect(x_ticks()).toEqual(linear_ticks)
 
-  await choose_scatter_property(`X axis`, `Training Materials`)
+  await choose_scatter_property(`X axis`, `Nmaterials`)
   expect(axis.key).toBe(METADATA_COLS.n_training_materials.key)
   expect(x_toggle?.checked).toBe(true)
   expect(x_ticks()).toEqual(log_ticks)
@@ -187,6 +191,7 @@ it.each([
         y_key: `model_params`,
         color_key: `n_training_structures`,
         size_key: `model_params`,
+        ...no_tween,
         get [prop_key]() {
           return selection.key
         },
@@ -210,8 +215,14 @@ it.each([
           )
     const previous_values = rendered_values()
     expect(previous_values.length).toBeGreaterThan(0)
-    await choose_scatter_property(label, `Training Materials`)
+    await choose_scatter_property(label, `Nmaterials`)
     expect(selection.key).toBe(`n_training_materials`)
+    if (dim === `size`) {
+      // the option's data-path line renders HTML labels instead of escaping their tags
+      const path_line = doc_query(`.selected-label small`)
+      expect(path_line.textContent).not.toContain(`<`)
+      expect(path_line.querySelector(`sub`)?.textContent).toBe(`materials`)
+    }
     expect(rendered_values()).not.toEqual(previous_values)
     expect(query_param(dim)).toBe(`n_training_materials`)
     const shared_url = location.href
@@ -295,13 +306,11 @@ it(`isolates comparison selections and linear scales from the surrounding page U
       },
     },
   )
-  expect(doc_query(`.x-label`).textContent).toContain(`Training Structures`)
+  expect(doc_query(`.x-label`).textContent).toContain(`Nstructures`)
   expect(doc_query(`.y-label`).textContent).toContain(`Params`)
-  expect(doc_query(`.colorbar .property-select`).textContent).toContain(
-    `Training Materials`,
-  )
+  expect(doc_query(`.colorbar .property-select`).textContent).toContain(`Nmaterials`)
   expect(doc_query(`.property-picker .selected-label`).textContent).toContain(
-    `Training Structures`,
+    `Nstructures`,
   )
   const toggles = [...document.querySelectorAll<HTMLInputElement>(`.log-controls input`)]
   expect(toggles).toHaveLength(4)
@@ -309,7 +318,7 @@ it(`isolates comparison selections and linear scales from the surrounding page U
   for (const [key, value] of Object.entries(comparison_params))
     expect(query_param(key)).toBe(value)
 
-  await choose_scatter_property(`X axis`, `Training Materials`)
+  await choose_scatter_property(`X axis`, `Nmaterials`)
   expect(query_param(`compare_plot_x`)).toBe(`n_training_materials`)
   expect(query_param(`compare_plot_x_scale`)).toBeNull()
   for (const [key, value] of Object.entries(page_params))
@@ -335,7 +344,7 @@ it(`rejects categorical axes and sizes while allowing categorical colors`, async
     },
   )
   expect(doc_query(`.x-label`).textContent).toContain(`Params`)
-  expect(doc_query(`.y-label`).textContent).toContain(`Training Materials`)
+  expect(doc_query(`.y-label`).textContent).toContain(`Nmaterials`)
   expect(doc_query(`.colorbar .property-select`).textContent).toContain(`Category`)
   expect(doc_query(`.property-picker .selected-label`).textContent).toContain(`Params`)
   expect(location.search).toBe(``)
@@ -364,7 +373,7 @@ it(`uses the active task's defaults when a comparison plot survives navigation`,
   defaults.y = `n_training_structures`
   await navigate(`http://localhost/benchmarks/diatomics`, `popstate`)
   expect(doc_query(`.x-label`).textContent).toContain(`Params`)
-  expect(doc_query(`.y-label`).textContent).toContain(`Training Structures`)
+  expect(doc_query(`.y-label`).textContent).toContain(`Nstructures`)
   expect(query_param(`compare_plot_y`)).toBeNull()
   await navigate(
     `http://localhost/benchmarks/diatomics?compare_plot_y=model_params`,
@@ -406,6 +415,7 @@ it(`renders category colors and dataset links without model metadata`, async () 
     size_key: `count`,
     legend: null,
     hovered: true,
+    ...no_tween,
   }
   mount<typeof props, Record<string, unknown>>(DynamicScatter, {
     target: document.body,

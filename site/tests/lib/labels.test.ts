@@ -3,9 +3,21 @@ import {
   format_property_path,
   format_relative_time,
   get_org_logo,
-} from '$lib/labels'
+  plain_label,
+} from '#lib/labels.js'
 import { Meta, Microsoft } from 'svelte-widgets/icons'
 import { describe, expect, it } from 'vite-plus/test'
+
+it.each([
+  [`E<sub>MAE</sub>`, `E_MAE`],
+  [`R<sup>2</sup>`, `R^2`],
+  [`t/t<sub>min</sub>`, `t/t_min`],
+  [`Σ<sub>=</sub> 10<sup>-2</sup>`, `Σ_= 10^-2`],
+  [`<span title="x">CPS</span>`, `CPS`],
+  [`Params`, `Params`],
+])(`plain_label(%s) = %s`, (label, expected) => {
+  expect(plain_label(label)).toBe(expected)
+})
 
 describe(`format_power_ten`, () => {
   it.each([
@@ -41,7 +53,7 @@ describe(`format_property_path`, () => {
   it.each([
     // Direct properties
     [`model_params`, `Params`],
-    [`dates.benchmark_added`, `dates > Date Added`],
+    [`dates.benchmark_added`, `dates > Added`],
     [`n_estimators`, `Estimators`],
     [`unknown_property`, `unknown property`],
     // Discovery metrics

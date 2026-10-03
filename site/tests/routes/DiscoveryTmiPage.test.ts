@@ -1,9 +1,9 @@
-import elem_prev from '$figs/element-prevalence-vs-error.jsonl'
-import hist_clf from '$figs/hist-clf-pred-hull-dist.jsonl'
-import DiscoveryTmiPage from '$routes/benchmarks/discovery/tmi/+page.svelte'
+import elem_prev from '#figs/element-prevalence-vs-error.jsonl'
+import hist_clf from '#figs/hist-clf-pred-hull-dist.jsonl'
+import DiscoveryTmiPage from '#routes/benchmarks/discovery/tmi/+page.svelte'
 import { tick } from 'svelte'
 import { describe, expect, it } from 'vite-plus/test'
-import { doc_query, mount_with_url } from '../index'
+import { doc_query, mount_with_url } from '../index.js'
 
 const ranked_histograms = hist_clf.models.toSorted((left, right) => right.f1 - left.f1)
 const histogram_titles = () =>

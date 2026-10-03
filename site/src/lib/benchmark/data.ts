@@ -1,6 +1,6 @@
 import DATASETS from '$data/datasets.yml'
 import data_files from '$pkg/data-files.yml'
-import pkg from '$site/package.json'
+import pkg from '#site/package.json'
 import { format_num } from 'matterviz/labels'
 import {
   Search,
@@ -11,8 +11,8 @@ import {
   RulerSquareCompass,
   Thermometer,
 } from 'svelte-widgets/icons'
-import benchmark_counts from '$routes/data/benchmark-element-counts.json'
-import wbm_counts from '$routes/data/wbm-element-counts-by-occurrence.json'
+import benchmark_counts from '#routes/data/benchmark-element-counts.json'
+import wbm_counts from '#routes/data/wbm-element-counts-by-occurrence.json'
 
 const n_elements = (counts: Record<string, number | null>) =>
   Object.values(counts).filter((count) => count !== null && count > 0).length
@@ -26,7 +26,7 @@ const file_url = (key: string) => {
   return file.url
 }
 
-export const test_sets = {
+const test_sets = {
   wbm: {
     id: `wbm`,
     name: `WBM`,

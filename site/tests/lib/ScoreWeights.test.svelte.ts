@@ -1,14 +1,14 @@
-import ScoreWeights from '$lib/ScoreWeights.svelte'
+import ScoreWeights from '#lib/ScoreWeights.svelte'
 import {
   DEFAULT_CDS_CONFIG,
   DEFAULT_CMDS_CONFIG,
   DEFAULT_CPS_CONFIG,
   type CpsConfig,
-} from '$lib/combined-scores.svelte'
-import { ALL_METRICS, MD_METRICS } from '$lib/labels'
+} from '#lib/combined-scores.svelte.js'
+import { ALL_METRICS, MD_METRICS } from '#lib/labels.js'
 import { flushSync } from 'svelte'
 import { describe, expect, it } from 'vite-plus/test'
-import { doc_query, mount } from '../index'
+import { doc_query, mount } from '../index.js'
 
 describe(`ScoreWeights`, () => {
   it.each([

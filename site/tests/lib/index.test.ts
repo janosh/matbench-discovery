@@ -1,14 +1,14 @@
 import data_files from '$pkg/data-files.yml'
 import DATASETS from '$data/datasets.yml'
-import { arr_to_str, format_date } from '$lib'
-import { MODELS } from '$lib/models.svelte'
-import { scatter_options_by_key } from '$lib/labels'
-import { render_data_markdown } from '../../scripts/markdown-data'
-import { sync_url_params } from '$lib/url-state.svelte'
+import { arr_to_str, format_date } from '#lib'
+import { MODELS } from '#lib/models.svelte.js'
+import { scatter_options_by_key } from '#lib/labels.js'
+import { render_data_markdown } from '../../scripts/markdown-data.js'
+import { sync_url_params } from '#lib/url-state.svelte.js'
 import { valid_query_param } from 'svelte-widgets/url-params'
 import { describe, expect, it, vi } from 'vite-plus/test'
 
-describe(`$lib data includes rendered YAML Markdown`, () => {
+describe(`#lib data includes rendered YAML Markdown`, () => {
   it(`DATASETS entries expose computed slug and description_html`, () => {
     const entries = Object.entries(DATASETS)
     expect(entries.length).toBeGreaterThanOrEqual(20) // datasets.yml entry count

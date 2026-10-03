@@ -1,18 +1,18 @@
 import { goto } from '$app/navigation'
 import DATASETS from '$data/datasets.yml'
-import { MODELS, score_weight_records } from '$lib/models.svelte'
+import { MODELS, score_weight_records } from '#lib/models.svelte.js'
 import {
   calculate_cds,
   CDS_CONFIG,
   CMDS_CONFIG,
   CPS_CONFIG,
-} from '$lib/combined-scores.svelte'
-import { comparison } from '$lib/model-comparison.svelte'
-import Layout from '$routes/+layout.svelte'
-import pkg from '$site/package.json'
+} from '#lib/combined-scores.svelte.js'
+import { comparison } from '#lib/model-comparison.svelte.js'
+import Layout from '#routes/+layout.svelte'
+import pkg from '#site/package.json'
 import { createRawSnippet, tick } from 'svelte'
 import { expect, it, vi } from 'vite-plus/test'
-import { doc_query, mount_with_url, navigate, query_param } from '../index'
+import { doc_query, mount_with_url, navigate, query_param } from '../index.js'
 
 it(`restores and shares every score's weights on model, task and comparison routes`, async () => {
   const model = MODELS.find(
@@ -77,6 +77,9 @@ it(`restores and shares every score's weights on model, task and comparison rout
 it(`loads comparison on demand and retains its controls between openings`, async () => {
   comparison.keys.clear()
   comparison.open = false
+  // Warm the lazily imported module: its cold transform alone can exceed the 5s waitFor
+  // below under full-suite load. The layout still imports it only once opened.
+  await import(`#lib/model/ModelComparison.svelte`)
   await mount_with_url(Layout, `http://localhost/`)
   expect(
     doc_query(`footer a[href="${pkg.repository}/blob/main/license"]`).textContent,

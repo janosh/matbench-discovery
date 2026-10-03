@@ -17,7 +17,7 @@
       location.origin,
     )
     target.search = location.search
-    void goto(`${target.pathname}${target.search}${target.hash}`, { replaceState: true })
+    void goto(`${target.pathname}${target.search}${target.hash}`, { replace: true })
   })
 </script>
 

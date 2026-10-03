@@ -1,7 +1,7 @@
 <script lang="ts">
   import DATASETS from '$data/datasets.yml'
-  import { arr_to_str, format_date } from '$lib'
-  import { format_relative_time, title_case } from '$lib/labels'
+  import { arr_to_str, format_date } from '#lib'
+  import { format_relative_time, title_case } from '#lib/labels.js'
   import { format_num } from 'matterviz/labels'
   import { Icon } from 'svelte-widgets'
   import {
@@ -20,7 +20,7 @@
     ORCID,
     Tag,
   } from 'svelte-widgets/icons'
-  import pkg from '$site/package.json'
+  import pkg from '#site/package.json'
   import { tooltip } from 'svelte-widgets/attachments'
   import type { PageData } from './$types'
   import MPtrjTargetDistros from './MPtrjTargetDistros.svelte'

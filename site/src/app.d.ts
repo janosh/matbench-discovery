@@ -1,5 +1,3 @@
-/// <reference types="@sveltejs/kit" />
-
 declare const BENCHMARK_REVISION: {
   commit: string
   modified: boolean
@@ -28,13 +26,13 @@ declare module '*package.json' {
 }
 
 declare module 'models/*.yml' {
-  import type { ModelMetadata } from '$lib/schema/model'
+  import type { ModelMetadata } from '#lib/schema/model.js'
   const data: ModelMetadata
   export default data
 }
 
 declare module '*/datasets.yml' {
-  import type { Dataset } from '$lib/types'
+  import type { Dataset } from '#lib/types.js'
   const data: Record<string, Dataset>
   export default data
 }
@@ -67,10 +65,6 @@ declare module '*modeling-tasks.yml' {
   export interface ModelingTask {
     label: string
     description: string
-    metrics: {
-      higher_is_better: string[]
-      lower_is_better: string[]
-    }
     subtasks?: Record<string, SubTask>
   }
 
@@ -87,7 +81,7 @@ declare module '*modeling-tasks.yml' {
 }
 
 declare module '*mlip-github-activity.json' {
-  import type { GitHubActivityData } from '$lib/types'
+  import type { GitHubActivityData } from '#lib/types.js'
   const data: GitHubActivityData[]
   export default data
 }

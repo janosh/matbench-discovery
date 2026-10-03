@@ -1,10 +1,10 @@
-import type { ModelData } from '$lib/types'
-import { MODELS } from '$lib/models.svelte'
-import DiatomicsPage from '$routes/benchmarks/diatomics/+page.svelte'
+import type { ModelData } from '#lib/types.js'
+import { MODELS } from '#lib/models.svelte.js'
+import DiatomicsPage from '#routes/benchmarks/diatomics/+page.svelte'
 import { tick } from 'svelte'
 import { PLOT_COLORS } from 'matterviz/colors'
 import { describe, expect, it } from 'vite-plus/test'
-import { doc_query, mount_with_url, open_filter_menu, sorted_header } from '../index'
+import { doc_query, mount_with_url, open_filter_menu, sorted_header } from '../index.js'
 
 const model_data: ModelData[] = (
   [
@@ -160,7 +160,7 @@ describe(`Diatomics Page URL state`, () => {
   it(`restores metrics-table sort and filters and syncs filter changes`, async () => {
     await mount_page(`?sort=pbe_force_mae&dir=desc&train=MPtrj&heatmap=0&selected_only=1`)
 
-    expect(sorted_header()?.textContent).toContain(`PBE F MAE`)
+    expect(sorted_header()?.textContent).toContain(`FMAE`)
     expect(sorted_header()?.getAttribute(`aria-sort`)).toBe(`descending`)
     const training_filter = doc_query<HTMLInputElement>(
       `[aria-label="require MPtrj"]`,

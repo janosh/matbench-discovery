@@ -1,11 +1,11 @@
 <script lang="ts">
   import DATASETS from '$data/datasets.yml'
-  import { fit_toolbar_links } from './fit-toolbar-links'
+  import { fit_toolbar_links } from './fit-toolbar-links.js'
   import type { Column, RowData } from 'matterviz/table'
-  import { openness_tooltips } from '$lib/metrics'
-  import { comparison } from '$lib/model-comparison.svelte'
-  import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
-  import type { ModelData } from '$lib/types'
+  import { openness_tooltips } from '#lib/metrics.js'
+  import { comparison } from '#lib/model-comparison.svelte.js'
+  import { ACTIVE_MODELS, make_table_filters } from '#lib/models.svelte.js'
+  import type { ModelData } from '#lib/types.js'
   import {
     DEFAULT_TARGETS_PARAM,
     FS_MODES,
@@ -15,7 +15,7 @@
     TARGET_OUTPUTS,
     type TargetOutput,
     type UrlTableFilters,
-  } from '$lib/url-state.svelte'
+  } from '#lib/url-state.svelte.js'
   import { Icon, Popover, Sheet } from 'svelte-widgets'
   import { Cross, Filter, Scale } from 'svelte-widgets/icons'
   import { ToggleMenu } from 'matterviz/table'
@@ -408,7 +408,7 @@
   .active-filters {
     flex-basis: 100%;
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: balance;
     justify-content: center;
     align-items: center;
     gap: 0.4em;

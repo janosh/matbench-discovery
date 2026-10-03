@@ -1,7 +1,7 @@
-import { load } from '$routes/changelog/+page.server'
-import Page from '$routes/changelog/+page.svelte'
+import { load } from '#routes/changelog/+page.server.js'
+import Page from '#routes/changelog/+page.svelte'
 import { expect, it } from 'vite-plus/test'
-import { mount } from '../index'
+import { mount } from '../index.js'
 
 it(`renders changelog Markdown with release headings and linked code`, async () => {
   mount(Page, { target: document.body, props: { data: await load() } })

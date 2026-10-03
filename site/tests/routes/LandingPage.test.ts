@@ -1,6 +1,6 @@
-import { OPENNESS_OPTIONS } from '$lib/url-state.svelte'
-import { comparison } from '$lib/model-comparison.svelte'
-import Page from '$routes/+page.svelte'
+import { OPENNESS_OPTIONS } from '#lib/url-state.svelte.js'
+import { comparison } from '#lib/model-comparison.svelte.js'
+import Page from '#routes/+page.svelte'
 import { flushSync, tick } from 'svelte'
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import {
@@ -13,7 +13,7 @@ import {
   POPOVER_OPEN_ATTR,
   query_param,
   sorted_header,
-} from '../index'
+} from '../index.js'
 
 const header_text = () =>
   [...document.querySelectorAll(`thead th`)]
@@ -56,10 +56,9 @@ const mount_page = () => mount(Page, { target: document.body })
 
 describe(`Landing Page`, () => {
   let page_component: ReturnType<typeof mount_page>
-  // happy-dom mounts of the full-column metrics table are slow in CI
   beforeEach(() => {
     page_component = mount_page()
-  }, 30_000)
+  })
 
   const select_preset = async (label: string) => {
     preset_button(label).click()
@@ -99,7 +98,7 @@ describe(`Landing Page`, () => {
       `CDS`,
       `Params`,
       `Targets`,
-      `Date Added`,
+      `Added`,
       `Links`,
       `rcut`,
       `Training Set`,
@@ -218,10 +217,10 @@ describe(`Landing Page`, () => {
 
   // Each non-default task preset reveals one of its signature columns.
   it.each([
-    [`Phonons`, [`κSRE`, `κSRME`, `κSRD`, `κ failed`, `Im(ω)`, `W1(ω)`]], // all six phonon metrics
+    [`Phonons`, [`κSRE`, `κSRME`, `κSRD`, `κfailed`, `Im(ω)`, `W1(ω)`]], // all six phonon metrics
     [`Geo Opt`, [`Σ`]], // symmetry metrics (Σ= / Σ↓ / Σ↑)
     [`MD`, [`vDOS`]], // vDOS err (RDF is hidden from leaderboards as redundant)
-    [`Diatomics`, [`E jump`]],
+    [`Diatomics`, [`Ejump`]],
   ])(
     `%s preset reveals task metrics and keeps headline metrics`,
     async (preset, signature_columns) => {

@@ -1,25 +1,25 @@
 <script lang="ts">
-  import TestSet from '$lib/benchmark/TestSet.svelte'
-  import TaskNavigation from '$lib/benchmark/TaskNavigation.svelte'
-  import spg_sankeys from '$figs/spg-sankeys.jsonl'
-  import struct_rmsd_cdf from '$figs/struct-rmsd-cdf.jsonl'
-  import sym_ops_diff from '$figs/sym-ops-diff-bar.jsonl'
-  import MetricsTable from '$lib/table/MetricsTable.svelte'
-  import type { Label } from '$lib/types'
-  import ModelSelect from '$lib/ModelSelect.svelte'
-  import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
-  import { by_benchmark_added_desc } from '$lib'
-  import { order_models } from '$lib/fig-helpers'
+  import TestSet from '#lib/benchmark/TestSet.svelte'
+  import TaskNavigation from '#lib/benchmark/TaskNavigation.svelte'
+  import spg_sankeys from '#figs/spg-sankeys.jsonl'
+  import struct_rmsd_cdf from '#figs/struct-rmsd-cdf.jsonl'
+  import sym_ops_diff from '#figs/sym-ops-diff-bar.jsonl'
+  import MetricsTable from '#lib/table/MetricsTable.svelte'
+  import type { Label } from '#lib/types.js'
+  import ModelSelect from '#lib/ModelSelect.svelte'
+  import { ACTIVE_MODELS, make_table_filters } from '#lib/models.svelte.js'
+  import { by_benchmark_added_desc } from '#lib'
+  import { order_models } from '#lib/fig-helpers.js'
   import {
     ALL_METRICS,
     GEO_OPT_SYMMETRY_METRICS,
     HYPERPARAMS,
     METADATA_COLS,
     scatter_axis_label,
-  } from '$lib/labels'
-  import { UrlModelSelection } from '$lib/model-selection.svelte'
-  import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
-  import { bind_url_params } from '$lib/url-state.svelte'
+  } from '#lib/labels.js'
+  import { UrlModelSelection } from '#lib/model-selection.svelte.js'
+  import DynamicScatter from '#lib/plot/DynamicScatter.svelte'
+  import { bind_url_params } from '#lib/url-state.svelte.js'
   import { min } from 'd3-array'
   import { format_num } from 'matterviz/labels'
   import { pick_contrast_color } from 'matterviz/colors'

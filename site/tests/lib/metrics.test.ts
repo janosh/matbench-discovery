@@ -1,35 +1,31 @@
 import DATASETS from '$data/datasets.yml'
-import { MODELS } from '$lib/models.svelte'
-import { ALL_METRICS, DIATOMICS_METRICS, MD_METRICS, PHONON_METRICS } from '$lib/labels'
+import { MODELS } from '#lib/models.svelte.js'
+import {
+  ALL_METRICS,
+  DIATOMICS_METRICS,
+  MD_METRICS,
+  PHONON_METRICS,
+} from '#lib/labels.js'
 import {
   assemble_row_data,
   format_train_set,
-  metric_better_as,
   missing_metric_reason,
   sort_models,
-} from '$lib/metrics'
-import type { ModelData } from '$lib/types'
+} from '#lib/metrics.js'
+import type { ModelData } from '#lib/types.js'
 import { describe, expect, it } from 'vite-plus/test'
 
-describe(`metric_better_as`, () => {
-  // guards metric orientation in modeling-tasks.yml, e.g. CMDS/combined_score
-  // being a score (higher=better) and errors like MAE/RMSE being lower=better
-  it.each([
-    [`combined_score`, `higher`],
-    [`CMDS`, `higher`],
-    [`vdos_error`, `lower`],
-    [`F1`, `higher`],
-    [`Precision`, `higher`],
-    [`MAE`, `lower`],
-    [`RMSE`, `lower`],
-    [`κ_failure_rate`, `lower`],
-    [`imaginary_mode_rate`, `lower`],
-    [`spectrum_w1`, `lower`],
-    [`κ_SRD`, null],
-    [`nonexistent_metric`, null],
-  ])(`maps %s -> %s`, (metric, expected) => {
-    expect(metric_better_as(metric)).toBe(expected)
-  })
+// labels own their direction (no fallback list), so a metric added without `better` would
+// silently lose its heatmap orientation and better-hint
+it(`every metric declares a direction except the deliberate exceptions`, () => {
+  const no_direction = Object.values(ALL_METRICS)
+    .filter(({ better }) => better !== `higher` && better !== `lower`)
+    .map(({ key }) => key)
+  expect(no_direction).toEqual([
+    `κ_SRD`,
+    `symmetry_increase_1e-2`,
+    `symmetry_increase_1e-5`,
+  ])
 })
 
 describe(`format_train_set`, () => {

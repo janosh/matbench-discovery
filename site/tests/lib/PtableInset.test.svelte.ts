@@ -1,7 +1,7 @@
-import PtableInset from '$lib/PtableInset.svelte'
+import PtableInset from '#lib/PtableInset.svelte'
 import type { ChemicalElement } from 'matterviz'
 import { describe, expect, it } from 'vite-plus/test'
-import { mount } from '../index'
+import { mount } from '../index.js'
 
 const mock_Fe = { symbol: `Fe`, name: `Iron`, number: 26 } as ChemicalElement
 const mock_H = { symbol: `H`, name: `Hydrogen`, number: 1 } as ChemicalElement

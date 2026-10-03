@@ -1,4 +1,4 @@
-import data from '$routes/models/per-element-each-errors.jsonl'
+import data from '#routes/models/per-element-each-errors.jsonl'
 
 // Per-model mean convex-hull-distance error projected onto elements. Reference columns
 // are payload-wide data in _base; only actual models occupy roster lines.

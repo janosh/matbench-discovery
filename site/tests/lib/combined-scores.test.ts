@@ -1,10 +1,10 @@
-import type { ModelData } from '$lib/types'
+import type { ModelData } from '#lib/types.js'
 import type {
   CpsConfig,
   CdsConfig,
   CdsValues,
   CmdsConfig,
-} from '$lib/combined-scores.svelte'
+} from '#lib/combined-scores.svelte.js'
 import {
   calculate_cds,
   calculate_cps,
@@ -17,8 +17,8 @@ import {
   calculate_cmds,
   DEFAULT_CMDS_CONFIG,
   update_models_cmds,
-} from '$lib/combined-scores.svelte'
-import { RMSD_BASELINE } from '$lib/labels'
+} from '#lib/combined-scores.svelte.js'
+import { RMSD_BASELINE } from '#lib/labels.js'
 import { apply_weights_param, weights_to_param } from 'matterviz/url-params'
 import { afterEach, beforeEach, describe, expect, it } from 'vite-plus/test'
 

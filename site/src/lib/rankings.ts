@@ -1,9 +1,9 @@
 // Per-metric leaderboard ranks for a single model, shown as a "report card" on
 // model detail pages. Values are read via the same label paths the metrics table
 // uses, so ranks always agree with the leaderboard.
-import { ALL_METRICS, MD_METRICS } from '$lib/labels'
-import { is_finite_num, metric_value } from '$lib/metrics'
-import type { Label, ModelData } from '$lib/types'
+import { ALL_METRICS, MD_METRICS } from '#lib/labels.js'
+import { is_finite_num, metric_value } from '#lib/metrics.js'
+import type { Label, ModelData } from '#lib/types.js'
 
 // headline metrics to rank models by, with the page where each leaderboard lives.
 // labels carry their task name for context on model detail pages

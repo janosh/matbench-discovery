@@ -1,13 +1,13 @@
 <script lang="ts">
-  import ModelCard from '$lib/model/ModelCard.svelte'
-  import GitHubActivityScatter from '$lib/plot/GitHubActivityScatter.svelte'
-  import type { Label } from '$lib/types'
+  import ModelCard from '#lib/model/ModelCard.svelte'
+  import GitHubActivityScatter from '#lib/plot/GitHubActivityScatter.svelte'
+  import type { Label } from '#lib/types.js'
   import { Icon, Popover } from 'svelte-widgets'
   import { Info } from 'svelte-widgets/icons'
-  import { ALL_METRICS, MD_METRICS, METADATA_COLS } from '$lib/labels'
-  import { get_nested_value, label_data_path, sort_models } from '$lib/metrics'
-  import { MODELS } from '$lib/models.svelte'
-  import { bind_url_params } from '$lib/url-state.svelte'
+  import { ALL_METRICS, MD_METRICS, METADATA_COLS } from '#lib/labels.js'
+  import { get_nested_value, label_data_path, sort_models } from '#lib/metrics.js'
+  import { MODELS } from '#lib/models.svelte.js'
+  import { bind_url_params } from '#lib/url-state.svelte.js'
   import { valid_query_param } from 'svelte-widgets/url-params'
   import { clamp_integer } from 'svelte-widgets/utils'
   import { ColorBar } from 'matterviz/plot'
@@ -58,8 +58,6 @@
     return rd_bu((val - min) / (max - min))
   }
 
-  // labels carry `better` directly; metric_better_as() keys on yml names (RMSD), not
-  // label keys (rmsd), so it would misreport RMSD as higher=better
   let lower_is_better = $derived(sort_by.better === `lower`)
 
   let models = $derived(sort_models(MODELS, sort_by_path, order))
@@ -198,7 +196,7 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
   }
   ul {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: balance;
     gap: 9pt;
     margin: 2.5ex auto 3ex;
     place-content: center;

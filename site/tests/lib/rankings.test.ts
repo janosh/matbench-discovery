@@ -1,6 +1,6 @@
-import { ALL_METRICS } from '$lib/labels'
-import { model_metric_ranks, RANKED_METRICS } from '$lib/rankings'
-import type { Label, ModelData } from '$lib/types'
+import { ALL_METRICS } from '#lib/labels.js'
+import { model_metric_ranks, RANKED_METRICS } from '#lib/rankings.js'
+import type { Label, ModelData } from '#lib/types.js'
 import { describe, expect, it } from 'vite-plus/test'
 
 // minimal model stub with just the fields the ranked metric paths read

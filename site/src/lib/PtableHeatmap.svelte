@@ -1,5 +1,5 @@
 <script lang="ts">
-  import PtableInset from '$lib/PtableInset.svelte'
+  import PtableInset from '#lib/PtableInset.svelte'
   import { extent } from 'd3-array'
   import type { ChemicalElement, ElementSymbol } from 'matterviz'
   import { ColorBar } from 'matterviz/plot'

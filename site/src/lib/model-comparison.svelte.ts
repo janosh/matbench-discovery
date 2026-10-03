@@ -1,5 +1,5 @@
 import { page } from '$app/state'
-import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from '$lib/labels'
+import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from '#lib/labels.js'
 import {
   discovery_task_tooltips,
   is_finite_num,
@@ -8,11 +8,11 @@ import {
   openness_tooltips,
   targets_tooltips,
   training_set_link,
-} from '$lib/metrics'
-import { ACTIVE_MODELS, MODELS } from '$lib/models.svelte'
-import { competition_rank, RANKED_METRICS } from '$lib/rankings'
-import type { Author, Label, ModelData } from '$lib/types'
-import { bind_url_params } from '$lib/url-state.svelte'
+} from '#lib/metrics.js'
+import { ACTIVE_MODELS, MODELS } from '#lib/models.svelte.js'
+import { competition_rank, RANKED_METRICS } from '#lib/rankings.js'
+import type { Author, Label, ModelData } from '#lib/types.js'
+import { bind_url_params } from '#lib/url-state.svelte.js'
 import { format_num } from 'matterviz/labels'
 import { escape_html } from 'matterviz/utils'
 import type { RowData } from 'matterviz/table'
@@ -113,7 +113,7 @@ export type CompareRow = Label & {
 }
 export type CompareGroup = { title: string; href?: string; rows: CompareRow[] }
 
-export const row_value = (row: CompareRow, model: ModelData): unknown =>
+const row_value = (row: CompareRow, model: ModelData): unknown =>
   row.value ? row.value(model) : metric_value(model, row)
 
 const metrics = (...keys: (keyof typeof ALL_METRICS)[]): CompareRow[] =>

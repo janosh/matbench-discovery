@@ -284,8 +284,12 @@ blockquote > :is(:first-child, :last-child) {
   margin: 0 auto;
 }
 
+/* longhands: the text-wrap shorthand would also reset an inherited white-space: nowrap */
 :where(h1, h2, h3, h4, h5, h6, address) {
-  text-wrap: balance;
+  text-wrap-style: balance;
+}
+:where(p, li, figcaption) {
+  text-wrap-style: pretty;
 }
 :where(h2, h3, h4, h5, h6):not(:first-of-type) {
   margin-top: 2em;

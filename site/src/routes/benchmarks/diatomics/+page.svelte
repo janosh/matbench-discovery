@@ -1,26 +1,26 @@
 <script lang="ts">
-  import TestSet from '$lib/benchmark/TestSet.svelte'
-  import TaskNavigation from '$lib/benchmark/TaskNavigation.svelte'
-  import MetricsTable from '$lib/table/MetricsTable.svelte'
-  import ModelSelect from '$lib/ModelSelect.svelte'
+  import TestSet from '#lib/benchmark/TestSet.svelte'
+  import TaskNavigation from '#lib/benchmark/TaskNavigation.svelte'
+  import MetricsTable from '#lib/table/MetricsTable.svelte'
+  import ModelSelect from '#lib/ModelSelect.svelte'
   import {
     ACTIVE_MODELS,
     has_diatomics_curves,
     make_table_filters,
-  } from '$lib/models.svelte'
+  } from '#lib/models.svelte.js'
   import { ButtonGroup } from 'svelte-widgets'
-  import { CDS_CONFIG, DEFAULT_CDS_CONFIG } from '$lib/combined-scores.svelte'
+  import { CDS_CONFIG, DEFAULT_CDS_CONFIG } from '#lib/combined-scores.svelte.js'
   import {
     DIATOMICS_METRICS,
     METADATA_COLS,
     scatter_axis_label,
     task_page_visible_cols,
-  } from '$lib/labels'
-  import DiatomicCurve from '$lib/plot/DiatomicCurve.svelte'
-  import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
-  import ScoreWeights from '$lib/ScoreWeights.svelte'
-  import { UrlModelSelection } from '$lib/model-selection.svelte'
-  import { bind_url_params } from '$lib/url-state.svelte'
+  } from '#lib/labels.js'
+  import DiatomicCurve from '#lib/plot/DiatomicCurve.svelte'
+  import DynamicScatter from '#lib/plot/DynamicScatter.svelte'
+  import ScoreWeights from '#lib/ScoreWeights.svelte'
+  import { UrlModelSelection } from '#lib/model-selection.svelte.js'
+  import { bind_url_params } from '#lib/url-state.svelte.js'
   import { valid_query_param } from 'svelte-widgets/url-params'
   import DiatomicsNote from './diatomics-note.md'
   import {
@@ -32,7 +32,7 @@
   import { pick_contrast_color, PLOT_COLORS } from 'matterviz/colors'
   import { SvelteSet } from 'svelte/reactivity'
   import type { PageData } from './$types'
-  import { make_plot_observer } from './observe-plot'
+  import { make_plot_observer } from './observe-plot.js'
 
   let { data }: { data: PageData } = $props()
   let diatomic_models = $derived(data?.diatomic_models ?? [])

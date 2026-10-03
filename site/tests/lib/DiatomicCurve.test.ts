@@ -1,6 +1,6 @@
-import DiatomicCurve from '$lib/plot/DiatomicCurve.svelte'
+import DiatomicCurve from '#lib/plot/DiatomicCurve.svelte'
 import { describe, expect, it, vi } from 'vite-plus/test'
-import { doc_query, get_scatter_plot_props, mount } from '../index'
+import { doc_query, get_scatter_plot_props, mount } from '../index.js'
 
 const plot_mocks = vi.hoisted(() => ({
   ScatterPlot: vi.fn(),

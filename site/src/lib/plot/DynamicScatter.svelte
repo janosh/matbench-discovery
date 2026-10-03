@@ -1,7 +1,7 @@
 <script lang="ts" generics="T extends object">
   import { goto } from '$app/navigation'
-  import { comparison } from '$lib/model-comparison.svelte'
-  import type { Label, DiscoverySet } from '$lib/types'
+  import { comparison } from '#lib/model-comparison.svelte.js'
+  import type { Label, DiscoverySet } from '#lib/types.js'
   import { extent } from 'd3-array'
   import { format_value_or_num } from 'matterviz/labels'
   import { create_collapsible_legend, ScatterPlot } from 'matterviz/plot'
@@ -21,16 +21,16 @@
     HYPERPARAMS,
     scatter_options,
     title_case,
-  } from '$lib/labels'
+  } from '#lib/labels.js'
   import {
     get_nested_value,
     is_finite_num,
     label_data_path,
     metric_data_path,
-  } from '$lib/metrics'
-  import { wide_legend } from '$lib/fig-helpers'
-  import { pareto_staircase, sota_frontier_indices, sota_step_line } from '$lib/sota'
-  import { bind_url_params } from '$lib/url-state.svelte'
+  } from '#lib/metrics.js'
+  import { wide_legend } from '#lib/fig-helpers.js'
+  import { pareto_staircase, sota_frontier_indices, sota_step_line } from '#lib/sota.js'
+  import { bind_url_params } from '#lib/url-state.svelte.js'
   import { valid_query_param } from 'svelte-widgets/url-params'
   import { untrack } from 'svelte'
 
@@ -374,7 +374,9 @@
           <span class:selected-label={type === `selected`}>
             {@html prop.label}
             <small
-              >{format_size_option_path(label_data_path(prop))} · {model_count(prop)}
+              >{@html format_size_option_path(label_data_path(prop))} · {model_count(
+                prop,
+              )}
               {item_name}</small
             >
           </span>

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { Author, OrgLogo } from '$lib/types'
-  import { get_org_logo } from '$lib/labels'
+  import type { Author, OrgLogo } from '#lib/types.js'
+  import { get_org_logo } from '#lib/labels.js'
   import { Popover } from 'svelte-widgets'
   import Logo from '../Logo.svelte'
 

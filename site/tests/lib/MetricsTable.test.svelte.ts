@@ -1,16 +1,16 @@
 import { goto } from '$app/navigation'
 import { page } from '$app/state'
 import data_files from '$pkg/data-files.yml'
-import { DIATOMICS_METRICS, DISCOVERY_SET_LABELS, HYPERPARAMS } from '$lib/labels'
-import { comparison } from '$lib/model-comparison.svelte'
+import { DIATOMICS_METRICS, DISCOVERY_SET_LABELS, HYPERPARAMS } from '#lib/labels.js'
+import { comparison } from '#lib/model-comparison.svelte.js'
 import {
   ACTIVE_MODELS,
   get_pred_file_urls,
   make_table_filters,
   score_weight_records,
-} from '$lib/models.svelte'
-import MetricsTable from '$lib/table/MetricsTable.svelte'
-import type { DiscoverySet, Label, ModelData } from '$lib/types'
+} from '#lib/models.svelte.js'
+import MetricsTable from '#lib/table/MetricsTable.svelte'
+import type { DiscoverySet, Label, ModelData } from '#lib/types.js'
 import { tick, type ComponentProps } from 'svelte'
 import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vite-plus/test'
 import {
@@ -20,8 +20,8 @@ import {
   mount_with_url,
   navigate,
   query_param,
-} from '../index'
-import app_css from '$site/src/app.css?raw'
+} from '../index.js'
+import app_css from '#site/src/app.css?raw'
 
 const mount_table = (props: ComponentProps<typeof MetricsTable> = {}) =>
   mount(MetricsTable, { target: document.body, props })
@@ -77,108 +77,102 @@ describe(`MetricsTable`, () => {
       return model
     })
 
-  it(
-    `renders columns, header tooltips and prediction downloads`,
-    { timeout: 30_000 },
-    async () => {
-      let discovery_set = $state<DiscoverySet>(`unique_prototypes`)
-      mount_table({
-        col_filter: () => true,
-        get discovery_set() {
-          return discovery_set
-        },
-      })
+  it(`renders columns, header tooltips and prediction downloads`, async () => {
+    let discovery_set = $state<DiscoverySet>(`unique_prototypes`)
+    mount_table({
+      col_filter: () => true,
+      get discovery_set() {
+        return discovery_set
+      },
+    })
 
-      const table = doc_query(`table`)
-      expect(table.querySelector(`thead`)).not.toBeNull()
-      expect(table.querySelector(`tbody`)).not.toBeNull()
-      const table_container = doc_query(`.table-container`)
-      expect(table_container.style.getPropertyValue(`--heatmap-column-max-width`)).toBe(
-        `14.4em`,
-      )
-      expect(
-        table_container.style.getPropertyValue(`--heatmap-sticky-cell-odd-bg`),
-      ).toContain(`linear-gradient`)
-      expect(
-        table_container.style.getPropertyValue(`--heatmap-row-num-padding-left`),
-      ).toBe(`0`)
+    const table = doc_query(`table`)
+    expect(table.querySelector(`thead`)).not.toBeNull()
+    expect(table.querySelector(`tbody`)).not.toBeNull()
+    const table_container = doc_query(`.table-container`)
+    expect(table_container.style.getPropertyValue(`--heatmap-column-max-width`)).toBe(
+      `14.4em`,
+    )
+    expect(
+      table_container.style.getPropertyValue(`--heatmap-sticky-cell-odd-bg`),
+    ).toContain(`linear-gradient`)
+    expect(table_container.style.getPropertyValue(`--heatmap-row-num-padding-left`)).toBe(
+      `0`,
+    )
 
-      const header_texts = header_cells().map((header) =>
-        header.textContent?.trim().replaceAll(/\s+/g, ` `),
-      )
-      // Model stays first and Org is a regular metadata column at the far right.
-      expect(header_texts[0]).toBe(`Model`)
-      expect(header_texts.at(-1)).toBe(`Org`)
-      const metric_order = [`CPS ↑`, `F1`, `DAF`].map((col) => header_texts.indexOf(col))
-      expect(metric_order).toStrictEqual([...metric_order].toSorted((n1, n2) => n1 - n2))
+    const header_texts = header_cells().map((header) =>
+      header.textContent?.trim().replaceAll(/\s+/g, ` `),
+    )
+    // Model stays first and Org is a regular metadata column at the far right.
+    expect(header_texts[0]).toBe(`Model`)
+    expect(header_texts.at(-1)).toBe(`Org`)
+    const metric_order = [`CPS ↑`, `F1`, `DAF`].map((col) => header_texts.indexOf(col))
+    expect(metric_order).toStrictEqual([...metric_order].toSorted((n1, n2) => n1 - n2))
 
-      const initial_rows = [...table.querySelectorAll(`tbody tr`)]
-      expect(ranking_context()).toContain(`Sorted by CPS (descending)`)
-      expect(ranking_context()).toContain(`MD and diatomics are excluded`)
-      expect(ranking_context()).toContain(`CPS uses unique-prototype discovery scores`)
-      for (const subset of [`full_test_set`, `unique_prototypes`] as const) {
-        discovery_set = subset
-        await tick()
-        expect(ranking_context()).toContain(
-          `Discovery: ${DISCOVERY_SET_LABELS[subset].label}`,
-        )
-        const models = row_models()
-        for (const [idx, row] of [...table.querySelectorAll(`tbody tr`)].entries()) {
-          expect(row).toBe(initial_rows[idx])
-          const f1 = models[idx].metrics?.discovery?.[subset]?.F1
-          expect(
-            doc_query(`td[data-col="F1"]`, row).getAttribute(`data-sort-value`),
-          ).toBe(f1 == null ? null : String(f1))
-        }
-      }
-
-      const org_cell = doc_query(`td[data-col="Org"]:has(.org-preview)`)
-      expect(org_cell.getAttribute(`style`)).not.toContain(`min-width:`)
-      const cps_header = header_cells().find((header) => header_name(header) === `CPS`)
-      if (!cps_header) throw new Error(`CPS header is missing`)
-      const style = document.createElement(`style`)
-      // happy-dom's CSS parser swallows the first rule after a bare @import.
-      style.textContent = app_css.replaceAll(/^@import[^;]+;/gm, ``)
-      document.body.append(style)
-      cps_header.style.fontWeight = `700`
+    const initial_rows = [...table.querySelectorAll(`tbody tr`)]
+    expect(ranking_context()).toContain(`Sorted by CPS (descending)`)
+    expect(ranking_context()).toContain(`MD and diatomics are excluded`)
+    expect(ranking_context()).toContain(`CPS uses unique-prototype discovery scores`)
+    for (const subset of [`full_test_set`, `unique_prototypes`] as const) {
+      discovery_set = subset
       await tick()
-      expect(getComputedStyle(doc_query(`.control-buttons`)).alignItems).toBe(`baseline`)
-      expect(doc_query(`.control-buttons`).firstElementChild).toBe(
-        doc_query(`.control-buttons > [aria-label="Active model filters"]`),
+      expect(ranking_context()).toContain(
+        `Discovery: ${DISCOVERY_SET_LABELS[subset].label}`,
       )
-      for (const action of document.querySelectorAll(
-        `.control-buttons > :is(button, a)`,
-      )) {
-        expect(getComputedStyle(action).whiteSpace).toBe(`nowrap`)
+      const models = row_models()
+      for (const [idx, row] of [...table.querySelectorAll(`tbody tr`)].entries()) {
+        expect(row).toBe(initial_rows[idx])
+        const f1 = models[idx].metrics?.discovery?.[subset]?.F1
+        expect(doc_query(`td[data-col="F1"]`, row).getAttribute(`data-sort-value`)).toBe(
+          f1 == null ? null : String(f1),
+        )
       }
-      const trigger = doc_query<HTMLButtonElement>(`button[aria-haspopup]`, cps_header)
-      trigger.dispatchEvent(new MouseEvent(`mouseenter`))
-      await vi.waitFor(() => {
-        const content = doc_query(`.popover`, cps_header)
-        expect(content.textContent).toContain(`Combined Performance Score`)
-        expect(content.textContent).toContain(`(higher=better)`)
-        expect(getComputedStyle(content).fontWeight).toBe(`400`)
-        expect(getComputedStyle(content).whiteSpace).toBe(`normal`)
-        expect(getComputedStyle(content).textAlign).toBe(`left`)
-      })
-      trigger.dispatchEvent(new MouseEvent(`mouseleave`))
-      await vi.waitFor(() => expect(cps_header.querySelector(`.popover`)).toBeNull())
+    }
 
-      const pred_files_button = doc_query<HTMLButtonElement>(
-        `tbody button[aria-label="Download model prediction files"]`,
-      )
-      expect(document.querySelector(`.pred-files-dropdown`)).toBeNull()
+    const org_cell = doc_query(`td[data-col="Org"]:has(.org-preview)`)
+    expect(org_cell.getAttribute(`style`)).not.toContain(`min-width:`)
+    const cps_header = header_cells().find((header) => header_name(header) === `CPS`)
+    if (!cps_header) throw new Error(`CPS header is missing`)
+    const style = document.createElement(`style`)
+    // happy-dom's CSS parser swallows the first rule after a bare @import.
+    style.textContent = app_css.replaceAll(/^@import[^;]+;/gm, ``)
+    document.body.append(style)
+    cps_header.style.fontWeight = `700`
+    await tick()
+    expect(getComputedStyle(doc_query(`.control-buttons`)).alignItems).toBe(`baseline`)
+    expect(doc_query(`.control-buttons`).firstElementChild).toBe(
+      doc_query(`.control-buttons > [aria-label="Active model filters"]`),
+    )
+    for (const action of document.querySelectorAll(`.control-buttons > :is(button, a)`)) {
+      expect(getComputedStyle(action).whiteSpace).toBe(`nowrap`)
+    }
+    const trigger = doc_query<HTMLButtonElement>(`button[aria-haspopup]`, cps_header)
+    trigger.dispatchEvent(new MouseEvent(`mouseenter`))
+    await vi.waitFor(() => {
+      const content = doc_query(`.popover`, cps_header)
+      expect(content.textContent).toContain(`Combined Performance Score`)
+      expect(content.textContent).toContain(`(higher=better)`)
+      expect(getComputedStyle(content).fontWeight).toBe(`400`)
+      expect(getComputedStyle(content).whiteSpace).toBe(`normal`)
+      expect(getComputedStyle(content).textAlign).toBe(`left`)
+    })
+    trigger.dispatchEvent(new MouseEvent(`mouseleave`))
+    await vi.waitFor(() => expect(cps_header.querySelector(`.popover`)).toBeNull())
 
-      // outside-press and Escape dismissal is the Popover's own (native light dismiss)
-      for (const open of [true, false]) {
-        pred_files_button.click()
-        await tick()
-        expect(pred_files_button.getAttribute(`aria-expanded`)).toBe(String(open))
-        const dropdown = document.querySelector(`.pred-files-dropdown`)
-        expect(dropdown?.textContent?.includes(`Files for`) ?? false).toBe(open)
-      }
-    },
-  )
+    const pred_files_button = doc_query<HTMLButtonElement>(
+      `tbody button[aria-label="Download model prediction files"]`,
+    )
+    expect(document.querySelector(`.pred-files-dropdown`)).toBeNull()
+
+    // outside-press and Escape dismissal is the Popover's own (native light dismiss)
+    for (const open of [true, false]) {
+      pred_files_button.click()
+      await tick()
+      expect(pred_files_button.getAttribute(`aria-expanded`)).toBe(String(open))
+      const dropdown = document.querySelector(`.pred-files-dropdown`)
+      expect(dropdown?.textContent?.includes(`Files for`) ?? false).toBe(open)
+    }
+  })
 
   it(`explains every n/a cell and displays the reason on hover`, async () => {
     const pending_model = ACTIVE_MODELS.find(
@@ -249,7 +243,7 @@ describe(`MetricsTable`, () => {
       n_eligible: 2,
       failed_elements: [],
       missing_elements: [],
-      tooltip: `Valid fits: 2/2 reference-eligible elements. No valid fit: 0. Unavailable curves: 0.`,
+      tooltip: null, // complete coverage shows the bare value
     },
   ])(
     `shows frequency fit coverage $n_valid/$n_eligible without changing numeric sorting`,
@@ -271,8 +265,13 @@ describe(`MetricsTable`, () => {
         filters: all_targets_filters(),
       })
       await tick()
-      const cell = doc_query(`tbody td[data-col="PBE Δω"]`)
+      const cell = doc_query(`tbody td[data-col="Δω"]`)
       expect(cell.getAttribute(`data-sort-value`)).toBe(coverage.n_valid ? `47.7` : null)
+      if (!tooltip) {
+        expect(cell.textContent?.trim()).toBe(`47.7`)
+        expect(cell.querySelector(`small, [data-title]`)).toBeNull()
+        return
+      }
       expect(cell.textContent?.trim()).toBe(
         `${coverage.n_valid ? `47.7` : `n/a`} · ${coverage.n_valid}/${coverage.n_eligible}`,
       )
@@ -290,7 +289,7 @@ describe(`MetricsTable`, () => {
     {
       name: `metadata`,
       hidden_keys: [`Training Set`, `Targets`, `benchmark_added`, `Links`],
-      hidden_labels: [`Training Set`, `Targets`, `Date Added`, `Links`],
+      hidden_labels: [`Training Set`, `Targets`, `Added`, `Links`],
       retained_labels: [`CPS`, `F1`, `DAF`, `Prec`, `Acc`],
     },
     {
@@ -312,28 +311,22 @@ describe(`MetricsTable`, () => {
     },
   )
 
-  it(
-    `hides energy-only models by default via the targets filter`,
-    {
-      timeout: 30_000,
-    },
-    async () => {
-      // default filters require force prediction, hiding energy-only models
-      const filters = make_table_filters()
-      mount_table({ filters })
-      await tick()
-      const rows_without_energy = row_models().length
-      expect(rows_without_energy).toBe(visible_row_count())
+  it(`hides energy-only models by default via the targets filter`, async () => {
+    // default filters require force prediction, hiding energy-only models
+    const filters = make_table_filters()
+    mount_table({ filters })
+    await tick()
+    const rows_without_energy = row_models().length
+    expect(rows_without_energy).toBe(visible_row_count())
 
-      // clearing the targets filter shows them
-      filters.targets = {}
-      await tick()
-      const rows_with_energy = row_models().length
+    // clearing the targets filter shows them
+    filters.targets = {}
+    await tick()
+    const rows_with_energy = row_models().length
 
-      expect(rows_with_energy).toBe(visible_row_count(filters.matches))
-      expect(rows_with_energy).toBeGreaterThan(rows_without_energy)
-    },
-  )
+    expect(rows_with_energy).toBe(visible_row_count(filters.matches))
+    expect(rows_with_energy).toBeGreaterThan(rows_without_energy)
+  })
 
   it(`reactively filters models and displays an empty state when none match`, async () => {
     let model_filter = $state<(model: ModelData) => boolean>(() => false)
@@ -440,12 +433,12 @@ describe(`MetricsTable`, () => {
   })
 
   describe(`Column Sorting`, () => {
-    // Date Added sorts by timestamp (chronological, not alphabetical); Training Set
+    // Added sorts by timestamp (chronological, not alphabetical); Training Set
     // and Params sort by their numeric data-sort-value, not display text
     it.each([
       {
         col_key: `benchmark_added`,
-        header: `Date Added`,
+        header: `Added`,
         sort_key: (model: ModelData) => Date.parse(model.dates.benchmark_added ?? ``),
       },
       {
@@ -537,7 +530,6 @@ describe(`MetricsTable`, () => {
       },
     ])(
       `alphabetically sorts by Model name on $test_name header click`,
-      { timeout: 30_000 }, // happy-dom renders of the full-column table are slow in CI
       async ({ props }) => {
         mount_table(props)
         await tick()
@@ -684,12 +676,12 @@ describe(`MetricsTable`, () => {
     mount_table()
 
     // Core text expected in default visible columns (duplicates intended: MD and
-    // diatomics each have Speed and Slowdown columns, disambiguated by tooltip)
+    // diatomics each have twall and t/tmin columns, disambiguated by tooltip)
     const expected_core_columns = [
       `Model`, // METADATA_COLS
       `Training Set`, // METADATA_COLS
       `Targets`, // METADATA_COLS
-      `Date Added`, // METADATA_COLS
+      `Added`, // METADATA_COLS
       `Links`, // METADATA_COLS
       `Org`, // METADATA_COLS
       `Params`, // HYPERPARAMS (short label)
@@ -711,7 +703,7 @@ describe(`MetricsTable`, () => {
       `κSRME`, // ALL_METRICS (Phonon) - textContent doesn't keep subscript
       `κSRE`, // ALL_METRICS (Phonon) - textContent doesn't keep subscript
       `κSRD`, // ALL_METRICS (Phonon) - textContent doesn't keep subscript
-      `κ failed`, // ALL_METRICS (Phonon)
+      `κfailed`, // ALL_METRICS (Phonon)
       `Im(ω)`, // ALL_METRICS (Phonon)
       `W1(ω)`, // ALL_METRICS (Phonon)
       `RMSD`, // ALL_METRICS (Geo Opt)
@@ -724,22 +716,22 @@ describe(`MetricsTable`, () => {
       `PW1`, // ALL_METRICS (MD) - textContent doesn't keep subscript
       `ΔP`, // ALL_METRICS (MD)
       `CMDS`, // ALL_METRICS (MD)
-      `Speed`, // ALL_METRICS (MD)
-      `Slowdown`, // ALL_METRICS (MD)
+      `twall`, // ALL_METRICS (MD)
+      `t/tmin`, // ALL_METRICS (MD)
       `CDS`, // DIATOMICS_METRICS
-      `Speed`, // DIATOMICS_METRICS
-      `Slowdown`, // DIATOMICS_METRICS
-      `E flips`, // DIATOMICS_METRICS
-      `E jump`, // DIATOMICS_METRICS
-      `F TV`, // DIATOMICS_METRICS
-      `F flips`, // DIATOMICS_METRICS
-      `F jump`, // DIATOMICS_METRICS
-      `PBE ΔDe`, // DIATOMICS_METRICS
-      `PBE Δr wall`, // DIATOMICS_METRICS
-      `PBE Δre`, // DIATOMICS_METRICS
-      `PBE Δω`, // DIATOMICS_METRICS
-      `PBE E MAE`, // DIATOMICS_METRICS
-      `PBE F MAE`, // DIATOMICS_METRICS
+      `twall`, // DIATOMICS_METRICS
+      `t/tmin`, // DIATOMICS_METRICS
+      `Eflips`, // DIATOMICS_METRICS - textContent doesn't keep subscript
+      `Ejump`, // DIATOMICS_METRICS
+      `FTV`, // DIATOMICS_METRICS
+      `Fflips`, // DIATOMICS_METRICS
+      `Fjump`, // DIATOMICS_METRICS
+      `ΔDe`, // DIATOMICS_METRICS
+      `Δrwall`, // DIATOMICS_METRICS
+      `Δre`, // DIATOMICS_METRICS
+      `Δω`, // DIATOMICS_METRICS
+      `EMAE`, // DIATOMICS_METRICS
+      `FMAE`, // DIATOMICS_METRICS
       `τ`, // DIATOMICS_METRICS
       `CPS`, // Added in assemble_row_data
     ]
@@ -751,7 +743,7 @@ describe(`MetricsTable`, () => {
 
     // The default visible columns should stay intentionally curated: new default
     // columns must be added to expected_core_columns explicitly. Sorted comparison
-    // ignores order but checks exact multiset (incl. duplicate Speed/Slowdown labels).
+    // ignores order but checks exact multiset (incl. duplicate twall and t/tmin labels).
     const compare_labels = (
       label_a: string | undefined,
       label_b: string | undefined,
@@ -798,110 +790,110 @@ describe(`MetricsTable`, () => {
         `/models/`,
         ``,
       )
-
-    it(
-      `selects and deselects models on double-click with proper state management`,
-      { timeout: 30_000 },
-      async () => {
-        mount_table({ col_filter: () => true })
-        await tick() // Wait for initial render
-
-        const initial_row = get_rows()[0]
-        expect(get_rows().length).toBeGreaterThanOrEqual(2)
-
-        // Initially no selection
-        expect(get_rows()[0].classList.contains(`highlight`)).toBe(false)
-        expect(get_rows()[1].classList.contains(`highlight`)).toBe(false)
-
-        // Select first row
-        double_click_row(get_rows()[0])
-        await tick()
-        expect(get_rows()[0].classList.contains(`highlight`)).toBe(true)
-        const first_key = row_key(get_rows()[0])
-        expect([...comparison.keys]).toEqual([first_key])
-
-        // Select second row
-        double_click_row(get_rows()[1])
-        await tick()
-        expect(get_rows()[0].classList.contains(`highlight`)).toBe(true)
-        expect(get_rows()[1].classList.contains(`highlight`)).toBe(true)
-        const second_key = row_key(get_rows()[1])
-        expect([...comparison.keys]).toEqual([first_key, second_key])
-
-        // Deselect first row
-        double_click_row(get_rows()[0])
-        await tick()
-        expect(get_rows()[0].classList.contains(`highlight`)).toBe(false)
-        expect(get_rows()[1].classList.contains(`highlight`)).toBe(true)
-        expect([...comparison.keys]).toEqual([second_key])
-        expect(get_rows()[0]).toBe(initial_row)
-      },
+    // Selection is row-level logic, so every 5th default-visible model (9 of 43 rows)
+    // exercises it at ~1/5 the render cost of the full table
+    const sampled_keys = new Set(
+      ACTIVE_MODELS.filter(make_table_filters().matches)
+        .filter((_, idx) => idx % 5 === 0)
+        .map(({ model_key }) => model_key),
     )
+    const model_filter = ({ model_key }: ModelData) => sampled_keys.has(model_key)
 
-    it(
-      `manages toggle visibility and count dynamically`,
-      { timeout: 30_000 },
-      async () => {
-        mount_table({ col_filter: () => true })
+    it(`selects and deselects models on double-click with proper state management`, async () => {
+      mount_table({ col_filter: () => true, model_filter })
+      await tick() // Wait for initial render
 
-        // Initially no toggle, compare button shows no count
-        expect(get_toggle()).toBeNull()
-        const compare_btn = doc_query<HTMLButtonElement>(`button.compare`)
-        expect(compare_btn.textContent?.trim()).toBe(`Compare`)
+      const initial_row = get_rows()[0]
+      expect(get_rows().length).toBeGreaterThanOrEqual(2)
 
-        // Select one model
-        double_click_row(get_rows()[0])
-        await tick()
-        expect(get_toggle()).not.toBeNull()
-        expect(get_toggle_label()?.textContent).toContain(`1 selected`)
-        expect(compare_btn.textContent).toContain(`Compare (1)`)
+      // Initially no selection
+      expect(get_rows()[0].classList.contains(`highlight`)).toBe(false)
+      expect(get_rows()[1].classList.contains(`highlight`)).toBe(false)
 
-        // Select second model
-        double_click_row(get_rows()[1])
-        await tick()
-        expect(get_toggle_label()?.textContent).toContain(`2 selected`)
+      // Select first row
+      double_click_row(get_rows()[0])
+      await tick()
+      expect(get_rows()[0].classList.contains(`highlight`)).toBe(true)
+      const first_key = row_key(get_rows()[0])
+      expect([...comparison.keys]).toEqual([first_key])
 
-        // Deselect one model
-        double_click_row(get_rows()[0])
-        await tick()
-        expect(get_toggle_label()?.textContent).toContain(`1 selected`)
+      // Select second row
+      double_click_row(get_rows()[1])
+      await tick()
+      expect(get_rows()[0].classList.contains(`highlight`)).toBe(true)
+      expect(get_rows()[1].classList.contains(`highlight`)).toBe(true)
+      const second_key = row_key(get_rows()[1])
+      expect([...comparison.keys]).toEqual([first_key, second_key])
 
-        // Deselect the remaining selected row (row 1 is still highlighted)
-        double_click_row(get_rows()[1])
-        await tick()
+      // Deselect first row
+      double_click_row(get_rows()[0])
+      await tick()
+      expect(get_rows()[0].classList.contains(`highlight`)).toBe(false)
+      expect(get_rows()[1].classList.contains(`highlight`)).toBe(true)
+      expect([...comparison.keys]).toEqual([second_key])
+      expect(get_rows()[0]).toBe(initial_row)
+    })
 
-        expect(get_toggle()).toBeNull()
-        expect(compare_btn.textContent?.trim()).toBe(`Compare`)
+    it(`manages toggle visibility and count dynamically`, async () => {
+      mount_table({ col_filter: () => true, model_filter })
 
-        // with nothing selected, the compare button seeds the dialog with the top 3 rows
-        // in the table's current sort order (rather than opening an empty picker)
-        expect(comparison.open).toBe(false)
-        compare_btn.click()
-        expect(comparison.open).toBe(true)
-        const top_3 = () => [...get_rows()].slice(0, 3).map(row_key)
-        const cps_top_3 = top_3()
-        expect([...comparison.keys]).toEqual(cps_top_3)
-        comparison.open = false
+      // Initially no toggle, compare button shows no count
+      expect(get_toggle()).toBeNull()
+      const compare_btn = doc_query<HTMLButtonElement>(`button.compare`)
+      expect(compare_btn.textContent?.trim()).toBe(`Compare`)
 
-        // the seed follows the table's sort: alphabetical by Model gives a different top 3
-        comparison.set([])
-        header_cells()[0].click()
-        await tick()
-        compare_btn.click()
-        expect(top_3()).not.toEqual(cps_top_3)
-        expect([...comparison.keys]).toEqual(top_3())
-        comparison.open = false
+      // Select one model
+      double_click_row(get_rows()[0])
+      await tick()
+      expect(get_toggle()).not.toBeNull()
+      expect(get_toggle_label()?.textContent).toContain(`1 selected`)
+      expect(compare_btn.textContent).toContain(`Compare (1)`)
 
-        // an existing selection is left alone
-        comparison.set([cps_top_3[2]])
-        compare_btn.click()
-        expect([...comparison.keys]).toEqual([cps_top_3[2]])
-        comparison.open = false
-      },
-    )
+      // Select second model
+      double_click_row(get_rows()[1])
+      await tick()
+      expect(get_toggle_label()?.textContent).toContain(`2 selected`)
+
+      // Deselect one model
+      double_click_row(get_rows()[0])
+      await tick()
+      expect(get_toggle_label()?.textContent).toContain(`1 selected`)
+
+      // Deselect the remaining selected row (row 1 is still highlighted)
+      double_click_row(get_rows()[1])
+      await tick()
+
+      expect(get_toggle()).toBeNull()
+      expect(compare_btn.textContent?.trim()).toBe(`Compare`)
+
+      // with nothing selected, the compare button seeds the dialog with the top 3 rows
+      // in the table's current sort order (rather than opening an empty picker)
+      expect(comparison.open).toBe(false)
+      compare_btn.click()
+      expect(comparison.open).toBe(true)
+      const top_3 = () => [...get_rows()].slice(0, 3).map(row_key)
+      const cps_top_3 = top_3()
+      expect([...comparison.keys]).toEqual(cps_top_3)
+      comparison.open = false
+
+      // the seed follows the table's sort: alphabetical by Model gives a different top 3
+      comparison.set([])
+      header_cells()[0].click()
+      await tick()
+      compare_btn.click()
+      expect(top_3()).not.toEqual(cps_top_3)
+      expect([...comparison.keys]).toEqual(top_3())
+      comparison.open = false
+
+      // an existing selection is left alone
+      comparison.set([cps_top_3[2]])
+      compare_btn.click()
+      expect([...comparison.keys]).toEqual([cps_top_3[2]])
+      comparison.open = false
+    })
 
     it(`toggles models via the row context menu`, async () => {
-      mount_table({ col_filter: () => true })
+      mount_table({ col_filter: () => true, model_filter })
       await tick()
       // the toolbar with the Compare button is opted out of matterviz's hover-reveal
       expect(document.querySelector(`.table-container.leaderboard`)).not.toBeNull()
@@ -965,49 +957,45 @@ describe(`MetricsTable`, () => {
       expect(vi.mocked(goto)).toHaveBeenCalledWith(`/models/${row_key(row_2)}`)
     })
 
-    it(
-      `filters selected rows and updates toggle labels and highlighting`,
-      { timeout: 30_000 },
-      async () => {
-        const filters = make_table_filters()
-        mount_table({ col_filter: () => true, filters })
-        const initial_count = get_rows().length
-        expect(initial_count).toBeGreaterThan(1)
+    it(`filters selected rows and updates toggle labels and highlighting`, async () => {
+      const filters = make_table_filters()
+      mount_table({ col_filter: () => true, model_filter, filters })
+      const initial_count = get_rows().length
+      expect(initial_count).toBeGreaterThan(1)
 
-        double_click_row(get_rows()[0])
-        await tick()
-        const toggle = get_toggle()
-        const label = get_toggle_label()
-        if (!toggle) throw new Error(`Toggle not found`)
-        expect(toggle.checked).toBe(false)
-        expect(label?.textContent).toContain(`Show only 1 selected`)
+      double_click_row(get_rows()[0])
+      await tick()
+      const toggle = get_toggle()
+      const label = get_toggle_label()
+      if (!toggle) throw new Error(`Toggle not found`)
+      expect(toggle.checked).toBe(false)
+      expect(label?.textContent).toContain(`Show only 1 selected`)
 
-        toggle.click()
-        await tick()
-        expect(toggle.checked).toBe(true)
-        expect(label?.textContent).toContain(`Show all`)
-        expect(get_rows()).toHaveLength(1)
-        expect(get_rows()[0].classList.contains(`highlight`)).toBe(false)
-        expect(filters.url_entries).toContainEqual([`selected_only`, `1`])
+      toggle.click()
+      await tick()
+      expect(toggle.checked).toBe(true)
+      expect(label?.textContent).toContain(`Show all`)
+      expect(get_rows()).toHaveLength(1)
+      expect(get_rows()[0].classList.contains(`highlight`)).toBe(false)
+      expect(filters.url_entries).toContainEqual([`selected_only`, `1`])
 
-        filters.read(new URLSearchParams())
-        await tick()
-        expect(toggle.checked).toBe(false)
-        expect(get_rows()).toHaveLength(initial_count)
-        filters.read(new URLSearchParams(`selected_only=1`))
-        await tick()
-        expect(toggle.checked).toBe(true)
-        expect(get_rows()).toHaveLength(1)
+      filters.read(new URLSearchParams())
+      await tick()
+      expect(toggle.checked).toBe(false)
+      expect(get_rows()).toHaveLength(initial_count)
+      filters.read(new URLSearchParams(`selected_only=1`))
+      await tick()
+      expect(toggle.checked).toBe(true)
+      expect(get_rows()).toHaveLength(1)
 
-        toggle.click()
-        await tick()
-        expect(toggle.checked).toBe(false)
-        expect(label?.textContent).toContain(`Show only 1 selected`)
-        expect(get_rows()).toHaveLength(initial_count)
-        expect(get_rows()[0].classList.contains(`highlight`)).toBe(true)
-        expect(filters.url_entries).toContainEqual([`selected_only`, ``])
-      },
-    )
+      toggle.click()
+      await tick()
+      expect(toggle.checked).toBe(false)
+      expect(label?.textContent).toContain(`Show only 1 selected`)
+      expect(get_rows()).toHaveLength(initial_count)
+      expect(get_rows()[0].classList.contains(`highlight`)).toBe(true)
+      expect(filters.url_entries).toContainEqual([`selected_only`, ``])
+    })
   })
 
   it.each([`full_test_set`, `unique_prototypes`] as const)(
@@ -1280,7 +1268,7 @@ describe(`MetricsTable`, () => {
         expect(header_cells().length).toBeGreaterThan(5)
         await tick()
         await resize(true)
-        expect(header_names()).toEqual([`Model`, `τ`, `E flips`, `CDS`, `Params`])
+        expect(header_names()).toEqual([`Model`, `τ`, `Eflips`, `CDS`, `Params`])
         expect(header_cells().map((header) => header.dataset.colId)).toEqual(
           query_param(`columns`)?.split(`,`),
         )
@@ -1291,7 +1279,7 @@ describe(`MetricsTable`, () => {
 
         // The shared mobile view also restores those exact columns on desktop.
         await navigate(mobile_query, `popstate`)
-        expect(header_names()).toEqual([`Model`, `τ`, `E flips`, `CDS`, `Params`])
+        expect(header_names()).toEqual([`Model`, `τ`, `Eflips`, `CDS`, `Params`])
         column_checkbox(`Org`).click()
         await tick()
         const custom_headers = header_names()

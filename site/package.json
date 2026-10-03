@@ -7,6 +7,13 @@
   "author": "Janosh Riebesell <janosh.riebesell@gmail.com>",
   "repository": "https://github.com/janosh/matbench-discovery",
   "type": "module",
+  "imports": {
+    "#lib": "./src/lib/index.ts",
+    "#lib/*": "./src/lib/*",
+    "#figs/*": "./src/figs/*",
+    "#routes/*": "./src/routes/*",
+    "#site/*": "./*"
+  },
   "scripts": {
     "dev": "node scripts/fetch-parity-assets.ts && vp dev",
     "build": "vp build",
@@ -19,8 +26,8 @@
     "fetch:github-activity": "node --experimental-strip-types scripts/fetch-mlip-repos-github-activity.ts"
   },
   "devDependencies": {
-    "@sveltejs/adapter-static": "^3.0.10",
-    "@sveltejs/kit": "^2.70.3",
+    "@sveltejs/adapter-static": "^4.0.0",
+    "@sveltejs/kit": "^3.0.0",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@types/d3-array": "^3.2.2",
     "@types/json-schema": "^7.0.15",

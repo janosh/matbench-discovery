@@ -1,6 +1,7 @@
 import { gzipSync } from 'node:zlib'
-import type { ModelData } from '$lib/types'
-import type { AfterNavigate } from '@sveltejs/kit'
+import type { ModelData } from '#lib/types.js'
+import type { AfterNavigate } from '$app/navigation'
+import NodeUtility from 'happy-dom/lib/nodes/node/NodeUtility.js'
 import { mount as svelte_mount, tick, unmount } from 'svelte'
 import { afterEach, beforeAll, beforeEach, vi } from 'vite-plus/test'
 
@@ -83,37 +84,58 @@ if (Object.getOwnPropertyDescriptor(Node.prototype, `nodeName`)?.get?.call({}) =
   })
 }
 
+// happy-dom's NodeUtility.isFollowing (behind every Range boundary comparison, e.g. in
+// extractContents) walks all nodes after node_b in document order until it meets node_a,
+// each nextSibling step an O(siblings) indexOf. So one Range op costs O(document size), and
+// matterviz's HeatmapTable, which splits every long HTML cell with a Range, renders full
+// tables in quadratic time (~1/3 of MetricsTable test CPU). Same tree-order answer by
+// comparing ancestor chains (equivalence checked in tests/setup.test.ts).
+type HappyDomNode = Parameters<typeof NodeUtility.isFollowing>[0]
+const inclusive_ancestors = (node: HappyDomNode): HappyDomNode[] => {
+  const chain: HappyDomNode[] = []
+  for (let current: HappyDomNode | null = node; current; current = current.parentNode) {
+    chain.push(current)
+  }
+  return chain.toReversed() // tree root first
+}
+NodeUtility.isFollowing = (node_a: HappyDomNode, node_b: HappyDomNode): boolean => {
+  if (node_a === node_b) return false
+  const chain_a = inclusive_ancestors(node_a)
+  const chain_b = inclusive_ancestors(node_b)
+  if (chain_a[0] !== chain_b[0]) return false // separate trees: the walk never reaches node_a
+  let depth = 1
+  while (chain_a[depth] && chain_a[depth] === chain_b[depth]) depth++
+  if (depth === chain_a.length) return false // node_a is an ancestor of node_b
+  if (depth === chain_b.length) return true // node_a is a descendant of node_b
+  const siblings = Array.from(chain_a[depth - 1].childNodes)
+  return siblings.indexOf(chain_a[depth]) > siblings.indexOf(chain_b[depth])
+}
+
 // Hoisted mocks for SvelteKit $app modules - more efficient than vi.mock at top level
 const app_mocks = vi.hoisted(() => ({
   state: {
     page: {
       url: new URL(`http://localhost/`),
-      params: {},
-      route: { id: null },
       state: {},
     },
   },
-  environment: { browser: false, building: false, version: `test` },
+  env: { building: false },
   navigation: {
-    goto: vi.fn(),
-    invalidate: vi.fn(),
-    invalidateAll: vi.fn(),
-    preloadData: vi.fn(),
-    preloadCode: vi.fn(),
-    beforeNavigate: vi.fn(),
+    // shallow goto() only rewrites the URL, mirroring Kit's history update
+    goto: vi.fn(
+      async (url: string | URL, opts?: { shallow?: boolean; state?: unknown }) => {
+        if (opts?.shallow) history.replaceState(opts.state, ``, url)
+      },
+    ),
     onNavigate: vi.fn(),
     afterNavigate: vi.fn((callback: AfterNavigateCallback) => {
       after_navigate_callbacks.push(callback)
-    }),
-    pushState: vi.fn(),
-    replaceState: vi.fn((url: string | URL, state: unknown) => {
-      history.replaceState(state, ``, url)
     }),
   },
 }))
 
 vi.mock(`$app/state`, () => app_mocks.state)
-vi.mock(`$app/environment`, () => app_mocks.environment)
+vi.mock(`$app/env`, () => app_mocks.env)
 vi.mock(`$app/navigation`, () => app_mocks.navigation)
 
 beforeAll(() => {
@@ -295,13 +317,14 @@ export async function choose_scatter_property(
   const options = picker.querySelectorAll<HTMLElement>(
     is_size ? `ul.options li[aria-posinset]` : `.portal-select-dropdown [role="option"]`,
   )
-  const option = [...options].find(
-    (element) =>
-      (is_size
-        ? element.querySelector(`span`)?.firstChild?.textContent
-        : element.textContent
-      )?.trim() === query,
-  )
+  // size options render the (HTML) label followed by a <small> data-path/count line
+  const option_text = (element: HTMLElement): string | undefined =>
+    is_size
+      ? element
+          .querySelector(`span`)
+          ?.textContent?.replace(element.querySelector(`small`)?.textContent ?? ``, ``)
+      : element.textContent
+  const option = [...options].find((element) => option_text(element)?.trim() === query)
   if (!option) throw new Error(`Missing option ${query} in ${label}`)
   option.click()
   await tick()

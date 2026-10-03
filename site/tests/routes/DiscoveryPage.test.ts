@@ -1,6 +1,6 @@
-import { discovery_set_toggle_options } from '$lib/labels'
-import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
-import DiscoveryPage from '$routes/benchmarks/discovery/+page.svelte'
+import { discovery_set_toggle_options } from '#lib/labels.js'
+import { ACTIVE_MODELS, make_table_filters } from '#lib/models.svelte.js'
+import DiscoveryPage from '#routes/benchmarks/discovery/+page.svelte'
 import type { ScatterPlot } from 'matterviz/plot'
 import { tick, type ComponentProps } from 'svelte'
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
@@ -13,7 +13,7 @@ import {
   mount,
   mount_with_url,
   sorted_header,
-} from '../index'
+} from '../index.js'
 
 const plot_mocks = vi.hoisted(() => ({ ScatterPlot: vi.fn() }))
 
@@ -66,7 +66,7 @@ describe(`Discovery Task Page`, () => {
     expect(table).not.toBeNull()
 
     const headers = [...document.querySelectorAll(`th`)].map(header_name)
-    for (const col of [`Model`, `F1`, `DAF`, `Links`, `Date Added`]) {
+    for (const col of [`Model`, `F1`, `DAF`, `Links`, `Added`]) {
       expect(headers).toContain(col)
     }
     expect(sorted_header()?.textContent).toContain(`F1`)

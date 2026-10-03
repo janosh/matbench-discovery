@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { DISCOVERY_SET_LABELS, discovery_set_toggle_options } from '$lib/labels'
-  import type { DiscoverySet } from '$lib/types'
+  import { DISCOVERY_SET_LABELS, discovery_set_toggle_options } from '#lib/labels.js'
+  import type { DiscoverySet } from '#lib/types.js'
   import { ButtonGroup, Icon } from 'svelte-widgets'
   import { Info } from 'svelte-widgets/icons'
   import type { HTMLAttributes } from 'svelte/elements'

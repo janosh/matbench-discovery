@@ -1,8 +1,8 @@
-import { by_benchmark_added_desc } from '$lib'
-import { MODELS } from '$lib/models.svelte'
-import { format_train_set, model_role_from_targets } from '$lib/metrics'
-import type { ModelData } from '$lib/types'
-import pkg from '$site/package.json'
+import { by_benchmark_added_desc } from '#lib'
+import { MODELS } from '#lib/models.svelte.js'
+import { format_train_set, model_role_from_targets } from '#lib/metrics.js'
+import type { ModelData } from '#lib/types.js'
+import pkg from '#site/package.json'
 import { format_num } from 'matterviz/labels'
 import { strip_html } from 'matterviz/utils'
 

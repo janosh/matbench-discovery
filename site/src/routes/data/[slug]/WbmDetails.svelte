@@ -1,17 +1,17 @@
 <script lang="ts">
   import DataReadme from '$data/wbm/readme.md'
-  import hist_e_form from '$figs/hist-wbm-e-form-per-atom.json.gz'
-  import hist_hull_dist from '$figs/hist-wbm-hull-dist.json.gz'
-  import arity_hist from '$figs/mp-vs-mp-trj-vs-wbm-arity-hist.json.gz'
-  import sunbursts from '$figs/spacegroup-sunbursts.json.gz'
-  import PtableHeatmap from '$lib/PtableHeatmap.svelte'
+  import hist_e_form from '#figs/hist-wbm-e-form-per-atom.json.gz'
+  import hist_hull_dist from '#figs/hist-wbm-hull-dist.json.gz'
+  import arity_hist from '#figs/mp-vs-mp-trj-vs-wbm-arity-hist.json.gz'
+  import sunbursts from '#figs/spacegroup-sunbursts.json.gz'
+  import PtableHeatmap from '#lib/PtableHeatmap.svelte'
   import {
     dashed,
     floating_label,
     labeled_vline,
     series_blue,
     series_red,
-  } from '$lib/fig-helpers'
+  } from '#lib/fig-helpers.js'
   import type { ElementSymbol } from 'matterviz'
   import {
     ColorScaleSelect,
@@ -23,7 +23,7 @@
   import type { D3InterpolateName } from 'matterviz/colors'
   import { Icon, MultiSelect, Popover } from 'svelte-widgets'
   import { Info } from 'svelte-widgets/icons'
-  import { bind_url_params, url_color_scale } from '$lib/url-state.svelte'
+  import { bind_url_params, url_color_scale } from '#lib/url-state.svelte.js'
   import {
     bool_from_param,
     bool_url_entry,
