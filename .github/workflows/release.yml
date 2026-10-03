@@ -13,5 +13,7 @@ jobs:
     needs: tests
     if: needs.tests.result == 'success'
     permissions:
-      id-token: write
+      contents: read
     uses: janosh/workflows/.github/workflows/pypi-publish.yml@main
+    # PyPI trusted publishing doesn't support reusable workflows, so pass PYPI_TOKEN
+    secrets: inherit
