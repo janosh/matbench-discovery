@@ -1,10 +1,10 @@
-import { MODELS } from '$lib/models.svelte'
-import { ALL_METRICS } from '$lib/labels'
-import { sort_models } from '$lib/metrics'
-import ModelsPage from '$routes/models/+page.svelte'
+import { MODELS } from '#lib/models.svelte.js'
+import { ALL_METRICS } from '#lib/labels.js'
+import { sort_models } from '#lib/metrics.js'
+import ModelsPage from '#routes/models/+page.svelte'
 import { tick } from 'svelte'
 import { describe, expect, it, vi } from 'vite-plus/test'
-import { doc_query, mount, mount_with_url } from '../index'
+import { doc_query, mount, mount_with_url } from '../index.js'
 
 // Outgoing cards become inert while their fade completes.
 const model_cards = () => document.querySelectorAll(`ol.models > li:not([inert])`)

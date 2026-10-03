@@ -1,10 +1,10 @@
-import { ACTIVE_MODELS } from '$lib/models.svelte'
-import ElementErrorsPtableHeatmap from '$routes/benchmarks/discovery/tmi/ElementErrorsPtableHeatmap.svelte'
-import { per_element_each_errors as per_elem_each_errors } from '$lib/per-element-errors'
+import { ACTIVE_MODELS } from '#lib/models.svelte.js'
+import ElementErrorsPtableHeatmap from '#routes/benchmarks/discovery/tmi/ElementErrorsPtableHeatmap.svelte'
+import { per_element_each_errors as per_elem_each_errors } from '#lib/per-element-errors.js'
 import { describe, expect, it } from 'vite-plus/test'
 import { tick } from 'svelte'
 import { format_num } from 'matterviz/labels'
-import { doc_query, mount_with_url } from '../index'
+import { doc_query, mount_with_url } from '../index.js'
 
 const models_with_errors = ACTIVE_MODELS.filter(
   ({ model_key }) => model_key in per_elem_each_errors,

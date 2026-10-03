@@ -1,13 +1,17 @@
-import TableControls from '$lib/table/TableControls.svelte'
-import { fit_toolbar_links } from '$lib/table/fit-toolbar-links'
+import TableControls from '#lib/table/TableControls.svelte'
+import { fit_toolbar_links } from '#lib/table/fit-toolbar-links.js'
 import type { Column } from 'matterviz/table'
-import { ACTIVE_MODELS, ALL_TRAINING_SETS, make_table_filters } from '$lib/models.svelte'
-import { OPENNESS_OPTIONS, type Openness } from '$lib/url-state.svelte'
-import { comparison } from '$lib/model-comparison.svelte'
-import type { ModelData } from '$lib/types'
+import {
+  ACTIVE_MODELS,
+  ALL_TRAINING_SETS,
+  make_table_filters,
+} from '#lib/models.svelte.js'
+import { OPENNESS_OPTIONS, type Openness } from '#lib/url-state.svelte.js'
+import { comparison } from '#lib/model-comparison.svelte.js'
+import type { ModelData } from '#lib/types.js'
 import { tick } from 'svelte'
 import { describe, expect, it, onTestFinished, vi } from 'vite-plus/test'
-import { doc_query, filter_menu_trigger, mount, open_filter_menu } from '../index'
+import { doc_query, filter_menu_trigger, mount, open_filter_menu } from '../index.js'
 
 describe(`TableControls`, () => {
   it.each([755, 756, 1000])(

@@ -1,11 +1,11 @@
 <script lang="ts">
-  import elem_counts_bar from '$figs/element-counts-mp-vs-wbm.json.gz'
-  import PtableHeatmap from '$lib/PtableHeatmap.svelte'
-  import { series_blue, series_red } from '$lib/fig-helpers'
+  import elem_counts_bar from '#figs/element-counts-mp-vs-wbm.json.gz'
+  import PtableHeatmap from '#lib/PtableHeatmap.svelte'
+  import { series_blue, series_red } from '#lib/fig-helpers.js'
   import type { ElementSymbol } from 'matterviz'
   import { ColorScaleSelect, BarPlot } from 'matterviz/plot'
   import type { D3InterpolateName } from 'matterviz/colors'
-  import { bind_url_params, url_color_scale } from '$lib/url-state.svelte'
+  import { bind_url_params, url_color_scale } from '#lib/url-state.svelte.js'
   import {
     bool_from_param,
     bool_url_entry,

@@ -1,18 +1,18 @@
-import { clear_asset_cache } from '$lib/asset-loader'
+import { clear_asset_cache } from '#lib/asset-loader.js'
 import {
   build_phonon_mode_data,
   has_kappa_modes,
   load_kappa_modes,
-} from '$lib/parity/kappa-modes'
-import type { KappaModesMaterial, KappaModesModel } from '$lib/parity/kappa-modes'
-import { kappa_parity_manifest } from '$lib/parity/kappa-parity'
+} from '#lib/parity/kappa-modes.js'
+import type { KappaModesMaterial, KappaModesModel } from '#lib/parity/kappa-modes.js'
+import { kappa_parity_manifest } from '#lib/parity/kappa-parity.js'
 import {
   nearest_qpoint_with_eigenvector,
   phonon_band_structure_from_modes,
 } from 'matterviz/spectral'
 import type { Complex, PhononQPointModes } from 'matterviz/spectral'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
-import { gzipped_json_response } from '../index'
+import { gzipped_json_response } from '../index.js'
 
 beforeEach(clear_asset_cache)
 afterEach(() => {

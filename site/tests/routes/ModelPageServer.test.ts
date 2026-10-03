@@ -1,5 +1,5 @@
-import type { ModelData } from '$lib/types'
-import { entries, load } from '$routes/models/[slug]/+page.server'
+import type { ModelData } from '#lib/types.js'
+import { entries, load } from '#routes/models/[slug]/+page.server.js'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -10,7 +10,7 @@ const model: Pick<ModelData, `model_key` | `metrics`> = vi.hoisted(() => ({
   model_key: `model-key`,
 }))
 
-vi.mock(`$lib/models.svelte`, () => ({ MODELS: [model] }))
+vi.mock(`#lib/models.svelte.js`, () => ({ MODELS: [model] }))
 
 const load_model = () =>
   load({ params: { slug: model.model_key } } as Parameters<typeof load>[0])

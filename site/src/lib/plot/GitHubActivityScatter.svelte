@@ -3,7 +3,7 @@
   import { format_num } from 'matterviz/labels'
   import { ScatterPlot } from 'matterviz/plot'
   import type { ComponentProps } from 'svelte'
-  import type { GitHubActivityData, Label } from '$lib/types'
+  import type { GitHubActivityData, Label } from '#lib/types.js'
 
   let {
     github_data = [],

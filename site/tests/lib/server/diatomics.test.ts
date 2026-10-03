@@ -1,4 +1,4 @@
-import { fetch_diatomics_data } from '$lib/server/predictions'
+import { fetch_diatomics_data } from '#lib/server/predictions.js'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { describe, expect, it, onTestFinished, vi } from 'vite-plus/test'

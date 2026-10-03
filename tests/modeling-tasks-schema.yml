@@ -2,25 +2,10 @@
 title: ModelingTasks
 
 definitions:
-  metric_orientation:
-    type: object
-    additionalProperties: false
-    properties:
-      higher_is_better:
-        type: array
-        items:
-          type: string
-          minLength: 1
-      lower_is_better:
-        type: array
-        items:
-          type: string
-          minLength: 1
-
   benchmark_task:
     type: object
     additionalProperties: false
-    required: [label, description, metrics]
+    required: [label, description]
     properties:
       label:
         type: string
@@ -28,8 +13,6 @@ definitions:
       description:
         type: string
         minLength: 1
-      metrics:
-        $ref: '#/definitions/metric_orientation'
       subtasks:
         type: object
         additionalProperties:

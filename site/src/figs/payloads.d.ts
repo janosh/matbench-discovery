@@ -1,6 +1,6 @@
 // Types for the data-only figure payloads in this directory. One exact ambient
 // declaration per payload — these take precedence over the generic '*.json.gz' / '*.jsonl'
-// fallbacks in app.d.ts, so each `import data from '$figs/<name>...'` is fully typed.
+// fallbacks in app.d.ts, so each `import data from '#figs/<name>...'` is fully typed.
 //
 // Static payloads are committed as gzipped `<name>.json.gz`; multi-model payloads as
 // line-delimited `<name>.jsonl` (one model per line, reassembled into the aggregate
@@ -57,7 +57,7 @@ interface KeyedModel {
 }
 
 // === tasks/discovery/tmi metrics ===
-declare module '$figs/box-hull-dist-errors.jsonl' {
+declare module '#figs/box-hull-dist-errors.jsonl' {
   const data: PayloadBase & {
     // quantiles = [q05, q25, median, q75, q95] of each model's hull distance error
     models: (KeyedModel & { quantiles: number[] })[]
@@ -65,7 +65,7 @@ declare module '$figs/box-hull-dist-errors.jsonl' {
   export default data
 }
 
-declare module '$figs/cumulative-precision-recall.jsonl' {
+declare module '#figs/cumulative-precision-recall.jsonl' {
   const data: PayloadBase & {
     n_stable: number // number of stable materials in the WBM test set
     models: (KeyedModel & {
@@ -79,7 +79,7 @@ declare module '$figs/cumulative-precision-recall.jsonl' {
   export default data
 }
 
-declare module '$figs/roc-models.jsonl' {
+declare module '#figs/roc-models.jsonl' {
   const data: PayloadBase & {
     models: (KeyedModel & {
       auc: number
@@ -90,7 +90,7 @@ declare module '$figs/roc-models.jsonl' {
   export default data
 }
 
-declare module '$figs/rolling-mae-vs-hull-dist.jsonl' {
+declare module '#figs/rolling-mae-vs-hull-dist.jsonl' {
   const data: PayloadBase & {
     x: number[] // shared E above hull values (eV/atom)
     models: (KeyedModel & {
@@ -101,7 +101,7 @@ declare module '$figs/rolling-mae-vs-hull-dist.jsonl' {
   export default data
 }
 
-declare module '$figs/hist-clf-pred-hull-dist.jsonl' {
+declare module '#figs/hist-clf-pred-hull-dist.jsonl' {
   const data: PayloadBase & {
     bin_centers: number[] // shared hull-dist bins (eV/atom)
     // per-model stability-classification counts per bin
@@ -111,7 +111,7 @@ declare module '$figs/hist-clf-pred-hull-dist.jsonl' {
 }
 
 // === benchmarks/discovery/tmi extras ===
-declare module '$figs/element-prevalence-vs-error.jsonl' {
+declare module '#figs/element-prevalence-vs-error.jsonl' {
   const data: PayloadBase & {
     elements: string[] // element symbols, same order as occurrences
     occurrences: (number | null)[] // MP training-set occurrence count per element
@@ -122,12 +122,12 @@ declare module '$figs/element-prevalence-vs-error.jsonl' {
 }
 
 // === data pages ===
-declare module '$figs/hist-wbm-e-form-per-atom.json.gz' {
+declare module '#figs/hist-wbm-e-form-per-atom.json.gz' {
   const data: HistBins
   export default data
 }
 
-declare module '$figs/hist-wbm-hull-dist.json.gz' {
+declare module '#figs/hist-wbm-hull-dist.json.gz' {
   const data: {
     bar_width: number
     stable: XY
@@ -138,7 +138,7 @@ declare module '$figs/hist-wbm-hull-dist.json.gz' {
   export default data
 }
 
-declare module '$figs/spacegroup-sunbursts.json.gz' {
+declare module '#figs/spacegroup-sunbursts.json.gz' {
   // flat plotly sunburst arrays; matterviz sunburst_from_labels_parents nests them
   interface SunburstArrays {
     labels: string[]
@@ -150,13 +150,13 @@ declare module '$figs/spacegroup-sunbursts.json.gz' {
   export default data
 }
 
-declare module '$figs/mp-vs-mp-trj-vs-wbm-arity-hist.json.gz' {
+declare module '#figs/mp-vs-mp-trj-vs-wbm-arity-hist.json.gz' {
   // fraction of structures per number of elements in formula, by dataset
   const data: { datasets: (LabeledXY & { color: string })[] }
   export default data
 }
 
-declare module '$figs/mp-trj-hists.json.gz' {
+declare module '#figs/mp-trj-hists.json.gz' {
   const data: {
     'e-form': HistBins
     forces: HistBins
@@ -167,13 +167,13 @@ declare module '$figs/mp-trj-hists.json.gz' {
   export default data
 }
 
-declare module '$figs/mp-elemental-ref-energies.json.gz' {
+declare module '#figs/mp-elemental-ref-energies.json.gz' {
   // x = atomic number, y = lowest energy of any unary structure for that element
   const data: XY
   export default data
 }
 
-declare module '$figs/element-counts-mp-vs-wbm.json.gz' {
+declare module '#figs/element-counts-mp-vs-wbm.json.gz' {
   // x = element symbols sorted by count, one series per dataset (WBM, MP)
   const data: {
     raw: LabeledXY<string>[]
@@ -183,7 +183,7 @@ declare module '$figs/element-counts-mp-vs-wbm.json.gz' {
 }
 
 // === phonons ===
-declare module '$figs/kappa-103-analysis.jsonl' {
+declare module '#figs/kappa-103-analysis.jsonl' {
   // per-material kappa-103 diagnostics vs the phononDB-PBE reference. All
   // per-material arrays are aligned to material_ids; null = material missing from
   // the model's predictions (or the value couldn't be computed)
@@ -210,18 +210,18 @@ declare module '$figs/kappa-103-analysis.jsonl' {
 }
 
 // === geo-opt ===
-declare module '$figs/struct-rmsd-cdf.jsonl' {
+declare module '#figs/struct-rmsd-cdf.jsonl' {
   const data: PayloadBase & { models: (KeyedModel & LabeledXY & { auc: number })[] }
   export default data
 }
 
-declare module '$figs/sym-ops-diff-bar.jsonl' {
+declare module '#figs/sym-ops-diff-bar.jsonl' {
   // histogram of symmetry-operation count changes during relaxation (symprec=1e-5)
   const data: PayloadBase & { models: (KeyedModel & LabeledXY & { sigma: number })[] }
   export default data
 }
 
-declare module '$figs/spg-sankeys.jsonl' {
+declare module '#figs/spg-sankeys.jsonl' {
   // DFT vs model spacegroup flows (symprec=1e-5), keyed by MODELS model_key. flat
   // arrays; matterviz sankey_from_links(source, target, value, labels) builds the graph
   const data: PayloadBase & {

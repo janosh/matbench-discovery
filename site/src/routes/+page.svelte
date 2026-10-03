@@ -1,9 +1,9 @@
 <script lang="ts">
-  import DiscoverySetToggle from '$lib/DiscoverySetToggle.svelte'
-  import MetricsTable from '$lib/table/MetricsTable.svelte'
-  import { DISCOVERY_SETS } from '$lib/types'
-  import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
-  import ScoreWeights from '$lib/ScoreWeights.svelte'
+  import DiscoverySetToggle from '#lib/DiscoverySetToggle.svelte'
+  import MetricsTable from '#lib/table/MetricsTable.svelte'
+  import { DISCOVERY_SETS } from '#lib/types.js'
+  import DynamicScatter from '#lib/plot/DynamicScatter.svelte'
+  import ScoreWeights from '#lib/ScoreWeights.svelte'
   import {
     ALL_METRICS,
     DIATOMICS_METRICS,
@@ -13,15 +13,15 @@
     MD_METRICS,
     METADATA_COLS,
     PHONON_METRICS,
-  } from '$lib/labels'
-  import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined-scores.svelte'
-  import { is_finite_num, metric_value } from '$lib/metrics'
-  import { make_table_filters, ACTIVE_MODELS } from '$lib/models.svelte'
-  import { bind_url_params } from '$lib/url-state.svelte'
+  } from '#lib/labels.js'
+  import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '#lib/combined-scores.svelte.js'
+  import { is_finite_num, metric_value } from '#lib/metrics.js'
+  import { make_table_filters, ACTIVE_MODELS } from '#lib/models.svelte.js'
+  import { bind_url_params } from '#lib/url-state.svelte.js'
   import type { TableSort } from 'matterviz/table'
   import { sort_from_query } from 'matterviz/url-params'
   import { valid_query_param } from 'svelte-widgets/url-params'
-  import type { DiscoverySet, Label, ModelData } from '$lib/types'
+  import type { DiscoverySet, Label, ModelData } from '#lib/types.js'
   import { ButtonGroup } from 'svelte-widgets'
   import { slide } from 'svelte/transition'
   import type { Snapshot } from './$types'
@@ -284,11 +284,18 @@
   }
   .toggle-row {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: wrap; /* fallback where balance is unsupported */
+    flex-wrap: balance;
     align-items: center;
     justify-content: center;
     gap: 8pt;
     font-size: smaller;
+  }
+  /* a var() resolving to an unsupported value would compute to nowrap, so gate it */
+  @supports (flex-wrap: balance) {
+    .toggle-row {
+      --btn-group-flex-wrap: balance;
+    }
   }
   .intro {
     text-align: center;

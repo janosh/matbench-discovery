@@ -1,12 +1,12 @@
-import spg_sankeys from '$figs/spg-sankeys.jsonl'
-import struct_rmsd_cdf from '$figs/struct-rmsd-cdf.jsonl'
-import sym_ops_diff from '$figs/sym-ops-diff-bar.jsonl'
-import { by_benchmark_added_desc } from '$lib'
-import { ACTIVE_MODELS, make_table_filters, MODELS } from '$lib/models.svelte'
-import { GEO_OPT_SYMMETRY_METRICS, HYPERPARAMS } from '$lib/labels'
-import type { ModelData } from '$lib/types'
+import spg_sankeys from '#figs/spg-sankeys.jsonl'
+import struct_rmsd_cdf from '#figs/struct-rmsd-cdf.jsonl'
+import sym_ops_diff from '#figs/sym-ops-diff-bar.jsonl'
+import { by_benchmark_added_desc } from '#lib'
+import { ACTIVE_MODELS, make_table_filters, MODELS } from '#lib/models.svelte.js'
+import { GEO_OPT_SYMMETRY_METRICS, HYPERPARAMS } from '#lib/labels.js'
+import type { ModelData } from '#lib/types.js'
 import { tick } from 'svelte'
-import GeoOptPage from '$routes/benchmarks/geo-opt/+page.svelte'
+import GeoOptPage from '#routes/benchmarks/geo-opt/+page.svelte'
 import { describe, expect, it } from 'vite-plus/test'
 import {
   checkbox_for,
@@ -14,7 +14,7 @@ import {
   filter_summary_badge,
   mount_with_url,
   sorted_header,
-} from '../index'
+} from '../index.js'
 
 // Mirrors the page's geo-opt presence check and default table filters.
 const geo_opt_row_count = (
@@ -122,7 +122,6 @@ describe(`Geo Opt Task Page`, () => {
 
   it.each([``, `unknown`])(
     `keeps empty states for aggregate diagnostics with models=%s`,
-    { timeout: 30_000 },
     async (models) => {
       await mount_with_url(
         GeoOptPage,

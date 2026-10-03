@@ -7,17 +7,17 @@
     load_energy_parity_model,
     load_wbm_structure,
     structure_popup_placement,
-  } from '$lib/parity/energy-parity'
+  } from '#lib/parity/energy-parity.js'
   import type {
     EnergyKind,
     EnergyParityBase,
     EnergyParityModel,
     EnergyParityPoint,
     StructurePopupPlacement,
-  } from '$lib/parity/energy-parity'
-  import { ParityLoadController } from '$lib/parity/load-controller.svelte'
-  import { get_error_message, type LoadStatus } from '$lib/asset-loader'
-  import type { ModelData } from '$lib/types'
+  } from '#lib/parity/energy-parity.js'
+  import { ParityLoadController } from '#lib/parity/load-controller.svelte.js'
+  import { get_error_message, type LoadStatus } from '#lib/asset-loader.js'
+  import type { ModelData } from '#lib/types.js'
   import { compact_formula, sanitize_compact_formula } from 'matterviz/sanitize'
   import { format_num } from 'matterviz/labels'
   import { Spinner } from 'svelte-widgets'

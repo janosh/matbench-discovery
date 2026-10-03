@@ -1,13 +1,13 @@
 import DATASETS from '$data/datasets.yml'
-import { format_date } from '$lib'
+import { format_date } from '#lib'
 import {
   CDS_COMPONENTS,
   CDS_CONFIG,
   CMDS_CONFIG,
   CPS_CONFIG,
   type CdsPillar,
-} from '$lib/combined-scores.svelte'
-import { ACTIVE_MODELS, get_pred_file_urls } from '$lib/models.svelte'
+} from '#lib/combined-scores.svelte.js'
+import { ACTIVE_MODELS, get_pred_file_urls } from '#lib/models.svelte.js'
 import {
   ALL_METRICS,
   DISCOVERY_METRICS,
@@ -15,9 +15,9 @@ import {
   HYPERPARAMS,
   MD_METRICS,
   METADATA_COLS,
-} from '$lib/labels'
-import type { ModelMetadata, TargetType } from '$lib/schema/model'
-import type { DiscoverySet, Label, ModelData } from '$lib/types'
+} from '#lib/labels.js'
+import type { ModelMetadata, TargetType } from '#lib/schema/model.js'
+import type { DiscoverySet, Label, ModelData } from '#lib/types.js'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import { escape_html } from 'matterviz/utils'
 import { format_num } from 'matterviz/labels'
@@ -193,28 +193,8 @@ export function missing_metric_reason(model: ModelData, metric: Label): string {
 }
 
 // Append "(higher|lower)=better" hint to a column tooltip where applicable
-export function append_better_hint(col: Label, better = col.better): string {
-  const description = col.description ?? ``
-  if (better !== `higher` && better !== `lower`) return description
-  return description ? `${description} (${better}=better)` : `${better}=better`
-}
-
-const all_higher_better_metrics = new Set(
-  Object.values(MODELINGS_TASKS).flatMap(
-    (model_task) => model_task.metrics.higher_is_better,
-  ),
-)
-
-const all_lower_better_metrics = new Set(
-  Object.values(MODELINGS_TASKS).flatMap(
-    (model_task) => model_task.metrics.lower_is_better,
-  ),
-)
-
-export function metric_better_as(metric: string): `higher` | `lower` | null {
-  if (all_higher_better_metrics.has(metric)) return `higher`
-  return all_lower_better_metrics.has(metric) ? `lower` : null
-}
+export const append_better_hint = ({ description, better }: Label): string =>
+  better ? `${description} (${better}=better)` : description
 
 export function training_set_link(key: string) {
   if (!Object.hasOwn(DATASETS, key)) {
@@ -315,7 +295,7 @@ export function assemble_row_data(
     get_nested_number(model, label_data_path(label))
   const finite_positive = (value: unknown): value is number =>
     is_finite_num(value) && value > 0
-  // Slowdown columns: wall time relative to the fastest model in the current
+  // t/t_min columns: wall time relative to the fastest model in the current
   // filtered view (roster-dependent, so computed here rather than stored on models)
   const time_multiplier = (run_time_label: Label) => {
     const fastest = Math.min(

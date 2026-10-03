@@ -1,8 +1,8 @@
 import MODELING_TASKS from '$pkg/modeling-tasks.yml'
-import BenchmarksPage from '$routes/benchmarks/+page.svelte'
-import { handle } from '$site/src/hooks.server'
+import BenchmarksPage from '#routes/benchmarks/+page.svelte'
+import { handle } from '#site/src/hooks.server.js'
 import { describe, expect, it, vi } from 'vite-plus/test'
-import { doc_query, mount } from '../index'
+import { doc_query, mount } from '../index.js'
 
 describe(`Benchmarks Page`, () => {
   it.each([``, `?cps_weights=1,0,0`])(

@@ -1,6 +1,6 @@
-import { ALL_METRICS, MD_METRICS, RMSD_BASELINE } from '$lib/labels'
-import type { DiatomicsMetrics, MdMetrics } from '$lib/schema/model'
-import type { Label, ModelData } from '$lib/types'
+import { ALL_METRICS, MD_METRICS, RMSD_BASELINE } from '#lib/labels.js'
+import type { DiatomicsMetrics, MdMetrics } from '#lib/schema/model.js'
+import type { Label, ModelData } from '#lib/types.js'
 
 export const DEFAULT_CPS_CONFIG = {
   F1: { ...ALL_METRICS.F1, weight: 0.5 },

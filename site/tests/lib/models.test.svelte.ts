@@ -3,9 +3,9 @@ import {
   calculate_cps,
   CPS_CONFIG,
   DEFAULT_CPS_CONFIG,
-} from '$lib/combined-scores.svelte'
-import { attach_style, order_models } from '$lib/fig-helpers'
-import { ALL_METRICS } from '$lib/labels'
+} from '#lib/combined-scores.svelte.js'
+import { attach_style, order_models } from '#lib/fig-helpers.js'
+import { ALL_METRICS } from '#lib/labels.js'
 import {
   ALL_TRAINING_SETS,
   calculate_training_sizes,
@@ -13,9 +13,9 @@ import {
   MODEL_METADATA_PATHS,
   MODELS,
   update_models_cps,
-} from '$lib/models.svelte'
-import type { ModelData } from '$lib/types'
-import { per_element_each_errors as per_elem_each_errors } from '$lib/per-element-errors'
+} from '#lib/models.svelte.js'
+import type { ModelData } from '#lib/types.js'
+import { per_element_each_errors as per_elem_each_errors } from '#lib/per-element-errors.js'
 import { parse_yaml } from 'svelte-widgets/yaml'
 import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'

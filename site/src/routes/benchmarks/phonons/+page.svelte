@@ -1,17 +1,21 @@
 <script lang="ts">
-  import TestSet from '$lib/benchmark/TestSet.svelte'
-  import TaskNavigation from '$lib/benchmark/TaskNavigation.svelte'
-  import MetricsTable from '$lib/table/MetricsTable.svelte'
-  import { by_benchmark_added_desc } from '$lib'
-  import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
-  import type { ModelData } from '$lib/types'
-  import { get_error_message } from '$lib/asset-loader'
-  import { load_kappa_analysis, type KappaAnalysis } from '$lib/parity/kappa-parity'
-  import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
-  import KappaParityPlot from '$lib/plot/KappaParityPlot.svelte'
-  import { bind_url_params } from '$lib/url-state.svelte'
+  import TestSet from '#lib/benchmark/TestSet.svelte'
+  import TaskNavigation from '#lib/benchmark/TaskNavigation.svelte'
+  import MetricsTable from '#lib/table/MetricsTable.svelte'
+  import { by_benchmark_added_desc } from '#lib'
+  import { ACTIVE_MODELS, make_table_filters } from '#lib/models.svelte.js'
+  import type { ModelData } from '#lib/types.js'
+  import { get_error_message } from '#lib/asset-loader.js'
+  import { load_kappa_analysis, type KappaAnalysis } from '#lib/parity/kappa-parity.js'
+  import DynamicScatter from '#lib/plot/DynamicScatter.svelte'
+  import KappaParityPlot from '#lib/plot/KappaParityPlot.svelte'
+  import { bind_url_params } from '#lib/url-state.svelte.js'
   import { valid_query_param } from 'svelte-widgets/url-params'
-  import { PHONON_METRICS, scatter_axis_label, task_page_visible_cols } from '$lib/labels'
+  import {
+    PHONON_METRICS,
+    scatter_axis_label,
+    task_page_visible_cols,
+  } from '#lib/labels.js'
   import { format_num } from 'matterviz/labels'
   import { MultiSelect, Spinner } from 'svelte-widgets'
   import { onMount } from 'svelte'
@@ -120,8 +124,8 @@
 
 <h2 id="leaderboard">Leaderboard</h2>
 <p>
-  κ failed is the fraction of predictions whose κ<sub>SRME</sub> was censored to 2 because
-  of imaginary modes, broken symmetry, or invalid conductivity data. A valid κ<sub
+  κ<sub>failed</sub> is the fraction of predictions whose κ<sub>SRME</sub> was censored to
+  2 because of imaginary modes, broken symmetry, or invalid conductivity data. A valid κ<sub
     >SRME</sub
   > of 2 is not a failure; Im(ω) separately reports the imaginary-mode rate.
 </p>

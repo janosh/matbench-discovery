@@ -1,7 +1,8 @@
-import type { DiscoverySet, Label, OrgLogo } from '$lib/types'
+import type { DiscoverySet, Label, OrgLogo } from '#lib/types.js'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import { Meta, Microsoft } from 'svelte-widgets/icons'
 import { format_datetime } from 'matterviz/table'
+import { strip_html } from 'matterviz/utils'
 
 import type {
   DiscoveryMetricsLabels,
@@ -9,7 +10,7 @@ import type {
   HyperparamLabels,
   MdMetricsLabels,
   MetadataLabels,
-} from './schema/label.d.ts'
+} from './schema/label.js'
 
 export const RMSD_BASELINE = 0.15 // Baseline for poor performance given worst performing model at time of writing is M3GNet at 0.1117
 
@@ -22,6 +23,15 @@ export const format_power_ten = (text: string): string =>
     )
     // collapse a bare mantissa of 1 (1×10^n -> 10^n) without touching e.g. 9.01×10^n
     .replaceAll(/(?<![\d.])1×10/g, `10`)
+
+// Plain-text label for exports, keeping sub/superscripts readable: E<sub>MAE</sub> -> E_MAE,
+// R<sup>2</sup> -> R^2 (bare tag stripping would run them together as EMAE, R2)
+export const plain_label = (label: string): string =>
+  strip_html(
+    label
+      .replaceAll(/<sub>(?<sub>.*?)<\/sub>/g, `_$<sub>`)
+      .replaceAll(/<sup>(?<sup>.*?)<\/sup>/g, `^$<sup>`),
+  )
 
 // "1y 2mo ago" / "3d from now" via matterviz; missing or unparsable dates show N/A
 export const format_relative_time = (date?: string, now_ms?: number): string => {
@@ -118,7 +128,7 @@ export const METADATA_COLS: MetadataLabels = {
   },
   benchmark_added: {
     key: `benchmark_added`,
-    label: `Date Added`,
+    label: `Added`,
     path: `dates`,
     format: `%b %y`,
     description: `Date the model was included on the benchmark leaderboard`,
@@ -131,23 +141,22 @@ export const METADATA_COLS: MetadataLabels = {
   },
   n_training_materials: {
     key: `n_training_materials`,
-    label: `Training Materials`,
+    label: `N<sub>materials</sub>`,
     description: `Number of training materials`,
     format: `~s`,
   },
   n_training_structures: {
     key: `n_training_structures`,
-    label: `Training Structures`,
+    label: `N<sub>structures</sub>`,
     description: `Number of training structures`,
     format: `~s`,
   },
   training_gpu_hours: {
     key: `training_gpu_hours`,
-    label: `Training Compute`,
-    unit: `GPU·h`,
+    label: `GPU·h`, // the label is the unit: device-summed training GPU hours
     format: `.3~s`,
     better: `lower`,
-    description: `Reported training cost summed over all listed devices (device count × hours per device)`,
+    description: `Reported training cost in GPU hours, summed over all listed devices (device count × hours per device)`,
   },
   checkpoint_license: {
     key: `Ckpt License`,
@@ -350,14 +359,14 @@ export const MD_METRICS: MdMetricsLabels = metric_group(
     },
     md_run_time_sec: {
       property: `run_time_sec`,
-      label: `Speed`,
+      label: `t<sub>wall</sub>`,
       description: `MD wall time in seconds to roll out all 17 DynaMat v1.0 NVT trajectories (20 ps each), summed over systems, excluding metric evaluation. Hardware is recorded per model in its YAML; blank for submissions without recorded timings`,
       unit: `s`,
       format: `.3~s`,
     },
     md_time_multiplier: {
       path: undefined,
-      label: `Slowdown`,
+      label: `t/t<sub>min</sub>`,
       description: `MD wall time as a multiple of the fastest finite MD wall time among models matching the active task, energy-only, training-data and openness filters (1× = fastest model in view)`,
       unit: `×`,
       format: `.2~f`,
@@ -395,55 +404,55 @@ export const DIATOMICS_METRICS = metric_group(
       style: `border-left: 1px solid black;`,
     },
     energy_diff_flips: {
-      label: `E flips`,
+      label: `E<sub>flips</sub>`,
       description: `Mean number of sign flips in adjacent diatomic energy differences over ${scored_diatomic_range}`,
     },
     energy_jump: {
-      label: `E jump`,
+      label: `E<sub>jump</sub>`,
       description: `Mean energy jump at sign-flip points over ${scored_diatomic_range}`,
       unit: `eV`,
     },
     pbe_wall_dist_mae: {
-      label: `PBE Δr wall`,
+      label: `Δr<sub>wall</sub>`,
       description: `Mean repulsive-wall distance error relative to PBE over the ${scored_diatomic_wall_range}, at 1, 5, 10, 20, 50 and 100 eV above the well minimum where reached by the reference; predictions that miss a supported threshold receive the full reference-radius error`,
       unit: `Å`,
     },
     pbe_energy_mae: {
-      label: `PBE E MAE`,
+      label: `E<sub>MAE</sub>`,
       description: `Mean absolute energy error relative to PBE over ${scored_diatomic_range}, after aligning curves at the largest shared separation`,
       unit: `eV`,
     },
     pbe_bond_length_error: {
-      label: `PBE Δr<sub>e</sub>`,
+      label: `Δr<sub>e</sub>`,
       description: `Equilibrium bond-length error relative to PBE from a local quadratic fit near the minimum over ${scored_diatomic_range}`,
       unit: `Å`,
     },
     pbe_well_depth_error: {
-      label: `PBE ΔD<sub>e</sub>`,
+      label: `ΔD<sub>e</sub>`,
       description: `Well-depth error relative to PBE over ${scored_diatomic_range}, D_e = E(r_max) - E_min`,
       unit: `eV`,
     },
     pbe_force_mae: {
-      label: `PBE F MAE`,
+      label: `F<sub>MAE</sub>`,
       description: `Mean absolute force error relative to PBE forces over ${scored_diatomic_range}`,
       unit: `eV/Å`,
     },
     pbe_vib_freq_error: {
-      label: `PBE Δω`,
-      description: `Mean harmonic vibrational-frequency error relative to PBE over valid local quadratic fits near the minimum over ${scored_diatomic_range}. The count shows valid fits / reference-eligible elements; hover for missing or failed fits. This diagnostic does not affect CDS`,
+      label: `Δω`,
+      description: `Mean harmonic vibrational-frequency error relative to PBE over valid local quadratic fits near the minimum over ${scored_diatomic_range}. Cells with incomplete coverage show valid fits / reference-eligible elements; hover for missing or failed fits. This diagnostic does not affect CDS`,
       unit: `cm⁻¹`,
     },
     force_flips: {
-      label: `F flips`,
+      label: `F<sub>flips</sub>`,
       description: `Mean number of force-direction flips over ${scored_diatomic_range}`,
     },
     force_total_variation: {
-      label: `F TV`,
+      label: `F<sub>TV</sub>`,
       description: `Mean total variation of forces over ${scored_diatomic_range}`,
       unit: `eV/Å`,
     },
     force_jump: {
-      label: `F jump`,
+      label: `F<sub>jump</sub>`,
       description: `Mean force jump at force-direction flip points over ${scored_diatomic_range}`,
       unit: `eV/Å`,
     },
@@ -457,14 +466,14 @@ export const DIATOMICS_METRICS = metric_group(
     },
     diatomics_run_time_sec: {
       property: `run_time_sec`,
-      label: `Speed`,
+      label: `t<sub>wall</sub>`,
       description: `Wall time in seconds for the full homonuclear diatomic curve sweep (H-U, 119 separations each), including calculator setup; summed over shards for parallel runs. Hardware varies by submission (recorded in the model YAML's hardware field); blank for submissions without recorded timings`,
       unit: `s`,
       format: `.3~s`,
     },
     diatomics_time_multiplier: {
       path: undefined,
-      label: `Slowdown`,
+      label: `t/t<sub>min</sub>`,
       description: `Diatomics wall time as a multiple of the fastest finite wall time among models matching the active task, energy-only, training-data and openness filters (1× = fastest model in view)`,
       unit: `×`,
       format: `.2~f`,
@@ -510,7 +519,7 @@ export const PHONON_METRICS = metric_group(
       color_scale: `interpolateRdBu`,
     },
     κ_failure_rate: {
-      label: `κ failed`,
+      label: `κ<sub>failed</sub>`,
       description: `Fraction of the 103 PhononDB-PBE materials where κ prediction failed outright and κ<sub>SRME</sub> was censored to its maximum of 2`,
       range: [0, 1],
       format: `.1~%`,
@@ -566,7 +575,7 @@ export const ALL_METRICS: AllMetrics = {
 
 // Column-visibility map for task pages: hide every metric except those passed in,
 // keep all metadata columns visible. Keyed by col.key (unique per column) rather than
-// label, which repeats across tasks (MD and diatomics both have Speed/Slowdown cols).
+// label, which repeats across tasks (MD and diatomics both have wall-time and t/t_min cols).
 // Columns absent from the map (e.g. hyperparams) default to shown via `?? true` in
 // the pages' col_filter.
 export const task_page_visible_cols = (
@@ -607,7 +616,7 @@ export const discovery_set_toggle_options = Object.entries(DISCOVERY_SET_LABELS)
   }),
 )
 
-// Slowdown columns are roster-dependent (computed per filtered table view, not
+// t/t_min (slowdown) columns are roster-dependent (computed per filtered table view, not
 // stored on models), so they can't be scatter axes
 const time_multiplier_keys = new Set([
   DIATOMICS_METRICS.diatomics_time_multiplier.key,

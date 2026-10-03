@@ -1,8 +1,8 @@
 import { goto } from '$app/navigation'
-import type { GitHubActivityData } from '$lib/types'
-import GitHubActivityScatter from '$lib/plot/GitHubActivityScatter.svelte'
+import type { GitHubActivityData } from '#lib/types.js'
+import GitHubActivityScatter from '#lib/plot/GitHubActivityScatter.svelte'
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
-import { get_scatter_plot_props, mount } from '../index'
+import { get_scatter_plot_props, mount } from '../index.js'
 
 const plot_mocks = vi.hoisted(() => ({
   ScatterPlot: vi.fn(),

@@ -1,16 +1,14 @@
-import { afterNavigate, onNavigate, replaceState } from '$app/navigation'
+import { afterNavigate, goto, onNavigate, type AfterNavigate } from '$app/navigation'
 import { page } from '$app/state'
-import type { AfterNavigate } from '@sveltejs/kit'
 import { untrack } from 'svelte'
 import { is_d3_interpolate_name, type D3InterpolateName } from 'matterviz/colors'
 import {
   bool_from_param,
   bool_url_entry,
-  sync_url_params as sync_params,
   type UrlParamEntry,
+  url_with_params,
 } from 'svelte-widgets/url-params'
 
-type PageState = Parameters<typeof replaceState>[1]
 // color_scale param: valid d3 interpolate names, defaulting to Viridis
 export const url_color_scale = {
   default: `interpolateViridis` as D3InterpolateName,
@@ -63,7 +61,7 @@ export type FilterConfig = {
   targets?: Partial<Record<TargetOutput, TrainFilterMode>> // absent = default (require F)
   fs_mode?: FsMode
 }
-// minimal structural model shape keeps this module decoupled from $lib/types
+// minimal structural model shape keeps this module decoupled from #lib/types.js
 type FilterableModel = {
   training_sets: string[]
   openness: Openness
@@ -273,8 +271,21 @@ export class UrlTableFilters {
   }
 }
 
-export function sync_url_params(entries: UrlParamEntry[], state: PageState): void {
-  sync_params(entries, location, (url) => replaceState(url, state))
+// Shallow goto() awaits route resolution before writing history, so bindings syncing in
+// the same flush would each build on a `location` that earlier writes haven't reached yet
+// and drop each other's params. Build on the latest requested URL until it has landed
+// or a router navigation (which brings its own query) supersedes it.
+let pending_url: URL | null = null
+
+export function sync_url_params(entries: UrlParamEntry[], state: App.PageState): void {
+  const current_url = pending_url ?? location
+  const next_url = url_with_params(entries, current_url)
+  if (next_url === url_with_params([], current_url)) return
+  const requested_url = new URL(next_url, location.href)
+  pending_url = requested_url
+  void goto(next_url, { shallow: true, replace: true, state }).finally(() => {
+    if (pending_url === requested_url) pending_url = null
+  })
 }
 
 let last_navigation: AfterNavigate | undefined
@@ -298,18 +309,25 @@ export function bind_url_params(
   })
   const read_url = (
     navigation: AfterNavigate,
-    params = popstate_queries.get(navigation.complete) ?? page.url.searchParams,
+    params = popstate_queries.get(navigation.complete) ??
+      new URLSearchParams(page.url.search),
   ) => {
     last_navigation = navigation
     read_params?.(params, navigation)
     url_ready = true
   }
-  afterNavigate(read_url)
+  // Skip shallow goto()s: they are this module's own URL writes (sync_url_params).
+  // Shallow popstates still read, since they restore a previously written query.
+  afterNavigate((navigation) => {
+    if (navigation.shallow && navigation.type === `goto`) return
+    pending_url = null
+    read_url(navigation)
+  })
 
   $effect(() => {
     const navigation = last_navigation
     // Normal navigations read the router's original query, before any URL writes.
-    // Late mounts read shallow edits, which Kit's replaceState omits from page.url.
+    // Late mounts read shallow edits, which shallow goto() omits from page.url.
     if (!url_ready && navigation) {
       untrack(() => read_url(navigation, new URLSearchParams(location.search)))
     }

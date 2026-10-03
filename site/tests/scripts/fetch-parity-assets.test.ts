@@ -1,4 +1,4 @@
-import { fetch_parity_assets } from '../../scripts/fetch-parity-assets'
+import { fetch_parity_assets } from '../../scripts/fetch-parity-assets.js'
 import { createHash } from 'node:crypto'
 import {
   mkdir,

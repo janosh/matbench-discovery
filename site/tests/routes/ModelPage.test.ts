@@ -1,28 +1,28 @@
-import { ACTIVE_MODELS, MODELS, update_models_cps } from '$lib/models.svelte'
+import { ACTIVE_MODELS, MODELS, update_models_cps } from '#lib/models.svelte.js'
 import {
   CDS_CONFIG,
   CMDS_CONFIG,
   CPS_CONFIG,
   update_models_cds,
   update_models_cmds,
-} from '$lib/combined-scores.svelte'
-import { parse_dependency_spec } from '$lib/environment'
-import { get_org_logo } from '$lib/labels'
-import { model_metric_ranks, RANKED_METRICS } from '$lib/rankings'
+} from '#lib/combined-scores.svelte.js'
+import { parse_dependency_spec } from '#lib/environment.js'
+import { get_org_logo } from '#lib/labels.js'
+import { model_metric_ranks, RANKED_METRICS } from '#lib/rankings.js'
 import {
   discovery_task_tooltips,
   openness_tooltips,
   targets_tooltips,
-} from '$lib/metrics'
-import type { ModelData } from '$lib/types'
-import * as predictions from '$lib/server/predictions'
+} from '#lib/metrics.js'
+import type { ModelData } from '#lib/types.js'
+import * as predictions from '#lib/server/predictions.js'
 import DATASETS from '$data/datasets.yml'
-import ModelPage from '$routes/models/[slug]/+page.svelte'
-import { load } from '$routes/models/[slug]/+page.server'
+import ModelPage from '#routes/models/[slug]/+page.svelte'
+import { load } from '#routes/models/[slug]/+page.server.js'
 import { format_num } from 'matterviz/labels'
 import { type ComponentProps, tick } from 'svelte'
 import { describe, expect, it, onTestFinished, vi } from 'vite-plus/test'
-import { doc_query, mount, mount_with_url } from '../index'
+import { doc_query, mount, mount_with_url } from '../index.js'
 
 const test_model = MODELS.find((model) =>
   model.authors.some((author) => author.affiliation === `Mirror Physics`),

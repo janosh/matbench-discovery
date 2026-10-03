@@ -1,15 +1,14 @@
-import type kappa_analysis_data from '$figs/kappa-103-analysis.jsonl'
+import type kappa_analysis_data from '#figs/kappa-103-analysis.jsonl'
 import type { PhononDos } from 'matterviz/spectral'
-import type { AnyStructure } from 'matterviz/structure'
 import {
   assert_array_length,
   load_json_asset,
   load_parity_model,
   parity_asset_resolver,
-} from '../asset-loader'
-import type { ParityBase, ParityModel, ParityPoint } from '../asset-loader'
+} from '../asset-loader.js'
+import type { ParityBase, ParityModel, ParityPoint } from '../asset-loader.js'
 import kappa_parity_manifest_json from './kappa-parity-manifest.json'
-import { is_finite_num } from '../metrics'
+import { is_finite_num } from '../metrics.js'
 
 export type KappaAnalysis = typeof kappa_analysis_data
 
@@ -17,7 +16,7 @@ let analysis_promise: Promise<KappaAnalysis> | undefined
 
 // Lazily load and cache the shared κ-103 per-material analysis payload.
 export const load_kappa_analysis = (): Promise<KappaAnalysis> =>
-  (analysis_promise ??= import(`$figs/kappa-103-analysis.jsonl`).then(
+  (analysis_promise ??= import(`#figs/kappa-103-analysis.jsonl`).then(
     (module) => module.default,
   ))
 
@@ -49,7 +48,6 @@ export interface KappaParityBase extends ParityBase {
   kappa_dft: (number | null)[]
   n_sites: (number | null)[]
   spacegroups: (number | null)[]
-  structures: Record<string, AnyStructure | string | undefined>
   dft_dos: Record<string, RawDos | undefined>
 }
 

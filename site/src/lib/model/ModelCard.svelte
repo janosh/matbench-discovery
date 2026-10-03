@@ -1,15 +1,15 @@
 <script lang="ts">
-  import type { Label, ModelData } from '$lib/types'
+  import type { Label, ModelData } from '#lib/types.js'
   import {
     get_nested_number,
     is_finite_num,
     label_data_path,
     missing_metric_reason,
     training_set_link,
-  } from '$lib/metrics'
-  import { ACTIVE_MODELS } from '$lib/models.svelte'
-  import { model_metric_ranks, rank_color, RANKED_METRICS } from '$lib/rankings'
-  import pkg from '$site/package.json'
+  } from '#lib/metrics.js'
+  import { ACTIVE_MODELS } from '#lib/models.svelte.js'
+  import { model_metric_ranks, rank_color, RANKED_METRICS } from '#lib/rankings.js'
+  import pkg from '#site/package.json'
   import { format_num } from 'matterviz/labels'
   import { Icon, Popover } from 'svelte-widgets'
   import {
@@ -168,7 +168,8 @@
     font-weight: 250;
     display: flex;
     gap: 5pt 1em;
-    flex-wrap: wrap;
+    flex-wrap: wrap; /* fallback where balance is unsupported */
+    flex-wrap: balance;
     place-content: center;
   }
   nav > a {

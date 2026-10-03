@@ -12,12 +12,12 @@ import zlib from 'node:zlib'
 import { default_highlighter } from 'svelte-widgets/highlight'
 import { make_config } from 'svelte-widgets/vite-config'
 import { parse_yaml, yaml_plugin } from 'svelte-widgets/yaml'
-import type { Plugin } from 'vite'
+import ts from 'typescript'
+import type { Alias, Plugin } from 'vite'
 import pkg from './package.json' with { type: 'json' }
 import { render_data_markdown } from './scripts/markdown-data.ts'
 
-// passed inline to sveltekit() (Kit >= 2.62) so no separate svelte.config.ts is needed;
-// kit options (adapter, version, alias) sit at the top level rather than under `kit`
+// sveltekit() plugin options: svelte compiler settings plus kit options (adapter, version)
 export const svelte_config = {
   extensions: [`.svelte`, `.md`],
 
@@ -37,6 +37,7 @@ export const svelte_config = {
       }),
     ),
     {
+      name: `figure-refs`,
       markup: (file: { content: string; filename?: string }) => {
         const filename = file.filename?.replaceAll(`\\`, `/`) ?? ``
         const route = filename.split(`site/src/routes/`)[1] ?? ``
@@ -82,15 +83,6 @@ export const svelte_config = {
   prerender: { entries: [`*`, `/tasks`] },
   // Date.now() diverges across Vite+ SSR/client config loads and breaks hydration.
   version: process.env.NODE_ENV === `production` ? undefined : { name: `dev` },
-
-  alias: {
-    $site: `.`,
-    $root: `..`,
-    $data: `../data`,
-    $pkg: `../matbench_discovery`,
-    $figs: `src/figs`,
-    $routes: `src/routes`,
-  },
 } satisfies NonNullable<Parameters<typeof sveltekit>[0]>
 
 // Load committed data payloads as parsed ES modules. Figure payloads in site/src/figs
@@ -98,7 +90,7 @@ export const svelte_config = {
 // (static, gzipped) and <name>.jsonl (multi-model, one model per line + a {"_base": {...}} line,
 // reassembled with _base.derived flattened beside its identity/audit metadata).
 // Both embed as JSON.parse('...') (cheap V8 parse; @__PURE__ drops unused payloads).
-// .jsonl goes through attach_style ($lib/fig-helpers) so pages import pre-styled models.
+// .jsonl goes through attach_style (#lib/fig-helpers.js) so pages import pre-styled models.
 const json_payload_plugin = (): Plugin => ({
   name: `json-payload`,
   load(id) {
@@ -127,7 +119,7 @@ const json_payload_plugin = (): Plugin => ({
         } else models.push(entry)
       }
       const json = JSON.stringify({ ...base, models })
-      const code = `import { attach_style } from '$lib/fig-helpers';
+      const code = `import { attach_style } from '#lib/fig-helpers.js';
 export default /* @__PURE__ */ attach_style(JSON.parse(${JSON.stringify(json)}))`
       return { code, map: null }
     }
@@ -251,6 +243,20 @@ function yaml_schema_to_typescript_plugin(): Plugin {
   }
 }
 
+// Out-of-package dirs ($root, $data, $pkg) can't be # subpath imports (Node and TS reject ../
+// targets), so tsconfig.json paths declares them and Vite aliases are derived from it here.
+// Only this repo's compilerOptions are parsed: an own `paths` replaces (not merges with) the
+// one from kit's extended $app/tsconfig, which may not exist yet before the first kit sync.
+const tsconfig_path_aliases = (): Alias[] => {
+  const { config } = ts.readConfigFile(`tsconfig.json`, (file) => ts.sys.readFile(file))
+  const paths: Record<string, string[]> = config?.compilerOptions?.paths ?? {}
+  return Object.entries(paths).map(([key, [target = ``]]) => {
+    if (!key.endsWith(`/*`))
+      throw new Error(`Expected only "X/*" tsconfig paths, got ${key}`)
+    return { find: key.slice(0, -2), replacement: path.resolve(target.slice(0, -2)) }
+  })
+}
+
 const config = make_config()
 // Vite's bundle loader does not provide import.meta.resolve for the inline Svelte config.
 const matterviz_dist = path.dirname(createRequire(import.meta.url).resolve(`matterviz`))
@@ -316,7 +322,10 @@ export default {
   resolve: {
     dedupe: [`svelte`, `svelte-widgets`],
     conditions: process.env.VITEST ? [`browser`] : undefined,
-    // Keep bare Three imports on Matterviz's WebGPU-compatible build to avoid duplicates.
-    alias: [{ find: /^three$/, replacement: three_compat }],
+    alias: [
+      // Keep bare Three imports on Matterviz's WebGPU-compatible build to avoid duplicates.
+      { find: /^three$/, replacement: three_compat },
+      ...tsconfig_path_aliases(),
+    ],
   },
 }

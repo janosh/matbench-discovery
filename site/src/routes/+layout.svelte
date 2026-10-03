@@ -2,10 +2,10 @@
   import { goto } from '$app/navigation'
   import { page } from '$app/state'
   import DATASETS from '$data/datasets.yml'
-  import { title_case } from '$lib/labels'
-  import { bind_score_weights, MODELS } from '$lib/models.svelte'
-  import { bind_comparison_url, comparison } from '$lib/model-comparison.svelte'
-  import { get_error_message } from '$lib/asset-loader'
+  import { title_case } from '#lib/labels.js'
+  import { bind_score_weights, MODELS } from '#lib/models.svelte.js'
+  import { bind_comparison_url, comparison } from '#lib/model-comparison.svelte.js'
+  import { get_error_message } from '#lib/asset-loader.js'
   import {
     CommandMenu,
     CopyButton,
@@ -20,7 +20,7 @@
   import type { CmdAction, FooterLink } from 'svelte-widgets'
   import { Changelog, Email, GitHub, RSS, Search, TextSearch } from 'svelte-widgets/icons'
   import MODELING_TASKS from '$pkg/modeling-tasks.yml'
-  import pkg from '$site/package.json'
+  import pkg from '#site/package.json'
   import { tick, type Snippet } from 'svelte'
   import { heading_anchors } from 'svelte-widgets/heading-anchors'
   // oxlint-disable-next-line no-unassigned-import
@@ -36,9 +36,9 @@
   bind_score_weights()
   // Load on first use, then retain the dialog's axis/picker state across reopenings.
   let comparison_module =
-    $state.raw<Promise<typeof import('$lib/model/ModelComparison.svelte')>>()
+    $state.raw<Promise<typeof import('#lib/model/ModelComparison.svelte')>>()
   $effect(() => {
-    if (comparison.open) comparison_module ??= import(`$lib/model/ModelComparison.svelte`)
+    if (comparison.open) comparison_module ??= import(`#lib/model/ModelComparison.svelte`)
   })
 
   const footer_links: FooterLink[] = [

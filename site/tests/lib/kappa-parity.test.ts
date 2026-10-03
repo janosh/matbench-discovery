@@ -8,15 +8,14 @@ import {
   kappa_parity_asset_url,
   load_kappa_parity_base,
   load_kappa_parity_model,
-} from '$lib/parity/kappa-parity'
-import type { KappaParityBase, KappaParityModel } from '$lib/parity/kappa-parity'
-import { clear_asset_cache } from '$lib/asset-loader'
-import * as kappa_parity from '$lib/parity/kappa-parity'
-import * as kappa_modes from '$lib/parity/kappa-modes'
-import KappaParityPlot from '$lib/plot/KappaParityPlot.svelte'
-import { MODELS } from '$lib/models.svelte'
+} from '#lib/parity/kappa-parity.js'
+import type { KappaParityBase, KappaParityModel } from '#lib/parity/kappa-parity.js'
+import { clear_asset_cache } from '#lib/asset-loader.js'
+import * as kappa_parity from '#lib/parity/kappa-parity.js'
+import * as kappa_modes from '#lib/parity/kappa-modes.js'
+import KappaParityPlot from '#lib/plot/KappaParityPlot.svelte'
+import { MODELS } from '#lib/models.svelte.js'
 import { tick } from 'svelte'
-import type { AnyStructure } from 'matterviz/structure'
 import {
   afterEach,
   beforeEach,
@@ -32,7 +31,7 @@ import {
   gzipped_json_response,
   mount,
   request_url,
-} from '../index'
+} from '../index.js'
 
 const plot_mocks = vi.hoisted(() => ({
   ScatterPlot: vi.fn(),
@@ -54,15 +53,12 @@ afterEach(() => {
   clear_asset_cache()
 })
 
-const dummy_structure = { sites: [], lattice: {} } as unknown as AnyStructure
-
 const base: KappaParityBase = {
   material_ids: [`mp-1`, `mp-2`, `mp-3`],
   formulas: [`Si2`, `Ge2`, `Sn2`],
   kappa_dft: [10, 5, null],
   n_sites: [8, 4, 2],
   spacegroups: [225, 186, 1],
-  structures: { 'mp-1': dummy_structure },
   dft_dos: { 'mp-1': { frequencies: [0, 1, 2], densities: [0, 1, 0] } },
 }
 
@@ -203,7 +199,6 @@ function manifest_sized_base(overrides: Partial<KappaParityBase> = {}): KappaPar
     kappa_dft: Array<number | null>(row_count).fill(1),
     n_sites: Array<number | null>(row_count).fill(2),
     spacegroups: Array<number | null>(row_count).fill(225),
-    structures: {},
     dft_dos: {},
     ...overrides,
   }

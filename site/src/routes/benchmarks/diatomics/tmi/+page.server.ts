@@ -1,4 +1,4 @@
-import dft_references from '$lib/diatomics-dft.json.gz'
+import dft_references from '#lib/diatomics-dft.json.gz'
 import type { PageServerLoad } from './$types'
 
 // functional -> formula -> per-point magmom data (subset of the bundled DFT reference)

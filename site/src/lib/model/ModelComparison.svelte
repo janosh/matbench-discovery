@@ -1,17 +1,17 @@
 <script lang="ts">
   import { page } from '$app/state'
-  import { ALL_METRICS, HYPERPARAMS, scatter_options } from '$lib/labels'
-  import { is_finite_num } from '$lib/metrics'
+  import { ALL_METRICS, HYPERPARAMS, scatter_options } from '#lib/labels.js'
+  import { is_finite_num } from '#lib/metrics.js'
   import {
     COMPARE_GROUPS,
     COST_ROWS,
     compare_cells,
     comparison,
-  } from '$lib/model-comparison.svelte'
-  import { ACTIVE_MODELS, MODELS } from '$lib/models.svelte'
-  import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
-  import { rank_color, RANKED_METRICS } from '$lib/rankings'
-  import type { ModelData } from '$lib/types'
+  } from '#lib/model-comparison.svelte.js'
+  import { ACTIVE_MODELS, MODELS } from '#lib/models.svelte.js'
+  import DynamicScatter from '#lib/plot/DynamicScatter.svelte'
+  import { rank_color, RANKED_METRICS } from '#lib/rankings.js'
+  import type { ModelData } from '#lib/types.js'
   import { format_num } from 'matterviz/labels'
   import { tick, untrack } from 'svelte'
   import { Dialog, Icon, MultiSelect, Popover } from 'svelte-widgets'

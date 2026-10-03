@@ -1,7 +1,7 @@
 <script lang="ts">
   import MODELING_TASKS from '$pkg/modeling-tasks.yml'
-  import { benchmarks } from '$lib/benchmark/data'
-  import ElementHeatmap from '$lib/benchmark/ElementHeatmap.svelte'
+  import { benchmarks } from '#lib/benchmark/data.js'
+  import ElementHeatmap from '#lib/benchmark/ElementHeatmap.svelte'
   import { Icon } from 'svelte-widgets'
   import DataFilesDirectDownload from '../data/data-files-direct-download.md'
 </script>

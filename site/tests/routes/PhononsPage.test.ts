@@ -1,7 +1,7 @@
-import kappa_103_analysis from '$figs/kappa-103-analysis.jsonl'
-import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
-import type * as KappaParity from '$lib/parity/kappa-parity'
-import PhononsPage from '$routes/benchmarks/phonons/+page.svelte'
+import kappa_103_analysis from '#figs/kappa-103-analysis.jsonl'
+import { ACTIVE_MODELS, make_table_filters } from '#lib/models.svelte.js'
+import type * as KappaParity from '#lib/parity/kappa-parity.js'
+import PhononsPage from '#routes/benchmarks/phonons/+page.svelte'
 import { tick } from 'svelte'
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 import {
@@ -11,11 +11,11 @@ import {
   mount,
   mount_with_url,
   sorted_header,
-} from '../index'
+} from '../index.js'
 
 // per-test override of the analysis payload's model list (null = real payload)
 const analysis_mock = vi.hoisted(() => ({ models: null as unknown[] | null, error: `` }))
-vi.mock(`$lib/parity/kappa-parity`, async (import_original) => {
+vi.mock(`#lib/parity/kappa-parity.js`, async (import_original) => {
   const actual = await import_original<typeof KappaParity>()
   return {
     ...actual,
@@ -74,7 +74,7 @@ describe(`Phonons Task Page`, () => {
     expect(doc_query(`h1`).textContent).toContain(`MLFF Phonon Modeling Metrics`)
     expect(document.body.textContent).toContain(`cancellation can hide errors`)
     expect(document.body.textContent).not.toContain(`working on extending the test set`)
-    expect(document.body.textContent).toMatch(/censored\s+to 2 because/)
+    expect(document.body.textContent).toMatch(/censored\s+to\s+2\s+because/)
 
     const headings = heading_texts()
     expect(headings).toEqual([
@@ -153,7 +153,7 @@ describe(`Phonons Task Page`, () => {
       `κSRME`,
       `κSRE`,
       `κSRD`,
-      `κ failed`,
+      `κfailed`,
       `Im(ω)`,
       `W1(ω)`,
     ]) {
@@ -163,7 +163,7 @@ describe(`Phonons Task Page`, () => {
       expect(headers).not.toContain(column)
     }
 
-    const kappa_col_indices = [`κSRME`, `κSRE`, `κSRD`, `κ failed`, `Im(ω)`].map(
+    const kappa_col_indices = [`κSRME`, `κSRE`, `κSRD`, `κfailed`, `Im(ω)`].map(
       (header) => headers.indexOf(header),
     )
     expect(kappa_col_indices.every((column_idx) => column_idx >= 0)).toBe(true)

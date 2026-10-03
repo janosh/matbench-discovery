@@ -1,7 +1,7 @@
 <script lang="ts">
-  import mp_trj_hists from '$figs/mp-trj-hists.json.gz'
+  import mp_trj_hists from '#figs/mp-trj-hists.json.gz'
   import data_files from '$pkg/data-files.yml'
-  import { series_blue } from '$lib/fig-helpers'
+  import { series_blue } from '#lib/fig-helpers.js'
   import { BarPlot } from 'matterviz/plot'
   import MPtrjElemCountsPtable from './MPtrjElemCountsPtable.svelte'
   import MpTrjNSitesHist from './MpTrjNSitesHist.svelte'

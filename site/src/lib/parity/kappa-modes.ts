@@ -5,8 +5,8 @@
 // validates the shapes, so the client trusts the JSON without rechecking.
 import type { Matrix3x3, Vec3 } from 'matterviz/math'
 import type { Complex, PhononModeData, PhononPathSegment } from 'matterviz/spectral'
-import { load_model_asset, parity_asset_resolver } from '../asset-loader'
-import { kappa_parity_manifest } from './kappa-parity'
+import { load_model_asset, parity_asset_resolver } from '../asset-loader.js'
+import { kappa_parity_manifest } from './kappa-parity.js'
 
 export interface KappaModesMaterial {
   primitive: {

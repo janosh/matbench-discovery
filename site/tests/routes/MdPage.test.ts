@@ -1,6 +1,6 @@
-import { ACTIVE_MODELS } from '$lib/models.svelte'
-import { MD_METRICS } from '$lib/labels'
-import MdPage from '$routes/benchmarks/md/+page.svelte'
+import { ACTIVE_MODELS } from '#lib/models.svelte.js'
+import { MD_METRICS } from '#lib/labels.js'
+import MdPage from '#routes/benchmarks/md/+page.svelte'
 import { describe, expect, it } from 'vite-plus/test'
 import {
   checkbox_for,
@@ -10,7 +10,7 @@ import {
   mount,
   mount_with_url,
   sorted_header,
-} from '../index'
+} from '../index.js'
 
 describe(`MD Task Page`, () => {
   it(`renders page structure with filtered leaderboard and scatter`, () => {
@@ -32,22 +32,22 @@ describe(`MD Task Page`, () => {
       th.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),
     )
     const expected = [`ΔERMSE`, `FRMSE`, `ΔADF`, `ΔvDOS`, `PMAE`, `PW1`, `CMDS`]
-    for (const header of [...expected, `Speed`, `Slowdown`]) {
+    for (const header of [...expected, `twall`, `t/tmin`]) {
       expect(headers, `missing column ${header}`).toContain(header)
     }
     // ΔRDF is hidden from the leaderboard (redundant with ΔvDOS/ΔADF, out of CMDS);
-    // the diatomics Speed/Slowdown columns must not leak onto the MD page despite
+    // the diatomics wall-time columns must not leak onto the MD page despite
     // sharing labels with the MD ones (col visibility is keyed by unique col.key)
     expect(headers).not.toContain(`ΔRDF`)
-    expect(headers.filter((header) => header === `Speed`)).toHaveLength(1)
-    expect(headers.filter((header) => header === `Slowdown`)).toHaveLength(1)
+    expect(headers.filter((header) => header === `twall`)).toHaveLength(1)
+    expect(headers.filter((header) => header === `t/tmin`)).toHaveLength(1)
 
     const headings = [...document.querySelectorAll<HTMLHeadingElement>(`h2`)].map((h2) =>
       h2.textContent?.replaceAll(/\s+/g, ` `).trim(),
     )
     expect(headings).toEqual([
       `Leaderboard`,
-      `CMDS vs Speed`,
+      `CMDS vs twall`,
       `Test set: DynaMat v1.0`,
       `Methodology`,
     ])
@@ -68,7 +68,7 @@ describe(`MD Task Page`, () => {
   it.each(Object.values(MD_METRICS))(
     `$key label points at metrics.md and has correct direction`,
     (label) => {
-      // Slowdown is computed per table view in assemble_row_data, not read from models
+      // t/t_min is computed per table view in assemble_row_data, not read from models
       const expected_path = label.key === `md_time_multiplier` ? undefined : `metrics.md`
       expect(label.path).toBe(expected_path)
       // combined_score (CMDS) is a score (higher=better); the rest are errors (lower)

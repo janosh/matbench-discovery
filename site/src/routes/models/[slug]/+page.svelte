@@ -1,10 +1,10 @@
 <script lang="ts">
-  import Logo from '$lib/Logo.svelte'
-  import type { Author } from '$lib/types'
-  import { comparison } from '$lib/model-comparison.svelte'
+  import Logo from '#lib/Logo.svelte'
+  import type { Author } from '#lib/types.js'
+  import { comparison } from '#lib/model-comparison.svelte.js'
   import DATASETS from '$data/datasets.yml'
-  import { model_metric_ranks, rank_color, RANKED_METRICS } from '$lib/rankings'
-  import PtableInset from '$lib/PtableInset.svelte'
+  import { model_metric_ranks, rank_color, RANKED_METRICS } from '#lib/rankings.js'
+  import PtableInset from '#lib/PtableInset.svelte'
   import {
     discovery_task_tooltips,
     get_nested_value,
@@ -14,13 +14,13 @@
     model_role_from_targets,
     openness_tooltips,
     targets_tooltips,
-  } from '$lib/metrics'
-  import { has_kappa_parity_model } from '$lib/parity/kappa-parity'
-  import EnergyParityPlot from '$lib/plot/EnergyParityPlot.svelte'
-  import KappaParityPlot from '$lib/plot/KappaParityPlot.svelte'
-  import { ACTIVE_MODELS, get_pred_file_urls, MODELS } from '$lib/models.svelte'
+  } from '#lib/metrics.js'
+  import { has_kappa_parity_model } from '#lib/parity/kappa-parity.js'
+  import EnergyParityPlot from '#lib/plot/EnergyParityPlot.svelte'
+  import KappaParityPlot from '#lib/plot/KappaParityPlot.svelte'
+  import { ACTIVE_MODELS, get_pred_file_urls, MODELS } from '#lib/models.svelte.js'
   import { error } from '@sveltejs/kit'
-  import pkg from '$site/package.json'
+  import pkg from '#site/package.json'
   import type { ChemicalElement } from 'matterviz'
   import { ButtonGroup, CopyButton, Icon, Popover } from 'svelte-widgets'
   import {
@@ -44,7 +44,7 @@
     Scale,
     Versions,
   } from 'svelte-widgets/icons'
-  import { format_relative_time, get_org_logo } from '$lib/labels'
+  import { format_relative_time, get_org_logo } from '#lib/labels.js'
   import { format_num } from 'matterviz/labels'
   import { HeatmapTable } from 'matterviz/table'
   import { JsonTree } from 'matterviz/layout'
@@ -53,11 +53,11 @@
   import type { D3InterpolateName } from 'matterviz/colors'
   import { tooltip } from 'svelte-widgets/attachments'
   import { SvelteSet } from 'svelte/reactivity'
-  import { bind_url_params } from '$lib/url-state.svelte'
+  import { bind_url_params } from '#lib/url-state.svelte.js'
   import { valid_query_param } from 'svelte-widgets/url-params'
-  import type { LoadStatus } from '$lib/asset-loader'
-  import { parse_dependency_spec } from '$lib/environment'
-  import { per_element_each_errors as per_elem_each_errors } from '$lib/per-element-errors'
+  import type { LoadStatus } from '#lib/asset-loader.js'
+  import { parse_dependency_spec } from '#lib/environment.js'
+  import { per_element_each_errors as per_elem_each_errors } from '#lib/per-element-errors.js'
   import type { PageData } from './$types'
 
   type ModelInfoItem = readonly [label: string, value: string, notation?: string]
@@ -123,7 +123,7 @@
   })
   let model = $derived(
     MODELS.find(({ model_key }) => model_key === data.model_key) ??
-      error(404, { message: `Model "${data.model_key}" not found` }),
+      error(404, `Model "${data.model_key}" not found`),
   )
   const task_metrics = RANKED_METRICS.filter((metric) => metric.rank_href !== `/`)
   const task_key = (href: string) => href.replace(`/benchmarks/`, ``)

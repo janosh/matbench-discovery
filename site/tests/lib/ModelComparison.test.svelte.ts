@@ -1,14 +1,13 @@
-import { afterNavigate, onNavigate } from '$app/navigation'
+import { afterNavigate, onNavigate, type AfterNavigate } from '$app/navigation'
 import { page } from '$app/state'
-import type { AfterNavigate } from '@sveltejs/kit'
 import DATASETS from '$data/datasets.yml'
-import { ALL_METRICS } from '$lib/labels'
+import { ALL_METRICS } from '#lib/labels.js'
 import {
   ACTIVE_MODELS,
   bind_score_weights,
   MODELS,
   score_weight_records,
-} from '$lib/models.svelte'
+} from '#lib/models.svelte.js'
 import {
   bind_comparison_url,
   COMPARE_GROUPS,
@@ -16,11 +15,11 @@ import {
   comparison,
   mark_compared_rows,
   type CompareRow,
-} from '$lib/model-comparison.svelte'
-import { bind_url_params } from '$lib/url-state.svelte'
-import ModelComparison from '$lib/model/ModelComparison.svelte'
-import ModelPage from '$routes/models/[slug]/+page.svelte'
-import type { ModelData } from '$lib/types'
+} from '#lib/model-comparison.svelte.js'
+import { bind_url_params } from '#lib/url-state.svelte.js'
+import ModelComparison from '#lib/model/ModelComparison.svelte'
+import ModelPage from '#routes/models/[slug]/+page.svelte'
+import type { ModelData } from '#lib/types.js'
 import { flushSync, tick } from 'svelte'
 import {
   afterEach,
@@ -32,7 +31,7 @@ import {
   test,
   vi,
 } from 'vite-plus/test'
-import { doc_query, get_scatter_plot_props, mount, query_param } from '../index'
+import { doc_query, get_scatter_plot_props, mount, query_param } from '../index.js'
 
 // happy-dom never measures the plot, so capture ScatterPlot's props instead of its SVG
 const plot_mocks = vi.hoisted(() => ({ ScatterPlot: vi.fn() }))
@@ -271,7 +270,7 @@ describe(`bind_comparison_url`, () => {
   // simulate SvelteKit: its page.url is a $state.raw holding a fresh URL object per navigation
   // (kit/src/runtime/client/client.js), so swap the object, mirror it into location, then
   // fire the afterNavigate callback registered by bind_comparison_url
-  let kit_url = $state.raw(new URL(`http://localhost/`))
+  let kit_url = $state.raw<typeof page.url>(new URL(`http://localhost/`))
   let on_navigation: Parameters<typeof afterNavigate>[0]
   const navigate = (url: string, type: `enter` | `link`) => {
     kit_url = new URL(url, location.origin)
@@ -371,7 +370,7 @@ describe(`bind_comparison_url`, () => {
 })
 
 describe(`ModelComparison dialog`, () => {
-  let kit_url = $state.raw(new URL(`http://localhost/`))
+  let kit_url = $state.raw<typeof page.url>(new URL(`http://localhost/`))
   let callback_start_idx = 0
   const navigate = async (path: string) => {
     kit_url = new URL(path, location.origin)
@@ -556,14 +555,14 @@ describe(`ModelComparison dialog`, () => {
     plot().on_axis_change(`x`, `n_training_materials`)
     plot().on_axis_change(`y`, `F1`)
     await tick()
-    expect(plot().x_axis.label).toBe(`Training Materials`)
+    expect(plot().x_axis.label).toBe(`N<sub>materials</sub>`)
     expect(plot().y_axis.label).toBe(`F1`)
     expect(query_param(`compare_plot_x`)).toBe(`n_training_materials`)
     comparison.open = false
     await tick()
     comparison.open = true
     await tick()
-    expect(plot().x_axis.label).toBe(`Training Materials`)
+    expect(plot().x_axis.label).toBe(`N<sub>materials</sub>`)
 
     // A retained dialog follows the new task's default, while explicit shared axes win.
     await navigate(`/benchmarks/md?compare_plot_x=n_training_materials`)
@@ -582,7 +581,7 @@ describe(`ModelComparison dialog`, () => {
       callback({ type: `enter`, from: null, to: { url: page.url } } as AfterNavigate)
     }
     await tick()
-    expect(plot().x_axis.label).toBe(`Training Materials`)
+    expect(plot().x_axis.label).toBe(`N<sub>materials</sub>`)
     expect(query_param(`compare_plot_x`)).toBe(`n_training_materials`)
     plot().point_events.onclick({ point: { metadata: { model_key: compared[0] } } })
     expect([...comparison.keys]).toEqual([compared[1]])

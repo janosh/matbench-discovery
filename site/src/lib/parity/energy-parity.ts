@@ -5,10 +5,10 @@ import {
   load_json_asset,
   load_parity_model,
   parity_asset_resolver,
-} from '../asset-loader'
-import type { ParityBase, ParityModel, ParityPoint } from '../asset-loader'
+} from '../asset-loader.js'
+import type { ParityBase, ParityModel, ParityPoint } from '../asset-loader.js'
 import energy_parity_manifest_json from './energy-parity-manifest.json'
-import { is_finite_num } from '../metrics'
+import { is_finite_num } from '../metrics.js'
 
 export const energy_parity_manifest = energy_parity_manifest_json
 export type EnergyKind = `e-form` | `each`

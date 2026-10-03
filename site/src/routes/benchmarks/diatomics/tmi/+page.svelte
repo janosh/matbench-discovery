@@ -1,6 +1,6 @@
 <script lang="ts">
   import { ButtonGroup } from 'svelte-widgets'
-  import { bind_url_params } from '$lib/url-state.svelte'
+  import { bind_url_params } from '#lib/url-state.svelte.js'
   import { valid_query_param } from 'svelte-widgets/url-params'
   import { ScatterPlot } from 'matterviz/plot'
   import {
@@ -11,7 +11,7 @@
   } from 'matterviz/element'
   import { SvelteSet } from 'svelte/reactivity'
   import type { PageData } from './$types'
-  import { make_plot_observer } from '../observe-plot'
+  import { make_plot_observer } from '../observe-plot.js'
 
   let { data }: { data: PageData } = $props()
   let magmom_curves = $derived(data.magmom_curves)

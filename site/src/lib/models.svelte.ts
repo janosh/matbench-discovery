@@ -1,7 +1,7 @@
 import { default as DATASETS } from '$data/datasets.yml'
-import type { ModelData, OrgLogo } from '$lib/types'
+import type { ModelData, OrgLogo } from '#lib/types.js'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
-import type { CpsConfig } from '$lib/combined-scores.svelte'
+import type { CpsConfig } from '#lib/combined-scores.svelte.js'
 import {
   calculate_cps,
   CPS_CONFIG,
@@ -12,10 +12,10 @@ import {
   CMDS_CONFIG,
   DEFAULT_CMDS_CONFIG,
   update_models_cmds,
-} from './combined-scores.svelte'
-import { get_org_logo } from './labels'
+} from './combined-scores.svelte.js'
+import { get_org_logo } from './labels.js'
 import { apply_weights_param, weights_to_param } from 'matterviz/url-params'
-import { bind_url_params, UrlTableFilters } from './url-state.svelte'
+import { bind_url_params, UrlTableFilters } from './url-state.svelte.js'
 
 export const MODEL_METADATA_PATHS = import.meta.glob<ModelData>(
   `$root/models/[^_]**/[^_]*.yml`,

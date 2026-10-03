@@ -1,5 +1,5 @@
-import type { FileRef } from '$lib/schema/model'
-import type { DiatomicsCurves, ModelData } from '$lib/types'
+import type { FileRef } from '#lib/schema/model.js'
+import type { DiatomicsCurves, ModelData } from '#lib/types.js'
 import { readFile } from 'node:fs/promises'
 import { isAbsolute, resolve } from 'node:path'
 import { setTimeout as sleep } from 'node:timers/promises'

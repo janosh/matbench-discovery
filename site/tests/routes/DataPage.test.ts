@@ -1,14 +1,14 @@
-import Page from '$routes/data/data-files-direct-download.md'
-import DataRoute from '$routes/data/+page.svelte'
-import WbmDetails from '$routes/data/[slug]/WbmDetails.svelte'
+import Page from '#routes/data/data-files-direct-download.md'
+import DataRoute from '#routes/data/+page.svelte'
+import WbmDetails from '#routes/data/[slug]/WbmDetails.svelte'
 import data_files from '$pkg/data-files.yml'
-import TestSet from '$lib/benchmark/TestSet.svelte'
-import { benchmarks } from '$lib/benchmark/data'
+import TestSet from '#lib/benchmark/TestSet.svelte'
+import { benchmarks } from '#lib/benchmark/data.js'
 import { goto } from '$app/navigation'
 import { element_data } from 'matterviz/element'
 import { tick } from 'svelte'
 import { describe, expect, it, vi } from 'vite-plus/test'
-import { doc_query, mount, mount_with_url } from '../index'
+import { doc_query, mount, mount_with_url } from '../index.js'
 
 it.each([
   [``, `/benchmarks`],
@@ -28,7 +28,7 @@ it.each([
   target.search = `?cps_weights=1,0,0`
   expect(vi.mocked(goto)).toHaveBeenCalledWith(
     `${target.pathname}${target.search}${target.hash}`,
-    { replaceState: true },
+    { replace: true },
   )
 })
 

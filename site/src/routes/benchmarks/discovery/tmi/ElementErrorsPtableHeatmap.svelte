@@ -1,12 +1,12 @@
 <script lang="ts">
-  import ModelSelect from '$lib/ModelSelect.svelte'
-  import { ACTIVE_MODELS } from '$lib/models.svelte'
+  import ModelSelect from '#lib/ModelSelect.svelte'
+  import { ACTIVE_MODELS } from '#lib/models.svelte.js'
   import { max } from 'd3-array'
   import { ColorBar } from 'matterviz/plot'
   import { format_num } from 'matterviz/labels'
   import { PeriodicTable, TableInset } from 'matterviz/periodic-table'
-  import { per_element_each_errors as each_errors } from '$lib/per-element-errors'
-  import { bind_url_params } from '$lib/url-state.svelte'
+  import { per_element_each_errors as each_errors } from '#lib/per-element-errors.js'
+  import { bind_url_params } from '#lib/url-state.svelte.js'
   import { bool_from_param, bool_url_entry } from 'svelte-widgets/url-params'
 
   const model_options = ACTIVE_MODELS.filter(

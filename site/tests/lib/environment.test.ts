@@ -1,11 +1,11 @@
-import { parse_dependency_spec } from '$lib/environment'
+import { parse_dependency_spec } from '#lib/environment.js'
 import fs from 'node:fs'
 import os from 'node:os'
 import zlib from 'node:zlib'
 import { build } from 'vite'
 import { describe, expect, it, vi } from 'vite-plus/test'
 import pkg from '../../package.json' with { type: 'json' }
-import vite_config, { svelte_config } from '../../vite.config'
+import vite_config, { svelte_config } from '../../vite.config.js'
 
 it(`bundles compressed JSON imports in production workers`, async () => {
   const root = fs.mkdtempSync(`${os.tmpdir()}/mbd-worker-build-`)
@@ -123,7 +123,7 @@ it.each([
   vi.stubEnv(`NODE_ENV`, node_env)
   vi.resetModules()
   try {
-    const { svelte_config: fresh_config } = await import(`../../vite.config`)
+    const { svelte_config: fresh_config } = await import(`../../vite.config.js`)
     expect(fresh_config.version).toStrictEqual(expected)
   } finally {
     vi.unstubAllEnvs()
@@ -139,7 +139,10 @@ it(`first svelte preprocessor rewrites pkg.homepage links to site-internal paths
 })
 
 it(`manuscript preprocessing numbers figure labels and resolves forward references`, async () => {
-  const figure_markup = svelte_config.preprocess.at(-1)?.markup
+  // find by name: Kit 3's sveltekit() appends its own warning preprocessor to the array
+  const figure_markup = svelte_config.preprocess.find(
+    (preprocessor) => preprocessor.name === `figure-refs`,
+  )?.markup
   const filename = `site/src/routes/benchmarks/discovery/tmi/discovery-metric-figs.md`
   const content = fs.readFileSync(`../${filename}`, `utf8`)
   const result = await figure_markup?.({ content, filename })

@@ -1,12 +1,12 @@
 import DATASETS from '$data/datasets.yml'
-import ModelCard from '$lib/model/ModelCard.svelte'
-import { ACTIVE_MODELS, MODELS } from '$lib/models.svelte'
-import { ALL_METRICS } from '$lib/labels'
-import { model_metric_ranks, RANKED_METRICS } from '$lib/rankings'
+import ModelCard from '#lib/model/ModelCard.svelte'
+import { ACTIVE_MODELS, MODELS } from '#lib/models.svelte.js'
+import { ALL_METRICS } from '#lib/labels.js'
+import { model_metric_ranks, RANKED_METRICS } from '#lib/rankings.js'
 import { format_num } from 'matterviz/labels'
 import type { ComponentProps } from 'svelte'
 import { describe, expect, it, vi } from 'vite-plus/test'
-import { doc_query, mount } from '../index'
+import { doc_query, mount } from '../index.js'
 
 describe(`ModelCard`, () => {
   const found_model = MODELS.find((model) => model.model_key === `mace-mp-0`)

@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined-scores.svelte'
-  import { ALL_METRICS } from '$lib/labels'
-  import type { Label } from '$lib/types'
+  import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '#lib/combined-scores.svelte.js'
+  import { ALL_METRICS } from '#lib/labels.js'
+  import type { Label } from '#lib/types.js'
   import { format_num } from 'matterviz/labels'
   import { tooltip } from 'svelte-widgets/attachments'
 

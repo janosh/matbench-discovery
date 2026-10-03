@@ -1,19 +1,19 @@
 <script lang="ts">
-  import TestSet from '$lib/benchmark/TestSet.svelte'
-  import TaskNavigation from '$lib/benchmark/TaskNavigation.svelte'
-  import MetricsTable from '$lib/table/MetricsTable.svelte'
-  import type { ModelData } from '$lib/types'
-  import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
+  import TestSet from '#lib/benchmark/TestSet.svelte'
+  import TaskNavigation from '#lib/benchmark/TaskNavigation.svelte'
+  import MetricsTable from '#lib/table/MetricsTable.svelte'
+  import type { ModelData } from '#lib/types.js'
+  import { ACTIVE_MODELS, make_table_filters } from '#lib/models.svelte.js'
   import {
     MD_METRICS,
     METADATA_COLS,
     scatter_axis_label,
     task_page_visible_cols,
-  } from '$lib/labels'
-  import { CMDS_CONFIG, DEFAULT_CMDS_CONFIG } from '$lib/combined-scores.svelte'
-  import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
-  import ScoreWeights from '$lib/ScoreWeights.svelte'
-  import { bind_url_params } from '$lib/url-state.svelte'
+  } from '#lib/labels.js'
+  import { CMDS_CONFIG, DEFAULT_CMDS_CONFIG } from '#lib/combined-scores.svelte.js'
+  import DynamicScatter from '#lib/plot/DynamicScatter.svelte'
+  import ScoreWeights from '#lib/ScoreWeights.svelte'
+  import { bind_url_params } from '#lib/url-state.svelte.js'
   import MdNote from './md-note.md'
 
   // show only MD metrics and metadata columns

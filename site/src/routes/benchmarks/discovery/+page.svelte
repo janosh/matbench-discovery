@@ -1,14 +1,14 @@
 <script lang="ts">
-  import TestSet from '$lib/benchmark/TestSet.svelte'
-  import TaskNavigation from '$lib/benchmark/TaskNavigation.svelte'
-  import MetricsTable from '$lib/table/MetricsTable.svelte'
-  import DiscoverySetToggle from '$lib/DiscoverySetToggle.svelte'
-  import { ACTIVE_MODELS, make_table_filters } from '$lib/models.svelte'
-  import DynamicScatter from '$lib/plot/DynamicScatter.svelte'
-  import { bind_url_params } from '$lib/url-state.svelte'
+  import TestSet from '#lib/benchmark/TestSet.svelte'
+  import TaskNavigation from '#lib/benchmark/TaskNavigation.svelte'
+  import MetricsTable from '#lib/table/MetricsTable.svelte'
+  import DiscoverySetToggle from '#lib/DiscoverySetToggle.svelte'
+  import { ACTIVE_MODELS, make_table_filters } from '#lib/models.svelte.js'
+  import DynamicScatter from '#lib/plot/DynamicScatter.svelte'
+  import { bind_url_params } from '#lib/url-state.svelte.js'
   import { valid_query_param } from 'svelte-widgets/url-params'
-  import * as labels from '$lib/labels'
-  import { DISCOVERY_SETS, type DiscoverySet } from '$lib/types'
+  import * as labels from '#lib/labels.js'
+  import { DISCOVERY_SETS, type DiscoverySet } from '#lib/types.js'
   import HullConstructionNote from './hull-construction-note.md'
 
   const default_discovery_set: DiscoverySet = `unique_prototypes`

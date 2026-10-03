@@ -1,9 +1,14 @@
 import type { Column } from 'matterviz/table'
 import type { IconData } from 'svelte-widgets'
-import type { Label1 as LabelType } from './schema/label'
-import type { DiatomicsMetrics, MdMetrics, ModelMetadata, Person } from './schema/model'
+import type { Label1 as LabelType } from './schema/label.js'
+import type {
+  DiatomicsMetrics,
+  MdMetrics,
+  ModelMetadata,
+  Person,
+} from './schema/model.js'
 
-export type { Dataset } from './schema/dataset'
+export type { Dataset } from './schema/dataset.js'
 
 export type OrgLogo =
   | { name: string; src: string; icon?: never }

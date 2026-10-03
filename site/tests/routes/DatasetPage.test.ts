@@ -1,10 +1,10 @@
 import DATASETS from '$data/datasets.yml'
-import { arr_to_str } from '$lib'
-import type { Dataset } from '$lib/types'
-import Page from '$routes/data/[slug]/+page.svelte'
-import pkg from '$site/package.json'
+import { arr_to_str } from '#lib'
+import type { Dataset } from '#lib/types.js'
+import Page from '#routes/data/[slug]/+page.svelte'
+import pkg from '#site/package.json'
 import { describe, expect, it } from 'vite-plus/test'
-import { doc_query, mount } from '../index'
+import { doc_query, mount } from '../index.js'
 
 describe(`Dataset Detail Page`, () => {
   // Cover optional metadata, versioned datasets, and minimal entries.

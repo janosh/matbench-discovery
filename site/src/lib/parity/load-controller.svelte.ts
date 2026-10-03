@@ -1,4 +1,4 @@
-import { get_error_message, type LoadStatus } from '$lib/asset-loader'
+import { get_error_message, type LoadStatus } from '#lib/asset-loader.js'
 
 // Shared race cancellation and status handling for asynchronous parity plots.
 export class ParityLoadController {
