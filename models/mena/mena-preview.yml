@@ -1,0 +1,173 @@
+model_name: Mena-Preview
+model_key: mena-preview
+model_version: 0.1.0
+dates:
+  benchmark_added: '2026-10-15'
+  paper_published: null
+lifecycle: active
+authors:
+  - name: Francesco Viola
+    email: francesco.viola001@studenti.uniparthenope.it
+    corresponding: true
+trained_by:
+  - name: Francesco Viola
+repo: null
+doi: null
+paper: null
+docs: null
+pypi: null
+pr_url: null
+checkpoint_url: null
+license:
+  code: MIT
+  code_url: null
+  code_url_reason: Code repository is currently private pending publication
+  checkpoint: CC-BY-4.0
+  checkpoint_url: null
+  checkpoint_url_reason: Model weights are currently private pending publication
+environment:
+  dependencies:
+    - torch>=2.5.0
+    - numpy>=2.0.0
+    - scipy>=1.14.0
+    - ase>=3.24.0
+    - pymatgen>=2025.3.10
+  python_version: '3.12'
+openness: CSOD
+architecture_types: [gnn]
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+training_sets: [MPtrj]
+model_params: 2215715
+training_cost:
+  entries:
+    - hardware: NVIDIA A100-SXM4-40GB
+      count: 1
+      hours_per_device: 5.5
+hyperparams:
+  evaluation:
+    max_force: 0.02
+    max_steps: 500
+    ase_optimizer: FIRE
+    cell_filter: FrechetCellFilter
+    kappa:
+      protocol: phonondb-v1
+      displacement_distance: 0.01
+      max_steps: 300
+      force_max: 0.0001
+      symprec: 1.0e-05
+      enforce_relax_symm: true
+      conductivity_broken_symm: false
+      save_forces: false
+  architecture:
+    n_layers: 3
+    graph_construction_radius: 6.0
+  training:
+    epochs: 15
+    optimizer: Muon + AdamW
+notes:
+  description: >
+    Mena-Preview is a 2.22M-parameter model with a smooth 6.0 A radial cutoff
+    (smoothly tapering neighbor interactions between 5.0 A and 6.0 A so that energies
+    and forces go continuously to zero as atoms cross the cutoff radius). After many
+    iterations and tests, trained on MPtrj for 5.5 hours on a single NVIDIA A100-SXM4-40GB
+    (40GB) GPU and evaluated locally on Apple M3 Max (36GB). I named it Mena-Preview
+    because there are still speed optimizations and minor architecture improvements planned,
+    and training was stopped early due to limited computational resources. This was done
+    as an independent work, without further human assistance. I am open to any inquiries
+    or questions at francesco.viola001@studenti.uniparthenope.it.
+metrics:
+  discovery:
+    pred_file:
+      name: models/mena/mena-preview/2026-10-15-discovery.csv.gz
+      url: https://figshare.com/files/70175763
+      size: 1359303
+      md5: f967b05ae4b2d06dcc42aabb6de798af
+    unique_prototypes:
+      F1: 0.7703
+      DAF: 4.7387
+      Precision: 0.7244
+      Recall: 0.8225
+      Accuracy: 0.925
+      TP: 27095
+      FP: 10308
+      TN: 172238
+      FN: 5847
+      MAE: 0.0411
+      RMSE: 0.1027
+      R2: 0.6892
+      missing_preds: 0
+    full_test_set:
+      F1: 0.7555
+      DAF: 4.2366
+      Precision: 0.7061
+      Recall: 0.8123
+      Accuracy: 0.9124
+      TP: 34786
+      FP: 14482
+      TN: 199656
+      FN: 8039
+      MAE: 0.0399
+      RMSE: 0.102
+      R2: 0.6809
+      missing_preds: 0
+  geo_opt:
+    pred_file:
+      name: models/mena/mena-preview/2026-10-15-geo-opt.jsonl.gz
+      url: https://figshare.com/files/70175772
+      size: 165859627
+      md5: 49df6529b955c0dfcdd0255c74253f58
+  phonons:
+    kappa_103:
+      pred_file:
+        name: models/mena/mena-preview/2026-10-15-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/70175766
+        size: 15374853
+        md5: e2d2e6d9540e69682a9172dc10ebd228
+      κ_SRME: 0.502
+      κ_SRE: 0.3705
+      κ_SRD: -0.3041
+      κ_failure_rate: 0.0
+      imaginary_mode_rate: 0.0
+      spectrum_w1: 0.2668
+  diatomics:
+    pred_file:
+      name: models/mena/mena-preview/2026-10-15-diatomics.json.gz
+      url: https://figshare.com/files/70175760
+      size: 134874
+      md5: 0673068585fbf80555e38777375527a8
+    hardware: Apple M3 Max (36GB)
+    run_time_sec: 1.12
+    pbe_wall_dist_mae: 0.1928
+    pbe_energy_mae: 2.848
+    pbe_bond_length_error: 0.2032
+    pbe_well_depth_error: 0.8502
+    pbe_vib_freq_error: 109.9
+    tortuosity: 1.002
+    energy_diff_flips: 1.954
+    energy_jump: 0.3003
+    force_flips: 1.989
+    force_total_variation: 218.6
+    force_jump: 67.81
+    pbe_force_mae: 4.064
+    pbe_vib_freq_coverage:
+      n_valid: 73
+      n_eligible: 73
+      failed_elements: []
+      missing_elements: []
+  md:
+    pred_file:
+      name: models/mena/mena-preview/2026-10-15-md-metrics.csv.gz
+      url: https://figshare.com/files/70175769
+      size: 1534
+      md5: 983b6cd9a3140f9cc701c46f925ef239
+    hardware: Apple M3 Max (36GB)
+    run_time_sec: 6015.0
+    rdf_error: 4.9406
+    adf_error: 1.9174
+    vdos_error: 24.9713
+    pressure_mae: 0.899
+    pressure_wasserstein: 0.9022
+    pressure_error: 68.8525
+    n_systems: 17
