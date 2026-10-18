@@ -1,5 +1,6 @@
 """Tests for phonon helper functions."""
 
+import json
 from pathlib import Path
 
 import numpy as np
@@ -26,14 +27,22 @@ def test_check_imaginary_freqs(freqs: np.ndarray, expected: bool) -> None:
 
 
 def test_read_kappa_json_sets_material_id_index(tmp_path: Path) -> None:
-    """Kappa JSON files are indexed by material ID, using the canonical field."""
+    """Kappa JSON is indexed by material ID; only flagged records drop conductivity."""
     json_path = tmp_path / "kappa.json"
-    pd.DataFrame({Key.mat_id: ["mp-1", "mp-2"], "kappa": [1.0, 2.0]}).to_json(json_path)
+    tensor = np.eye(3).tolist()
+    # the shared runner writes conductivity_skipped only on skipped records
+    records = [
+        {Key.mat_id: "mp-1", "kappa_tot_rta": [tensor], "errors": []},
+        {Key.mat_id: "mp-2", "kappa_tot_rta": [tensor], "conductivity_skipped": True},
+    ]
+    json_path.write_text(json.dumps(records))
 
     df_kappa = phonons.read_kappa_json(str(json_path))
 
     assert list(df_kappa.index) == ["mp-1", "mp-2"]
     assert df_kappa.index.name == Key.mat_id
+    np.testing.assert_array_equal(df_kappa.loc["mp-1", "kappa_tot_rta"], [tensor])
+    assert np.isnan(df_kappa.loc["mp-2", "kappa_tot_rta"])
 
 
 @pytest.mark.parametrize("ids", [None, [""], [None], [1], ["mp-1", "mp-1"]])

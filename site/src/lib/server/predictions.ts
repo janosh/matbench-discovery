@@ -5,7 +5,10 @@ import { isAbsolute, resolve } from 'node:path'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { gunzipSync } from 'node:zlib'
 
-const repo_root = resolve(import.meta.dirname, `../../../..`)
+// vite and vitest run from site/. import.meta.dirname breaks once bundled: prerender runs
+// this from .svelte-kit/output/server/chunks/, which made every build re-download local
+// prediction files from Figshare.
+const repo_root = resolve(process.cwd(), `..`)
 
 type DiatomicsSource = { pred_file?: FileRef | null }
 type FetchOptions = { fetch_fn?: typeof fetch; root_dir?: string; max_attempts?: number }
