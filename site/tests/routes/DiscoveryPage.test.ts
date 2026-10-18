@@ -5,7 +5,7 @@ import type { ScatterPlot } from 'matterviz/plot'
 import { tick, type ComponentProps } from 'svelte'
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import {
-  checkbox_for,
+  heatmap_toggle,
   doc_query,
   filter_summary_badge,
   get_scatter_plot_props,
@@ -155,7 +155,7 @@ describe(`Discovery Task Page`, () => {
     expect(filter_summary_badge(`Targets`)).toContain(`(F,S,gradient)`)
     expect(heading_texts()).toContainEqual(expect.stringContaining(`RMSD vs F1`))
     expect(filter_summary_badge(`Training data`)).toContain(`(2)`)
-    expect(checkbox_for(`Show heatmap`).checked).toBe(false)
+    expect((await heatmap_toggle()).checked).toBe(false)
     const header = sorted_header()
     expect(header?.textContent).toContain(`F1`)
     expect(header?.getAttribute(`aria-sort`)).toBe(`ascending`)

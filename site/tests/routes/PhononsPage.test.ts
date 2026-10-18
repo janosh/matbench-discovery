@@ -5,7 +5,7 @@ import PhononsPage from '#routes/benchmarks/phonons/+page.svelte'
 import { tick } from 'svelte'
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 import {
-  checkbox_for,
+  heatmap_toggle,
   doc_query,
   filter_summary_badge,
   mount,
@@ -285,7 +285,7 @@ describe(`Phonons Task Page`, () => {
       expect(header?.textContent).toContain(`κSRE`)
       expect(header?.getAttribute(`aria-sort`)).toBe(`ascending`)
       expect(filter_summary_badge(`Openness`)).toContain(`(1/4)`)
-      expect(checkbox_for(`Show heatmap`).checked).toBe(false)
+      expect((await heatmap_toggle()).checked).toBe(false)
     },
   )
 })

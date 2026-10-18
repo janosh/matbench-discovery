@@ -4,7 +4,7 @@ default_install_hook_types: [pre-commit, commit-msg]
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.16.7
+    rev: v0.17.1
     hooks:
       - id: ruff-check
         args: [--fix]
@@ -16,7 +16,7 @@ repos:
         name: ty
         entry: ty check
         language: python
-        additional_dependencies: [ty==0.0.79]
+        additional_dependencies: [ty==0.0.89]
         pass_filenames: false
         always_run: true
 
@@ -74,7 +74,7 @@ repos:
         exclude: changelog\.md$
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.38.0
+    rev: 0.38.2
     hooks:
       - id: check-jsonschema
         name: check-jsonschema-models
@@ -91,7 +91,7 @@ repos:
       - id: check-github-workflows
 
   - repo: https://github.com/crate-ci/typos
-    rev: v1.50.1
+    rev: v1.51.1
     hooks:
       - id: typos
         stages: [pre-commit, commit-msg]

@@ -19,6 +19,7 @@ import {
   mount,
   mount_with_url,
   navigate,
+  open_column_menu,
   query_param,
 } from '../index.js'
 import app_css from '#site/src/app.css?raw'
@@ -34,12 +35,14 @@ const header_cells = () => [
 const header_names = () => header_cells().map(header_name)
 const ranking_context = () =>
   doc_query(`.ranking-context`).textContent?.replaceAll(/\s+/g, ` `)
-const column_checkbox = (name: string): HTMLInputElement => {
-  const label = [...document.querySelectorAll(`.column-menu label`)].find(
+// click a column's visibility checkbox in the (popover) column menu
+const toggle_column = async (name: string): Promise<void> => {
+  const column_menu = await open_column_menu()
+  const label = [...column_menu.querySelectorAll(`label`)].find(
     (candidate) => candidate.textContent?.trim() === name,
   )
   if (!label) throw new Error(`No column checkbox labeled ${name}`)
-  return doc_query<HTMLInputElement>(`input`, label)
+  doc_query<HTMLInputElement>(`input`, label).click()
 }
 
 // table filters restricted to models trained (at least in part) on MPtrj
@@ -1099,7 +1102,7 @@ describe(`MetricsTable`, () => {
 
       // Changing this view uses shallow URL writes: page.url intentionally stays stale.
       for (const name of [`Params`, `Training Set`, `Org`]) {
-        column_checkbox(name).click()
+        await toggle_column(name)
         await tick()
       }
       const shift_click = async (id: string): Promise<void> => {
@@ -1280,7 +1283,7 @@ describe(`MetricsTable`, () => {
         // The shared mobile view also restores those exact columns on desktop.
         await navigate(mobile_query, `popstate`)
         expect(header_names()).toEqual([`Model`, `τ`, `Eflips`, `CDS`, `Params`])
-        column_checkbox(`Org`).click()
+        await toggle_column(`Org`)
         await tick()
         const custom_headers = header_names()
         expect(custom_headers).toContain(`Org`)

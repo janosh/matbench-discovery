@@ -3,6 +3,7 @@ import type { DiatomicsCurves } from '#lib/types.js'
 import { ACTIVE_MODELS, has_diatomics_curves } from '#lib/models.svelte.js'
 import dft_references from '#lib/diatomics-dft.json.gz'
 import { fetch_diatomics_data } from '#lib/server/predictions.js'
+import { to_error } from 'svelte-widgets/utils'
 import type { PageServerLoad } from './$types'
 
 // VASP PBE/r2SCAN homonuclear references, keyed functional -> formula -> curve. Each
@@ -47,7 +48,7 @@ export const load: PageServerLoad = async () => {
         diatomic_curves[model.model_key] = to_page_curves(curves)
       } catch (error) {
         console.error(`Failed to fetch data for ${model.model_name}:`, error)
-        errors[model.model_key] = error instanceof Error ? error.message : String(error)
+        errors[model.model_key] = to_error(error).message
       }
     }),
   )

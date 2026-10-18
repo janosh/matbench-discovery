@@ -14,7 +14,7 @@ import sys
 import tempfile
 import time
 import traceback
-from collections.abc import Iterable, Iterator, Mapping, Sequence
+from collections.abc import Generator, Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, replace
 from datetime import UTC, datetime
@@ -1073,7 +1073,7 @@ def write_kappa_artifacts(
 
 
 @contextmanager
-def _atomic_output_path(path: str) -> Iterator[str]:
+def _atomic_output_path(path: str) -> Generator[str]:
     """Yield a temporary sibling path and atomically promote it on success."""
     parent = os.path.dirname(path)
     if parent:

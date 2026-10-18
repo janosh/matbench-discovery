@@ -9,7 +9,8 @@ import { tick } from 'svelte'
 import GeoOptPage from '#routes/benchmarks/geo-opt/+page.svelte'
 import { describe, expect, it } from 'vite-plus/test'
 import {
-  checkbox_for,
+  heatmap_toggle,
+  open_column_menu,
   doc_query,
   filter_summary_badge,
   mount_with_url,
@@ -148,7 +149,7 @@ describe(`Geo Opt Task Page`, () => {
     expect(sorted_header()?.getAttribute(`aria-sort`)).toBe(`descending`)
     expect(filter_summary_badge(`Training data`)).toContain(`(1)`)
     expect(filter_summary_badge(`Openness`)).toContain(`(2/4)`)
-    expect(checkbox_for(`Show heatmap`).checked).toBe(false)
+    expect((await heatmap_toggle()).checked).toBe(false)
   })
 
   it(`renders table with correct structure, columns, groups, and units`, async () => {
@@ -254,9 +255,7 @@ describe(`Geo Opt Task Page`, () => {
   it(`toggles heatmap colors`, async () => {
     await mount_with_url(GeoOptPage, `http://localhost/benchmarks/geo-opt?models=`)
 
-    const checkbox = doc_query<HTMLInputElement>(
-      `input[type="checkbox"][aria-label="Toggle heatmap colors"]`,
-    )
+    const checkbox = await heatmap_toggle()
     expect(checkbox.checked).toBe(true)
 
     checkbox.click()
@@ -271,11 +270,8 @@ describe(`Geo Opt Task Page`, () => {
   it(`opens column visibility panel with checkboxes`, async () => {
     await mount_with_url(GeoOptPage, `http://localhost/benchmarks/geo-opt?models=`)
 
-    const toggle_btn = doc_query(`.column-toggles summary`)
-    toggle_btn.click()
-    await tick()
-
-    const column_menu = doc_query(`.sections-container`)
+    const column_menu = await open_column_menu()
+    expect(column_menu.className).toContain(`sections-container`)
     expect(
       [...column_menu.querySelectorAll(`.section-header`)].map((button) =>
         button.textContent?.trim().replace(/^[▶▼]\s*/, ``),

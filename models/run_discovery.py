@@ -10,10 +10,10 @@ Examples:
 # /// script
 # requires-python = ">=3.14"
 # dependencies = [
-#   "ase>=3.28",
+#   "ase>=3.29",
 #   "numpy",
 #   "pandas",
-#   "pymatgen>=2026.5.4",
+#   "pymatgen>=2026.9.24",
 #   "tqdm",
 #   "matbench-discovery",
 # ]

@@ -5,7 +5,7 @@
   import { title_case } from '#lib/labels.js'
   import { bind_score_weights, MODELS } from '#lib/models.svelte.js'
   import { bind_comparison_url, comparison } from '#lib/model-comparison.svelte.js'
-  import { get_error_message } from '#lib/asset-loader.js'
+  import { to_error } from 'svelte-widgets/utils'
   import {
     CommandMenu,
     CopyButton,
@@ -23,6 +23,9 @@
   import pkg from '#site/package.json'
   import { tick, type Snippet } from 'svelte'
   import { heading_anchors } from 'svelte-widgets/heading-anchors'
+  // MathML from markdown math, styled with the system math font
+  // oxlint-disable-next-line no-unassigned-import
+  import 'temml/dist/Temml-Local.css'
   // oxlint-disable-next-line no-unassigned-import
   import '../app.css'
 
@@ -263,7 +266,7 @@
       <p role="alert">Could not load model comparison.</p>
       <button onclick={() => location.reload()}>Reload comparison</button>
       <button onclick={() => (comparison.open = false)}>Dismiss</button>
-      <details><summary>Asset details</summary>{get_error_message(error)}</details>
+      <details><summary>Asset details</summary>{to_error(error).message}</details>
     </div>
   {/if}
 {/await}

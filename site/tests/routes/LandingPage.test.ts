@@ -6,9 +6,11 @@ import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import {
   doc_query,
   header_name,
+  heatmap_toggle,
   mount,
   mount_with_url,
   navigate,
+  open_column_menu,
   open_filter_menu,
   POPOVER_OPEN_ATTR,
   query_param,
@@ -333,20 +335,13 @@ describe(`Landing Page`, () => {
   )
 
   it(`updates column visibility when toggling checkboxes`, async () => {
-    const columns_button = doc_query<HTMLButtonElement>(`details.column-toggles summary`)
-    const column_menu = doc_query(`.column-menu`)
-    const details = doc_query<HTMLDetailsElement>(`details.column-toggles`)
-
-    expect(column_menu.parentElement).toBe(document.body)
-    expect(details.open).toBe(false)
-
-    columns_button.click()
-    expect(details.open).toBe(true)
+    expect(document.querySelector(`.column-menu`)).toBeNull()
+    const column_menu = await open_column_menu()
 
     expect(header_text()).toContain(`F1`)
 
-    const checkboxes = document.querySelectorAll<HTMLInputElement>(
-      `.column-menu .toggle-label input[type="checkbox"]`,
+    const checkboxes = column_menu.querySelectorAll<HTMLInputElement>(
+      `.toggle-label input[type="checkbox"]`,
     )
     const f1_checkbox = [...checkboxes].find((checkbox) =>
       checkbox.parentElement?.textContent?.includes(`F1`),
@@ -360,8 +355,9 @@ describe(`Landing Page`, () => {
 
     expect(header_text()).not.toContain(`F1`)
 
-    columns_button.click()
-    expect(details.open).toBe(false)
+    doc_query(`.column-toggles > button`).click()
+    await tick()
+    expect(document.querySelector(`.column-menu`)).toBeNull()
   })
 
   it(`filters models via the training-data dropdown`, async () => {
@@ -413,8 +409,12 @@ describe(`Landing Page`, () => {
 })
 
 describe(`Landing Page URL state`, () => {
-  const column_checkbox = () =>
-    doc_query<HTMLInputElement>(`.column-menu .toggle-label input:not(:disabled)`)
+  const column_checkbox = async () =>
+    doc_query<HTMLInputElement>(
+      `.toggle-label input:not(:disabled)`,
+      await open_column_menu(),
+    )
+  const toggle_column = async () => (await column_checkbox()).click()
 
   it.each([
     [`http://localhost/?preset=MD&sort=F1`, `F1`, `descending`],
@@ -450,7 +450,7 @@ describe(`Landing Page URL state`, () => {
       await tick()
       expect_sort(sorted_column, direction)
 
-      column_checkbox().click()
+      await toggle_column()
       await tick()
       const custom_query = location.search
       const custom_headers = [...document.querySelectorAll(`thead th`)].map(header_name)
@@ -494,13 +494,11 @@ describe(`Landing Page URL state`, () => {
 
     const first_row = doc_query(`tbody tr`)
     const cps_cell = doc_query(`td[data-col="CPS"]`, first_row)
-    const heatmap_toggle = doc_query<HTMLInputElement>(
-      `input[aria-label="Toggle heatmap colors"]`,
-    )
-    expect(heatmap_toggle.checked).toBe(false)
+    expect((await heatmap_toggle()).checked).toBe(false)
     expect(cps_cell.style.getPropertyValue(`--cell-bg`)).toBe(``)
 
-    heatmap_toggle.click()
+    const toggle = await heatmap_toggle()
+    toggle.click()
     await tick()
     expect(location.search).not.toContain(`heatmap=`)
     expect(cps_cell.style.getPropertyValue(`--cell-bg`)).not.toBe(``)
@@ -508,14 +506,14 @@ describe(`Landing Page URL state`, () => {
     const filtered_query = `?train=MPtrj&openness=OSOD&targets=S&set=full_test_set&preset=MD&heatmap=0`
     // Revisit the same preset as well as a different one after customizing columns.
     for (const query of [filtered_query, filtered_query, ``]) {
-      column_checkbox().click()
+      await toggle_column()
       await tick()
       await navigate(query, `popstate`)
       expect(location.search).toBe(query)
-      expect(column_checkbox().checked).toBe(true)
+      expect((await column_checkbox()).checked).toBe(true)
       expect(header_text()).toContain(`Model`)
       if (query) expect(header_text()).toContain(`vDOS`)
-      expect(heatmap_toggle.checked).toBe(!query)
+      expect((await heatmap_toggle()).checked).toBe(!query)
       for (const [menu, box] of [
         [`Training data`, `require MPtrj`],
         [`Targets`, `require stress`],

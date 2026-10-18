@@ -11,7 +11,13 @@ import { comparison } from '#lib/model-comparison.svelte.js'
 import type { ModelData } from '#lib/types.js'
 import { tick } from 'svelte'
 import { describe, expect, it, onTestFinished, vi } from 'vite-plus/test'
-import { doc_query, filter_menu_trigger, mount, open_filter_menu } from '../index.js'
+import {
+  doc_query,
+  filter_menu_trigger,
+  mount,
+  open_column_menu,
+  open_filter_menu,
+} from '../index.js'
 
 describe(`TableControls`, () => {
   it.each([755, 756, 1000])(
@@ -299,15 +305,13 @@ describe(`TableControls`, () => {
     })
     await tick()
 
-    const toggle_btn = doc_query(`.column-toggles summary`)
-    const details = doc_query<HTMLDetailsElement>(`.column-toggles`)
+    const toggle_btn = doc_query(`.column-toggles > button`)
     expect(toggle_btn.textContent?.trim()).toBe(`Columns`)
-    expect(details.open).toBe(false)
+    expect(toggle_btn.getAttribute(`aria-expanded`)).toBe(`false`)
+    expect(document.querySelector(`.column-menu`)).toBeNull()
 
-    toggle_btn.click()
-    expect(details.open).toBe(true)
-
-    const column_menu = doc_query(`.column-menu`)
+    const column_menu = await open_column_menu()
+    expect(toggle_btn.getAttribute(`aria-expanded`)).toBe(`true`)
     expect(column_menu.getAttribute(`role`)).toBe(`group`)
     const heatmap = doc_query<HTMLInputElement>(`[aria-label="Toggle heatmap colors"]`)
     expect(column_menu.contains(heatmap)).toBe(true)
@@ -315,7 +319,7 @@ describe(`TableControls`, () => {
     heatmap.click()
     await tick()
     expect(filters.show_heatmap).toBe(false)
-    expect(details.open).toBe(true)
+    expect(toggle_btn.getAttribute(`aria-expanded`)).toBe(`true`)
     heatmap.click()
     await tick()
     expect(filters.show_heatmap).toBe(true)
@@ -335,6 +339,8 @@ describe(`TableControls`, () => {
     expect(first_checkbox.checked).toBe(true)
 
     toggle_btn.click()
-    expect(details.open).toBe(false)
+    await tick()
+    expect(toggle_btn.getAttribute(`aria-expanded`)).toBe(`false`)
+    expect(document.querySelector(`.column-menu`)).toBeNull()
   })
 })

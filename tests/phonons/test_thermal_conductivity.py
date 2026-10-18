@@ -2,6 +2,7 @@
 
 import itertools
 import json
+from functools import partial
 
 import numpy as np
 import pytest
@@ -79,16 +80,18 @@ def test_init_phono3py(
     """Initialization preserves supercells, meshes and default/custom displacements."""
     fc2_supercell = test_atoms.info["fc2_supercell"]
     fc3_supercell = test_atoms.info["fc3_supercell"]
-    ph3 = ltc.init_phono3py(
+    init = partial(
+        ltc.init_phono3py,
         test_atoms,
         fc2_supercell=fc2_supercell,
         fc3_supercell=fc3_supercell,
         q_point_mesh=q_point_mesh,
-        **(
-            {"displacement_distance": displacement_distance}
-            if displacement_distance is not None
-            else {}
-        ),
+    )
+    # None exercises the default displacement distance
+    ph3 = (
+        init()
+        if displacement_distance is None
+        else init(displacement_distance=displacement_distance)
     )
     assert isinstance(ph3, Phono3py)
     assert ph3.mesh_numbers is not None

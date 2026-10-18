@@ -5,7 +5,7 @@
   import { by_benchmark_added_desc } from '#lib'
   import { ACTIVE_MODELS, make_table_filters } from '#lib/models.svelte.js'
   import type { ModelData } from '#lib/types.js'
-  import { get_error_message } from '#lib/asset-loader.js'
+  import { to_error } from 'svelte-widgets/utils'
   import { load_kappa_analysis, type KappaAnalysis } from '#lib/parity/kappa-parity.js'
   import DynamicScatter from '#lib/plot/DynamicScatter.svelte'
   import KappaParityPlot from '#lib/plot/KappaParityPlot.svelte'
@@ -69,7 +69,7 @@
   onMount(() => {
     load_kappa_analysis()
       .then((analysis) => (kappa_analysis = analysis))
-      .catch((error: unknown) => (analysis_error = get_error_message(error)))
+      .catch((error: unknown) => (analysis_error = to_error(error).message))
   })
   // per-material diagnostics (SRME scatter + frequency parity) for the selected model
   let selected_diagnostics = $derived(

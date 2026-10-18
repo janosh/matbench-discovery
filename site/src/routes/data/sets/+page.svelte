@@ -74,7 +74,7 @@
       cell: size_cell,
       description: `Number of structures in the dataset. Any system with atomic positions and energy/force/stress labels is counted as a structure incl. successive ionic steps in MD/geometry optimization trajectories.`,
       better: `higher`,
-      scale_type: `log`,
+      color_scale: { type: `log` },
       format: `.3s`,
     },
     Materials: {
@@ -82,7 +82,7 @@
       cell: size_cell,
       description: `Distinct materials or molecules. Dataset notes explain the counting scope.`,
       better: `higher`,
-      scale_type: `log`,
+      color_scale: { type: `log` },
       format: `.3s`,
     },
     Created: {

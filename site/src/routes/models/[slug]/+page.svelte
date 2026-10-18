@@ -585,8 +585,10 @@
                   <ColorBar
                     title="|E<sub>ML,hull</sub> - E<sub>DFT,hull</sub>| (eV / atom)"
                     title_side="top"
-                    scale={color_scale}
-                    range={[0, Math.max(0, ...Object.values(heatmap_values))]}
+                    color_scale={{
+                      scheme: color_scale,
+                      value_range: [0, Math.max(0, ...Object.values(heatmap_values))],
+                    }}
                     style="width: 80%; margin: 0 2em"
                   />
                 </TableInset>

@@ -22,7 +22,7 @@ Model dependency trees conflict, so each model resolves its own environment via
 
 # /// script
 # requires-python = ">=3.14"
-# dependencies = ["ase>=3.27", "numpy", "pandas", "scipy", "tqdm", "matbench-discovery"]
+# dependencies = ["ase>=3.29", "numpy", "pandas", "scipy", "tqdm", "matbench-discovery"]
 #
 # [tool.uv.sources]
 # matbench-discovery = { path = "../", editable = true }

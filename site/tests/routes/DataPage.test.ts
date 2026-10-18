@@ -110,7 +110,7 @@ it.each([
         ({ symbol: elem_symbol }) => elem_symbol === element,
       )?.name
       // one line: count unit, full element name, count
-      expect(doc_query(`.tooltip`, table).textContent?.trim()).toBe(
+      expect(doc_query(`.plot-tooltip`, table).textContent?.trim()).toBe(
         `${dataset.count_unit} containing ${name}: ${expected_count.toLocaleString(`en-US`)}`,
       )
       tile.dispatchEvent(new MouseEvent(`mouseleave`))

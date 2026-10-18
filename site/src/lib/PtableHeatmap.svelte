@@ -31,12 +31,12 @@
     const [min, max] = extent(finite_values)
     return [min ?? 0, max ?? 0]
   })
+  let scale = $derived({ scheme: color_scale, type: log ? `log` : `linear` } as const)
 </script>
 
 <PeriodicTable
   {heatmap_values}
-  {color_scale}
-  {log}
+  color_scale={scale}
   bind:active_element
   show_photo={false}
   missing={{ color: `rgba(255,255,255,0.3)` }}
@@ -56,10 +56,8 @@
       <ColorBar
         title="Count"
         title_side="top"
-        scale={color_scale}
-        scale_type={log ? `log` : `linear`}
+        color_scale={{ ...scale, value_range: colorbar_range }}
         tick_labels={5}
-        range={colorbar_range}
         style="width: 85%; margin: 0 2em 2em"
         {...colorbar}
       />

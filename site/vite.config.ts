@@ -127,39 +127,6 @@ export default /* @__PURE__ */ attach_style(JSON.parse(${JSON.stringify(json)}))
   },
 })
 
-// Ignore mtime-only rewrites from concurrent SvelteKit sync/check processes.
-const unchanged_generated_hmr_plugin = (): Plugin => {
-  const generated_dir = path.resolve(`.svelte-kit/generated`)
-  const initial_snapshots = new Map<string, string>()
-  const environment_snapshots = new WeakMap<object, Map<string, string>>()
-
-  return {
-    name: `unchanged-generated-hmr`,
-    configureServer() {
-      if (!fs.existsSync(generated_dir)) return
-      for (const relative_file of fs.readdirSync(generated_dir, { recursive: true })) {
-        const file = path.join(generated_dir, relative_file.toString())
-        if (!fs.statSync(file).isFile()) continue
-        initial_snapshots.set(file, fs.readFileSync(file, `utf8`))
-      }
-    },
-    async hotUpdate({ file, read, type }) {
-      if (type !== `update` || !file.startsWith(`${generated_dir}${path.sep}`)) {
-        return undefined
-      }
-      let file_snapshots = environment_snapshots.get(this.environment)
-      if (!file_snapshots) {
-        file_snapshots = new Map(initial_snapshots)
-        environment_snapshots.set(this.environment, file_snapshots)
-      }
-      const content = await read()
-      if (file_snapshots.get(file) === content) return []
-      file_snapshots.set(file, content)
-      return undefined
-    },
-  }
-}
-
 // Custom Vite plugin that watches *-schema.yml files and writes src/lib/schema/*.d.ts
 function yaml_schema_to_typescript_plugin(): Plugin {
   const schema_map = {
@@ -284,7 +251,6 @@ export default {
     yaml_plugin({ transform: render_data_markdown }),
     yaml_schema_to_typescript_plugin(),
     json_payload_plugin(),
-    unchanged_generated_hmr_plugin(),
   ],
   worker: { plugins: () => [json_payload_plugin()] },
 

@@ -21,7 +21,7 @@
     KappaParityPoint,
   } from '#lib/parity/kappa-parity.js'
   import type { PhononDos } from 'matterviz/spectral'
-  import { get_error_message } from '#lib/asset-loader.js'
+  import { to_error } from 'svelte-widgets/utils'
   import { ParityLoadController } from '#lib/parity/load-controller.svelte.js'
   import { parity_diagonal } from '#lib/fig-helpers.js'
   import { get_nested_number, is_finite_num } from '#lib/metrics.js'
@@ -147,7 +147,7 @@
         load_kappa_parity_base(),
         load_kappa_parity_model(model_key),
         load_kappa_srme_map(model_key).catch((error: unknown) => {
-          analysis_error = get_error_message(error)
+          analysis_error = to_error(error).message
           return undefined
         }),
       ])
@@ -357,7 +357,7 @@
                 <p>Could not load thermal plots.</p>
                 <button onclick={() => location.reload()}>Reload page</button>
                 <details>
-                  <summary>Asset details</summary>{get_error_message(error)}
+                  <summary>Asset details</summary>{to_error(error).message}
                 </details>
               </div>
             {/await}
@@ -398,7 +398,7 @@
                     }}>{spectral_failed ? `Reload page` : `Retry phonon modes`}</button
                   >
                   <details>
-                    <summary>Asset details</summary>{get_error_message(error)}
+                    <summary>Asset details</summary>{to_error(error).message}
                   </details>
                 </div>
               {/await}

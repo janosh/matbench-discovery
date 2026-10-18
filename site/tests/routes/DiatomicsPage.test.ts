@@ -4,7 +4,13 @@ import DiatomicsPage from '#routes/benchmarks/diatomics/+page.svelte'
 import { tick } from 'svelte'
 import { PLOT_COLORS } from 'matterviz/colors'
 import { describe, expect, it } from 'vite-plus/test'
-import { doc_query, mount_with_url, open_filter_menu, sorted_header } from '../index.js'
+import {
+  doc_query,
+  heatmap_toggle,
+  mount_with_url,
+  open_filter_menu,
+  sorted_header,
+} from '../index.js'
 
 const model_data: ModelData[] = (
   [
@@ -166,7 +172,7 @@ describe(`Diatomics Page URL state`, () => {
       `[aria-label="require MPtrj"]`,
       await open_filter_menu(`Training data`),
     )
-    const heatmap = doc_query<HTMLInputElement>(`[aria-label="Toggle heatmap colors"]`)
+    const heatmap = await heatmap_toggle()
     const selected_only = doc_query<HTMLInputElement>(
       `[aria-label="Toggle between showing only selected models and all models"]`,
     )

@@ -255,6 +255,18 @@ export async function open_filter_menu(menu_name: string): Promise<HTMLElement> 
   return panel
 }
 
+// open matterviz ToggleMenu's column popover (rendered only while open), return the panel
+export async function open_column_menu(): Promise<HTMLElement> {
+  const trigger = doc_query<HTMLButtonElement>(`.column-toggles > button`)
+  if (trigger.getAttribute(`aria-expanded`) !== `true`) {
+    trigger.click()
+    await tick()
+  }
+  return doc_query(`.column-toggles :is(.column-menu, .sections-container)`)
+}
+export const heatmap_toggle = async (): Promise<HTMLInputElement> =>
+  doc_query(`input[aria-label="Toggle heatmap colors"]`, await open_column_menu())
+
 // find a checkbox by the text of its wrapping <label> (e.g. table-control toggles)
 export function checkbox_for(label_text: string): HTMLInputElement {
   const label = [...document.querySelectorAll(`label`)].find((lbl) =>
@@ -315,7 +327,7 @@ export async function choose_scatter_property(
   }
   await tick()
   const options = picker.querySelectorAll<HTMLElement>(
-    is_size ? `ul.options li[aria-posinset]` : `.portal-select-dropdown [role="option"]`,
+    is_size ? `ul.options li[aria-posinset]` : `.popover-select-dropdown [role="option"]`,
   )
   // size options render the (HTML) label followed by a <small> data-path/count line
   const option_text = (element: HTMLElement): string | undefined =>

@@ -134,12 +134,13 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
     <ColorBar
       title="Card titles colored by {sort_by.label}"
       title_style="font-size: 1.5em;"
-      scale={{
-        interpolator: (fraction) => rd_bu(lower_is_better ? 1 - fraction : fraction),
+      color_scale={{
+        scheme: `interpolateRdBu`,
+        value_range: lower_is_better ? [worst_val, best_val] : [best_val, worst_val],
+        palette_range: lower_is_better ? [1, 0] : [0, 1],
       }}
       style="min-width: 0; flex: 1"
       bar_style="height: 14pt;"
-      range={lower_is_better ? [worst_val, best_val] : [best_val, worst_val]}
     />
     <span>
       {lower_is_better ? `worst` : `best`}

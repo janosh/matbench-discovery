@@ -12,16 +12,16 @@
 
 <PeriodicTable
   heatmap_values={dataset.element_counts}
-  log={log_scale}
+  color_scale={{ type: log_scale ? `log` : `linear` }}
   lanth_act_tiles={[]}
   tile_props={{ show_name: false, show_number: false }}
   missing={{ color: `var(--text-color)`, style: `opacity: 0.15` }}
-  color_bar_props={{
+  color_bar={{
     title: `${dataset.count_unit}${log_scale ? ` (log)` : ``}`,
     tick_labels: counts.length === 1 ? counts : 3,
     snap_ticks: false,
   }}
-  style="--ptable-min-tile-size: 0; --elem-symbol-font-size: 60cqw; --tooltip-max-width: none"
+  style="--ptable-min-tile-size: 0; --elem-symbol-font-size: 60cqw; --plot-tooltip-max-width: 100vw"
 >
   {#snippet tooltip({ element, value })}
     {dataset.count_unit} containing {element.name}: {format_num(Number(value ?? 0), `,`)}

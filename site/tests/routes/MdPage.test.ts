@@ -3,7 +3,7 @@ import { MD_METRICS } from '#lib/labels.js'
 import MdPage from '#routes/benchmarks/md/+page.svelte'
 import { describe, expect, it } from 'vite-plus/test'
 import {
-  checkbox_for,
+  heatmap_toggle,
   doc_query,
   filter_summary_badge,
   has_md_metrics,
@@ -91,6 +91,6 @@ describe(`MD Task Page`, () => {
     expect(header?.textContent).toContain(`vDOS`)
     expect(header?.getAttribute(`aria-sort`)).toBe(`ascending`)
     expect(filter_summary_badge(`Training data`)).toContain(`(1)`)
-    expect(checkbox_for(`Show heatmap`).checked).toBe(false)
+    expect((await heatmap_toggle()).checked).toBe(false)
   })
 })

@@ -10,7 +10,7 @@ https://github.com/janosh/pymatviz/blob/-/examples/mp_bimodal_e_form.ipynb
 # requires-python = ">=3.14"
 # dependencies = [
 #   "matbench-discovery",
-#   "mp-api==0.46.4",
+#   "mp-api==0.46.5",
 # ]
 #
 # [tool.uv.sources]
