@@ -949,6 +949,7 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
         "tace_oam_l": _named_spec(_tace, "tace_oam_l", checkpoint=True),
         "tece_oam_rra_1_0": _named_spec(_tace, "tece_oam_rra_1_0", checkpoint=True),
         "bam_mp_core": _named_spec(_bam, "bam_mp_core", checkpoint=True, ext=".pkl"),
+        "bam_mp_dens": _named_spec(_bam, "bam_mp_dens", checkpoint=True, ext=".pkl"),
         "dpa_3_1_mptrj": _deepmd_spec("dpa_3_1_mptrj"),
         "dpa_3_1_3m_ft": _deepmd_spec("dpa_3_1_3m_ft"),
         "dpa3_v2_mptrj": _deepmd_spec("dpa3_v2_mptrj"),
