@@ -2,7 +2,7 @@ model_name: BAM-MP-DeNS
 model_key: bam-mp-dens
 model_version: 1.0.0
 dates:
-  benchmark_added: # TODO(user): set when the PR is opened
+  benchmark_added: '2026-10-18'
   paper_published: # no paper for the DeNS variant
 lifecycle: active
 authors:
@@ -46,7 +46,7 @@ repo: https://github.com/myung-group/BAM-torch
 doi: # no paper for the DeNS variant
 paper: # no paper for the DeNS variant
 docs: https://github.com/myung-group/BAM-torch/tree/BAM_DeNS/examples/bam-mp-dens
-pr_url: # TODO(user): no PR exists yet
+pr_url: https://github.com/janosh/matbench-discovery/pull/401
 checkpoint_url: https://figshare.com/files/70285206
 license:
   code: MIT
