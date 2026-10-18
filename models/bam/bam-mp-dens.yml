@@ -139,6 +139,11 @@ metrics:
     force_total_variation: 102.8
     force_jump: 3.339
     pbe_force_mae: 1.604
+    pbe_vib_freq_coverage:
+      n_valid: 73
+      n_eligible: 73
+      failed_elements: []
+      missing_elements: []
   discovery:
     pred_file:
       name: models/bam/bam-mp-dens/2026-10-12-discovery.csv.gz

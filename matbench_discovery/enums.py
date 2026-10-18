@@ -289,6 +289,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     alphanet_v1_mptrj = auto(), "alphanet/alphanet-v1-mptrj.yml"
     alphanet_v1_oam = auto(), "alphanet/alphanet-v1-oam.yml"
     bam_mp_core = auto(), "bam/bam-mp-core.yml"
+    bam_mp_dens = auto(), "bam/bam-mp-dens.yml"
     bowsr = auto(), "bowsr/bowsr.yml"
     cgcnn = auto(), "cgcnn/cgcnn.yml"
     cgcnn_p = auto(), "cgcnn/cgcnn-p.yml"
