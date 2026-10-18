@@ -39,6 +39,10 @@ Inference uses the single 6.5M-parameter model with its EMA weights, so
 Loading this checkpoint requires `bam-torch` at BAM_DeNS commit `24ed0f0`, which passes
 the DeNS-era architecture options from the checkpoint config to the model.
 
+The benchmark predictions were computed with Python 3.13. The YAML sets
+`python_version: '3.14'` because the shared runners require Python >= 3.14; all four
+runners were smoke-tested with it.
+
 ## No-leakage statement
 
 BAM-MP-DeNS was trained and selected **solely on the MPtrj train/validation splits**

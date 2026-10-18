@@ -63,7 +63,7 @@ environment:
   - openequivariance==0.7.0
   - ase==3.29.0
   - pymatgen==2026.9.24
-  python_version: '3.13'
+  python_version: '3.14'
 openness: OSOD
 architecture_types: [gnn]
 train_task: S2EFS
