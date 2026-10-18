@@ -1,4 +1,4 @@
-model_name: BAM-MP-DeNS # TODO(user): confirm display name (model_key bam-mp-dens was specified)
+model_name: BAM-MP-DeNS
 model_key: bam-mp-dens
 model_version: 1.0.0
 dates:
