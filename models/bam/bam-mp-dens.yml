@@ -47,7 +47,7 @@ doi: # no paper for the DeNS variant
 paper: # no paper for the DeNS variant
 docs: https://github.com/myung-group/BAM-torch/tree/BAM_DeNS/examples/bam-mp-dens
 pr_url: # TODO(user): no PR exists yet
-checkpoint_url: https://figshare.com/files/70285206 # model_best.pkl, sha256 b04fbc9e...333a3; item https://doi.org/10.6084/m9.figshare.34682664
+checkpoint_url: https://figshare.com/files/70285206
 license:
   code: MIT
   code_url: https://github.com/myung-group/BAM-torch/blob/BAM_DeNS/LICENSE
