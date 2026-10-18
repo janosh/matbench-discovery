@@ -46,24 +46,48 @@ const to_download_url = (url: string): string =>
     `https://ndownloader.figshare.com/files/`,
   )
 
-const fetch_remote_diatomics_once = async (
-  pred_file_url: string,
+// Retrying cannot fix a WAF challenge or a 4xx (missing file, no access)
+class PermanentFetchError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'PermanentFetchError'
+  }
+}
+
+// Download one prediction file's bytes from its published URL. Figshare intermittently
+// serves 5xx or drops connections, so those retry with exponential backoff.
+const fetch_prediction_bytes = async (
+  url: string,
   fetch_fn: typeof fetch,
-): Promise<DiatomicsCurves> => {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 30_000)
-  try {
-    const response = await fetch_fn(to_download_url(pred_file_url), {
-      signal: controller.signal,
-    })
-    const waf_action = response.headers.get(`x-amzn-waf-action`)
-    if (waf_action) throw new Error(`Figshare WAF challenge: ${waf_action}`)
-    if (response.status !== 200) {
-      throw new Error(`${response.status} ${response.statusText}`)
+  max_attempts: number,
+): Promise<Uint8Array> => {
+  if (!Number.isInteger(max_attempts) || max_attempts < 1) {
+    throw new Error(`max_attempts must be a positive integer, got ${max_attempts}`)
+  }
+  const download_url = to_download_url(url)
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const response = await fetch_fn(download_url, {
+        signal: AbortSignal.timeout(30_000),
+      })
+      const waf_action = response.headers.get(`x-amzn-waf-action`)
+      if (waf_action)
+        throw new PermanentFetchError(`Figshare WAF challenge: ${waf_action}`)
+      if (response.status !== 200) {
+        const msg = `HTTP ${response.status} ${response.statusText}`
+        throw response.status < 500
+          ? new PermanentFetchError(`${download_url}: ${msg}`)
+          : new Error(msg)
+      }
+      return new Uint8Array(await response.arrayBuffer())
+    } catch (error) {
+      if (error instanceof PermanentFetchError) throw error
+      if (attempt >= max_attempts) {
+        const msg = `${url} failed after ${max_attempts} attempts: ${String(error)}`
+        throw new Error(msg, { cause: error })
+      }
+      await sleep(1000 * 2 ** (attempt - 1))
     }
-    return parse_gzipped_json(await response.arrayBuffer(), pred_file_url)
-  } finally {
-    clearTimeout(timeout)
   }
 }
 
@@ -80,28 +104,8 @@ export async function fetch_diatomics_data(
   const pred_file_url = pred_file?.url
   if (!pred_file_url) throw new Error(`No local diatomics file or remote URL`)
 
-  if (!Number.isInteger(max_attempts) || max_attempts < 1) {
-    throw new Error(`max_attempts must be a positive integer, got ${max_attempts}`)
-  }
-  const fetch_with_retry = async (attempt = 0): Promise<DiatomicsCurves> => {
-    try {
-      return await fetch_remote_diatomics_once(pred_file_url, fetch_fn)
-    } catch (error) {
-      if (error instanceof Error && error.message.startsWith(`Figshare WAF challenge:`)) {
-        throw error
-      }
-      if (attempt + 1 >= max_attempts) {
-        throw new Error(
-          `${pred_file_url} failed after ${max_attempts} attempts: ${String(error)}`,
-          { cause: error },
-        )
-      }
-      await sleep(1000 * 2 ** attempt)
-      return fetch_with_retry(attempt + 1)
-    }
-  }
-
-  return fetch_with_retry()
+  const bytes = await fetch_prediction_bytes(pred_file_url, fetch_fn, max_attempts)
+  return parse_gzipped_json(bytes, pred_file_url)
 }
 
 type MdPerSystemRow = Record<string, number | string>
@@ -114,7 +118,7 @@ const mev_cols = new Set([`energy_rmse`, `force_rmse`])
 // return null; malformed files and failed downloads must surface during the build.
 export async function read_md_per_system(
   model: Pick<ModelData, `metrics`>,
-  root_dir: string = repo_root,
+  { fetch_fn = fetch, root_dir = repo_root, max_attempts = 3 }: FetchOptions = {},
 ): Promise<MdPerSystemRow[] | null> {
   const prediction = model.metrics?.md?.pred_file
   if (!prediction) return null
@@ -122,12 +126,7 @@ export async function read_md_per_system(
   let bytes = await read_local_prediction(prediction_path(prediction.name, root_dir))
   if (!bytes) {
     if (!prediction.url) return null
-    const url = to_download_url(prediction.url)
-    const response = await fetch(url, { signal: AbortSignal.timeout(30_000) })
-    if (response.status !== 200) {
-      throw new Error(`MD predictions ${url}: HTTP ${response.status}`)
-    }
-    bytes = new Uint8Array(await response.arrayBuffer())
+    bytes = await fetch_prediction_bytes(prediction.url, fetch_fn, max_attempts)
   }
 
   const csv = new TextDecoder()

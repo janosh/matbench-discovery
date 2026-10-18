@@ -367,3 +367,32 @@ def test_maybe_auto_download_file_forwards_huggingface_token(
 
     assert os.path.isfile(abs_path)
     assert mock_get.call_args.kwargs["headers"] == {"Authorization": "Bearer hf_test"}
+
+
+@pytest.mark.parametrize(
+    ("statuses", "n_calls", "error_match"),
+    [
+        ((500, 503, 200), 3, None),  # transient 5xx recover
+        ((502,) * 5, 5, "502 Server Error"),  # persistent 5xx fail after all retries
+        ((404,), 1, "404 Client Error"),  # 4xx fails at once
+    ],
+)
+def test_download_file_retries_transient_server_errors(
+    statuses: tuple[int, ...], n_calls: int, error_match: str | None, tmp_path: Path
+) -> None:
+    """5xx responses are retried with backoff; 4xx and exhausted retries raise."""
+    url, dest_path = "https://example.com/test.txt", tmp_path / "test.txt"
+    responses = [make_mock_response(b"payload", status) for status in statuses]
+    for response in responses:
+        response.url = url
+    with patch("requests.get", side_effect=responses) as mock_get:
+        if error_match is None:
+            download_file(str(dest_path), url)
+            assert dest_path.read_bytes() == b"payload"
+        else:
+            with pytest.raises(requests.HTTPError, match=error_match) as error:
+                download_file(str(dest_path), url)
+            assert not dest_path.exists()
+            if n_calls > 1:
+                assert f"Failed after {n_calls} attempts" in error.value.__notes__
+    assert mock_get.call_count == n_calls

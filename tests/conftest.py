@@ -10,6 +10,13 @@ from pymatgen.core import Lattice, Structure
 from requests.adapters import HTTPAdapter, Retry
 
 from matbench_discovery.metrics.diatomics import DiatomicCurves
+from matbench_discovery.remote import fetch
+
+
+@pytest.fixture(autouse=True)
+def no_download_retry_delay(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep download_file's transient-error retries instant in tests."""
+    monkeypatch.setattr(fetch, "DOWNLOAD_RETRY_DELAYS", (0,) * 4)
 
 
 @pytest.fixture(scope="session")

@@ -1,7 +1,11 @@
-import { fetch_diatomics_data } from '#lib/server/predictions.js'
+import { fetch_diatomics_data, read_md_per_system } from '#lib/server/predictions.js'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
+import { gzipSync } from 'node:zlib'
 import { describe, expect, it, onTestFinished, vi } from 'vite-plus/test'
+
+// skip retry backoff
+vi.mock(`node:timers/promises`, () => ({ setTimeout: () => Promise.resolve() }))
 
 describe(`diatomics server data loader`, () => {
   it(`does not fall back to remote data when local pred_file is corrupt`, async () => {
@@ -63,6 +67,39 @@ describe(`diatomics server data loader`, () => {
         ),
       ).rejects.toThrow(`max_attempts must be a positive integer`)
       expect(fetch_fn).not.toHaveBeenCalled()
+    },
+  )
+
+  const pred_file = { name: `missing.json.gz`, url: `https://figshare.com/files/123` }
+  const loaders = {
+    diatomics: (fetch_fn: typeof fetch) =>
+      fetch_diatomics_data({ pred_file }, { fetch_fn, max_attempts: 3 }),
+    md: (fetch_fn: typeof fetch) =>
+      read_md_per_system(
+        { metrics: { md: { pred_file } } },
+        { fetch_fn, max_attempts: 3 },
+      ),
+  }
+  const body = { diatomics: gzipSync(`{}`), md: `system,rdf_error\nCu,1.5` }
+
+  it.each([
+    [`diatomics`, [503, 500, 200], 3, {}],
+    [`md`, [502, 200], 2, [{ system: `Cu`, rdf_error: 1.5 }]],
+    [`diatomics`, [500, 503, 502], 3, /failed after 3 attempts.*HTTP 502/],
+    [`md`, [404], 1, /HTTP 404/],
+  ] as const)(
+    `%s retries 5xx but not 4xx (statuses %j)`,
+    async (loader, statuses, n_calls, outcome) => {
+      const fetch_fn = vi.fn<typeof fetch>()
+      for (const status of statuses) {
+        fetch_fn.mockResolvedValueOnce(
+          new Response(status === 200 ? body[loader] : null, { status }),
+        )
+      }
+      const result = loaders[loader](fetch_fn)
+      if (outcome instanceof RegExp) await expect(result).rejects.toThrow(outcome)
+      else await expect(result).resolves.toEqual(outcome)
+      expect(fetch_fn).toHaveBeenCalledTimes(n_calls)
     },
   )
 })

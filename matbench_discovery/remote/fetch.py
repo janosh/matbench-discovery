@@ -5,11 +5,25 @@ import hashlib
 import os
 import sys
 import tempfile
+import time
 from urllib.parse import urlsplit
 
 import requests
 
 from matbench_discovery import file_digest
+
+# Figshare intermittently serves 5xx and drops connections; retry those after these
+# delays (s). 4xx errors (missing file, no access) fail at once.
+DOWNLOAD_RETRY_DELAYS: tuple[float, ...] = (1, 2, 4, 8)
+
+
+def _is_transient(exc: requests.RequestException) -> bool:
+    """Return whether a download error is worth retrying: 5xx or dropped connection."""
+    if isinstance(exc, requests.HTTPError):
+        return exc.response is not None and exc.response.status_code >= 500
+    return isinstance(
+        exc, requests.ConnectionError | requests.exceptions.ChunkedEncodingError
+    )
 
 
 def download_file(
@@ -58,18 +72,28 @@ def download_file(
     os.close(file_descriptor)
     download_finished = False
     try:
-        # Stream large files to avoid loading entire file into memory
-        file_hash = hashlib.md5()  # noqa: S324
-        with (
-            requests.get(
-                url, timeout=600, stream=True, headers=request_headers or None
-            ) as response,
-            open(tmp_file_path, mode="wb") as file,
-        ):
-            response.raise_for_status()
-            for chunk in response.iter_content(chunk_size=8192):
-                file.write(chunk)
-                file_hash.update(chunk)
+        for attempt, delay in enumerate((*DOWNLOAD_RETRY_DELAYS, None), start=1):
+            # Stream large files to avoid loading entire file into memory
+            file_hash = hashlib.md5()  # noqa: S324
+            try:
+                with (
+                    requests.get(
+                        url, timeout=600, stream=True, headers=request_headers or None
+                    ) as response,
+                    open(tmp_file_path, mode="wb") as file,
+                ):
+                    response.raise_for_status()
+                    for chunk in response.iter_content(chunk_size=8192):
+                        file.write(chunk)
+                        file_hash.update(chunk)
+                break
+            except requests.RequestException as exc:
+                if delay is None or not _is_transient(exc):
+                    if attempt > 1:
+                        exc.add_note(f"Failed after {attempt} attempts")
+                    raise
+                print(f"Retrying {url} in {delay}s after attempt {attempt}: {exc}")
+                time.sleep(delay)
 
         if md5 and (actual_md5 := file_hash.hexdigest()) != md5:
             raise ValueError(

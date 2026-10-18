@@ -488,12 +488,13 @@ def test_model_md_path_passes_huggingface_token(
 
 TIMEOUT = 30
 URL_WORKERS = 16  # HTTP checks wait on the network, not the runner's CPU cores.
-VALID_URL_STATUSES = {200, 202, 403, 429}
+VALID_URL_STATUSES = {200, 202, 403, 429, 500, 502, 503, 504}
 
 
 def check_url(session: requests.Session, url: str) -> None:
     """Assert a URL resolves - the adapter retries transients, so only 404s fail."""
-    # 200: OK, 202: figshare async, 403: restricted, 429: rate limited after retries
+    # 200: OK, 202: figshare async, 403: restricted, 429/5xx: rate limited or server
+    # outage after retries, which says nothing about whether the URL is valid
     status = session.head(url, allow_redirects=True, timeout=TIMEOUT).status_code
     assert status in VALID_URL_STATUSES, f"unexpected {status=} for {url}"
 

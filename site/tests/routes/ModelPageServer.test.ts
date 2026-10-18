@@ -86,8 +86,7 @@ describe(`model-key routes`, () => {
 
   it.each([
     [202, `challenge`],
-    [404, `missing`],
-    [500, `failed`],
+    [404, `missing`], // 5xx retries are covered in tests/lib/server/diatomics.test.ts
     [200, ``],
     [200, `system,value\nCu,"unterminated`],
     [200, `system,value\nCu,"quoted"trailing`],
