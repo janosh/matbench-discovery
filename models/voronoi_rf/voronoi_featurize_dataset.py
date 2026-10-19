@@ -59,7 +59,8 @@ if os.path.isfile(out_path):
     raise SystemExit(f"{out_path=} already exists, exiting early")
 
 print(f"{data_path=}")
-df_in = pd.read_json(data_path, lines=True).set_index(Key.mat_id)
+# WBM files are JSON Lines, the MP computed structure entries one JSON document
+df_in = pd.read_json(data_path, lines=data_name == "wbm").set_index(Key.mat_id)
 if slurm_array_task_count > 1:
     df_in = df_slurm_chunk(df_in, slurm_array_task_count, slurm_array_task_id)
 

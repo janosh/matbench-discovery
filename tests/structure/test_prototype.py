@@ -3,7 +3,9 @@
 from typing import Final
 
 import pytest
+from ase import Atoms
 from pymatgen.core.structure import Lattice, Structure
+from pymatgen.io.ase import AseAtomsAdaptor
 
 from matbench_discovery import TEST_FILES
 from matbench_discovery.structure import prototype
@@ -90,26 +92,13 @@ TEST_CASES: Final[tuple[tuple[Structure, str], ...]] = (
 )
 
 
+@pytest.mark.parametrize("as_atoms", [False, True])
 @pytest.mark.parametrize("struct, label", TEST_CASES)
-def test_get_protostructure_label(struct: Structure, label: str) -> None:
-    """Check that moyopy gives correct protostructure label for simple cases."""
-    moyopy_label = prototype.get_protostructure_label(struct)
+def test_get_protostructure_label(
+    struct: Structure, label: str, as_atoms: bool
+) -> None:
+    """Moyopy gives the correct protostructure label for Structure and Atoms input."""
+    struct_in = AseAtomsAdaptor.get_atoms(struct) if as_atoms else struct
+    assert isinstance(struct_in, Atoms if as_atoms else Structure)
+    moyopy_label = prototype.get_protostructure_label(struct_in)
     assert moyopy_label == label, f"{moyopy_label=} != {label}"
-
-
-def test_get_protostructure_label_with_ase_atoms() -> None:
-    """Test that get_protostructure_label() works with ASE Atoms input."""
-    from ase import Atoms
-    from pymatgen.io.ase import AseAtomsAdaptor
-
-    NaCl_atoms = AseAtomsAdaptor.get_atoms(NaCl)  # noqa: N806
-    assert isinstance(NaCl_atoms, Atoms)
-    struct_label = prototype.get_protostructure_label(NaCl)
-    atoms_label = prototype.get_protostructure_label(NaCl_atoms)
-
-    assert atoms_label == struct_label == "AB_cF8_225_a_b:Cl-Na"
-
-    SrTiO3_atoms = AseAtomsAdaptor.get_atoms(SrTiO3_perovskite)  # noqa: N806
-    assert isinstance(SrTiO3_atoms, Atoms)
-    atoms_label = prototype.get_protostructure_label(SrTiO3_atoms)
-    assert atoms_label == "A3BC_cP5_221_c_a_b:O-Sr-Ti"

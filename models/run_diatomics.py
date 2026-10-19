@@ -13,6 +13,13 @@ Typical cluster usage:
 
     # full homonuclear sweep (H-U) + metrics written to the model YAML
     uv run --with orb-models models/run_diatomics.py --model orb_v3 --write-yaml
+
+    # in a Slurm array, each task predicts every n-th element into per-element shard
+    # files (--n-shards/--shard-index default to the array's task count/index):
+    eval "$(uv run models/run_diatomics.py --print-cmd --model orb_v3)"
+    # then one job merges the shards and writes the YAML
+    eval "$(uv run models/run_diatomics.py --print-cmd --model orb_v3 \
+        --merge-shards --write-yaml)"
 """
 
 # /// script
@@ -29,9 +36,11 @@ import json
 import os
 import shlex
 import time
+from collections.abc import Mapping, Sequence
 from glob import glob
 
 import numpy as np
+from ase.calculators.calculator import Calculator
 from ase.data import chemical_symbols
 
 from matbench_discovery import today
@@ -47,7 +56,13 @@ from matbench_discovery.diatomics import (
     calc_diatomic_curve,
     homo_nuc,
 )
-from matbench_discovery.hpc import detect_hardware, merge_run_metadata, peak_memory_gb
+from matbench_discovery.hpc import (
+    detect_hardware,
+    effective_shard_args,
+    merge_audit_metadata,
+    peak_memory_gb,
+    slurm_shard_selection,
+)
 from matbench_discovery.metrics.diatomics import DIATOMIC_WALL_R_MIN_FACTOR, eval_window
 from matbench_discovery.metrics.diatomics.exclusions import (
     drop_metric_exclusions,
@@ -56,6 +71,7 @@ from matbench_discovery.metrics.diatomics.exclusions import (
 )
 from matbench_discovery.runner_cli import (
     add_common_runner_args,
+    add_shard_args,
     dependency_run_args,
     resolve_sharded_prefix,
 )
@@ -91,11 +107,68 @@ def trim_curve_to_finite(formula: str, curve: CurveDict) -> CurveDict | None:
     }
 
 
+def predict_curves(
+    calculator: Calculator,
+    model_key: str,
+    z_values: Sequence[int],
+    distances: np.ndarray,
+) -> tuple[DiatomicResults, list[str]]:
+    """Predict homonuclear curves, trimming unscored non-finite points.
+
+    Returns the finite curves and the formulas dropped for non-finite scored points
+    (NaN/Infinity are not valid JSON and unscored points carry no information).
+    """
+    curves: DiatomicResults = {}
+    calc_diatomic_curve(
+        pairs=[(z_value, z_value) for z_value in z_values],
+        calculator=calculator,
+        model_name=model_key,
+        distances=distances,
+        results=curves,
+    )
+    invalid_formulas = []
+    for formula in list(curves):
+        trimmed = trim_curve_to_finite(formula, curves[formula])
+        if trimmed is None:
+            invalid_formulas.append(formula)
+            del curves[formula]
+        else:
+            curves[formula] = trimmed
+    return curves, invalid_formulas
+
+
+def write_results(
+    json_path: str,
+    curves: DiatomicResults,
+    distances: np.ndarray,
+    run_metadata: Mapping[str, object],
+) -> dict[str, object]:
+    """Write curves + run provenance in the schema DiatomicCurves.from_dict reads."""
+    results: dict[str, object] = {
+        homo_nuc: curves,
+        "hetero-nuclear": {},
+        "distances": distances.tolist(),
+        # provenance (hardware, run time, exclusions) so shards can be aggregated later
+        "run_metadata": dict(run_metadata),
+    }
+    os.makedirs(os.path.dirname(json_path), exist_ok=True)
+    with gzip.open(json_path, mode="wt") as file:
+        # allow_nan=False catches non-finite values that slipped past the trim
+        json.dump(results, file, allow_nan=False, default=lambda arr: arr.tolist())
+    return results
+
+
 def main() -> int:
     """Parse args and run (or dry-run) the diatomic curve sweep for one model."""
     parser = add_common_runner_args(
         argparse.ArgumentParser(description=__doc__),
         dry_run_help="Smoke test: a few elements at a few distances",
+    )
+    add_shard_args(
+        parser,
+        merge_shards_help="Merge per-element shard files into the final artifact",
+        write_yaml_help="Compute + write metrics to model YAML (unsharded runs or "
+        "--merge-shards)",
     )
     parser.add_argument(
         "--max-z",
@@ -112,15 +185,6 @@ def main() -> int:
     parser.add_argument(
         "--n-points", type=int, default=119, help="Number of log-spaced distances"
     )
-    parser.add_argument(
-        "--write-yaml",
-        action="store_true",
-        help="Compute + write metrics to model YAML",
-    )
-    parser.add_argument(
-        "--merge-shards", action="store_true", help="Merge Slurm shards"
-    )
-    parser.add_argument("--shard-dir", help="Override the resumable shard directory")
     args = parser.parse_args()
 
     model_key = resolve_cli_calculator(parser, args.model, list_models=args.list_models)
@@ -135,9 +199,8 @@ def main() -> int:
         parser.error("--n-points must be >= 2 (a curve needs at least 2 points)")
     if args.write_yaml and args.dry_run:
         parser.error("--write-yaml is incompatible with --dry-run")
-    slurm_task_id = os.getenv("SLURM_ARRAY_TASK_ID")
-    if args.write_yaml and slurm_task_id and not args.merge_shards:
-        parser.error("--write-yaml is only supported by the --merge-shards task")
+    if args.merge_shards and args.shard_index is not None:
+        parser.error("--shard-index is incompatible with --merge-shards")
 
     if args.print_cmd:
         run_args = dependency_run_args(
@@ -145,12 +208,15 @@ def main() -> int:
             args.model,
             {
                 "dtype": args.dtype,
+                "device": args.device,
                 "min-dist": args.min_dist,
                 "max-dist": args.max_dist,
                 "n-points": args.n_points,
                 "max-z": args.max_z,
                 "out-dir": args.out_dir,
                 "shard-dir": args.shard_dir,
+                "n-shards": args.n_shards,
+                "shard-index": args.shard_index,
             },
             ("dry-run", "merge-shards", "write-yaml"),
         )
@@ -173,15 +239,26 @@ def main() -> int:
     out_dir = args.out_dir or f"{module_dir}/{model_dir}"
 
     max_z = 3 if args.dry_run else args.max_z
-    if slurm_task_id and not args.merge_shards:
-        slurm_task_idx = int(slurm_task_id)
-        if not 0 <= slurm_task_idx < max_z:
-            parser.error(
-                f"SLURM_ARRAY_TASK_ID must be in [0, {max_z - 1}] for {max_z=}"
+    all_z_values = list(range(1, max_z + 1))
+    n_shards, shard_index = 1, 0
+    if not args.merge_shards:
+        try:
+            n_shards_arg, shard_index_arg, skip_task = effective_shard_args(
+                args.n_shards, args.shard_index, dry_run=args.dry_run
             )
-        z_values = [slurm_task_idx + 1]  # Slurm array indices are zero-based.
-    else:
-        z_values = range(1, max_z + 1)
+            if skip_task:
+                print("Skipping redundant dry run outside the first Slurm array task")
+                return 0
+            n_shards, shard_index = slurm_shard_selection(n_shards_arg, shard_index_arg)
+        except ValueError as exc:
+            parser.error(str(exc))
+        if n_shards > max_z:
+            parser.error(f"--n-shards ({n_shards}) cannot exceed {max_z=}")
+        if args.write_yaml and n_shards > 1:
+            parser.error(
+                "--write-yaml is only supported by unsharded runs or "
+                "the --merge-shards task"
+            )
     n_points = 10 if args.dry_run else args.n_points
     # geometric spacing densifies the short-range repulsive wall, where unphysical
     # wiggles and discontinuities are most diagnostic (matches the MACE-MP convention)
@@ -202,16 +279,14 @@ def main() -> int:
     artifact_date = artifact_date_from_prefix(artifact_prefix, fallback=today)
     artifact_dir = f"{out_dir}/dry-run" if args.dry_run else out_dir
     json_path = f"{artifact_dir}/{artifact_filename(artifact_date, 'diatomics')}"
-    n_pairs = len(z_values)
-    run_metadata: dict[str, str | float | dict[str, str]]
-    curves: DiatomicResults = {}
 
     if args.merge_shards:
+        curves: DiatomicResults = {}
         shard_metadatas: list[dict[str, object]] = []
         # Normalize both sides because glob returns OS-native separators on Windows.
         expected_paths = [
             os.path.normpath(f"{shard_dir}/Z{z_value:03d}-diatomics.json.gz")
-            for z_value in z_values
+            for z_value in all_z_values
         ]
         shard_paths = sorted(
             map(os.path.normpath, glob(f"{shard_dir}/Z*-diatomics.json.gz"))
@@ -230,7 +305,7 @@ def main() -> int:
             shard_metadatas.append(shard.get("run_metadata", {}))
         expected_formulas = {
             f"{chemical_symbols[z_value]}-{chemical_symbols[z_value]}"
-            for z_value in z_values
+            for z_value in all_z_values
         }
         missing_formulas = {
             formula
@@ -244,58 +319,52 @@ def main() -> int:
         exclusion_reasons = get_excluded_formula_reasons(args.model)
         if unexpected_missing := missing_formulas - set(exclusion_reasons):
             parser.error(f"Missing curves in shards: {sorted(unexpected_missing)}")
-        run_metadata = {**merge_run_metadata(shard_metadatas)}
+        # all-or-nothing cost provenance: mixed GPUs or any shard missing a field
+        # drops it rather than reporting a partial sum or one shard's label
+        run_metadata = merge_audit_metadata(shard_metadatas)
+        run_metadata["excluded_formula_reasons"] = exclusion_reasons
+        results = write_results(json_path, curves, distances, run_metadata)
+        print(f"Merged {len(curves)}/{max_z} diatomic curves into {json_path}")
     else:
-        start_time = time.perf_counter()
-        calculator = load_calculator(args.model, dtype=args.dtype)
+        z_values = all_z_values[shard_index::n_shards]
+        load_start = time.perf_counter()
+        calculator = load_calculator(args.model, device=args.device, dtype=args.dtype)
+        load_time_sec = time.perf_counter() - load_start
         hardware = detect_hardware()  # after load: the backend's GPU is now initialized
-        print(f"\nPredicting {n_pairs} diatomic curves for {args.model} on {hardware}")
-        calc_diatomic_curve(
-            pairs=[(z_value, z_value) for z_value in z_values],
-            calculator=calculator,
-            model_name=args.model,
-            distances=distances,
-            results=curves,
+        print(
+            f"\nPredicting {len(z_values)} diatomic curves for {args.model} on "
+            f"{hardware} (shard {shard_index + 1}/{n_shards})"
         )
-        run_time_sec = round(time.perf_counter() - start_time, 2)
-
-        # trim out-of-window non-finite samples (unscored anyway, and NaN/Infinity are
-        # not valid JSON); drop curves that are non-finite at scored separations
-        invalid_formulas = []
-        for formula in list(curves):
-            trimmed = trim_curve_to_finite(formula, curves[formula])
-            if trimmed is None:
-                invalid_formulas.append(formula)
-                del curves[formula]
-            else:
-                curves[formula] = trimmed
-
-        exclusion_reasons = get_excluded_formula_reasons(args.model, invalid_formulas)
-        # peak memory covers calculator load + full sweep (one process per run/shard)
-        run_metadata = {
-            "hardware": hardware,
-            "run_time_sec": run_time_sec,
-            **peak_memory_gb(),
-        }
-        if slurm_task_id:
-            json_path = f"{shard_dir}/Z{z_values[0]:03d}-diatomics.json.gz"
-
-    run_metadata["excluded_formula_reasons"] = exclusion_reasons
-    # flat on-disk schema read by DiatomicCurves.from_dict / the site's diatomics parser
-    results: dict[str, object] = {
-        homo_nuc: curves,
-        "hetero-nuclear": {},
-        "distances": distances.tolist(),
-    }
-    # provenance (hardware, run time, exclusions) so shards can be aggregated later
-    results["run_metadata"] = run_metadata
-    os.makedirs(os.path.dirname(json_path), exist_ok=True)
-    with gzip.open(json_path, mode="wt") as file:
-        # allow_nan=False catches non-finite values that slipped past the trim above
-        json.dump(results, file, allow_nan=False, default=lambda arr: arr.tolist())
-    print(f"Wrote {len(curves)}/{n_pairs} diatomic curves to {json_path}")
-    if not args.merge_shards:
-        print(f"Ran on {hardware} in {run_time_sec:.1f} s")
+        # sharded runs write one resumable file per element (what --merge-shards
+        # expects); an unsharded run predicts every element into the final artifact
+        z_groups = [[z_value] for z_value in z_values] if n_shards > 1 else [z_values]
+        for z_group in z_groups:
+            start_time = time.perf_counter()
+            curves, invalid_formulas = predict_curves(
+                calculator, args.model, z_group, distances
+            )
+            # charge calculator loading to the first file so merged sums cover it
+            run_time_sec = round(time.perf_counter() - start_time + load_time_sec, 2)
+            load_time_sec = 0.0
+            run_metadata = {
+                "hardware": hardware,
+                "run_time_sec": run_time_sec,
+                # peak memory covers calculator load + sweep so far (one process)
+                **peak_memory_gb(),
+                "excluded_formula_reasons": get_excluded_formula_reasons(
+                    args.model, invalid_formulas
+                ),
+            }
+            out_path = (
+                f"{shard_dir}/Z{z_group[0]:03d}-diatomics.json.gz"
+                if n_shards > 1
+                else json_path
+            )
+            results = write_results(out_path, curves, distances, run_metadata)
+            print(
+                f"Wrote {len(curves)}/{len(z_group)} diatomic curves to {out_path} "
+                f"on {hardware} in {run_time_sec:.1f} s"
+            )
 
     if args.write_yaml:
         if model is None:  # debug models like emt have no YAML to write to

@@ -20,7 +20,6 @@ from sklearn.metrics import (
 from matbench_discovery import ROOT
 from matbench_discovery.data import load_discovery_predictions
 from matbench_discovery.enums import MbdKey, Model, TestSubset
-from matbench_discovery.metrics import metrics_df_from_yaml
 from matbench_discovery.metrics.discovery import (
     calc_discovery_metrics,
     classify_stable,
@@ -29,7 +28,16 @@ from matbench_discovery.metrics.discovery import (
     write_all_metrics_to_yaml,
 )
 
-df_full_discovery_metrics = metrics_df_from_yaml(["discovery.full_test_set"])
+df_full_discovery_metrics = pd.DataFrame.from_dict(
+    {
+        model.key: full_test_set
+        for model in Model.active()
+        if (
+            full_test_set := (model.metrics.get("discovery") or {}).get("full_test_set")
+        )
+    },
+    orient="index",
+)
 full_discovery_model_keys = set(df_full_discovery_metrics.index)
 
 
@@ -314,13 +322,14 @@ def test_discovery_prediction_frames(
     # One missing prediction must not poison the cross-model mean.
     raw.loc[material_ids[0], Model.mace_mpa_0.key] = np.nan
 
-    def load_predictions(*, models: list[Model]) -> pd.DataFrame:
+    def load_predictions(*, models: list[Model], subset: object = None) -> pd.DataFrame:
         """Exercise real roster selection without loading gigabytes to check shapes."""
         assert {model.key for model in models} == full_discovery_model_keys
+        assert subset is None
         return raw.copy()
 
     monkeypatch.setattr(
-        "matbench_discovery.data.load_df_wbm_with_preds", load_predictions
+        "matbench_discovery.preds.load_df_wbm_with_preds", load_predictions
     )
     # Exercise the loader without retaining synthetic predictions in its global cache.
     cache_info = load_discovery_predictions.cache_info()

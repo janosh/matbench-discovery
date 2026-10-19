@@ -113,6 +113,14 @@ def test_run_diatomics_exclusion_reasons(run_diatomics: ModuleType) -> None:
         "Cu": {"energy_jump": 2.0}
     }
 
+    # debug calculators without a Model entry have no curated exclusions, but a
+    # mistyped model key fails instead of silently skipping its curated reasons
+    assert run_diatomics.get_excluded_formula_reasons("emt", ["X-X"]) == {
+        "X-X": "invalid or unsupported curve"
+    }
+    with pytest.raises(ValueError, match="not found in Model enum"):
+        run_diatomics.get_excluded_formula_reasons("alphanet_v1_oamm")
+
 
 def write_diatomics_shard(
     shard_dir: Path,

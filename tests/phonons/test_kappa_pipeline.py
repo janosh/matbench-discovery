@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import gzip
 import json
 import os
@@ -32,7 +33,7 @@ from matbench_discovery.phonons.pipeline import (
     KappaComputation,
     KappaRecord,
     KappaSettings,
-    atomic_write_gzip_json,
+    atomic_write_json,
     calculate_kappa_for_structure,
     checkpoint_digest,
     kappa_source_paths,
@@ -116,6 +117,8 @@ class Phono3pyStub:
             "first_atoms": [{"number": 0, "displacement": [0.01, 0, 0]}]
         }
         self.dataset = {"first_atoms": []}
+        # one-q-point mesh: the regular grid's only point maps to BZ point 0 (Gamma)
+        self.grid = SimpleNamespace(grg2bzg=np.array([0]))
 
     def produce_fc3(self, *, symmetrize_fc3r: bool) -> None:
         """Validate FC3 production after forces are assigned."""
@@ -183,10 +186,11 @@ class PipelineAdapterStub(StandardKappaAdapter):
         *,
         max_evaluations: int | None = None,
     ) -> np.ndarray:
-        """Record and return one deterministic FC3 force set."""
-        del phono3py, calculator, settings, max_evaluations
+        """Record, assign and return one deterministic FC3 force set."""
+        del calculator, settings, max_evaluations
         self.n_fc3_calls += 1
-        return np.full((1, 1, 3), 3.0)
+        phono3py.forces = np.full((1, 1, 3), 3.0)
+        return phono3py.forces
 
 
 def make_atoms_by_id() -> dict[str, Atoms]:
@@ -301,15 +305,22 @@ def test_kappa_settings_reject_invalid_values(
         replace(KappaSettings(), **{field_name: invalid_value})
 
 
+@pytest.mark.parametrize("platform", ["win32", "linux"])
 def test_checkpoint_digest_hashes_artifact_bytes(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, platform: str
 ) -> None:
-    """Windows checkpoint provenance follows file content rather than stale metadata."""
-    monkeypatch.setattr("matbench_discovery.phonons.pipeline.sys.platform", "win32")
+    """Checkpoint provenance follows file content rather than stale metadata, through
+    the POSIX stat-keyed digest cache (ctime still moves) or direct Windows hashing.
+    """
+    monkeypatch.setattr("matbench_discovery.phonons.pipeline.sys.platform", platform)
     checkpoint_path = f"{tmp_path}/model.pt"
     with open(checkpoint_path, mode="wb") as file:
         file.write(b"first checkpoint")
     first_digest = checkpoint_digest(checkpoint_path)
+    assert first_digest == file_digest(checkpoint_path)
+    cache_path = f"{checkpoint_path}.sha256.json"
+    assert os.path.isfile(cache_path) is (platform != "win32")
+    assert checkpoint_digest(checkpoint_path) == first_digest  # cache hit
     checkpoint_stat = os.stat(checkpoint_path)
     with open(checkpoint_path, mode="wb") as file:
         file.write(b"other checkpoint")
@@ -317,7 +328,11 @@ def test_checkpoint_digest_hashes_artifact_bytes(
         checkpoint_path,
         ns=(checkpoint_stat.st_atime_ns, checkpoint_stat.st_mtime_ns),
     )
+    assert checkpoint_digest(checkpoint_path) == file_digest(checkpoint_path)
     assert checkpoint_digest(checkpoint_path) != first_digest
+    assert checkpoint_digest("registry:model-v1") != checkpoint_digest(
+        "registry:model-v2"
+    )
 
 
 def test_generated_models_use_stable_registry_provenance() -> None:
@@ -370,53 +385,76 @@ def test_kappa_output_paths_reuse_exactly_one_prior_shard_tree(tmp_path: Path) -
         )
 
 
-def test_kappa_cli_requires_declared_explicit_checkpoint(
+@pytest.mark.parametrize(
+    ("argv", "exit_code", "expected_text"),
+    [
+        # models without a downloadable artifact reject implicit calculator loading
+        (["--model", "equiformer_v3_mp", "--print-cmd"], 2, "requires --checkpoint"),
+        (
+            ["--model", "equiformer_v3_mp", "--merge-shards", "--write-yaml"],
+            2,
+            "requires --checkpoint",
+        ),
+        (
+            ["--model", "equiformer_v3_mp", "--checkpoint", "model.pt", "--print-cmd"],
+            0,
+            "--checkpoint model.pt",
+        ),
+        (
+            ["--model", "mace_mp_0", "--harmonic-only", "--print-cmd"],
+            0,
+            "--harmonic-only",
+        ),
+        (
+            [
+                *("--model", "mace_mp_0", "--harmonic-only"),
+                *("--merge-shards", "--write-yaml"),
+            ],
+            2,
+            "cannot replace conductivity",
+        ),
+    ],
+    ids=[
+        "no_checkpoint",
+        "merge_no_checkpoint",
+        "explicit_checkpoint",
+        "harmonic_only",
+        "harmonic_only_write_yaml",
+    ],
+)
+def test_kappa_cli_checkpoint_and_mode_args(
     capsys: pytest.CaptureFixture[str],
+    argv: list[str],
+    exit_code: int,
+    expected_text: str,
 ) -> None:
-    """Models without a downloadable artifact reject implicit calculator loading."""
+    """The kappa CLI requires declared checkpoints and guards harmonic-only YAML."""
     from models import run_kappa
 
-    with pytest.raises(SystemExit, match="2"):
-        run_kappa.main(["--model", "equiformer_v3_mp", "--print-cmd"])
-    assert "requires --checkpoint" in capsys.readouterr().err
-    with pytest.raises(SystemExit, match="2"):
-        run_kappa.main(
-            ["--model", "equiformer_v3_mp", "--merge-shards", "--write-yaml"]
-        )
-    assert "requires --checkpoint" in capsys.readouterr().err
-
-    assert (
-        run_kappa.main(
-            [
-                "--model",
-                "equiformer_v3_mp",
-                "--checkpoint",
-                "model.pt",
-                "--print-cmd",
-            ]
-        )
-        == 0
-    )
-    assert "--checkpoint model.pt" in capsys.readouterr().out
-    assert (
-        run_kappa.main(["--model", "mace_mp_0", "--harmonic-only", "--print-cmd"]) == 0
-    )
-    assert "--harmonic-only" in capsys.readouterr().out
-    with pytest.raises(SystemExit, match="2"):
-        run_kappa.main(
-            [
-                "--model",
-                "mace_mp_0",
-                "--harmonic-only",
-                "--merge-shards",
-                "--write-yaml",
-            ]
-        )
-    assert "cannot replace conductivity" in capsys.readouterr().err
+    if exit_code:
+        with pytest.raises(SystemExit, match=str(exit_code)):
+            run_kappa.main(argv)
+        assert expected_text in capsys.readouterr().err
+    else:
+        assert run_kappa.main(argv) == 0
+        assert expected_text in capsys.readouterr().out
 
 
-def test_yaml_write_requires_verified_settings_and_dataset(tmp_path: Path) -> None:
-    """Official metrics reject overridden protocols and noncanonical datasets."""
+@pytest.mark.parametrize(
+    ("change", "match"),
+    [
+        (None, None),
+        ("settings", "overridden protocol"),
+        ("dataset_hash", "noncanonical"),
+        ("n_failed", "failed records"),
+    ],
+)
+def test_yaml_write_requires_verified_settings_and_dataset(
+    tmp_path: Path, change: str | None, match: str | None
+) -> None:
+    """Official metrics reject overridden protocols, noncanonical datasets and
+    failed records.
+    """
     from models import run_kappa
 
     dataset_path = f"{tmp_path}/phonondb.extxyz"
@@ -427,39 +465,28 @@ def test_yaml_write_requires_verified_settings_and_dataset(tmp_path: Path) -> No
         settings=settings,
         dataset_hash=file_digest(dataset_path),
     )
+    run_metadata = {"n_failed": 0}
+    if change == "settings":
+        manifest.settings = replace(settings, force_max=settings.force_max * 2)
+    elif change == "dataset_hash":
+        manifest.dataset_hash = "different"
+    elif change == "n_failed":
+        run_metadata["n_failed"] = 1
     merged_run = cast(
         "MergedKappaRun",
-        SimpleNamespace(manifest=manifest, run_metadata={"n_failed": 0}),
+        SimpleNamespace(manifest=manifest, run_metadata=run_metadata),
     )
-    run_kappa.validate_yaml_write_provenance(
+    validate = functools.partial(
+        run_kappa.validate_yaml_write_provenance,
         Model.mace_mp_0,
         merged_run,
         canonical_dataset_path=dataset_path,
     )
-
-    manifest.settings = replace(settings, force_max=settings.force_max * 2)
-    with pytest.raises(ValueError, match="overridden protocol"):
-        run_kappa.validate_yaml_write_provenance(
-            Model.mace_mp_0,
-            merged_run,
-            canonical_dataset_path=dataset_path,
-        )
-    manifest.settings = settings
-    manifest.dataset_hash = "different"
-    with pytest.raises(ValueError, match="noncanonical"):
-        run_kappa.validate_yaml_write_provenance(
-            Model.mace_mp_0,
-            merged_run,
-            canonical_dataset_path=dataset_path,
-        )
-    manifest.dataset_hash = file_digest(dataset_path)
-    merged_run.run_metadata["n_failed"] = 1
-    with pytest.raises(ValueError, match="failed records"):
-        run_kappa.validate_yaml_write_provenance(
-            Model.mace_mp_0,
-            merged_run,
-            canonical_dataset_path=dataset_path,
-        )
+    if match is None:
+        validate()
+        return
+    with pytest.raises(ValueError, match=match):
+        validate()
 
 
 def test_dry_run_uses_and_merges_capped_protocol(shard_env: SimpleNamespace) -> None:
@@ -627,6 +654,45 @@ def test_calculate_kappa_for_structure_runs_shared_physics_flow(
         assert (failed.phonons is None) is harmonic_failure
 
 
+def test_skipped_conductivity_rows_store_regular_grid_spectrum() -> None:
+    """Rows without conductivity store each regular-grid q-point once, so their
+    unweighted spectrum matches the weighted irreducible grid of computed rows.
+    """
+    from ase.build import bulk
+    from ase.calculators.emt import EMT
+
+    from matbench_discovery.metrics.phonons import phonon_spectrum_w1
+
+    atoms = bulk("Cu", "fcc", a=3.615)
+    q_point_mesh = (4, 4, 4)  # 64 regular-grid points vs 89 BZ-grid points
+    atoms.info |= {
+        Key.mat_id: "mp-30",
+        "fc2_supercell": 2 * np.eye(3),
+        "fc3_supercell": np.eye(3),
+        "q_point_mesh": q_point_mesh,
+    }
+    rows = {
+        harmonic_only: calculate_kappa_for_structure(
+            atoms=atoms,
+            calculator=EMT(),
+            settings=KappaSettings(
+                relaxation_mode="none", max_steps=0, harmonic_only=harmonic_only
+            ),
+            adapter=StandardKappaAdapter(),
+        ).result
+        for harmonic_only in (True, False)
+    }
+    skipped, computed = rows[True], rows[False]
+    assert skipped["conductivity_skipped"] is True
+    assert computed["errors"] == []
+    assert np.shape(skipped[Key.ph_freqs]) == (np.prod(q_point_mesh), 3)
+    assert np.isnan(skipped[Key.mode_weights])
+    # the BZ grid's duplicated surface points biased this by ~0.26 THz
+    assert phonon_spectrum_w1(pd.Series(skipped), pd.Series(computed)) == (
+        pytest.approx(0, abs=1e-12)
+    )
+
+
 def test_normalize_kappa_schema_and_voigt() -> None:
     """Canonical records normalize tensors and retain failure/symmetry semantics."""
     result = normalize_kappa_result(
@@ -746,17 +812,17 @@ def test_resumable_shards_strict_merge_and_artifacts(
     failed_record = replace(
         read_kappa_record(failed_record_path), error="persisted failure"
     )
-    atomic_write_gzip_json(failed_record_path, asdict(failed_record))
+    atomic_write_json(failed_record_path, asdict(failed_record))
     shard_env.run(settings=settings, n_shards=2)
     assert len(computation_stub.material_ids) == first_call_count
     mismatched_retry = replace(
         failed_record,
         run_metadata={**failed_record.run_metadata, "hardware": "different hardware"},
     )
-    atomic_write_gzip_json(failed_record_path, asdict(mismatched_retry))
+    atomic_write_json(failed_record_path, asdict(mismatched_retry))
     with pytest.raises(ValueError, match="different hardware or package versions"):
         shard_env.run(settings=settings, n_shards=2, retry_failures=True)
-    atomic_write_gzip_json(failed_record_path, asdict(failed_record))
+    atomic_write_json(failed_record_path, asdict(failed_record))
     shard_env.run(
         n_shards=2,
         settings=settings,
@@ -784,13 +850,13 @@ def test_resumable_shards_strict_merge_and_artifacts(
         **cast("dict[str, str]", mixed_metadata["versions"]),
         "synthetic-backend": "different",
     }
-    atomic_write_gzip_json(
+    atomic_write_json(
         mixed_record_path,
         asdict(replace(original_record, run_metadata=mixed_metadata)),
     )
     with pytest.raises(ValueError, match="mixed or missing package versions"):
         merge_kappa_shards(shard_dir, model_key="test_model")
-    atomic_write_gzip_json(mixed_record_path, asdict(original_record))
+    atomic_write_json(mixed_record_path, asdict(original_record))
 
     merged_run = merge_kappa_shards(shard_dir, model_key="test_model")
     stem = f"{tmp_path}/2026-07-01-phonons-kappa-103"
@@ -833,7 +899,7 @@ def test_resumable_shards_strict_merge_and_artifacts(
         {"hardware": "different hardware"},
         {"versions": {"synthetic-backend": "different"}},
     ):
-        atomic_write_gzip_json(
+        atomic_write_json(
             missing_record_path,
             asdict(
                 replace(
@@ -848,7 +914,7 @@ def test_resumable_shards_strict_merge_and_artifacts(
         with pytest.raises(ValueError, match="different hardware or package versions"):
             shard_env.run(settings=settings, n_shards=2)
     assert len(computation_stub.material_ids) == n_calls_before
-    atomic_write_gzip_json(missing_record_path, asdict(missing_record))
+    atomic_write_json(missing_record_path, asdict(missing_record))
     shard_env.run(settings=settings, n_shards=2)
     shard_env.run(shard_index=1, settings=settings, n_shards=2)
     assert computation_stub.material_ids[n_calls_before:] == [missing_sidecar_id]
@@ -859,7 +925,7 @@ def test_resumable_shards_strict_merge_and_artifacts(
             pred_file_path=f"{shard_dir}/records/final.json.gz",
         )
 
-    atomic_write_gzip_json(f"{shard_dir}/records/extra.json.gz", {})
+    atomic_write_json(f"{shard_dir}/records/extra.json.gz", {})
     with pytest.raises(ValueError, match="extra="):
         merge_kappa_shards(shard_dir, model_key="test_model")
 
@@ -879,7 +945,7 @@ def test_harmonic_failure_resume_and_merge(
         result={**record.result, "phonon_errors": {"band_path": {"message": "failed"}}},
         phonon_file=record.phonon_file if partial_sidecar else None,
     )
-    atomic_write_gzip_json(path, asdict(failed))
+    atomic_write_json(path, asdict(failed))
     n_calls = len(shard_env.computation.material_ids)
     shard_env.run(settings=settings)
     assert len(shard_env.computation.material_ids) == n_calls
@@ -899,22 +965,18 @@ def test_harmonic_failure_resume_and_merge(
 
 
 def test_manifest_rejects_changed_settings(shard_env: SimpleNamespace) -> None:
-    """A resumed run cannot silently change its scientific protocol."""
-    settings = KappaSettings(relaxation_mode="none", max_steps=0)
-    shard_env.run(settings=settings)
-    with pytest.raises(ValueError, match=r"does not match.*settings"):
-        shard_env.run(settings=replace(settings, force_max=2e-4))
-    with pytest.raises(ValueError, match=r"does not match.*dtype"):
-        shard_env.run(settings=settings, dtype="float32")
-
-
-def test_merge_preserves_manifest_checkpoint_identity(
-    shard_env: SimpleNamespace,
-) -> None:
-    """A merge validates records against the persisted checkpoint identity."""
+    """A resumed run cannot silently change its protocol, dtype or checkpoint, and a
+    merge validates records against the persisted checkpoint identity.
+    """
     settings = KappaSettings(relaxation_mode="none", max_steps=0)
     checkpoint = "registry:model-v1"
     shard_env.run(settings=settings, checkpoint=checkpoint)
+    with pytest.raises(ValueError, match=r"does not match.*settings"):
+        shard_env.run(settings=replace(settings, force_max=2e-4), checkpoint=checkpoint)
+    with pytest.raises(ValueError, match=r"does not match.*dtype"):
+        shard_env.run(settings=settings, checkpoint=checkpoint, dtype="float32")
+    with pytest.raises(ValueError, match=r"does not match.*checkpoint"):
+        shard_env.run(settings=settings, checkpoint="registry:model-v2")
 
     merged_run = merge_kappa_shards(shard_env.shard_dir, model_key="test_model")
     assert len(merged_run.records) == len(shard_env.atoms_by_id)

@@ -21,6 +21,8 @@ def _is_transient(exc: requests.RequestException) -> bool:
     """Return whether a download error is worth retrying: 5xx or dropped connection."""
     if isinstance(exc, requests.HTTPError):
         return exc.response is not None and exc.response.status_code >= 500
+    # ConnectionError includes ConnectTimeout. ReadTimeout is deliberately not retried:
+    # a 600 s read timeout x 4 retries would stall a stuck download for 40 min.
     return isinstance(
         exc, requests.ConnectionError | requests.exceptions.ChunkedEncodingError
     )

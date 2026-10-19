@@ -292,10 +292,17 @@ def test_workflows_refresh_and_deploy_exact_parity_assets(
     refresh = workflow.split("- name: Refresh payloads without secrets", 1)[1].split(
         "- name: Recheck submission head before archival", 1
     )[0]
+    # --validate-only already ran ingest's FIG_STEPS (both parity generators) for the
+    # detected models, so the refresh only rebuilds parity for full-roster changes
+    from scripts.ingest_model import FIG_STEPS
+
+    validate_step = workflow.split("- name: Validate submitted models without", 1)[1]
+    assert "--validate-only" in validate_step.split("- name:", 1)[0]
+    full_roster_refresh = refresh.split("--full-roster", 1)[1]
     for kind in ("energy", "kappa"):
-        assert f"generate-{kind}-parity-assets.py" in refresh
-    assert 'PARITY_ARGS=(--models "${MODEL_ARGS[@]}")' in refresh
-    assert refresh.count('"${PARITY_ARGS[@]}"') == 2
+        script = f"site/scripts/generate-{kind}-parity-assets.py"
+        assert any(step[-1] == script for step in FIG_STEPS)
+        assert refresh.count(script) == full_roster_refresh.count(script) == 1
     assert "site/src/lib/parity/{energy,kappa}-parity-manifest.json" in workflow
     assert (
         "git add matbench_discovery/enums.py models site/src/figs site/src/lib/parity"
@@ -304,7 +311,8 @@ def test_workflows_refresh_and_deploy_exact_parity_assets(
     assert workflow.index("generate-kappa-parity-assets.py") < workflow.index(
         "--publish-parity"
     )
-    assert '"${PAYLOAD_ARGS[@]}" --payloads-only' in refresh
+    assert '"${MODEL_ARGS[@]}" --payloads-only' in refresh
+    assert "--full-roster \\\n            --payloads-only" in refresh
     with open(f"{ROOT}/.github/workflows/gh-pages.yml", encoding="utf-8") as file:
         deploy = file.read()
     assert (

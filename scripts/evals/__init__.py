@@ -11,8 +11,9 @@ def evaluate_models(
 ) -> int:
     """Run one evaluator per model, returning 0 only if nothing failed.
 
-    Evaluators return a reason string to skip an expected gap. Selecting no models is
-    not a failure, but an unexpected error is, even when other models succeed.
+    Evaluators return a reason string to skip an expected gap (e.g. a force model
+    without kappa predictions). Skips are not failures, even when every model is
+    skipped, but an unexpected error is, even when other models succeed.
     """
     print(f"Evaluating {task} metrics for {len(models)} model(s)...")
     n_success = n_failed = 0
@@ -34,4 +35,4 @@ def evaluate_models(
         print(f"\nNo models evaluated successfully ({tally})")
     else:
         print(f"\nSuccessfully evaluated {n_success} model(s), {tally}")
-    return 1 if n_failed or (len(models) > 0 and n_success == 0) else 0
+    return int(n_failed > 0)

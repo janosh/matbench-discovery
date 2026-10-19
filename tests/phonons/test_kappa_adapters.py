@@ -216,9 +216,45 @@ def patch_relaxation(
     monkeypatch.setattr(standard, "FixSymmetry", ConstraintStub)
 
 
-def test_pet_batched_force_set_preserves_shape_when_capped() -> None:
-    """PET evaluates the cap and zero-fills null and deferred displacements."""
-    calculator = BatchCalculatorStub()
+class PositionEchoCalculator(Calculator):
+    """ASE-only calculator echoing atom positions as forces (no batch method)."""
+
+    implemented_properties = ["energy", "forces"]  # noqa: RUF012
+
+    def calculate(
+        self,
+        atoms: Atoms | None = None,
+        properties: Sequence[str] = ("energy", "forces"),
+        system_changes: Sequence[str] = (),
+    ) -> None:
+        """Return the current positions as deterministic per-structure forces."""
+        super().calculate(atoms, properties, system_changes)
+        if atoms is None:
+            raise ValueError("atoms are required")
+        self.results = {"energy": 0.0, "forces": atoms.positions.copy()}
+
+
+@pytest.mark.parametrize(
+    ("calculator_cls", "batch_size", "max_evaluations", "expected_values"),
+    [
+        (BatchCalculatorStub, 1, 1, (1, 0, 0)),
+        (BatchCalculatorStub, 2, None, (1, 0, 3)),
+        # current metatomic SymmetrizedCalculator exposes only the ASE API
+        (PositionEchoCalculator, 1, 1, (1, 0, 0)),
+        (PositionEchoCalculator, 2, None, (1, 0, 3)),
+    ],
+    ids=["batch_capped", "batch", "ase_capped", "ase"],
+)
+def test_pet_batched_force_set(
+    calculator_cls: type[BatchCalculatorStub | PositionEchoCalculator],
+    batch_size: int,
+    max_evaluations: int | None,
+    expected_values: tuple[float, float, float],
+) -> None:
+    """PET evaluates up to the cap through its batch or ASE-only API and zero-fills
+    null and deferred displacements.
+    """
+    calculator = calculator_cls()
     displacements = cast(
         "list[PhonopyAtoms | None]",
         [FakePhonopyAtoms(1), None, FakePhonopyAtoms(3)],
@@ -226,27 +262,14 @@ def test_pet_batched_force_set_preserves_shape_when_capped() -> None:
     force_set = _batched_force_set(
         displacements,
         cast("Calculator", calculator),
-        batch_size=1,
+        batch_size=batch_size,
         n_atoms=2,
-        max_evaluations=1,
+        max_evaluations=max_evaluations,
     )
-    assert calculator.batch_sizes == [1]
-    assert np.all(force_set[0] == 1)
-    assert np.all(force_set[1] == 0)
-    assert np.all(force_set[2] == 0)
-
-
-def test_pet_force_set_supports_ase_only_symmetrizer_api() -> None:
-    """PET falls back to ASE calls when its symmetrizer has no batch method."""
-    displacements = cast(
-        "list[PhonopyAtoms | None]",
-        [FakePhonopyAtoms(1), None, FakePhonopyAtoms(3)],
-    )
-    force_set = _batched_force_set(
-        displacements, ZeroStressCalculator(), batch_size=2, n_atoms=2
-    )
-    assert force_set.shape == (3, 2, 3)
-    assert np.all(force_set == 0)
+    expected = np.repeat(expected_values, 6).reshape(3, 2, 3).astype(float)
+    np.testing.assert_array_equal(force_set, expected)
+    if isinstance(calculator, BatchCalculatorStub):
+        assert calculator.batch_sizes == [1 if max_evaluations else 2]
 
 
 @pytest.mark.parametrize(
@@ -296,10 +319,10 @@ def test_fairchem_adapter_disables_training_scaler() -> None:
     assert calculator.trainer.scaler is None
 
 
-def test_orb_adapter_accepts_q_mesh_and_plusminus(
+def test_init_phono3py_forwards_q_point_mesh_and_plusminus(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """ORB forwards legacy q_mesh metadata and its displacement policy."""
+    """Init forwards q_point_mesh and the displacement policy, rejects legacy q_mesh."""
     from matbench_discovery.phonons import thermal_conductivity
 
     initializer_kwargs: dict[str, object] = {}
@@ -318,6 +341,9 @@ def test_orb_adapter_accepts_q_mesh_and_plusminus(
         "fc3_supercell": np.eye(3, dtype=int),
         "q_mesh": [4, 5, 6],
     }
+    with pytest.raises(KeyError, match="q_point_mesh"):
+        StandardKappaAdapter().init_phono3py(atoms, KappaSettings())
+    atoms.info["q_point_mesh"] = atoms.info.pop("q_mesh")
     StandardKappaAdapter().init_phono3py(atoms, KappaSettings(is_plusminus=True))
     assert initializer_kwargs["q_point_mesh"] == (4, 5, 6)
     assert initializer_kwargs["is_plusminus"] is True

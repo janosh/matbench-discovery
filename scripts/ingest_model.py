@@ -148,7 +148,6 @@ def check_submission(
         checks.ok(f"Model YAML file exists: {yaml_path}")
     else:
         checks.fail(f"Model YAML file not found at: {yaml_path}")
-    checks.ok(f"Model '{model.name}' is present in the generated Model enum")
     metadata = model.metadata
     metrics_by_task = model.metrics
     expected_artifact_dir = f"models/{model.family}/{metadata['model_key']}"

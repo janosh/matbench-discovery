@@ -91,9 +91,11 @@ def test_make_request_errors(error_content: bytes, status_code: int) -> None:
         figshare.make_request("GET", "test_url")
 
 
-@pytest.mark.parametrize("status_code,expected", [(200, True), (404, False)])
-def test_article_exists(status_code: int, expected: bool) -> None:
-    """Test true and false case for article_exists."""
+@pytest.mark.parametrize(
+    ("status_code", "expected"), [(200, True), (404, False), (500, None)]
+)
+def test_article_exists(status_code: int, expected: bool | None) -> None:
+    """404 means missing, other HTTP errors raise with the article URL."""
     mock_response = MagicMock(content=b'{"id": 12345}')
     if status_code != 200:
         mock_response.raise_for_status.side_effect = requests.HTTPError(
@@ -101,22 +103,12 @@ def test_article_exists(status_code: int, expected: bool) -> None:
         )
 
     with patch("requests.request", return_value=mock_response):
-        assert figshare.article_exists(12345) == expected
-
-
-def test_article_exists_errors() -> None:
-    """Test article_exists raises exceptions for non-404 errors."""
-    mock_response = MagicMock()
-    mock_response.raise_for_status.side_effect = requests.HTTPError(
-        response=MagicMock(status_code=500)
-    )
-
-    err_msg = "article_url='https://api.figshare.com/v2/account/articles/12345'"
-    with (
-        patch("requests.request", return_value=mock_response),
-        pytest.raises(requests.HTTPError, match=err_msg),
-    ):
-        figshare.article_exists(12345)
+        if expected is not None:
+            assert figshare.article_exists(12345) == expected
+            return
+        err_msg = "article_url='https://api.figshare.com/v2/account/articles/12345'"
+        with pytest.raises(requests.HTTPError, match=err_msg):
+            figshare.article_exists(12345)
 
 
 def test_create_article(capsys: pytest.CaptureFixture) -> None:
@@ -233,13 +225,15 @@ def test_verify_upload(
             "matbench_discovery.remote.figshare.make_request",
             side_effect=remote_responses,
         ),
-        patch("matbench_discovery.remote.figshare.time.sleep"),  # skip the backoff
+        patch("matbench_discovery.remote.figshare.time.sleep") as sleep,
     ):
         if expected_error:
             with pytest.raises(ValueError, match=expected_error):
                 figshare.verify_upload(1, 2, "abc123", attempts=len(remote_responses))
         else:
             figshare.verify_upload(1, 2, "abc123", attempts=len(remote_responses))
+    # backoff only between polls, never after the final one
+    assert sleep.call_count == sum(not response for response in remote_responses[:-1])
 
 
 DUMMY_FILES = [

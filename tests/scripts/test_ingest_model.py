@@ -101,46 +101,52 @@ def test_unregistered_discovery_model_validation(
     assert ("kappa shared runner unsupported" in failures) is validate_runner
 
 
-@pytest.mark.parametrize("task", ["discovery", "kappa", "diatomics"])
-def test_missing_shared_runner_fails_checklist(
-    monkeypatch: pytest.MonkeyPatch, task: str
-) -> None:
-    """Calculator-backed tasks fail validation when their shared runner is absent."""
-    monkeypatch.setattr(
-        ingest.os.path, "isfile", lambda path: not path.endswith(f"run_{task}.py")
-    )
-    checks = ingest.Checklist()
-    ingest.check_submission(Model.mace_mpa_0, checks)
-    failures = msgs(checks, ingest.FAIL)
-    assert any(
-        f"Invalid shared {task} runner configuration: shared runner not found" in msg
-        for msg in failures
-    )
+RUNNER_ERROR = "Invalid shared {task} runner configuration:"
 
 
 @pytest.mark.parametrize(
-    "error",
+    ("missing_runner", "process_error", "failing_tasks"),
     [
-        subprocess.CalledProcessError(1, ["uv", "run"]),
-        OSError("runner unavailable"),
+        ("discovery", None, ["discovery"]),
+        ("kappa", None, ["kappa"]),
+        ("diatomics", None, ["diatomics"]),
+        (
+            None,
+            subprocess.CalledProcessError(1, ["uv", "run"]),
+            ["discovery", "diatomics"],
+        ),
+        (None, OSError("runner unavailable"), ["discovery", "diatomics"]),
     ],
-    ids=["nonzero-exit", "os-error"],
+    ids=["no-discovery", "no-kappa", "no-diatomics", "nonzero-exit", "os-error"],
 )
-def test_shared_runner_process_errors_fail_checklist(
-    monkeypatch: pytest.MonkeyPatch, error: Exception
+def test_shared_runner_problems_fail_checklist(
+    monkeypatch: pytest.MonkeyPatch,
+    missing_runner: str | None,
+    process_error: Exception | None,
+    failing_tasks: list[str],
 ) -> None:
-    """Shared-runner execution errors become checklist failures."""
+    """Missing shared runners and runner process errors become checklist failures."""
+    if missing_runner:
+        monkeypatch.setattr(
+            ingest.os.path,
+            "isfile",
+            lambda path: not path.endswith(f"run_{missing_runner}.py"),
+        )
+    if process_error:
 
-    def raise_process_error(*_args: object, **_kwargs: object) -> None:
-        """Raise the configured subprocess failure."""
-        raise error
+        def raise_process_error(*_args: object, **_kwargs: object) -> None:
+            """Raise the configured subprocess failure."""
+            raise process_error
 
-    monkeypatch.setattr(ingest.subprocess, "run", raise_process_error)
+        monkeypatch.setattr(ingest.subprocess, "run", raise_process_error)
     checks = ingest.Checklist()
     ingest.check_submission(Model.mace_mpa_0, checks)
     failures = "\n".join(msgs(checks, ingest.FAIL))
-    assert "Invalid shared discovery runner configuration:" in failures
-    assert "Invalid shared diatomics runner configuration:" in failures
+    for task in failing_tasks:
+        expected = RUNNER_ERROR.format(task=task)
+        if missing_runner:
+            expected += " shared runner not found"
+        assert expected in failures
 
 
 def test_energy_only_model_skips_force_tasks() -> None:

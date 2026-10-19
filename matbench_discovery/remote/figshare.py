@@ -17,11 +17,10 @@ ENV_PATH: Final[str] = f"{ROOT}/site/.env"
 BASE_URL: Final[str] = "https://api.figshare.com/v2"
 CLI_TIMEOUT: Final = 30
 
-# Maps modeling tasks to their Figshare article IDs. New figshare articles will be
-# created if the ID is None. Be sure to paste the new article ID into the
-# ARTICLE_IDS dict below! It'll be printed by this script.
 ARTICLE_URL_PREFIX: Final = "https://figshare.com/articles/dataset"
 DOWNLOAD_URL_PREFIX: Final = "https://figshare.com/files"
+# Maps modeling tasks to their Figshare article IDs. The upload scripts create a new
+# article when an ID is None and print its ID: paste it in here.
 ARTICLE_IDS: Final[dict[str, int | None]] = {
     "model_preds_discovery": 28187990,
     "model_preds_geo_opt": 28642406,
@@ -187,7 +186,8 @@ def verify_upload(
                     f"{expected_md5}; the upload was corrupted"
                 )
             return
-        time.sleep(2**attempt)
+        if attempt < attempts - 1:  # no pointless wait after the final check
+            time.sleep(2**attempt)
     raise ValueError(f"Figshare reported no checksum for {file_id=} after {attempts=}")
 
 

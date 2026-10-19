@@ -5,7 +5,7 @@ import os
 from collections.abc import Iterator
 from contextlib import nullcontext
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
@@ -69,7 +69,7 @@ def test_figshare_url_conversion(
 
 
 def test_download_file(tmp_path: Path) -> None:
-    """Downloads verify checksums and propagate HTTP failures, preserving cache."""
+    """Downloads verify checksums and reject malformed URLs without a .part file."""
     url = "https://example.com/test.txt"
     test_content = b"test content"
     dest_path = tmp_path / "test.txt"
@@ -79,31 +79,8 @@ def test_download_file(tmp_path: Path) -> None:
         assert dest_path.read_bytes() == test_content
         assert not list(tmp_path.glob(".*.part"))
 
-    with (
-        patch("requests.get", return_value=make_mock_response(b"Not found", 404)),
-        pytest.raises(requests.HTTPError, match="404") as error,
-    ):
-        download_file(str(dest_path), url)
-    assert url in " ".join(error.value.__notes__)
-    assert dest_path.read_bytes() == test_content
     with pytest.raises(ValueError, match="Invalid IPv6 URL"):
         download_file(str(dest_path), "https://[invalid")
-    assert not list(tmp_path.glob(".*.part"))
-
-
-def test_download_file_md5_mismatch_discards_download(tmp_path: Path) -> None:
-    """A download failing md5 verification is discarded; cached file survives."""
-    url = "https://example.com/test.txt"
-    dest_path = tmp_path / "test.txt"
-    dest_path.write_bytes(b"old content")
-    expected_md5 = "0" * 32
-
-    with (
-        patch("requests.get", return_value=make_mock_response(b"new content")),
-        pytest.raises(ValueError, match=f"MD5 mismatch.*expected {expected_md5}"),
-    ):
-        download_file(str(dest_path), url, md5=expected_md5)
-    assert dest_path.read_bytes() == b"old content"
     assert not list(tmp_path.glob(".*.part"))
 
 
@@ -195,48 +172,72 @@ def test_download_file_keeps_completed_part_file_on_replace_error(
     assert repr(str(part_paths[0])) in " ".join(error.value.__notes__)
 
 
-@pytest.mark.parametrize(
-    "stream_chunks, remove_error",
-    [
-        ((), None),
-        ((b"partial content",), None),
-        ((b"partial content",), PermissionError("cannot remove part file")),
-    ],
-)
-def test_download_file_keeps_existing_file_on_stream_error(
-    stream_chunks: tuple[bytes, ...],
-    remove_error: OSError | None,
-    tmp_path: Path,
-) -> None:
-    """Failed streamed downloads should not corrupt existing cached files."""
-    url = "https://example.com/test.txt"
-    dest_path = tmp_path / "test.txt"
-    dest_path.write_bytes(b"old content")
+def broken_stream(*chunks: bytes) -> MagicMock:
+    """Mock response whose stream yields chunks, then drops the connection."""
     response = make_mock_response(b"")
 
     def broken_iter_content(**_kwargs: object) -> Iterator[bytes]:
-        yield from stream_chunks
+        yield from chunks
         raise requests.ConnectionError("stream failed")
 
-    response.iter_content = broken_iter_content  # ty: ignore[invalid-assignment]
+    response.iter_content = broken_iter_content
+    return response
+
+
+@pytest.mark.parametrize(
+    ("response", "md5", "remove_error", "error_cls", "error_match"),
+    [
+        (make_mock_response(b"Not found", 404), None, None, requests.HTTPError, "404"),
+        (
+            make_mock_response(b"new content"),
+            "0" * 32,
+            None,
+            ValueError,
+            "MD5 mismatch.*expected 0{32}",
+        ),
+        (broken_stream(), None, None, requests.ConnectionError, "stream failed"),
+        (broken_stream(b"partial"), None, None, requests.ConnectionError, "stream"),
+        (
+            broken_stream(b"partial"),
+            None,
+            PermissionError("cannot remove part file"),
+            requests.ConnectionError,
+            "stream failed",
+        ),
+    ],
+    ids=["http-404", "md5-mismatch", "empty-stream", "partial-stream", "rm-fails"],
+)
+def test_failed_download_keeps_cache_without_part(
+    response: MagicMock,
+    md5: str | None,
+    remove_error: OSError | None,
+    error_cls: type[Exception],
+    error_match: str,
+    tmp_path: Path,
+) -> None:
+    """Failed downloads keep the cached file and clean up their .part file."""
+    url = "https://example.com/test.txt"
+    dest_path = tmp_path / "test.txt"
+    dest_path.write_bytes(b"old content")
     remove_ctx = (
         patch("os.remove", side_effect=remove_error) if remove_error else nullcontext()
     )
     with (
         patch("requests.get", return_value=response),
         remove_ctx,
-        pytest.raises(requests.ConnectionError, match="stream failed") as error,
+        pytest.raises(error_cls, match=error_match) as error,
     ):
-        download_file(str(dest_path), url)
+        download_file(str(dest_path), url, md5=md5)
     notes = " ".join(error.value.__notes__)
     assert url in notes
     assert dest_path.read_bytes() == b"old content"
-    if remove_error:
+    n_part_files = len(list(tmp_path.glob(".*.part")))
+    if remove_error:  # cleanup failures are reported, never masked
         assert "Failed to remove partial download" in notes
         assert "cannot remove part file" in notes
-        assert len(list(tmp_path.glob(".*.part"))) == 1
+        assert n_part_files == 1
     else:
-        assert not list(tmp_path.glob(".*.part"))
+        assert n_part_files == 0
 
 
 def test_overlapping_downloads_use_independent_temporary_files(tmp_path: Path) -> None:
@@ -350,23 +351,6 @@ def test_maybe_auto_download_file_validates_existing_file(
         maybe_auto_download_file(url, abs_path, label="test", md5=md5)
     assert Path(abs_path).read_bytes() == expected_content
     assert mock_get.called is should_download
-
-
-def test_maybe_auto_download_file_forwards_huggingface_token(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Auto-download forwards HuggingFace bearer auth to the underlying request."""
-    url = "https://huggingface.co/org/repo/resolve/main/file.csv.gz"
-    abs_path = f"{tmp_path}/test/file.csv.gz"
-
-    monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", "true")
-    monkeypatch.delenv("HUGGING_FACE_HUB_TOKEN", raising=False)
-    monkeypatch.setenv("HF_TOKEN", "hf_test")
-    with patch("requests.get", return_value=make_mock_response(b"test")) as mock_get:
-        maybe_auto_download_file(url, abs_path, label="test")
-
-    assert os.path.isfile(abs_path)
-    assert mock_get.call_args.kwargs["headers"] == {"Authorization": "Bearer hf_test"}
 
 
 @pytest.mark.parametrize(

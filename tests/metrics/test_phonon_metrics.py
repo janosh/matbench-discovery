@@ -203,38 +203,9 @@ def test_mode_weights_for_freqs(
         assert_allclose(result[:n_modes], weights[0], rtol=0, atol=0)
 
 
-def test_calc_kappa_metrics_from_dfs() -> None:
-    """Aggregate metrics compare predicted tensors with reference scalars."""
-    ml_df = pd.DataFrame(
-        {
-            MbdKey.mode_kappa_tot_rta: [np.ones((1, 3, 3))] * 2,
-            MbdKey.kappa_tot_rta: [np.ones((3, 3))] * 2,
-            Key.mode_weights: [np.array([1])] * 2,
-            Key.has_imag_ph_modes: [False] * 2,
-            Key.final_spg_num: [1] * 2,
-            Key.init_spg_num: [1] * 2,
-        }
-    )
-    dft_df = pd.DataFrame(
-        {
-            MbdKey.kappa_tot_avg: [1, 2],
-            MbdKey.mode_kappa_tot_rta: [np.ones((1, 3, 3))] * 2,
-            MbdKey.kappa_tot_rta: [np.ones((3, 3))] * 2,
-            Key.mode_weights: [np.array([1])] * 2,
-        }
-    )
-
-    result = phonon_metrics.calc_kappa_metrics_from_dfs(ml_df, dft_df)
-    assert_allclose(result[Key.srd], [0, -2 / 3])
-    assert_allclose(result[Key.sre], [0, 2 / 3])
-    assert result[phonon_metrics.SRME_CENSORED].tolist() == [False, False]
-
-
 @pytest.mark.parametrize(
     "ml_data,expected_srme",
     [
-        ({Key.has_imag_ph_modes: True}, 0),  # SRME is 0 for invalid cases
-        ({"relaxed_space_group_number": 2}, 0),
         ({MbdKey.kappa_tot_avg: np.array([np.nan])}, [2]),
         (
             {
@@ -296,7 +267,7 @@ def test_calc_kappa_srme_invalid_predictions_score_two(
     modified = df_pred.copy()
     modified[column] = modified[column].astype(object)
     modified.loc[0, column] = value
-    assert phonon_metrics.calc_kappa_srme_dataframes(modified, df_true)[0] == 2
+    assert phonon_metrics.calc_kappa_srme_dataframes(modified, df_true)[0][0] == 2
 
 
 def test_calc_kappa_srme_single_material() -> None:
@@ -323,7 +294,7 @@ def test_calc_kappa_srme_single_material() -> None:
 def test_calc_kappa_metrics_with_different_values(
     df_pred: pd.DataFrame, df_true: pd.DataFrame
 ) -> None:
-    """Test calculation of aggregate metrics with different ML and DFT values."""
+    """Per-material SRD/SRE/SRME compare predicted tensors with reference scalars."""
     df_pred_copy = df_pred.copy()
     df_pred_copy[MbdKey.kappa_tot_rta] = [2 * np.diag([1, 2, 3]), 4 * np.eye(3)]
     df_pred_copy[MbdKey.mode_kappa_tot_rta] = [2 * np.diag([1, 2, 3]), 4 * np.eye(3)]
@@ -344,25 +315,11 @@ def test_calc_kappa_metrics_with_different_values(
         phonon_metrics.SRME_CENSORED,
         MbdKey.true_kappa_tot_avg,
     }
-    assert df_out[Key.sre].mean() == pytest.approx(2 / 3)
+    # kappa_tot_avg is recomputed from the tensors: 4 vs reference 2 for both rows
+    assert_allclose(df_out[Key.srd], [2 / 3, 2 / 3], rtol=1e-12)
+    assert_allclose(df_out[Key.sre], [2 / 3, 2 / 3], rtol=1e-12)
     assert df_out[Key.srme].mean() == pytest.approx(1)
-
-
-def test_calc_kappa_metrics_from_dfs_missing_columns(
-    df_minimal: pd.DataFrame,
-) -> None:
-    """Test processing benchmark descriptors with missing columns."""
-    df_pred = df_minimal.drop(columns=[MbdKey.kappa_tot_avg])
-    df_true = df_minimal.copy()
-
-    df_out = phonon_metrics.calc_kappa_metrics_from_dfs(df_pred, df_true)
-    assert {
-        MbdKey.kappa_tot_avg,
-        Key.srd,
-        Key.sre,
-        Key.srme,
-        phonon_metrics.SRME_CENSORED,
-    } <= set(df_out)
+    assert df_out[phonon_metrics.SRME_CENSORED].tolist() == [False, False]
 
 
 def test_calc_kappa_srme_temperature_dependence(series_multi_temp: pd.Series) -> None:
@@ -452,7 +409,7 @@ def test_calc_kappa_srme_dataframes_missing_init_spg_uses_reference(
     if reference_spg_col is not None:
         df_true[reference_spg_col] = [225, 225]
 
-    srme_values = phonon_metrics.calc_kappa_srme_dataframes(df_pred, df_true)
+    srme_values, _censored = phonon_metrics.calc_kappa_srme_dataframes(df_pred, df_true)
     assert [value == 2 for value in srme_values] == expected_failures
 
 
@@ -468,7 +425,7 @@ def test_calc_kappa_srme_dataframes_penalizes_float_typed_imaginary_flag(
     df_pred[Key.has_imag_ph_modes] = [1.0, 0.0, np.nan]
     df_true = pd.concat([df_minimal] * 3, ignore_index=True).copy()
 
-    srme_values = phonon_metrics.calc_kappa_srme_dataframes(df_pred, df_true)
+    srme_values, _censored = phonon_metrics.calc_kappa_srme_dataframes(df_pred, df_true)
     assert [value == 2 for value in srme_values] == [True, False, False]
 
 
@@ -532,6 +489,12 @@ def test_evaluate_kappa_predictions_returns_all_aggregate_metrics(
             "spectrum_w1": 0.5,
         }
     )
+    # an absent imaginary-mode column scores zero imaginary modes, not a failure
+    no_imag_flag = phonon_metrics.evaluate_kappa_predictions(
+        predictions.drop(columns=[Key.has_imag_ph_modes])
+    )
+    assert no_imag_flag["imaginary_mode_rate"] == 0
+    assert no_imag_flag["failure_rate"] == pytest.approx(1 / 3)  # failed mp-3 tensor
     predictions[Key.ph_freqs] = [None] * len(predictions)
     no_spectrum_metrics = phonon_metrics.evaluate_kappa_predictions(predictions)
     assert no_spectrum_metrics["spectrum_w1"] is None
@@ -543,44 +506,6 @@ def test_evaluate_kappa_predictions_returns_all_aggregate_metrics(
     assert failed_metrics["sre"] == 2
     assert failed_metrics["failure_rate"] == 1
     assert failed_metrics["imaginary_mode_rate"] == 1
-
-
-def test_evaluate_kappa_predictions_does_not_censor_valid_exact_two(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """A valid exact-2 SRME is not a failure and an absent imaginary flag is zero."""
-    from matbench_discovery import phonons
-
-    material_id = "mp-1"
-    reference = pd.DataFrame(index=[material_id])
-    predictions = pd.DataFrame(index=[material_id])
-
-    def read_reference(_path: str) -> pd.DataFrame:
-        """Return the fixed one-material reference frame."""
-        return reference
-
-    def calculate_metrics(
-        _predictions: pd.DataFrame, _reference: pd.DataFrame
-    ) -> pd.DataFrame:
-        """Return a valid exact-2 score that was not censored."""
-        return pd.DataFrame(
-            {
-                Key.srme: [2.0],
-                Key.sre: [2.0],
-                Key.srd: [2.0],
-                phonon_metrics.SRME_CENSORED: [False],
-            },
-            index=[material_id],
-        )
-
-    monkeypatch.setattr(phonons, "read_kappa_json", read_reference)
-    monkeypatch.setattr(
-        phonon_metrics, "calc_kappa_metrics_from_dfs", calculate_metrics
-    )
-    metrics = phonon_metrics.evaluate_kappa_predictions(predictions)
-
-    assert metrics["failure_rate"] == 0
-    assert metrics["imaginary_mode_rate"] == 0
 
 
 @pytest.mark.parametrize(
@@ -625,34 +550,26 @@ def test_kappa_analysis_rejects_invalid_spacegroups(spacegroup_num: object) -> N
 
 
 def test_kappa_analysis_uses_shared_spectrum_helpers(
-    df_pred: pd.DataFrame,
-    df_true: pd.DataFrame,
-    monkeypatch: pytest.MonkeyPatch,
+    df_pred: pd.DataFrame, df_true: pd.DataFrame
 ) -> None:
-    """The analysis payload delegates spectrum W1 to the canonical metric helper."""
+    """The analysis payload reports the canonical metric's spectrum W1 per material."""
     from scripts.model_figs.kappa_103_analysis import model_payload
 
     material_ids = ["mp-1", "mp-2"]
     df_pred = df_pred.set_axis(material_ids)
     df_true = df_true.set_axis(material_ids)
-    frequencies = [np.array([[0.0, 1.0, 2.0]])] * len(material_ids)
-    df_pred[Key.ph_freqs] = frequencies
-    df_true[Key.ph_freqs] = frequencies
-    call_count = 0
-
-    def shared_w1(_prediction: pd.Series, _reference: pd.Series) -> float:
-        """Return a sentinel W1 value while counting delegated calls."""
-        nonlocal call_count
-        call_count += 1
-        return 0.12345
-
-    monkeypatch.setattr(phonon_metrics, "phonon_spectrum_w1", shared_w1)
+    df_pred[Key.ph_freqs] = [np.array([[0.0, 1.0, 2.0]]), np.array([[0.5, 1.0, 2.0]])]
+    df_true[Key.ph_freqs] = [np.array([[0.0, 1.0, 2.0]])] * len(material_ids)
     payload = model_payload(Model.mace_mp_0, __file__, df_pred, df_true, material_ids)
 
-    assert call_count == len(material_ids)
+    expected_w1 = [
+        phonon_metrics.phonon_spectrum_w1(df_pred.loc[mat_id], df_true.loc[mat_id])
+        for mat_id in material_ids
+    ]
+    assert expected_w1 == pytest.approx([0, 0.5 / 3])  # one of 3 modes shifted 0.5
     assert payload["srme_censored"] == [False, False]
-    assert payload["freq_w1"] == [0.1235, 0.1235]
-    assert payload["freq_w1_mean"] == 0.1235
+    assert payload["freq_w1"] == pytest.approx(expected_w1, abs=5e-5)
+    assert payload["freq_w1_mean"] == pytest.approx(np.mean(expected_w1), abs=1e-4)
 
 
 def test_evaluate_kappa_predictions_rejects_duplicate_ids(

@@ -9,13 +9,13 @@ import contextlib
 import dataclasses
 import json
 import os
-import platform
+import socket
 import time
 import zipfile
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Any, cast
+from typing import IO, Any, cast
 
 import ase
 import ase.io
@@ -33,6 +33,9 @@ from matbench_discovery import today
 from matbench_discovery.hpc import COST_PROVENANCE_KEYS
 from matbench_discovery.metrics import md as md_metrics
 from matbench_discovery.trajectory import Trajectory
+
+# DynaMat v1.0 protocol thermostat time scale (fs) shared by every rollout entry point
+THERMOSTAT_TIME_SCALE_FS = 25.0
 
 # === single-file multi-system reference dataset ===
 # DynaMat v1.0 references ship as one HDF5 with a group per system, each carrying the
@@ -122,7 +125,7 @@ def run_nvt_md(
     n_steps: int = 80_000,
     time_step_fs: float = 0.25,
     record_interval: int = 10,
-    thermostat_time_scale_fs: float = 25,
+    thermostat_time_scale_fs: float = THERMOSTAT_TIME_SCALE_FS,
     seed: int = 0,
     progress_interval: int = 1_000,
     progress_label: str = "MD rollout",
@@ -293,16 +296,18 @@ def run_info_path(traj_path: str) -> str:
     return f"{traj_path.removesuffix('.extxyz')}-run-info.json"
 
 
-def collect_run_info(rollout_sec: float) -> dict[str, object]:
+def collect_run_info(rollout_sec: float, params: NvtParams) -> dict[str, object]:
     """Assemble a completed rollout's run-info sidecar contents.
 
     Cost fields (COST_PROVENANCE_KEYS) flow into the per-system metric CSVs:
     ``run_time_sec`` (wall time, accumulated across resumes by the caller),
     ``max_rss_gb`` (host RSS high-water mark since process start - exact per system in
     one-system-per-job cluster runs), ``max_gpu_mem_gb`` (peak CUDA memory since the
-    rollout-start reset) and ``hardware``. The rest is audit-only provenance:
-    completion timestamp, host/job identity (how the 2026-07 timing salvage traced
-    trajectories back to Slurm logs) and key package versions.
+    rollout-start reset) and ``hardware``. ``nvt_params`` records the parameters that
+    define the trajectory so a later run with different settings recomputes instead of
+    silently reusing it (see validate_pred_trajectory). The rest is audit-only
+    provenance: completion timestamp, host/job identity (how the 2026-07 timing salvage
+    traced trajectories back to Slurm logs) and key package versions.
     """
     from matbench_discovery.hpc import detect_hardware, package_versions, peak_memory_gb
 
@@ -310,8 +315,10 @@ def collect_run_info(rollout_sec: float) -> dict[str, object]:
         "run_time_sec": round(rollout_sec, 2),
         **peak_memory_gb(),
         "hardware": detect_hardware(),
-        "completed_at": f"{datetime.now(tz=UTC):%Y-%m-%dT%H:%M:%SZ}",
-        "hostname": platform.node(),
+        "nvt_params": dataclasses.asdict(params),
+        # same timestamp/hostname formats as the kappa and discovery run metadata
+        "completed_at": datetime.now(UTC).isoformat(),
+        "hostname": socket.gethostname(),
     }
     if slurm_job_id := os.getenv("SLURM_JOB_ID"):
         run_info["slurm_job_id"] = slurm_job_id
@@ -319,26 +326,39 @@ def collect_run_info(rollout_sec: float) -> dict[str, object]:
 
 
 def read_run_info(traj_path: str) -> dict[str, object]:
-    """Load a rollout's run-info sidecar, or an empty dict when absent/unreadable."""
-    try:
-        with open(run_info_path(traj_path), encoding="utf-8") as file:
-            run_info = json.load(file)
-    except OSError, ValueError:
+    """Load a rollout's run-info sidecar, or an empty dict when absent (rollouts that
+    predate sidecars). A corrupt sidecar raises: silently dropping it would publish
+    the rollout without its cost provenance or reuse it without a parameter check.
+    """
+    path = run_info_path(traj_path)
+    if not os.path.isfile(path):
         return {}
-    return run_info if isinstance(run_info, dict) else {}
+    with open(path, encoding="utf-8") as file:
+        try:
+            run_info = json.load(file)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Corrupt MD run-info sidecar {path}: {exc}") from exc
+    if not isinstance(run_info, dict):
+        raise TypeError(f"MD run-info sidecar {path} must hold a JSON object")
+    return run_info
 
 
-def _atomic_savez(path: str, **arrays: NpzValue) -> None:
-    """Write an NPZ file through a temp path, then atomically promote it."""
+def _atomic_write(path: str, write: Callable[[IO[bytes]], object]) -> None:
+    """Write a binary file through a temp path, then atomically promote it."""
     tmp_path = f"{path}.{os.getpid()}.tmp"
     try:
         with open(tmp_path, "wb") as file:
-            np.savez(file, **cast("dict[str, Any]", arrays))
+            write(file)
         os.replace(tmp_path, path)
     except Exception:
         with contextlib.suppress(OSError):
             os.remove(tmp_path)
         raise
+
+
+def _atomic_savez(path: str, **arrays: NpzValue) -> None:
+    """Write an NPZ file through a temp path, then atomically promote it."""
+    _atomic_write(path, lambda file: np.savez(file, **cast("dict[str, Any]", arrays)))
 
 
 def _nvt_state_attrs(
@@ -435,7 +455,7 @@ def run_nvt_md_resumable(
     n_steps: int = 80_000,
     time_step_fs: float = 0.25,
     record_interval: int = 10,
-    thermostat_time_scale_fs: float = 25,
+    thermostat_time_scale_fs: float = THERMOSTAT_TIME_SCALE_FS,
     seed: int = 0,
     progress_interval: int = 1_000,
     progress_label: str = "MD rollout",
@@ -549,9 +569,10 @@ def run_nvt_md_resumable(
             f"{out_path} rollout produced {len(frames)} frames != {target_frames}"
         )
     rollout_sec = prior_rollout_sec + (time.perf_counter() - session_start)
-    run_info = collect_run_info(rollout_sec)
-    with open(run_info_path(out_path), mode="w", encoding="utf-8") as file:
-        json.dump(run_info, file, indent=2)
+    run_info_json = json.dumps(collect_run_info(rollout_sec, params), indent=2)
+    _atomic_write(
+        run_info_path(out_path), lambda file: file.write(run_info_json.encode())
+    )
     os.replace(part_path, out_path)  # atomic promote only once complete
     with contextlib.suppress(FileNotFoundError):
         os.remove(ckpt_path)
@@ -559,18 +580,24 @@ def run_nvt_md_resumable(
 
 
 def validate_pred_trajectory(
-    path: str, *, expected_frames: int, ref_atoms: Atoms, record_interval: int
+    path: str, *, expected_frames: int, ref_atoms: Atoms, params: NvtParams
 ) -> list[Atoms] | None:
     """Read and validate a cached predicted rollout, returning its frames if sound or
     None if it should be recomputed.
 
     A truncated or otherwise inconsistent rollout would silently evaluate as a shorter
     trajectory (evaluate_md_system time-matches to the shorter span), so reuse only
-    when the file is complete and consistent: readable, exactly ``expected_frames``
-    frames with a strict ``md_step`` sequence 0, record_interval, 2*record_interval,
-    ...; matching atom count and chemical symbols, cell and pbc of ``ref_atoms``; and
-    all-finite positions and velocities.
+    when the file is complete and consistent: run with ``params`` (when its run-info
+    sidecar records them; rollouts predating that record are trusted), readable,
+    exactly ``expected_frames`` frames with a strict ``md_step`` sequence 0,
+    record_interval, 2*record_interval, ...; matching atom count and chemical symbols,
+    cell and pbc of ``ref_atoms``; and all-finite positions and velocities.
     """
+    recorded_params = read_run_info(path).get("nvt_params")
+    if isinstance(recorded_params, dict) and NvtParams(**recorded_params) != params:
+        print(f"  recomputing {path}: run with {recorded_params} != {params}")
+        return None
+    record_interval = params.record_interval
     try:
         frames = read_trajectory(path)
     except (OSError, ValueError, IndexError, StopIteration) as exc:
@@ -654,16 +681,18 @@ def run_md_benchmark(
         ref_file = default_md_reference_path()
 
     all_systems = list_reference_systems(ref_file)
+    if systems is not None and (unknown := sorted(set(systems) - set(all_systems))):
+        raise ValueError(
+            f"Unknown systems {unknown} not in reference {ref_file!r}, available: "
+            f"{all_systems}"
+        )
     system_names = (
         all_systems
         if systems is None
         else [name for name in all_systems if name in systems]
     )
     if not system_names:  # clearer than the downstream empty-DataFrame KeyError
-        raise ValueError(
-            f"No systems found in reference {ref_file!r}"
-            + (f" matching {systems=}" if systems else "")
-        )
+        raise ValueError(f"No systems found in reference {ref_file!r} for {systems=}")
     if dry_run:  # one system, a few steps, capped reference slice
         system_names = system_names[:1]
         # enough recorded frames that time-matching keeps >=4 even for the coarsest
@@ -720,7 +749,13 @@ def run_md_benchmark(
                     pred_traj_path,
                     expected_frames=target_frames,
                     ref_atoms=initial_atoms,
-                    record_interval=record_interval,
+                    params=NvtParams(
+                        temperature_kelvin=temperature_kelvin,
+                        time_step_fs=time_step_fs,
+                        record_interval=record_interval,
+                        thermostat_time_scale_fs=THERMOSTAT_TIME_SCALE_FS,
+                        seed=seed,
+                    ),
                 )
             if pred_frames is None:  # crash-safe resumable rollout to pred_traj_path
                 pred_frames = run_nvt_md_resumable(
@@ -779,7 +814,7 @@ def run_md_benchmark(
         return df_md
 
     # suffix avoids collisions when parallel single-system jobs share out_dir
-    suffix = f"-{'-'.join(systems)}" if systems else ""
+    suffix = f"-{'-'.join(system_names)}" if systems is not None else ""
     csv_path = f"{out_dir}/{today}-{model_key}-md-metrics{suffix}.csv.gz"
     df_md.to_csv(csv_path)
     print(f"Per-system MD metrics for {model_key} saved to {csv_path!r}")

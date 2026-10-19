@@ -14,11 +14,10 @@ from pymatviz.enums import ElemCountMode, Key
 from pymatviz.utils import si_fmt_int
 
 from matbench_discovery import PDF_FIGS, STABILITY_THRESHOLD
-from matbench_discovery.data import DATASETS, df_wbm, load_discovery_predictions
+from matbench_discovery.data import DATASETS, df_wbm
 from matbench_discovery.energy import mp_elem_ref_entries
 from matbench_discovery.enums import DataFiles, MbdKey
 
-_df_preds, _df_each_pred, df_each_err = load_discovery_predictions()
 module_dir = os.path.dirname(__file__)
 
 
@@ -236,59 +235,6 @@ for symbol, e_per_atom, num, *_ in df_ref.itertuples(index=False):
 fig.show()
 
 pmv.save_fig(fig, f"{PDF_FIGS}/mp-elemental-ref-energies.pdf")
-
-
-# %% plot 2d and 3d t-SNE projections of one-hot encoded element vectors summed by
-# weight in each WBM composition. TLDR: no obvious structure in the data
-# was hoping to find certain clusters to have higher or lower errors after seeing
-# many models struggle on the halogens in per-element error periodic table heatmaps
-# https://janosh.github.io/matbench-discovery/models
-df_2d_tsne = pd.read_csv(f"{module_dir}/tsne/one-hot-112-composition-2d.csv.gz")
-df_2d_tsne = df_2d_tsne.set_index(Key.mat_id)
-
-df_3d_tsne = pd.read_csv(f"{module_dir}/tsne/one-hot-112-composition-3d.csv.gz")
-df_3d_tsne = df_3d_tsne.set_index(Key.mat_id)  # align on material ID like the 2d frame
-
-df_wbm[list(df_2d_tsne)] = df_2d_tsne
-df_wbm[list(df_3d_tsne)] = df_3d_tsne
-df_wbm[list(df_each_err.add_suffix(" abs EACH error"))] = df_each_err.abs()
-
-
-# %%
-# px only resolves column names, not the index name; df_wbm keeps material_id as a
-# column (set_index(drop=False)), so drop the index rather than re-inserting it
-df_wbm_tsne = df_wbm.reset_index(drop=True)
-fig = px.scatter(
-    df_wbm_tsne,
-    x="2d t-SNE 1",
-    y="2d t-SNE 2",
-    color="step",
-    hover_name=Key.mat_id,
-    hover_data=(Key.formula, MbdKey.each_true),
-)
-fig.show()
-
-
-# %%
-fig = px.scatter_3d(
-    df_wbm_tsne,
-    x="3d t-SNE 1",
-    y="3d t-SNE 2",
-    z="3d t-SNE 3",
-    color="step",
-    # customdata columns are indexed positionally in the hovertemplate below
-    custom_data=[Key.mat_id, Key.formula, MbdKey.each_true, "step"],
-)
-fig.update_traces(
-    hovertemplate=(
-        "<b>material_id: %{customdata[0]}</b><br><br>"
-        "t-SNE: (%{x:.2f}, %{y:.2f}, %{z:.2f})<br>"
-        "Formula: %{customdata[1]}<br>"
-        "E<sub>above hull</sub>: %{customdata[2]:.2f}<br>"
-        "WBM step: %{customdata[3]}<br>"
-    )
-)
-fig.show()
 
 
 # %%

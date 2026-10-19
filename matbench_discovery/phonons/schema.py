@@ -89,7 +89,8 @@ def normalize_kappa_result(result: Mapping[str, Any]) -> dict[str, Any]:
 
     initial_spg = normalized.get(str(Key.init_spg_num))
     final_spg = normalized.get(str(Key.final_spg_num))
-    if "broken_symmetry" not in normalized:
+    # NaN cells count as absent: DataFrame rows get NaN where other records set it
+    if _is_missing_scalar(normalized.get("broken_symmetry")):
         normalized["broken_symmetry"] = bool(
             not pd.isna(initial_spg)
             and not pd.isna(final_spg)

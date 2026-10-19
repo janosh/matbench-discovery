@@ -370,17 +370,33 @@ def test_calc_adf_error_invalid_input(
 # === velocities and vDOS ===
 
 
-def test_calc_velocities_linear_motion() -> None:
-    """Constant-velocity motion should give that exact velocity at every frame."""
-    velocity = np.array([0.02, -0.01, 0.005])  # A/fs
-    time_step_fs = 2.0
-    frames = [
-        Atoms("H", positions=[velocity * time_step_fs * step], cell=[100] * 3, pbc=True)
-        for step in range(10)
+@pytest.mark.parametrize(
+    ("velocity", "time_step_fs", "box_len"),
+    [
+        ((0.02, -0.01, 0.005), 2.0, 100.0),  # slow, -y wraps once at the origin
+        ((0.4, 0.0, 0.0), 1.0, 5.0),  # crosses the periodic boundary repeatedly
+    ],
+    ids=["linear", "pbc_crossings"],
+)
+def test_calc_velocities_constant_motion(
+    velocity: tuple[float, float, float], time_step_fs: float, box_len: float
+) -> None:
+    """Constant-velocity motion gives that exact velocity at every frame, without
+    spikes when positions wrap across periodic boundaries.
+    """
+    n_frames = 20
+    frames = [  # positions wrapped into the box by the % operator
+        Atoms(
+            "H",
+            positions=[np.multiply(velocity, time_step_fs * step) % box_len],
+            cell=[box_len] * 3,
+            pbc=True,
+        )
+        for step in range(n_frames)
     ]
     velocities = md_metrics.calc_velocities(frames, time_step_fs=time_step_fs)
     np.testing.assert_allclose(
-        velocities, np.tile(velocity, (10, 1, 1)), rtol=1e-12, atol=1e-14
+        velocities, np.tile(velocity, (n_frames, 1, 1)), rtol=1e-12, atol=1e-12
     )
 
 
@@ -405,22 +421,6 @@ def test_equipartition_temperature() -> None:
     # halving the assumed dt quadruples the inferred temperature
     half_dt = md_metrics.equipartition_temperature(frames, time_step_fs=dt / 2)
     assert half_dt == pytest.approx(4 * temp, rel=1e-9)
-
-
-def test_calc_velocities_unwraps_pbc_crossings() -> None:
-    """Atoms crossing periodic boundaries must not produce velocity spikes."""
-    time_step_fs, box_len, speed = 1.0, 5.0, 0.4  # A/fs, crosses boundary
-    frames = [  # positions wrapped into the box by the % operator
-        Atoms(
-            "H",
-            positions=[((speed * step) % box_len, 0, 0)],
-            cell=[box_len] * 3,
-            pbc=True,
-        )
-        for step in range(20)
-    ]
-    velocities = md_metrics.calc_velocities(frames, time_step_fs=time_step_fs)
-    np.testing.assert_allclose(velocities[:, 0, 0], speed, rtol=1e-12, atol=1e-12)
 
 
 @pytest.mark.parametrize(
@@ -512,26 +512,23 @@ def test_calc_vdos_error_w1_shift_monotonic() -> None:
 
 
 @pytest.mark.parametrize(
-    ("vdos_ref", "err_msg"),
+    ("vdos_ref", "band_frac", "err_msg"),
     [
-        (np.full(11, -1.0), "negative intensities"),
-        (np.zeros(11), "non-positive area"),
-        (np.full(11, np.inf), "non-finite intensities"),
+        (np.full(11, -1.0), 0.5, "negative intensities"),
+        (np.zeros(11), 0.5, "non-positive area"),
+        (np.full(11, np.inf), 0.5, "non-finite intensities"),
+        *((np.ones(11), band_frac, "band_frac") for band_frac in (0.0, -0.1, 1.5)),
     ],
 )
-def test_calc_vdos_error_invalid_spectra(vdos_ref: np.ndarray, err_msg: str) -> None:
-    """Reject negative, zero-area or non-finite vDOS spectra."""
+def test_calc_vdos_error_invalid_input(
+    vdos_ref: np.ndarray, band_frac: float, err_msg: str
+) -> None:
+    """Reject negative, zero-area or non-finite spectra and band_frac outside (0, 1]."""
     freqs = np.linspace(0, 10, 11)
     with pytest.raises(ValueError, match=err_msg):
-        md_metrics.calc_vdos_error(freqs, vdos_ref, freqs, np.ones(11))
-
-
-@pytest.mark.parametrize("band_frac", [0.0, -0.1, 1.5])
-def test_calc_vdos_error_invalid_band_frac(band_frac: float) -> None:
-    """Reject band_frac outside (0, 1]."""
-    freqs, ones = np.linspace(0, 10, 11), np.ones(11)
-    with pytest.raises(ValueError, match="band_frac"):
-        md_metrics.calc_vdos_error(freqs, ones, freqs, ones, band_frac=band_frac)
+        md_metrics.calc_vdos_error(
+            freqs, vdos_ref, freqs, np.ones(11), band_frac=band_frac
+        )
 
 
 def test_calc_vdos_error_edge_cases() -> None:
@@ -635,12 +632,6 @@ def test_calc_pressure_metrics(
     )
 
 
-def test_calc_pressure_metrics_rejects_empty_input() -> None:
-    """Pressure metrics reject an empty pressure series."""
-    with pytest.raises(ValueError, match="empty"):
-        md_metrics.calc_pressure_metrics(np.array([]), np.arange(4.0))
-
-
 # === private energy/force diagnostics ===
 
 
@@ -693,15 +684,21 @@ def test_calc_pressure_histogram_error_partial_and_symmetry() -> None:
     assert md_metrics.calc_pressure_histogram_error(const, const) == 0
 
 
-def test_calc_pressure_histogram_error_rejects_bad_input() -> None:
+@pytest.mark.parametrize(
+    ("func_name", "p_ref", "kwargs", "err_msg"),
+    [
+        ("calc_pressure_metrics", np.array([]), {}, "empty"),
+        ("calc_pressure_histogram_error", np.array([]), {}, "empty"),
+        ("calc_pressure_histogram_error", np.arange(4.0), {"n_bins": 1}, "bins"),
+        ("calc_pressure_histogram_error", np.array([0.0, np.nan]), {}, "finite"),
+    ],
+)
+def test_pressure_metrics_reject_bad_input(
+    func_name: str, p_ref: np.ndarray, kwargs: dict[str, int], err_msg: str
+) -> None:
     """Empty arrays, <2 bins and non-finite pressures raise, not return garbage."""
-    pressures = np_rng.normal(0, 1, 100)
-    with pytest.raises(ValueError, match="empty"):
-        md_metrics.calc_pressure_histogram_error(np.array([]), pressures)
-    with pytest.raises(ValueError, match="bins"):
-        md_metrics.calc_pressure_histogram_error(pressures, pressures, n_bins=1)
-    with pytest.raises(ValueError, match="finite"):
-        md_metrics.calc_pressure_histogram_error(np.array([0.0, np.nan]), pressures)
+    with pytest.raises(ValueError, match=err_msg):
+        getattr(md_metrics, func_name)(p_ref, np.arange(4.0), **kwargs)
 
 
 def test_calc_rdf_matches_direct_ase_histogram() -> None:
@@ -920,10 +917,44 @@ def test_calc_md_metrics() -> None:
             ("hardware", "run_time_sec"),
         ),
         (
+            # no hardware column at all: GPU-dependent costs have no label to qualify
+            # them, GPU-independent host RSS is kept
+            {
+                "run_time_sec": [100.0, 200.0],
+                "max_rss_gb": [4.2, 6.1],
+                "max_gpu_mem_gb": [11.5, 9.0],
+            },
+            ("run_time_sec", "max_gpu_mem_gb"),
+        ),
+        (
             # partial memory coverage -> dropped (a subset max could hide the true
             # peak); the complete sibling memory column is kept
-            {"max_rss_gb": [4.2, np.nan], "max_gpu_mem_gb": [11.5, 9.0]},
+            {
+                "max_rss_gb": [4.2, np.nan],
+                "max_gpu_mem_gb": [11.5, 9.0],
+                "hardware": ["NVIDIA H200"] * 2,
+            },
             ("max_rss_gb",),
+        ),
+        (
+            # model without stress support: no pressure mean to publish (NaN would
+            # land in the YAML), while non-pressure metrics stay
+            {
+                "pressure_mae": [np.nan, np.nan],
+                "pressure_wasserstein": [np.nan, np.nan],
+                "pressure_error": [np.nan, np.nan],
+            },
+            ("pressure_mae", "pressure_wasserstein", "pressure_error"),
+        ),
+        (
+            # pressure columns disagreeing on which systems are NaN -> inconsistent
+            # per-system coverage, drop all pressure metrics
+            {
+                "pressure_mae": [1.0, 2.0],
+                "pressure_wasserstein": [0.5, np.nan],
+                "pressure_error": [40.0, 30.0],
+            },
+            ("pressure_mae", "pressure_wasserstein", "pressure_error"),
         ),
     ],
     ids=[
@@ -931,7 +962,10 @@ def test_calc_md_metrics() -> None:
         "partial_run_time",
         "mixed_gpus",
         "missing_gpu",
+        "missing_hardware_column",
         "partial_memory",
+        "all_nan_pressure",
+        "mismatched_pressure_nans",
     ],
 )
 def test_calc_md_metrics_all_or_nothing_columns(
@@ -948,25 +982,6 @@ def test_calc_md_metrics_all_or_nothing_columns(
     assert set(cols) - set(dropped) <= set(metrics)
     assert metrics["rdf_error"] == pytest.approx(15)
     assert metrics["n_systems"] == 2
-
-
-def test_calc_md_metrics_handles_all_nan_pressure() -> None:
-    """All-NaN pressure errors should not make aggregation fail."""
-    df_md = pd.DataFrame(
-        {
-            "rdf_error": [10.0, 20.0],
-            "adf_error": [30.0, 40.0],
-            "vdos_error": [50.0, 60.0],
-            "pressure_error": [np.nan, np.nan],
-        }
-    )
-
-    metrics = md_metrics.calc_md_metrics(df_md)
-
-    assert metrics["rdf_error"] == pytest.approx(15)
-    assert metrics["adf_error"] == pytest.approx(35)
-    assert metrics["vdos_error"] == pytest.approx(55)
-    assert np.isnan(metrics["pressure_error"])
 
 
 def test_write_metrics_to_yaml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
