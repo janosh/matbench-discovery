@@ -141,9 +141,9 @@ metrics:
   geo_opt:
     pred_file:
       name: models/chgnet/chgnet-0.3.0/2023-12-21-geo-opt.jsonl.gz
-      url: https://figshare.com/files/53153459
-      size: 117688460
-      md5: bfad645e47a4873e29da8e2b00514db8
+      url: https://figshare.com/files/70324917
+      size: 118451301
+      md5: 22896c9b7d99999ca80cd906626f6587
     symprec=1e-5:
       rmsd: 0.0949
       n_sym_ops_mae: 3.0863

@@ -153,9 +153,9 @@ metrics:
   geo_opt:
     pred_file:
       name: models/sevennet/sevennet-l3i5/2024-12-10-geo-opt.jsonl.gz
-      url: https://figshare.com/files/57753580
-      size: 142279929
-      md5: b274a23e0505ad985a628328eb24d029
+      url: https://figshare.com/files/70324761
+      size: 143322218
+      md5: e0595138dada18001796768384a366c2
     symprec=1e-5:
       rmsd: 0.0847
       n_sym_ops_mae: 2.7178

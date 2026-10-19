@@ -111,9 +111,9 @@ metrics:
   geo_opt:
     pred_file:
       name: models/m3gnet/m3gnet/2023-06-01-geo-opt.jsonl.gz
-      url: https://figshare.com/files/57751024
-      size: 118487634
-      md5: f82191618b2958811c4069e9a2031662
+      url: https://figshare.com/files/70325163
+      size: 119057902
+      md5: 48afeae1de05f2d3a143999fcbefb67d
     symprec=1e-5:
       rmsd: 0.1117
       n_sym_ops_mae: 1.8691

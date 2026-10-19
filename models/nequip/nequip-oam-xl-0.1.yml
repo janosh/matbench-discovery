@@ -165,9 +165,9 @@ metrics:
   geo_opt:
     pred_file:
       name: models/nequip/nequip-oam-xl-0.1/2025-11-30-geo-opt.jsonl.gz
-      url: https://figshare.com/files/60007799
-      size: 106686716
-      md5: e1758c240cecad1cb773d4d79174c35e
+      url: https://figshare.com/files/70325361
+      size: 107380551
+      md5: ee518b4fc8d790b6051e893d4e85f8c7
     symprec=1e-5:
       rmsd: 0.063
       n_sym_ops_mae: 2.0821

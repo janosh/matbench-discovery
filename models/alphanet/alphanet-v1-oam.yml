@@ -166,9 +166,9 @@ metrics:
   geo_opt:
     pred_file:
       name: models/alphanet/alphanet-v1-oam/2025-07-24-geo-opt.jsonl.gz
-      url: https://figshare.com/files/56871812
-      size: 153843754
-      md5: d3ee6ef51c262bbbdb3c8881cc8e0e25
+      url: https://figshare.com/files/70324872
+      size: 154869476
+      md5: 6580087ae3a8fbc779e1ebc3d7c6b9cd
     symprec=1e-5:
       rmsd: 0.0793
       n_sym_ops_mae: 10.0801

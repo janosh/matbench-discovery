@@ -96,9 +96,9 @@ metrics:
   geo_opt:
     pred_file:
       name: models/bowsr/bowsr/2023-01-23-geo-opt.jsonl.gz
-      url: https://figshare.com/files/53153456
-      size: 79341126
-      md5: 7afc7e279b0ffb3b7e0fd5a8df8f2f32
+      url: https://figshare.com/files/70324902
+      size: 79130464
+      md5: f346a6232770ddcb0de0ef1ea0a96443
     symprec=1e-5:
       rmsd: 0.195
       n_sym_ops_mae: 29.4219

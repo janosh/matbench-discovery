@@ -197,9 +197,9 @@ metrics:
   geo_opt:
     pred_file:
       name: models/mattersim/mattersim-v1-5m/2024-12-19-geo-opt.jsonl.gz
-      url: https://figshare.com/files/57753373
-      size: 150241479
-      md5: c55da1cdfcfcc2c5aa71f60baced8932
+      url: https://figshare.com/files/70325286
+      size: 152125160
+      md5: e0210a52ce5a55147abe9003355fd08c
     symprec=1e-2:
       rmsd: 0.0733
       n_sym_ops_mae: 1.7451

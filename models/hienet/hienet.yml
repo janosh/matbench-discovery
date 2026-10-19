@@ -166,9 +166,9 @@ metrics:
   geo_opt:
     pred_file:
       name: models/hienet/hienet/2025-07-01-geo-opt.jsonl.gz
-      url: https://figshare.com/files/55909424
-      size: 142678752
-      md5: 3f0bafd55bbb9a1923c39e69b388a31f
+      url: https://figshare.com/files/70325145
+      size: 142688075
+      md5: e85f99ac89f805843e52697c345b9204
     symprec=1e-2:
       rmsd: 0.0795
       n_sym_ops_mae: 1.8758

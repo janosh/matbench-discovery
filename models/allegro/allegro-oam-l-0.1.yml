@@ -166,9 +166,9 @@ metrics:
   geo_opt:
     pred_file:
       name: models/allegro/allegro-oam-l-0.1/2025-09-08-geo-opt.jsonl.gz
-      url: https://figshare.com/files/57731011
-      size: 106344541
-      md5: 1ba8e28bca78ba8736028688a1aaa3b8
+      url: https://figshare.com/files/70324824
+      size: 107007627
+      md5: d725bf21722d32a024ea6e72512b3610
     symprec=1e-2:
       rmsd: 0.0651
       n_sym_ops_mae: 1.7418

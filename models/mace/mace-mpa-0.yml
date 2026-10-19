@@ -142,9 +142,9 @@ metrics:
   geo_opt:
     pred_file:
       name: models/mace/mace-mpa-0/2025-01-30-geo-opt.jsonl.gz
-      url: https://figshare.com/files/57751036
-      size: 145776132
-      md5: 8dcd0dbd05a819cca7a8b88c5818462e
+      url: https://figshare.com/files/70325196
+      size: 146192266
+      md5: f304a01c74255eb87f93b2f1d7afa805
     symprec=1e-2:
       rmsd: 0.0731
       n_sym_ops_mae: 1.8086
