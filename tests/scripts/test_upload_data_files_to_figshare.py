@@ -66,7 +66,7 @@ def test_sync_matches_remote_by_rel_path(
     assert exit_code == 0
     if expect_upload:
         assert calls == [
-            ("upload", (1, str(local_file), DATA_FILE.rel_path)),
+            ("upload", (1, f"{tmp_path}/{DATA_FILE.rel_path}", DATA_FILE.rel_path)),
             ("publish", 1),
         ]
     else:

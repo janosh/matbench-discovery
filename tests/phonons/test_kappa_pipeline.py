@@ -6,6 +6,7 @@ import functools
 import gzip
 import json
 import os
+import sys
 from dataclasses import asdict, replace
 from pathlib import Path
 from types import SimpleNamespace
@@ -305,7 +306,16 @@ def test_kappa_settings_reject_invalid_values(
         replace(KappaSettings(), **{field_name: invalid_value})
 
 
-@pytest.mark.parametrize("platform", ["win32", "linux"])
+@pytest.mark.parametrize(
+    "platform",
+    [
+        "win32",
+        # the POSIX cache keys on ctime, which Windows reports as creation time
+        pytest.param(
+            "linux", marks=pytest.mark.skipif(sys.platform == "win32", reason="POSIX")
+        ),
+    ],
+)
 def test_checkpoint_digest_hashes_artifact_bytes(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, platform: str
 ) -> None:
