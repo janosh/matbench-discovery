@@ -212,6 +212,21 @@ metrics:
         md5: 4f420c13bb9a809aa195431c2a265380
   phonons:
     kappa_103:
+      run_info_file:
+        name: models/bam/bam-mp-dens/harmonic/2026-10-19-phonons-kappa-103-run-info.json
+        url: https://figshare.com/files/70313988
+        size: 5177
+        md5: d54b79f747d71b24eccccb3a985464e2
+      phonon_file:
+        name: models/bam/bam-mp-dens/harmonic/2026-10-19-phonons-kappa-103-phonons.json.gz
+        url: https://figshare.com/files/70313931
+        size: 1337363209
+        md5: ba895dd2afc63fa3d820a823df86ce6f
+      force_file:
+        name: models/bam/bam-mp-dens/harmonic/2026-10-19-phonons-kappa-103-forces.json.gz
+        url: https://figshare.com/files/70313985
+        size: 8815871
+        md5: fd2e3f9e35a2c77038f98b3950bed150
       pred_file:
         name: models/bam/bam-mp-dens/2026-10-09-phonons-kappa-103.json.gz
         url: https://figshare.com/files/70285317
