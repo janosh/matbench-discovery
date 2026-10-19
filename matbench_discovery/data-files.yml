@@ -72,16 +72,16 @@ wbm_summary:
   md5: 1555268d3aa59d20262cb9d01ce0994b
 
 wbm_dft_geo_opt_symprec_1e_2:
-  url: https://figshare.com/files/52066799
-  path: data/wbm/dft-geo-opt-symprec=1e-2-moyo=0.3.1.csv.gz
-  description: WBM DFT-relaxed crystal symmetries as determined by moyopy==0.3.1 with symprec=1e-2.
-  md5: df60953f55755cea62e6df880ece07d9
+  url: https://figshare.com/files/70326696
+  path: wbm/dft-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+  description: WBM DFT-relaxed crystal symmetries as determined by moyopy==0.21.0 with symprec=1e-2.
+  md5: a202a985bfb9366df6f5fc11430a698d
 
 wbm_dft_geo_opt_symprec_1e_5:
-  url: https://figshare.com/files/52066796
-  path: data/wbm/dft-geo-opt-symprec=1e-5-moyo=0.3.1.csv.gz
-  description: WBM DFT-relaxed crystal symmetries as determined by moyopy==0.3.1 with symprec=1e-5.
-  md5: f20d2ca1cabbc4bfb2bdf0f7698a2e75
+  url: https://figshare.com/files/70326702
+  path: wbm/dft-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+  description: WBM DFT-relaxed crystal symmetries as determined by moyopy==0.21.0 with symprec=1e-5.
+  md5: 18b4c160c190553b8b86984e526873e6
 
 phonondb_pbe_103_structures:
   url: https://figshare.com/files/52179965
