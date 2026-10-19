@@ -1,6 +1,7 @@
 import type { DiscoverySet, Label, OrgLogo } from '#lib/types.js'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import { Meta, Microsoft } from 'svelte-widgets/icons'
+import { format_num } from 'matterviz/labels'
 import { format_datetime } from 'matterviz/table'
 import { strip_html } from 'matterviz/utils'
 
@@ -13,6 +14,26 @@ import type {
 } from './schema/label.js'
 
 export const RMSD_BASELINE = 0.15 // Baseline for poor performance given worst performing model at time of writing is M3GNet at 0.1117
+
+// Default CMDS/CDS weights and the CDS element roster size live here (not in
+// combined-scores, which imports this module) so score descriptions can quote them.
+export const DEFAULT_CMDS_WEIGHTS = {
+  vdos_error: 0.3,
+  adf_error: 0.2,
+  run_time_sec: 0.2,
+  pressure_error: 0.3,
+} as const
+// Preserve the established default weights used by published rankings.
+export const DEFAULT_CDS_WEIGHTS = {
+  accuracy: 4 / 9,
+  geometry: 2 / 9,
+  speed: 1 / 9,
+  physicality: 2 / 9,
+} as const
+export const N_SCORED_DIATOMIC_ELEMENTS = 87
+const pct = (weight: number): string => format_num(weight, `.0%`)
+const { vdos_error, adf_error, run_time_sec, pressure_error } = DEFAULT_CMDS_WEIGHTS
+const { accuracy, geometry, speed, physicality } = DEFAULT_CDS_WEIGHTS
 
 // Format scientific notation with superscript, e.g. for symprec in geo_opt metrics
 export const format_power_ten = (text: string): string =>
@@ -352,7 +373,7 @@ export const MD_METRICS: MdMetricsLabels = metric_group(
     md_combined_score: {
       key: `combined_score`,
       label: `CMDS`,
-      description: `Combined MD score in [0,1] (higher is better): weighted mean of the ΔvDOS (30%), ΔADF (20%), ΔP (30%) subscores (1 − error/100) and Speed (summed rollout wall time, log-scaled, 20%), reweightable on the MD task page. Computed on the fly like CPS/CDS, never stored with submissions. ΔRDF is excluded because it overlaps with ΔvDOS/ΔADF; models without recorded timings get no CMDS unless the Speed weight is zeroed. Higher = closer to ab-initio dynamics.`,
+      description: `Combined MD score in [0,1] (higher is better): weighted mean of the ΔvDOS (${pct(vdos_error)}), ΔADF (${pct(adf_error)}), ΔP (${pct(pressure_error)}) subscores (1 − error/100) and Speed (summed rollout wall time, log-scaled, ${pct(run_time_sec)}), reweightable on the MD task page. Computed on the fly like CPS/CDS, never stored with submissions. ΔRDF is excluded because it overlaps with ΔvDOS/ΔADF; models without recorded timings get no CMDS unless the Speed weight is zeroed. Higher = closer to ab-initio dynamics.`,
       range: [0, 1],
       better: `higher`,
       format: `.3f`,
@@ -459,7 +480,7 @@ export const DIATOMICS_METRICS = metric_group(
     diatomics_combined_score: {
       property: `combined_score`,
       label: `CDS`,
-      description: `Combined Diatomics Score in [0,1] (higher is better): weighted mean of 4 pillar subscores - Accuracy (PBE energy/force MAE, 44%), Geometry (repulsive wall, bond length, well depth vs PBE, 22%), Physicality (reference-free smoothness: energy jumps, force flips, tortuosity, 22%) and Speed (sweep wall time, log-scaled, 11%; hardware varies by submission) - multiplied by the fraction of 87 benchmark elements completed and reweightable on the diatomics page. Components use fixed normalization baselines so scores remain stable as models are added. Computed on the fly like CPS/CMDS, never stored with submissions`,
+      description: `Combined Diatomics Score in [0,1] (higher is better): weighted mean of 4 pillar subscores - Accuracy (PBE energy/force MAE, ${pct(accuracy)}), Geometry (repulsive wall, bond length, well depth vs PBE, ${pct(geometry)}), Physicality (reference-free smoothness: energy jumps, force flips, tortuosity, ${pct(physicality)}) and Speed (sweep wall time, log-scaled, ${pct(speed)}; hardware varies by submission) - multiplied by the fraction of ${N_SCORED_DIATOMIC_ELEMENTS} benchmark elements completed and reweightable on the diatomics page. Components use fixed normalization baselines so scores remain stable as models are added. Computed on the fly like CPS/CMDS, never stored with submissions`,
       range: [0, 1],
       better: `higher`,
       format: `.3f`,
@@ -609,10 +630,7 @@ export const discovery_set_toggle_options = Object.entries(DISCOVERY_SET_LABELS)
   ([value, { label, description: tooltip }]) => ({
     value,
     label,
-    tooltip: tooltip
-      .replaceAll(/<br\s*\/?\s*>/giu, `\n`)
-      .replaceAll(/<[^>]*>/gu, ``)
-      .trim(),
+    tooltip: strip_html(tooltip.replaceAll(/<br\s*\/?\s*>/giu, `\n`)).trim(),
   }),
 )
 

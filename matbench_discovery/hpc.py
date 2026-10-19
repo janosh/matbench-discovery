@@ -1,6 +1,7 @@
 """Slurm job submission helper function."""
 
 import importlib.metadata
+import math
 import os
 import platform
 import shutil
@@ -8,7 +9,7 @@ import subprocess
 import sys
 import tempfile
 from collections.abc import Iterable, Mapping, Sequence, Sized
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, TypeIs
 
 import numpy as np
 
@@ -287,7 +288,7 @@ def slurm_submit(
         *("sbatch", "--job-name", job_name),
         *("--output", f"{out_dir}/slurm-%A{'-%a' if array else ''}.log"),
         *(slurm_flags.split() if isinstance(slurm_flags, str) else slurm_flags),
-        *("--wrap", f"{pre_cmd or ''} python {py_file_path}".strip()),
+        *("--wrap", f"{pre_cmd} python {py_file_path}".strip()),
     ]
     for flag in (f"{time=!s}", f"{account=!s}", f"{partition=!s}", f"{array=!s}"):
         key, val = flag.split("=")
@@ -306,7 +307,7 @@ def slurm_submit(
         slurm_vars["slurm_timelimit"] = time
     if slurm_flags != ():
         slurm_vars["slurm_flags"] = str(slurm_flags)
-    if pre_cmd not in ("", None):
+    if pre_cmd:
         slurm_vars["pre_cmd"] = pre_cmd
 
     # print sbatch cmd into slurm log and at submission time, not to terminal/Jupyter
@@ -324,37 +325,15 @@ def slurm_submit(
     raise SystemExit(result.returncode)
 
 
-def merge_run_metadata(
-    shard_metadatas: list[dict[str, object]],
-) -> dict[str, str | float]:
-    """Shared hardware, summed run_time_sec and peak memory across Slurm shard
-    run_metadata dicts.
-
-    Shards run in parallel, so the summed run_time_sec ~ a serial sweep, memory peaks
-    are maxed (each shard is its own process) and hardware is shared. Keys no shard
-    recorded are omitted, so a merge keeps existing YAML values.
+def _is_finite_number(value: object) -> TypeIs[int | float]:
+    """Whether value is a usable numeric cost field (NaN would make sums NaN and
+    max() depend on segment order).
     """
-    hardware = next(
-        (meta["hardware"] for meta in shard_metadatas if meta.get("hardware")), None
+    return (
+        isinstance(value, int | float)
+        and not isinstance(value, bool)
+        and math.isfinite(value)
     )
-    run_times = [
-        float(secs)
-        for meta in shard_metadatas
-        if isinstance(secs := meta.get("run_time_sec"), int | float)
-    ]
-    merged: dict[str, str | float] = {
-        **({"hardware": hardware} if isinstance(hardware, str) else {}),
-        **({"run_time_sec": round(sum(run_times), 2)} if run_times else {}),
-    }
-    for mem_key in ("max_rss_gb", "max_gpu_mem_gb"):
-        peaks = [
-            val
-            for meta in shard_metadatas
-            if isinstance(val := meta.get(mem_key), int | float)
-        ]
-        if peaks:
-            merged[mem_key] = max(peaks)
-    return merged
 
 
 def merge_audit_metadata(
@@ -362,49 +341,61 @@ def merge_audit_metadata(
 ) -> dict[str, object]:
     """Merge cost and audit provenance, optionally rejecting incomplete segments."""
     segments = [dict(segment) for segment in metadata_segments]
+    n_segments = len(segments)
     versions = [
         value
         for segment in segments
         if isinstance(value := segment.get("versions"), dict)
     ]
-    hardware_labels = {
-        str(segment["hardware"]) for segment in segments if segment.get("hardware")
-    }
-    cost_counts = {
-        key: sum(
-            (
-                isinstance(segment.get(key), str) and bool(segment.get(key))
-                if key == "hardware"
-                else isinstance(segment.get(key), int | float)
-            )
+    hardware_values = [
+        value
+        for segment in segments
+        if isinstance(value := segment.get("hardware"), str) and value
+    ]
+    hardware_labels = set(hardware_values)
+    numeric_values: dict[str, list[float]] = {
+        key: [
+            float(value)
             for segment in segments
-        )
-        for key in COST_PROVENANCE_KEYS
+            if _is_finite_number(value := segment.get(key))
+        ]
+        for key in COST_PROVENANCE_KEYS[1:]
     }
-    versions_complete_and_equal = len(versions) == len(segments) and all(
+    n_present = {
+        "hardware": len(hardware_values),
+        **{key: len(values) for key, values in numeric_values.items()},
+    }
+    versions_complete_and_equal = len(versions) == n_segments and all(
         value == versions[0] for value in versions[1:]
     )
     if strict:
         if not versions_complete_and_equal:
             raise ValueError("Run segments contain mixed or missing package versions")
-        if cost_counts["hardware"] != len(segments) or len(hardware_labels) != 1:
+        if n_present["hardware"] != n_segments or len(hardware_labels) != 1:
             raise ValueError(
                 "Run segments contain mixed or missing hardware provenance"
             )
-        if cost_counts["run_time_sec"] != len(segments):
+        if n_present["run_time_sec"] != n_segments:
             raise ValueError("Run segments contain missing runtime provenance")
         for memory_key in COST_PROVENANCE_KEYS[2:]:
-            if cost_counts[memory_key] not in {0, len(segments)}:
+            if n_present[memory_key] not in {0, n_segments}:
                 raise ValueError(
                     f"Run segments contain partial {memory_key} provenance"
                 )
 
-    merged: dict[str, object] = dict(merge_run_metadata(segments))
-    if len(hardware_labels) > 1:
-        merged.pop("hardware", None)
-    for cost_key, count in cost_counts.items():
-        if count != len(segments):
-            merged.pop(cost_key, None)
+    # All-or-nothing cost provenance: segments run in parallel, so summed run_time_sec
+    # ~ one serial sweep and memory peaks are maxed (each segment is its own process).
+    # A field missing from any segment (or mixed hardware) is dropped rather than
+    # reported as a partial sum or one segment's label.
+    merged: dict[str, object] = {}
+    complete = {key for key, count in n_present.items() if n_segments == count > 0}
+    if "hardware" in complete and len(hardware_labels) == 1:
+        merged["hardware"] = hardware_values[0]
+    if "run_time_sec" in complete:
+        merged["run_time_sec"] = round(sum(numeric_values["run_time_sec"]), 2)
+    for memory_key in COST_PROVENANCE_KEYS[2:]:
+        if memory_key in complete:
+            merged[memory_key] = max(numeric_values[memory_key])
     if versions and versions_complete_and_equal:
         merged["versions"] = versions[0]
     if completed_at := [

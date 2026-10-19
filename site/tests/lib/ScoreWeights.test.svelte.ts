@@ -32,9 +32,15 @@ describe(`ScoreWeights`, () => {
       ]
       const reset = doc_query<HTMLButtonElement>(`.score-weights button`)
       expect(inputs.map(({ value }) => value)).toEqual(percentages)
-      expect(
-        inputs.every((input) => input.getAttribute(`aria-label`)?.endsWith(`weight (%)`)),
-      ).toBe(true)
+      // group name uses the plain label (CMDS), not the raw key (combined_score)
+      expect(doc_query(`.score-weights`).getAttribute(`aria-label`)).toBe(
+        `${title_label.label} weights`,
+      )
+      expect(inputs.map((input) => input.getAttribute(`aria-label`))).toEqual(
+        Object.values(default_config).map(
+          ({ label }) => `${label.replaceAll(/<\/?su[bp]>/g, ``)} weight (%)`,
+        ),
+      )
       expect(reset.disabled).toBe(true)
 
       const edit = (value: string) => {

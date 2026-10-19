@@ -140,6 +140,8 @@ describe(`arr_to_str`, () => {
     [undefined, `n/a`],
     [``, `n/a`],
     [[`a`, `b`, `c`], `a, b, c`],
+    [`DFT`, `DFT`],
+    [{ key: `val` }, `{"key":"val"}`],
     [123, `123`],
     [0, `0`],
     [true, `true`],
@@ -150,17 +152,13 @@ describe(`arr_to_str`, () => {
 })
 
 describe(`format_date`, () => {
-  // covers string and numeric (timestamp) inputs; explicit times avoid timezone boundary issues
-  it.each<[string | number, string, RegExp, RegExp]>([
-    [`2023-05-15T12:00:00`, `2023`, /May/, /15/],
-    [`2023-12-25T12:00:00`, `2023`, /Dec/, /25/],
-    [new Date(`2023-12-25T12:00:00`).getTime(), `2023`, /Dec/, /25/],
-  ])(`formats %s into a valid localized date`, (input, year, month, day) => {
-    const result = format_date(input)
-    expect(result).not.toBe(`Invalid Date`)
-    expect(result).toContain(year)
-    expect(result).toMatch(month)
-    expect(result).toMatch(day)
+  // fixed en-US locale + UTC: date-only strings must not shift by the host time zone
+  it.each<[string | number, string]>([
+    [`2023-05-15`, `May 15, 2023`],
+    [`2023-12-25T12:00:00Z`, `Dec 25, 2023`],
+    [Date.UTC(2024, 0, 1), `Jan 1, 2024`],
+  ])(`formats %s as %s`, (input, expected) => {
+    expect(format_date(input)).toBe(expected)
   })
 })
 
@@ -224,8 +222,6 @@ describe(`sync_url_params`, () => {
   })
 
   it(`keeps commas unencoded for human-readable weights params`, () => {
-    history.replaceState(null, ``, `/`)
-
     sync_url_params([[`weights`, `0.579,0.35,0.071`]], {})
 
     expect(location.search).toBe(`?weights=0.579,0.35,0.071`)

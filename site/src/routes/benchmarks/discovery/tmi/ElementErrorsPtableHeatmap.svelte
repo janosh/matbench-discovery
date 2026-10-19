@@ -74,6 +74,10 @@
     0,
     manual_cbar_max ? cbar_max : current_data_max,
   ])
+  let color_scale = $derived({
+    scheme: `interpolateViridis`,
+    value_range: cs_range,
+  } as const)
   let error_unit = $derived(normalized ? `normalized` : `eV/atom`)
   let cbar_title = $derived(
     `${selected_models.length === 1 ? selected_models[0].label : `Element-projected error`} (${error_unit})`,
@@ -113,6 +117,7 @@
     <input type="checkbox" bind:checked={manual_cbar_max} />
     <input
       type="range"
+      aria-label="Color bar max"
       disabled={!manual_cbar_max}
       bind:value={cbar_max}
       min={0.01}
@@ -134,8 +139,7 @@
 
 <PeriodicTable
   {heatmap_values}
-  color_scale="interpolateViridis"
-  color_scale_range={cs_range}
+  {color_scale}
   tile_props={{ float_fmt: `.2` }}
   show_photo={false}
   missing={{ color: `rgba(255,255,255,0.3)` }}
@@ -158,9 +162,8 @@
         <ColorBar
           title={cbar_title}
           title_side="top"
-          scale="interpolateViridis"
+          {color_scale}
           tick_labels={5}
-          range={cs_range}
           style="width: 85%; margin: 0 2em"
         />
       </TableInset>

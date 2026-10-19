@@ -29,16 +29,14 @@ const rank_keys = (model_key: string, metrics: readonly Label[] = RANKED_METRICS
 
 describe(`model_metric_ranks`, () => {
   it.each([
-    [`model-a`, `CPS`, 1, 3], // higher=better
-    [`model-b`, `CPS`, 3, 3],
-  ])(`%s ranks %s #%d of %d`, (model_key, metric_key, rank, n_models) => {
-    expect(rank_of(model_key, metric_key)).toMatchObject({ rank, n_models })
-  })
-
-  it(`ties share the better rank`, () => {
-    expect(rank_of(`model-a`, `F1`)).toMatchObject({ rank: 2, n_models: 3 })
-    expect(rank_of(`model-c`, `F1`)).toMatchObject({ rank: 2, n_models: 3 })
-    expect(rank_of(`model-b`, `F1`)).toMatchObject({ rank: 1, n_models: 3 })
+    [`model-a`, `CPS`, 1], // higher=better
+    [`model-b`, `CPS`, 3],
+    [`model-b`, `F1`, 1],
+    // ties share the better rank
+    [`model-a`, `F1`, 2],
+    [`model-c`, `F1`, 2],
+  ])(`%s ranks %s #%d of 3`, (model_key, metric_key, rank) => {
+    expect(rank_of(model_key, metric_key)).toMatchObject({ rank, n_models: 3 })
   })
 
   it(`omits metrics the model has no value for`, () => {

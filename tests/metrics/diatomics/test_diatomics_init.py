@@ -82,9 +82,15 @@ def test_diatomic_classes() -> None:
     for override, message in [
         ({"energies": [0]}, "distance and energy counts differ"),
         ({"forces": forces[:1]}, "distance and force counts differ"),
+        ({"forces": []}, "distance and force counts differ"),  # missing forces
     ]:
         with pytest.raises(ValueError, match=message):
             DiatomicCurve(**(bad_curve_args | override))
+    # a JSON curve without forces fails on load, not later inside the metrics
+    with pytest.raises(ValueError, match=r"force counts differ: 2 != 0"):
+        DiatomicCurves.from_dict(
+            {"distances": distances, "homo-nuclear": {"H": {"energies": energies}}}
+        )
     # off-grid, duplicated, and reordered per-curve distances are all rejected
     for bad_dists in ([0.5, 1.5], [1.0, 1.0], [2.0, 1.0]):
         data["homo-nuclear"]["H"]["distances"] = bad_dists
@@ -230,7 +236,9 @@ def test_pbe_force_mae_skips_unusable_ref_window(
 
 
 def test_calc_diatomic_metrics_gates_low_quality_refs_and_non_mp_elements() -> None:
-    """Non-MP elements are skipped entirely, jumpy refs only lose pbe_* metrics."""
+    """Non-MP elements and in-window non-finite curves are skipped entirely, jumpy refs
+    only lose pbe_* metrics.
+    """
     distances = np.logspace(1, -1, 40)
     smooth = base_curve(distances)
     # oscillating reference: large alternating jumps at every point in the window
@@ -240,13 +248,29 @@ def test_calc_diatomic_metrics_gates_low_quality_refs_and_non_mp_elements() -> N
     ref_curves = make_element_curves(
         {"H": smooth, "Ho": jumpy, "Po": smooth, "Er": non_finite}
     )
+    # distances[14] ~ 1.9 A lies inside the Li/Mg windows; distances[0] = 10 A lies
+    # beyond Na's 3.1 * r_vdw cutoff
+    nan_in_window, nan_outside_window = smooth.copy(), smooth.copy()
+    nan_in_window[14] = nan_outside_window[0] = np.nan
     pred_curves = make_element_curves(
-        {"H": smooth, "Ho": smooth, "Po": smooth, "Er": smooth}
+        {
+            "H": smooth,
+            "Ho": smooth,
+            "Po": smooth,
+            "Er": smooth,
+            "Li": nan_in_window,
+            "Na": nan_outside_window,
+            "Mg": smooth,
+        }
     )
+    pred_curves.homo_nuclear["Mg"].forces[14, 0, 0] = np.nan
 
     assert diatomics.find_low_quality_dft_refs(ref_curves) == {"Ho", "Er"}
     metrics_out = diatomics.calc_diatomic_metrics(ref_curves, pred_curves)
-    assert set(metrics_out) == {"H", "Ho", "Er"}
+    # curves non-finite inside the scored window (Li energies, Mg forces) are skipped
+    # instead of aborting the model; out-of-window NaNs (Na) are never scored
+    assert set(metrics_out) == {"H", "Ho", "Er", "Na"}
+    assert np.isfinite(list(metrics_out["Na"].values())).all()
     assert MbdKey.pbe_energy_mae in metrics_out["H"]
     # jumpy/non-finite reference: self-consistency metrics only, no ref-relative ones
     for gated_elem in ("Ho", "Er"):
@@ -254,7 +278,7 @@ def test_calc_diatomic_metrics_gates_low_quality_refs_and_non_mp_elements() -> N
         assert MbdKey.tortuosity in metrics_out[gated_elem]
     # without reference curves there is no quality gate but non-MP skip still applies
     no_ref_out = diatomics.calc_diatomic_metrics(None, pred_curves)
-    assert set(no_ref_out) == {"H", "Ho", "Er"}
+    assert set(no_ref_out) == {"H", "Ho", "Er", "Na"}
 
 
 def test_find_low_quality_dft_refs_on_bundled_pbe_reference() -> None:

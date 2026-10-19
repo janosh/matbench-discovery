@@ -31,19 +31,20 @@ module_dir = os.path.dirname(__file__)
 # %% run on 2022-09-16 and again on 2023-02-07
 all_mp_computed_structure_entries = MPRester().get_entries("")
 
-# save all ComputedStructureEntries to disk
-# mp-15590 appears twice so we drop_duplicates()
+# save all ComputedStructureEntries to disk in the single-document JSON layout that
+# DataFiles.mp_computed_structure_entries is read with (columns: material_id, entry)
 df_mp_cse = pd.DataFrame(
-    all_mp_computed_structure_entries,
-    columns=["entry"],
+    {"entry": all_mp_computed_structure_entries},
+    index=pd.Index(
+        [entry.entry_id for entry in all_mp_computed_structure_entries],
+        name=Key.mat_id,
+    ),
 )
-df_mp_cse.index.name = Key.mat_id
-df_mp_cse.index = [e.entry_id for e in df_mp_cse.entry]
+# mp-15590 appeared twice on 2023-02-07
+df_mp_cse = df_mp_cse[~df_mp_cse.index.duplicated()]
 df_mp_cse.reset_index().to_json(
-    f"{module_dir}/{today}-mp-computed-structure-entries.jsonl.gz",
+    f"{module_dir}/{today}-mp-computed-structure-entries.json.gz",
     default_handler=lambda x: x.as_dict(),
-    orient="records",
-    lines=True,
 )
 
 
@@ -87,10 +88,10 @@ df_wbm = pd.read_json(wbm_cse_path, lines=True).set_index(Key.mat_id)
 
 # using ComputedStructureEntry vs ComputedEntry here is important as CSEs receive
 # more accurate energy corrections that take into account peroxide/superoxide nature
-# of materials (and same for sulfides) based on atomic distances in the structure
-filtered_entries = list(
-    df_wbm.query("n_elements > 1").cse.map(ComputedStructureEntry.from_dict)
-)
+# of materials (and same for sulfides) based on atomic distances in the structure.
+# Elemental WBM entries are excluded so MP alone defines the terminal references.
+wbm_entries = df_wbm[Key.computed_structure_entry].map(ComputedStructureEntry.from_dict)
+filtered_entries = [entry for entry in wbm_entries if len(entry.composition) > 1]
 wbm_computed_entries = MaterialsProject2020Compatibility().process_entries(
     filtered_entries, verbose=True, clean=True
 )
@@ -133,7 +134,7 @@ df_mp[e_form_us] = [
 
 
 # make sure get_form_energy_per_atom() reproduces MP formation energies
-fig = pmv.density_scatter(df=df_mp, x=Key.form_energy, y=e_form_us)
+fig = pmv.density_scatter(df=df_mp, x=Key.formation_energy_per_atom, y=e_form_us)
 fig.layout.title = "Formation Energy Comparison"
 fig.layout.xaxis.title = "MP Formation Energy (eV/atom)"
 fig.layout.yaxis.title = "Our Formation Energy (eV/atom)"

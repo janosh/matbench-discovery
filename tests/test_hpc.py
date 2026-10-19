@@ -3,7 +3,8 @@
 import os
 import sys
 from collections.abc import Sequence
-from unittest.mock import mock_open, patch
+from pathlib import Path
+from unittest.mock import patch
 
 import pandas as pd
 import pytest
@@ -33,24 +34,45 @@ def test_df_slurm_chunk_rejects_invalid_task_ids(n_chunks: int, task_id: int) ->
         hpc.df_slurm_chunk(df_in, n_chunks, task_id)
 
 
-@pytest.mark.parametrize("py_file_path", [None, "path/to/file.py"])
-@pytest.mark.parametrize("partition", [None, "fake-partition"])
-@pytest.mark.parametrize("time", [None, "0:0:1"])
-@pytest.mark.parametrize("account", [None, "fake-account"])
-@pytest.mark.parametrize("pre_cmd", [None, "module load pytorch;", "ENV_VAR=42"])
-@pytest.mark.parametrize("submit_as_temp_file", [True, False])
+@pytest.mark.parametrize(
+    (
+        "py_file_path",
+        "time",
+        "account",
+        "partition",
+        "array",
+        "pre_cmd",
+        "submit_as_temp_file",
+    ),
+    [
+        (None, None, None, None, None, "", True),
+        (
+            "path/to/file.py",
+            "0:0:1",
+            "fake-account",
+            "fake-partition",
+            None,
+            "module load pytorch;",
+            False,
+        ),
+        (None, "0:0:1", None, None, "0-9%2", "ENV_VAR=42", True),
+        ("path/to/file.py", None, "fake-account", None, "1-10", "", False),
+        (None, None, None, "fake-partition", None, "ENV_VAR=42", False),
+    ],
+)
 def test_slurm_submit(
     capsys: pytest.CaptureFixture[str],
+    tmp_path: Path,
     py_file_path: str | None,
-    partition: str | None,
     time: str | None,
     account: str | None,
-    pre_cmd: str | None,
+    partition: str | None,
+    array: str | None,
+    pre_cmd: str,
     submit_as_temp_file: bool,
 ) -> None:
-    job_name = "test_job"
-    out_dir = "tmp"
-
+    """slurm_submit is a no-op outside submit mode and builds the sbatch command."""
+    job_name, out_dir = "test_job", f"{tmp_path}/slurm-logs"
     kwargs = dict(
         job_name=job_name,
         out_dir=out_dir,
@@ -59,28 +81,28 @@ def test_slurm_submit(
         account=account,
         py_file_path=py_file_path,
         slurm_flags="--foo",
+        array=array,
         pre_cmd=pre_cmd,
         submit_as_temp_file=submit_as_temp_file,
     )
 
     hpc.slurm_submit(**kwargs)  # ty: ignore[invalid-argument-type]
-
-    stdout, stderr = capsys.readouterr()
-    # check slurm_submit() did nothing in normal mode
-    assert stdout == stderr == ""
+    assert capsys.readouterr() == ("", "")  # does nothing in normal mode
+    assert os.path.isdir(out_dir)  # sbatch fails if the log dir is missing
 
     with patch.dict(os.environ, {"SLURM_JOB_ID": "1234"}, clear=True):
         slurm_vars = hpc.slurm_submit(**kwargs)  # ty: ignore[invalid-argument-type]
-    expected_slurm_vars = dict(slurm_job_id="1234", slurm_flags="--foo")
-    if time is not None:
-        expected_slurm_vars["slurm_timelimit"] = time
-    if pre_cmd and not pre_cmd.strip().endswith(";"):
-        pre_cmd += ";"
-    if pre_cmd is not None and pre_cmd != "":
-        expected_slurm_vars["pre_cmd"] = pre_cmd
-    assert slurm_vars == expected_slurm_vars
+    expected_pre_cmd = (
+        pre_cmd if pre_cmd.endswith(";") or not pre_cmd else f"{pre_cmd};"
+    )
+    assert slurm_vars == {
+        "slurm_job_id": "1234",
+        "slurm_flags": "--foo",
+        **({"slurm_timelimit": time} if time else {}),
+        **({"pre_cmd": expected_pre_cmd} if pre_cmd else {}),
+    }
 
-    # check slurm_submit() prints cmd and calls subprocess.run() in submit mode
+    # submit mode prints the cmd and calls subprocess.run()
     with (
         pytest.raises(SystemExit),
         patch("sys.argv", ["slurm-submit"]),
@@ -90,33 +112,33 @@ def test_slurm_submit(
             return_value="/tmp/slurm_job_123",
         ),
         patch("matbench_discovery.hpc.shutil.copy2") as mock_copy2,
-        patch("builtins.open", mock_open()),
         patch.dict(os.environ, {"SLURM_JOB_ID": "1234"}, clear=True),
     ):
         hpc.slurm_submit(**kwargs)  # ty: ignore[invalid-argument-type]
-
     assert mock_subprocess_run.call_count == 1
 
     expected_py_file_path = py_file_path or __file__
     if submit_as_temp_file:
-        expected_py_file_path = (
-            f"/tmp/slurm_job_123/{os.path.basename(expected_py_file_path)}"
-        )
-        assert mock_copy2.called
-        assert mock_copy2.call_args[0][0] == (py_file_path or __file__)
-        assert mock_copy2.call_args[0][1] == expected_py_file_path
+        temp_path = f"/tmp/slurm_job_123/{os.path.basename(expected_py_file_path)}"
+        mock_copy2.assert_called_once_with(expected_py_file_path, temp_path)
+        expected_py_file_path = temp_path
     else:
-        assert not mock_copy2.called
+        mock_copy2.assert_not_called()
 
+    log_name = "slurm-%A-%a.log" if array else "slurm-%A.log"
+    wrap_cmd = f"{expected_pre_cmd} python {expected_py_file_path}".strip()
     sbatch_cmd = (
-        f"sbatch --job-name {job_name} --output {out_dir}/slurm-%A.log --foo "
-        f"--wrap {pre_cmd + ' ' if pre_cmd else ''}python {expected_py_file_path}"
+        f"sbatch --job-name {job_name} --output {out_dir}/{log_name} --foo "
+        f"--wrap {wrap_cmd}"
     ).replace(" --", "\n  --")
-    for flag in (f"{time=!s}", f"{account=!s}", f"{partition=!s}"):
-        key, val = flag.split("=")
-        if val != "None":
+    for key, val in (
+        ("time", time),
+        ("account", account),
+        ("partition", partition),
+        ("array", array),
+    ):
+        if val is not None:
             sbatch_cmd += f"\n  --{key} {val}"
-
     stdout, stderr = capsys.readouterr()
     assert sbatch_cmd in stdout
     assert stderr == ""
@@ -132,71 +154,110 @@ def test_get_calling_file_path() -> None:
 
 
 @pytest.mark.parametrize(
-    ("shard_metadatas", "expected"),
+    ("segments", "expected"),
     [
         (
             [
                 # unrelated keys like excluded_formula_reasons are ignored by merge
                 {
                     "hardware": "H200",
-                    "run_time_sec": 100.0,
+                    "run_time_sec": 100,
                     "excluded_formula_reasons": {},
                 },
                 {"hardware": "H200", "run_time_sec": 50.5},
             ],
             {"hardware": "H200", "run_time_sec": 150.5},
         ),
+        ([], {}),
         ([{}, {}], {}),  # no provenance -> empty (leaves existing YAML untouched)
-        ([{"run_time_sec": 12.0}, {}], {"run_time_sec": 12.0}),  # partial
+        # all-or-nothing: a field missing from any segment is dropped, not summed
+        # over the segments that have it
+        ([{"run_time_sec": 12.0}, {}], {}),
         (
-            # memory peaks max over shards (each shard is its own process)
+            [
+                {"hardware": "H200", "run_time_sec": 10.0, "max_rss_gb": 4.0},
+                {"hardware": "H200", "run_time_sec": 20.0},
+            ],
+            {"hardware": "H200", "run_time_sec": 30.0},
+        ),
+        (
+            # memory peaks max over segments (each segment is its own process)
             [
                 {"run_time_sec": 10.0, "max_rss_gb": 4.2, "max_gpu_mem_gb": 11.5},
                 {"run_time_sec": 20.0, "max_rss_gb": 6.1, "max_gpu_mem_gb": 9.0},
-                {"run_time_sec": 5.0},  # shard without memory info still sums time
             ],
-            {"run_time_sec": 35.0, "max_rss_gb": 6.1, "max_gpu_mem_gb": 11.5},
+            {"run_time_sec": 30.0, "max_rss_gb": 6.1, "max_gpu_mem_gb": 11.5},
+        ),
+        # mixed or missing GPU labels drop hardware instead of keeping the first one
+        ([{"hardware": "H200"}, {"hardware": "H100"}], {}),
+        ([{"hardware": "H200"}, {"hardware": ""}], {}),
+        # NaN counts as missing, so the result can't depend on segment order
+        ([{"max_rss_gb": float("nan")}, {"max_rss_gb": 2.0}], {}),
+        ([{"max_rss_gb": 2.0}, {"max_rss_gb": float("nan")}], {}),
+        # versions only when every segment agrees
+        ([{"versions": {"numpy": "1"}}, {}], {}),
+        ([{"versions": {"numpy": "1"}}, {"versions": {"numpy": "2"}}], {}),
+        (
+            [{"versions": {"numpy": "1"}}, {"versions": {"numpy": "1"}}],
+            {"versions": {"numpy": "1"}},
+        ),
+        (
+            # latest completion time and sorted, de-duplicated host/job unions
+            [
+                {
+                    "completed_at": "2026-07-02T00:00:00",
+                    "hostname": "node-b",
+                    "slurm_job_id": "2",
+                    "slurm_array_task_id": "1",
+                },
+                {
+                    "completed_at": "2026-07-03T00:00:00",
+                    "hostname": "node-a",
+                    "slurm_job_id": "2",
+                    "slurm_array_task_id": "0",
+                },
+                {"completed_at": "2026-07-01T00:00:00", "hostname": "node-b"},
+            ],
+            {
+                "completed_at": "2026-07-03T00:00:00",
+                "hostnames": ["node-a", "node-b"],
+                "slurm_job_ids": ["2"],
+                "slurm_array_task_ids": ["0", "1"],
+            },
         ),
     ],
-    ids=["full", "missing", "partial", "memory_peaks"],
 )
-def test_merge_run_metadata(
-    shard_metadatas: list[dict[str, object]], expected: dict[str, str | float]
+def test_merge_audit_metadata(
+    segments: list[dict[str, object]], expected: dict[str, object]
 ) -> None:
-    """merge_run_metadata sums run_time_sec, maxes memory peaks + shares hardware."""
-    assert hpc.merge_run_metadata(shard_metadatas) == expected
+    """Cost fields merge all-or-nothing; audit fields take latest time + unions."""
+    assert hpc.merge_audit_metadata(segments) == expected
 
 
-INCOMPLETE_HARDWARE_SEGMENTS = (
-    {"hardware": "H200", "versions": {}},
-    {"hardware": "", "versions": {}},
+STRICT_SEGMENT = {"hardware": "H200", "run_time_sec": 1.0, "versions": {"numpy": "1"}}
+
+
+@pytest.mark.parametrize(
+    ("other_segment", "error_match"),
+    [
+        ({**STRICT_SEGMENT, "versions": {"numpy": "2"}}, "mixed or missing package"),
+        ({**STRICT_SEGMENT, "hardware": ""}, "mixed or missing hardware"),
+        ({**STRICT_SEGMENT, "hardware": "H100"}, "mixed or missing hardware"),
+        ({**STRICT_SEGMENT, "run_time_sec": None}, "missing runtime"),
+        ({**STRICT_SEGMENT, "max_rss_gb": 3.0}, "partial max_rss_gb"),
+    ],
 )
-
-
-def test_merge_audit_metadata_drops_partial_cost_fields() -> None:
-    """Audit aggregation publishes each cost field only with complete coverage."""
-    merged = hpc.merge_audit_metadata(
-        [
-            {"hardware": "H200", "run_time_sec": 10.0, "max_rss_gb": 4.0},
-            {"hardware": "H200", "run_time_sec": 20.0},
-        ]
-    )
-    assert merged == {"hardware": "H200", "run_time_sec": 30.0}
-    base_segment = {"versions": {"numpy": "1"}}
-    for other_segment in ({}, {"versions": {"numpy": "2"}}):
-        merged = hpc.merge_audit_metadata([base_segment, other_segment])
-        assert "versions" not in merged
-
-
-def test_merge_audit_metadata_drops_mismatched_hardware() -> None:
-    """Mismatched hardware provenance is silently omitted from merged metadata."""
-    assert "hardware" not in hpc.merge_audit_metadata(INCOMPLETE_HARDWARE_SEGMENTS)
-
-
-def test_merge_audit_metadata_strictly_rejects_missing_hardware() -> None:
-    """Strict audit merging rejects a segment with missing hardware provenance."""
-    with pytest.raises(ValueError, match="missing hardware"):
-        hpc.merge_audit_metadata(INCOMPLETE_HARDWARE_SEGMENTS, strict=True)
+def test_merge_audit_metadata_strict_errors(
+    other_segment: dict[str, object], error_match: str
+) -> None:
+    """Strict merging rejects mixed or incomplete provenance."""
+    assert hpc.merge_audit_metadata([STRICT_SEGMENT] * 2, strict=True) == {
+        "hardware": "H200",
+        "run_time_sec": 2.0,
+        "versions": {"numpy": "1"},
+    }
+    with pytest.raises(ValueError, match=error_match):
+        hpc.merge_audit_metadata([STRICT_SEGMENT, other_segment], strict=True)
 
 
 def test_peak_memory_gb() -> None:

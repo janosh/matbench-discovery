@@ -6,7 +6,7 @@
   import {
     ACTIVE_MODELS,
     has_diatomics_curves,
-    make_table_filters,
+    task_page_filters,
   } from '#lib/models.svelte.js'
   import { ButtonGroup } from 'svelte-widgets'
   import { CDS_CONFIG, DEFAULT_CDS_CONFIG } from '#lib/combined-scores.svelte.js'
@@ -20,7 +20,6 @@
   import DynamicScatter from '#lib/plot/DynamicScatter.svelte'
   import ScoreWeights from '#lib/ScoreWeights.svelte'
   import { UrlModelSelection } from '#lib/model-selection.svelte.js'
-  import { bind_url_params } from '#lib/url-state.svelte.js'
   import { valid_query_param } from 'svelte-widgets/url-params'
   import DiatomicsNote from './diatomics-note.md'
   import {
@@ -35,20 +34,22 @@
   import { make_plot_observer } from './observe-plot.js'
 
   let { data }: { data: PageData } = $props()
-  let diatomic_models = $derived(data?.diatomic_models ?? [])
-  let diatomic_curves = $derived(data?.diatomic_curves ?? {})
-  let reference_names = $derived(data?.reference_names ?? [])
+  // resolve keys from the live MODELS so CDS re-weighting re-ranks the defaults
+  const find_model = (key: string) => {
+    const model = ACTIVE_MODELS.find(({ model_key }) => model_key === key)
+    if (!model) throw new Error(`Unknown diatomics model key: ${key}`)
+    return model
+  }
+  let diatomic_models = $derived(data.diatomic_model_keys.map(find_model))
+  let { diatomic_curves, reference_names } = $derived(data)
   let model_idx_by_key = $derived(
     Object.fromEntries(diatomic_models.map(({ model_key }, idx) => [model_key, idx])),
   )
   const label_for = (key: string): string =>
     diatomic_models[model_idx_by_key[key] ?? -1]?.model_name ?? key
-  let errors = $derived(data?.errors ?? {})
-  let error_entries = $derived(Object.entries(errors))
 
   const homo_nuc_key = `homo-nuclear`
   const visible_cols = task_page_visible_cols(...Object.values(DIATOMICS_METRICS))
-  const filters = make_table_filters()
   // default-sort by the combined diatomics score (CDS), best (highest) first
   let plot = $state({
     x: DIATOMICS_METRICS.diatomics_run_time_sec.key,
@@ -72,15 +73,7 @@
       element_groups[0],
   )
 
-  let available_models = $derived(
-    diatomic_models.filter(
-      ({ model_key }) => model_key in diatomic_curves && !errors[model_key],
-    ),
-  )
-  let selectable_keys = $derived([
-    ...reference_names,
-    ...available_models.map(({ model_key }) => model_key),
-  ])
+  let selectable_keys = $derived([...reference_names, ...data.diatomic_model_keys])
   let selectable_options = $derived(
     selectable_keys.map((model_key) => {
       const model_color = color_for(model_key)
@@ -99,7 +92,7 @@
   // DFT references plus the three highest CDS-ranked models with available curves.
   let default_selected_keys = $derived([
     ...reference_names,
-    ...available_models
+    ...diatomic_models
       .toSorted(
         (left, right) =>
           (right.metrics?.diatomics?.combined_score ?? -Infinity) -
@@ -129,21 +122,19 @@
       ),
   )
 
-  const read_url_params = (params: URLSearchParams) => {
-    model_selection.read(params)
-    selected_element_group = valid_query_param(
-      params,
-      `elements`,
-      `all`,
-      element_group_keys,
-    )
-    filters.read(params)
-  }
-  bind_url_params(read_url_params, () => [
-    model_selection.url_entry,
-    [`elements`, selected_element_group, `all`],
-    ...filters.url_entries,
-  ])
+  const { filters, in_view } = task_page_filters(
+    has_diatomics_curves,
+    (params) => {
+      model_selection.read(params)
+      selected_element_group = valid_query_param(
+        params,
+        `elements`,
+        `all`,
+        element_group_keys,
+      )
+    },
+    () => [model_selection.url_entry, [`elements`, selected_element_group, `all`]],
+  )
 
   const curves_for_formula = (formula: string) =>
     selected_model_keys.flatMap((model_key) => {
@@ -212,7 +203,7 @@
 
 <DynamicScatter
   models={ACTIVE_MODELS}
-  model_filter={has_diatomics_curves}
+  model_filter={in_view}
   bind:x_key={plot.x}
   bind:y_key={plot.y}
   color_key={METADATA_COLS.n_training_materials.key}
@@ -235,23 +226,6 @@
 </TestSet>
 
 <h2 id="diatomic-energy-curves" style="text-align: center">Diatomic Energy Curves</h2>
-
-{#if error_entries.length > 0}
-  <div class="error-summary" role="alert">
-    <p>
-      Failed to load diatomics data for {error_entries.length}
-      {error_entries.length === 1 ? `model` : `models`}.
-    </p>
-    <details>
-      <summary>Asset details</summary>
-      <ul>
-        {#each error_entries as [key, error] (key)}
-          <li><a href="/models/{key}">{label_for(key)}</a>: {error}</li>
-        {/each}
-      </ul>
-    </details>
-  </div>
-{/if}
 
 <div class="controls">
   <ButtonGroup
@@ -299,13 +273,5 @@
     align-items: center;
     gap: 1em;
     padding: 1em;
-  }
-  .error-summary {
-    overflow-wrap: anywhere;
-    margin: 1em auto;
-    max-width: 80ch;
-    padding: 0.75em 1em;
-    border: 1px solid var(--danger, #b91c1c);
-    border-radius: 4px;
   }
 </style>

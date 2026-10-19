@@ -19,24 +19,17 @@ import { MODELS } from '#lib/models.svelte.js'
 import * as matterviz_plot from 'matterviz/plot'
 import { clear_asset_cache, load_json_asset } from '#lib/asset-loader.js'
 import { gzipSync } from 'node:zlib'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import {
   doc_query,
   get_scatter_plot_props,
   gzipped_json_response,
   mount,
-  request_url,
+  stub_json_routes,
 } from '../index.js'
 
 const popup_mock = vi.hoisted(() => vi.fn())
 vi.mock(`matterviz/convex-hull`, () => ({ StructurePopup: popup_mock }))
-
-beforeEach(clear_asset_cache)
-
-afterEach(() => {
-  vi.unstubAllGlobals()
-  clear_asset_cache()
-})
 
 const base: EnergyParityBase = {
   material_ids: [`wbm-1-1`, `wbm-1-2`, `wbm-1-3`],
@@ -158,17 +151,6 @@ describe(`energy parity data helpers`, () => {
     expect(point?.error).toBeCloseTo(0.2)
   })
 
-  it(`loads gzipped JSON assets and caches duplicate requests`, async () => {
-    const body = gzipSync(JSON.stringify({ ok: true }))
-    const fetch_mock = vi.fn(() => Promise.resolve(new Response(body, { status: 200 })))
-    vi.stubGlobal(`fetch`, fetch_mock)
-
-    const url = `/fixture-${crypto.randomUUID()}.json.gz`
-    await expect(load_json_asset(url)).resolves.toEqual({ ok: true })
-    await expect(load_json_asset(url)).resolves.toEqual({ ok: true })
-    expect(fetch_mock).toHaveBeenCalledTimes(1)
-  })
-
   it(`retries asset loads after a failed request`, async () => {
     const body = gzipSync(JSON.stringify({ ok: true }))
     const fetch_mock = vi
@@ -216,81 +198,92 @@ describe(`energy parity data helpers`, () => {
     )
   })
 
-  it(`loads base and per-model assets through the manifest`, async () => {
-    const valid_base = manifest_sized_base()
-    const valid_model = manifest_sized_model()
-    const base_url = energy_parity_asset_url(energy_parity_manifest.base.asset)
-    const model_url = energy_parity_asset_url(model_asset(first_model_key))
-    const fetch_mock = vi.fn((url: RequestInfo | URL) => {
-      const href = request_url(url)
-      if (href === base_url) return gzipped_json_response(valid_base)
-      if (href === model_url) return gzipped_json_response({ model: valid_model })
-      return Promise.resolve(new Response(`missing`, { status: 404 }))
+  describe(`manifest loaders`, () => {
+    // validators read row_count at call time, so a tiny manifest keeps fixtures small
+    const row_count = 4
+    beforeEach(() => {
+      const real_row_count = energy_parity_manifest.row_count
+      energy_parity_manifest.row_count = row_count
+      return () => {
+        energy_parity_manifest.row_count = real_row_count
+      }
     })
-    vi.stubGlobal(`fetch`, fetch_mock)
 
-    await expect(load_energy_parity_base()).resolves.toEqual(valid_base)
-    await expect(load_energy_parity_model(first_model_key)).resolves.toEqual(valid_model)
-    expect(fetch_mock).toHaveBeenCalledTimes(2)
-  })
+    it(`loads base and per-model assets through the manifest`, async () => {
+      const valid_base = manifest_sized_base()
+      const valid_model = manifest_sized_model()
+      const fetch_mock = stub_json_routes({
+        [energy_parity_asset_url(energy_parity_manifest.base.asset)]: valid_base,
+        [energy_parity_asset_url(model_asset(first_model_key))]: { model: valid_model },
+      })
+      await expect(load_energy_parity_base()).resolves.toEqual(valid_base)
+      await expect(load_energy_parity_model(first_model_key)).resolves.toEqual(
+        valid_model,
+      )
+      expect(fetch_mock).toHaveBeenCalledTimes(2)
+    })
 
-  it.each([
-    {
-      case: `wrong row count`,
-      kind: `base`,
-      response: () => gzipped_json_response(manifest_sized_base({ formulas: [] })),
-      load: () => load_energy_parity_base(),
-      error: `Invalid energy parity formulas: expected ${energy_parity_manifest.row_count} rows`,
-    },
-    {
-      case: `wrong row count`,
-      kind: `model`,
-      response: () =>
-        gzipped_json_response({
-          model: manifest_sized_model(first_model_key, { e_form_pred: [0] }),
-        }),
-      load: () => load_energy_parity_model(first_model_key),
-      error:
-        `Invalid energy parity ${first_model_key}.e_form_pred: ` +
-        `expected ${energy_parity_manifest.row_count} rows`,
-    },
-    {
-      case: `missing { model } wrapper`,
-      kind: `model`,
-      // asset stores the model object directly instead of under the { model } key
-      response: () => gzipped_json_response(manifest_sized_model(first_model_key)),
-      load: () => load_energy_parity_model(first_model_key),
-      error: `No energy parity model ${first_model_key} in its asset`,
-    },
-    {
-      case: `model_key mismatch`,
-      kind: `model`,
-      response: () =>
-        gzipped_json_response({ model: manifest_sized_model(`other-model`) }),
-      load: () => load_energy_parity_model(first_model_key),
-      error: `Invalid energy parity model: expected ${first_model_key}, got other-model`,
-    },
-  ])(`retries rejected $kind assets ($case)`, async ({ kind, response, load, error }) => {
-    const valid = kind === `base` ? manifest_sized_base() : manifest_sized_model()
-    const fetch_mock = vi
-      .fn(() => gzipped_json_response(kind === `base` ? valid : { model: valid }))
-      .mockImplementationOnce(response)
-    vi.stubGlobal(`fetch`, fetch_mock)
-    await expect(load()).rejects.toThrow(error)
-    await expect(load()).resolves.toEqual(valid)
-    await expect(load()).resolves.toEqual(valid)
-    expect(fetch_mock).toHaveBeenCalledTimes(2)
-  })
-
-  it(`reports a clear error for a stale base asset missing a field`, async () => {
-    // simulate an old-schema release asset that predates the n_sites column
-    const { n_sites: _omit, ...stale_base } = manifest_sized_base()
-    vi.stubGlobal(
-      `fetch`,
-      vi.fn(() => gzipped_json_response(stale_base)),
-    )
-    await expect(load_energy_parity_base()).rejects.toThrow(
-      `Invalid energy parity n_sites: expected ${energy_parity_manifest.row_count} rows, got missing field`,
+    it.each([
+      {
+        case: `wrong row count`,
+        kind: `base`,
+        response: () => gzipped_json_response(manifest_sized_base({ formulas: [] })),
+        load: () => load_energy_parity_base(),
+        error: `Invalid energy parity formulas: expected ${row_count} rows, got 0`,
+      },
+      {
+        // old-schema release asset that predates the n_sites column
+        case: `stale schema missing a field`,
+        kind: `base`,
+        response: () => {
+          const { n_sites: _omit, ...stale_base } = manifest_sized_base()
+          return gzipped_json_response(stale_base)
+        },
+        load: () => load_energy_parity_base(),
+        error: `Invalid energy parity n_sites: expected ${row_count} rows, got missing field`,
+      },
+      {
+        case: `wrong row count`,
+        kind: `model`,
+        response: () =>
+          gzipped_json_response({
+            model: manifest_sized_model(first_model_key, { e_form_pred: [0] }),
+          }),
+        load: () => load_energy_parity_model(first_model_key),
+        error:
+          `Invalid energy parity ${first_model_key}.e_form_pred: ` +
+          `expected ${row_count} rows, got 1`,
+      },
+      {
+        case: `missing { model } wrapper`,
+        kind: `model`,
+        // asset stores the model object directly instead of under the { model } key
+        response: () => gzipped_json_response(manifest_sized_model(first_model_key)),
+        load: () => load_energy_parity_model(first_model_key),
+        error: `No energy parity model ${first_model_key} in its asset`,
+      },
+      {
+        case: `model_key mismatch`,
+        kind: `model`,
+        response: () =>
+          gzipped_json_response({ model: manifest_sized_model(`other-model`) }),
+        load: () => load_energy_parity_model(first_model_key),
+        error: `Invalid energy parity model: expected ${first_model_key}, got other-model`,
+      },
+    ])(
+      `retries rejected $kind assets ($case)`,
+      async ({ kind, response, load, error }) => {
+        const valid = kind === `base` ? manifest_sized_base() : manifest_sized_model()
+        const fetch_mock = vi
+          .fn(() => gzipped_json_response(kind === `base` ? valid : { model: valid }))
+          .mockImplementationOnce(response)
+        vi.stubGlobal(`fetch`, fetch_mock)
+        await expect(load()).rejects.toThrow(error)
+        await expect(load()).resolves.toEqual(valid)
+        // the third load hits the cache of the validated retry
+        await expect(load()).resolves.toEqual(valid)
+        expect(fetch_mock).toHaveBeenCalledTimes(2)
+      },
     )
   })
 
@@ -310,18 +303,11 @@ describe(`energy parity data helpers`, () => {
   it(`loads structures from the shard nested inside a bundle`, async () => {
     const structure = { sites: [], lattice: [] }
     const material_id = base.material_ids[2] ?? ``
-    const structure_url = energy_parity_asset_url(first_structure_bundle.asset)
-    const fetch_mock = vi.fn((url: RequestInfo | URL) => {
-      const href = request_url(url)
-      if (href === structure_url) {
-        return gzipped_json_response({
-          shards: { 1: { [material_id]: structure } },
-        })
-      }
-      return Promise.resolve(new Response(`missing`, { status: 404 }))
+    const fetch_mock = stub_json_routes({
+      [energy_parity_asset_url(first_structure_bundle.asset)]: {
+        shards: { 1: { [material_id]: structure } },
+      },
     })
-    vi.stubGlobal(`fetch`, fetch_mock)
-
     await expect(load_wbm_structure(base, 2, material_id)).resolves.toEqual(structure)
     expect(fetch_mock).toHaveBeenCalledTimes(1)
   })

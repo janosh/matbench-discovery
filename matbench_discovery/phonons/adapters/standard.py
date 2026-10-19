@@ -185,14 +185,11 @@ class StandardKappaAdapter:
         """Initialize phono3py from canonical PhononDB metadata keys."""
         from matbench_discovery.phonons import thermal_conductivity as ltc
 
-        q_point_mesh = atoms.info.get("q_point_mesh", atoms.info.get("q_mesh"))
-        if q_point_mesh is None:
-            raise ValueError("Structure has no q_point_mesh or q_mesh metadata")
         return ltc.init_phono3py(
             atoms,
             fc2_supercell=np.asarray(atoms.info["fc2_supercell"]),
             fc3_supercell=np.asarray(atoms.info["fc3_supercell"]),
-            q_point_mesh=tuple(q_point_mesh),
+            q_point_mesh=tuple(atoms.info["q_point_mesh"]),
             displacement_distance=settings.displacement_distance,
             symprec=settings.symprec,
             is_plusminus=settings.is_plusminus,
@@ -219,7 +216,7 @@ class StandardKappaAdapter:
         """Derive band path, eigenvectors, DOS and thermal properties from FC2.
 
         Runs after calculate_fc2 for every material, so it must not depend on FC3 or
-        the conductivity solver. Adapters that keep FC2 elsewhere override this.
+        the conductivity solver.
         """
         from matbench_discovery.phonons.harmonic import harmonic_data_from_phono3py
 
@@ -233,7 +230,11 @@ class StandardKappaAdapter:
         *,
         max_evaluations: int | None = None,
     ) -> np.ndarray:
-        """Calculate FC3 with serial ASE force calls."""
+        """Calculate FC3 with serial ASE force calls.
+
+        Every adapter's calculate_fc3 must assign the returned force set to
+        ``phono3py.forces``: the pipeline calls ``produce_fc3`` right after.
+        """
         from matbench_discovery.phonons import thermal_conductivity as ltc
 
         return ltc.calculate_fc3_set(

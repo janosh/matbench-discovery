@@ -2,13 +2,13 @@
 
 import io
 import os
-import sys
 import tempfile
 import zipfile
+from collections.abc import Iterator
 from datetime import date
 from pathlib import Path
 from typing import Any, Self, cast
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import ase.io
 import numpy as np
@@ -18,8 +18,8 @@ from ase import Atoms
 from pymatviz.enums import Key
 from ruamel.yaml.comments import CommentedMap
 
+from matbench_discovery import TEST_FILES, preds
 from matbench_discovery import data as data_module
-from matbench_discovery import preds
 from matbench_discovery.data import (
     artifact_filename,
     ase_atoms_from_zip,
@@ -102,19 +102,33 @@ def test_glob_to_df(
     assert list(df_loaded) == list(df_mixed)
 
 
-def test_glob_to_df_errors(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_glob_to_df_errors(tmp_path: Path) -> None:
     """Unsupported patterns and absent files raise their specific errors."""
     with pytest.raises(ValueError, match="Unsupported file extension in pattern='foo'"):
         glob_to_df("foo")
+    with pytest.raises(FileNotFoundError, match="No files matching glob pattern="):
+        glob_to_df(f"{tmp_path}/foo.csv")
 
-    mock_modules = dict(sys.modules)
-    mock_modules.pop("pytest", None)
-    monkeypatch.delenv("CI", raising=False)
+
+@pytest.fixture
+def mock_wbm_preds() -> Iterator[Mock]:
+    """Serve 499 MACE-MPA-0 WBM preds for every model without resolving real files.
+
+    Yields the resolve_verified_file mock so tests can count path resolutions.
+    """
+    df_mock = pd.read_csv(f"{TEST_FILES}/mock-wbm-energy-preds.csv.gz").rename(
+        columns={str(Key.formation_energy_per_atom): "e_form_per_atom"}
+    )
     with (
-        patch("sys.modules", mock_modules),
-        pytest.raises(FileNotFoundError, match="No files matching glob pattern="),
+        patch(
+            "matbench_discovery.enums.resolve_verified_file",
+            side_effect=lambda abs_path, **_kwargs: abs_path,
+        ) as resolve_file,
+        patch.object(
+            data_module, "glob_to_df", side_effect=lambda *_a, **_kw: df_mock.copy()
+        ),
     ):
-        glob_to_df("foo.csv")
+        yield resolve_file
 
 
 def test_atoms_zip_round_trip(dummy_atoms_zip: Path) -> None:
@@ -213,27 +227,23 @@ def test_ase_atoms_from_zip_with_slice_limit(
     assert [atoms.get_chemical_formula() for atoms in read_atoms] == expected_formulas
 
 
-@pytest.mark.skipif(
-    "CI" in os.environ,
-    reason="CI uses mock data so don't check length against on-the-fly "
-    "downloaded actual df_wbm",
-)
 @pytest.mark.parametrize(
     ("models", "max_error_threshold"),
     [
         ([], None),
         (["wrenformer"], None),
         (["wrenformer"], 5.0),
-        (["wrenformer"], 1.0),
+        (["wrenformer"], 0.1),
     ],
 )
 def test_load_df_wbm_with_preds(
-    models: list[str], max_error_threshold: float | None
+    models: list[str], max_error_threshold: float | None, mock_wbm_preds: Mock
 ) -> None:
     """Model selection and outlier thresholds preserve the canonical WBM rows."""
     df_wbm_with_preds = load_df_wbm_with_preds(
-        models=models, max_error_threshold=max_error_threshold
+        models=models, max_error_threshold=max_error_threshold, pbar=False
     )
+    assert mock_wbm_preds.call_count == len(models)
     assert len(df_wbm_with_preds) == len(df_wbm)
 
     assert list(df_wbm_with_preds) == list(df_wbm) + [
@@ -247,29 +257,22 @@ def test_load_df_wbm_with_preds(
             error = abs(
                 df_wbm_with_preds[model.key] - df_wbm_with_preds[MbdKey.e_form_dft]
             )
+            n_kept = df_wbm_with_preds[model.key].notna().sum()
             assert np.all(error[~error.isna()] <= max_error_threshold)
+            assert 0 < n_kept < 499 if max_error_threshold < 1 else n_kept == 499
         else:
-            assert df_wbm_with_preds[model.key].isna().sum() == 0
+            assert df_wbm_with_preds[model.key].notna().sum() == 499
 
 
-def test_load_df_wbm_with_preds_mock_data_models() -> None:
-    """Test default and explicit model loading with pytest mock data."""
+def test_load_df_wbm_with_preds_mock_data_models(mock_wbm_preds: Mock) -> None:
+    """Default loading selects active models; inactive ones load by any ref."""
     inactive_model = Model.alphanet_v1_mptrj
     inactive_model_refs = (inactive_model, inactive_model.name, inactive_model.label)
-    # Mock resolution as well as reading: discovery_path otherwise downloads every
-    # real prediction file before glob_to_df substitutes the 500-row test fixture.
-    with (
-        patch(
-            "matbench_discovery.enums.resolve_verified_file",
-            side_effect=lambda abs_path, **_kwargs: abs_path,
-        ) as resolve_file,
-        patch("matbench_discovery.data.glob", return_value=[]),
-    ):
-        df_default = load_df_wbm_with_preds(pbar=False)
-        inactive_cols = [
-            list(load_df_wbm_with_preds(models=[model_ref], pbar=False))
-            for model_ref in inactive_model_refs
-        ]
+    df_default = load_df_wbm_with_preds(pbar=False)
+    inactive_cols = [
+        list(load_df_wbm_with_preds(models=[model_ref], pbar=False))
+        for model_ref in inactive_model_refs
+    ]
 
     default_cols = list(df_default)
     assert default_cols == [*df_wbm, *(model.key for model in Model.active())]
@@ -277,13 +280,12 @@ def test_load_df_wbm_with_preds_mock_data_models() -> None:
         model.key for model in Model if not model.is_active
     )
     assert inactive_cols == [[*df_wbm, inactive_model.key]] * len(inactive_model_refs)
-    assert resolve_file.call_count == len(Model.active()) + len(inactive_model_refs)
+    n_loads = len(Model.active()) + len(inactive_model_refs)
+    assert mock_wbm_preds.call_count == n_loads
     assert df_default[Model.mace_mpa_0.key].notna().any()
 
 
-@pytest.mark.skipif(
-    "CI" in os.environ, reason="CI uses mock data where other error thresholds apply"
-)
+@pytest.mark.network
 def test_load_df_wbm_max_error_threshold() -> None:
     """Tighter outlier thresholds monotonically increase missing predictions."""
     model = Model.mace_mp_0
@@ -310,11 +312,11 @@ def test_load_df_wbm_with_preds_errors(df_float: pd.DataFrame) -> None:
         load_df_wbm_with_preds(max_error_threshold=-1)
 
     with (
-        # Make glob return a non-empty list to skip the mock data loading path
-        patch("matbench_discovery.data.glob", return_value=["dummy_file.csv"]),
-        # Patch only the specific read_csv call in glob_to_df that loads predictions,
-        # not the one that loads mock data
-        patch("pandas.read_csv", return_value=df_float),
+        patch(
+            "matbench_discovery.enums.resolve_verified_file",
+            side_effect=lambda abs_path, **_kwargs: abs_path,
+        ),
+        patch.object(data_module, "glob_to_df", return_value=df_float),
         pytest.raises(ValueError, match=r"e_form_per_atom column not found in"),
     ):
         load_df_wbm_with_preds(models=["alignn"])
@@ -325,21 +327,23 @@ def test_load_df_wbm_with_preds_errors(df_float: pd.DataFrame) -> None:
     [
         "unique_prototypes",
         TestSubset.uniq_protos,
+        TestSubset.full_test_set,
+        "full_test_set",
         ["wbm-1-1", "wbm-1-2"],
         pd.Index(["wbm-1-1", "wbm-1-2"]),
         None,
     ],
 )
 def test_load_df_wbm_with_preds_subset(
-    subset: str | TestSubset | list[str] | pd.Index | None,
+    subset: str | TestSubset | list[str] | pd.Index | None, mock_wbm_preds: Mock
 ) -> None:
     """Subset selectors return exactly the requested WBM material IDs."""
     # Default model selection is covered above; one prediction column exercises
     # subsetting without loading every model for each selector.
     model = Model.mace_mpa_0
-    with patch("matbench_discovery.data.glob", return_value=[]):
-        df_subset = load_df_wbm_with_preds(models=[model], subset=subset, pbar=False)
-    if subset is None:
+    df_subset = load_df_wbm_with_preds(models=[model], subset=subset, pbar=False)
+    assert mock_wbm_preds.call_count == 1
+    if subset is None or (isinstance(subset, str) and subset == "full_test_set"):
         expected_index = df_wbm.index
     elif isinstance(subset, list | pd.Index):
         expected_index = df_wbm.loc[subset].index
@@ -410,6 +414,12 @@ def test_update_yaml_file(tmp_path: Path) -> None:
 
     updated_yaml = update_yaml_file(test_file, "metrics.new.nested.path", {"value": 42})
     assert updated_yaml["metrics"]["new"]["nested"]["path"] == {"value": 42}
+
+    # null intermediate sections (bare `md:`) are replaced, not indexed into
+    test_file.write_text("metrics:\n  md:\n", encoding="utf-8")
+    updated_yaml = update_yaml_file(test_file, "metrics.md.nested", {"value": 1})
+    assert updated_yaml["metrics"] == {"md": {"nested": {"value": 1}}}
+    test_file.write_text(initial_yaml, encoding="utf-8")
 
     # the write lock must not be left next to the target, which for real model YAMLs
     # would leave an untracked .yml.lock sitting in the repo
@@ -636,22 +646,30 @@ def test_make_file_ref() -> None:
 
 
 @pytest.mark.parametrize(
-    ("same_name", "url", "replace", "preserve_metadata"),
+    ("same_name", "url", "replace", "expected_url", "keep_checksum"),
     [
-        (True, None, False, True),
-        (True, "https://figshare.com/files/2", False, True),
-        (False, None, False, False),
-        (True, None, True, False),
+        (True, None, False, FILE_REF_URL, True),
+        (True, FILE_REF_URL, False, FILE_REF_URL, True),
+        (
+            True,
+            "https://figshare.com/files/2",
+            False,
+            "https://figshare.com/files/2",
+            False,
+        ),
+        (False, None, False, None, False),
+        (True, None, True, None, False),
     ],
-    ids=("unchanged", "new-url", "new-name", "replace"),
+    ids=("unchanged", "same-url", "new-url", "new-name", "replace"),
 )
 def test_merge_file_ref(
     same_name: bool,
     url: str | None,
     replace: bool,
-    preserve_metadata: bool,
+    expected_url: str | None,
+    keep_checksum: bool,
 ) -> None:
-    """File-ref updates preserve metadata only for an unchanged artifact."""
+    """Checksums survive only for an unchanged artifact and upload URL."""
     name = FILE_REF_PATH if same_name else UPDATED_FILE_REF_PATH
     existing = make_file_ref(
         FILE_REF_PATH,
@@ -661,9 +679,9 @@ def test_merge_file_ref(
     )
     expected = make_file_ref(
         name,
-        url=(url or FILE_REF_URL) if preserve_metadata else url,
-        size=10 if preserve_metadata else None,
-        md5="a" * 32 if preserve_metadata else None,
+        url=expected_url,
+        size=10 if keep_checksum else None,
+        md5="a" * 32 if keep_checksum else None,
     )
     assert merge_file_ref(existing, name, url=url, replace=replace) == expected
 
@@ -692,6 +710,9 @@ def test_file_ref_accessors() -> None:
         ({"targets": "E"}, "md", "not_applicable"),
         ({"lifecycle": "aborted"}, "discovery", "not_available"),
         ({}, "md", "pending"),
+        # bare `metrics:` / `md:` keys load as None
+        ({"metrics": None}, "md", "pending"),
+        ({"metrics": {"md": None}}, "md", "pending"),
         (
             {"metrics": {"md": {"status": "pending", "reason": "not run yet"}}},
             "md",

@@ -1,0 +1,242 @@
+model_name: BAM-MP-DeNS
+model_key: bam-mp-dens
+model_version: 1.0.0
+dates:
+  benchmark_added: '2026-10-18'
+  paper_published: # no paper for the DeNS variant
+lifecycle: active
+authors:
+- name: Hyun Gyu Park
+  affiliation: Department of Energy Science, Sungkyunkwan University
+  email: hgpark95@skku.edu
+  corresponding: true
+- name: Won Woong Choi
+  affiliation: Department of Energy Science, Sungkyunkwan University
+  email: wonoong5385@skku.edu
+- name: Seungwon Kim
+  affiliation: Department of Energy Science, Sungkyunkwan University
+  email: swkim1011@skku.edu
+- name: Kwanghyeon Jo
+  affiliation: Department of Energy Science, Sungkyunkwan University
+  email: khjo24@skku.edu
+- name: Jooyeon Song
+  affiliation: Department of Energy Science, Sungkyunkwan University
+  email: wndus0920@skku.edu
+- name: Wonho Lee
+  affiliation: Department of Energy Science, Sungkyunkwan University
+  email: lwh8260@g.skku.edu
+- name: Gi Beom Sim
+  affiliation: Department of Energy Science, Sungkyunkwan University
+  email: gbsim@skku.edu
+- name: Tae Hyeon Park
+  affiliation: Department of Energy Science, Sungkyunkwan University
+  email: pth323@skku.edu
+- name: Soohaeng Yoo Willow
+  affiliation: Department of Energy Science, Sungkyunkwan University
+  email: sy7willow@gmail.com
+- name: Chang Woo Myung
+  affiliation: Department of Energy Science, Sungkyunkwan University
+  email: cwmyung@skku.edu
+trained_by:
+- name: Hyun Gyu Park
+  affiliation: Department of Energy Science, Sungkyunkwan University
+  email: hgpark95@skku.edu
+
+repo: https://github.com/myung-group/BAM-torch
+doi: # no paper for the DeNS variant
+paper: # no paper for the DeNS variant
+docs: https://github.com/myung-group/BAM-torch/tree/BAM_DeNS/examples/bam-mp-dens
+pr_url: https://github.com/janosh/matbench-discovery/pull/401
+checkpoint_url: https://figshare.com/files/70285206
+license:
+  code: MIT
+  code_url: https://github.com/myung-group/BAM-torch/blob/BAM_DeNS/LICENSE
+  checkpoint: MIT
+  checkpoint_url: https://github.com/myung-group/BAM-torch/blob/BAM_DeNS/LICENSE
+
+environment:
+  dependencies:
+  - bam-torch @ git+https://github.com/myung-group/BAM-torch@24ed0f042660a1e11ad5d91466b4275955df98c6
+  - torch==2.13.0 # +cu126 build used for inference
+  - e3nn==0.6.0
+  # optional equivariance backend
+  - openequivariance==0.7.0
+  - ase==3.29.0
+  - pymatgen==2026.9.24
+  python_version: '3.14'
+openness: OSOD
+architecture_types: [gnn]
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+training_sets: [MPtrj]
+model_params: 6468994
+training_cost:
+  entries:
+  - hardware: NVIDIA A100 40GB
+    count: 4
+    hours_per_device: 858.0 # 620.2 h measured for epochs ~33-118, scaled to all 118 epochs
+hyperparams:
+  evaluation:
+    ase_optimizer: FIRE
+    cell_filter: FrechetCellFilter
+    max_force: 0.05
+    max_steps: 500
+    kappa:
+      protocol: phonondb-v1
+      displacement_distance: 0.03
+      force_max: 1.0e-4
+      symprec: 1.0e-5
+      ase_optimizer: FIRE
+      ase_filter: FrechetCellFilter
+      save_forces: true
+  architecture:
+    graph_construction_radius: 7.0
+    max_neighbors:
+notes:
+  description: |
+    BAM-MP-DeNS is a universal interatomic potential from the BAM-torch BAM_DeNS
+    branch (RACE architecture), trained on MPtrj with denoising non-equilibrium
+    structures (DeNS) as an auxiliary task. It is evaluated here on WBM IS2RE-SR
+    discovery and geometry optimization, PhononDB kappa-103, DynaMat MD, and
+    diatomic curves.
+
+metrics:
+  md:
+    pred_file:
+      name: models/bam/bam-mp-dens/2026-10-16-md-metrics.csv.gz
+      url: https://figshare.com/files/70285329
+      size: 1500
+      md5: 4a91088226787dbb40ef92f08b91db3f
+    hardware: NVIDIA A100 80GB PCIe
+    run_time_sec: 117635.89 # s
+    max_rss_gb: 3.142 # GB
+    max_gpu_mem_gb: 8.899 # GB
+    rdf_error: 6.2346 # %
+    adf_error: 2.6016 # %
+    vdos_error: 30.281 # %
+    pressure_mae: 0.7637 # GPa
+    pressure_wasserstein: 0.7651 # GPa
+    pressure_error: 64.5269 # %
+    n_systems: 17 # count
+  diatomics:
+    pred_file:
+      name: models/bam/bam-mp-dens/2026-10-16-diatomics.json.gz
+      url: https://figshare.com/files/70285338
+      size: 237257
+      md5: f0316d1e693e716dca0a78d4f7d4c75c
+    hardware: NVIDIA A100 80GB PCIe
+    run_time_sec: 374.7
+    pbe_wall_dist_mae: 0.2706
+    pbe_energy_mae: 1.187
+    pbe_bond_length_error: 0.2008
+    pbe_well_depth_error: 0.6762
+    pbe_vib_freq_error: 78.22
+    tortuosity: 1.142
+    energy_diff_flips: 1.322
+    energy_jump: 0.06566
+    force_flips: 1.345
+    force_total_variation: 102.8
+    force_jump: 3.339
+    pbe_force_mae: 1.604
+    pbe_vib_freq_coverage:
+      n_valid: 73
+      n_eligible: 73
+      failed_elements: []
+      missing_elements: []
+  discovery:
+    pred_file:
+      name: models/bam/bam-mp-dens/2026-10-12-discovery.csv.gz
+      url: https://figshare.com/files/70285251
+      size: 1438844
+      md5: 6d00bb556e053933477e1f121670eef3
+    hardware: NVIDIA A100 40GB
+    run_time_sec: 467344
+    full_test_set:
+      F1: 0.75 # fraction
+      DAF: 4.072 # dimensionless
+      Precision: 0.699 # fraction
+      Recall: 0.81 # fraction
+      Accuracy: 0.908 # fraction
+      TP: 35734.0 # count
+      FP: 15408.0 # count
+      TN: 197463.0 # count
+      FN: 8358.0 # count
+      MAE: 0.041 # eV/atom
+      RMSE: 0.082 # eV/atom
+      R2: 0.794 # dimensionless
+      missing_preds: 2 # count
+    unique_prototypes:
+      F1: 0.761 # fraction
+      DAF: 4.614 # dimensionless
+      Precision: 0.705 # fraction
+      Recall: 0.826 # fraction
+      Accuracy: 0.92 # fraction
+      TP: 27570.0 # count
+      FP: 11518.0 # count
+      TN: 170596.0 # count
+      FN: 5804.0 # count
+      MAE: 0.043 # eV/atom
+      RMSE: 0.083 # eV/atom
+      R2: 0.797 # dimensionless
+      missing_preds: 0 # count
+  geo_opt:
+    pred_file:
+      name: models/bam/bam-mp-dens/2026-10-12-geo-opt.jsonl.gz
+      url: https://figshare.com/files/70285257
+      size: 106063830
+      md5: 608eead8a86c56211bb86e46cef2a4ef
+    symprec=1e-5:
+      rmsd: 0.0832 # unitless
+      n_sym_ops_mae: 1.9173 # unitless
+      symmetry_decrease: 0.063 # fraction
+      symmetry_match: 0.7242 # fraction
+      symmetry_increase: 0.2076 # fraction
+      n_structures: 256963 # count
+      analysis_file:
+        name: models/bam/bam-mp-dens/2026-10-12-geo-opt-symprec=1e-5-moyo=0.13.0.csv.gz
+        url: https://figshare.com/files/70285299
+        size: 7995792
+        md5: e545b402d060202b8e9b8041d4d89278
+    symprec=1e-2:
+      rmsd: 0.0832 # unitless
+      n_sym_ops_mae: 1.8647 # unitless
+      symmetry_decrease: 0.0623 # fraction
+      symmetry_match: 0.8101 # fraction
+      symmetry_increase: 0.1207 # fraction
+      n_structures: 256963 # count
+      analysis_file:
+        name: models/bam/bam-mp-dens/2026-10-12-geo-opt-symprec=1e-2-moyo=0.13.0.csv.gz
+        url: https://figshare.com/files/70285308
+        size: 8100968
+        md5: 4f420c13bb9a809aa195431c2a265380
+  phonons:
+    kappa_103:
+      run_info_file:
+        name: models/bam/bam-mp-dens/harmonic/2026-10-19-phonons-kappa-103-run-info.json
+        url: https://figshare.com/files/70313988
+        size: 5177
+        md5: d54b79f747d71b24eccccb3a985464e2
+      phonon_file:
+        name: models/bam/bam-mp-dens/harmonic/2026-10-19-phonons-kappa-103-phonons.json.gz
+        url: https://figshare.com/files/70313931
+        size: 1337363209
+        md5: ba895dd2afc63fa3d820a823df86ce6f
+      force_file:
+        name: models/bam/bam-mp-dens/harmonic/2026-10-19-phonons-kappa-103-forces.json.gz
+        url: https://figshare.com/files/70313985
+        size: 8815871
+        md5: fd2e3f9e35a2c77038f98b3950bed150
+      pred_file:
+        name: models/bam/bam-mp-dens/2026-10-09-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/70285317
+        size: 16118884
+        md5: 1cdefa2e007bbe0055eecbc7f71b9ada
+      hardware: NVIDIA A100 80GB PCIe
+      run_time_sec: 12859
+      κ_SRME: 0.7659
+      κ_SRE: 0.5722
+      κ_SRD: -0.4148
+      κ_failure_rate: 0.0583
+      imaginary_mode_rate: 0.0583
+      spectrum_w1: 1.2795

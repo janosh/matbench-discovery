@@ -10,10 +10,10 @@ Examples:
 # /// script
 # requires-python = ">=3.14"
 # dependencies = [
-#   "ase>=3.28",
+#   "ase>=3.29",
 #   "numpy",
 #   "pandas",
-#   "pymatgen>=2026.5.4",
+#   "pymatgen>=2026.9.24",
 #   "tqdm",
 #   "matbench-discovery",
 # ]
@@ -225,6 +225,17 @@ def _write_yaml_results(
     )
 
 
+def validate_yaml_write_settings(model_key: str, settings: RelaxationSettings) -> None:
+    """Require official YAML metrics to come from the model's verified protocol."""
+    verified_settings = RelaxationSettings.from_model(model_key)
+    if settings != verified_settings:
+        raise ValueError(
+            "Cannot write discovery YAML metrics from CLI-overridden relaxation "
+            f"settings: shards used {settings}, {model_key} YAML specifies "
+            f"{verified_settings}"
+        )
+
+
 def main(raw_args: Sequence[str] | None = None) -> int:
     """Run, resume, or merge the unified WBM discovery benchmark."""
     parser = build_parser()
@@ -300,6 +311,11 @@ def main(raw_args: Sequence[str] | None = None) -> int:
             parser.error(
                 f"Merged {merged_run.n_shards} shards, expected {args.n_shards}"
             )
+        if args.write_yaml and model is not None:
+            try:
+                validate_yaml_write_settings(model_key, merged_run.settings)
+            except ValueError as exc:
+                parser.error(str(exc))
         artifacts = write_discovery_artifacts(
             merged_run,
             pred_file_path=pred_file_path,

@@ -4,7 +4,8 @@ model_version: 1.0.0
 dates:
   benchmark_added: "2026-07-16"
   paper_published: '2025-10-03'
-lifecycle: active
+lifecycle: superseded
+superseded_by: bam-mp-dens
 authors:
 - name: Hyun Gyu Park
   affiliation: Department of Energy Science, Sungkyunkwan University

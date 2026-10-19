@@ -295,6 +295,50 @@ def test_cli_rejects_unsafe_flag_combinations(cli_args: list[str]) -> None:
 
 
 @pytest.mark.parametrize(
+    ("shard_settings", "error_match"),
+    [
+        (RelaxationSettings.from_model("mace_mp_0", max_steps=7), "CLI-overridden"),
+        (RelaxationSettings.from_model("mace_mp_0"), None),
+    ],
+)
+def test_merge_write_yaml_requires_verified_settings(
+    shard_settings: RelaxationSettings,
+    error_match: str | None,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """--merge-shards --write-yaml refuses shards run with overridden settings."""
+    merged_run = MergedDiscoveryRun(
+        model_key="mace_mp_0",
+        settings=shard_settings,
+        records=(),
+        run_metadata={},
+        n_shards=1,
+    )
+    monkeypatch.setattr(
+        discovery_runner, "merge_discovery_shards", lambda *_args, **_kwargs: merged_run
+    )
+
+    def stop_before_writing(*_args: object, **_kwargs: object) -> None:
+        """Mark that validation passed without writing artifacts."""
+        raise RuntimeError("reached artifact writing")
+
+    monkeypatch.setattr(
+        discovery_runner, "write_discovery_artifacts", stop_before_writing
+    )
+    cli_args = ["--model", "mace_mp_0", "--merge-shards", "--write-yaml"]
+    cli_args += ["--out-dir", str(tmp_path)]
+    if error_match is None:
+        with pytest.raises(RuntimeError, match="reached artifact writing"):
+            discovery_runner.main(cli_args)
+        return
+    with pytest.raises(SystemExit, match="2"):
+        discovery_runner.main(cli_args)
+    assert error_match in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
     "model_ref",
     [*discovery_core.ARCHIVED_DISCOVERY_MODELS, "equflash-29m-oam"],
 )
@@ -340,7 +384,8 @@ def test_dependency_isolated_print_cmd(
     )
     command = capsys.readouterr().out
     assert "uv run --no-project" in command
-    assert all(dependency in command for dependency in CALCULATORS[model_key].deps)
+    runner_deps = CALCULATORS[model_key].runner_deps()
+    assert all(dependency in command for dependency in runner_deps)
     assert f"models/run_discovery.py --model {model_key}" in command
     assert all(arg in command for arg in extra_args)
     assert "--dry-run" in command
@@ -457,17 +502,21 @@ def test_relaxation_settings_reject_invalid_values(
 
 
 def test_emt_relaxation_smoke() -> None:
-    """EMT produces a finite energy, structure, and convergence state."""
+    """EMT produces a finite energy, structure, and step-capped convergence state."""
+    # fixed-cell EMT Cu converges at step 0, so relax the cell to a tight fmax to
+    # make the step cap bind
     record = relax_atoms(
         bulk_atoms("wbm-cu"),
         EMT(),
-        RelaxationSettings(max_force=0.5, max_steps=2, cell_filter="none"),
+        RelaxationSettings(
+            max_force=0.01, max_steps=2, cell_filter="FrechetCellFilter"
+        ),
     )
     assert record.material_id == "wbm-cu"
     assert record.error is None
     assert record.structure is not None
-    assert record.energy is not None
-    assert record.n_steps <= 2
+    assert np.isfinite(record.energy)
+    assert (record.converged, record.n_steps) == (False, 2)
     single_point_record = relax_atoms(
         bulk_atoms("wbm-cu-single-point"),
         EMT(),
@@ -476,32 +525,20 @@ def test_emt_relaxation_smoke() -> None:
     assert single_point_record.converged is False
 
 
-def _run_test_shard(
-    tmp_path: Path, *, shard_index: int, n_shards: int, material_id: str
-) -> str:
-    """Write one complete EMT shard and return its path."""
-    shard_path = tmp_path / f"shard-{shard_index:03d}-of-{n_shards:03d}.jsonl"
-    run_single_point_shard(
-        {material_id: bulk_atoms(material_id)},
-        str(shard_path),
-        shard_index=shard_index,
-        n_shards=n_shards,
-        dataset_material_ids=(["wbm-1", "wbm-2"] if n_shards == 2 else [material_id]),
-    )
-    return str(shard_path)
-
-
 def _run_two_test_shards(tmp_path: Path) -> list[str]:
-    """Write a complete two-shard EMT run."""
-    return [
-        _run_test_shard(
-            tmp_path,
+    """Write a complete two-shard EMT run and return the shard paths."""
+    shard_paths = []
+    for shard_index, material_id in enumerate(("wbm-1", "wbm-2")):
+        shard_path = f"{tmp_path}/shard-{shard_index:03d}-of-002.jsonl"
+        run_single_point_shard(
+            {material_id: bulk_atoms(material_id)},
+            shard_path,
             shard_index=shard_index,
             n_shards=2,
-            material_id=material_id,
+            dataset_material_ids=["wbm-1", "wbm-2"],
         )
-        for shard_index, material_id in enumerate(("wbm-1", "wbm-2"))
-    ]
+        shard_paths.append(shard_path)
+    return shard_paths
 
 
 def _merge_test_shards(shard_paths: list[str]) -> MergedDiscoveryRun:

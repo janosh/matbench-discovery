@@ -1,5 +1,4 @@
 import DATASETS from '$data/datasets.yml'
-import { arr_to_str } from '#lib'
 import type { Dataset } from '#lib/types.js'
 import Page from '#routes/data/[slug]/+page.svelte'
 import pkg from '#site/package.json'
@@ -90,11 +89,11 @@ describe(`Dataset Detail Page`, () => {
     const items = [...doc_query(`.method-info`).querySelectorAll(`li`)].map((item) =>
       item.textContent?.replaceAll(/\s+/g, ` `).trim(),
     )
-    // scalar values go through arr_to_str (JSON-quoted), arrays are comma-joined
+    // strings render unquoted, arrays are comma-joined
     expect(items).toEqual([
-      `Method: ${arr_to_str(dataset.method)}`,
+      `Method: DFT`,
       ...(has_params
-        ? [`Code: "VASP"`, `Cutoff Energy: "520 eV: hard"`, `Pseudopotentials: PBE`]
+        ? [`Code: VASP`, `Cutoff Energy: 520 eV: hard`, `Pseudopotentials: PBE`]
         : []),
     ])
   })

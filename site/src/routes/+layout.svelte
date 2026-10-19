@@ -5,7 +5,7 @@
   import { title_case } from '#lib/labels.js'
   import { bind_score_weights, MODELS } from '#lib/models.svelte.js'
   import { bind_comparison_url, comparison } from '#lib/model-comparison.svelte.js'
-  import { get_error_message } from '#lib/asset-loader.js'
+  import { to_error } from 'svelte-widgets/utils'
   import {
     CommandMenu,
     CopyButton,
@@ -23,12 +23,14 @@
   import pkg from '#site/package.json'
   import { tick, type Snippet } from 'svelte'
   import { heading_anchors } from 'svelte-widgets/heading-anchors'
+  // MathML from markdown math, styled with the system math font
+  // oxlint-disable-next-line no-unassigned-import
+  import 'temml/dist/Temml-Local.css'
   // oxlint-disable-next-line no-unassigned-import
   import '../app.css'
 
   let { children }: { children?: Snippet } = $props()
   let toc_desktop = $state(true)
-  let find_open = $state(false)
   let search_open = $state(false)
   let find_bar = $state<ReturnType<typeof FindBar>>()
   let main_element = $state<HTMLElement>()
@@ -80,17 +82,18 @@
   let url = $derived(page.url.pathname)
   let heading_selector = $derived(`main :is(${url === `/api` ? `h1, ` : ``}h2, h3, h4)`)
   let find_enabled = $derived([`/api`, `/changelog`, `/contribute`].includes(url))
+  // Writable, reset whenever find_enabled flips so leaving and returning to a
+  // searchable route does not reopen the bar.
+  let find_open = $derived.by(() => {
+    void find_enabled
+    return false
+  })
 
   const open_find = async (): Promise<void> => {
     find_open = true
     await tick()
     find_bar?.focus_input()
   }
-
-  // Reset so leaving and returning to a searchable route does not reopen the bar.
-  $effect(() => {
-    if (!find_enabled) find_open = false
-  })
 
   const base_description = `Matbench Discovery - ${pkg.description}`
   const descriptions: Record<string, string> = {
@@ -263,7 +266,7 @@
       <p role="alert">Could not load model comparison.</p>
       <button onclick={() => location.reload()}>Reload comparison</button>
       <button onclick={() => (comparison.open = false)}>Dismiss</button>
-      <details><summary>Asset details</summary>{get_error_message(error)}</details>
+      <details><summary>Asset details</summary>{to_error(error).message}</details>
     </div>
   {/if}
 {/await}

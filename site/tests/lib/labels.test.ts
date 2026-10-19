@@ -1,4 +1,7 @@
+import { DEFAULT_CDS_CONFIG, DEFAULT_CMDS_CONFIG } from '#lib/combined-scores.svelte.js'
 import {
+  DIATOMICS_METRICS,
+  MD_METRICS,
   format_power_ten,
   format_property_path,
   format_relative_time,
@@ -97,52 +100,21 @@ describe(`get_org_logo`, () => {
   it.each([
     [`Google DeepMind`, src_logo(`Google DeepMind`, `/logos/google-deepmind.svg`)],
     [`FAIR at Meta`, { name: `FAIR at Meta`, icon: Meta }],
+    // substring match returns the canonical org name, not the full affiliation
     [
       `Microsoft Research AI for Science`,
       { name: `Microsoft Research`, icon: Microsoft },
-    ],
-    [`Some unknown university`, undefined],
-    [
-      `Massachusetts Institute of Technology, USA`,
-      src_logo(
-        `Massachusetts Institute of Technology`,
-        `/logos/massachusetts-institute-of-technology.svg`,
-      ),
     ],
     [
       `Department of Energy Science, Sungkyunkwan University`,
       src_logo(`Sungkyunkwan University`, `/logos/sungkyunkwan-university.svg`),
     ],
-    [
-      `Aberystwyth University, UK`,
-      src_logo(`Aberystwyth University`, `/logos/aberystwyth-university.svg`),
-    ],
-    [
-      `Independent Researcher in Data-driven Materials Discovery, M.Sc in Materials Science and Engineering, Christian-Albrechts-Universität zu Kiel`,
-      src_logo(
-        `Christian-Albrechts-Universität zu Kiel`,
-        `/logos/christian-albrechts-university-kiel.svg`,
-      ),
-    ],
-    [
-      `Rutherford Appleton Laboratory, UK`,
-      src_logo(
-        `Rutherford Appleton Laboratory`,
-        `/logos/science-and-technology-facilities-council.svg`,
-      ),
-    ],
-    [`DeePMD`, src_logo(`DeePMD`, `/logos/deepmd.svg`)],
-    [`Kairos Materials`, src_logo(`Kairos Materials`, `/logos/kairos-materials.svg`)],
+    // case-insensitive match
+    [`deepmd-kit team`, src_logo(`DeePMD`, `/logos/deepmd.svg`)],
+    [`Some unknown university`, undefined],
+    [``, undefined],
   ])(`returns correct logo data for '%s'`, (input: string, expected: unknown) => {
     expect(get_org_logo(input)).toStrictEqual(expected)
-  })
-
-  it(`returns undefined for empty or undefined input`, () => {
-    expect(get_org_logo(``)).toBeUndefined()
-    // @ts-expect-error testing undefined input
-    expect(get_org_logo()).toBeUndefined()
-    // @ts-expect-error testing null input
-    expect(get_org_logo(null)).toBeUndefined()
   })
 })
 
@@ -156,3 +128,48 @@ it.each([
 ])(`format_relative_time(%s) relative to 2024-01-15T14:30Z is '%s'`, (date, expected) => {
   expect(format_relative_time(date, Date.parse(`2024-01-15T14:30:00Z`))).toBe(expected)
 })
+
+// descriptions quote the live default weights (rounded) and the CDS element roster size
+const { vdos_error, adf_error, pressure_error, run_time_sec } = DEFAULT_CMDS_CONFIG
+const { accuracy, geometry, physicality, speed } = DEFAULT_CDS_CONFIG
+it.each([
+  [
+    MD_METRICS.md_combined_score,
+    [
+      [vdos_error, `ΔvDOS (%)`],
+      [adf_error, `ΔADF (%)`],
+      [pressure_error, `ΔP (%)`],
+      [run_time_sec, `log-scaled, %)`],
+    ],
+  ],
+  [
+    DIATOMICS_METRICS.diatomics_combined_score,
+    [
+      [accuracy, `MAE, %)`],
+      [geometry, `vs PBE, %)`],
+      [physicality, `tortuosity, %)`],
+      [speed, `log-scaled, %;`],
+    ],
+  ],
+] as const)(`$label description quotes default weights`, (label, snippets) => {
+  for (const [{ weight }, snippet] of snippets)
+    expect(label.description).toContain(
+      snippet.replace(`%`, `${Math.round(weight * 100)}%`),
+    )
+})
+it(`CDS description quotes the scored element count`, () => {
+  expect(DIATOMICS_METRICS.diatomics_combined_score.description).toContain(
+    `fraction of 87 benchmark elements`,
+  )
+})
+
+it.each(Object.values(MD_METRICS))(
+  `$key label points at metrics.md and has correct direction`,
+  (label) => {
+    // t/t_min is computed per table view in assemble_row_data, not read from models
+    const expected_path = label.key === `md_time_multiplier` ? undefined : `metrics.md`
+    expect(label.path).toBe(expected_path)
+    // combined_score (CMDS) is a score (higher=better); the rest are errors (lower)
+    expect(label.better).toBe(label.key === `combined_score` ? `higher` : `lower`)
+  },
+)

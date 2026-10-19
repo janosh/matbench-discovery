@@ -44,7 +44,7 @@
     Scale,
     Versions,
   } from 'svelte-widgets/icons'
-  import { format_relative_time, get_org_logo } from '#lib/labels.js'
+  import { format_relative_time, get_org_logo, MD_METRICS } from '#lib/labels.js'
   import { format_num } from 'matterviz/labels'
   import { HeatmapTable } from 'matterviz/table'
   import { JsonTree } from 'matterviz/layout'
@@ -66,35 +66,28 @@
 
   // per-system MD breakdown: columns shown only when present in the CSV (older
   // pred files lack n_atoms/cost provenance; pressure is NaN for stress-less systems)
+  const md_metric_cols = [
+    MD_METRICS.md_rdf_error,
+    MD_METRICS.md_adf_error,
+    MD_METRICS.md_vdos_error,
+    MD_METRICS.md_pressure_mae,
+    MD_METRICS.md_pressure_error,
+    MD_METRICS.md_energy_rmse,
+    MD_METRICS.md_force_rmse,
+    MD_METRICS.md_run_time_sec,
+    MD_METRICS.md_max_gpu_mem_gb,
+  ].map(({ key, property, label, unit, better, format }) => ({
+    id: property ?? key, // per-system CSV columns use the YAML property names
+    label: `${label} (${unit})`,
+    better: better ?? undefined,
+    format,
+  }))
   const md_col_defs = [
     { id: `system`, label: `System`, sticky: true },
     { id: `temperature_kelvin`, label: `T (K)`, format: `.0f` },
     { id: `n_atoms`, label: `Atoms`, format: `.0f` },
-    { id: `rdf_error`, label: `ΔRDF (%)`, better: `lower`, format: `.1f` },
-    { id: `adf_error`, label: `ΔADF (%)`, better: `lower`, format: `.1f` },
-    { id: `vdos_error`, label: `ΔvDOS (%)`, better: `lower`, format: `.1f` },
-    {
-      id: `pressure_mae`,
-      label: `P<sub>MAE</sub> (GPa)`,
-      better: `lower`,
-      format: `.2f`,
-    },
-    { id: `pressure_error`, label: `ΔP (%)`, better: `lower`, format: `.1f` },
-    {
-      id: `energy_rmse`,
-      label: `ΔE<sub>RMSE</sub> (meV/atom)`,
-      better: `lower`,
-      format: `.2f`,
-    },
-    {
-      id: `force_rmse`,
-      label: `F<sub>RMSE</sub> (meV/Å)`,
-      better: `lower`,
-      format: `.1f`,
-    },
-    { id: `run_time_sec`, label: `Time (s)`, better: `lower`, format: `.3~s` },
-    { id: `max_gpu_mem_gb`, label: `VRAM (GB)`, better: `lower`, format: `.2f` },
-  ] as const
+    ...md_metric_cols,
+  ]
   let md_rows = $derived(data.md_per_system ?? [])
   let md_cols = $derived(
     md_col_defs.filter((col) => md_rows.some((row) => col.id in row)),
@@ -158,6 +151,17 @@
   let selected_metric = $derived(
     task_metrics.find((metric) => task_key(metric.rank_href) === diagnostic_task),
   )
+  // Each leaderboard reads a different param: geo-opt/phonons select diagnostic models,
+  // diatomics' curve picker replaces its whole selection (so keep the DFT references),
+  // and discovery/MD highlight the model's table row via the comparison selection.
+  const leaderboard_query = (task: string, key: string): string =>
+    task === `geo-opt`
+      ? `models=${key}`
+      : task === `phonons`
+        ? `model=${key}`
+        : task === `diatomics`
+          ? `models=PBE,r2SCAN,${key}`
+          : `compare=${key}`
   // Registry tests enforce a shared calculator for every declared phonon protocol.
   let runner_command = $derived(
     model.hyperparams?.evaluation?.kappa
@@ -491,10 +495,10 @@
     {#if selected_metric && has_task_results(diagnostic_task)}
       <p class="diagnostic-context">
         <a
-          href="{selected_metric.rank_href}?{diagnostic_task === `phonons`
-            ? `model`
-            : `models`}={model.model_key}"
-          >Open {@html selected_metric.label} leaderboard and task details</a
+          href="{selected_metric.rank_href}?{leaderboard_query(
+            diagnostic_task,
+            model.model_key,
+          )}">Open {@html selected_metric.label} leaderboard and task details</a
         >
       </p>
       {#if diagnostic_task === `discovery`}
@@ -585,8 +589,10 @@
                   <ColorBar
                     title="|E<sub>ML,hull</sub> - E<sub>DFT,hull</sub>| (eV / atom)"
                     title_side="top"
-                    scale={color_scale}
-                    range={[0, Math.max(0, ...Object.values(heatmap_values))]}
+                    color_scale={{
+                      scheme: color_scale,
+                      value_range: [0, Math.max(0, ...Object.values(heatmap_values))],
+                    }}
                     style="width: 80%; margin: 0 2em"
                   />
                 </TableInset>

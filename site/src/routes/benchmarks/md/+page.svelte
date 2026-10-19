@@ -3,7 +3,7 @@
   import TaskNavigation from '#lib/benchmark/TaskNavigation.svelte'
   import MetricsTable from '#lib/table/MetricsTable.svelte'
   import type { ModelData } from '#lib/types.js'
-  import { ACTIVE_MODELS, make_table_filters } from '#lib/models.svelte.js'
+  import { ACTIVE_MODELS, task_page_filters } from '#lib/models.svelte.js'
   import {
     MD_METRICS,
     METADATA_COLS,
@@ -13,7 +13,6 @@
   import { CMDS_CONFIG, DEFAULT_CMDS_CONFIG } from '#lib/combined-scores.svelte.js'
   import DynamicScatter from '#lib/plot/DynamicScatter.svelte'
   import ScoreWeights from '#lib/ScoreWeights.svelte'
-  import { bind_url_params } from '#lib/url-state.svelte.js'
   import MdNote from './md-note.md'
 
   // show only MD metrics and metadata columns
@@ -27,9 +26,7 @@
     y: MD_METRICS.md_combined_score.key,
   })
 
-  const filters = make_table_filters()
-
-  bind_url_params(filters.read, () => filters.url_entries)
+  const { filters, in_view } = task_page_filters(has_md_metrics)
 </script>
 
 <h1 id="molecular-dynamics-metrics">
@@ -84,7 +81,7 @@
 
 <DynamicScatter
   models={ACTIVE_MODELS}
-  model_filter={has_md_metrics}
+  model_filter={in_view}
   bind:x_key={plot.x}
   bind:y_key={plot.y}
   color_key={METADATA_COLS.n_training_materials.key}

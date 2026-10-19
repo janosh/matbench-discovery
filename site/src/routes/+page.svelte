@@ -16,14 +16,14 @@
   } from '#lib/labels.js'
   import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '#lib/combined-scores.svelte.js'
   import { is_finite_num, metric_value } from '#lib/metrics.js'
-  import { make_table_filters, ACTIVE_MODELS } from '#lib/models.svelte.js'
-  import { bind_url_params } from '#lib/url-state.svelte.js'
+  import { ACTIVE_MODELS, task_page_filters } from '#lib/models.svelte.js'
   import type { TableSort } from 'matterviz/table'
   import { sort_from_query } from 'matterviz/url-params'
   import { valid_query_param } from 'svelte-widgets/url-params'
   import type { DiscoverySet, Label, ModelData } from '#lib/types.js'
   import { ButtonGroup } from 'svelte-widgets'
   import { slide } from 'svelte/transition'
+  import type { UrlTableFilters } from '#lib/url-state.svelte.js'
   import type { Snapshot } from './$types'
 
   // landing hid TPR; keep its Recall replacement supplementary too
@@ -67,7 +67,6 @@
       preset === `Discovery` ? ALL_METRICS.CPS : preset_primary_metrics[preset]
     return { column: metric.key, dir: metric.better === `lower` ? `asc` : `desc` }
   }
-  const filters = make_table_filters()
   const col_preset_options = col_preset_names.map((name) => ({
     value: name,
     label: name,
@@ -104,27 +103,35 @@
     sort = next_sort
 
     discovery_set = valid_query_param(params, `set`, `unique_prototypes`, valid_sets)
-    filters.read(params)
     col_preset = next_preset
     // Reapply the preset even when only its columns were customized.
     preset_metric_keys = new Set(preset_metric_keys)
   }
 
-  bind_url_params(read_url_params, () => [
-    [`preset`, col_preset, default_col_preset],
-    [`set`, discovery_set, `unique_prototypes`],
-    ...filters.url_entries,
-  ])
-
   // Each task view includes only models with its headline metric.
   let has_preset_data = $derived((model: ModelData) =>
     is_finite_num(metric_value(model, preset_primary_metrics[col_preset], discovery_set)),
   )
-  let in_cohort = $derived(
-    (model: ModelData) => has_preset_data(model) && filters.matches(model),
+  const { filters, in_view } = task_page_filters(
+    (model) => has_preset_data(model),
+    read_url_params,
+    () => [
+      [`preset`, col_preset, default_col_preset],
+      [`set`, discovery_set, `unique_prototypes`],
+    ],
   )
 
-  export const snapshot: Snapshot = {
+  // Partial and plain strings: snapshots stored by older deploys may lack fields added
+  // since or name discovery sets/presets that were removed
+  type PageSnapshot = Partial<{
+    discovery_set: string
+    col_preset: string
+    sort: TableSort
+    auto_sort_enabled: boolean
+    filters: UrlTableFilters[`config`]
+    show_heatmap: boolean
+  }>
+  export const snapshot: Snapshot<PageSnapshot> = {
     capture: () => ({
       discovery_set,
       col_preset,
@@ -141,7 +148,8 @@
     restore: (values) => {
       auto_sort_enabled = values.auto_sort_enabled ?? auto_sort_enabled
       sort = values.sort ?? sort
-      if (valid_sets.has(values.discovery_set)) discovery_set = values.discovery_set
+      discovery_set =
+        DISCOVERY_SETS.find((set) => set === values.discovery_set) ?? discovery_set
       col_preset =
         col_preset_names.find((preset) => preset === values.col_preset) ?? col_preset
       // apply() drops unknown dataset keys, targets and openness values itself
@@ -222,7 +230,7 @@
   <p>Each dot is a model; the dashed line tracks the best score so far.</p>
   <DynamicScatter
     models={ACTIVE_MODELS}
-    model_filter={in_cohort}
+    model_filter={in_view}
     {discovery_set}
     x_key={METADATA_COLS.benchmark_added.key}
     y_key={ALL_METRICS.CPS.key}
@@ -284,18 +292,12 @@
   }
   .toggle-row {
     display: flex;
-    flex-wrap: wrap; /* fallback where balance is unsupported */
     flex-wrap: balance;
+    --btn-group-flex-wrap: balance;
     align-items: center;
     justify-content: center;
     gap: 8pt;
     font-size: smaller;
-  }
-  /* a var() resolving to an unsupported value would compute to nowrap, so gate it */
-  @supports (flex-wrap: balance) {
-    .toggle-row {
-      --btn-group-flex-wrap: balance;
-    }
   }
   .intro {
     text-align: center;

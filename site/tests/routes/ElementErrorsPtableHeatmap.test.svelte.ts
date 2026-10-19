@@ -80,7 +80,10 @@ describe(`ElementErrorsPtableHeatmap`, () => {
     const [manual, normalized] = document.querySelectorAll<HTMLInputElement>(
       `form input[type="checkbox"]`,
     )
-    const maximum = doc_query<HTMLInputElement>(`input[type="range"]`)
+    // the shared <label> names only its first control (the checkbox)
+    const maximum = doc_query<HTMLInputElement>(
+      `input[type="range"][aria-label="Color bar max"]`,
+    )
     expect(manual.checked).toBe(true)
     expect(normalized.checked).toBe(false)
     expect(maximum.value).toBe(`0.4`)

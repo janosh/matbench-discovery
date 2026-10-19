@@ -1,13 +1,11 @@
 // Shared loader for gzipped JSON assets (energy-parity, kappa-parity, ...).
-// Decompresses via matterviz's gzip helper, parses JSON, and caches promises.
-import { decompress_data } from 'matterviz/io'
+// Decompresses via matterviz's payload classifier, parses JSON, and caches promises.
+import { classify_payload } from 'matterviz/io'
 
 const asset_cache = new Map<string, Promise<unknown>>()
 
 // load lifecycle status shared by the parity plot components
 export type LoadStatus = `idle` | `loading` | `ready` | `error`
-export const get_error_message = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error)
 
 // per-model asset files wrap their payload as { model: ... }
 interface ModelAsset<TModel> {
@@ -71,12 +69,13 @@ async function read_asset_text(url: string): Promise<string> {
   const response = await fetch(url)
   if (!response.ok) throw new Error(`Failed to load ${url}: HTTP ${response.status}`)
 
-  const buffer = await response.arrayBuffer()
-  const bytes = new Uint8Array(buffer)
-  // raw .gz (served without Content-Encoding) starts with the gzip magic bytes and needs
-  // manual decompression; if the server already decompressed it, bytes are plain JSON text
-  const is_gzip = bytes[0] === 0x1f && bytes[1] === 0x8b
-  return is_gzip ? decompress_data(buffer, `gzip`) : new TextDecoder().decode(bytes)
+  // raw .gz (served without Content-Encoding) still starts with the gzip magic bytes and
+  // gets inflated; if the server already decompressed it, the bytes pass through as text
+  const { content } = await classify_payload(await response.blob(), [url], {
+    compression_by_magic: true,
+  })
+  if (typeof content !== `string`) throw new Error(`Expected text asset at ${url}`)
+  return content
 }
 
 // Validate that a decoded asset array has the row count promised by its manifest.

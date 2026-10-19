@@ -17,10 +17,15 @@ def get_excluded_formula_reasons(
     Curated reasons take precedence. Formulas containing elements outside the
     Materials Project element set are omitted because metrics skip them globally.
     """
+    from matbench_discovery.calculators import CALCULATORS
+
     try:
-        diatomics_metrics = Model.from_ref(model_key).metrics.get("diatomics") or {}
-    except ValueError:  # debug models like emt have no Model enum entry
-        diatomics_metrics = {}
+        model: Model | None = Model.from_ref(model_key)
+    except ValueError:
+        if model_key not in CALCULATORS:  # a typo, not a debug model
+            raise
+        model = None  # debug models like emt have a calculator but no Model entry
+    diatomics_metrics = (model.metrics.get("diatomics") or {}) if model else {}
     curated_reasons = diatomics_metrics.get("excluded_formula_reasons", {})
     reasons = dict.fromkeys(invalid_formulas, "invalid or unsupported curve")
     reasons |= curated_reasons

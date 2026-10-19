@@ -9,7 +9,19 @@ import requests
 from pymatgen.core import Lattice, Structure
 from requests.adapters import HTTPAdapter, Retry
 
+from matbench_discovery import cli
 from matbench_discovery.metrics.diatomics import DiatomicCurves
+from matbench_discovery.remote import fetch
+
+# scripts and helpers read cli.cli_args, which strictly parses sys.argv on first use;
+# give them the shared defaults instead of pytest's own flags
+cli.parse_cli_args([])
+
+
+@pytest.fixture(autouse=True)
+def no_download_retry_delay(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep download_file's transient-error retries instant in tests."""
+    monkeypatch.setattr(fetch, "DOWNLOAD_RETRY_DELAYS", (0,) * 4)
 
 
 @pytest.fixture(scope="session")

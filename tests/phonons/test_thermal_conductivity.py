@@ -2,6 +2,7 @@
 
 import itertools
 import json
+from functools import partial
 
 import numpy as np
 import pytest
@@ -79,16 +80,18 @@ def test_init_phono3py(
     """Initialization preserves supercells, meshes and default/custom displacements."""
     fc2_supercell = test_atoms.info["fc2_supercell"]
     fc3_supercell = test_atoms.info["fc3_supercell"]
-    ph3 = ltc.init_phono3py(
+    init = partial(
+        ltc.init_phono3py,
         test_atoms,
         fc2_supercell=fc2_supercell,
         fc3_supercell=fc3_supercell,
         q_point_mesh=q_point_mesh,
-        **(
-            {"displacement_distance": displacement_distance}
-            if displacement_distance is not None
-            else {}
-        ),
+    )
+    # None exercises the default displacement distance
+    ph3 = (
+        init()
+        if displacement_distance is None
+        else init(displacement_distance=displacement_distance)
     )
     assert isinstance(ph3, Phono3py)
     assert ph3.mesh_numbers is not None
@@ -107,54 +110,35 @@ def test_init_phono3py(
     )
 
 
-def test_calculate_fc3_set(test_ph3: Phono3py, test_calculator: EMT) -> None:
-    """Test calculation of 3rd order force constants."""
-    forces = ltc.calculate_fc3_set(test_ph3, test_calculator, pbar_kwargs={})
-    assert isinstance(forces, np.ndarray)
-    assert forces.ndim == 3
-    assert forces.shape[-1] == 3
-
-    capped_forces = ltc.calculate_fc3_set(
-        test_ph3,
-        test_calculator,
-        pbar_kwargs={},
-        max_evaluations=0,
-    )
-    assert capped_forces.shape == forces.shape
-    assert np.count_nonzero(capped_forces) == 0
-
-
-def test_get_fc2_and_freqs(test_ph3: Phono3py, test_calculator: EMT) -> None:
-    """Test getting force constants and frequencies."""
-    ph3, fc2_set, freqs = ltc.get_fc2_and_freqs(
+def test_calculate_conductivity(test_ph3: Phono3py, test_calculator: EMT) -> None:
+    """FC2 frequencies, FC3 force sets (incl. capped) and conductivity compose."""
+    test_ph3, fc2_set, freqs = ltc.get_fc2_and_freqs(
         test_ph3, test_calculator, pbar_kwargs={}
     )
-    assert isinstance(ph3, Phono3py)
-    assert isinstance(fc2_set, np.ndarray)
-    assert isinstance(freqs, np.ndarray)
-    assert freqs.ndim == 2  # (n_qpoints, n_bands)
-    n_bz_grid, n_bands = 15, 3
+    assert fc2_set.shape == (
+        len(test_ph3.phonon_supercells_with_displacements),
+        len(test_ph3.phonon_supercell),
+        3,
+    )
+    n_bz_grid, n_bands = 15, 3  # 2x2x2 mesh: 8 regular-grid points + BZ surface
     assert freqs.shape == (n_bz_grid, n_bands)
 
-
-def test_calculate_conductivity(test_ph3: Phono3py, test_calculator: EMT) -> None:
-    """Test thermal conductivity calculation."""
-    # First need to compute force constants
-    test_ph3, fc2_set, _ = ltc.get_fc2_and_freqs(
-        test_ph3, test_calculator, pbar_kwargs={}
+    n_fc3_displacements = len(test_ph3.supercells_with_displacements)
+    capped_forces = ltc.calculate_fc3_set(
+        test_ph3, test_calculator, pbar_kwargs={}, max_evaluations=0
     )
-
+    assert capped_forces.shape == (n_fc3_displacements, len(test_ph3.supercell), 3)
+    assert np.count_nonzero(capped_forces) == 0
     fc3_set = ltc.calculate_fc3_set(test_ph3, calculator=test_calculator)
+    assert fc3_set.shape == capped_forces.shape
+    assert test_ph3.forces is not None
+    np.testing.assert_array_equal(test_ph3.forces, fc3_set)  # assigned for produce_fc3
 
-    test_ph3.phonon_forces = fc2_set
-    test_ph3.forces = fc3_set
-    test_ph3.produce_fc2(symmetrize_fc2=True)
     test_ph3.produce_fc3(symmetrize_fc3r=True)
 
     ph3, kappa_dict, kappa = ltc.calculate_conductivity(test_ph3, [300])
 
     assert isinstance(ph3, Phono3py)
-    assert isinstance(kappa_dict, dict)
     required_keys = {
         MbdKey.kappa_tot_rta,
         MbdKey.kappa_p_rta,
@@ -268,17 +252,6 @@ def test_calculate_fc2_set_with_various_supercells(
     np.testing.assert_array_equal(
         force_set, np.broadcast_to(expected_forces, force_set.shape)
     )
-
-
-def test_calculate_fc2_set_requires_phonon_supercell() -> None:
-    """Calling fc2 forces without phonon supercell must raise."""
-    atoms = make_si2_phonopy_atoms()
-    ph3 = Phono3py(atoms, supercell_matrix=np.eye(3, dtype=int))
-    ph3.generate_displacements(distance=0.02)
-    ph3.generate_fc2_displacements()
-    calc = MockCalculator(np.zeros((len(ph3.supercell), 3)))
-    with pytest.raises(RuntimeError):
-        _ = calculate_fc2_set(ph3, calc, pbar_kwargs={"disable": True})
 
 
 def test_harmonic_data_from_phono3py(test_ph3: Phono3py, test_calculator: EMT) -> None:

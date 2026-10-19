@@ -18,6 +18,7 @@ describe(`Models Page`, () => {
     expect(n_best_input.min).toBe(`2`)
     expect(n_best_input.max).toBe(String(MODELS.length))
     expect(n_best_input.parentElement?.textContent).toMatch(/Sort\s+best models/)
+    expect(n_best_input.getAttribute(`aria-label`)).toBe(`Number of best models to show`)
     expect(
       [...document.querySelectorAll<HTMLInputElement>(`input[type="radio"]`)].map(
         (radio) => [radio.value, radio.checked],
@@ -29,7 +30,9 @@ describe(`Models Page`, () => {
     expect(
       [...document.querySelectorAll(`ul button`)].map((btn) => btn.textContent?.trim()),
     ).toStrictEqual([`Model Name`, `CPS`, `F1`, `RMSD`, `κSRME`, `CMDS`, `CDS`])
-    const legend = doc_query(`legend`)
+    // a <legend> outside a <fieldset> is invalid HTML
+    expect(document.querySelector(`legend`)).toBeNull()
+    const legend = doc_query(`.legend`)
     expect(legend.textContent).toContain(`best`)
     expect(legend.textContent).toContain(`worst`)
     expect(doc_query(`.colorbar`, legend).textContent).toContain(

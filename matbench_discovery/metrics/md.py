@@ -694,10 +694,12 @@ def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, float | str]:
     """Aggregate per-system MD metric rows (one row per system with a subset of
     PER_SYSTEM_METRIC_COLS columns) into model-level metrics.
 
-    Means are taken over systems, skipping NaNs (e.g. systems without stress data).
-    The combined MD score (CMDS) is deliberately absent: it is site-computed (see
-    module docstring). Private-label energy/force RMSE rows are in eV but reported
-    here in meV for readability.
+    Means are taken over systems. Pressure means skip NaN rows of systems without
+    stress data (stress-less references are NaN for every model alike), but pressure
+    metrics are dropped when every row is NaN (a model without stress support) or the
+    pressure columns disagree on which rows are NaN. The combined MD score (CMDS) is
+    deliberately absent: it is site-computed (see module docstring). Private-label
+    energy/force RMSE rows are in eV but reported here in meV for readability.
 
     Run provenance columns (COST_PROVENANCE_KEYS) aggregate differently:
     ``run_time_sec`` is summed over systems (parallel per-system jobs ~ one serial
@@ -714,12 +716,12 @@ def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, float | str]:
             f"expected a subset of {PER_SYSTEM_METRIC_COLS}"
         )
     metrics: dict[str, float | str] = {}
-    # hardware is uniform when every row has the same non-null label; an incomplete or
-    # mixed column also drops the GPU-dependent costs (summed wall time, peak VRAM): a
-    # total over an H200 and an A100 (or rows of unknown provenance) would misrepresent
-    # the model's cost with no hardware label left to qualify it. Host RSS is kept: it
-    # reflects model/system size, not the GPU.
-    hardware_uniform = True
+    # hardware is uniform when every row has the same non-null label; a missing,
+    # incomplete or mixed column also drops the GPU-dependent costs (summed wall time,
+    # peak VRAM): a total over an H200 and an A100 (or rows of unknown provenance)
+    # would misrepresent the model's cost with no hardware label left to qualify it.
+    # Host RSS is kept: it reflects model/system size, not the GPU.
+    hardware_uniform = False
     if "hardware" in df_md:
         hardware_vals = df_md["hardware"].unique()
         hardware_uniform = len(hardware_vals) == 1 and pd.notna(hardware_vals[0])
@@ -741,10 +743,18 @@ def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, float | str]:
     }
     # private-label diagnostics must cover every system or not be published at all: a
     # NaN-skipping subset mean (mixed runs with/without a private ref) would silently
-    # misrepresent the model while n_systems suggests full coverage. (Pressure NaNs
-    # differ: stress-less systems are NaN for every model alike, means stay comparable.)
+    # misrepresent the model while n_systems suggests full coverage.
     for col in ("energy_rmse", "force_rmse"):
         if col in metrics and df_md[col].isna().any():
+            del metrics[col]
+    # pressure NaNs differ: stress-less reference systems are NaN for every model
+    # alike, so NaN-skipping means stay comparable. An all-NaN column (model without
+    # stress support) has no mean to publish, and pressure columns with different NaN
+    # rows mean inconsistent per-system coverage.
+    pressure_cols = [col for col in metric_cols if col.startswith("pressure_")]
+    pressure_nan_masks = {tuple(df_md[col].isna()) for col in pressure_cols}
+    if len(pressure_nan_masks) > 1 or df_md[pressure_cols].isna().all().any():
+        for col in pressure_cols:
             del metrics[col]
     metrics["n_systems"] = len(df_md)
     return metrics

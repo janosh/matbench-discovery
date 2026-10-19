@@ -41,6 +41,7 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatviz.enums import Key
 
 from matbench_discovery.enums import DataFiles, MbdKey
+from matbench_discovery.metrics.phonons import calculate_kappa_avg
 from matbench_discovery.phonons import read_kappa_json
 
 if TYPE_CHECKING:
@@ -95,25 +96,14 @@ def scalar_from_avg(value: npt.ArrayLike) -> float | None:
 
 
 def scalar_from_rta(value: npt.ArrayLike) -> float | None:
-    """Directionally average an RTA conductivity tensor at the first temperature.
+    """Directionally average an RTA conductivity at the first temperature.
 
-    Handles Voigt 6-vectors ([xx, yy, zz, yz, xz, xy]), full 3x3 tensors, and plain
-    3-vectors, each optionally prefixed by a temperature axis. When present, the
-    temperature axis is always leading (component dims follow), so ``arr[0]`` selects
-    the first temperature, the single point we export.
+    calculate_kappa_avg handles Voigt 6-vectors, 3x3 tensors and 3-vectors, each
+    optionally prefixed by a leading temperature axis (it warns and returns NaN, here
+    mapped to None, for malformed input).
     """
-    arr = np.asarray(value, dtype=float)
-    if arr.size == 0:
-        return None
-    if arr.ndim == 3:  # (n_temp, 3, 3) -> first temperature
-        arr = arr[0]
-    if arr.ndim == 2 and arr.shape == (3, 3):  # full tensor -> diagonal mean
-        return clean_float(float(np.trace(arr) / 3), KAPPA_DECIMALS)
-    # (n_temp, 6) Voigt or (n_temp, 3) -> first temp; (6,)/(3,) -> as-is
-    row = arr[0] if arr.ndim == 2 else arr
-    if row.ndim != 1 or row.shape[0] < 3:
-        return None
-    return clean_float(float(np.mean(row[:3])), KAPPA_DECIMALS)
+    kappa_avg = np.ravel(calculate_kappa_avg(np.asarray(value, dtype=float)))
+    return clean_float(kappa_avg[0], KAPPA_DECIMALS) if kappa_avg.size else None
 
 
 def row_scalar_kappa(row: pd.Series) -> float | None:

@@ -20,6 +20,7 @@ import importlib
 import importlib.metadata
 import itertools
 import os
+import re
 from concurrent.futures import ProcessPoolExecutor
 from typing import TYPE_CHECKING, Any, Final
 
@@ -28,7 +29,7 @@ from pymatgen.core import Structure
 from pymatviz.enums import Key
 
 from matbench_discovery import ROOT
-from matbench_discovery.cli import cli_parser
+from matbench_discovery.cli import cli_parser, parse_cli_args
 from matbench_discovery.data import (
     artifact_filename,
     canonical_scientific_notation,
@@ -43,6 +44,11 @@ from matbench_discovery.structure import symmetry
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+DFT_REFERENCE_FILES: Final[dict[float, DataFiles]] = {
+    1e-2: DataFiles.wbm_dft_geo_opt_symprec_1e_2,
+    1e-5: DataFiles.wbm_dft_geo_opt_symprec_1e_5,
+}
 
 
 def analyze_model_symprec(
@@ -197,7 +203,12 @@ def main(raw_args: list[str] | None = None) -> int:
         default=[1e-2, 1e-5],
         help="Symmetry precision values to analyze.",
     )
-    args, _unknown = cli_parser.parse_known_args(raw_args)
+    geo_opt_group.add_argument(
+        "--write-dft-reference",
+        action="store_true",
+        help="Recompute the WBM DFT symmetry reference with the installed moyopy.",
+    )
+    args = parse_cli_args(raw_args)
 
     # > 0 activates debug mode, analyzing only that many structures
     debug_mode: Final[int] = args.debug
@@ -216,27 +227,44 @@ def main(raw_args: list[str] | None = None) -> int:
         for mat_id, cse in df_wbm_structs[Key.computed_structure_entry].items()
     }
 
-    # %% Process DFT structures for each symprec value
+    # %% Load the registered DFT reference for each symprec value. Model analyses are
+    # only comparable to a reference computed with the same moyopy version, so a version
+    # mismatch fails here instead of silently recomputing an unregistered reference.
     dft_analysis_dict: dict[float, pd.DataFrame] = {}
     for symprec in symprec_values:
         symprec_str = f"symprec={canonical_scientific_notation(symprec)}"
-
-        # always the full DFT analysis file, even in debug mode, so reference data
-        # covers all model structures whatever subset/ordering they use
-        dft_csv_path = (
-            f"{ROOT}/data/wbm/dft-geo-opt-{symprec_str}-moyo={moyo_version}.csv.gz"
-        )
-
-        if os.path.isfile(dft_csv_path):
-            print(f"Loading DFT analysis from {dft_csv_path}")
-            dft_analysis_dict[symprec] = pd.read_csv(dft_csv_path).set_index(Key.mat_id)
-        else:
+        data_file = DFT_REFERENCE_FILES.get(symprec)
+        if data_file is None:
+            raise ValueError(
+                f"No registered DFT reference for {symprec_str}, available: "
+                f"{sorted(DFT_REFERENCE_FILES)}"
+            )
+        dft_csv_path = f"{DataFiles.base_dir}/{data_file.rel_path}"
+        if f"moyo={moyo_version}" not in data_file.rel_path:
+            if not args.write_dft_reference:
+                raise ValueError(
+                    f"Installed moyopy {moyo_version} does not match the registered "
+                    f"DFT reference {data_file.rel_path}. Install the registered "
+                    "version, or pass --write-dft-reference and re-register the file "
+                    "in data-files.yml"
+                )
+            dft_csv_path = re.sub(
+                r"moyo=[^/]+?\.csv", f"moyo={moyo_version}.csv", dft_csv_path
+            )
+        if args.write_dft_reference:
             dft_analysis_dict[symprec] = symmetry.get_sym_info_from_structs(
                 dft_structs,
                 pbar=dict(desc=f"Getting DFT symmetries {symprec=}"),
                 symprec=symprec,
             )
             dft_analysis_dict[symprec].to_csv(dft_csv_path)
+            print(
+                f"Wrote DFT reference to {dft_csv_path}; register it in data-files.yml"
+            )
+        else:
+            dft_analysis_dict[symprec] = pd.read_csv(data_file.path).set_index(
+                Key.mat_id
+            )
 
     tasks = list(itertools.product(args.models, symprec_values))
     n_workers = min(len(tasks), args.workers)

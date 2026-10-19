@@ -47,8 +47,12 @@ def _is_missing_scalar(value: object) -> bool:
     return isinstance(missing, bool | np.bool_) and bool(missing)
 
 
-def _has_errors(value: object) -> bool:
-    """Treat missing error cells as empty and populated values as failures."""
+def _is_set(value: object) -> bool:
+    """Treat missing DataFrame cells as unset and other values by truthiness.
+
+    Records may omit optional flags such as ``conductivity_skipped``; pandas fills the
+    gap with NaN, which is truthy, so a bare ``bool()`` would flag every record.
+    """
     return not _is_missing_scalar(value) and bool(value)
 
 
@@ -85,7 +89,8 @@ def normalize_kappa_result(result: Mapping[str, Any]) -> dict[str, Any]:
 
     initial_spg = normalized.get(str(Key.init_spg_num))
     final_spg = normalized.get(str(Key.final_spg_num))
-    if "broken_symmetry" not in normalized:
+    # NaN cells count as absent: DataFrame rows get NaN where other records set it
+    if _is_missing_scalar(normalized.get("broken_symmetry")):
         normalized["broken_symmetry"] = bool(
             not pd.isna(initial_spg)
             and not pd.isna(final_spg)
@@ -93,7 +98,7 @@ def normalize_kappa_result(result: Mapping[str, Any]) -> dict[str, Any]:
         )
     normalized.setdefault("errors", [])
     normalized.setdefault("error_traceback", [])
-    if _has_errors(normalized["errors"]) or normalized.get("conductivity_skipped"):
+    if _is_set(normalized["errors"]) or _is_set(normalized.get("conductivity_skipped")):
         normalized[str(MbdKey.kappa_tot_rta)] = np.nan
         normalized[str(MbdKey.mode_kappa_tot_rta)] = np.nan
         normalized[str(Key.mode_weights)] = np.nan

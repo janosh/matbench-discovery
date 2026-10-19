@@ -240,7 +240,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
             dependency_description = (
                 f"project={spec.project}"
                 if spec.project
-                else ", ".join(spec.deps) or "(core deps only)"
+                else ", ".join(spec.runner_deps()) or "(core deps only)"
             )
             print(f"{model_key}{checkpoint_note}: {dependency_description}")
         return 0

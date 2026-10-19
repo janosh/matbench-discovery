@@ -1,26 +1,22 @@
-import type { ModelData } from '#lib/types.js'
-import { MODELS } from '#lib/models.svelte.js'
+import { ACTIVE_MODELS, has_diatomics_curves } from '#lib/models.svelte.js'
 import DiatomicsPage from '#routes/benchmarks/diatomics/+page.svelte'
 import { tick } from 'svelte'
 import { PLOT_COLORS } from 'matterviz/colors'
-import { describe, expect, it } from 'vite-plus/test'
-import { doc_query, mount_with_url, open_filter_menu, sorted_header } from '../index.js'
+import { describe, expect, it, onTestFinished } from 'vite-plus/test'
+import {
+  button_for,
+  doc_query,
+  expect_table_url_state,
+  mount_with_url,
+  open_filter_menu,
+} from '../index.js'
 
-const model_data: ModelData[] = (
-  [
-    [`a`, 0.1],
-    [`b`, 0.8],
-    [`c`, 0.6],
-    [`d`, 0.9],
-    [`e`, 1],
-    [`f`, 0.95],
-  ] as const
-).map(([suffix, combined_score]) => ({
-  ...MODELS[0],
-  model_key: `model-${suffix}`,
-  model_name: `Model ${suffix.toUpperCase()}`,
-  metrics: { diatomics: { combined_score } },
-}))
+// Real model entries with overridden names/CDS: the page resolves its model keys from
+// the live MODELS, so defaults must follow these (not serialized) scores.
+const fixture_scores = { a: 0.1, b: 0.8, c: 0.6, d: 0.9, e: 0.2, f: 0.3 }
+const fixture_models = ACTIVE_MODELS.filter(has_diatomics_curves).slice(0, 6)
+const model_keys = fixture_models.map(({ model_key }) => model_key)
+const [key_a, key_b] = model_keys
 
 const curve = {
   distances: [1],
@@ -31,29 +27,31 @@ const curve = {
   },
 }
 const page_data = {
-  diatomic_models: model_data,
+  diatomic_model_keys: model_keys,
   diatomic_curves: {
     PBE: curve,
     r2SCAN: curve,
-    ...Object.fromEntries(
-      model_data.slice(0, 5).map(({ model_key }) => [model_key, curve]),
-    ),
+    ...Object.fromEntries(model_keys.map((key) => [key, curve])),
   },
-  errors: { 'model-e': `Curve unavailable` },
   reference_names: [`PBE`, `r2SCAN`],
-}
-
-const button_for = (text: string): HTMLButtonElement => {
-  const button = [...document.querySelectorAll<HTMLButtonElement>(`button`)].find(
-    (candidate) => candidate.textContent?.trim() === text,
-  )
-  if (!button) throw new Error(`No button found for ${text}`)
-  return button
 }
 
 const model_select = () => doc_query(`.controls .multiselect`)
 
 const mount_page = async (search = ``): Promise<void> => {
+  for (const [idx, [suffix, combined_score]] of Object.entries(
+    fixture_scores,
+  ).entries()) {
+    const model = fixture_models[idx]
+    const { model_name, metrics } = model
+    Object.assign(model, {
+      model_name: `Model ${suffix.toUpperCase()}`,
+      metrics: { ...metrics, diatomics: { ...metrics?.diatomics, combined_score } },
+    })
+    onTestFinished(() => {
+      Object.assign(model, { model_name, metrics })
+    })
+  }
   await mount_with_url(DiatomicsPage, `http://localhost/benchmarks/diatomics${search}`, {
     props: { data: page_data },
   })
@@ -95,11 +93,6 @@ describe(`Diatomics Page URL state`, () => {
       `methodology`,
     ])
     expect(doc_query<HTMLDetailsElement>(`#methodology + details`).open).toBe(false)
-    const error_details = doc_query<HTMLDetailsElement>(`.error-summary details`)
-    expect(error_details.open).toBe(false)
-    expect(error_details.textContent).toContain(`Curve unavailable`)
-    expect(doc_query(`a`, error_details).getAttribute(`href`)).toBe(`/models/model-e`)
-    expect(doc_query(`a`, error_details).textContent).toBe(`Model E`)
     expect(selected_labels()).toEqual([
       `PBE (DFT)`,
       `r2SCAN (DFT)`,
@@ -117,24 +110,18 @@ describe(`Diatomics Page URL state`, () => {
     expect(new URL(location.href).searchParams.get(`models`)).toBe(`PBE,r2SCAN`)
   })
 
-  it(`restores selected curve models from the models query param`, async () => {
-    await mount_page(`?models=unknown,model-b,model-b`)
+  it(`restores selected curve models from the models query param and syncs edits`, async () => {
+    await mount_page(`?models=unknown,${key_b},${key_b}`)
 
-    const selected = selected_options()
     expect(selected_labels()).toEqual([`Model B`])
-    expect(new URL(location.href).searchParams.get(`models`)).toBe(`model-b`)
-    const selected_item = selected?.querySelector<HTMLLIElement>(`li`)
+    expect(new URL(location.href).searchParams.get(`models`)).toBe(key_b)
+    const selected_item = doc_query<HTMLLIElement>(`li`, selected_options())
     // Model B is the second model, so it takes the second palette entry
-    expect(selected_item?.style.background).toContain(PLOT_COLORS[1])
-    expect(selected_item?.style.color).not.toBe(``)
-  })
-
-  it(`syncs selected curve models back to the models query param`, async () => {
-    await mount_page(`?models=model-b`)
+    expect(selected_item.style.background).toContain(PLOT_COLORS[1])
+    expect(selected_item.style.color).not.toBe(``)
 
     await select_model_option(`Model A`)
-
-    expect(new URL(location.href).searchParams.get(`models`)).toBe(`model-a,model-b`)
+    expect(new URL(location.href).searchParams.get(`models`)).toBe(`${key_a},${key_b}`)
   })
 
   it(`restores selected element subset from the elements query param`, async () => {
@@ -146,32 +133,18 @@ describe(`Diatomics Page URL state`, () => {
     expect(doc_query(`.diatomic-plot-title`).textContent).toContain(`F-F`)
   })
 
-  it(`syncs selected element subset back to the elements query param`, async () => {
-    await mount_page(`?models=model-b`)
-
-    button_for(`Nonmetals`).click()
-    await tick()
-
-    const params = new URL(location.href).searchParams
-    expect(params.get(`models`)).toBe(`model-b`)
-    expect(params.get(`elements`)).toBe(`nonmetal`)
-  })
-
   it(`restores metrics-table sort and filters and syncs filter changes`, async () => {
     await mount_page(`?sort=pbe_force_mae&dir=desc&train=MPtrj&heatmap=0&selected_only=1`)
 
-    expect(sorted_header()?.textContent).toContain(`FMAE`)
-    expect(sorted_header()?.getAttribute(`aria-sort`)).toBe(`descending`)
+    const heatmap = await expect_table_url_state(`FMAE`, `descending`)
     const training_filter = doc_query<HTMLInputElement>(
       `[aria-label="require MPtrj"]`,
       await open_filter_menu(`Training data`),
     )
-    const heatmap = doc_query<HTMLInputElement>(`[aria-label="Toggle heatmap colors"]`)
     const selected_only = doc_query<HTMLInputElement>(
       `[aria-label="Toggle between showing only selected models and all models"]`,
     )
     expect(training_filter.checked).toBe(true)
-    expect(heatmap.checked).toBe(false)
     expect(selected_only.checked).toBe(true)
 
     training_filter.click()
@@ -186,13 +159,13 @@ describe(`Diatomics Page URL state`, () => {
   })
 
   it(`preserves metrics-table sort params when other controls update the URL`, async () => {
-    await mount_page(`?models=model-b&sort=pbe_force_mae&dir=asc`)
+    await mount_page(`?models=${key_b}&sort=pbe_force_mae&dir=asc`)
 
     button_for(`Nonmetals`).click()
     await tick()
 
     const params = new URL(location.href).searchParams
-    expect(params.get(`models`)).toBe(`model-b`)
+    expect(params.get(`models`)).toBe(key_b)
     expect(params.get(`elements`)).toBe(`nonmetal`)
     expect(params.get(`sort`)).toBe(`pbe_force_mae`)
     // asc is non-default (default sort is CDS desc), so dir must survive in the URL

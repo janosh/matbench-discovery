@@ -22,7 +22,7 @@ Model dependency trees conflict, so each model resolves its own environment via
 
 # /// script
 # requires-python = ">=3.14"
-# dependencies = ["ase>=3.27", "numpy", "pandas", "scipy", "tqdm", "matbench-discovery"]
+# dependencies = ["ase>=3.29", "numpy", "pandas", "scipy", "tqdm", "matbench-discovery"]
 #
 # [tool.uv.sources]
 # matbench-discovery = { path = "../", editable = true }
@@ -78,6 +78,8 @@ def main() -> int:
     if model_key is None:
         return 0
     args.model = model_key
+    if args.write_yaml and args.dry_run:
+        parser.error("--write-yaml is incompatible with --dry-run")
     # a subset run writes model-level metrics from incomplete coverage; aggregation
     # over all systems belongs to scripts/evals/md.py with an explicit run directory
     if args.write_yaml and args.systems:
@@ -144,7 +146,7 @@ def main() -> int:
     for key, val in model_metrics.items():
         print(f"  {key}: {val:.4f}" if isinstance(val, float) else f"  {key}: {val}")
 
-    if args.write_yaml and not args.dry_run:
+    if args.write_yaml:
         if model is None:  # debug models like emt have no YAML to write to
             print(f"Skipping metrics.md write: {args.model!r} is not a Model")
             return 0

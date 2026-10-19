@@ -103,9 +103,9 @@
   ]
 
   let {
-    discovery_set = $bindable(`unique_prototypes`),
-    model_filter = $bindable(() => true),
-    col_filter = $bindable(() => true),
+    discovery_set = `unique_prototypes`,
+    model_filter = () => true,
+    col_filter = () => true,
     column_labels = default_columns,
     show_row_numbers = true,
     filters = make_table_filters(),

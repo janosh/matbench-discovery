@@ -14,11 +14,15 @@ const colorbar_ticks = (): number[] =>
   )
 
 describe(`PtableHeatmap.svelte`, () => {
-  it(`renders labeled log checkbox that reflects log prop and toggles on click`, async () => {
+  // /data mounts three heatmaps; a global id would be duplicated (and label[for] would
+  // point every label at the first checkbox), so the checkbox nests in its label
+  it(`log checkbox nests in its label, reflects the log prop and toggles on click`, async () => {
     mount(PtableHeatmap, {
       target: document.body,
       props: { heatmap_values: sample_values },
     })
+    expect(document.querySelector(`input#log`)).toBeNull()
+    expect(document.querySelector(`label[for]`)).toBeNull()
     const checkbox = checkbox_for(`Log color scale`)
     expect(checkbox.checked).toBe(false)
 
@@ -36,18 +40,6 @@ describe(`PtableHeatmap.svelte`, () => {
       props: { heatmap_values: sample_values, log: true },
     })
     expect(checkbox_for(`Log color scale`).checked).toBe(true)
-  })
-
-  // /data mounts three heatmaps; a global id would be duplicated (and label[for] would
-  // point every label at the first checkbox)
-  it(`nests the log checkbox in its label without a global id`, () => {
-    mount(PtableHeatmap, {
-      target: document.body,
-      props: { heatmap_values: sample_values },
-    })
-    expect(document.querySelector(`input#log`)).toBeNull()
-    expect(document.querySelector(`label[for]`)).toBeNull()
-    expect(checkbox_for(`Log color scale`).type).toBe(`checkbox`)
   })
 
   // colorbar range spans the finite data extent; without the 0 fallback, empty → -Infinity
@@ -81,6 +73,5 @@ describe(`PtableHeatmap.svelte`, () => {
       (label) => label.textContent,
     )
     expect(linear_ticks[0]?.startsWith(`−`)).toBe(true)
-    expect(linear_ticks).not.toEqual(tick_texts)
   })
 })

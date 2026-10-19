@@ -155,9 +155,9 @@ metrics:
   geo_opt:
     pred_file:
       name: models/matris/matris-10m-oam/2025-10-29-geo-opt.jsonl.gz
-      url: https://figshare.com/files/59233958
-      size: 139439266
-      md5: ff8439a75d882b0564170c072d06c2a1
+      url: https://figshare.com/files/70325241
+      size: 140628230
+      md5: 1413ed2de31ba9b8b93311d4594296b3
     symprec=1e-2:
       rmsd: 0.0601
       n_sym_ops_mae: 1.732

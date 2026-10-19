@@ -161,9 +161,9 @@ metrics:
   geo_opt:
     pred_file:
       name: models/tace/tace-oam-l/2026-04-09-geo-opt.jsonl.gz
-      url: https://figshare.com/files/63594915
-      size: 106885046
-      md5: d0c21952707f9cdf309056591ceeff35
+      url: https://figshare.com/files/70325523
+      size: 107603202
+      md5: a6bae5a9ebeb6341e3ea803629537a6a
     symprec=1e-2:
       rmsd: 0.0606
       n_sym_ops_mae: 1.7042

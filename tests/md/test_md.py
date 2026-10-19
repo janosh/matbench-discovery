@@ -1,10 +1,12 @@
 """Tests for molecular dynamics rollout helpers and benchmark pipeline."""
 
+import dataclasses
 import functools
 import json
 import os
 import platform
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 import ase.io
@@ -19,9 +21,11 @@ from ase.calculators.emt import EMT
 from matbench_discovery import today
 from matbench_discovery.md import (
     NpzValue,
+    NvtParams,
     list_reference_systems,
     read_reference_trajectory,
     read_trajectory,
+    run_info_path,
     run_md_benchmark,
     run_nvt_md,
     run_nvt_md_resumable,
@@ -32,34 +36,29 @@ from matbench_discovery.metrics import md as md_metrics
 from matbench_discovery.trajectory import Trajectory
 
 
-def _make_reference_h5(tmp_path: Path, *, system: str = "bulkCu_300K_test") -> str:
-    """Create a tiny single-system reference HDF5 with dt=0.25 fs and T=300 K."""
-    atoms = bulk("Cu", cubic=True) * (2, 2, 2)
-    reference = run_nvt_md(
-        atoms, EMT(), temperature_kelvin=300, n_steps=80, record_interval=1
-    )
-    ref_file = str(tmp_path / "ref.h5")
-    # dt = saved-frame cadence = time_step_fs * record_interval = 0.25 * 1
-    write_reference_h5(
-        ref_file, [(system, Trajectory.from_ase(reference), 0.25, 300.0)]
-    )
-    return ref_file
-
-
-def _make_private_reference_h5(
-    tmp_path: Path, *, system: str = "bulkCu_300K_test", atoms: Atoms | None = None
+def _make_reference_h5(
+    tmp_path: Path,
+    *,
+    system: str = "bulkCu_300K_test",
+    atoms: Atoms | None = None,
+    labeled: bool = False,
 ) -> str:
-    """Create a tiny private reference HDF5 retaining energy and force labels."""
+    """Create a tiny single-system reference HDF5 with dt=0.25 fs and T=300 K,
+    optionally retaining energy/force labels like the private reference.
+    """
     atoms = bulk("Cu", cubic=True) * (2, 2, 2) if atoms is None else atoms
     reference = Trajectory.from_ase(
         run_nvt_md(atoms, EMT(), temperature_kelvin=300, n_steps=80, record_interval=1)
     )
-    ref_file = str(tmp_path / "private-ref.h5")
-    with h5py.File(ref_file, "w") as file:
-        group = file.create_group(system)
-        reference.write_to_h5_group(group)
-        group.attrs["dt_fs"] = 0.25
-        group.attrs["temperature_kelvin"] = 300.0
+    ref_file = str(tmp_path / ("private-ref.h5" if labeled else "ref.h5"))
+    # dt = saved-frame cadence = time_step_fs * record_interval = 0.25 * 1
+    if labeled:  # write_reference_h5 strips labels, so write the group directly
+        with h5py.File(ref_file, "w") as file:
+            group = file.create_group(system)
+            reference.write_to_h5_group(group)
+            group.attrs.update(dt_fs=0.25, temperature_kelvin=300.0)
+    else:
+        write_reference_h5(ref_file, [(system, reference, 0.25, 300.0)])
     return ref_file
 
 
@@ -105,6 +104,16 @@ def _fail_save_checkpoint_after(
 
     monkeypatch.setattr(md_mod, "_atomic_savez", killing_savez)
     return save_count
+
+
+def _resume_until_complete[T](run: Callable[[], T]) -> T:
+    """Rerun an interrupted (simulated-timeout) job until it completes."""
+    for _attempt in range(8):  # bounded resume loop
+        try:
+            return run()
+        except RuntimeError:
+            continue
+    raise AssertionError("resume loop did not complete")
 
 
 def test_reference_h5_roundtrip(tmp_path: Path) -> None:
@@ -252,18 +261,40 @@ def test_validate_pred_trajectory(tmp_path: Path) -> None:
     assert len(frames) == 5  # 40 // 10 + 1
     good = tmp_path / "pred.extxyz"
     ase.io.write(good, frames)
+    params = NvtParams(
+        temperature_kelvin=300,
+        time_step_fs=0.25,
+        record_interval=10,
+        thermostat_time_scale_fs=25,
+        seed=0,
+    )
 
     def validate(
         path: Path, *, expected: int = 5, ref: Atoms = atoms
     ) -> list[Atoms] | None:
         """Validate a rollout against the expected frame and atom metadata."""
         return validate_pred_trajectory(
-            str(path), expected_frames=expected, ref_atoms=ref, record_interval=10
+            str(path), expected_frames=expected, ref_atoms=ref, params=params
         )
 
-    valid = validate(good)
+    valid = validate(good)  # no run-info sidecar (legacy rollout) -> trusted
     assert valid is not None
     assert len(valid) == 5
+
+    # a sidecar recording other rollout parameters forces a recompute, matching ones
+    # reuse, and a corrupt sidecar fails loudly instead of skipping the check
+    sidecar = Path(run_info_path(str(good)))
+    for recorded, expected_valid in (
+        (dataclasses.replace(params, time_step_fs=0.5), False),
+        (dataclasses.replace(params, seed=1), False),
+        (params, True),
+    ):
+        sidecar.write_text(json.dumps({"nvt_params": dataclasses.asdict(recorded)}))
+        assert (validate(good) is not None) is expected_valid, f"{recorded=}"
+    sidecar.write_text("{truncated")
+    with pytest.raises(ValueError, match="Corrupt MD run-info sidecar"):
+        validate(good)
+    sidecar.unlink()
 
     assert validate(good, expected=6) is None  # frame-count mismatch
     assert validate(tmp_path / "missing.extxyz") is None  # unreadable
@@ -326,14 +357,7 @@ def test_run_nvt_md_resume_reproduces(
     save_count = _fail_save_checkpoint_after(monkeypatch)
 
     out_path = str(tmp_path / "out.extxyz")
-    resumed = None
-    for _attempt in range(8):  # bounded resume loop
-        try:
-            resumed = _run_short_resumable(atoms, out_path)
-            break
-        except RuntimeError:
-            continue
-    assert resumed is not None, "resume loop did not complete"
+    resumed = _resume_until_complete(lambda: _run_short_resumable(atoms, out_path))
     assert save_count["count"] >= 3, "test did not exercise interruptions"
 
     assert len(resumed) == len(reference)
@@ -376,9 +400,9 @@ def test_run_md_benchmark(tmp_path: Path, *, dry_run: bool) -> None:
     ref_file = _make_reference_h5(tmp_path)
     out_dir = tmp_path / "out"
 
-    def run(*, dry: bool = False) -> pd.DataFrame:
+    def run(*, dry: bool = False, systems: list[str] | None = None) -> pd.DataFrame:
         """Run the benchmark in dry or persistent mode."""
-        return _run_tiny_benchmark(ref_file, out_dir, dry_run=dry)
+        return _run_tiny_benchmark(ref_file, out_dir, systems=systems, dry_run=dry)
 
     df_md = run(dry=dry_run)
     assert list(df_md.index) == ["bulkCu_300K_test"]
@@ -405,70 +429,62 @@ def test_run_md_benchmark(tmp_path: Path, *, dry_run: bool) -> None:
     assert run_info_file.is_file()
     run_info = json.loads(run_info_file.read_text())
     # audit-only provenance stays in the sidecar (not copied into CSV rows)
-    assert {"completed_at", "hostname", "versions"} <= set(run_info)
+    assert {"nvt_params", "completed_at", "hostname", "versions"} <= set(run_info)
     assert run_info["versions"]["python"] == platform.python_version()
     assert df_md.loc["bulkCu_300K_test", "run_time_sec"] > 0
     assert isinstance(df_md.loc["bulkCu_300K_test", "hardware"], str)
     assert df_md.loc["bulkCu_300K_test", "n_atoms"] == 32  # 2x2x2 cubic Cu cell
     if sys.platform != "win32":  # Windows lacks the resource module
         assert df_md.loc["bulkCu_300K_test", "max_rss_gb"] > 0
-    # second run reuses the existing rollout but still reports its recorded cost
+    # second run reuses the existing rollout but still reports its recorded cost; an
+    # explicit (duplicated) selection names the CSV after the matched systems
     rollout_mtime = rollout.stat().st_mtime
-    df_rerun = run()
+    df_rerun = run(systems=["bulkCu_300K_test"] * 2)
     assert rollout.stat().st_mtime == rollout_mtime
+    assert (out_dir / f"{today}-emt-md-metrics-bulkCu_300K_test.csv.gz").is_file()
     assert df_rerun.loc["bulkCu_300K_test", "run_time_sec"] == pytest.approx(
         df_md.loc["bulkCu_300K_test", "run_time_sec"]
     )
 
 
-def test_run_md_benchmark_private_ref_adds_energy_force_rmse(tmp_path: Path) -> None:
-    """Private labeled references enable energy and force diagnostics."""
-    ref_file = _make_reference_h5(tmp_path)
-    private_ref_file = _make_private_reference_h5(tmp_path)
-
-    df_private_md = _run_tiny_benchmark(
-        ref_file, tmp_path / "out", private_ref_file=private_ref_file, dry_run=True
-    )
-
-    assert {"energy_rmse", "force_rmse"} <= set(df_private_md.columns)
-    assert np.isfinite(df_private_md.loc["bulkCu_300K_test", "energy_rmse"])
-    assert np.isfinite(df_private_md.loc["bulkCu_300K_test", "force_rmse"])
-
-
 @pytest.mark.parametrize(
     ("private_system", "private_atoms", "error_class", "match"),
     [
+        ("bulkCu_300K_test", None, None, None),
         # stale file: right group name but different (4 vs 32 atom) structure
-        (
-            "bulkCu_300K_test",
-            bulk("Cu", cubic=True),
-            ValueError,
-            "different atoms than",
-        ),
+        ("bulkCu_300K_test", bulk("Cu", cubic=True), ValueError, "different atoms"),
         # incomplete file: system missing entirely
         ("other_system", None, KeyError, "bulkCu_300K_test"),
     ],
+    ids=["matching", "stale", "incomplete"],
 )
-def test_run_md_benchmark_rejects_bad_private_ref(
+def test_run_md_benchmark_private_ref(
     tmp_path: Path,
     private_system: str,
     private_atoms: Atoms | None,
-    error_class: type[Exception],
-    match: str,
+    error_class: type[Exception] | None,
+    match: str | None,
 ) -> None:
-    """Stale or incomplete private references fail loudly."""
+    """Matching private labels add energy/force RMSEs; stale or incomplete fail."""
     ref_file = _make_reference_h5(tmp_path)
-    private_ref_file = _make_private_reference_h5(
-        tmp_path, system=private_system, atoms=private_atoms
+    private_ref_file = _make_reference_h5(
+        tmp_path, system=private_system, atoms=private_atoms, labeled=True
     )
+    run = functools.partial(
+        _run_tiny_benchmark,
+        ref_file,
+        tmp_path / "out",
+        private_ref_file=private_ref_file,
+        dry_run=True,
+    )
+    if error_class is not None:
+        with pytest.raises(error_class, match=match):
+            run()
+        return
 
-    with pytest.raises(error_class, match=match):
-        _run_tiny_benchmark(
-            ref_file,
-            tmp_path / "out",
-            private_ref_file=private_ref_file,
-            dry_run=True,
-        )
+    df_private_md = run()
+    for col in ("energy_rmse", "force_rmse"):
+        assert np.isfinite(df_private_md.loc["bulkCu_300K_test", col])
 
 
 def test_run_md_benchmark_resume_matches_single_run(
@@ -496,14 +512,7 @@ def test_run_md_benchmark_resume_matches_single_run(
     save_count = _fail_save_checkpoint_after(monkeypatch)
 
     out_dir = tmp_path / "resumed"
-    resumed = None
-    for _attempt in range(8):
-        try:
-            resumed = run(out_dir)
-            break
-        except RuntimeError:
-            continue
-    assert resumed is not None, "resume loop did not complete"
+    resumed = _resume_until_complete(lambda: run(out_dir))
     assert save_count["count"] >= 3, "test did not exercise interruptions"
 
     # wall time and memory high-water marks are process state, not trajectory
@@ -530,14 +539,25 @@ def test_run_md_benchmark_resume_matches_single_run(
     assert resumed.loc["bulkCu_300K_test", "run_time_sec"] > 0
 
 
-@pytest.mark.parametrize("systems", [[], ["does_not_exist"]])
+@pytest.mark.parametrize(
+    ("systems", "match"),
+    [
+        ([], "No systems found"),
+        (["does_not_exist"], r"Unknown systems \['does_not_exist'\]"),
+        # a partly matching selection must not silently drop the unknown name
+        (
+            ["bulkCu_300K_test", "typo_system"],
+            r"Unknown systems \['typo_system'\].*available: \['bulkCu_300K_test'\]",
+        ),
+    ],
+)
 def test_run_md_benchmark_rejects_empty_or_unknown_systems(
-    tmp_path: Path, systems: list[str]
+    tmp_path: Path, systems: list[str], match: str
 ) -> None:
-    """Empty or unmatched system selections fail clearly."""
+    """Empty selections and any unknown system names fail clearly."""
     ref_file = _make_reference_h5(tmp_path)
 
-    with pytest.raises(ValueError, match="No systems found"):
+    with pytest.raises(ValueError, match=match):
         _run_tiny_benchmark(ref_file, tmp_path / "out", systems=systems)
 
 

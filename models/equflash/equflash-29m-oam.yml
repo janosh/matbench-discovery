@@ -113,9 +113,9 @@ metrics:
   geo_opt:
     pred_file:
       name: models/equflash/equflash-29m-oam/2025-06-23-geo-opt.jsonl.gz
-      url: https://figshare.com/files/57277370
-      size: 137602306
-      md5: dd462f9350aee7d682e0ed64f63bb870
+      url: https://figshare.com/files/70325073
+      size: 138972553
+      md5: 80d4b7bf3d20c67039d805f8d0e67ffc
     symprec=1e-5:
       rmsd: 0.0602
       n_sym_ops_mae: 2.0595

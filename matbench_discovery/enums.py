@@ -289,6 +289,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     alphanet_v1_mptrj = auto(), "alphanet/alphanet-v1-mptrj.yml"
     alphanet_v1_oam = auto(), "alphanet/alphanet-v1-oam.yml"
     bam_mp_core = auto(), "bam/bam-mp-core.yml"
+    bam_mp_dens = auto(), "bam/bam-mp-dens.yml"
     bowsr = auto(), "bowsr/bowsr.yml"
     cgcnn = auto(), "cgcnn/cgcnn.yml"
     cgcnn_p = auto(), "cgcnn/cgcnn-p.yml"
@@ -352,12 +353,11 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     @functools.cached_property  # cache to avoid re-reading same file multiple times
     def metadata(self) -> dict[str, Any]:
         """Metadata associated with the model."""
-        yaml_path = f"{type(self).base_dir}/{self.rel_path}"
-        with open(yaml_path, encoding="utf-8") as file:
+        with open(self.yaml_path, encoding="utf-8") as file:
             data = yaml.safe_load(file)
 
         if not isinstance(data, dict):
-            raise TypeError(f"{yaml_path!r} does not contain valid YAML metadata")
+            raise TypeError(f"{self.yaml_path!r} does not contain valid YAML metadata")
 
         return data
 
@@ -384,7 +384,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     @property
     def metrics(self) -> dict[str, Any]:
         """Metrics associated with the model."""
-        return self.metadata.get("metrics", {})
+        return self.metadata.get("metrics") or {}  # bare `metrics:` loads as None
 
     @property
     def yaml_path(self) -> str:

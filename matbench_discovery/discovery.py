@@ -39,7 +39,7 @@ from matbench_discovery.hpc import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
+    from collections.abc import Callable, Mapping, Sequence
 
     from ase import Atoms
     from ase.calculators.calculator import Calculator
@@ -120,26 +120,26 @@ class RelaxationSettings:
         if not isinstance(evaluation, dict):
             raise TypeError(f"{model_key} hyperparams.evaluation must be a mapping")
 
-        return cls(
-            max_force=float(
-                max_force
-                if max_force is not None
-                else evaluation.get("max_force", 0.05)
-            ),
-            max_steps=int(
-                max_steps if max_steps is not None else evaluation.get("max_steps", 500)
-            ),
-            ase_optimizer=str(
-                ase_optimizer
-                if ase_optimizer is not None
-                else evaluation.get("ase_optimizer", "FIRE")
-            ),
-            cell_filter=(
-                cell_filter
-                if cell_filter is not None
-                else evaluation.get("cell_filter", "FrechetCellFilter")
-            ),
-        )
+        overrides = {
+            "max_force": max_force,
+            "max_steps": max_steps,
+            "ase_optimizer": ase_optimizer,
+            "cell_filter": cell_filter,
+        }
+        casts: dict[str, Callable[[Any], Any]] = {
+            "max_force": float,
+            "max_steps": int,
+            "ase_optimizer": str,
+        }
+        # explicit flag > YAML value (incl. a YAML null cell_filter) > field default
+        kwargs = {
+            name: casts.get(name, lambda value: value)(
+                override if override is not None else evaluation[name]
+            )
+            for name, override in overrides.items()
+            if override is not None or name in evaluation
+        }
+        return cls(**kwargs)
 
 
 @dataclass(frozen=True)

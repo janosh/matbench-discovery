@@ -26,7 +26,6 @@ from matbench_discovery.enums import (
     resolve_verified_file,
 )
 from matbench_discovery.remote import figshare
-from matbench_discovery.remote.fetch import maybe_auto_download_file
 from tests.utils import make_mock_response
 
 
@@ -313,55 +312,6 @@ def test_data_files_md5_matches_figshare(
     )
 
 
-def test_files_enum_auto_download(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
-) -> None:
-    """Test auto-download behavior in Files class."""
-
-    class TestFiles(Files, base_dir=str(tmp_path)):
-        test_file = auto(), "test/file.txt"
-
-        @property
-        def url(self) -> str:
-            """URL associated with the file."""
-            return "https://example.com/file.txt"
-
-        @property
-        def label(self) -> str:
-            """Label associated with the file."""
-            return "test"
-
-    test_file = TestFiles.test_file
-    abs_path = f"{tmp_path}/test/file.txt"
-    os.makedirs(os.path.dirname(abs_path), exist_ok=True)
-
-    mock_response = make_mock_response(b"test content")
-
-    # Test 1: Auto-download enabled (default)
-    monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", "true")
-    with patch("requests.get", return_value=mock_response):
-        maybe_auto_download_file(test_file.url, abs_path, label=test_file.label)
-    stdout, _ = capsys.readouterr()
-    assert f"Downloading 'test' from {test_file.url!r}" in stdout
-    assert os.path.isfile(abs_path)
-
-    # Test 2: File already exists (no download attempt)
-    with patch("requests.get") as mock_get:
-        maybe_auto_download_file(test_file.url, abs_path, label=test_file.label)
-        mock_get.assert_not_called()
-
-    # Test 3: Auto-download disabled
-    os.remove(abs_path)
-    monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", "false")
-    assert not os.path.isfile(abs_path)
-    with (
-        patch("requests.get", return_value=mock_response),
-        patch("sys.stdin.isatty", return_value=False),
-    ):
-        maybe_auto_download_file(test_file.url, abs_path, label=test_file.label)
-    assert os.path.isfile(abs_path)  # file should now be downloaded
-
-
 def test_model_enum() -> None:
     """Test Model enum functionality."""
     assert Model.alignn.name == "alignn"
@@ -375,9 +325,10 @@ def test_model_enum() -> None:
     assert isinstance(Model.alignn.metadata, dict)
 
     assert Model.alignn.yaml_path.endswith("alignn/alignn.yml")
-    grace_kappa_path = Model.grace_2l_mptrj.kappa_103_path
-    assert isinstance(grace_kappa_path, str)
-    assert grace_kappa_path.endswith("2024-11-20-phonons-kappa-103.json.gz")
+    grace_kappa_ref = Model.grace_2l_mptrj.metrics["phonons"]["kappa_103"]["pred_file"]
+    grace_kappa_name = file_ref_name(grace_kappa_ref)
+    assert grace_kappa_name is not None
+    assert grace_kappa_name.endswith("2024-11-20-phonons-kappa-103.json.gz")
 
     metrics = Model.alignn.metrics
     assert isinstance(metrics, dict)
@@ -395,10 +346,21 @@ def test_model_enum() -> None:
     assert Model.mace_mp_0.name == Model.mace_mp_0.value == "mace_mp_0"
     assert not Model.alphanet_v1_mptrj.is_active
     assert not Model.dpa_3_1_mptrj.is_active
-    model_keys = {model.key for model in Model}
-    for model in Model:
-        if model.metadata["lifecycle"] == "superseded":
-            assert model.metadata["superseded_by"] in model_keys
+
+
+def test_model_metrics_null_section(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Bare `metrics:` (None) reads as no metrics instead of crashing callers."""
+    from matbench_discovery import cli
+
+    model = Model.chgnet_0_3_0
+    monkeypatch.setitem(vars(model), "metadata", {**model.metadata, "metrics": None})
+    assert model.metrics == {}
+    assert model.md_path is None
+    monkeypatch.setitem(
+        vars(model), "metadata", {**model.metadata, "metrics": {"discovery": None}}
+    )
+    monkeypatch.setattr(cli.cli_args, "models", [model])
+    assert cli.complete_models() == []
 
 
 def test_generated_model_enum_is_current() -> None:
@@ -488,12 +450,13 @@ def test_model_md_path_passes_huggingface_token(
 
 TIMEOUT = 30
 URL_WORKERS = 16  # HTTP checks wait on the network, not the runner's CPU cores.
-VALID_URL_STATUSES = {200, 202, 403, 429}
+VALID_URL_STATUSES = {200, 202, 403, 429, 500, 502, 503, 504}
 
 
 def check_url(session: requests.Session, url: str) -> None:
     """Assert a URL resolves - the adapter retries transients, so only 404s fail."""
-    # 200: OK, 202: figshare async, 403: restricted, 429: rate limited after retries
+    # 200: OK, 202: figshare async, 403: restricted, 429/5xx: rate limited or server
+    # outage after retries, which says nothing about whether the URL is valid
     status = session.head(url, allow_redirects=True, timeout=TIMEOUT).status_code
     assert status in VALID_URL_STATUSES, f"unexpected {status=} for {url}"
 

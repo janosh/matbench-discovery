@@ -3,7 +3,7 @@ import { comparison, mark_compared_rows } from '#lib/model-comparison.svelte.js'
 import { HYPERPARAMS, METADATA_COLS } from '#lib/labels.js'
 import DynamicScatter from '#lib/plot/DynamicScatter.svelte'
 import { get_d3_interpolator } from 'matterviz/colors'
-import { tick } from 'svelte'
+import { type ComponentProps, tick } from 'svelte'
 import { afterEach, beforeEach, expect, it, vi } from 'vite-plus/test'
 import {
   choose_scatter_property,
@@ -38,6 +38,15 @@ const scatter_props = {
 const marker_color = (marker: Element) =>
   /^var\(--point-fill-color, (?<color>.+)\)$/.exec(marker.getAttribute(`fill`) ?? ``)
     ?.groups?.color
+const markers = () => [...document.querySelectorAll<SVGPathElement>(`path.marker`)]
+// plain (non-getter) props only: spreading would detach getter/setter bindings
+const mount_scatter = async (props: Partial<ComponentProps<typeof DynamicScatter>>) => {
+  mount(DynamicScatter, {
+    target: document.body,
+    props: { models: make_models(1, 100), ...scatter_props, ...props },
+  })
+  await tick()
+}
 
 beforeEach(() => {
   comparison.keys.clear()
@@ -54,15 +63,7 @@ it.each([
 ] as const)(
   `sets log toggles for range [%d, %d] with x=%s`,
   async (min_value, max_value, x_key, expected_labels) => {
-    mount(DynamicScatter, {
-      target: document.body,
-      props: {
-        models: make_models(min_value, max_value),
-        x_key,
-        ...scatter_props,
-      },
-    })
-    await tick()
+    await mount_scatter({ models: make_models(min_value, max_value), x_key })
 
     const toggles = [
       ...document.querySelectorAll<HTMLInputElement>(`.log-controls input`),
@@ -136,27 +137,22 @@ it.each([
 ])(
   `honors log preferences with $scale color scaling for $counts`,
   async ({ counts, scale, fraction }) => {
-    mount(DynamicScatter, {
-      target: document.body,
-      props: {
-        models: counts.map((count, idx) => ({
-          ...make_models(idx + 1)[0],
-          n_training_structures: count,
-        })),
-        options: [
-          { ...HYPERPARAMS.model_params },
-          { ...METADATA_COLS.n_training_materials },
-          { ...METADATA_COLS.n_training_structures, scale_type: `log` },
-        ],
-        x_key: HYPERPARAMS.model_params.key,
-        ...scatter_props,
-      },
+    await mount_scatter({
+      models: counts.map((count, idx) => ({
+        ...make_models(idx + 1)[0],
+        n_training_structures: count,
+      })),
+      options: [
+        { ...HYPERPARAMS.model_params },
+        { ...METADATA_COLS.n_training_materials },
+        { ...METADATA_COLS.n_training_structures, scale_type: `log` },
+      ],
+      x_key: HYPERPARAMS.model_params.key,
     })
-    await tick()
     const toggle = doc_query<HTMLInputElement>(`[aria-label="${scale} scales"] input`)
     expect(toggle.parentElement?.textContent?.trim()).toBe(`Color`)
     expect(toggle.checked).toBe(true)
-    const colors = () => [...document.querySelectorAll(`path.marker`)].map(marker_color)
+    const colors = () => markers().map(marker_color)
     expect(colors()).toHaveLength(counts.length)
     expect(colors()[1]).toBe(viridis(fraction))
     toggle.click()
@@ -207,7 +203,7 @@ it.each([
     expect(document.querySelectorAll(`.interactive-axis-label button`)).toHaveLength(2)
     const rendered_values = () =>
       dim === `color` || dim === `size`
-        ? [...document.querySelectorAll(`path.marker`)].map((marker) =>
+        ? markers().map((marker) =>
             dim === `color` ? marker_color(marker) : marker.getAttribute(`d`),
           )
         : [...document.querySelectorAll(`.${dim}-axis .tick text`)].map(
@@ -241,18 +237,11 @@ it(`keeps duplicate-label series distinct and collapses their legend`, async () 
     ...model,
     model_name: `Duplicate label`,
   }))
-  mount(DynamicScatter, {
-    target: document.body,
-    props: {
-      models,
-      x_key: METADATA_COLS.benchmark_added.key,
-      ...scatter_props,
-    },
-  })
+  await mount_scatter({ models, x_key: METADATA_COLS.benchmark_added.key })
 
   doc_query(`button.models-toggle`).click()
   await tick()
-  const legend = doc_query(`.scatter > .legend:has(.legend-item)`)
+  const legend = doc_query(`.legend:has(.legend-item)`)
   expect(
     [...legend.querySelectorAll(`.legend-item`)].map((item) => item.textContent?.trim()),
   ).toEqual(models.map(({ model_name, model_key }) => `${model_name} (${model_key})`))
@@ -273,7 +262,7 @@ it(`keeps duplicate-label series distinct and collapses their legend`, async () 
 
   // the controls row sits inside the same wrapper the attachment is on, so only the
   // legend itself may count as inside — everything else collapses it
-  doc_query(`.collapsible-legend .controls-row`).dispatchEvent(click())
+  doc_query(`.controls-row`).dispatchEvent(click())
   await tick()
   expect(document.querySelector(`button.models-toggle`)).not.toBeNull()
 })
@@ -422,60 +411,52 @@ it(`renders category colors and dataset links without model metadata`, async () 
     props,
   })
   await tick()
-  const markers = [...document.querySelectorAll<SVGPathElement>(`path.marker`)]
-  expect(markers).toHaveLength(2)
+  const category_markers = markers()
+  expect(category_markers).toHaveLength(2)
   expect(doc_query(`.property-picker .selected-label small`).textContent).toMatch(
     /3\s+models/,
   )
-  const category_fills = markers.map(marker_color)
+  const category_fills = category_markers.map(marker_color)
   expect(doc_query(`.colorbar .property-select`).textContent).toContain(`Access`)
   expect(doc_query(`.colorbar-wrapper`).getAttribute(`role`)).toBe(`group`)
   expect(document.querySelector(`.colorbar .bar`)).toBeNull()
   for (const [idx, color] of Object.values(categories).entries()) {
     expect(category_fills[idx]).toBe(color)
   }
-  markers[1].dispatchEvent(new MouseEvent(`click`, { bubbles: true }))
+  category_markers[1].dispatchEvent(new MouseEvent(`click`, { bubbles: true }))
   expect(goto).toHaveBeenCalledWith(`/data/partial-set`)
   await choose_scatter_property(`Color`, `Count`)
   expect(document.querySelector(`.category-legend`)).toBeNull()
   expect(document.querySelector(`.colorbar .bar`)).not.toBeNull()
-  expect(document.querySelectorAll(`path.marker`)).toHaveLength(3)
-  expect(markers.map(marker_color)).not.toEqual(category_fills)
+  expect(markers()).toHaveLength(3)
+  expect(markers().map(marker_color)).not.toEqual(category_fills)
   doc_query<SVGPathElement>(`path.marker`).dispatchEvent(
     new MouseEvent(`click`, { bubbles: true }),
   )
   await tick()
   await choose_scatter_property(`Color`, `Access`)
-  expect(document.querySelectorAll(`path.marker`)).toHaveLength(2)
+  expect(markers()).toHaveLength(2)
   await choose_scatter_property(`Color`, `Unreported`)
-  expect(document.querySelectorAll(`path.marker`)).toHaveLength(0)
+  expect(markers()).toHaveLength(0)
   expect(document.querySelector(`.colorbar .bar`)).toBeNull()
   expect(doc_query(`.colorbar .property-select`).textContent).toContain(`Unreported`)
   await choose_scatter_property(`Color`, `Access`)
-  expect(document.querySelectorAll(`path.marker`)).toHaveLength(2)
-  expect([...document.querySelectorAll(`path.marker`)].map(marker_color)).toEqual(
-    category_fills,
-  )
+  expect(markers().map(marker_color)).toEqual(category_fills)
 })
 
 it(`shares model picks across plots and table rows while preserving point callbacks`, async () => {
   const models = make_models(1, 100)
   const onclick = vi.fn()
   for (const url_prefix of [``, `second`])
-    mount(DynamicScatter, {
-      target: document.body,
-      props: {
-        models,
-        x_key: HYPERPARAMS.model_params.key,
-        url_prefix,
-        point_events: { onclick },
-        ...scatter_props,
-        show_model_labels: true,
-        bleed: false,
-        legend: null,
-      },
+    await mount_scatter({
+      models,
+      x_key: HYPERPARAMS.model_params.key,
+      url_prefix,
+      point_events: { onclick },
+      show_model_labels: true,
+      bleed: false,
+      legend: null,
     })
-  await tick()
   doc_query(`path.marker`).dispatchEvent(new MouseEvent(`click`, { bubbles: true }))
   await tick()
   expect(onclick).toHaveBeenCalledOnce()
@@ -486,13 +467,13 @@ it(`shares model picks across plots and table rows while preserving point callba
   ])
   expect(goto).not.toHaveBeenCalled()
 
-  const markers = [...document.querySelectorAll<SVGPathElement>(`path.marker`)]
+  const plot_markers = markers()
   const style_of = (marker: SVGPathElement) => ({
     fill_opacity: marker.getAttribute(`fill-opacity`),
     stroke: marker.getAttribute(`stroke`),
   })
   // the dimmed model paints first (default stroke), the ringed highlighted one on top
-  expect(markers.map(style_of)).toEqual([
+  expect(plot_markers.map(style_of)).toEqual([
     { fill_opacity: `0.3`, stroke: `#000` },
     { fill_opacity: `1`, stroke: `currentColor` },
     { fill_opacity: `0.3`, stroke: `#000` },
@@ -506,20 +487,13 @@ it(`shares model picks across plots and table rows while preserving point callba
   expect(document.querySelector(`.bleed-1400`)).toBeNull()
   expect(document.querySelector(`button.models-toggle`)).toBeNull()
   // Deselect in the second plot; both plots and table rows return to normal.
-  markers.at(-1)?.dispatchEvent(new MouseEvent(`click`, { bubbles: true }))
+  plot_markers.at(-1)?.dispatchEvent(new MouseEvent(`click`, { bubbles: true }))
   await tick()
   expect(comparison.keys.size).toBe(0)
   expect(mark_compared_rows(models, false).every((row) => !row.class)).toBe(true)
-  expect(
-    [...document.querySelectorAll(`path.marker`)].map((marker) =>
-      marker.getAttribute(`fill-opacity`),
-    ),
-  ).toEqual([`1`, `1`, `1`, `1`])
+  const opacities = () => markers().map((marker) => marker.getAttribute(`fill-opacity`))
+  expect(opacities()).toEqual([`1`, `1`, `1`, `1`])
   comparison.toggle(`absent-model`)
   await tick()
-  expect(
-    [...document.querySelectorAll(`path.marker`)].every(
-      (marker) => marker.getAttribute(`fill-opacity`) === `1`,
-    ),
-  ).toBe(true)
+  expect(opacities()).toEqual([`1`, `1`, `1`, `1`])
 })

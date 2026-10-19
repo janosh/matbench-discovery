@@ -1,13 +1,15 @@
 """Registry of MLIP ASE calculators shared across benchmark tasks.
 
-Runners resolve each model's YAML environment via CalcSpec.uv_run_cmd
-(uv run --with or --project for override-heavy stacks like EquFlash).
+Runners layer each model's YAML calculator packages onto their own Python 3.14
+env via CalcSpec.uv_run_cmd (uv run --with, or --project for override-heavy stacks
+like EquFlash).
 Factories import packages lazily so listing models needs only core deps.
 
 Registry keys are Model enum names so metrics write to the right YAML.
 """
 
 import argparse
+import functools
 import hashlib
 import inspect
 import os
@@ -17,7 +19,7 @@ import sys
 import zipfile
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
-from importlib.metadata import PackageNotFoundError, version
+from importlib.metadata import PackageNotFoundError, requires, version
 from urllib.parse import urlsplit
 
 from ase.calculators.calculator import Calculator
@@ -26,6 +28,8 @@ from filelock import FileLock
 from matbench_discovery import DEFAULT_CACHE_DIR, file_digest
 
 CHECKPOINT_DIR = f"{DEFAULT_CACHE_DIR}/md-checkpoints"
+# runner --dtype default; factories without a dtype parameter only accept this value
+DEFAULT_DTYPE = "float64"
 # generous: AOTInductor exports (TACE) compile every kernel ahead of time
 DERIVED_ARTIFACT_TIMEOUT_SEC = 30 * 60
 
@@ -103,18 +107,11 @@ def download_checkpoint(model_key: str, ext: str | None = None) -> str:
     return dest
 
 
-def _stage_checkpoint(
-    model_key: str,
-    dest: str,
-    *,
-    ext: str | None = None,
-    source_path: str | None = None,
-) -> None:
-    """Download a checkpoint and atomically stage it in a framework-specific cache.
+def _stage_checkpoint(source: str, dest: str) -> None:
+    """Atomically stage a resolved checkpoint in a framework-specific cache.
 
     This bypasses framework downloaders that a WAF may serve as empty files.
     """
-    source = source_path or download_checkpoint(model_key, ext=ext)
     source_hash, source_state = _stable_file_sha256(source)
     cached_dest = _cached_file_sha256(dest)
     os.makedirs(os.path.dirname(dest) or ".", exist_ok=True)
@@ -212,38 +209,80 @@ def _run_to_atomic_output(
                 os.remove(tmp_dest)
 
 
+# Extras the shared runner environments install on top of matbench-discovery's
+# base dependencies (run_kappa.py needs matbench-discovery[phonons,symmetry]).
+RUNNER_EXTRAS = ("phonons", "symmetry")
+
+
+@functools.cache
+def runner_provided_packages() -> frozenset[str]:
+    """Canonical names of packages the shared runner environments already install.
+
+    These are matbench-discovery itself plus its base and RUNNER_EXTRAS requirements
+    (a superset of every runner's PEP 723 header). Model YAML pins of these packages
+    are submission provenance only: the runners need their own (Python 3.14) versions.
+    """
+    from packaging.requirements import Requirement
+    from packaging.utils import canonicalize_name
+
+    names = {"matbench-discovery"}
+    for requirement_str in requires("matbench-discovery") or ():
+        requirement = Requirement(requirement_str)
+        marker = requirement.marker
+        if marker is None or any(
+            marker.evaluate({"extra": extra}) for extra in RUNNER_EXTRAS
+        ):
+            names.add(canonicalize_name(requirement.name))
+    return frozenset(names)
+
+
 @dataclass(frozen=True)
 class CalcSpec:
     """A registered MLIP calculator and its YAML-owned runtime environment."""
 
     make_calc: Callable[..., Calculator]
-    deps: tuple[str, ...] = ()  # extra uv requirements beyond CORE_DEPS
+    deps: tuple[str, ...] = ()  # YAML environment.dependencies (submission provenance)
     find_links: tuple[str, ...] = ()  # uv --find-links (e.g. PyG/dgl wheel pages)
     extra_index_url: tuple[str, ...] = ()  # uv --extra-index-url entries
-    # pin uv's Python (e.g. HIENet's torch 2.1.2 has no cp312 wheels, so needs 3.11);
-    # None lets uv pick the default
-    python_version: str | None = None
     project: str | None = None
     requires_checkpoint: bool = False
     auto_checkpoint: bool = False
     checkpoint_ext: str | None = None
 
+    def runner_deps(self) -> tuple[str, ...]:
+        """YAML dependencies minus packages the shared runner env already provides.
+
+        Runners pin their own Python (>=3.14 per their PEP 723 headers) plus ase,
+        numpy, pymatgen, etc. via matbench-discovery, so only model-specific
+        calculator packages (incl. torch) are layered on with uv --with.
+        """
+        from packaging.requirements import Requirement
+        from packaging.utils import canonicalize_name
+
+        provided = runner_provided_packages()
+        return tuple(
+            dep
+            for dep in self.deps
+            if canonicalize_name(Requirement(dep).name) not in provided
+        )
+
     def uv_run_cmd(self, script: str, *args: str) -> list[str]:
         """Uv run command that resolves this model's env and runs the script.
 
-        With project, that pyproject owns resolution (incl. override-dependencies);
-        YAML dependencies stay for display only. Otherwise deps / indexes apply.
+        With project, that pyproject owns resolution (incl. Python and
+        override-dependencies); YAML dependencies stay for display only. Otherwise
+        the script's PEP 723 header picks Python and core packages, and runner_deps,
+        find_links and extra indexes add the model's calculator stack.
         """
-        py_args = ["--python", self.python_version] if self.python_version else []
         if self.project:
-            mode = ["--project", self.project, "--isolated", *py_args, "python"]
+            mode = ["--project", self.project, "--isolated", "python"]
         else:
             pairs = (
-                *(("--with", dep) for dep in self.deps),
+                *(("--with", dep) for dep in self.runner_deps()),
                 *(("--find-links", url) for url in self.find_links),
                 *(("--extra-index-url", url) for url in self.extra_index_url),
             )
-            mode = ["--no-project", *py_args, *(tok for pair in pairs for tok in pair)]
+            mode = ["--no-project", *(tok for pair in pairs for tok in pair)]
         return ["uv", "run", *mode, script, *args]
 
 
@@ -270,7 +309,6 @@ def _runtime_calc_spec(
             deps=tuple(environment["dependencies"]),
             find_links=tuple(environment.get("find_links", ())),
             extra_index_url=tuple(environment.get("extra_index_urls", ())),
-            python_version=environment["python_version"],
             project=environment.get("project"),
             requires_checkpoint=requires_checkpoint,
             auto_checkpoint=auto_checkpoint,
@@ -421,22 +459,28 @@ def _mattersim(checkpoint: str) -> Callable[[str], Calculator]:
     return make_calc
 
 
-def _sevennet(
-    model: str, modal: str | None = None, *, from_url: bool = False
-) -> Callable[..., Calculator]:
+def _sevennet(model: str, modal: str | None = None) -> Callable[..., Calculator]:
     def make_calc(device: str, checkpoint: str | None = None) -> Calculator:
-        """Construct SevenNet, locking package downloads or resolving a YAML URL."""
+        """Construct SevenNet by name, locking the package's own download."""
         from sevenn.calculator import SevenNetCalculator
 
         kwargs = {"modal": modal} if modal else {}
-        if from_url:
-            checkpoint = checkpoint or download_checkpoint(model)
-            return SevenNetCalculator(model=checkpoint, device=device, **kwargs)
         os.makedirs(CHECKPOINT_DIR, exist_ok=True)
         with FileLock(f"{CHECKPOINT_DIR}/sevennet-{model}.lock"):
             return SevenNetCalculator(
                 model=checkpoint or model, device=device, **kwargs
             )
+
+    return make_calc
+
+
+def _sevennet_from_url(modal: str | None = None) -> Callable[..., Calculator]:
+    def make_calc(device: str, checkpoint: str) -> Calculator:
+        """Construct SevenNet from the registry-downloaded YAML checkpoint_url."""
+        from sevenn.calculator import SevenNetCalculator
+
+        kwargs = {"modal": modal} if modal else {}
+        return SevenNetCalculator(model=checkpoint, device=device, **kwargs)
 
     return make_calc
 
@@ -450,30 +494,18 @@ def _grace(model_name: str) -> Callable[[str], Calculator]:
     return make_calc
 
 
-def _fairchem(model_key: str) -> Callable[..., Calculator]:
-    def make_calc(device: str, checkpoint: str | None = None) -> Calculator:
-        from fairchem.core import OCPCalculator
+def _fairchem(device: str, checkpoint: str) -> Calculator:
+    """Load a fairchem v1 OCPCalculator from a resolved checkpoint."""
+    from fairchem.core import OCPCalculator
 
-        # equiformer_v3 specs set requires_checkpoint, so load_calculator already
-        # rejected a missing checkpoint before this runs
-        checkpoint = checkpoint or download_checkpoint(model_key)
-        return OCPCalculator(checkpoint_path=checkpoint, cpu=device == "cpu", seed=0)
-
-    return make_calc
+    return OCPCalculator(checkpoint_path=checkpoint, cpu=device == "cpu", seed=0)
 
 
-def _deepmd(model_key: str) -> Callable[..., Calculator]:
-    def make_calc(
-        device: str,  # noqa: ARG001 - DP picks the device
-        checkpoint: str | None = None,
-    ) -> Calculator:
-        from deepmd.calculator import DP
+def _deepmd(device: str, checkpoint: str) -> Calculator:  # noqa: ARG001
+    """Load a frozen DeePMD model (DP picks the device and its backend by suffix)."""
+    from deepmd.calculator import DP
 
-        # DP selects its backend by file suffix, so force '.pth' (figshare URLs are
-        # extensionless and would otherwise save as '.ckpt')
-        return DP(checkpoint or download_checkpoint(model_key, ext=".pth"))
-
-    return make_calc
+    return DP(checkpoint)
 
 
 def _deepmd_model_paths(extract_dir: str) -> list[str]:
@@ -533,54 +565,36 @@ def _extract_single_deepmd_model(archive_path: str) -> str:
             shutil.rmtree(tmp_extract_dir, ignore_errors=True)
 
 
-def _deepmd_archive(model_key: str) -> Callable[..., Calculator]:
-    """Build a DeePMD calculator from a downloadable model archive."""
+def _deepmd_archive(device: str, checkpoint: str) -> Calculator:  # noqa: ARG001
+    """Extract a DeePMD model archive when needed and load its frozen artifact."""
+    from deepmd.calculator import DP
 
-    def make_calc(
-        device: str,  # noqa: ARG001 - DP picks the device
-        checkpoint: str | None = None,
-    ) -> Calculator:
-        """Extract the model archive when needed and load its frozen artifact."""
-        from deepmd.calculator import DP
+    if zipfile.is_zipfile(checkpoint):
+        checkpoint = _extract_single_deepmd_model(checkpoint)
+    return DP(checkpoint)
 
-        checkpoint = checkpoint or download_checkpoint(model_key, ext=".zip")
-        if zipfile.is_zipfile(checkpoint):
-            checkpoint = _extract_single_deepmd_model(checkpoint)
+
+def _deepmd_freeze(device: str, checkpoint: str) -> Calculator:  # noqa: ARG001
+    """Freeze a DeePMD training checkpoint (state dict) and load the frozen model."""
+    from deepmd.calculator import DP
+
+    if checkpoint.endswith(".pt2"):
         return DP(checkpoint)
-
-    return make_calc
-
-
-def _deepmd_freeze(model_key: str) -> Callable[..., Calculator]:
-    def make_calc(
-        device: str,  # noqa: ARG001 - DP picks the device
-        checkpoint: str | None = None,
-    ) -> Calculator:
-        from deepmd.calculator import DP
-
-        # figshare ships a training checkpoint (state dict), so freeze it to the
-        # torch-export .pt2 artifact that DP(frozen) loads.
-        ckpt = checkpoint or download_checkpoint(model_key, ext=".pt")
-        if ckpt.endswith(".pt2"):
-            return DP(ckpt)
-        # deepmd 3.2's pt backend freezes to a torch-export .pt2 (not TorchScript .pth)
-        frozen = f"{os.path.splitext(ckpt)[0]}-frozen.pt2"
-        _run_to_atomic_output(
-            ["dp", "--pt", "freeze", "-c", ckpt, "-o", "{output}"],
-            frozen,
-            source_paths=(ckpt,),
-            tool_packages=("deepmd-kit",),
-        )
-        return DP(frozen)
-
-    return make_calc
+    # deepmd 3.2's pt backend freezes to a torch-export .pt2 (not TorchScript .pth)
+    frozen = f"{os.path.splitext(checkpoint)[0]}-frozen.pt2"
+    _run_to_atomic_output(
+        ["dp", "--pt", "freeze", "-c", checkpoint, "-o", "{output}"],
+        frozen,
+        source_paths=(checkpoint,),
+        tool_packages=("deepmd-kit",),
+    )
+    return DP(frozen)
 
 
 def _tace(model_key: str, *, accelerate: bool = True) -> Callable[..., Calculator]:
-    def make_calc(device: str, checkpoint: str | None = None) -> Calculator:
+    def make_calc(device: str, checkpoint: str) -> Calculator:
         from tace.interface.ase import TACEAseCalc
 
-        checkpoint = checkpoint or download_checkpoint(model_key)
         # OpenEquivariance kernels are CUDA-only, so CPU runs stay on the eager path
         if not accelerate or not device.startswith("cuda"):
             return TACEAseCalc(checkpoint, device=device)
@@ -623,22 +637,19 @@ def _tace(model_key: str, *, accelerate: bool = True) -> Callable[..., Calculato
     return make_calc
 
 
-def _hienet(model_key: str) -> Callable[..., Calculator]:
-    def make_calc(device: str, checkpoint: str | None = None) -> Calculator:
-        from hienet.hienet_calculator import HIENetCalculator
+def _hienet(device: str, checkpoint: str) -> Calculator:
+    """Load HIENet from a resolved checkpoint."""
+    from hienet.hienet_calculator import HIENetCalculator
 
-        checkpoint = checkpoint or download_checkpoint(model_key)
-        return HIENetCalculator(model=checkpoint, device=device)
-
-    return make_calc
+    return HIENetCalculator(model=checkpoint, device=device)
 
 
-def _prophet(device: str, checkpoint: str | None = None) -> Calculator:
+def _prophet(device: str, checkpoint: str) -> Calculator:
     """Load Prophet on the runner-selected device."""
     from prophet import KairosCalculator
 
     return KairosCalculator(
-        model_path=checkpoint or download_checkpoint("prophet_oame_mbd", ext=".pt"),
+        model_path=checkpoint,
         use_kernel=device.startswith("cuda"),
         use_compile=False,
         device=device,
@@ -681,14 +692,14 @@ def _nequip(model_key: str) -> Callable[[str], Calculator]:
     return make_calc
 
 
-def _eqnorm(model_key: str, model_variant: str) -> Callable[..., Calculator]:
-    def make_calc(device: str, checkpoint: str | None = None) -> Calculator:
+def _eqnorm(model_variant: str) -> Callable[..., Calculator]:
+    def make_calc(device: str, checkpoint: str) -> Calculator:
         from eqnorm.calculator import EqnormCalculator
 
         # EqnormCalculator downloads via the wget package, which figshare's WAF serves
         # as 0 bytes (-> torch.load EOFError), so stage our checkpoint where it looks
         dest = os.path.expanduser(f"~/.cache/eqnorm/{model_variant}.pt")
-        _stage_checkpoint(model_key, dest, ext=".pt", source_path=checkpoint)
+        _stage_checkpoint(checkpoint, dest)
         return EqnormCalculator(
             model_name="eqnorm", model_variant=model_variant, device=device
         )
@@ -699,7 +710,7 @@ def _eqnorm(model_key: str, model_variant: str) -> Callable[..., Calculator]:
 def _nequix(model_key: str) -> Callable[..., Calculator]:
     def make_calc(
         device: str,  # noqa: ARG001 - jax picks the device
-        checkpoint: str | None = None,
+        checkpoint: str,
     ) -> Calculator:
         from nequix.calculator import NequixCalculator
 
@@ -707,23 +718,21 @@ def _nequix(model_key: str) -> Callable[..., Calculator]:
         # stage our checkpoint and pass model_path so it loads ours directly.
         # use_kernel=False avoids the openequivariance extension (installed separately)
         dest = os.path.expanduser(f"~/.cache/nequix/{model_key}.nqx")
-        _stage_checkpoint(model_key, dest, ext=".nqx", source_path=checkpoint)
+        _stage_checkpoint(checkpoint, dest)
         return NequixCalculator(model_path=dest, backend="jax", use_kernel=False)
 
     return make_calc
 
 
 def _matris(model: str, cache_name: str) -> Callable[..., Calculator]:
-    def make_calc(device: str, checkpoint: str | None = None) -> Calculator:
+    def make_calc(device: str, checkpoint: str) -> Calculator:
         from matris.applications import MatRISCalculator
 
         # MatRIS.load() only takes a registered model name and resolves it to
         # ~/.cache/matris/<cache_name> (its built-in figshare downloader serves 0 bytes
         # behind a WAF), so stage our YAML checkpoint there before constructing the calc
         _stage_checkpoint(
-            model,
-            os.path.expanduser(f"~/.cache/matris/{cache_name}"),
-            source_path=checkpoint,
+            checkpoint, os.path.expanduser(f"~/.cache/matris/{cache_name}")
         )
         return MatRISCalculator(model=model, device=device)
 
@@ -731,9 +740,7 @@ def _matris(model: str, cache_name: str) -> Callable[..., Calculator]:
 
 
 def _alphanet(model_key: str, config_url: str) -> Callable[..., Calculator]:
-    def make_calc(
-        device: str, dtype: str = "float64", checkpoint: str | None = None
-    ) -> Calculator:
+    def make_calc(device: str, checkpoint: str, dtype: str = "float64") -> Calculator:
         from alphanet.config import All_Config
         from alphanet.infer.calc import AlphaNetCalculator
 
@@ -749,7 +756,7 @@ def _alphanet(model_key: str, config_url: str) -> Callable[..., Calculator]:
                 download_file(config_path, config_url)
         config = All_Config().from_json(config_path)
         return AlphaNetCalculator(
-            ckpt_path=checkpoint or download_checkpoint(model_key),
+            ckpt_path=checkpoint,
             device=device,
             precision={"float32": "32", "float64": "64"}[dtype],
             config=config,
@@ -758,34 +765,29 @@ def _alphanet(model_key: str, config_url: str) -> Callable[..., Calculator]:
     return make_calc
 
 
-def _pet(model_key: str) -> Callable[..., Calculator]:
-    def make_calc(
-        device: str, dtype: str = "float64", checkpoint: str | None = None
-    ) -> Calculator:
-        import torch
-        from metatomic.torch import load_atomistic_model
-        from metatomic.torch.ase_calculator import MetatomicCalculator
+def _pet(device: str, checkpoint: str, dtype: str = "float64") -> Calculator:
+    """Export PET's metatrain checkpoint and load it as a metatomic calculator."""
+    import torch
+    from metatomic.torch import load_atomistic_model
+    from metatomic.torch.ase_calculator import MetatomicCalculator
 
-        # PET ships a metatrain .ckpt that must be exported to a TorchScript .pt before
-        # metatomic can load it; cache the export and lock it against parallel tasks
-        ckpt = checkpoint or download_checkpoint(model_key)
-        pt_file = f"{os.path.splitext(ckpt)[0]}.pt"
-        # The temp name must end in .pt: mtt appends .pt otherwise, writing elsewhere.
-        _run_to_atomic_output(
-            ["mtt", "export", ckpt, "-o", "{output}"],
-            pt_file,
-            source_paths=(ckpt,),
-            tool_packages=("metatrain", "upet"),
-        )
-        model = load_atomistic_model(pt_file)
-        model.capabilities().dtype = dtype
-        model = model.to(
-            dtype={"float32": torch.float32, "float64": torch.float64}[dtype],
-            device=device,
-        )
-        return MetatomicCalculator(model, device=device, non_conservative=False)
-
-    return make_calc
+    # PET ships a metatrain .ckpt that must be exported to a TorchScript .pt before
+    # metatomic can load it; cache the export and lock it against parallel tasks
+    pt_file = f"{os.path.splitext(checkpoint)[0]}.pt"
+    # The temp name must end in .pt: mtt appends .pt otherwise, writing elsewhere.
+    _run_to_atomic_output(
+        ["mtt", "export", checkpoint, "-o", "{output}"],
+        pt_file,
+        source_paths=(checkpoint,),
+        tool_packages=("metatrain", "upet"),
+    )
+    model = load_atomistic_model(pt_file)
+    model.capabilities().dtype = dtype
+    model = model.to(
+        dtype={"float32": torch.float32, "float64": torch.float64}[dtype],
+        device=device,
+    )
+    return MetatomicCalculator(model, device=device, non_conservative=False)
 
 
 def _chgnet(device: str) -> Calculator:
@@ -805,31 +807,21 @@ def _m3gnet(device: str) -> Calculator:  # noqa: ARG001 - matgl manages device
     return PESCalculator(matgl.load_model("M3GNet-MP-2021.2.8-PES"))
 
 
-def _equflash(model_key: str) -> Callable[..., Calculator]:
-    def make_calc(device: str, checkpoint: str | None = None) -> Calculator:
-        from GGNN.common.calculator import UCalculator
+def _equflash(device: str, checkpoint: str) -> Calculator:
+    """Load EquFlash's UCalculator (an ASE Calculator) from a torch .pt checkpoint."""
+    from GGNN.common.calculator import UCalculator
 
-        # UCalculator is an ASE Calculator (the kappa task drives phonopy with it);
-        # figshare ships a torch .pt checkpoint that it loads by path
-        ckpt = checkpoint or download_checkpoint(model_key, ext=".pt")
-        return UCalculator(checkpoint_path=ckpt, cpu=device == "cpu")
-
-    return make_calc
+    return UCalculator(checkpoint_path=checkpoint, cpu=device == "cpu")
 
 
-def _bam(model_key: str) -> Callable[..., Calculator]:
-    def make_calc(device: str, checkpoint: str | None = None) -> Calculator:
-        # BAM-torch's RACECalculator (bam_torch.tase.base_calculator) already
-        # exposes energy/forces/stress plus free_energy and defaults missing
-        # periodic stress to zero, so no monkey-patching or subclassing here.
-        from bam_torch.tase.base_calculator import RACECalculator
+def _bam(device: str, checkpoint: str) -> Calculator:
+    """Load BAM-torch's RACECalculator from a resolved .pkl checkpoint."""
+    # RACECalculator (bam_torch.tase.base_calculator) already exposes
+    # energy/forces/stress plus free_energy and defaults missing periodic stress
+    # to zero, so no monkey-patching or subclassing here.
+    from bam_torch.tase.base_calculator import RACECalculator
 
-        return RACECalculator(
-            model=checkpoint or download_checkpoint(model_key, ext=".pkl"),
-            device=device,
-        )
-
-    return make_calc
+    return RACECalculator(model=checkpoint, device=device)
 
 
 def _emt(device: str) -> Calculator:  # noqa: ARG001 - CPU only, debug model
@@ -838,8 +830,9 @@ def _emt(device: str) -> Calculator:  # noqa: ARG001 - CPU only, debug model
     return EMT()
 
 
-# Executable pins live in each model YAML's environment. Factories above keep
-# checkpoint behavior; _runtime_calc_spec supplies the uv env. Compatibility notes:
+# Each model YAML's environment records its submission stack; _runtime_calc_spec
+# layers its calculator packages (CalcSpec.runner_deps) onto the Python 3.14 runner
+# env. Submission-time compatibility notes:
 # - fairchem-core v1: torch 2.4, matching PyG wheels, numpy<2, scipy<1.15
 # - HIENet: torch 2.1.2 needs Python 3.11 + matching PyG wheels
 # - NequIP/Allegro: torch<2.10 (TorchScript GPU path)
@@ -857,12 +850,16 @@ _ALPHANET_PRETRAINED = (
 
 def _deepmd_spec(
     model_key: str,
-    factory: Callable[[str], Callable[..., Calculator]] = _deepmd,
+    make_calc: Callable[..., Calculator] = _deepmd,
     *,
     ext: str = ".pth",
 ) -> Callable[[], CalcSpec]:
-    """YAML-backed DeePMD spec with managed checkpoint download."""
-    return _named_spec(factory, model_key, checkpoint=True, ext=ext)
+    """YAML-backed DeePMD spec with managed checkpoint download.
+
+    DP selects its backend by file suffix, so force ext (figshare URLs are
+    extensionless and would otherwise save as '.ckpt').
+    """
+    return _checkpoint_spec(model_key, make_calc, ext=ext)
 
 
 CALCULATORS: _CalcRegistry = _CalcRegistry(
@@ -879,7 +876,7 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
         "sevennet_l3i5": _runtime_calc_spec("sevennet_l3i5", _sevennet("7net-l3i5")),
         "sevennet_mf_ompa": _checkpoint_spec(
             "sevennet_mf_ompa",
-            _sevennet("sevennet_mf_ompa", modal="mpa", from_url=True),
+            _sevennet_from_url(modal="mpa"),
         ),
         "sevennet_omni_i12": _runtime_calc_spec(
             "sevennet_omni_i12", _sevennet("7net-omni-i12", modal="mpa")
@@ -896,7 +893,7 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
             "grace_2l_mptrj", _grace("GRACE-2L-MP-r6")
         ),
         "chgnet_0_3_0": _runtime_calc_spec("chgnet_0_3_0", _chgnet),
-        "hienet": _named_spec(_hienet, "hienet", checkpoint=True),
+        "hienet": _checkpoint_spec("hienet", _hienet),
         "prophet_oame_mbd": _checkpoint_spec("prophet_oame_mbd", _prophet, ext=".pt"),
         "nequip_mp_l_0_1": _named_spec(_nequip, "nequip_mp_l_0_1"),
         "nequip_oam_l_0_1": _named_spec(_nequip, "nequip_oam_l_0_1"),
@@ -910,13 +907,13 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
             "matris_10m_mp", _matris("matris_10m_mp", "MatRIS_10M_MP.pth.tar")
         ),
         "eqnorm_mptrj": _checkpoint_spec(
-            "eqnorm_mptrj", _eqnorm("eqnorm_mptrj", "eqnorm-mptrj"), ext=".pt"
+            "eqnorm_mptrj", _eqnorm("eqnorm-mptrj"), ext=".pt"
         ),
         "nequix_mp_1": _named_spec(_nequix, "nequix_mp_1", checkpoint=True, ext=".nqx"),
         "nequix_mp_1_pft": _named_spec(
             _nequix, "nequix_mp_1_pft", checkpoint=True, ext=".nqx"
         ),
-        "pet_oam_xl_1_0_0": _named_spec(_pet, "pet_oam_xl_1_0_0", checkpoint=True),
+        "pet_oam_xl_1_0_0": _checkpoint_spec("pet_oam_xl_1_0_0", _pet),
         "alphanet_v1_mptrj": _checkpoint_spec(
             "alphanet_v1_mptrj",
             _alphanet("alphanet_v1_mptrj", f"{_ALPHANET_PRETRAINED}/MPtrj/mp.json"),
@@ -926,17 +923,15 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
             _alphanet("alphanet_v1_oam", f"{_ALPHANET_PRETRAINED}/OMA/oma.json"),
         ),
         "m3gnet": _runtime_calc_spec("m3gnet", _m3gnet),
-        "eqv2_s_dens_mp": _named_spec(_fairchem, "eqv2_s_dens_mp", checkpoint=True),
-        "eqv2_m_omat_salex_mp": _named_spec(
-            _fairchem, "eqv2_m_omat_salex_mp", checkpoint=True
+        "eqv2_s_dens_mp": _checkpoint_spec("eqv2_s_dens_mp", _fairchem),
+        "eqv2_m_omat_salex_mp": _checkpoint_spec("eqv2_m_omat_salex_mp", _fairchem),
+        "esen_30m_oam": _checkpoint_spec("esen_30m_oam", _fairchem),
+        "esen_30m_mp": _checkpoint_spec("esen_30m_mp", _fairchem),
+        "equiformer_v3_mp": _checkpoint_spec(
+            "equiformer_v3_mp", _fairchem, requires_checkpoint=True
         ),
-        "esen_30m_oam": _named_spec(_fairchem, "esen_30m_oam", checkpoint=True),
-        "esen_30m_mp": _named_spec(_fairchem, "esen_30m_mp", checkpoint=True),
-        "equiformer_v3_mp": _named_spec(
-            _fairchem, "equiformer_v3_mp", checkpoint=True, requires_checkpoint=True
-        ),
-        "equiformer_v3_oam": _named_spec(
-            _fairchem, "equiformer_v3_oam", checkpoint=True, requires_checkpoint=True
+        "equiformer_v3_oam": _checkpoint_spec(
+            "equiformer_v3_oam", _fairchem, requires_checkpoint=True
         ),
         # superseded TACE models keep the eager stack their metrics were published
         # with: their torch 2.9.1 pins predate the torch>=2.11 AOTI export needs
@@ -948,7 +943,8 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
         ),
         "tace_oam_l": _named_spec(_tace, "tace_oam_l", checkpoint=True),
         "tece_oam_rra_1_0": _named_spec(_tace, "tece_oam_rra_1_0", checkpoint=True),
-        "bam_mp_core": _named_spec(_bam, "bam_mp_core", checkpoint=True, ext=".pkl"),
+        "bam_mp_core": _checkpoint_spec("bam_mp_core", _bam, ext=".pkl"),
+        "bam_mp_dens": _checkpoint_spec("bam_mp_dens", _bam, ext=".pkl"),
         "dpa_3_1_mptrj": _deepmd_spec("dpa_3_1_mptrj"),
         "dpa_3_1_3m_ft": _deepmd_spec("dpa_3_1_3m_ft"),
         "dpa3_v2_mptrj": _deepmd_spec("dpa3_v2_mptrj"),
@@ -961,11 +957,9 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
         "dpa_4_0_1_pro_mptrj": _deepmd_spec(
             "dpa_4_0_1_pro_mptrj", _deepmd_freeze, ext=".pt"
         ),
-        "equflash_29m_oam": _named_spec(
-            _equflash, "equflash_29m_oam", checkpoint=True, ext=".pt"
-        ),
-        "equflashv2_45m_oam": _named_spec(
-            _equflash, "equflashv2_45m_oam", checkpoint=True, ext=".pt"
+        "equflash_29m_oam": _checkpoint_spec("equflash_29m_oam", _equflash, ext=".pt"),
+        "equflashv2_45m_oam": _checkpoint_spec(
+            "equflashv2_45m_oam", _equflash, ext=".pt"
         ),
         # Eager: no Model YAML / environment; do not wrap with _runtime_calc_spec.
         "emt": CalcSpec(_emt),
@@ -1013,7 +1007,7 @@ def resolve_cli_calculator(
         for model_key, spec in CALCULATORS.items():
             if archived_reasons and model_key in archived_reasons:
                 continue
-            print(f"{model_key}: {', '.join(spec.deps) or '(core deps only)'}")
+            print(f"{model_key}: {', '.join(spec.runner_deps()) or '(core deps only)'}")
         return None
     if not model_ref:
         parser.error("--model is required (or pass --list-models)")
@@ -1030,7 +1024,7 @@ def resolve_cli_calculator(
 def load_calculator(
     model_key: str,
     device: str | None = None,
-    dtype: str = "float64",
+    dtype: str = DEFAULT_DTYPE,
     checkpoint: str | None = None,
 ) -> Calculator:
     """Instantiate the ASE calculator for a registered model.
@@ -1039,8 +1033,10 @@ def load_calculator(
         model_key: Key into CALCULATORS (a Model enum name).
         device: 'cuda' or 'cpu'. Defaults to auto-detection (cuda if torch sees a GPU,
             except the CPU-only 'emt' debug model).
-        dtype: Floating-point precision ('float64' or 'float32'). Passed to MACE,
-            AlphaNet, and PET; other calculators keep their package defaults.
+        dtype: Floating-point precision ('float64' or 'float32'). Passed to
+            factories that declare a dtype parameter (MACE, AlphaNet, PET). Others
+            keep their package default and reject any non-default dtype, so a
+            recorded float32 run can't silently have run at package precision.
         checkpoint: Explicit local model artifact for factories that support one.
 
     Returns:
@@ -1051,7 +1047,14 @@ def load_calculator(
     calc_spec = CALCULATORS[model_key]
     checkpoint = resolve_checkpoint(model_key, checkpoint)
     factory_params = inspect.signature(calc_spec.make_calc).parameters
-    kwargs: dict[str, str] = {"dtype": dtype} if "dtype" in factory_params else {}
+    kwargs: dict[str, str] = {}
+    if "dtype" in factory_params:
+        kwargs["dtype"] = dtype
+    elif dtype != DEFAULT_DTYPE:
+        raise ValueError(
+            f"{model_key} calculator has no dtype option, so {dtype=} would be "
+            f"ignored; only the package default ({DEFAULT_DTYPE=}) is supported"
+        )
     # Pass optional runtime values only to factories that explicitly declare them.
     if checkpoint is not None:
         if "checkpoint" not in factory_params:

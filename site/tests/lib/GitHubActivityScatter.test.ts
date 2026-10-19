@@ -11,30 +11,11 @@ const plot_mocks = vi.hoisted(() => ({
 vi.mock(`matterviz/labels`, () => ({ format_num: vi.fn(String) }))
 vi.mock(`matterviz/plot`, () => ({ ScatterPlot: plot_mocks.ScatterPlot }))
 
+type ScatterMetadata = { name?: string; model_key?: string }
 type ScatterPlotProps = {
-  series: {
-    x: number[]
-    y: number[]
-    metadata: { name: string; repo: string; model_key?: string }[]
-    color_values: number[]
-    size_values: number[]
-    point_label: { text: string; font_size: string; auto_placement: boolean }[]
-  }[]
-  x_axis: {
-    label: string
-    format: string
-    range: [number, null]
-    label_shift?: { y?: number }
-  }
-  y_axis: { label: string; format: string; range: [number, null] }
-  color_bar: { title: string; tick_format: string }
-  color_scale: { type: string }
-  point_events: {
-    onclick: (event: {
-      point: { metadata?: { model_key?: string; name?: string } }
-    }) => void
-  }
-  style?: string
+  series: { metadata: ScatterMetadata[] }[]
+  x_axis: unknown
+  point_events: { onclick: (event: { point: { metadata?: ScatterMetadata } }) => void }
 }
 
 const create_mock_github_data = (
@@ -92,31 +73,35 @@ describe(`GitHubActivityScatter`, () => {
 
     expect(plot_mocks.ScatterPlot).toHaveBeenCalledTimes(1)
     const props = get_scatter_plot_props(plot_mocks.ScatterPlot) as ScatterPlotProps
-    expect(props.series).toHaveLength(1)
-    expect(props.series[0]).toStrictEqual({
-      x: [0, 100_000],
-      y: [10, 999_999],
-      markers: `points`,
-      point_style: { fill: `#4dabf7` },
-      metadata: [
-        { name: `Zero Commits`, repo: `org/zero`, model_key: `zero-model` },
-        { name: `Popular`, repo: `org/popular`, model_key: undefined },
-      ],
-      color_values: [1, 10_000],
-      size_values: [1, 1000],
-      point_label: [
-        { text: `Zero Commits`, font_size: `11px`, auto_placement: true },
-        { text: `Popular`, font_size: `11px`, auto_placement: true },
-      ],
-    })
+    expect(props.series).toStrictEqual([
+      {
+        x: [0, 100_000],
+        y: [10, 999_999],
+        markers: `points`,
+        point_style: { fill: `#4dabf7` },
+        metadata: [
+          { name: `Zero Commits`, repo: `org/zero`, model_key: `zero-model` },
+          { name: `Popular`, repo: `org/popular`, model_key: undefined },
+        ],
+        color_values: [1, 10_000],
+        size_values: [1, 1000],
+        point_label: [
+          { text: `Zero Commits`, font_size: `11px`, auto_placement: true },
+          { text: `Popular`, font_size: `11px`, auto_placement: true },
+        ],
+      },
+    ])
     expect(props).toMatchObject({
-      x_axis: { label: `GitHub Forks`, format: `,.0f`, range: [0, null] },
       y_axis: { label: `GitHub Stars`, format: `,.0f`, range: [0, null] },
       color_bar: { title: `Commits Last Year`, tick_format: `~s` },
       color_scale: { type: `log` },
     })
-    // An inward title shift puts the label over the plotted data.
-    expect(props.x_axis.label_shift?.y ?? 0).toBeGreaterThanOrEqual(0)
+    // exact x_axis: no label_shift, since an inward title shift puts the label over the data
+    expect(props.x_axis).toStrictEqual({
+      label: `GitHub Forks`,
+      format: `,.0f`,
+      range: [0, null],
+    })
   })
 
   it(`passes rest props and disables labels when requested`, () => {

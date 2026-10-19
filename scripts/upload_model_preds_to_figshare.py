@@ -14,7 +14,7 @@ import yaml
 from tqdm import tqdm
 
 from matbench_discovery import PKG_DIR, ROOT, repo_relative_path
-from matbench_discovery.cli import cli_parser, models_arg
+from matbench_discovery.cli import cli_parser, models_arg, parse_cli_args
 from matbench_discovery.data import iter_file_refs, round_trip_yaml
 from matbench_discovery.enums import Model
 from matbench_discovery.remote import figshare
@@ -329,7 +329,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
     models_arg.type = str
     models_arg.choices = None
     models_arg.default = [model.name for model in Model.active()]
-    args, _unknown = cli_parser.parse_known_args(raw_args)
+    args = parse_cli_args(raw_args)
 
     args.tasks = process_exclusion_prefixes(args.tasks, list(modeling_tasks))
     processed_models = process_exclusion_prefixes(

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import gzip
+import hashlib
 import json
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
@@ -95,20 +96,34 @@ def test_write_json_gz_roundtrip(tmp_path: Path) -> None:
         assert json.load(file) == payload
 
 
-def test_artifact_manifest_hashes_and_sizes_one_open_file(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+@pytest.mark.parametrize(
+    ("role", "file_name", "error_cls", "error_match"),
+    [
+        ("input", "artifact.csv", None, None),
+        ("", "artifact.csv", ValueError, "non-empty logical name"),
+        ("nested/role", "artifact.csv", ValueError, "non-empty logical name"),
+        ("input", "missing.csv", FileNotFoundError, "Payload input file not found"),
+    ],
+)
+def test_artifact_manifest(
+    tmp_path: Path,
+    role: str,
+    file_name: str,
+    error_cls: type[Exception] | None,
+    error_match: str | None,
 ) -> None:
-    """Artifact sizes come from the file descriptor used for hashing."""
-    path = tmp_path / "artifact.csv"
-    path.write_text("data")
-    monkeypatch.setattr(
-        figs.os.path,
-        "getsize",
-        lambda _path: pytest.fail("artifact manifest must not reopen the path"),
-    )
-    with patch("builtins.open", wraps=open) as mock_open:
-        assert figs.artifact_manifest("input", str(path))["size"] == 4
-    mock_open.assert_called_once_with(str(path), "rb")
+    """Manifests hash content without paths; bad roles and missing files raise."""
+    (tmp_path / "artifact.csv").write_text("data")
+    path = str(tmp_path / file_name)
+    if error_cls is None:
+        assert figs.artifact_manifest(role, path) == {
+            "role": role,
+            "sha256": hashlib.sha256(b"data").hexdigest(),
+            "size": 4,
+        }
+        return
+    with pytest.raises(error_cls, match=error_match):
+        figs.artifact_manifest(role, path)
 
 
 def test_discovery_provenance_hashes_only_caller_recipe_sources() -> None:

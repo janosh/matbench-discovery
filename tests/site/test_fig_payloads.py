@@ -12,6 +12,7 @@ import hashlib
 import json
 import math
 import os
+from collections.abc import Callable
 from functools import partial
 from typing import Any
 
@@ -162,6 +163,11 @@ def check_hist_clf() -> None:
         for clf in ("tp", "fn", "fp", "tn"):
             assert_num_list(model[clf], length=n_bins)
 
+
+@pytest.mark.network  # downloads the prediction file of the first mismatched model
+def test_hist_clf_f1_matches_recomputed_predictions() -> None:
+    """A payload F1 that differs from the YAML registry matches recomputed preds."""
+    payload = load_payload("hist-clf-pred-hull-dist")
     record = next(
         (
             model
@@ -373,20 +379,6 @@ DISCOVERY_PAYLOADS = (
 )
 
 
-@pytest.mark.parametrize("name", DISCOVERY_PAYLOADS)
-def test_discovery_payload_covers_active_models(name: str) -> None:
-    """Each discovery figure covers every active model with discovery metrics."""
-    expected = {model.key for model in Model.active() if model.metrics.get("discovery")}
-    assert len(expected) > 30, f"sanity: too few discovery models ({len(expected)})"
-    keys = payload_model_keys(name)
-    assert keys == expected, (
-        f"{name} roster drift: missing={expected - keys}, extra={keys - expected}. "
-        "Run `uv run --with-editable . scripts/ingest_model.py <your-model> "
-        "--payloads-only` to splice your model's entries into the committed "
-        "payloads (needs only your own prediction files)."
-    )
-
-
 GEO_OPT_PAYLOADS = ("spg-sankeys", "struct-rmsd-cdf", "sym-ops-diff-bar")
 ELEMENT_PAYLOADS = {"element-prevalence-vs-error", "per-element-each-errors"}
 PREDICTION_ROLES = {"generator", "payload_numerics"}
@@ -445,37 +437,50 @@ def test_multi_model_payload_provenance_matches_computation() -> None:
             assert "pymatgen" in audit["runtime"]["packages"]
 
 
-@pytest.mark.parametrize("name", GEO_OPT_PAYLOADS)
-def test_geo_opt_payload_covers_active_models(name: str) -> None:
-    """Each geo-opt payload includes every active model with an analysis file."""
-    expected = {
-        model.key
-        for model in Model.active()
-        if (geo_opt := model.metrics.get("geo_opt") or {}).get("pred_file")
+def has_discovery_metrics(model: Model) -> bool:
+    """Whether a model has any discovery metrics."""
+    return bool(model.metrics.get("discovery"))
+
+
+def has_geo_opt_analysis(model: Model) -> bool:
+    """Whether a model has geo-opt predictions plus a symprec=1e-5 analysis file."""
+    geo_opt = model.metrics.get("geo_opt") or {}
+    return bool(
+        geo_opt.get("pred_file")
         and (geo_opt.get("symprec=1e-5") or {}).get("analysis_file")
-    }
-    assert len(expected) > 30, f"sanity: too few geo-opt models ({len(expected)})"
-    keys = payload_model_keys(name)
-    assert keys == expected, (
-        f"{name} roster drift: missing={expected - keys}, extra={keys - expected}. "
-        "Run `python scripts/evals/geo_opt.py --auto-download`."
     )
 
 
-def test_kappa_payload_covers_active_models() -> None:
-    """kappa-103-analysis covers every active model with kappa_103 predictions."""
-    expected = {
-        model.key
-        for model in Model.active()
-        if ((model.metrics.get("phonons") or {}).get("kappa_103") or {}).get(
-            "pred_file"
-        )
-    }
-    assert len(expected) > 30, f"sanity: too few kappa models ({len(expected)})"
-    keys = payload_model_keys("kappa-103-analysis")
+def has_kappa_preds(model: Model) -> bool:
+    """Whether a model has kappa_103 predictions."""
+    phonons = model.metrics.get("phonons") or {}
+    return bool((phonons.get("kappa_103") or {}).get("pred_file"))
+
+
+SPLICE_HINT = (
+    "Run `uv run --with-editable . scripts/ingest_model.py <your-model> "
+    "--payloads-only` to splice your model's entries into the committed payloads "
+    "(needs only your own prediction files)."
+)
+ROSTER_CASES = [
+    *((name, has_discovery_metrics, SPLICE_HINT) for name in DISCOVERY_PAYLOADS),
+    *(
+        (name, has_geo_opt_analysis, "Run `python scripts/evals/geo_opt.py`.")
+        for name in GEO_OPT_PAYLOADS
+    ),
+    ("kappa-103-analysis", has_kappa_preds, SPLICE_HINT),
+]
+
+
+@pytest.mark.parametrize(("name", "has_task_data", "hint"), ROSTER_CASES)
+def test_payload_covers_active_models(
+    name: str, has_task_data: Callable[[Model], bool], hint: str
+) -> None:
+    """Each multi-model payload covers every active model with that task's data."""
+    expected = {model.key for model in Model.active() if has_task_data(model)}
+    assert len(expected) > 30, f"sanity: too few {name} models ({len(expected)})"
+    keys = payload_model_keys(name)
     assert keys == expected, (
-        f"kappa-103-analysis roster drift: missing={expected - keys}, "
-        f"extra={keys - expected}. Run `uv run --with-editable . "
-        "scripts/ingest_model.py <your-model> --payloads-only` to splice your "
-        "model's entries into the committed payloads."
+        f"{name} roster drift: missing={expected - keys}, extra={keys - expected}. "
+        f"{hint}"
     )

@@ -1,6 +1,8 @@
 """Download all MP formation and above hull energies on 2023-01-10.
 
 The main purpose of this script is to produce the file at DataFiles.mp_energies.path.
+It writes a new dated file next to this script instead of overwriting that md5-pinned
+registry file; register the new file in data-files.yml to replace it.
 
 Related EDA of MP formation energies:
 https://github.com/janosh/pymatviz/blob/-/examples/mp_bimodal_e_form.ipynb
@@ -10,7 +12,7 @@ https://github.com/janosh/pymatviz/blob/-/examples/mp_bimodal_e_form.ipynb
 # requires-python = ">=3.14"
 # dependencies = [
 #   "matbench-discovery",
-#   "mp-api==0.46.4",
+#   "mp-api==0.46.5",
 # ]
 #
 # [tool.uv.sources]
@@ -20,6 +22,7 @@ https://github.com/janosh/pymatviz/blob/-/examples/mp_bimodal_e_form.ipynb
 import os
 
 import pandas as pd
+import plotly.express as px
 import pymatviz as pmv
 from mp_api.client import MPRester
 from pymatgen.core import Element, Structure
@@ -61,9 +64,10 @@ df_mp = pd.DataFrame(docs).set_index(Key.mat_id)
 df_mp = df_mp.rename(columns={"formula_pretty": Key.formula, "nsites": Key.n_sites})
 
 df_spg = pd.json_normalize(df_mp.pop("symmetry").tolist())[["number", "symbol"]]
-df_mp["spacegroup_symbol"] = df_spg.symbol.to_numpy()
+df_spg.index = df_mp.index  # json_normalize returns a RangeIndex
+df_mp["spacegroup_symbol"] = df_spg.symbol
 
-df_mp.energy_type.value_counts().plot.pie(autopct="%1.1f%%")
+print(df_mp.energy_type.value_counts(normalize=True))
 # GGA: 72.2%, GGA+U: 27.8%
 
 
@@ -76,57 +80,58 @@ df_mp_cse[Key.structure] = [
     Structure.from_dict(cse[Key.structure])
     for cse in tqdm(df_mp_cse.entry, desc="Hydrating structures")
 ]
+# raise_errors: symmetry detection must succeed for every structure
 df_mp_cse[f"{Key.protostructure}_moyo"] = [
-    prototype.get_protostructure_label(struct)
+    prototype.get_protostructure_label(struct, raise_errors=True)
     for struct in tqdm(df_mp_cse.structure, desc="Calculating proto-structure labels")
 ]
-# make sure symmetry detection succeeded for all structures
-assert df_mp_cse[f"{Key.protostructure}_moyo"].str.startswith("invalid").sum() == 0
 df_mp[f"{Key.protostructure}_moyo"] = df_mp_cse[f"{Key.protostructure}_moyo"]
 
 spg_nums = df_mp[f"{Key.protostructure}_moyo"].str.split("_").str[2].astype(int)
-# make sure all our spacegroup numbers match MP's
-assert (spg_nums.sort_index() == df_spg["number"].sort_index()).all()
+# make sure all our spacegroup numbers match MP's (both indexed by material ID)
+if n_mismatch := (spg_nums != df_spg["number"]).sum():
+    raise ValueError(f"{n_mismatch:,} moyo space groups differ from MP's")
 
-df_mp.to_csv(DataFiles.mp_energies.path)
-# df_mp = pd.read_csv(DataFiles.mp_energies.path, na_filter=False).set_index(Key.mat_id)
+out_path = f"{module_dir}/{today}-mp-energies.csv.gz"
+df_mp.to_csv(out_path)
+print(f"Wrote {out_path}; register it in data-files.yml to replace mp_energies")
+# df_mp = pd.read_csv(out_path, na_filter=False).set_index(Key.mat_id)
 
 
 # %% reproduce fig. 1b from https://arxiv.org/abs/2001.10591 (as data consistency check)
-ax = df_mp.plot.scatter(
+fig = px.scatter(
+    df_mp,
     x=e_form_key,
     y=e_decomp_enth_key,
-    alpha=0.1,
-    xlim=[-5, 1],
-    ylim=[-1, 1],
-    color=(df_mp[e_decomp_enth_key] > STABILITY_THRESHOLD).map(
-        {True: "red", False: "blue"}
-    ),
+    opacity=0.1,
+    range_x=[-5, 1],
+    range_y=[-1, 1],
+    color=df_mp[e_decomp_enth_key] > STABILITY_THRESHOLD,
     title=f"{today} - {len(df_mp):,} MP entries",
 )
-
-pmv.powerups.annotate_metrics(df_mp[e_form_key], df_mp[e_decomp_enth_key])
+pmv.powerups.annotate_metrics(df_mp[e_form_key], df_mp[e_decomp_enth_key], fig=fig)
+fig.show()
 # result on 2023-01-10: plots match. no correlation between formation energy and
 # decomposition enthalpy. R^2 = -1.571, MAE = 1.604
-# pmv.save_fig(ax, f"{module_dir}/mp-decomp-enth-vs-e-form.webp", dpi=300)
+# pmv.save_fig(fig, f"{module_dir}/mp-decomp-enth-vs-e-form.webp", dpi=300)
 
 
 # %% scatter plot energy above convex hull vs decomposition enthalpy
 # https://berkeleytheory.slack.com/archives/C16RE1TUN/p1673887564955539
 mask_above_line = df_mp.energy_above_hull - df_mp[e_decomp_enth_key].clip(0) > 0.1
-ax = df_mp.plot.scatter(
+n_above_line = sum(mask_above_line)
+# most points lie on line y=x for x > 0 and y = 0 for x < 0.
+fig = px.scatter(
+    df_mp.reset_index(),
     x=e_decomp_enth_key,
     y="energy_above_hull",
-    color=mask_above_line.map({True: "red", False: "blue"}),
-    hover_data=["index", Key.formula, e_form_key],
-)
-# most points lie on line y=x for x > 0 and y = 0 for x < 0.
-n_above_line = sum(mask_above_line)
-ax.set(
+    color=mask_above_line.to_numpy(),
+    hover_data=[Key.mat_id, Key.formula, e_form_key],
     title=f"{n_above_line:,} / {len(df_mp):,} = {n_above_line / len(df_mp):.1%} "
-    f"MP materials with\nenergy_above_hull - {e_decomp_enth_key}.clip(0) > 0.1"
+    f"MP materials with<br>energy_above_hull - {e_decomp_enth_key}.clip(0) > 0.1",
 )
-# pmv.save_fig(ax, f"{module_dir}/mp-e-above-hull-vs-decomp-enth.webp", dpi=300)
+fig.show()
+# pmv.save_fig(fig, f"{module_dir}/mp-e-above-hull-vs-decomp-enth.webp", dpi=300)
 
 
 # %% pull all single-element entries and filter for lowest energy per atom system for

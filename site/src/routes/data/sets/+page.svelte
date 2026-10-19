@@ -37,8 +37,6 @@
     partial: `Only a subset is public. Open the dataset details for release coverage.`,
     unreleased: `The training corpus is not publicly released.`,
   }
-  const display_value = (value: unknown): string =>
-    typeof value === `string` ? value : arr_to_str(value)
   const api_links = [
     [`native_api`, `Native API`, API],
     [`optimade_api`, `OPTIMADE API`, Optimade],
@@ -58,7 +56,7 @@
     method_label:
       [dataset.method, dataset.params?.functional]
         .filter(Boolean)
-        .map(display_value)
+        .map(arr_to_str)
         .join(` · `) || `Unknown`,
   }))
   type DatasetRow = (typeof datasets)[number]
@@ -74,7 +72,7 @@
       cell: size_cell,
       description: `Number of structures in the dataset. Any system with atomic positions and energy/force/stress labels is counted as a structure incl. successive ionic steps in MD/geometry optimization trajectories.`,
       better: `higher`,
-      scale_type: `log`,
+      color_scale: { type: `log` },
       format: `.3s`,
     },
     Materials: {
@@ -82,7 +80,7 @@
       cell: size_cell,
       description: `Distinct materials or molecules. Dataset notes explain the counting scope.`,
       better: `higher`,
-      scale_type: `log`,
+      color_scale: { type: `log` },
       format: `.3s`,
     },
     Created: {
@@ -257,7 +255,7 @@
     class="method"
     title={`${row.method_label}\n${
       Object.entries(row.params ?? {})
-        .map(([key, value]) => `${title_case(key)}: ${display_value(value)}`)
+        .map(([key, value]) => `${title_case(key)}: ${arr_to_str(value)}`)
         .join(`\n`) || `Calculation settings not reported.`
     }`}><span>{start}</span><span>{end}</span></span
   >

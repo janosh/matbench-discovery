@@ -90,10 +90,17 @@ df_in = pd.read_csv(data_path).set_index(Key.mat_id)
 df_mp_cse = pd.read_json(DataFiles.mp_computed_structure_entries.path).set_index(
     Key.mat_id
 )
-df_in[input_col] = [
-    Structure.from_dict(computed_entry[input_col])
-    for computed_entry in tqdm(df_mp_cse.entry, desc="Structures from dict")
-]
+# align structures to energies by material ID: the two files list the same IDs in
+# different row orders (154,067 of 154,718 rows differ by position)
+df_in[input_col] = pd.Series(
+    [
+        Structure.from_dict(computed_entry[input_col])
+        for computed_entry in tqdm(df_mp_cse.entry, desc="Structures from dict")
+    ],
+    index=df_mp_cse.index,
+)
+if n_missing := df_in[input_col].isna().sum():
+    raise ValueError(f"{n_missing:,} MP energy rows have no computed structure entry")
 
 if target_col not in df_in:
     raise TypeError(f"{target_col!s} not in {df_in.columns=}")

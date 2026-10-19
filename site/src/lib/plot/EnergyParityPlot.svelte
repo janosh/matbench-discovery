@@ -16,7 +16,8 @@
     StructurePopupPlacement,
   } from '#lib/parity/energy-parity.js'
   import { ParityLoadController } from '#lib/parity/load-controller.svelte.js'
-  import { get_error_message, type LoadStatus } from '#lib/asset-loader.js'
+  import type { LoadStatus } from '#lib/asset-loader.js'
+  import { to_error } from 'svelte-widgets/utils'
   import type { ModelData } from '#lib/types.js'
   import { compact_formula, sanitize_compact_formula } from 'matterviz/sanitize'
   import { format_num } from 'matterviz/labels'
@@ -226,7 +227,7 @@
       const [structure] = await Promise.all([
         load_wbm_structure(base, point.row_idx, point.material_id),
         StructurePopup ??
-          import('matterviz/convex-hull').then(
+          import(`matterviz/convex-hull`).then(
             (mod) => (StructurePopup = mod.StructurePopup),
             (error: unknown) => {
               structure_module_failed = true
@@ -237,7 +238,7 @@
       if (selection_is_current()) selected_structure = structure
     } catch (error) {
       if (selection_is_current()) {
-        structure_error = get_error_message(error)
+        structure_error = to_error(error).message
       }
     } finally {
       if (selection_is_current()) structure_loading = false
@@ -389,12 +390,6 @@ title, so label the section for screen readers instead -->
 <style>
   .energy-parity-plot {
     position: relative;
-  }
-  /* matterviz only sets the tooltip background inline via bg_color, which the binned
-     plot omits for per-point tooltips -> give them a readable theme-aware fallback */
-  .energy-parity-plot :global(.plot-tooltip) {
-    background: var(--tooltip-bg);
-    box-shadow: 0 4px 12px var(--shadow);
   }
   .popup-anchor {
     height: 0;

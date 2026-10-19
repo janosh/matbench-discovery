@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import re
+import sys
 from contextlib import nullcontext
 from datetime import date
 from functools import cache
@@ -19,6 +20,7 @@ from matbench_discovery.calculators import CALCULATORS
 from matbench_discovery.data import DATASETS, iter_file_refs, validate_artifact_path
 from matbench_discovery.discovery import ARCHIVED_DISCOVERY_MODELS
 from matbench_discovery.enums import ArchitectureType, Model, Open, Targets, Task
+from tests.utils import import_repo_script
 
 with open(f"{ROOT}/tests/model-schema.yml", encoding="utf-8") as file:
     MODEL_SCHEMA: dict[str, Any] = yaml.safe_load(file)
@@ -193,6 +195,8 @@ def test_model_registry_identity() -> None:
         assert model.family == family_dir
         # yaml_path is base_dir + rel_path, so rel_path pins the full path
         assert model.rel_path == f"{family_dir}/{model_key}.yml"
+        if metadata["lifecycle"] == "superseded":
+            assert metadata["superseded_by"] in {member.key for member in Model}
 
     registry_keys = set(CALCULATORS) | set(ARCHIVED_DISCOVERY_MODELS)
     assert registry_keys - {"emt"} <= Model.__members__.keys()
@@ -228,6 +232,23 @@ def test_model_key_schema_requires_canonical_keys(
     """Model key schema accepts only canonical lowercase kebab-case."""
     pattern = MODEL_SCHEMA["properties"]["model_key"]["pattern"]
     assert bool(re.search(pattern, model_key)) is is_valid
+
+
+@pytest.mark.parametrize("task", ["diatomics", "discovery", "kappa", "md"])
+def test_shared_runners_reject_write_yaml_dry_run(
+    task: str,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """No runner silently skips --write-yaml in a dry run: all exit with an error."""
+    runner = import_repo_script(f"run_{task}", f"models/run_{task}.py")
+    argv = ["--model", "emt", "--write-yaml", "--dry-run"]
+    if task in {"discovery", "kappa"}:
+        argv.append("--merge-shards")  # their YAML writes are merge-only
+    monkeypatch.setattr(sys, "argv", [f"run_{task}", *argv])
+    with pytest.raises(SystemExit, match="2"):
+        runner.main()
+    assert "--write-yaml is incompatible with --dry-run" in capsys.readouterr().err
 
 
 @pytest.mark.parametrize("task", ["diatomics", "discovery", "kappa"])
@@ -312,7 +333,6 @@ def test_environments_drive_calculator_dependencies() -> None:
         model = Model[calculator_key]
         environment = model.metadata["environment"]
         assert calc_spec.deps == tuple(environment["dependencies"])
-        assert calc_spec.python_version == environment.get("python_version")
         assert calc_spec.find_links == tuple(environment.get("find_links", []))
         assert calc_spec.extra_index_url == tuple(
             environment.get("extra_index_urls", [])

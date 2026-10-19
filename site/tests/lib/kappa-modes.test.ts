@@ -11,14 +11,8 @@ import {
   phonon_band_structure_from_modes,
 } from 'matterviz/spectral'
 import type { Complex, PhononQPointModes } from 'matterviz/spectral'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { describe, expect, it, vi } from 'vite-plus/test'
 import { gzipped_json_response } from '../index.js'
-
-beforeEach(clear_asset_cache)
-afterEach(() => {
-  vi.unstubAllGlobals()
-  clear_asset_cache()
-})
 
 // two-atom cell, 6 bands, 3 q-points along GAMMA-X; eigenvectors stored only at the
 // endpoints (index 0 and 2) like the site asset generator emits

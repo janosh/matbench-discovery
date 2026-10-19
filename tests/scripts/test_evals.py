@@ -14,13 +14,25 @@ Outcome = str | Exception | None  # skip reason, raised error, or success
     [
         ({}, 0, "0 skipped, 0 failed"),  # selecting nothing is not a failure
         ({MODEL_A: None}, 0, "0 skipped, 0 failed"),
-        ({MODEL_A: "no artifact"}, 1, "1 skipped, 0 failed"),
+        # all-skipped is not a failure (e.g. kappa evals for a force model with
+        # no phonon predictions must not fail ingestion)
+        ({MODEL_A: "no artifact"}, 0, "1 skipped, 0 failed"),
+        ({MODEL_A: "no artifact", MODEL_B: "no artifact"}, 0, "2 skipped, 0 failed"),
         ({MODEL_A: ValueError("boom")}, 1, "0 skipped, 1 failed"),
         ({MODEL_A: None, MODEL_B: "no artifact"}, 0, "1 skipped, 0 failed"),
         ({MODEL_A: None, MODEL_B: OSError("boom")}, 1, "0 skipped, 1 failed"),
         ({MODEL_A: "no artifact", MODEL_B: KeyError("boom")}, 1, "1 skipped, 1 failed"),
     ],
-    ids=["empty", "ok", "skip", "error", "ok-skip", "ok-error", "skip-error"],
+    ids=[
+        "empty",
+        "ok",
+        "skip",
+        "all-skip",
+        "error",
+        "ok-skip",
+        "ok-error",
+        "skip-error",
+    ],
 )
 def test_evaluate_models_exit_code(
     outcomes: dict[Model, Outcome],

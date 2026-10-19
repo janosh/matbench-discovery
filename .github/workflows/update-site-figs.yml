@@ -183,24 +183,25 @@ jobs:
           FULL_PAYLOAD_REFRESH: ${{ steps.detect.outputs.full_payload_refresh }}
           MODELS: ${{ steps.detect.outputs.models }}
         run: |
-          PAYLOAD_ARGS=(--full-roster)
-          PARITY_ARGS=()
           if [ "$FULL_PAYLOAD_REFRESH" != "true" ]; then
             if [ -z "$MODELS" ]; then
               echo "Pure model-YAML path move: no payload refresh"
               exit 0
             fi
+            # --validate-only above already built these models' parity assets
             read -ra MODEL_ARGS <<< "$MODELS"
-            PAYLOAD_ARGS=("${MODEL_ARGS[@]}")
-            PARITY_ARGS=(--models "${MODEL_ARGS[@]}")
+            uv run --with-editable . scripts/ingest_model.py \
+              "${MODEL_ARGS[@]}" --payloads-only
+            exit 0
           fi
-          uv run --with-editable . scripts/ingest_model.py \
-            "${PAYLOAD_ARGS[@]}" --payloads-only
+          uv run --with-editable . scripts/ingest_model.py --full-roster \
+            --payloads-only
+          # roster changes (removals, lifecycle) rebuild parity manifests for all
+          # active models, not just the ones --validate-only covered
           MBD_AUTO_DOWNLOAD_FILES=true uv run --with-editable . \
-            site/scripts/generate-energy-parity-assets.py \
-            "${PARITY_ARGS[@]}"
+            site/scripts/generate-energy-parity-assets.py
           MBD_AUTO_DOWNLOAD_FILES=true uv run --with-editable ".[phonons]" \
-            site/scripts/generate-kappa-parity-assets.py "${PARITY_ARGS[@]}"
+            site/scripts/generate-kappa-parity-assets.py
 
       - name: Recheck submission head before archival
         env:

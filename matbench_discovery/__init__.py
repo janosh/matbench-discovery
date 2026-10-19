@@ -72,12 +72,13 @@ today = timestamp.split("@", maxsplit=1)[0]
 
 # filter pymatgen warnings that spam the logs when e.g. applying corrections to
 # ComputedStructureEntries or using PatchedPhaseDiagram to get e_above_hull
-# warnings are:
-# > No electronegativity for Ne. Setting to NaN. This has no physical meaning
-# and MaterialsProject2020Compatibility to get formation energies
+# and MaterialsProject2020Compatibility to get formation energies. Warnings are:
+# > No Pauling electronegativity for Ne. Setting to NaN. This has no physical meaning
 # > Failed to guess oxidation states for Entry
+# pymatgen warns with stacklevel=2, attributing Element.X's warning to its caller
+# (functools.cached_property, or user code), so that filter can't pin a module.
 for msg, category, module in {
-    ("No electronegativity for", UserWarning, "pymatgen"),
+    ("No Pauling electronegativity for", UserWarning, ""),
     ("Failed to guess oxidation states for Entry", UserWarning, "pymatgen"),
     ("torch.load", FutureWarning, ""),
     ("logm result may be inaccurate, approximate err", RuntimeWarning, ""),

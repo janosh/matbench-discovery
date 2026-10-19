@@ -22,7 +22,7 @@ import { load } from '#routes/models/[slug]/+page.server.js'
 import { format_num } from 'matterviz/labels'
 import { type ComponentProps, tick } from 'svelte'
 import { describe, expect, it, onTestFinished, vi } from 'vite-plus/test'
-import { doc_query, mount, mount_with_url } from '../index.js'
+import { doc_query, header_name, mount, mount_with_url } from '../index.js'
 
 const test_model = MODELS.find((model) =>
   model.authors.some((author) => author.affiliation === `Mirror Physics`),
@@ -112,6 +112,12 @@ describe(`Model Detail Page`, () => {
       expect(card?.querySelector(`small`)?.textContent).toBe(
         `#${rank.rank}/${rank.n_models}`,
       )
+      card?.dispatchEvent(new MouseEvent(`click`, { bubbles: true, cancelable: true }))
+      await tick()
+      // diatomics' `models` param replaces its curve selection, so keep the DFT refs
+      expect(doc_query(`.diagnostic-context a`).getAttribute(`href`)).toBe(
+        `/benchmarks/${task}?${task === `md` ? `compare=` : `models=PBE,r2SCAN,`}${score_model.model_key}`,
+      )
     }
   })
 
@@ -147,15 +153,12 @@ describe(`Model Detail Page`, () => {
     if (test_model.dates.paper_published)
       expect(document.body.textContent).toContain(test_model.dates.paper_published)
 
-    const meta_info = document.querySelector(`.meta-info`)
-    expect(meta_info?.textContent).toContain(`parameters`)
-    expect(meta_info?.querySelector(`code`)?.textContent).toContain(
-      `uv pip install test-model`,
-    )
+    const meta_info = doc_query(`.meta-info`)
+    expect(meta_info.textContent).toContain(`parameters`)
     expect(
-      meta_info?.textContent?.includes(`Ensemble ${test_model.n_estimators} models`),
+      meta_info.textContent?.includes(`Ensemble ${test_model.n_estimators} models`),
     ).toBe((test_model.n_estimators ?? 1) > 1)
-    expect(meta_info?.textContent).not.toContain(`Missing preds`)
+    expect(meta_info.textContent).not.toContain(`Missing preds`)
     const discovery_detail = document.querySelector(`section.discovery-detail`)
     expect(
       discovery_detail?.querySelector(`h2`)?.textContent?.replaceAll(/\s+/g, ` `),
@@ -301,11 +304,12 @@ describe(`Model Detail Page`, () => {
   }, 10_000)
 
   it.each([
+    `https://pypi.org/project/test-model`,
     `https://pypi.org/project/test-model/`,
     `https://pypi.org/project/test-model/1.2.3/?source=docs#files`,
   ])(`builds the install command from %s`, (pypi) => {
     mount_page({ ...test_model, pypi })
-    expect(document.querySelector(`.meta-info code`)?.textContent?.trim()).toBe(
+    expect(doc_query(`.meta-info code`).textContent?.trim()).toBe(
       `uv pip install test-model`,
     )
   })
@@ -406,6 +410,10 @@ describe(`Model Detail Page`, () => {
     expect(new URL(location.href).searchParams.get(`diagnostic`)).toBe(`discovery`)
     expect(document.querySelector(`.discovery-detail`)).not.toBeNull()
     expect(rank_links[0].getAttribute(`aria-current`)).toBe(`true`)
+    // discovery's leaderboard ignores `models`, so highlight the row via `compare`
+    expect(doc_query(`.diagnostic-context a`).getAttribute(`href`)).toBe(
+      `/benchmarks/discovery?compare=${test_model.model_key}`,
+    )
     rank_links[1].dispatchEvent(new MouseEvent(`click`, { bubbles: true }))
     await tick()
     expect(new URL(location.href).searchParams.get(`diagnostic`)).toBe(`geo-opt`)
@@ -456,13 +464,14 @@ describe(`Model Detail Page`, () => {
       },
     )
 
+    expect(doc_query(`.diagnostic-context a`).getAttribute(`href`)).toBe(
+      `/benchmarks/md?compare=${test_model.model_key}`,
+    )
     const section = document.querySelector(`section.md-per-system`)
     expect(section?.textContent).toContain(`per-system breakdown`)
     expect(section?.querySelectorAll(`tbody tr`)).toHaveLength(2)
     // only columns present in the rows render (no pressure/RMSE/time cols here)
-    const headers = [...(section?.querySelectorAll(`th`) ?? [])].map((th) =>
-      th.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),
-    )
+    const headers = [...(section?.querySelectorAll(`th`) ?? [])].map(header_name)
     expect(headers).toContain(`System`)
     expect(headers).toContain(`ΔvDOS (%)`)
     expect(headers).not.toContain(`ΔP (%)`)

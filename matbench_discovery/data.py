@@ -17,7 +17,6 @@ import os
 import posixpath
 import re
 import stat
-import sys
 import tempfile
 import zipfile
 from collections.abc import Callable, Iterator, Mapping, Sequence
@@ -38,7 +37,7 @@ from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 from tqdm import tqdm
 
-from matbench_discovery import DATA_DIR, TEST_FILES
+from matbench_discovery import DATA_DIR
 from matbench_discovery.enums import DataFiles, MbdKey, Model, TestSubset
 
 round_trip_yaml = YAML()  # round-trippable YAML for updating model metadata files
@@ -108,7 +107,8 @@ def task_coverage(metadata: dict[str, Any], task: str) -> tuple[str, str | None]
     4. ``targets: E`` for force tasks → not_applicable
     5. Else → pending
     """
-    task_metrics = (metadata.get("metrics") or {}).get(task, {})
+    # `or {}`: YAML `metrics:` / `metrics.<task>:` with no value load as None
+    task_metrics = (metadata.get("metrics") or {}).get(task) or {}
     if (status := task_metrics.get("status")) is not None:
         return status, task_metrics.get("reason")
     if task_metrics.keys() - _COVERAGE_META_KEYS:
@@ -150,14 +150,17 @@ def merge_file_ref(
 ) -> FileRef:
     """Build an updated file ref, retaining metadata when its path is unchanged.
 
-    An explicit URL replaces the existing URL. Without one, the existing URL and
-    checksum pair survive only when ``name`` still identifies the same artifact.
-    ``replace=True`` deliberately drops all old metadata.
+    The existing URL and checksum pair survive only when ``name`` still identifies
+    the same artifact. A new explicit URL replaces the existing URL and drops the
+    old checksums (they describe the old upload). ``replace=True`` deliberately
+    drops all old metadata.
     """
     size = md5 = None
     if not replace and file_ref_name(existing) == name:
-        url = url or file_ref_url(existing)
-        if isinstance(existing, dict):
+        existing_url = file_ref_url(existing)
+        same_upload = url is None or url == existing_url
+        url = url or existing_url
+        if same_upload and isinstance(existing, dict):
             existing_size, existing_md5 = existing.get("size"), existing.get("md5")
             if isinstance(existing_size, int) and isinstance(existing_md5, str):
                 size, md5 = existing_size, existing_md5
@@ -332,17 +335,7 @@ def glob_to_df(
             raise ValueError(f"Unsupported file extension in {pattern=}")
 
     files = glob(pattern)
-
     if not files:
-        # load mocked model predictions when running pytest (just first 500 lines
-        # from MACE-MPA-0 WBM energy preds)
-        if "pytest" in sys.modules or "CI" in os.environ:
-            df_mock = pd.read_csv(f"{TEST_FILES}/mock-wbm-energy-preds.csv.gz")
-            if "e_form_per_atom" in df_mock:
-                return df_mock
-            return df_mock.rename(
-                columns={str(Key.formation_energy_per_atom): "e_form_per_atom"}
-            )
         raise FileNotFoundError(f"No files matching glob {pattern=}")
 
     # Join Slurm job array results into a single dataframe
@@ -422,8 +415,9 @@ def load_df_wbm_with_preds(
             when None. Pass an empty sequence to load no model predictions.
         pbar (bool, optional): Whether to show progress bar. Defaults to True.
         id_col (str, optional): Column to set as df.index. Defaults to "material_id".
-        subset (pd.Index | Sequence[str] | 'uniq_protos' | None, optional):
-            Subset of material IDs to keep. Defaults to None, which loads all materials.
+        subset (pd.Index | Sequence[str] | TestSubset | None, optional):
+            Subset of material IDs to keep. Defaults to None (same as
+            TestSubset.full_test_set), which loads all materials.
             'uniq_protos' drops WBM structures with matching prototype in MP
             training set and duplicate prototypes in WBM test set (keeping only the most
             stable structure per prototype). This increases the 'OOD-ness' of WBM.
@@ -482,9 +476,11 @@ def load_df_wbm_with_preds(
         exc.add_note(f"Failed to load {model_name=}")
         raise
 
-    # isinstance guard: a pd.Index subset would make the == comparison elementwise
-    if isinstance(subset, str) and subset == TestSubset.uniq_protos:
-        df_out = df_out.query(MbdKey.uniq_proto)
+    # isinstance guard: a pd.Index subset would make the == comparison elementwise.
+    # TestSubset(str) also rejects unknown subset names instead of indexing by them.
+    if isinstance(subset, str):
+        if TestSubset(subset) == TestSubset.uniq_protos:
+            df_out = df_out.query(MbdKey.uniq_proto)
     elif subset is not None:
         df_out = df_out.loc[subset]
 
@@ -495,14 +491,14 @@ def load_df_wbm_with_preds(
 def load_discovery_predictions() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Load WBM model predictions and derive hull-distance predictions and errors."""
     from matbench_discovery.cli import complete_models
+    from matbench_discovery.preds import load_prediction_errors
 
     models_to_load = complete_models()
-    df_preds = load_df_wbm_with_preds(models=models_to_load).round(3)
+    df_preds, df_each_err = load_prediction_errors(models_to_load)
 
     model_keys = [model.key for model in models_to_load]
     each_shift = df_preds[MbdKey.each_true] - df_preds[MbdKey.e_form_dft]
     df_each_pred = df_preds[model_keys].add(each_shift, axis=0)
-    df_each_err = df_preds[model_keys].sub(df_preds[MbdKey.e_form_dft], axis=0)
     df_each_err[MbdKey.each_err_models] = df_preds[MbdKey.each_err_models] = (
         df_each_err.abs().mean(axis=1)
     )
@@ -551,7 +547,7 @@ def update_yaml_file(
     # different locks and interleave their read-modify-write into a corrupt file.
     # realpath so two spellings of one file (symlink, relative) share a lock.
     os.makedirs(YAML_LOCK_DIR, exist_ok=True)
-    lock_digest = hashlib.sha256(os.path.realpath(file_path).encode()).hexdigest()[:16]
+    lock_digest = hashlib.sha256(file_path.encode()).hexdigest()[:16]
     with FileLock(f"{YAML_LOCK_DIR}/{lock_digest}.lock"):
         with open(file_path, encoding="utf-8") as file:
             yaml_data = round_trip_yaml.load(file)
@@ -560,7 +556,10 @@ def update_yaml_file(
         *parts, last = dotted_path.split(".")
 
         for part in parts:
-            current = current.setdefault(part, {})
+            # a key with no value (e.g. `metrics:`) loads as None: replace it
+            if current.get(part) is None:
+                current[part] = CommentedMap()
+            current = current[part]
 
         previous = current.get(last)
         # Callables own the merge (they receive a copy of the prior section). Plain dict

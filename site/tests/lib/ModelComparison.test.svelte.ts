@@ -59,15 +59,46 @@ type PlotProps = {
 
 const [key_a, key_b, key_c] = MODELS.map((model) => model.model_key)
 // minimal stand-ins: a row whose accessor reads a single field off the "model"
+type StandIn = { val: unknown }
 const as_models = (vals: unknown[]) =>
   vals.map((val) => ({ val }) as unknown as ModelData)
+const val_of = (model: ModelData): unknown => (model as unknown as StandIn).val
 const row = (better: `lower` | `higher` | null): CompareRow => ({
   key: `val`,
   label: `Val`,
   description: ``,
   better,
-  value: (model) => (model as unknown as { val: unknown }).val,
+  value: val_of,
 })
+// fire the most recently registered afterNavigate callback
+const last_after_navigate = (navigation: AfterNavigate): void =>
+  vi.mocked(afterNavigate).mock.calls.at(-1)?.[0](navigation)
+
+// SvelteKit's page.url is a $state.raw holding a fresh URL object per navigation
+// (kit/src/runtime/client/client.js). Swap the plain mock property for a reactive
+// accessor in this describe block; assigning page.url then re-runs dependent effects.
+function with_reactive_page_url(): void {
+  let kit_url = $state.raw<typeof page.url>(new URL(`http://localhost/`))
+  beforeEach(() => {
+    kit_url = page.url
+    Object.defineProperty(page, `url`, {
+      get: () => kit_url,
+      set: (url: URL) => {
+        kit_url = url
+      },
+      configurable: true,
+    })
+  })
+  afterEach(() => {
+    // back to the plain, assignable mock property other tests (and tests/index) rely on
+    Object.defineProperty(page, `url`, {
+      value: new URL(`http://localhost/`),
+      writable: true,
+      enumerable: true,
+      configurable: true,
+    })
+  })
+}
 
 beforeEach(() => {
   comparison.keys.clear()
@@ -79,11 +110,7 @@ describe(`compare_cells`, () => {
   // compared models are field members where the value exists there (like active models on
   // the real leaderboard), else stand-ins outside the field (superseded/deprecated models)
   const pick = (vals: readonly unknown[]) =>
-    vals.map(
-      (val) =>
-        field.find((model) => (model as unknown as { val: unknown }).val === val) ??
-        as_models([val])[0],
-    )
+    vals.map((val) => field.find((model) => val_of(model) === val) ?? as_models([val])[0])
   test.each([
     // ranks numbers against the field, flags the best compared value, passes text through
     [
@@ -118,8 +145,10 @@ describe(`compare_cells`, () => {
     const parts_row: CompareRow = {
       ...row(null),
       parts: (model) => {
-        const val = (model as unknown as { val: string }).val
-        return val ? [{ text: val, href: `/data/${val}` }, { text: ` + ` }] : []
+        const val = val_of(model)
+        return typeof val === `string` && val
+          ? [{ text: val, href: `/data/${val}` }, { text: ` + ` }]
+          : []
       },
     }
     expect(compare_cells(parts_row, as_models([`mptrj`, ``, 3]), field)).toEqual([
@@ -132,8 +161,7 @@ describe(`compare_cells`, () => {
     ])
     const titled_row: CompareRow = {
       ...row(`lower`),
-      title: (model) =>
-        (model as unknown as { val: number }).val > 1 ? `big` : undefined,
+      title: (model) => (Number(val_of(model)) > 1 ? `big` : undefined),
     }
     expect(compare_cells(titled_row, pick([3, 1]), field)).toEqual([
       { text: `3`, title: `big`, rank: 4, n: 5, best: false },
@@ -226,7 +254,7 @@ it(`reads shallow edits on late mount but the original router query on navigatio
       bind_url_params(null, () => [[`columns`, `Model,CPS`]])
     }),
   )
-  vi.mocked(afterNavigate).mock.calls.at(-1)?.[0](navigation)
+  last_after_navigate(navigation)
   flushSync()
   expect(location.search).toBe(`?columns=Model,CPS`)
   expect(page.url.search).toBe(``)
@@ -247,7 +275,7 @@ it(`reads shallow edits on late mount but the original router query on navigatio
 
   // Another binding has already written its automatic defaults. The navigation
   // callback must not mistake those writes for explicit columns from a shared URL.
-  vi.mocked(afterNavigate).mock.calls.at(-1)?.[0](navigation)
+  last_after_navigate(navigation)
   flushSync()
   expect(reads).toEqual([`Model,CPS`, null])
 
@@ -259,45 +287,33 @@ it(`reads shallow edits on late mount but the original router query on navigatio
   }
   // A destination binding may write defaults before the remaining readers run.
   history.replaceState(null, ``, `/?columns=Model,CPS`)
-  vi.mocked(afterNavigate).mock.calls.at(-1)?.[0](popped)
+  last_after_navigate(popped)
   flushSync()
   expect(reads.at(-1)).toBe(`Model,F1`)
-  vi.mocked(afterNavigate).mock.calls.at(-1)?.[0](navigation)
+  last_after_navigate(navigation)
   expect(reads.at(-1)).toBeNull()
 })
 
 describe(`bind_comparison_url`, () => {
-  // simulate SvelteKit: its page.url is a $state.raw holding a fresh URL object per navigation
-  // (kit/src/runtime/client/client.js), so swap the object, mirror it into location, then
-  // fire the afterNavigate callback registered by bind_comparison_url
-  let kit_url = $state.raw<typeof page.url>(new URL(`http://localhost/`))
+  with_reactive_page_url()
+  // swap the router URL, mirror it into location, then fire the afterNavigate callback
+  // registered by bind_comparison_url
   let on_navigation: Parameters<typeof afterNavigate>[0]
   const navigate = (url: string, type: `enter` | `link`) => {
-    kit_url = new URL(url, location.origin)
-    history.replaceState(null, ``, kit_url.href)
+    page.url = new URL(url, location.origin)
+    history.replaceState(null, ``, page.url.href)
     on_navigation({ type } as never)
     flushSync()
   }
   let cleanup = () => {}
 
   beforeEach(() => {
-    kit_url = page.url
-    Object.defineProperty(page, `url`, { get: () => kit_url, configurable: true })
     vi.mocked(afterNavigate).mockImplementationOnce((callback) => {
       on_navigation = callback
     })
     cleanup = $effect.root(() => bind_comparison_url())
   })
-  afterEach(() => {
-    cleanup() // tear down the effect root even when an assertion above it failed
-    // back to the plain, assignable mock property other tests (and tests/index) rely on
-    Object.defineProperty(page, `url`, {
-      value: new URL(`http://localhost/`),
-      writable: true,
-      enumerable: true,
-      configurable: true,
-    })
-  })
+  afterEach(() => cleanup()) // tear down the effect root even when an assertion failed
 
   it.each([
     [`/`, true],
@@ -370,35 +386,23 @@ describe(`bind_comparison_url`, () => {
 })
 
 describe(`ModelComparison dialog`, () => {
-  let kit_url = $state.raw<typeof page.url>(new URL(`http://localhost/`))
+  with_reactive_page_url()
+  // fire only callbacks registered since from_idx (earlier tests' components are gone)
   let callback_start_idx = 0
-  const navigate = async (path: string) => {
-    kit_url = new URL(path, location.origin)
+  const navigate = async (
+    path: string,
+    type: AfterNavigate[`type`] = `link`,
+    from_idx = callback_start_idx,
+  ) => {
+    page.url = new URL(path, location.origin)
     history.replaceState(null, ``, path)
-    for (const [callback] of vi
-      .mocked(afterNavigate)
-      .mock.calls.slice(callback_start_idx)) {
-      callback({ type: `link`, from: null, to: { url: kit_url } } as AfterNavigate)
+    for (const [callback] of vi.mocked(afterNavigate).mock.calls.slice(from_idx)) {
+      callback({ type, from: null, to: { url: page.url } } as AfterNavigate)
     }
     await tick()
   }
   beforeEach(() => {
-    kit_url = page.url
     callback_start_idx = vi.mocked(afterNavigate).mock.calls.length
-    Object.defineProperty(page, `url`, {
-      get: () => kit_url,
-      set: (url: URL) => {
-        kit_url = url
-      },
-      configurable: true,
-    })
-  })
-  afterEach(() => {
-    Object.defineProperty(page, `url`, {
-      value: kit_url,
-      writable: true,
-      configurable: true,
-    })
   })
 
   it(`opens with a single selected model without looping and lists it`, async () => {
@@ -416,7 +420,7 @@ describe(`ModelComparison dialog`, () => {
     expect(comparison.open).toBe(true)
     expect([...comparison.keys]).toEqual([key_a])
     const header_cells = [...document.querySelectorAll(`thead th a`)]
-    expect(header_cells.map((el) => el.textContent)).toEqual([MODELS[0].model_name])
+    expect(header_cells.map((cell) => cell.textContent)).toEqual([MODELS[0].model_name])
     // with nothing to compare yet, the model picker is the next step and takes focus
     expect(document.activeElement).toBe(
       document.querySelector(`dialog input[role="combobox"]`),
@@ -462,9 +466,7 @@ describe(`ModelComparison dialog`, () => {
     expect(ext_link?.target).toBe(`_blank`)
 
     const remove_first = () =>
-      document
-        .querySelector<HTMLButtonElement>(`thead th button[aria-label^="Remove"]`)
-        ?.click()
+      doc_query<HTMLButtonElement>(`thead th button[aria-label^="Remove"]`).click()
     remove_first()
     await tick()
     expect([...comparison.keys]).toEqual([key_b, key_c])
@@ -494,8 +496,7 @@ describe(`ModelComparison dialog`, () => {
         .slice(0, 2)
         .map((model) => `${model.model_name} ${cps_of(model).toFixed(3)}`),
     )
-    const sort_select = document.querySelector<HTMLSelectElement>(`.option-sort select`)
-    if (!sort_select) throw new Error(`sort select not rendered`)
+    const sort_select = doc_query<HTMLSelectElement>(`.option-sort select`)
     sort_select.value = `added`
     sort_select.dispatchEvent(new Event(`change`, { bubbles: true }))
     await tick()
@@ -507,19 +508,17 @@ describe(`ModelComparison dialog`, () => {
 
     // picking an option adds that model (MultiSelect's bind:value writes back to the
     // store), and the dialog's own close button closes it
-    document.querySelector<HTMLLIElement>(`dialog ul.options li`)?.click()
+    doc_query<HTMLLIElement>(`dialog ul.options li`).click()
     await tick()
     expect([...comparison.keys]).toEqual([key_c, newest.model_key])
     expect(document.querySelectorAll(`thead th a`)).toHaveLength(2)
-    document
-      .querySelector<HTMLButtonElement>(`button[aria-label="Close model comparison"]`)
-      ?.click()
+    doc_query<HTMLButtonElement>(`button[aria-label="Close model comparison"]`).click()
     await tick()
     expect(comparison.open).toBe(false)
   })
 
   it(`plots cost vs accuracy via DynamicScatter, y defaulting to the current task page's metric`, async () => {
-    Object.assign(page, { url: new URL(`http://localhost/benchmarks/phonons`) })
+    page.url = new URL(`http://localhost/benchmarks/phonons`)
     const with_kappa = MODELS.filter((model) => model.metrics?.phonons?.kappa_103?.κ_SRME)
     const compared = with_kappa.slice(0, 2).map((model) => model.model_key)
     comparison.set(compared)
@@ -577,10 +576,7 @@ describe(`ModelComparison dialog`, () => {
     const callback_idx = vi.mocked(afterNavigate).mock.calls.length
     comparison.set(compared)
     await tick()
-    for (const [callback] of vi.mocked(afterNavigate).mock.calls.slice(callback_idx)) {
-      callback({ type: `enter`, from: null, to: { url: page.url } } as AfterNavigate)
-    }
-    await tick()
+    await navigate(`${page.url.pathname}${page.url.search}`, `enter`, callback_idx)
     expect(plot().x_axis.label).toBe(`N<sub>materials</sub>`)
     expect(query_param(`compare_plot_x`)).toBe(`n_training_materials`)
     plot().point_events.onclick({ point: { metadata: { model_key: compared[0] } } })

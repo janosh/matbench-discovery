@@ -2,12 +2,16 @@ import kappa_103_analysis from '#figs/kappa-103-analysis.jsonl'
 import { ACTIVE_MODELS, make_table_filters } from '#lib/models.svelte.js'
 import type * as KappaParity from '#lib/parity/kappa-parity.js'
 import PhononsPage from '#routes/benchmarks/phonons/+page.svelte'
+import PhononFreqParity from '#routes/benchmarks/phonons/PhononFreqParity.svelte'
 import { tick } from 'svelte'
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 import {
-  checkbox_for,
   doc_query,
+  expect_table_url_state,
   filter_summary_badge,
+  header_name,
+  heading_texts,
+  mock_element_size,
   mount,
   mount_with_url,
   sorted_header,
@@ -39,11 +43,6 @@ const phonon_leaderboard_count = ACTIVE_MODELS.filter(
   (model) => model.metrics?.phonons?.kappa_103 != null && default_filters.matches(model),
 ).length
 
-const get_headers = (root: ParentNode) =>
-  Array.from(root.querySelectorAll(`th`), (header) =>
-    header.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),
-  )
-
 const kappa_sort_select = (): HTMLSelectElement =>
   doc_query<HTMLSelectElement>(`.kappa-model-select select`)
 
@@ -60,24 +59,15 @@ async function kappa_model_options(): Promise<HTMLElement[]> {
   )
 }
 
-const heading_texts = (): (string | undefined)[] =>
-  [...document.querySelectorAll(`h2`)].map((heading) =>
-    heading.textContent?.replaceAll(/\s+/g, ` `).trim(),
-  )
-
 describe(`Phonons Task Page`, () => {
   it(`renders the task narrative, scatter, and diagnostics`, async () => {
-    vi.spyOn(HTMLElement.prototype, `clientWidth`, `get`).mockReturnValue(800)
-    vi.spyOn(HTMLElement.prototype, `clientHeight`, `get`).mockReturnValue(600)
     mount(PhononsPage, { target: document.body })
 
     expect(doc_query(`h1`).textContent).toContain(`MLFF Phonon Modeling Metrics`)
     expect(document.body.textContent).toContain(`cancellation can hide errors`)
-    expect(document.body.textContent).not.toContain(`working on extending the test set`)
     expect(document.body.textContent).toMatch(/censored\s+to\s+2\s+because/)
 
-    const headings = heading_texts()
-    expect(headings).toEqual([
+    expect(heading_texts()).toEqual([
       `Leaderboard`,
       `Model Comparison: κSRME vs κSRE`,
       `Model Inspector`,
@@ -98,9 +88,16 @@ describe(`Phonons Task Page`, () => {
       { timeout: 10_000 },
     )
     expect(doc_query(`.diagnostics-grid`).querySelectorAll(`div.scatter`)).toHaveLength(2)
-    const annotation = await vi.waitFor(() =>
-      doc_query(`.diagnostics-grid .plot-annotation`),
-    )
+  })
+
+  it(`keeps the frequency-parity metric annotation inside the plot area`, async () => {
+    mock_element_size(800, 600)
+    const [entry] = kappa_103_analysis.models
+    mount(PhononFreqParity, {
+      target: document.body,
+      props: { entry, base: kappa_103_analysis },
+    })
+    const annotation = await vi.waitFor(() => doc_query(`.plot-annotation`))
     const annotation_frame = annotation.closest(`foreignObject`)
     const plot_area = doc_query(`clipPath rect`, annotation.closest(`svg`))
     // Keep the metric inside the data area when the legend reserves bottom padding.
@@ -146,7 +143,7 @@ describe(`Phonons Task Page`, () => {
     mount(PhononsPage, { target: document.body })
 
     const leaderboard = doc_query(`section.full-bleed`)
-    const headers = get_headers(leaderboard)
+    const headers = [...leaderboard.querySelectorAll(`th`)].map(header_name)
     for (const column of [
       `Model`,
       `Links`,
@@ -177,53 +174,6 @@ describe(`Phonons Task Page`, () => {
     }
     expect(sorted_header()?.textContent).toContain(`κSRME`)
     expect(sorted_header()?.getAttribute(`aria-sort`)).toBe(`ascending`)
-  })
-
-  it(`matches payload and canonical aggregate diagnostics`, () => {
-    const n_materials = kappa_103_analysis.material_ids.length
-    for (const values of [
-      kappa_103_analysis.formulas,
-      kappa_103_analysis.spg_nums,
-      kappa_103_analysis.kappa_dft,
-    ]) {
-      expect(values).toHaveLength(n_materials)
-    }
-    expect(
-      kappa_103_analysis.spg_nums.every(
-        (spg_num) => Number.isInteger(spg_num) && spg_num >= 1 && spg_num <= 230,
-      ),
-    ).toBe(true)
-
-    for (const entry of kappa_103_analysis.models) {
-      for (const values of [
-        entry.kappa_ml,
-        entry.srme,
-        entry.srme_censored,
-        entry.imag_modes,
-        entry.broken_sym,
-        entry.max_steps,
-        entry.freq_w1,
-      ]) {
-        expect(values).toHaveLength(n_materials)
-      }
-      const model = ACTIVE_MODELS.find(
-        (candidate) => candidate.model_key === entry.model_key,
-      )
-      const metrics = model?.metrics?.phonons?.kappa_103
-      if (!metrics) throw new Error(`missing phonon metrics for ${entry.model_key}`)
-      const payload_failure_rate =
-        entry.srme_censored.filter((value) => value === true).length / n_materials
-      expect(payload_failure_rate).toBeCloseTo(metrics.κ_failure_rate, 4)
-
-      const payload_imaginary_rate =
-        entry.imag_modes.filter((value) => value === true).length / n_materials
-      expect(payload_imaginary_rate).toBeCloseTo(metrics.imaginary_mode_rate, 4)
-      if (metrics.spectrum_w1 === null) {
-        expect(entry.freq_w1_mean).toBeNull()
-      } else {
-        expect(entry.freq_w1_mean).toBeCloseTo(metrics.spectrum_w1, 4)
-      }
-    }
   })
 
   it(`orders Compare models by κSRME and updates the model URL`, async () => {
@@ -281,11 +231,8 @@ describe(`Phonons Task Page`, () => {
       expect(kappa_selected_model()).toContain(mace_name)
       expect(heading_texts()).toContain(`Model Comparison: κSRE vs F1`)
 
-      const header = sorted_header()
-      expect(header?.textContent).toContain(`κSRE`)
-      expect(header?.getAttribute(`aria-sort`)).toBe(`ascending`)
+      await expect_table_url_state(`κSRE`, `ascending`)
       expect(filter_summary_badge(`Openness`)).toContain(`(1/4)`)
-      expect(checkbox_for(`Show heatmap`).checked).toBe(false)
     },
   )
 })

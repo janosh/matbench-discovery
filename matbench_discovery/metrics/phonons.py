@@ -28,7 +28,6 @@ from scipy.stats import wasserstein_distance
 from matbench_discovery.data import file_ref_name, make_file_ref, merge_file_ref
 from matbench_discovery.enums import DataFiles, MbdKey, Model
 from matbench_discovery.hpc import COST_PROVENANCE_KEYS
-from matbench_discovery.phonons import thermal_conductivity as ltc
 
 KAPPA_ERROR_MAX = 2.0
 SRME_CENSORED = "srme_censored"
@@ -51,23 +50,26 @@ def _finite_array(value: object, *, nonnegative: bool = False) -> np.ndarray | N
     return values
 
 
-def _single_kappa(value: object, *, reference: bool = False) -> float | None:
-    """Return one non-negative conductivity, failing hard for bad references."""
+def _single_kappa(value: object) -> float | None:
+    """Return one non-negative conductivity, or None for malformed values."""
     values = _finite_array(value, nonnegative=True)
     if values is None or values.size != 1:
-        if reference:
-            raise InvalidKappaReferenceError(
-                f"Reference kappa must be one finite non-negative value, got {value!r}"
-            )
         return None
     return float(values.ravel()[0])
 
 
+def _reference_kappa(value: object) -> float:
+    """Return one non-negative reference conductivity, failing hard if malformed."""
+    if (kappa := _single_kappa(value)) is None:
+        raise InvalidKappaReferenceError(
+            f"Reference kappa must be one finite non-negative value, got {value!r}"
+        )
+    return kappa
+
+
 def _symmetric_relative_difference(predicted: object, reference: object) -> float:
     """Return bounded SRD, assigning maximum error to invalid predictions."""
-    true_value = _single_kappa(reference, reference=True)
-    if true_value is None:  # pragma: no cover - reference=True raises instead
-        raise ValueError("Invalid reference kappa")
+    true_value = _reference_kappa(reference)
     pred_value = _single_kappa(predicted)
     if pred_value is None:
         return -KAPPA_ERROR_MAX
@@ -113,7 +115,7 @@ def calc_kappa_metrics_from_dfs(
         )
     ]
     df_pred[Key.sre] = df_pred[Key.srd].abs()
-    srme, srme_censored = _calc_kappa_srme_dataframes(df_pred, df_true)
+    srme, srme_censored = calc_kappa_srme_dataframes(df_pred, df_true)
     df_pred[Key.srme] = srme
     df_pred[SRME_CENSORED] = srme_censored
     df_pred[MbdKey.true_kappa_tot_avg] = true_kappa
@@ -315,61 +317,40 @@ def calculate_kappa_avg(kappa: np.ndarray) -> np.ndarray | float:
 
 def _mode_kappa_values(kappas: pd.Series) -> np.ndarray | None:
     """Return finite mode conductivities from the best available representation."""
-    keys = set(kappas.index)
     for mode_key in (MbdKey.mode_kappa_tot_avg, MbdKey.mode_kappa_tot_rta):
-        if mode_key not in keys:
+        if mode_key not in kappas.index:
             continue
         mode_kappa = kappas[mode_key]
         if mode_key == MbdKey.mode_kappa_tot_rta:
             mode_kappa = calculate_kappa_avg(mode_kappa)
         if (mode_values := _finite_array(mode_kappa)) is not None:
             return mode_values
-    if {MbdKey.kappa_p_rta, MbdKey.kappa_c, Key.heat_capacity} <= keys:
-        try:
-            mode_kappa = calculate_kappa_avg(
-                ltc.calc_mode_kappa_tot(
-                    kappas[MbdKey.kappa_p_rta],
-                    kappas[MbdKey.kappa_c],
-                    kappas[Key.heat_capacity],
-                )
-            )
-        except TypeError, ValueError:
-            return None
-        return _finite_array(mode_kappa)
     return None
 
 
 def calc_kappa_srme_dataframes(
     df_pred: pd.DataFrame, df_true: pd.DataFrame
-) -> list[float]:
+) -> tuple[list[float], list[bool]]:
     """Calculate Symmetric Relative Mean Error (SRME) for each material.
 
     SRME measures total thermal-conductivity accuracy and individual phonon-mode
     contributions. Like SRD, it is symmetric between over- and underprediction, and it
     averages errors over all modes weighted by their contributions.
 
-    Edge cases:
-    - Returns 2.0 for materials with imaginary frequencies (unphysical predictions)
-    - Returns 2.0 for materials where symmetry is broken during relaxation
-    - Returns 2.0 for failed calculations or missing data
+    Edge cases (censored to 2.0):
+    - materials with imaginary frequencies (unphysical predictions)
+    - materials where symmetry is broken during relaxation
+    - failed calculations or missing data
 
     Args:
         df_pred: ML predictions with mode-resolved properties.
         df_true: DFT references with mode-resolved properties.
 
     Returns:
-        SRME values for each material, between 0 and 2:
-        - 0 indicates perfect agreement in both total κ and mode-resolved properties
-        - 2 indicates complete disagreement or a censored invalid prediction
-        - Intermediate values indicate partial agreement, lower being better
+        Per-material SRME values between 0 (perfect agreement in total and
+        mode-resolved kappa) and 2 (complete disagreement or censored), and per-material
+        flags whether each value was censored.
     """
-    return _calc_kappa_srme_dataframes(df_pred, df_true)[0]
-
-
-def _calc_kappa_srme_dataframes(
-    df_pred: pd.DataFrame, df_true: pd.DataFrame
-) -> tuple[list[float], list[bool]]:
-    """Return per-material SRME values and whether each value was censored."""
     srme_list: list[float] = []
     censored_list: list[bool] = []
     for row_idx, row_pred in df_pred.iterrows():
@@ -378,7 +359,7 @@ def _calc_kappa_srme_dataframes(
         # Validate the reference before any prediction-failure short-circuit. Keep
         # this outside the try so InvalidKappaReferenceError is not swallowed by the
         # broader ValueError handler.
-        _single_kappa(row_true[MbdKey.kappa_tot_avg], reference=True)
+        _reference_kappa(row_true[MbdKey.kappa_tot_avg])
         try:
             result = np.ravel(calc_kappa_srme(row_pred, row_true, nan_on_invalid=True))
         except InvalidKappaReferenceError:

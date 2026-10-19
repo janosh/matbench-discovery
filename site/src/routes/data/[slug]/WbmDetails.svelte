@@ -1,3 +1,20 @@
+<script lang="ts" module>
+  import type { ElementSymbol } from 'matterviz'
+
+  const elem_counts = import.meta.glob<Record<ElementSymbol, number>>(
+    `../*-element-counts-by-{occurrence,composition}*.json`,
+    { eager: true, import: 'default' },
+  )
+  const count_modes = [`occurrence`, `composition`]
+  // static data: check every dataset/count-mode file once instead of per selection
+  for (const count_mode of count_modes) {
+    for (const dataset of [`mp`, `mp-trj`, `wbm`]) {
+      if (!elem_counts[`../${dataset}-element-counts-by-${count_mode}.json`])
+        throw new Error(`No ${dataset} data for count mode ${count_mode}!`)
+    }
+  }
+</script>
+
 <script lang="ts">
   import DataReadme from '$data/wbm/readme.md'
   import hist_e_form from '#figs/hist-wbm-e-form-per-atom.json.gz'
@@ -12,7 +29,6 @@
     series_blue,
     series_red,
   } from '#lib/fig-helpers.js'
-  import type { ElementSymbol } from 'matterviz'
   import {
     ColorScaleSelect,
     BarPlot,
@@ -41,14 +57,9 @@
     floating_label(mean - std, `stable`, series_blue),
     floating_label(mean + std, `unstable`, series_red),
   ]
-  const elem_counts = import.meta.glob<Record<ElementSymbol, number>>(
-    `../*-element-counts-by-{occurrence,composition}*.json`,
-    { eager: true, import: 'default' },
-  )
 
   let log_scale = $state(false) // Log color scale
   let color_scale = $state<D3InterpolateName>(url_color_scale.default)
-  const count_modes = [`occurrence`, `composition`]
   let count_mode = $state(count_modes[0])
 
   const read_url_params = (params: URLSearchParams) => {
@@ -66,13 +77,6 @@
     bool_url_entry(`log`, log_scale),
     url_color_scale.entry(color_scale),
   ])
-
-  $effect.pre(() => {
-    for (const dataset of [`mp`, `mp-trj`, `wbm`]) {
-      if (!elem_counts[`../${dataset}-element-counts-by-${count_mode}.json`])
-        throw new Error(`No ${dataset} data for count mode ${count_mode}!`)
-    }
-  })
 </script>
 
 {#snippet elements_heatmap(dataset: `mp` | `wbm`)}

@@ -27,18 +27,18 @@ classifiers = [
 ]
 requires-python = ">=3.14"
 dependencies = [
-  "ase>=3.28",
-  "filelock>=3.29",
-  "h5py>=3.11",
-  "numpy>=2,<3",
-  "pandas>=3,<4",
-  "pymatgen>=2026.5.4",
+  "ase>=3.29",
+  "filelock>=4.2",
+  "h5py>=3.16",
+  "numpy>=2.5,<3",
+  "pandas>=3.0.6,<4",
+  "pymatgen>=2026.9.24",
   # strict pin on pymatviz due to https://github.com/janosh/matbench-discovery/issues/209
   "pymatviz[export]==0.18.0",
   "ruamel.yaml>=0.19.1",
-  "scikit-learn>=1.8",
-  "scipy>=1.17.1",
-  "tqdm>=4.67.3",
+  "scikit-learn>=1.9.1",
+  "scipy>=1.18.1",
+  "tqdm>=4.70.1",
 ]
 
 [project.urls]
@@ -47,16 +47,16 @@ Repo = "https://github.com/janosh/matbench-discovery"
 Package = "https://pypi.org/project/matbench-discovery"
 
 [project.optional-dependencies]
-test = ["matbench-discovery[phonons]", "pytest-cov>=5", "pytest>=8.1", "jsonschema>=4"]
-fetch-wbm-data = ["gdown>=5.2"]
+test = ["matbench-discovery[phonons]", "pytest-cov>=7.1", "pytest>=9.1.1", "jsonschema>=4.26"]
+fetch-wbm-data = ["gdown>=6.4.2"]
 # phono3py >=3.31 removed the MS-SMM19 RTA method used for Wigner transport.
 # seekpath generates the high-symmetry q-path for the harmonic phonon sidecar
-phonons = ["phono3py==3.30.0", "phonopy>=2.35", "seekpath>=2.1"]
+phonons = ["phono3py==3.30.0", "phonopy>=3.5.1", "seekpath>=2.2.2"]
 # symmetry-analysis scripts + tests depend on moyopy
-symmetry = ["moyopy>=0.12"]
+symmetry = ["moyopy>=0.21"]
 
 [build-system]
-requires = ["uv_build>=0.12"]
+requires = ["uv_build>=0.13.1"]
 build-backend = "uv_build"
 
 [tool.uv]
@@ -120,7 +120,7 @@ markers = ["network: checks live remote URLs and release assets"]
 ignore-words-list = "nd,te,fpr,matris,titel"
 
 [dependency-groups]
-dev = ["prek>=0.4.5", "ty>=0.0.64"]
+dev = ["prek>=0.5.5", "ty>=0.0.89"]
 
 [tool.ty.environment]
 python-version = "3.14"
@@ -138,6 +138,7 @@ unused-ignore-comment = "ignore"
 locale = "en-us"
 extend-ignore-re = [
   "`[0-9a-f]{7,40}`", # Git commit SHAs in backticks
+  "-[0-9a-f]{16}\\.json\\.gz", # content-hashed site asset names
 ]
 extend-ignore-identifiers-re = [
   "\\balph_\\w+\\b", # alph_* identifiers

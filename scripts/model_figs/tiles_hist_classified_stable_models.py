@@ -8,13 +8,12 @@ data set and separate true/false positives/negatives.
 from matbench_discovery import ROOT, STABILITY_THRESHOLD, figs, payload_numerics
 from matbench_discovery.cli import cli_args, complete_models
 from matbench_discovery.data import load_df_wbm_with_preds
-from matbench_discovery.enums import MbdKey, TestSubset
+from matbench_discovery.enums import MbdKey
 from matbench_discovery.metrics.discovery import classify_stable, stable_metrics
 
 test_subset = cli_args.test_subset
 models_to_plot = complete_models()
-load_subset = test_subset if test_subset == TestSubset.uniq_protos else None
-df_preds = load_df_wbm_with_preds(models=models_to_plot, subset=load_subset)
+df_preds = load_df_wbm_with_preds(models=models_to_plot, subset=test_subset)
 
 
 # %%

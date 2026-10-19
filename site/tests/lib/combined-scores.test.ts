@@ -25,6 +25,14 @@ import { afterEach, beforeEach, describe, expect, it } from 'vite-plus/test'
 const clone_config = (): CmdsConfig => structuredClone(DEFAULT_CMDS_CONFIG)
 // geometric midpoint of the speed scale (log-scored), subscore exactly 0.5
 const mid_speed = Math.sqrt(CMDS_SPEED.floor * CMDS_SPEED.baseline)
+const mixed_md_values = {
+  adf_error: 10,
+  vdos_error: 20,
+  pressure_error: 30,
+  run_time_sec: mid_speed,
+}
+// default weights: 30% vdos, 20% adf, 20% speed, 30% pressure
+const mixed_md_cmds = 0.3 * 0.8 + 0.2 * 0.9 + 0.2 * 0.5 + 0.3 * 0.7
 // config with speed zeroed and equal-weight observables = the pre-speed CMDS formula
 const observables_only_config = (): CmdsConfig => {
   const config = clone_config()
@@ -98,29 +106,21 @@ describe(`calculate_cps`, () => {
     expect(calculate_cps(vals[0], vals[1], vals[2], config)).toBeCloseTo(1, 5)
   })
 
-  it(`returns null when all weights are 0 (score undefined, matches CMDS)`, () => {
-    expect(calculate_cps(0.8, 0.05, 0.5, make_cps_config(0, 0, 0))).toBeNull()
-  })
-
   it(`normalizes weights that do not sum to 1`, () => {
     const config = make_cps_config(1.0, 0.5, 0.5)
     expect(calculate_cps(1.0, RMSD_BASELINE, 2, config)).toBeCloseTo(0.5, 4)
   })
 
-  it.each([-1, NaN, Infinity, Number.MAX_VALUE])(
-    `rejects invalid or overflowing weights: %s`,
+  // all-zero weights leave the score undefined (null, not worst)
+  it.each([0, -1, NaN, Infinity, Number.MAX_VALUE])(
+    `rejects all-zero, invalid or overflowing weights: %s`,
     (weight) => {
       expect(
         calculate_cps(0.8, 0.05, 0.5, make_cps_config(weight, weight, weight)),
       ).toBeNull()
       const cmds_config = clone_config()
       for (const metric of Object.values(cmds_config)) metric.weight = weight
-      expect(
-        calculate_cmds(
-          { adf_error: 10, vdos_error: 20, pressure_error: 30, run_time_sec: mid_speed },
-          cmds_config,
-        ),
-      ).toBeNull()
+      expect(calculate_cmds(mixed_md_values, cmds_config)).toBeNull()
       const cds_config = clone_cds_config()
       for (const pillar of Object.values(cds_config)) pillar.weight = weight
       expect(calculate_cds(halfway_cds_values, cds_config)).toBeNull()
@@ -162,19 +162,6 @@ describe(`calculate_cps`, () => {
   it(`calculates correct CPS with default weights`, () => {
     const result = calculate_cps(0.8, RMSD_BASELINE / 2, 0.5, DEFAULT_CPS_CONFIG)
     expect(result).toBeCloseTo(0.75, 5)
-  })
-})
-
-describe(`DEFAULT_CPS_CONFIG`, () => {
-  it(`has expected weights that sum to 1.0`, () => {
-    expect(DEFAULT_CPS_CONFIG.F1.weight).toBe(0.5)
-    expect(DEFAULT_CPS_CONFIG.κ_SRME.weight).toBe(0.4)
-    expect(DEFAULT_CPS_CONFIG.RMSD.weight).toBe(0.1)
-    const sum = Object.values(DEFAULT_CPS_CONFIG).reduce(
-      (total, { weight }) => total + weight,
-      0,
-    )
-    expect(sum).toBeCloseTo(1.0, 5)
   })
 })
 
@@ -226,11 +213,7 @@ describe(`calculate_cmds`, () => {
       },
       0,
     ],
-    // default weights: 30% vdos, 20% adf, 20% speed, 30% pressure
-    [
-      { adf_error: 10, vdos_error: 20, pressure_error: 30, run_time_sec: mid_speed },
-      0.3 * 0.8 + 0.2 * 0.9 + 0.2 * 0.5 + 0.3 * 0.7,
-    ],
+    [mixed_md_values, mixed_md_cmds],
     // per-component subscores clamp to [0,1]: the >100% ADF error clamps to subscore
     // 0 and the faster-than-floor speed clamps to 1, so neither over/undershoots
     [{ adf_error: 150, vdos_error: 0, pressure_error: 0, run_time_sec: 1 }, 0.8],
@@ -258,55 +241,6 @@ describe(`calculate_cmds`, () => {
     config.pressure_error.weight = 0
     // mean of (1 - 10/100) and (1 - 20/100) weighted 1/3 each = 0.85
     expect(calculate_cmds({ adf_error: 10, vdos_error: 20 }, config)).toBeCloseTo(0.85)
-  })
-
-  it(`returns null when all weights are zero (score undefined, not worst)`, () => {
-    const config = clone_config()
-    for (const key of Object.keys(config) as (keyof CmdsConfig)[]) {
-      config[key].weight = 0
-    }
-    expect(calculate_cmds({}, config)).toBeNull()
-  })
-})
-
-describe(`update_models_cmds`, () => {
-  it(`writes CMDS into metrics.md and deletes it when components are missing`, () => {
-    const models = [
-      {
-        metrics: {
-          md: {
-            adf_error: 10,
-            vdos_error: 20,
-            pressure_error: 30,
-            run_time_sec: mid_speed,
-          },
-        },
-      },
-      // no run_time_sec: stale score must be removed under default (non-zero) speed weight
-      {
-        metrics: {
-          md: {
-            adf_error: 10,
-            vdos_error: 20,
-            pressure_error: 30,
-            combined_score: 0.99,
-          },
-        },
-      },
-      { metrics: {} },
-    ] as unknown as ModelData[]
-
-    update_models_cmds(models, clone_config())
-
-    const scored_md = models[0].metrics?.md as { combined_score?: number }
-    expect(scored_md.combined_score).toBeCloseTo(
-      0.3 * 0.8 + 0.2 * 0.9 + 0.2 * 0.5 + 0.3 * 0.7,
-      10,
-    )
-    // incomplete components: stale score removed, not overwritten with NaN (a NaN
-    // field would count as present in scatter model counts and export as 'NaN')
-    expect(models[1].metrics?.md).not.toHaveProperty(`combined_score`)
-    expect(models[2].metrics?.md).toBeUndefined()
   })
 })
 
@@ -359,29 +293,38 @@ describe(`calculate_cds`, () => {
 
     expect(calculate_cds(values, config)).toBeCloseTo(0.5, 10)
   })
-
-  it(`returns null when all weights are zero (score undefined, not worst)`, () => {
-    const config = clone_cds_config()
-    for (const key of Object.keys(config) as (keyof CdsConfig)[]) {
-      config[key].weight = 0
-    }
-    expect(calculate_cds(halfway_cds_values, config)).toBeNull()
-  })
 })
 
-describe(`update_models_cds`, () => {
-  it(`writes CDS into metrics.diatomics and deletes it when components are missing`, () => {
+it.each([
+  {
+    task: `md` as const,
+    update: (models: ModelData[]) => update_models_cmds(models, clone_config()),
+    complete: mixed_md_values,
+    // no run_time_sec: stale score must be removed under default (non-zero) speed weight
+    incomplete: { adf_error: 10, vdos_error: 20, pressure_error: 30 },
+    expected: mixed_md_cmds,
+  },
+  {
+    task: `diatomics` as const,
+    update: (models: ModelData[]) => update_models_cds(models, clone_cds_config()),
+    complete: halfway_cds_values,
+    incomplete: { pbe_energy_mae: 1 },
+    expected: 0.5,
+  },
+])(
+  `writes metrics.$task.combined_score and deletes it when components are missing`,
+  ({ task, update, complete, incomplete, expected }) => {
     const models = [
-      { metrics: { diatomics: { ...halfway_cds_values } } },
-      { metrics: { diatomics: { pbe_energy_mae: 1, combined_score: 0.99 } } },
+      { metrics: { [task]: { ...complete } } },
+      { metrics: { [task]: { ...incomplete, combined_score: 0.99 } } },
       { metrics: {} },
     ] as unknown as ModelData[]
-
-    update_models_cds(models, clone_cds_config())
-
-    const scored = models[0].metrics?.diatomics as { combined_score?: number }
-    expect(scored.combined_score).toBeCloseTo(0.5, 10)
-    expect(models[1].metrics?.diatomics).not.toHaveProperty(`combined_score`)
-    expect(models[2].metrics?.diatomics).toBeUndefined()
-  })
-})
+    update(models)
+    const scored = models[0].metrics?.[task] as { combined_score?: number }
+    expect(scored.combined_score).toBeCloseTo(expected, 10)
+    // incomplete components: stale score removed, not overwritten with NaN (a NaN
+    // field would count as present in scatter model counts and export as 'NaN')
+    expect(models[1].metrics?.[task]).not.toHaveProperty(`combined_score`)
+    expect(models[2].metrics?.[task]).toBeUndefined()
+  },
+)

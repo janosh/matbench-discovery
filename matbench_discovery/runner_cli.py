@@ -32,7 +32,8 @@ def add_common_runner_args(
         "--dtype",
         choices=("float64", "float32"),
         default="float64",
-        help="Calculator float precision. default float64",
+        help="Calculator float precision; non-default values need a calculator "
+        "with a dtype option (MACE, AlphaNet, PET). default float64",
     )
     return parser
 

@@ -169,9 +169,9 @@ metrics:
   geo_opt:
     pred_file:
       name: models/deepmd/dpa-3.1-3m-ft/2025-06-05-geo-opt.jsonl.gz
-      url: https://figshare.com/files/55410170
-      size: 119033135
-      md5: b539774231134f36344f994ff3b1b5e1
+      url: https://figshare.com/files/70325010
+      size: 119699831
+      md5: f1faf08c388652d8a006e48ef9262f50
     symprec=1e-5:
       rmsd: 0.0693
       n_sym_ops_mae: 2.0174

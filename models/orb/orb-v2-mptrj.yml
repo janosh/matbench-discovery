@@ -146,9 +146,9 @@ metrics:
   geo_opt:
     pred_file:
       name: models/orb/orb-v2-mptrj/2024-10-14-geo-opt.jsonl.gz
-      url: https://figshare.com/files/57753379
-      size: 135854111
-      md5: 2c164703a563cfea232f8fa99e07b3c0
+      url: https://figshare.com/files/70325424
+      size: 136527936
+      md5: 5547198f16832896d271166d716d10fe
     symprec=1e-5:
       rmsd: 0.1007
       n_sym_ops_mae: 10.0889

@@ -4,7 +4,7 @@ import { format_train_set, model_role_from_targets } from '#lib/metrics.js'
 import type { ModelData } from '#lib/types.js'
 import pkg from '#site/package.json'
 import { format_num } from 'matterviz/labels'
-import { strip_html } from 'matterviz/utils'
+import { escape_html, strip_html } from 'matterviz/utils'
 
 export const prerender = true
 
@@ -80,22 +80,23 @@ export function GET() {
   const xml = `
     <rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
       <channel>
-        <title>${pkg.name}</title>
-        <description>${pkg.description}</description>
-        <link>${pkg.homepage}</link>
-        <atom:link href="${rss_feed_url}" rel="self" type="application/rss+xml"/>
+        <title>${escape_html(pkg.name)}</title>
+        <description>${escape_html(pkg.description)}</description>
+        <link>${escape_html(pkg.homepage)}</link>
+        <atom:link href="${escape_html(rss_feed_url)}" rel="self" type="application/rss+xml"/>
         ${sorted_models
-          .map(
-            (model) => `
+          .map((model) => {
+            const model_url = `${base_url}models/${model.model_key}`
+            return `
             <item>
-              <title>${model.model_name}</title>
+              <title>${escape_html(model.model_name)}</title>
               <description><![CDATA[${format_model_for_rss(model)}]]></description>
-              <link>${base_url}models/${model.model_key}</link>
-              <guid isPermaLink="true">${base_url}models/${model.model_key}</guid>
+              <link>${escape_html(model_url)}</link>
+              <guid isPermaLink="true">${escape_html(model_url)}</guid>
               <pubDate>${new Date(model.dates.benchmark_added ?? 0).toUTCString()}</pubDate>
             </item>
-          `,
-          )
+          `
+          })
           .join(``)}
       </channel>
     </rss>

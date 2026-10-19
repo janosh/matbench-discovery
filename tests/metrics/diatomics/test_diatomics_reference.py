@@ -98,35 +98,6 @@ def test_replaces_drop_between_different_neighbor_spin_branches() -> None:
     assert replacements[0].replacement_spin == "10"
 
 
-def test_keeps_low_gain_spin_branch_islands() -> None:
-    """Near-degenerate branch flicker is kept: it IS the adiabatic minimum.
-
-    Substituting <=0.2 eV spin islands with the surrounding branch was removed as
-    unphysical hand-curation: the per-distance minimum is reported as computed and the
-    published per-point magmoms + spin_candidates make branch flicker visible.
-    """
-    candidate_points: CandidatePoints = {
-        2: [
-            make_point(1, 0),
-            make_point(2, -0.96, 2),
-            make_point(3, -0.90, 2),
-            make_point(4, 0),
-        ],
-        4: [
-            make_point(1, 1, 4),
-            make_point(2, -1.00, 4),
-            make_point(3, -0.95, 4),
-            make_point(4, 1, 4),
-        ],
-    }
-
-    merged, edits = merge_postprocessed_min_energy_curve(candidate_points)
-
-    assert edits == []
-    assert [point["spin_candidate"] for point in merged] == ["2", "4", "4", "2"]
-    assert [point["energies"][-1] for point in merged] == [0, -1.0, -0.95, 0]
-
-
 def test_removes_isolated_upward_energy_bump() -> None:
     """A one-point same-branch upward SCF glitch is removed from the curve."""
     candidate_points: CandidatePoints = {
@@ -166,8 +137,29 @@ def test_removes_isolated_upward_energy_bump() -> None:
             ["0", "6", "0"],
             [0, -4, 0],
         ),
+        # near-degenerate (<=0.2 eV) branch flicker IS the adiabatic minimum: the
+        # per-distance minimum is reported as computed, the published per-point
+        # magmoms + spin_candidates make the flicker visible
+        (
+            {
+                2: [
+                    make_point(1, 0),
+                    make_point(2, -0.96, 2),
+                    make_point(3, -0.90, 2),
+                    make_point(4, 0),
+                ],
+                4: [
+                    make_point(1, 1, 4),
+                    make_point(2, -1.00, 4),
+                    make_point(3, -0.95, 4),
+                    make_point(4, 1, 4),
+                ],
+            },
+            ["2", "4", "4", "2"],
+            [0, -1.0, -0.95, 0],
+        ),
     ],
-    ids=["neighbor_spins_differ", "drop_below_threshold"],
+    ids=["neighbor_spins_differ", "drop_below_threshold", "low_gain_islands"],
 )
 def test_keeps_non_isolated_or_small_spin_branch_drops(
     candidate_points: CandidatePoints,

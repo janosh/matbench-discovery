@@ -81,7 +81,13 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
 <div style="display: grid; grid-template-columns: minmax(0, 1fr)">
   <span>
     Sort
-    <input type="number" min={min_models} max={models.length} bind:value={show_n_best} />
+    <input
+      type="number"
+      min={min_models}
+      max={models.length}
+      bind:value={show_n_best}
+      aria-label="Number of best models to show"
+    />
     best models
     <span class="radio-group">
       {#each [`asc`, `desc`] as value (value)}
@@ -127,24 +133,28 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
     {/each}
   </ul>
 
-  <legend style:opacity={sort_by.key === METADATA_COLS.model_name.key ? 0 : 1}>
+  <div
+    class="legend"
+    style:opacity={sort_by.key === METADATA_COLS.model_name.key ? 0 : 1}
+  >
     <span>
       {lower_is_better ? `best` : `worst`}
     </span>
     <ColorBar
       title="Card titles colored by {sort_by.label}"
       title_style="font-size: 1.5em;"
-      scale={{
-        interpolator: (fraction) => rd_bu(lower_is_better ? 1 - fraction : fraction),
+      color_scale={{
+        scheme: `interpolateRdBu`,
+        value_range: lower_is_better ? [worst_val, best_val] : [best_val, worst_val],
+        palette_range: lower_is_better ? [1, 0] : [0, 1],
       }}
       style="min-width: 0; flex: 1"
       bar_style="height: 14pt;"
-      range={lower_is_better ? [worst_val, best_val] : [best_val, worst_val]}
     />
     <span>
       {lower_is_better ? `worst` : `best`}
     </span>
-  </legend>
+  </div>
 
   <ol class="models full-bleed">
     {#each models.slice(0, model_limit) as model (model.model_key)}
@@ -177,7 +187,7 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
 </section>
 
 <style>
-  legend {
+  .legend {
     display: flex;
     gap: 8pt;
     place-content: center;
@@ -187,7 +197,7 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
     transition: opacity 0.4s;
     width: min(100%, 32em);
   }
-  legend span {
+  .legend span {
     transform: translateY(4px);
   }
   :is(ul, ol) {
@@ -196,7 +206,6 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
   }
   ul {
     display: flex;
-    flex-wrap: wrap; /* fallback where balance is unsupported */
     flex-wrap: balance;
     gap: 9pt;
     margin: 2.5ex auto 3ex;

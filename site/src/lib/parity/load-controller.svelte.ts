@@ -1,4 +1,5 @@
-import { get_error_message, type LoadStatus } from '#lib/asset-loader.js'
+import type { LoadStatus } from '#lib/asset-loader.js'
+import { to_error } from 'svelte-widgets/utils'
 
 // Shared race cancellation and status handling for asynchronous parity plots.
 export class ParityLoadController {
@@ -32,7 +33,7 @@ export class ParityLoadController {
     } catch (error) {
       if (!is_current()) return
       this.status = `error`
-      this.error_message = get_error_message(error)
+      this.error_message = to_error(error).message
     }
   }
 }

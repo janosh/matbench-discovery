@@ -1,5 +1,8 @@
 """Test CLI argument parsing module."""
 
+import sys
+from types import ModuleType
+
 import pytest
 
 from matbench_discovery import cli
@@ -96,7 +99,8 @@ def test_payload_scope_is_explicit(
     full_roster: bool,
 ) -> None:
     """Payload generation requires exactly one targeted or full-roster scope."""
-    monkeypatch.setattr(cli, "models_were_explicit", models_explicit)
+    models = [Model.chgnet_0_3_0] if models_explicit else cli.models_arg.default
+    monkeypatch.setattr(cli.cli_args, "models", models)
     monkeypatch.setattr(cli.cli_args, "full_roster", full_roster)
     if models_explicit == full_roster:
         with pytest.raises(SystemExit, match="2"):
@@ -110,3 +114,32 @@ def test_complete_models_drops_inactive(monkeypatch: pytest.MonkeyPatch) -> None
     inactive = next(model for model in Model if not model.is_active)
     monkeypatch.setattr(cli.cli_args, "models", [inactive, Model.chgnet_0_3_0])
     assert cli.complete_models() == [Model.chgnet_0_3_0]
+
+
+@pytest.mark.parametrize(
+    ("argv", "jupyter", "expected_dry_run"),
+    [
+        (["-n"], False, True),
+        (["--dryrun"], False, None),  # typo exits instead of silently defaulting
+        (["--f=/path/to/kernel.json"], True, False),  # Jupyter kernel flags pass
+    ],
+)
+def test_parse_cli_args_is_strict(
+    monkeypatch: pytest.MonkeyPatch,
+    argv: list[str],
+    jupyter: bool,
+    expected_dry_run: bool | None,
+) -> None:
+    """Shared CLI parsing rejects unknown flags outside Jupyter and caches args."""
+    monkeypatch.setattr(cli, "cli_args", cli.cli_args)  # restore cache afterwards
+    if jupyter:
+        monkeypatch.setitem(sys.modules, "ipykernel", ModuleType("ipykernel"))
+    else:
+        monkeypatch.delitem(sys.modules, "ipykernel", raising=False)
+    if expected_dry_run is None:
+        with pytest.raises(SystemExit, match="2"):
+            cli.parse_cli_args(argv)
+        return
+    args = cli.parse_cli_args(argv)
+    assert args.dry_run is expected_dry_run
+    assert cli.cli_args is args

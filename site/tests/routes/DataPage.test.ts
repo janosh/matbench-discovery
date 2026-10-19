@@ -8,7 +8,7 @@ import { goto } from '$app/navigation'
 import { element_data } from 'matterviz/element'
 import { tick } from 'svelte'
 import { describe, expect, it, vi } from 'vite-plus/test'
-import { doc_query, mount, mount_with_url } from '../index.js'
+import { doc_query, mock_element_size, mount, mount_with_url } from '../index.js'
 
 it.each([
   [``, `/benchmarks`],
@@ -41,8 +41,7 @@ it.each([
 ] as const)(
   `shows %s test-set coverage, credits, downloads, and reference EDA`,
   async (task, symbol, count, n_elements, eda) => {
-    vi.spyOn(HTMLElement.prototype, `clientWidth`, `get`).mockReturnValue(600)
-    vi.spyOn(HTMLElement.prototype, `clientHeight`, `get`).mockReturnValue(300)
+    mock_element_size(600, 300)
     mount(TestSet, { target: document.body, props: { task } })
     await tick()
     const { dataset } = benchmarks[task]
@@ -110,7 +109,7 @@ it.each([
         ({ symbol: elem_symbol }) => elem_symbol === element,
       )?.name
       // one line: count unit, full element name, count
-      expect(doc_query(`.tooltip`, table).textContent?.trim()).toBe(
+      expect(doc_query(`.plot-tooltip`, table).textContent?.trim()).toBe(
         `${dataset.count_unit} containing ${name}: ${expected_count.toLocaleString(`en-US`)}`,
       )
       tile.dispatchEvent(new MouseEvent(`mouseleave`))
@@ -172,6 +171,8 @@ describe(`WBM details URL state`, () => {
       new URLSearchParams(query).get(`color_scale`) ?? `interpolateViridis`
     ).replace(`interpolate`, ``)
     expect(doc_query(`ul.selected`, scale_picker).textContent).toContain(expected_scale)
+    if (query) return // URL restore only; the interactions below run once
+
     doc_query(`input[aria-label="Color scale"]`).focus()
     await tick()
     const cividis_option = [
@@ -189,15 +190,15 @@ describe(`WBM details URL state`, () => {
     expect(picker.querySelector(`button[title^="Remove"]`)).toBeNull()
     doc_query(`#count-mode`).click()
     await tick()
-    const other_mode = expected_mode === `occurrence` ? `composition` : `occurrence`
     const option = [...picker.querySelectorAll<HTMLElement>(`li[role="option"]`)].find(
-      (element) => element.textContent?.includes(other_mode),
+      (element) => element.textContent?.includes(`composition`),
     )
-    if (!option) throw new Error(`Missing count mode ${other_mode}`)
+    if (!option) throw new Error(`Missing count mode composition`)
     option.click()
     await tick()
-    expect(count_mode_text()).toContain(other_mode)
-    expect(count_mode_text()).not.toContain(expected_mode)
+    expect(count_mode_text()).toContain(`composition`)
+    expect(count_mode_text()).not.toContain(`occurrence`)
+    expect(new URL(location.href).searchParams.get(`count_mode`)).toBe(`composition`)
     expect(picker.querySelectorAll(`ul.selected > li`)).toHaveLength(1)
   })
 
@@ -206,19 +207,18 @@ describe(`WBM details URL state`, () => {
   ]
 
   // the three element-count heatmaps share one log toggle (two-way bound), also in the URL
-  it(`shares the log toggle across all heatmaps and syncs it to the URL`, async () => {
-    await mount_with_url(WbmDetails, `http://localhost/data/wbm`)
-    const checkboxes = log_checkboxes()
-    expect(checkboxes).toHaveLength(3)
-    expect(checkboxes.map((box) => box.checked)).toEqual([false, false, false])
+  it.each([``, `?log=1`])(
+    `shares the log toggle across heatmaps via URL %j`,
+    async (query) => {
+      await mount_with_url(WbmDetails, `http://localhost/data/wbm${query}`)
+      const checkboxes = log_checkboxes()
+      expect(checkboxes.map((box) => box.checked)).toEqual(Array(3).fill(Boolean(query)))
+      if (query) return
 
-    checkboxes[1].click()
-    await tick()
-    expect(checkboxes.map((box) => box.checked)).toEqual([true, true, true])
-    expect(new URL(location.href).searchParams.get(`log`)).toBe(`1`)
-
-    document.body.innerHTML = ``
-    await mount_with_url(WbmDetails, `http://localhost/data/wbm?log=1`)
-    expect(log_checkboxes().map((box) => box.checked)).toEqual([true, true, true])
-  })
+      checkboxes[1].click()
+      await tick()
+      expect(checkboxes.map((box) => box.checked)).toEqual([true, true, true])
+      expect(new URL(location.href).searchParams.get(`log`)).toBe(`1`)
+    },
+  )
 })

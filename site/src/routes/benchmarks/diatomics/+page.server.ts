@@ -33,23 +33,23 @@ export const load: PageServerLoad = async () => {
     by_benchmark_added_desc,
   )
 
-  // Fetch data for all models at build time. Return only the homonuclear
-  // energies used by the page; forces and heteronuclear curves are large and unused.
-  const diatomic_curves: Record<string, PageDiatomicsCurves> = {}
-  const errors: Record<string, string> = {}
-
-  await Promise.all(
-    diatomic_models.map(async (model) => {
-      try {
+  // Fetch data for all models at build time; a failed download fails the build (like
+  // MD) rather than prerendering a page with missing curves. Return only the
+  // homonuclear energies used by the page; forces and heteronuclear curves are large
+  // and unused.
+  const diatomic_curves: Record<string, PageDiatomicsCurves> = Object.fromEntries(
+    await Promise.all(
+      diatomic_models.map(async (model) => {
         const curves = await fetch_diatomics_data({
           pred_file: model.metrics?.diatomics?.pred_file,
+        }).catch((error: unknown) => {
+          throw new Error(`Failed to fetch diatomics curves for ${model.model_key}`, {
+            cause: error,
+          })
         })
-        diatomic_curves[model.model_key] = to_page_curves(curves)
-      } catch (error) {
-        console.error(`Failed to fetch data for ${model.model_name}:`, error)
-        errors[model.model_key] = error instanceof Error ? error.message : String(error)
-      }
-    }),
+        return [model.model_key, to_page_curves(curves)] as const
+      }),
+    ),
   )
 
   // Add DFT reference curves (PBE, r2SCAN) as selectable pseudo-models on the plots.
@@ -67,5 +67,8 @@ export const load: PageServerLoad = async () => {
   }
   const reference_names = Object.keys(DFT_REFERENCES)
 
-  return { diatomic_models, diatomic_curves, errors, reference_names }
+  // Model keys only: the page resolves them from MODELS so it sorts by live (re-weighted)
+  // scores rather than stale serialized copies.
+  const diatomic_model_keys = diatomic_models.map(({ model_key }) => model_key)
+  return { diatomic_model_keys, diatomic_curves, reference_names }
 }

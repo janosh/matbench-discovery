@@ -5,8 +5,8 @@ import { is_d3_interpolate_name, type D3InterpolateName } from 'matterviz/colors
 import {
   bool_from_param,
   bool_url_entry,
+  sync_url_params as write_changed_url,
   type UrlParamEntry,
-  url_with_params,
 } from 'svelte-widgets/url-params'
 
 // color_scale param: valid d3 interpolate names, defaulting to Viridis
@@ -38,7 +38,7 @@ export const url_color_scale = {
 export const OPENNESS_OPTIONS = [`OSOD`, `OSCD`, `CSOD`, `CSCD`] as const
 export type Openness = (typeof OPENNESS_OPTIONS)[number]
 export const TRAIN_FILTER_MODES = [`require`, `exclude`] as const
-export type TrainFilterMode = (typeof TRAIN_FILTER_MODES)[number]
+type TrainFilterMode = (typeof TRAIN_FILTER_MODES)[number]
 // filterable predicted outputs (energy is universal, so not filterable): forces,
 // stress, magmoms, Hessian. Keys match the letters in model.targets (e.g. EFS_GM).
 export const TARGET_OUTPUTS = {
@@ -51,11 +51,11 @@ export type TargetOutput = keyof typeof TARGET_OUTPUTS
 const target_output_keys = Object.keys(TARGET_OUTPUTS) as TargetOutput[]
 // how forces/stress are computed: direct model heads vs energy gradients
 export const FS_MODES = [`any`, `direct`, `gradient`] as const
-export type FsMode = (typeof FS_MODES)[number]
+type FsMode = (typeof FS_MODES)[number]
 const DEFAULT_TARGETS = { F: `require` } as const
 export const DEFAULT_TARGETS_PARAM = `F`
 // Filter configuration shared by browser-history snapshots and table exports.
-export type FilterConfig = {
+type FilterConfig = {
   training: Record<string, TrainFilterMode>
   openness: readonly Openness[]
   targets?: Partial<Record<TargetOutput, TrainFilterMode>> // absent = default (require F)
@@ -278,13 +278,12 @@ export class UrlTableFilters {
 let pending_url: URL | null = null
 
 export function sync_url_params(entries: UrlParamEntry[], state: App.PageState): void {
-  const current_url = pending_url ?? location
-  const next_url = url_with_params(entries, current_url)
-  if (next_url === url_with_params([], current_url)) return
-  const requested_url = new URL(next_url, location.href)
-  pending_url = requested_url
-  void goto(next_url, { shallow: true, replace: true, state }).finally(() => {
-    if (pending_url === requested_url) pending_url = null
+  write_changed_url(entries, pending_url ?? location, (next_url) => {
+    const requested_url = new URL(next_url, location.href)
+    pending_url = requested_url
+    void goto(next_url, { shallow: true, replace: true, state }).finally(() => {
+      if (pending_url === requested_url) pending_url = null
+    })
   })
 }
 

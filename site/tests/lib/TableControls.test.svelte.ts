@@ -11,7 +11,13 @@ import { comparison } from '#lib/model-comparison.svelte.js'
 import type { ModelData } from '#lib/types.js'
 import { tick } from 'svelte'
 import { describe, expect, it, onTestFinished, vi } from 'vite-plus/test'
-import { doc_query, filter_menu_trigger, mount, open_filter_menu } from '../index.js'
+import {
+  doc_query,
+  filter_menu_trigger,
+  mount,
+  open_column_menu,
+  open_filter_menu,
+} from '../index.js'
 
 describe(`TableControls`, () => {
   it.each([755, 756, 1000])(
@@ -91,13 +97,19 @@ describe(`TableControls`, () => {
     // both trees stay in the DOM (CSS toggles visibility) so SSR/client markup match
     const filters = await mount_with_filters()
     expect(document.querySelectorAll(`button.filter-menu-trigger`)).toHaveLength(3)
-    const sheet_trigger = document.querySelector(`button.filter-sheet-trigger`)
-    expect(sheet_trigger).toBeInstanceOf(HTMLButtonElement)
-    if (!(sheet_trigger instanceof HTMLButtonElement)) return
-    sheet_trigger.click()
+    doc_query<HTMLButtonElement>(`button.filter-sheet-trigger`).click()
     await tick()
     const dialog = doc_query<HTMLDialogElement>(`dialog[aria-label="Model filters"]`)
     expect(dialog.open).toBe(true)
+    // each tree's forces/stress radios form one named group, distinct from the other
+    // tree (desktop popovers render their panel only while open)
+    await open_filter_menu(`Targets`)
+    const radio_names = [
+      ...document.querySelectorAll<HTMLInputElement>(`.fs-mode input[type="radio"]`),
+    ].map((radio) => radio.name)
+    expect(radio_names).toHaveLength(6)
+    expect(radio_names.every(Boolean)).toBe(true)
+    expect(new Set(radio_names).size).toBe(2)
     doc_query<HTMLInputElement>(
       `dialog[aria-label="Model filters"] input[aria-label="exclude OMat24"]`,
     ).click()
@@ -113,7 +125,7 @@ describe(`TableControls`, () => {
     const filters = await mount_with_filters()
 
     const dropdown = await open_filter_menu(`Training data`)
-    const boxes = dropdown?.querySelectorAll<HTMLInputElement>(`input`) ?? []
+    const boxes = dropdown.querySelectorAll<HTMLInputElement>(`input`)
     expect(boxes).toHaveLength(2 * ALL_TRAINING_SETS.length)
     const require_boxes = [...boxes].filter((box) =>
       box.getAttribute(`aria-label`)?.startsWith(`require `),
@@ -243,7 +255,7 @@ describe(`TableControls`, () => {
         ? doc_query(`dialog[aria-label="Model filters"]`)
         : await open_filter_menu(`Training data`)
       const compliant_btn = [
-        ...(dropdown?.querySelectorAll<HTMLButtonElement>(`button`) ?? []),
+        ...dropdown.querySelectorAll<HTMLButtonElement>(`button`),
       ].find((btn) => btn.textContent?.trim() === `Compliant models`)
       if (!compliant_btn) throw new Error(`Compliant preset button not found`)
       compliant_btn.click()
@@ -272,7 +284,7 @@ describe(`TableControls`, () => {
     const filters = await mount_with_filters()
 
     const dropdown = await open_filter_menu(`Openness`)
-    const boxes = [...(dropdown?.querySelectorAll<HTMLInputElement>(`input`) ?? [])]
+    const boxes = [...dropdown.querySelectorAll<HTMLInputElement>(`input`)]
     expect(boxes).toHaveLength(OPENNESS_OPTIONS.length)
     expect(boxes.every((box) => box.checked)).toBe(true)
 
@@ -293,21 +305,17 @@ describe(`TableControls`, () => {
 
   it(`opens, updates and closes the columns panel with its heatmap setting`, async () => {
     const filters = make_table_filters()
-    mount(TableControls, {
-      target: document.body,
-      props: { columns: [...sample_columns], filters },
-    })
+    const props = $state({ columns: structuredClone(sample_columns), filters })
+    mount(TableControls, { target: document.body, props })
     await tick()
 
-    const toggle_btn = doc_query(`.column-toggles summary`)
-    const details = doc_query<HTMLDetailsElement>(`.column-toggles`)
+    const toggle_btn = doc_query(`.column-toggles > button`)
     expect(toggle_btn.textContent?.trim()).toBe(`Columns`)
-    expect(details.open).toBe(false)
+    expect(toggle_btn.getAttribute(`aria-expanded`)).toBe(`false`)
+    expect(document.querySelector(`.column-menu`)).toBeNull()
 
-    toggle_btn.click()
-    expect(details.open).toBe(true)
-
-    const column_menu = doc_query(`.column-menu`)
+    const column_menu = await open_column_menu()
+    expect(toggle_btn.getAttribute(`aria-expanded`)).toBe(`true`)
     expect(column_menu.getAttribute(`role`)).toBe(`group`)
     const heatmap = doc_query<HTMLInputElement>(`[aria-label="Toggle heatmap colors"]`)
     expect(column_menu.contains(heatmap)).toBe(true)
@@ -315,7 +323,7 @@ describe(`TableControls`, () => {
     heatmap.click()
     await tick()
     expect(filters.show_heatmap).toBe(false)
-    expect(details.open).toBe(true)
+    expect(toggle_btn.getAttribute(`aria-expanded`)).toBe(`true`)
     heatmap.click()
     await tick()
     expect(filters.show_heatmap).toBe(true)
@@ -330,11 +338,22 @@ describe(`TableControls`, () => {
     const [first_checkbox] = column_checkboxes
     expect(first_checkbox.checked).toBe(true)
     first_checkbox.click()
+    await tick()
     expect(first_checkbox.checked).toBe(false)
+    expect(props.columns.map(({ visible }) => visible)).toEqual([
+      false,
+      true,
+      true,
+      false,
+    ])
     first_checkbox.click()
+    await tick()
     expect(first_checkbox.checked).toBe(true)
+    expect(props.columns[0].visible).toBe(true)
 
     toggle_btn.click()
-    expect(details.open).toBe(false)
+    await tick()
+    expect(toggle_btn.getAttribute(`aria-expanded`)).toBe(`false`)
+    expect(document.querySelector(`.column-menu`)).toBeNull()
   })
 })

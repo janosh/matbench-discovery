@@ -15,6 +15,7 @@ import {
 } from './combined-scores.svelte.js'
 import { get_org_logo } from './labels.js'
 import { apply_weights_param, weights_to_param } from 'matterviz/url-params'
+import type { UrlParamEntry } from 'svelte-widgets/url-params'
 import { bind_url_params, UrlTableFilters } from './url-state.svelte.js'
 
 export const MODEL_METADATA_PATHS = import.meta.glob<ModelData>(
@@ -185,6 +186,25 @@ export const ALL_TRAINING_SETS: string[] = Object.keys(DATASETS).filter((key) =>
 // table filter (training data + openness + targets + heatmap) with the dataset roster
 export const make_table_filters = (): UrlTableFilters =>
   new UrlTableFilters(ALL_TRAINING_SETS)
+
+// Task-page table filters synced to the URL after the page's own params. in_view also
+// applies them to the page's task predicate, so plots show the same models as the table.
+// Call during component init (binds URL params).
+export function task_page_filters(
+  has_task_data: (model: ModelData) => boolean,
+  read_params: (params: URLSearchParams) => void = () => {},
+  entries: () => UrlParamEntry[] = () => [],
+): { filters: UrlTableFilters; in_view: (model: ModelData) => boolean } {
+  const filters = make_table_filters()
+  bind_url_params(
+    (params) => {
+      read_params(params)
+      filters.read(params)
+    },
+    () => [...entries(), ...filters.url_entries],
+  )
+  return { filters, in_view: (model) => has_task_data(model) && filters.matches(model) }
+}
 
 export const has_diatomics_curves = (model: ModelData): boolean =>
   Boolean(model.metrics?.diatomics?.pred_file?.name)

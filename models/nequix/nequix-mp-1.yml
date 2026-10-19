@@ -170,9 +170,9 @@ metrics:
   geo_opt:
     pred_file:
       name: models/nequix/nequix-mp-1/2025-08-17-geo-opt.jsonl.gz
-      url: https://figshare.com/files/57262715
-      size: 143983625
-      md5: 945c16a045d4de33ea2b1980c13a565e
+      url: https://figshare.com/files/70325385
+      size: 145172284
+      md5: a181716a7f21c1581d4965fd5789c8be
     symprec=1e-5:
       rmsd: 0.0853
       n_sym_ops_mae: 2.0462

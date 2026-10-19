@@ -138,13 +138,13 @@ it.each([
   [`/benchmarks`, [`/benchmarks`], `Benchmarks`, `Benchmarks`],
   [
     `/benchmarks/discovery/tmi`,
-    [`/benchmarks`, `/benchmarks/discovery`],
+    [`/benchmarks/discovery`],
     `Discovery diagnostics`,
     `/benchmarks/discovery/tmi`,
   ],
   [
     `/benchmarks/diatomics/tmi`,
-    [`/benchmarks`, `/benchmarks/diatomics`],
+    [`/benchmarks/diatomics`],
     `Diatomic DFT reference spin states`,
     `spin states`,
   ],

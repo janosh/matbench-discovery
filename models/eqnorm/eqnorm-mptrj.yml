@@ -174,9 +174,9 @@ metrics:
   geo_opt:
     pred_file:
       name: models/eqnorm/eqnorm-mptrj/2025-06-16-geo-opt.jsonl.gz
-      url: https://figshare.com/files/55550972
-      size: 147883782
-      md5: efe3ae47e431efe61ca80598eacda8e3
+      url: https://figshare.com/files/70325058
+      size: 149098841
+      md5: 18d29fd8efb0504459ad3a4be445912e
     symprec=1e-2:
       rmsd: 0.0837
       n_sym_ops_mae: 1.7966

@@ -81,7 +81,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    df_traj.to_csv("trajectory.csv.gz")  # Save final structure and trajectory data
    ```
 
-2. Reproducible inference code. If your model exposes an ASE calculator, register its constructor in [`matbench_discovery/calculators.py`](https://github.com/janosh/matbench-discovery/blob/main/matbench_discovery/calculators.py) and declare its isolated `uv` dependencies in YAML `environment`. The shared runners [`models/run_discovery.py`](https://github.com/janosh/matbench-discovery/blob/main/models/run_discovery.py), [`models/run_kappa.py`](https://github.com/janosh/matbench-discovery/blob/main/models/run_kappa.py), [`models/run_md.py`](https://github.com/janosh/matbench-discovery/blob/main/models/run_md.py), and [`models/run_diatomics.py`](https://github.com/janosh/matbench-discovery/blob/main/models/run_diatomics.py) are the only entry points for calculator-backed models; do not add per-model forks or join scripts.
+2. Reproducible inference code. If your model exposes an ASE calculator, register its constructor in [`matbench_discovery/calculators.py`](https://github.com/janosh/matbench-discovery/blob/main/matbench_discovery/calculators.py) and declare its isolated `uv` dependencies in YAML `environment`. The shared runners run on Python 3.14 with `matbench-discovery`'s own `ase`, `numpy`, `pymatgen`, `phonopy`, etc., so they install only your model-specific packages from `environment.dependencies` (e.g. your package, `torch`, PyG wheels) and treat `python_version` and pins of packages `matbench-discovery` already depends on as submission provenance. Your calculator stack must therefore resolve on Python 3.14 alongside those versions; check with `--print-cmd ... --dry-run`. The shared runners [`models/run_discovery.py`](https://github.com/janosh/matbench-discovery/blob/main/models/run_discovery.py), [`models/run_kappa.py`](https://github.com/janosh/matbench-discovery/blob/main/models/run_kappa.py), [`models/run_md.py`](https://github.com/janosh/matbench-discovery/blob/main/models/run_md.py), and [`models/run_diatomics.py`](https://github.com/janosh/matbench-discovery/blob/main/models/run_diatomics.py) are the only entry points for calculator-backed models; do not add per-model forks or join scripts.
 
    Calculator integration belongs in the same model PR. Normal secretless PR CI validates that code, while automated ingestion evaluates the submitted artifacts using trusted base-branch code and never executes PR code with credentials.
 
@@ -154,7 +154,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
      # URL that points to the license file for the model checkpoint, not the checkpoint file itself.
      checkpoint_url: https://url.of/model-checkpoint-license
 
-   environment: # provenance pins + (for calculators) isolated runner install
+   environment: # submission provenance; runners install only the model-specific deps
      dependencies:
        - my-model-package>=1.0
        - torch==2.8.0
@@ -282,7 +282,8 @@ uv run models/run_kappa.py --print-cmd --model <model_key> --dry-run
 eval "$(uv run models/run_kappa.py --print-cmd --model <model_key>)"
 eval "$(uv run models/run_kappa.py --print-cmd --model <model_key> --merge-shards --write-yaml)"
 
-# 20 ps NVT molecular dynamics
+# 20 ps NVT molecular dynamics. Writes observable metrics only: energy/force RMSEs need
+# the private labeled DynaMat references, so maintainers add them after submission
 uv run models/run_md.py --print-cmd --model <model_key> --dry-run
 eval "$(uv run models/run_md.py --print-cmd --model <model_key> --write-yaml)"
 

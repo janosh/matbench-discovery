@@ -93,7 +93,7 @@ class DiatomicCurve:
     def __init__(
         self, distances: ArrayLike, energies: ArrayLike, forces: ArrayLike
     ) -> None:
-        """Convert inputs to numpy arrays and reshape forces if needed."""
+        """Convert inputs to numpy arrays and check per-distance lengths agree."""
         self.distances = np.asarray(distances)
         self.energies = np.asarray(energies)
         self.forces = np.asarray(forces)
@@ -101,10 +101,6 @@ class DiatomicCurve:
         n_dist, n_e = len(self.distances), len(self.energies)
         if n_e != n_dist:
             raise ValueError(f"distance and energy counts differ: {n_dist} != {n_e}")
-
-        # handle forces stored as (1, n_distances*n_atoms, 3), not (n_dist, n_atoms, 3)
-        if self.forces.shape == (1, 2 * n_dist, 3):
-            self.forces = self.forces.reshape(n_dist, 2, 3)
         if (n_f := len(self.forces)) != n_dist:
             raise ValueError(f"distance and force counts differ: {n_dist} != {n_f}")
 
@@ -134,7 +130,7 @@ class DiatomicCurves:
 
         def make_curves(section: str) -> dict[str, DiatomicCurve]:
             """Convert one JSON curve section to DiatomicCurve objects."""
-            curves = data.get(section, data.get(section.replace("-", "_"), {}))
+            curves = data.get(section, {})
             key_fn = _homo_key if section.startswith("homo") else str
 
             def curve_distances(formula: str, curve: dict[str, Any]) -> np.ndarray:
@@ -142,7 +138,9 @@ class DiatomicCurves:
 
                 Curves may omit grid points (run_diatomics trims non-finite samples
                 outside the scored window) but must not introduce off-grid,
-                duplicated, or reordered distances.
+                duplicated, or reordered distances. Curves without their own
+                distances use the top-level grid: published pre-2026-07 prediction
+                files (e.g. mace-mp-0, orb-v2) store distances only at the top level.
                 """
                 curve_dists = np.asarray(curve.get("distances", distances))
                 # off-grid points map to -1; valid subsets have strictly
@@ -336,15 +334,8 @@ def calc_diatomic_metrics(
         seps_pred = pred_dists[pred_mask]
         pred_energies_raw = np.asarray(pred_data.energies)
         pred_energies = pred_energies_raw[pred_mask]
-        pred_forces_raw = np.asarray(pred_data.forces)
-        if not pred_forces_raw.size:
-            raise ValueError(f"{elem_symbol} diatomic curve is missing forces")
-        if len(pred_forces_raw) != len(pred_dists):
-            raise ValueError(
-                f"{elem_symbol} diatomic force and distance counts differ: "
-                f"{len(pred_forces_raw)} != {len(pred_dists)}"
-            )
-        pred_forces = pred_forces_raw[pred_mask]
+        # DiatomicCurve already guarantees one force entry per distance
+        pred_forces = np.asarray(pred_data.forces)[pred_mask]
 
         # skip curves still non-finite within the window (model instability at scored
         # geometries); they'd fail metric validation and abort the whole model otherwise

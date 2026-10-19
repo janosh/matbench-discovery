@@ -14,7 +14,7 @@ import sys
 import tempfile
 import time
 import traceback
-from collections.abc import Iterable, Iterator, Mapping, Sequence
+from collections.abc import Generator, Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, replace
 from datetime import UTC, datetime
@@ -471,15 +471,13 @@ def kappa_source_digest(adapter: StandardKappaAdapter, model_key: str) -> str:
 
 
 def material_id_from_atoms(atoms: Atoms) -> str:
-    """Extract and canonicalize a PhononDB material ID from ASE metadata."""
-    for key in (str(Key.mat_id), "mp_id"):
-        material_id = atoms.info.get(key)
-        if isinstance(material_id, str) and material_id:
-            atoms.info[str(Key.mat_id)] = material_id
-            return material_id
-    raise ValueError(
-        f"Structure has no material_id/mp_id in info keys {sorted(atoms.info)}"
-    )
+    """Extract a PhononDB material ID from ASE metadata."""
+    material_id = atoms.info.get(str(Key.mat_id))
+    if not isinstance(material_id, str) or not material_id:
+        raise ValueError(
+            f"Structure has no {Key.mat_id} in info keys {sorted(atoms.info)}"
+        )
+    return material_id
 
 
 def load_phonondb_atoms(
@@ -667,7 +665,12 @@ def calculate_kappa_for_structure(
         has_imaginary_modes = check_imaginary_freqs(frequencies)
         result |= {
             str(Key.has_imag_ph_modes): has_imaginary_modes,
-            str(Key.ph_freqs): frequencies,
+            # the BZ grid repeats symmetry-equivalent surface q-points, which would bias
+            # the unweighted spectrum W1 of rows without conductivity (mode_weights is
+            # NaN there); grg2bzg selects each regular-grid point once (Gamma stays
+            # first), the uniform-weight equivalent of the weighted irreducible grid
+            # that conductivity rows overwrite this with
+            str(Key.ph_freqs): frequencies[phono3py.grid.grg2bzg],
         }
         if settings.save_forces:
             forces = {
@@ -701,7 +704,6 @@ def calculate_kappa_for_structure(
             if forces is not None:
                 forces["fc3_set"] = fc3_set
                 forces["fc3_displacements"] = phono3py.dataset
-            phono3py.forces = np.asarray(fc3_set)
             phono3py.produce_fc3(symmetrize_fc3r=True)
             error_stage = "Conductivity"
             from matbench_discovery.phonons import thermal_conductivity as ltc
@@ -731,7 +733,7 @@ def _write_sidecar(
     if data is None:
         return None
     relative_path = f"{SIDECAR_DIRS[attribute]}/{record_filename(material_id)}"
-    atomic_write_gzip_json(f"{shard_dir}/{relative_path}", data)
+    atomic_write_json(f"{shard_dir}/{relative_path}", data)
     return relative_path
 
 
@@ -854,7 +856,7 @@ def run_kappa_shard(
                     shard_dir, "phonon_file", material_id, computation.phonons
                 ),
             )
-            atomic_write_gzip_json(output_path, asdict(record))
+            atomic_write_json(output_path, asdict(record))
 
     records = tuple(
         read_kappa_record(record_path(shard_dir, material_id))
@@ -1036,7 +1038,7 @@ def write_kappa_artifacts(
             )
 
     rows = [record.result for record in merged_run.records]
-    atomic_write_gzip_json(pred_file_path, rows)
+    atomic_write_json(pred_file_path, rows)
 
     atomic_write_json(
         run_info_path,
@@ -1073,7 +1075,7 @@ def write_kappa_artifacts(
 
 
 @contextmanager
-def _atomic_output_path(path: str) -> Iterator[str]:
+def _atomic_output_path(path: str) -> Generator[str]:
     """Yield a temporary sibling path and atomically promote it on success."""
     parent = os.path.dirname(path)
     if parent:
@@ -1248,21 +1250,11 @@ def json_ready(value: object) -> object:
 
 
 def atomic_write_json(path: str, data: object) -> None:
-    """Atomically write strict JSON to a plain-text file."""
+    """Atomically write strict JSON, gzip-compressed when ``path`` ends in ``.gz``."""
+    open_fn = gzip.open if path.endswith(".gz") else open
     with (
         _atomic_output_path(path) as temporary_path,
-        open(temporary_path, mode="w", encoding="utf-8") as file,
-    ):
-        json.dump(json_ready(data), file, sort_keys=True, allow_nan=False)
-        file.flush()
-        os.fsync(file.fileno())
-
-
-def atomic_write_gzip_json(path: str, data: object) -> None:
-    """Atomically write strict JSON to a gzip file."""
-    with (
-        _atomic_output_path(path) as temporary_path,
-        gzip.open(temporary_path, mode="wt", encoding="utf-8") as file,
+        open_fn(temporary_path, mode="wt", encoding="utf-8") as file,
     ):
         json.dump(json_ready(data), file, sort_keys=True, allow_nan=False)
         file.flush()

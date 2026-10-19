@@ -21,6 +21,8 @@ def main(
     max_file_size: int = 500 * 1024**2,  # in bytes, files larger than this should
     # be uploaded manually to avoid timeouts
     files: Sequence[DataFiles] = tuple(DataFiles),
+    *,
+    dry_run: bool = False,
 ) -> int:
     """Keep Data Files Figshare article in sync with data-files.yml file.
 
@@ -32,6 +34,8 @@ def main(
         max_file_size (int): Maximum file size in bytes to be uploaded automatically.
         files (list[DataFiles] | None): Which attributes of DataFiles to upload.
             Defaults to all.
+        dry_run (bool): Only print planned creates, uploads, publishes and YAML
+            writes. Reads the remote file listing but changes nothing.
     """
     article_is_new = False
     if article_id is not None:
@@ -66,12 +70,15 @@ def main(
     }
 
     if article_id is None:
-        article_id = figshare.create_article(metadata)
         article_is_new = True
-        print(
-            f"\n⚠️ Created new Figshare article with {article_id=}"
-            f"\nSet ARTICLE_IDS['data_files'] in {figshare.__file__} to this ID!"
-        )
+        if dry_run:
+            print("\n[dry-run] Would create a new Figshare article")
+        else:
+            article_id = figshare.create_article(metadata)
+            print(
+                f"\n⚠️ Created new Figshare article with {article_id=}"
+                f"\nSet ARTICLE_IDS['data_files'] in {figshare.__file__} to this ID!"
+            )
     article_url = f"{figshare.ARTICLE_URL_PREFIX}/{article_id}"
 
     try:
@@ -81,7 +88,9 @@ def main(
                 existing_yaml = round_trip_yaml.load(file)
 
         # remote listing lets us skip re-uploading unchanged files
-        existing_files = figshare.list_article_files(article_id)
+        existing_files = (
+            [] if article_id is None else figshare.list_article_files(article_id)
+        )
         print(f"Found {len(existing_files)} existing files on Figshare")
         files_by_name = {file["name"]: file for file in existing_files}
 
@@ -105,7 +114,9 @@ def main(
 
             # Always record the freshly computed hash: reusing a stored md5 here once
             # let re-uploads leave stale registry checksums (#357).
-            file_name = os.path.basename(file_path)
+            # Files upload under their DATA_DIR-relative path (e.g. wbm/x.csv.gz), so
+            # the remote listing must be matched by that name, not the basename.
+            file_name = data_file.rel_path
             file_hash, file_size = figshare.get_file_hash_and_size(file_path)
             file_data["md5"] = file_hash
             files_in_article[data_file.name] = file_data
@@ -131,10 +142,14 @@ def main(
                     del files_in_article[data_file.name]
                 continue
             else:  # upload new or modified file, tracked for the summary print below
-                file_id = figshare.upload_file(
-                    article_id, file_path, file_name=data_file.rel_path
-                )
                 dest = updated_files if data_file.name in existing_yaml else new_files
+                if dry_run or article_id is None:
+                    print(f"\n[dry-run] Would upload {file_path} as {file_name!r}")
+                    dest[data_file.name] = "(not uploaded: dry run)"
+                    continue
+                file_id = figshare.upload_file(
+                    article_id, file_path, file_name=file_name
+                )
                 dest[data_file.name] = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
             file_data["url"] = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
 
@@ -150,7 +165,12 @@ def main(
                     print(f"{idx}. {data_file}: {url}")
 
             # newly created articles need manual review before their first publish
-            if article_is_new:
+            if dry_run or article_id is None:  # no article ID only in dry runs
+                action = (
+                    "leave new article unpublished" if article_is_new else "publish"
+                )
+                print(f"\n[dry-run] Would {action} {article_url}")
+            elif article_is_new:
                 print(
                     "\n⚠️ Article was newly created. Please review it at "
                     f"{article_url} before publishing manually."
@@ -163,8 +183,11 @@ def main(
         else:
             print("\nNo files were added or updated.")
 
-        with open(yaml_path, mode="w", encoding="utf-8") as file:
-            round_trip_yaml.dump(files_in_article, file)
+        if dry_run:
+            print(f"[dry-run] Would update {yaml_path}")
+        else:
+            with open(yaml_path, mode="w", encoding="utf-8") as file:
+                round_trip_yaml.dump(files_in_article, file)
 
     except Exception as exc:  # add context to exception for better debugging
         state = {
@@ -176,7 +199,10 @@ def main(
     return 0
 
 
-if __name__ == "__main__":
+def build_parser() -> argparse.ArgumentParser:
+    """Build the CLI parser (strict, so typos like --dryrun fail instead of
+    silently uploading and publishing).
+    """
     parser = argparse.ArgumentParser(description="Upload data files to Figshare")
     parser.add_argument(
         "--files",
@@ -186,14 +212,27 @@ if __name__ == "__main__":
         default=tuple(DataFiles),
         help="DataFiles to upload. If not specified, all files will be uploaded.",
     )
-    args, _unknown = parser.parse_known_args()
+    parser.add_argument(
+        "-n",
+        "--dry-run",
+        action="store_true",
+        help="Print planned uploads/publishes without changing Figshare or the YAML",
+    )
+    return parser
+
+
+if __name__ == "__main__":
+    args = build_parser().parse_args()
 
     with open(f"{ROOT}/pyproject.toml", mode="rb") as toml_file:
         pyproject = tomllib.load(toml_file)["project"]
 
-    main(
-        yaml_path=f"{PKG_DIR}/data-files.yml",
-        article_id=figshare.ARTICLE_IDS["data_files"],
-        pyproject=pyproject,
-        files=args.files,
+    raise SystemExit(
+        main(
+            yaml_path=f"{PKG_DIR}/data-files.yml",
+            article_id=figshare.ARTICLE_IDS["data_files"],
+            pyproject=pyproject,
+            files=args.files,
+            dry_run=args.dry_run,
+        )
     )

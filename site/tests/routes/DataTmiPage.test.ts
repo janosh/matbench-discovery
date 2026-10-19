@@ -12,19 +12,6 @@ const radio_values = (): string[] =>
   ].map((radio) => radio.value)
 
 describe(`Data TMI Page`, () => {
-  it(`defaults filter to first arity key and toggles unchecked`, async () => {
-    await mount_with_url(DataTmiPage, `http://localhost/data/tmi`)
-
-    const default_filter = radio_values().find((value) => value.startsWith(`arity=`))
-    expect(checked_radio()?.value).toBe(default_filter)
-    expect(checkbox_for(`Normalize by data set size`).checked).toBe(false)
-    expect(checkbox_for(`Log color scale`).checked).toBe(false)
-    // shared PtableHeatmap renders the count color bar with the filter in its title
-    expect(document.querySelector(`.periodic-table .colorbar`)?.textContent).toContain(
-      `WBM element counts for ${default_filter}`,
-    )
-  })
-
   it(`restores filter and toggles from URL params`, async () => {
     const target_filter = `batch=5`
     await mount_with_url(
@@ -54,13 +41,19 @@ describe(`Data TMI Page`, () => {
     expect(new URL(location.href).searchParams.has(`color_scale`)).toBe(false)
   })
 
-  it.each([`bogus`, `constructor`, `__proto__`])(
-    `defaults an unknown filter: %s`,
-    async (filter) => {
-      await mount_with_url(DataTmiPage, `http://localhost/data/tmi?filter=${filter}`)
+  it.each([``, `?filter=bogus`, `?filter=constructor`, `?filter=__proto__`])(
+    `defaults filter to the first arity key and toggles off with query %j`,
+    async (query) => {
+      await mount_with_url(DataTmiPage, `http://localhost/data/tmi${query}`)
 
       const default_filter = radio_values().find((value) => value.startsWith(`arity=`))
       expect(checked_radio()?.value).toBe(default_filter)
+      expect(checkbox_for(`Normalize by data set size`).checked).toBe(false)
+      expect(checkbox_for(`Log color scale`).checked).toBe(false)
+      // shared PtableHeatmap renders the count color bar with the filter in its title
+      expect(doc_query(`.periodic-table .colorbar`).textContent).toContain(
+        `WBM element counts for ${default_filter}`,
+      )
     },
   )
 })

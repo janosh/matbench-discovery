@@ -20,11 +20,13 @@ from matbench_discovery.enums import Model
 
 
 def test_load_calculator(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """EMT loads with no deps, undeclared dtype is ignored, unknown keys raise."""
+    """EMT loads with no deps, undeclared non-default dtype and unknown keys raise."""
     # emt has no model YAML: must stay an eager CalcSpec, not _runtime_calc_spec.
     assert isinstance(CALCULATORS._data["emt"], calculators.CalcSpec)  # noqa: SLF001
     assert isinstance(load_calculator("emt"), EMT)
-    assert isinstance(load_calculator("emt", dtype="float32"), EMT)  # dtype ignored
+    assert isinstance(load_calculator("emt", dtype="float64"), EMT)
+    with pytest.raises(ValueError, match="emt calculator has no dtype option"):
+        load_calculator("emt", dtype="float32")
 
     seen_dtype = ""
     seen_checkpoint: str | None = None
@@ -90,13 +92,32 @@ def test_equflash_uv_command_uses_isolated_override_project() -> None:
         "--project",
         "models/equflash/kappa-env",
         "--isolated",
-        "--python",
-        "3.12",
         "python",
         "models/run_kappa.py",
     ]
     assert calc_spec.deps  # still exposed for site provenance
     assert calc_spec.project
+
+
+def test_uv_command_layers_model_packages_on_runner_env() -> None:
+    """--with mode drops YAML Python and runner-provided pins, keeps model packages."""
+    calc_spec = CALCULATORS["mace_mp_0"]
+    yaml_env = Model.mace_mp_0.metadata["environment"]
+    assert yaml_env["python_version"] == "3.11"  # provenance only
+    assert "ase==3.22.1" in calc_spec.deps
+    command = calc_spec.uv_run_cmd("models/run_md.py", "--model", "mace_mp_0")
+    with_deps = [command[idx + 1] for idx, tok in enumerate(command) if tok == "--with"]
+    assert command[:3] == ["uv", "run", "--no-project"]
+    assert "--python" not in command
+    assert with_deps == list(calc_spec.runner_deps())
+    assert "torch==2.0.1" in with_deps
+    assert "mace-torch>=0.3.16" in with_deps
+    assert not any(dep.startswith(("ase", "numpy", "pymatgen")) for dep in with_deps), (
+        with_deps
+    )
+    provided = calculators.runner_provided_packages()
+    assert {"ase", "numpy", "pymatgen", "phonopy", "matbench-discovery"} <= provided
+    assert "torch" not in provided
 
 
 def test_project_backed_yaml_deps_match_install_project() -> None:
@@ -120,12 +141,12 @@ def test_project_backed_yaml_deps_match_install_project() -> None:
 
 
 def test_checkpoint_specs_accept_declared_overrides() -> None:
-    """Managed and required checkpoints must reach their calculator factories."""
+    """Managed/required checkpoints are a required factory arg (no inner download)."""
     for model_key, calc_spec in CALCULATORS.items():
         if calc_spec.auto_checkpoint or calc_spec.requires_checkpoint:
-            assert "checkpoint" in inspect.signature(calc_spec.make_calc).parameters, (
-                model_key
-            )
+            params = inspect.signature(calc_spec.make_calc).parameters
+            assert "checkpoint" in params, model_key
+            assert params["checkpoint"].default is inspect.Parameter.empty, model_key
 
 
 def test_corrected_model_factory_contracts() -> None:
@@ -242,7 +263,7 @@ def test_pet_factory_casts_exported_model(
     monkeypatch.setattr(
         calculators, "_run_to_atomic_output", lambda *_args, **_kwargs: None
     )
-    calculators._pet("fake")(  # noqa: SLF001
+    calculators._pet(  # noqa: SLF001
         "cpu", dtype="float64", checkpoint=str(tmp_path / "model.ckpt")
     )
     assert fake_model.capabilities().dtype == "float64"

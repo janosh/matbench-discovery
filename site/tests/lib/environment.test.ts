@@ -122,13 +122,8 @@ it.each([
 ])(`kit version is $expected when NODE_ENV=$node_env`, async ({ node_env, expected }) => {
   vi.stubEnv(`NODE_ENV`, node_env)
   vi.resetModules()
-  try {
-    const { svelte_config: fresh_config } = await import(`../../vite.config.js`)
-    expect(fresh_config.version).toStrictEqual(expected)
-  } finally {
-    vi.unstubAllEnvs()
-    vi.resetModules()
-  }
+  const { svelte_config: fresh_config } = await import(`../../vite.config.js`)
+  expect(fresh_config.version).toStrictEqual(expected)
 })
 
 it(`first svelte preprocessor rewrites pkg.homepage links to site-internal paths`, async () => {

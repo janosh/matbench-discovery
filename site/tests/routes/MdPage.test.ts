@@ -1,15 +1,16 @@
 import { ACTIVE_MODELS } from '#lib/models.svelte.js'
-import { MD_METRICS } from '#lib/labels.js'
+import { is_finite_num } from '#lib/metrics.js'
 import MdPage from '#routes/benchmarks/md/+page.svelte'
 import { describe, expect, it } from 'vite-plus/test'
 import {
-  checkbox_for,
   doc_query,
+  expect_table_url_state,
   filter_summary_badge,
   has_md_metrics,
+  header_name,
+  heading_texts,
   mount,
   mount_with_url,
-  sorted_header,
 } from '../index.js'
 
 describe(`MD Task Page`, () => {
@@ -28,9 +29,7 @@ describe(`MD Task Page`, () => {
     expect(table.querySelectorAll(`tbody tr`)).toHaveLength(
       ACTIVE_MODELS.filter(has_md_metrics).length,
     )
-    const headers = [...table.querySelectorAll(`th`)].map((th) =>
-      th.textContent?.replace(/\s*[↑↓]\s*$/, ``).trim(),
-    )
+    const headers = [...table.querySelectorAll(`th`)].map(header_name)
     const expected = [`ΔERMSE`, `FRMSE`, `ΔADF`, `ΔvDOS`, `PMAE`, `PW1`, `CMDS`]
     for (const header of [...expected, `twall`, `t/tmin`]) {
       expect(headers, `missing column ${header}`).toContain(header)
@@ -42,10 +41,7 @@ describe(`MD Task Page`, () => {
     expect(headers.filter((header) => header === `twall`)).toHaveLength(1)
     expect(headers.filter((header) => header === `t/tmin`)).toHaveLength(1)
 
-    const headings = [...document.querySelectorAll<HTMLHeadingElement>(`h2`)].map((h2) =>
-      h2.textContent?.replaceAll(/\s+/g, ` `).trim(),
-    )
-    expect(headings).toEqual([
+    expect(heading_texts()).toEqual([
       `Leaderboard`,
       `CMDS vs twall`,
       `Test set: DynaMat v1.0`,
@@ -65,32 +61,23 @@ describe(`MD Task Page`, () => {
     expect(scatter.getAttribute(`style`)).toContain(`height: 800px`)
   })
 
-  it.each(Object.values(MD_METRICS))(
-    `$key label points at metrics.md and has correct direction`,
-    (label) => {
-      // t/t_min is computed per table view in assemble_row_data, not read from models
-      const expected_path = label.key === `md_time_multiplier` ? undefined : `metrics.md`
-      expect(label.path).toBe(expected_path)
-      // combined_score (CMDS) is a score (higher=better); the rest are errors (lower)
-      const expected = label.key === `combined_score` ? `higher` : `lower`
-      expect(label.better).toBe(expected)
-    },
-  )
-
   it(`restores URL state for scatter axes, table sort and filters`, async () => {
     await mount_with_url(
       MdPage,
       `http://localhost/benchmarks/md?x=combined_score&y=force_rmse&sort=vdos_error&dir=asc&train=-OMat24&heatmap=0`,
     )
 
-    const heading = document
-      .querySelector(`#model-comparison`)
-      ?.textContent?.replaceAll(/\s+/g, ` `)
-    expect(heading).toContain(`FRMSE vs CMDS`)
-    const header = sorted_header()
-    expect(header?.textContent).toContain(`vDOS`)
-    expect(header?.getAttribute(`aria-sort`)).toBe(`ascending`)
+    expect(heading_texts(`#model-comparison`)).toEqual([`FRMSE vs CMDS`])
+    await expect_table_url_state(`ΔvDOS`, `ascending`)
     expect(filter_summary_badge(`Training data`)).toContain(`(1)`)
-    expect(checkbox_for(`Show heatmap`).checked).toBe(false)
+    // the scatter applies the table filters too (its size picker counts plotted models)
+    const sized = ACTIVE_MODELS.filter(
+      (model) => has_md_metrics(model) && is_finite_num(model.model_params),
+    )
+    const shown = sized.filter((model) => !model.training_sets.includes(`OMat24`))
+    expect(shown.length).toBeLessThan(sized.length)
+    expect(doc_query(`.property-picker .selected-label small`).textContent).toMatch(
+      new RegExp(`\\b${shown.length}\\s+models`),
+    )
   })
 })
