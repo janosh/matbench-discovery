@@ -37,6 +37,10 @@
       }
     },
     "bam-mp-dens": {
+      "modes": {
+        "asset": "kappa-parity-phonondb-v1-modes-bam-mp-dens-9d632863d5cd557a.json.gz",
+        "sha256": "0c27bf30a7b83552a4a9b4371939181cc6d47f81ccc14bc8e038eb21e4d83da7"
+      },
       "parity": {
         "asset": "kappa-parity-phonondb-v1-model-bam-mp-dens-6c6e0cb76621bc77.json.gz",
         "sha256": "c57452ee2d1abb62c07c6d8f9ea04d8a3e4f72c0fb12a80094be8a28eda57c87"
