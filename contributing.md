@@ -282,7 +282,8 @@ uv run models/run_kappa.py --print-cmd --model <model_key> --dry-run
 eval "$(uv run models/run_kappa.py --print-cmd --model <model_key>)"
 eval "$(uv run models/run_kappa.py --print-cmd --model <model_key> --merge-shards --write-yaml)"
 
-# 20 ps NVT molecular dynamics
+# 20 ps NVT molecular dynamics. Writes observable metrics only: energy/force RMSEs need
+# the private labeled DynaMat references, so maintainers add them after submission
 uv run models/run_md.py --print-cmd --model <model_key> --dry-run
 eval "$(uv run models/run_md.py --print-cmd --model <model_key> --write-yaml)"
 
