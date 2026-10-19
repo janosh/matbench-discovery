@@ -10,15 +10,10 @@ repos:
         args: [--fix]
       - id: ruff-format
 
-  - repo: local
+  - repo: https://github.com/astral-sh/ty-pre-commit
+    rev: v0.0.89
     hooks:
       - id: ty
-        name: ty
-        entry: ty check
-        language: python
-        additional_dependencies: [ty==0.0.89]
-        pass_filenames: false
-        always_run: true
 
   - repo: https://github.com/janosh/format-ipy-cells
     rev: v0.1.11
