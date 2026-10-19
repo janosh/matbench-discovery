@@ -31,7 +31,6 @@
 
   let { children }: { children?: Snippet } = $props()
   let toc_desktop = $state(true)
-  let find_open = $state(false)
   let search_open = $state(false)
   let find_bar = $state<ReturnType<typeof FindBar>>()
   let main_element = $state<HTMLElement>()
@@ -83,17 +82,18 @@
   let url = $derived(page.url.pathname)
   let heading_selector = $derived(`main :is(${url === `/api` ? `h1, ` : ``}h2, h3, h4)`)
   let find_enabled = $derived([`/api`, `/changelog`, `/contribute`].includes(url))
+  // Writable, reset whenever find_enabled flips so leaving and returning to a
+  // searchable route does not reopen the bar.
+  let find_open = $derived.by(() => {
+    void find_enabled
+    return false
+  })
 
   const open_find = async (): Promise<void> => {
     find_open = true
     await tick()
     find_bar?.focus_input()
   }
-
-  // Reset so leaving and returning to a searchable route does not reopen the bar.
-  $effect(() => {
-    if (!find_enabled) find_open = false
-  })
 
   const base_description = `Matbench Discovery - ${pkg.description}`
   const descriptions: Record<string, string> = {

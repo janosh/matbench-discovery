@@ -227,7 +227,7 @@
       const [structure] = await Promise.all([
         load_wbm_structure(base, point.row_idx, point.material_id),
         StructurePopup ??
-          import('matterviz/convex-hull').then(
+          import(`matterviz/convex-hull`).then(
             (mod) => (StructurePopup = mod.StructurePopup),
             (error: unknown) => {
               structure_module_failed = true

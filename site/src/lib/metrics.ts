@@ -19,7 +19,7 @@ import {
 import type { ModelMetadata, TargetType } from '#lib/schema/model.js'
 import type { DiscoverySet, Label, ModelData } from '#lib/types.js'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
-import { escape_html } from 'matterviz/utils'
+import { escape_html, strip_html } from 'matterviz/utils'
 import { format_num } from 'matterviz/labels'
 import { is_invalid, sort_table_rows, type CellVal } from 'matterviz/table'
 import { resolve_path } from 'svelte-widgets/json-tree/path'
@@ -121,7 +121,7 @@ export function missing_metric_reason(model: ModelData, metric: Label): string {
         ? (raw_task as keyof NonNullable<ModelData['metrics']>)
         : undefined
     if (!task_key && !is_cps) {
-      return [`${label.label.replaceAll(/<[^>]*>/g, ``)}: not reported.`]
+      return [`${strip_html(label.label)}: not reported.`]
     }
 
     const task_name = task_key ? MODELINGS_TASKS[task_key].label : `CPS`

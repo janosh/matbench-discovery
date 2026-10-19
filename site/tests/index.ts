@@ -1,9 +1,10 @@
 import { gzipSync } from 'node:zlib'
+import { clear_asset_cache } from '#lib/asset-loader.js'
 import type { ModelData } from '#lib/types.js'
 import type { AfterNavigate } from '$app/navigation'
 import NodeUtility from 'happy-dom/lib/nodes/node/NodeUtility.js'
 import { mount as svelte_mount, tick, unmount } from 'svelte'
-import { afterEach, beforeAll, beforeEach, vi } from 'vite-plus/test'
+import { afterEach, beforeAll, beforeEach, expect, vi } from 'vite-plus/test'
 
 type AfterNavigateCallback = (navigation: unknown) => void
 
@@ -30,13 +31,13 @@ Object.defineProperty(globalThis, `matchMedia`, {
 // and show/hide dispatch `toggle` so anything listening for popover state still hears it.
 export const POPOVER_OPEN_ATTR = `data-popover-open`
 if (!(`showPopover` in HTMLElement.prototype)) {
-  const set_popover_open = (el: HTMLElement, open: boolean) => {
-    if (!el.hasAttribute(`popover`)) {
+  const set_popover_open = (element: HTMLElement, open: boolean) => {
+    if (!element.hasAttribute(`popover`)) {
       throw new DOMException(`Element is not a popover`, `NotSupportedError`)
     }
-    if (el.hasAttribute(POPOVER_OPEN_ATTR) === open) return
-    el.toggleAttribute(POPOVER_OPEN_ATTR, open)
-    el.dispatchEvent(new Event(`toggle`))
+    if (element.hasAttribute(POPOVER_OPEN_ATTR) === open) return
+    element.toggleAttribute(POPOVER_OPEN_ATTR, open)
+    element.dispatchEvent(new Event(`toggle`))
   }
   Object.assign(HTMLElement.prototype, {
     showPopover(this: HTMLElement) {
@@ -156,6 +157,7 @@ beforeAll(() => {
 
 beforeEach(() => {
   document.body.innerHTML = ``
+  clear_asset_cache()
   const fetch_mock = vi.fn(async () => Response.error())
   vi.stubGlobal(`fetch`, fetch_mock)
   app_mocks.state.page.url = new URL(`http://localhost/`)
@@ -235,7 +237,7 @@ export function header_name(header: Element): string {
 export function filter_menu_trigger(menu_name: string): HTMLButtonElement {
   const trigger = [
     ...document.querySelectorAll<HTMLButtonElement>(`button.filter-menu-trigger`),
-  ].find((el) => el.textContent?.includes(menu_name))
+  ].find((button) => button.textContent?.includes(menu_name))
   if (!trigger) throw new Error(`No filter menu found for ${menu_name}`)
   return trigger
 }
@@ -267,6 +269,42 @@ export async function open_column_menu(): Promise<HTMLElement> {
 export const heatmap_toggle = async (): Promise<HTMLInputElement> =>
   doc_query(`input[aria-label="Toggle heatmap colors"]`, await open_column_menu())
 
+// a task page's metrics table restored `sort`/`dir` and `heatmap=0` from its URL;
+// returns the heatmap checkbox for follow-up toggling
+export async function expect_table_url_state(
+  sort_label: string,
+  aria_sort: `ascending` | `descending`,
+): Promise<HTMLInputElement> {
+  const header = sorted_header()
+  if (!header) throw new Error(`No sorted table header`)
+  expect(header_name(header)).toBe(sort_label)
+  expect(header.getAttribute(`aria-sort`)).toBe(aria_sort)
+  const heatmap = await heatmap_toggle()
+  expect(heatmap.checked).toBe(false)
+  return heatmap
+}
+
+// first element matching selector whose trimmed text equals text exactly
+export function button_for(text: string, selector = `button`): HTMLButtonElement {
+  const button = [...document.querySelectorAll<HTMLButtonElement>(selector)].find(
+    (candidate) => candidate.textContent?.trim() === text,
+  )
+  if (!button) throw new Error(`No ${selector} found with text ${text}`)
+  return button
+}
+
+// whitespace-normalized text of every heading matching selector (default h2)
+export const heading_texts = (selector = `h2`): (string | undefined)[] =>
+  [...document.querySelectorAll(selector)].map((heading) =>
+    heading.textContent?.replaceAll(/\s+/g, ` `).trim(),
+  )
+
+// happy-dom lays nothing out, so plots need explicit client sizes to render markers
+export function mock_element_size(width: number, height: number): void {
+  vi.spyOn(HTMLElement.prototype, `clientWidth`, `get`).mockReturnValue(width)
+  vi.spyOn(HTMLElement.prototype, `clientHeight`, `get`).mockReturnValue(height)
+}
+
 // find a checkbox by the text of its wrapping <label> (e.g. table-control toggles)
 export function checkbox_for(label_text: string): HTMLInputElement {
   const label = [...document.querySelectorAll(`label`)].find((lbl) =>
@@ -290,6 +328,18 @@ export const gzipped_json_response = async (data: unknown) =>
 // normalize the fetch() url argument (string | URL | Request) to a string
 export const request_url = (url: RequestInfo | URL) =>
   typeof url === `string` || url instanceof URL ? String(url) : url.url
+
+// stub fetch() with gzipped JSON for exact URLs and 404 for anything else
+export const stub_json_routes = (routes: Record<string, unknown>) => {
+  const fetch_mock = vi.fn((url: RequestInfo | URL) => {
+    const href = request_url(url)
+    return Object.hasOwn(routes, href)
+      ? gzipped_json_response(routes[href])
+      : Promise.resolve(new Response(`missing`, { status: 404 }))
+  })
+  vi.stubGlobal(`fetch`, fetch_mock)
+  return fetch_mock
+}
 
 export const has_md_metrics = (model: ModelData): boolean => model.metrics?.md != null
 

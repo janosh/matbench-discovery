@@ -3,13 +3,12 @@
   import TaskNavigation from '#lib/benchmark/TaskNavigation.svelte'
   import MetricsTable from '#lib/table/MetricsTable.svelte'
   import { by_benchmark_added_desc } from '#lib'
-  import { ACTIVE_MODELS, make_table_filters } from '#lib/models.svelte.js'
+  import { ACTIVE_MODELS, task_page_filters } from '#lib/models.svelte.js'
   import type { ModelData } from '#lib/types.js'
   import { to_error } from 'svelte-widgets/utils'
   import { load_kappa_analysis, type KappaAnalysis } from '#lib/parity/kappa-parity.js'
   import DynamicScatter from '#lib/plot/DynamicScatter.svelte'
   import KappaParityPlot from '#lib/plot/KappaParityPlot.svelte'
-  import { bind_url_params } from '#lib/url-state.svelte.js'
   import { valid_query_param } from 'svelte-widgets/url-params'
   import {
     PHONON_METRICS,
@@ -91,18 +90,17 @@
     }),
   )
 
-  const filters = make_table_filters()
-
-  const read_url_params = (params: URLSearchParams) => {
-    selected_key = valid_query_param(params, `model`, default_selected_key, model_keys)
-    sort_mode = valid_query_param(params, `model_sort`, default_sort_mode, sort_compare)
-    filters.read(params)
-  }
-  bind_url_params(read_url_params, () => [
-    [`model`, selected_key, default_selected_key],
-    [`model_sort`, sort_mode, default_sort_mode],
-    ...filters.url_entries,
-  ])
+  const { filters, in_view } = task_page_filters(
+    has_phonon_metrics,
+    (params) => {
+      selected_key = valid_query_param(params, `model`, default_selected_key, model_keys)
+      sort_mode = valid_query_param(params, `model_sort`, default_sort_mode, sort_compare)
+    },
+    () => [
+      [`model`, selected_key, default_selected_key],
+      [`model_sort`, sort_mode, default_sort_mode],
+    ],
+  )
 
   const phonon_url = `https://github.com/atztogo/phonondb/blob/main/README.md#url-links-to-phono3py-finite-displacement-method-inputs-of-103-compounds-on-mdr-at-nims-pbe`
   const github_src_url = `https://github.com/janosh/matbench-discovery/blob/main/matbench_discovery`
@@ -152,7 +150,7 @@
 
 <DynamicScatter
   models={ACTIVE_MODELS}
-  model_filter={has_phonon_metrics}
+  model_filter={in_view}
   bind:x_key={plot.x}
   bind:y_key={plot.y}
   style="height: 800px"

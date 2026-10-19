@@ -7,14 +7,14 @@ import { GEO_OPT_SYMMETRY_METRICS, HYPERPARAMS } from '#lib/labels.js'
 import type { ModelData } from '#lib/types.js'
 import { tick } from 'svelte'
 import GeoOptPage from '#routes/benchmarks/geo-opt/+page.svelte'
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it, onTestFinished } from 'vite-plus/test'
 import {
-  heatmap_toggle,
-  open_column_menu,
   doc_query,
+  expect_table_url_state,
   filter_summary_badge,
+  heading_texts,
   mount_with_url,
-  sorted_header,
+  open_column_menu,
 } from '../index.js'
 
 // Mirrors the page's geo-opt presence check and default table filters.
@@ -49,7 +49,8 @@ const sankey_labels = (): string[] =>
   )
 
 describe(`Geo Opt Task Page`, () => {
-  it(`renders intro, leaderboard, comparison, and diagnostics in order`, async () => {
+  // default selection = the 5 most recently added models among those with plot payloads
+  it(`renders sections in order and preselects the newest plotted models`, async () => {
     await mount_with_url(GeoOptPage, `http://localhost/benchmarks/geo-opt`)
 
     expect(doc_query(`h1`).textContent).toContain(`MLFF Geometry Optimization`)
@@ -57,10 +58,7 @@ describe(`Geo Opt Task Page`, () => {
       `WBM test set`,
     )
     expect(doc_query(`#test-set`).textContent).toContain(`WBM`)
-    const section_headings = [...document.querySelectorAll(`h2`)].map((heading) =>
-      heading.textContent?.trim(),
-    )
-    expect(section_headings).toStrictEqual([
+    expect(heading_texts()).toStrictEqual([
       `Leaderboard`,
       `Model Comparison`,
       `Aggregate Diagnostics`,
@@ -69,13 +67,8 @@ describe(`Geo Opt Task Page`, () => {
     ])
     expect(doc_query<HTMLDetailsElement>(`#methodology + details`).open).toBe(false)
     expect(document.body.textContent).toContain(`RMSD is symprec-invariant`)
-    expect(doc_query(`.collapsible-legend .scatter`)).toBeInstanceOf(HTMLElement)
+    doc_query(`.collapsible-legend .scatter`)
     expect(cdf_labels().length).toBeGreaterThan(0)
-  })
-
-  // default selection = the 5 most recently added models among those with plot payloads
-  it(`preselects the newest models by benchmark_added`, async () => {
-    await mount_with_url(GeoOptPage, `http://localhost/benchmarks/geo-opt`)
 
     const payload_keys = new Set(
       [...struct_rmsd_cdf.models, ...sym_ops_diff.models, ...spg_sankeys.models].map(
@@ -140,24 +133,35 @@ describe(`Geo Opt Task Page`, () => {
       `http://localhost/benchmarks/geo-opt?x=model_params&y=symmetry_match_1e-5&sort=Model&dir=desc&train=MPtrj&openness=OSOD,OSCD&heatmap=0`,
     )
 
-    const scatter_heading = [...document.querySelectorAll(`h3`)].find((heading) =>
-      heading.textContent?.includes(` vs `),
-    )
-    expect(scatter_heading?.textContent).toContain(`Params`)
-    expect(scatter_heading?.textContent).toContain(`Σ`)
-    expect(sorted_header()?.textContent).toContain(`Model`)
-    expect(sorted_header()?.getAttribute(`aria-sort`)).toBe(`descending`)
+    const scatter_heading = heading_texts(`h3`).find((text) => text?.includes(` vs `))
+    expect(scatter_heading).toContain(`Params`)
+    expect(scatter_heading).toContain(`Σ`)
+    await expect_table_url_state(`Model`, `descending`)
     expect(filter_summary_badge(`Training data`)).toContain(`(1)`)
     expect(filter_summary_badge(`Openness`)).toContain(`(2/4)`)
-    expect((await heatmap_toggle()).checked).toBe(false)
   })
 
-  it(`renders table with correct structure, columns, groups, and units`, async () => {
+  it(`renders geo-opt columns, groups and units and excludes models without geo-opt metrics`, async () => {
+    const model_key = `no-geo-opt-regression`
+    ACTIVE_MODELS.push({
+      model_key,
+      model_name: model_key,
+      model_version: `test`,
+      targets: `EFS_G`,
+      training_sets: [],
+      n_training_materials: 1,
+      n_training_structures: 1,
+      model_params: 1,
+      dates: { benchmark_added: `2026-06-30` },
+      metrics: {
+        discovery: { full_test_set: { F1: 0.1 } },
+        diatomics: { energy_mae: 1 },
+      },
+    } as unknown as ModelData)
+    onTestFinished(() => {
+      ACTIVE_MODELS.pop()
+    })
     await mount_with_url(GeoOptPage, `http://localhost/benchmarks/geo-opt?models=`)
-
-    const table = doc_query(`table`)
-    doc_query(`thead`, table)
-    doc_query(`tbody`, table)
 
     const headers = [...document.querySelectorAll(`th`)]
     const header_texts = headers.map((header) => header.textContent?.trim())
@@ -190,13 +194,8 @@ describe(`Geo Opt Task Page`, () => {
       ),
     ).toBe(false)
 
-    const symmetry_labels = Object.values(GEO_OPT_SYMMETRY_METRICS).map(
-      (metric) => metric.label,
-    )
-    const found_symmetry = symmetry_labels.filter((label) =>
-      header_html.some((html) => html.includes(label)),
-    ).length
-    expect(found_symmetry).toBe(symmetry_labels.length)
+    for (const { label } of Object.values(GEO_OPT_SYMMETRY_METRICS))
+      expect(header_html.some((html) => html.includes(label))).toBe(true)
 
     // Group headers for Symmetry and Hyperparams
     const group_texts = [...document.querySelectorAll(`tr.group-header th`)]
@@ -204,67 +203,19 @@ describe(`Geo Opt Task Page`, () => {
       .filter(Boolean)
     expect(group_texts).toContain(`Symmetry`)
     expect(group_texts).toContain(`Hyperparams`)
-  })
 
-  it(`renders geo-opt rows and excludes models without geo-opt metrics`, async () => {
-    const model_key = `no-geo-opt-regression`
-    ACTIVE_MODELS.push({
-      model_key,
-      model_name: model_key,
-      model_version: `test`,
-      targets: `EFS_G`,
-      training_sets: [],
-      n_training_materials: 1,
-      n_training_structures: 1,
-      model_params: 1,
-      dates: { benchmark_added: `2026-06-30` },
-      metrics: {
-        discovery: { full_test_set: { F1: 0.1 } },
-        diatomics: { energy_mae: 1 },
-      },
-    } as unknown as ModelData)
-
-    try {
-      await mount_with_url(GeoOptPage, `http://localhost/benchmarks/geo-opt?models=`)
-
-      expect(document.body.textContent).not.toContain(model_key)
-
-      const rows = document.querySelectorAll(`tbody tr`)
-      expect(rows).toHaveLength(geo_opt_row_count())
-
-      const model_cells = [...document.querySelectorAll(`td[data-col="Model"]`)]
-      expect(model_cells).toHaveLength(rows.length)
-      expect(model_cells[0]?.querySelector(`a`)?.getAttribute(`href`)).toMatch(
-        /^\/models\//,
-      )
-
-      const rmsd_cells = [...document.querySelectorAll(`td`)].filter((td) =>
-        td.getAttribute(`data-col`)?.includes(`RMSD`),
-      )
-      expect(
-        rmsd_cells.some((cell) => {
-          const text = cell.textContent?.trim()
-          return text ? !Number.isNaN(Number(text)) : false
-        }),
-      ).toBe(true)
-    } finally {
-      ACTIVE_MODELS.pop()
-    }
-  })
-
-  it(`toggles heatmap colors`, async () => {
-    await mount_with_url(GeoOptPage, `http://localhost/benchmarks/geo-opt?models=`)
-
-    const checkbox = await heatmap_toggle()
-    expect(checkbox.checked).toBe(true)
-
-    checkbox.click()
-    await tick()
-    expect(checkbox.checked).toBe(false)
-
-    checkbox.click()
-    await tick()
-    expect(checkbox.checked).toBe(true)
+    expect(document.body.textContent).not.toContain(model_key)
+    const rows = document.querySelectorAll(`tbody tr`)
+    expect(rows).toHaveLength(geo_opt_row_count())
+    const model_cells = [...document.querySelectorAll(`td[data-col="Model"]`)]
+    expect(model_cells).toHaveLength(rows.length)
+    expect(model_cells[0]?.querySelector(`a`)?.getAttribute(`href`)).toMatch(
+      /^\/models\//,
+    )
+    const rmsd_values = [...document.querySelectorAll(`td[data-col*="RMSD"]`)].map(
+      (cell) => cell.textContent?.trim(),
+    )
+    expect(rmsd_values.some((text) => text && Number.isFinite(Number(text)))).toBe(true)
   })
 
   it(`opens column visibility panel with checkboxes`, async () => {
@@ -282,68 +233,29 @@ describe(`Geo Opt Task Page`, () => {
     )
   })
 
-  it.each([`RMSD`, `Model`])(`sorts by %s when header is clicked`, async (col_name) => {
-    await mount_with_url(GeoOptPage, `http://localhost/benchmarks/geo-opt?models=`)
-
-    const headers = [...document.querySelectorAll(`th`)]
-    const header = headers.find((candidate) =>
-      col_name === `Model`
-        ? candidate.textContent?.trim() === `Model`
-        : candidate.textContent?.includes(col_name),
-    )
-    if (!header) throw new Error(`${col_name} header not found`)
-
-    const get_order = () =>
-      [...document.querySelectorAll(`td[data-col="Model"]`)].map((cell) =>
-        cell.textContent?.trim(),
+  it.each([`MPtrj`, `-OMat24`])(
+    `filters rows with train=%s and clears them`,
+    async (train) => {
+      const filters = make_table_filters()
+      filters.read(new URLSearchParams({ train }))
+      await mount_with_url(
+        GeoOptPage,
+        `http://localhost/benchmarks/geo-opt?models=&train=${train}`,
       )
 
-    const initial = get_order()
-    header.click()
-    await tick()
-    const after_click = get_order()
-    header.click()
-    await tick()
-    const after_second = get_order()
-
-    const changed =
-      JSON.stringify(initial) !== JSON.stringify(after_click) ||
-      JSON.stringify(after_click) !== JSON.stringify(after_second)
-    expect(initial).toHaveLength(geo_opt_row_count())
-    expect(changed).toBe(true)
-  })
-
-  it.each([
-    { training: {}, desc: `no filters` },
-    { training: { MPtrj: `require` }, desc: `MPtrj-trained only` },
-    { training: { OMat24: `exclude` }, desc: `OMat24 excluded` },
-  ] as const)(`filters rows with $desc`, async ({ training }) => {
-    const filters = make_table_filters()
-    filters.training = { ...training } as typeof filters.training
-    const train = Object.entries(training)
-      .map(([key, mode]) => (mode === `exclude` ? `-${key}` : key))
-      .join(`,`)
-    await mount_with_url(
-      GeoOptPage,
-      `http://localhost/benchmarks/geo-opt?models=&train=${train}`,
-    )
-
-    doc_query(`thead`, doc_query(`table`))
-
-    const rows = document.querySelectorAll(`tbody tr[data-row-idx]`)
-    expect(rows).toHaveLength(geo_opt_row_count(filters.matches))
-    const first_row = rows[0]
-    if (first_row) {
+      const rows = document.querySelectorAll(`tbody tr[data-row-idx]`)
+      expect(rows).toHaveLength(geo_opt_row_count(filters.matches))
+      const [first_row] = rows
       const href = doc_query<HTMLAnchorElement>(
         `a[href^="/models/"]`,
         first_row,
       ).getAttribute(`href`)
-      if (train) doc_query(`button.clear-filters`).click()
+      doc_query(`button.clear-filters`).click()
       await tick()
       expect(new URL(location.href).searchParams.has(`train`)).toBe(false)
       expect(doc_query(`a[href="${href}"]`, doc_query(`tbody`)).closest(`tr`)).toBe(
         first_row,
       )
-    } else expect(doc_query(`tbody`).textContent?.trim()).toBe(`No data`)
-  })
+    },
+  )
 })

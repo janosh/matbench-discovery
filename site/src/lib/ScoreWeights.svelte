@@ -3,6 +3,7 @@
   import { ALL_METRICS } from '#lib/labels.js'
   import type { Label } from '#lib/types.js'
   import { format_num } from 'matterviz/labels'
+  import { strip_html } from 'matterviz/utils'
   import { tooltip } from 'svelte-widgets/attachments'
 
   type WeightsConfig = Record<string, Label & { weight: number }>
@@ -42,7 +43,11 @@
   }
 </script>
 
-<div class="score-weights" role="group" aria-label="{title_label.key} weights">
+<div
+  class="score-weights"
+  role="group"
+  aria-label="{strip_html(title_label.label)} weights"
+>
   <div class="heading">
     <strong title={title_label.description} {@attach tooltip()}>
       {@html title_label.label} weights
@@ -59,7 +64,7 @@
             min="0"
             max="100"
             step="any"
-            aria-label="{metric.label.replace(/<[^>]*>/g, ``)} weight (%)"
+            aria-label="{strip_html(metric.label)} weight (%)"
             value={percentage(metric.weight)}
             onchange={(event) => change_weight(key, event.currentTarget)}
           />

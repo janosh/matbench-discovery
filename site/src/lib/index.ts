@@ -2,19 +2,20 @@
 export function arr_to_str(value: unknown): string {
   if (value === null || value === undefined || value === ``) return `n/a`
   if (Array.isArray(value)) return value.join(`, `)
+  if (typeof value === `string`) return value
   return JSON.stringify(value)
 }
 
-export const format_date = (
-  date: string | number,
-  options?: Intl.DateTimeFormatOptions,
-): string =>
-  new Date(date).toLocaleDateString(undefined, {
-    year: `numeric`,
-    month: `short`,
-    day: `numeric`,
-    ...options,
-  })
+// Fixed locale and UTC so prerendered HTML doesn't depend on the build machine and
+// date-only strings (parsed as UTC midnight) don't shift a day west of Greenwich.
+const date_formatter = new Intl.DateTimeFormat(`en-US`, {
+  year: `numeric`,
+  month: `short`,
+  day: `numeric`,
+  timeZone: `UTC`,
+})
+export const format_date = (date: string | number): string =>
+  date_formatter.format(new Date(date))
 
 // Compare models by benchmark inclusion date, newest first.
 export const by_benchmark_added_desc = (

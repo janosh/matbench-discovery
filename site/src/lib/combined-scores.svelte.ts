@@ -1,4 +1,11 @@
-import { ALL_METRICS, MD_METRICS, RMSD_BASELINE } from '#lib/labels.js'
+import {
+  ALL_METRICS,
+  DEFAULT_CDS_WEIGHTS,
+  DEFAULT_CMDS_WEIGHTS,
+  MD_METRICS,
+  N_SCORED_DIATOMIC_ELEMENTS,
+  RMSD_BASELINE,
+} from '#lib/labels.js'
 import type { DiatomicsMetrics, MdMetrics } from '#lib/schema/model.js'
 import type { Label, ModelData } from '#lib/types.js'
 
@@ -79,15 +86,18 @@ export const CMDS_SPEED = { baseline: 300_000, floor: 9000, log: true } as const
 // vDOS and pressure get the emphasis: vDOS is the headline dynamical observable
 // and pressure the least correlated with the other components (see md-metrics-design.md).
 export const DEFAULT_CMDS_CONFIG = {
-  vdos_error: { ...MD_METRICS.md_vdos_error, weight: 0.3 },
-  adf_error: { ...MD_METRICS.md_adf_error, weight: 0.2 },
+  vdos_error: { ...MD_METRICS.md_vdos_error, weight: DEFAULT_CMDS_WEIGHTS.vdos_error },
+  adf_error: { ...MD_METRICS.md_adf_error, weight: DEFAULT_CMDS_WEIGHTS.adf_error },
   run_time_sec: {
     ...MD_METRICS.md_run_time_sec,
     label: `Speed`,
     description: `Wall time to roll out all 17 DynaMat v1.0 NVT trajectories, scored on a log scale from 9,000 s (subscore 1) to 300,000 s (subscore 0). H100/H200 backfills assume equal speed; actual GPUs are recorded in prediction files. Models without recorded timings get no CMDS unless this weight is zeroed`,
-    weight: 0.2,
+    weight: DEFAULT_CMDS_WEIGHTS.run_time_sec,
   },
-  pressure_error: { ...MD_METRICS.md_pressure_error, weight: 0.3 },
+  pressure_error: {
+    ...MD_METRICS.md_pressure_error,
+    weight: DEFAULT_CMDS_WEIGHTS.pressure_error,
+  },
 } as const
 
 export type CmdsConfig = Record<
@@ -198,33 +208,31 @@ type CdsComponent = (typeof CDS_COMPONENTS)[CdsPillar][number]
 export type CdsValues = Partial<Record<CdsComponent[`key`], number>> & {
   excluded_formula_reasons?: Record<string, string>
 }
-const N_SCORED_DIATOMIC_ELEMENTS = 87
 
-// Preserve the established default weights used by published rankings.
 export const DEFAULT_CDS_CONFIG: CdsConfig = {
   accuracy: {
     key: `cds_accuracy`,
     label: `Accuracy`,
     description: `PEC agreement with PBE: energy MAE (5/9) and force MAE (4/9) over the scored separation range. Note PBE itself is unreliable for stretched diatomics (dissociation limits, spin states), so models trained on other references may deviate here without being worse potentials`,
-    weight: 4 / 9,
+    weight: DEFAULT_CDS_WEIGHTS.accuracy,
   },
   geometry: {
     key: `cds_geometry`,
     label: `Geometry`,
     description: `Curve-shape agreement with PBE: repulsive-wall distance from 1 to 100 eV where supported by the reference (1/2), equilibrium bond length (1/3) and well depth (1/6) errors`,
-    weight: 2 / 9,
+    weight: DEFAULT_CDS_WEIGHTS.geometry,
   },
   speed: {
     key: `cds_speed`,
     label: `Speed`,
     description: `Wall time of the full diatomic sweep, scored on a log scale from 50s (subscore 1) to 5000s (subscore 0). Caveat: hardware varies by submission (recorded in each model YAML); models without recorded timings get no CDS unless this weight is zeroed`,
-    weight: 1 / 9,
+    weight: DEFAULT_CDS_WEIGHTS.speed,
   },
   physicality: {
     key: `cds_physicality`,
     label: `Physicality`,
     description: `Reference-free smoothness diagnostics: energy jumps at sign flips (2/5), force-direction flips (2/5) and tortuosity (1/5). Penalizes pathological potential energy curves regardless of DFT reference`,
-    weight: 2 / 9,
+    weight: DEFAULT_CDS_WEIGHTS.physicality,
   },
 }
 

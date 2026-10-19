@@ -2,96 +2,75 @@ import { by_benchmark_added_desc } from '#lib'
 import { MODELS } from '#lib/models.svelte.js'
 import { GET } from '#routes/rss.xml/+server.js'
 import pkg from '#site/package.json'
-import { describe, expect, it } from 'vite-plus/test'
+import { escape_html } from 'matterviz/utils'
+import { describe, expect, it, onTestFinished } from 'vite-plus/test'
+
+const base_url = pkg.homepage.endsWith(`/`) ? pkg.homepage : `${pkg.homepage}/`
+const sorted_models = MODELS.toSorted(by_benchmark_added_desc)
+const cdata_descriptions = (xml: string): string[] =>
+  [
+    ...xml.matchAll(/<description><!\[CDATA\[(?<cdata>[\s\S]*?)\]\]><\/description>/g),
+  ].map((match) => match.groups?.cdata ?? ``)
 
 describe(`RSS feed endpoint`, () => {
-  const extract_first_cdata = (xml: string): string => {
-    const match = /<description><!\[CDATA\[(?<cdata>[\s\S]*?)\]\]><\/description>/.exec(
-      xml,
-    )
-    return match?.groups?.cdata ?? ``
-  }
-
-  it(`should return valid XML with expected structure and content type`, async () => {
+  it(`returns an RSS document with one linked item per model, newest first`, async () => {
     const response = GET()
     expect(response.headers.get(`Content-Type`)).toBe(`application/xml`)
     expect(response.status).toBe(200)
     const xml = await response.text()
 
     expect(xml).toMatch(
-      /<rss xmlns:atom="http:\/\/www\.w3\.org\/2005\/Atom" version="2\.0">/,
+      /^<rss xmlns:atom="http:\/\/www\.w3\.org\/2005\/Atom" version="2\.0">\s*<channel>[\s\S]*<\/channel>\s*<\/rss>$/,
     )
-    expect(xml).toMatch(/<channel>[\s\S]*<\/channel>/)
-    expect(xml).toContain(`</rss>`)
+    expect(xml).toContain(`<title>${escape_html(pkg.name)}</title>`)
+    expect(xml).toContain(`<description>${escape_html(pkg.description)}</description>`)
+    expect(xml).toContain(
+      `<atom:link href="${base_url}rss.xml" rel="self" type="application/rss+xml"/>`,
+    )
 
-    expect(xml).toContain(`<title>${pkg.name}</title>`)
-    expect(xml).toContain(`<description>${pkg.description}</description>`)
-
-    expect(xml).toMatch(/<atom:link href=.*rel="self" type="application\/rss\+xml"\/>/)
-    expect(xml).toMatch(/<link>.*<\/link>/)
-
-    // Validate item structure: the feed contains one item per model
-    const items = [...xml.matchAll(/<item>[\s\S]*?<\/item>/g)]
+    const items = [...xml.matchAll(/<item>[\s\S]*?<\/item>/g)].map((match) => match[0])
     expect(items).toHaveLength(MODELS.length)
-
-    const first_item = items[0]?.[0] ?? ``
-    expect(first_item).toMatch(/<title>.*<\/title>/)
-    expect(first_item).toMatch(/<link>.*<\/link>/)
-    expect(first_item).toMatch(/<description><!\[CDATA\[[\s\S]*?\]\]><\/description>/)
-    expect(first_item).toMatch(/<pubDate>.*<\/pubDate>/)
-    expect(first_item).toMatch(/<guid isPermaLink="true">.*<\/guid>/)
+    for (const [idx, item] of items.entries()) {
+      const { model_key, model_name } = sorted_models[idx]
+      const model_url = `${base_url}models/${model_key}`
+      expect(/<title>(?<title>[^<]*)<\/title>/.exec(item)?.groups?.title).toBe(
+        escape_html(model_name),
+      )
+      expect(item).toContain(`<link>${model_url}</link>`)
+      expect(item).toContain(`<guid isPermaLink="true">${model_url}</guid>`)
+      const pub_date = /<pubDate>(?<date>[^<]+)<\/pubDate>/.exec(item)?.groups?.date
+      expect(new Date(pub_date ?? ``).toString()).not.toBe(`Invalid Date`)
+    }
   })
 
-  it(`should include model details in the description`, async () => {
-    const response = GET()
-    const xml = await response.text()
-
-    const cdata_content = extract_first_cdata(xml)
-    expect(cdata_content).not.toBe(``)
-
-    expect(cdata_content).toMatch(/<h2>[^<]+<\/h2>/) // Model name heading
-    expect(cdata_content).toMatch(/<strong>Metrics:<\/strong>/)
-    expect(cdata_content).toMatch(/<strong>Parameters:<\/strong>[^<]+/)
-
-    // Role is present for every model.
-    expect(cdata_content).toContain(`<strong>Role:</strong>`)
-
-    // Authors section should appear later in the content
-    const metrics_pos = cdata_content.indexOf(`<strong>Metrics:</strong>`)
-    const authors_pos = cdata_content.indexOf(`<strong>Authors:</strong>`)
-    expect(metrics_pos).toBeLessThan(authors_pos)
-
-    const strong_tags = [...cdata_content.matchAll(/<strong>/g)]
-    const strong_close_tags = [...cdata_content.matchAll(/<\/strong>/g)]
-
-    expect(strong_tags.length).toBeGreaterThanOrEqual(5)
-    expect(strong_close_tags.length).toBeGreaterThanOrEqual(5)
+  it(`escapes XML special characters in item titles`, async () => {
+    const [model] = MODELS
+    const { model_name } = model
+    model.model_name = `A & <B>`
+    onTestFinished(() => {
+      model.model_name = model_name
+    })
+    const xml = await GET().text()
+    expect(xml).toContain(`<title>A &amp; &lt;B&gt;</title>`)
+    expect(xml).not.toContain(`<title>A & <B></title>`)
   })
 
-  it(`should include links to model resources`, async () => {
-    const response = GET()
-    const xml = await response.text()
+  it(`describes every model with ordered details and absolute resource links`, async () => {
+    const descriptions = cdata_descriptions(await GET().text())
+    expect(descriptions).toHaveLength(sorted_models.length)
 
-    const base_url = pkg.homepage.endsWith(`/`) ? pkg.homepage : `${pkg.homepage}/`
-
-    expect(xml).toMatch(new RegExp(`<link>${base_url}models/[^<]+</link>`))
-    expect(xml).toMatch(
-      new RegExp(`<guid isPermaLink="true">${base_url}models/[^<]+</guid>`),
+    const [first] = descriptions
+    expect(first).toMatch(/<h2>[^<]+<\/h2>/)
+    expect(first).toMatch(/<strong>Parameters:<\/strong>[^<]+/)
+    expect(first).toContain(`<strong>Role:</strong>`)
+    expect(first.indexOf(`<strong>Metrics:</strong>`)).toBeGreaterThan(-1)
+    expect(first.indexOf(`<strong>Metrics:</strong>`)).toBeLessThan(
+      first.indexOf(`<strong>Authors:</strong>`),
     )
 
-    const model = MODELS[0]
-    expect(xml).toContain(model.model_name)
-    expect(xml).toContain(`models/${model.model_key}`)
-
-    // every item's description links exactly to its detail page plus the model's
-    // paper and repo when set (some models, e.g. EMA-GNN, have paper: null)
-    const descriptions = [
-      ...xml.matchAll(/<description><!\[CDATA\[(?<cdata>[\s\S]*?)\]\]><\/description>/g),
-    ].map((match) => match.groups?.cdata ?? ``)
-    const sorted_models = MODELS.toSorted(by_benchmark_added_desc)
-    expect(descriptions).toHaveLength(sorted_models.length)
+    // each description links to its detail page plus paper and repo when set (some
+    // models, e.g. EMA-GNN, have paper: null); all hrefs are absolute
     expect(sorted_models.some((model_data) => model_data.paper)).toBe(true)
-
     for (const [idx, model_data] of sorted_models.entries()) {
       const links = [...descriptions[idx].matchAll(/<a href="[^"]+">[^<]+<\/a>/g)].map(
         (match) => match[0],
@@ -103,6 +82,8 @@ describe(`RSS feed endpoint`, () => {
           ? [`<a href="${model_data.repo}">View code repository</a>`]
           : []),
       ])
+      for (const match of descriptions[idx].matchAll(/href="(?<url>[^"]+)"/g))
+        expect(match.groups?.url).toMatch(/^https:\/\//)
     }
   })
 
@@ -120,48 +101,5 @@ describe(`RSS feed endpoint`, () => {
 
     const xml = await GET().text()
     expect(xml).toContain(`${hyperparameter_key}: `)
-  })
-
-  it(`should sort models by date in descending order`, async () => {
-    const xml = await GET().text()
-
-    const expected_names = MODELS.toSorted(by_benchmark_added_desc).map(
-      (model) => model.model_name,
-    )
-    const item_names = [...xml.matchAll(/<item>\s*<title>(?<name>[^<]+)<\/title>/g)].map(
-      (match) => match.groups?.name ?? ``,
-    )
-    expect(item_names).toStrictEqual(expected_names)
-
-    // every item carries a parseable pubDate
-    const pub_dates = [...xml.matchAll(/<pubDate>(?<date>[^<]+)<\/pubDate>/g)]
-    expect(pub_dates).toHaveLength(MODELS.length)
-    for (const match of pub_dates) {
-      expect(new Date(match.groups?.date ?? ``).toString()).not.toBe(`Invalid Date`)
-    }
-  })
-
-  it(`should have correct self-reference URL and absolute URLs in descriptions`, async () => {
-    const response = GET()
-    const xml = await response.text()
-
-    expect(xml).toContain(
-      `<atom:link href="${pkg.homepage}/rss.xml" rel="self" type="application/rss+xml"/>`,
-    )
-
-    const descriptions = [
-      ...xml.matchAll(/<description><!\[CDATA\[(?<cdata>[\s\S]*?)\]\]><\/description>/g),
-    ]
-    expect(descriptions).toHaveLength(MODELS.length)
-
-    // URLs in descriptions should be absolute
-    const description = descriptions[0]?.groups?.cdata ?? ``
-    const url_matches = [...description.matchAll(/href="(?<url>[^"]+)"/g)]
-    expect(url_matches.length).toBeGreaterThan(0)
-
-    // All URLs should be absolute (start with https://)
-    for (const match of url_matches) {
-      expect(match.groups?.url?.startsWith(`https://`)).toBe(true)
-    }
   })
 })

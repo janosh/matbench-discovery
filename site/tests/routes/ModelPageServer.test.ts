@@ -4,7 +4,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { gzipSync } from 'node:zlib'
-import { afterEach, describe, expect, it, onTestFinished, vi } from 'vite-plus/test'
+import { describe, expect, it, onTestFinished, vi } from 'vite-plus/test'
 
 const model: Pick<ModelData, `model_key` | `metrics`> = vi.hoisted(() => ({
   model_key: `model-key`,
@@ -23,10 +23,6 @@ const csv_fixture = [
 ].join(`\r\n`)
 
 describe(`model-key routes`, () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
   it.each([undefined, `missing.csv.gz`])(
     `resolves the canonical key with unavailable MD predictions (%s)`,
     async (name) => {

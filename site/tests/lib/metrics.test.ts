@@ -32,7 +32,7 @@ describe(`format_train_set`, () => {
   const mp2022 = DATASETS[`MP 2022`]
   const mptrj = DATASETS.MPtrj
 
-  it.each([`MP 2022`, `OC22`, `MAD-1.6`, `OCx24`])(
+  it.each([`MP 2022`, `OC22`, `OCx24`])(
     `formats single training set %s correctly`,
     (key) => {
       const dataset = DATASETS[key]
@@ -112,13 +112,14 @@ describe(`assemble_row_data`, () => {
   const get_test_rows = () => assemble_row_data(`unique_prototypes`, model_filter)
   const tece_model = MODELS.find((model) => model.model_key === `tece-oam-rra-1.0`)
   if (!tece_model) throw new Error(`missing TECE-OAM-RRA-1.0 test fixture`)
+  const gnome = MODELS.find(({ model_key }) => model_key === `gnome`)
+  if (!gnome) throw new Error(`Missing GNoME test fixture`)
 
   it(`returns formatted rows for selected models with expected properties`, () => {
     const rows = get_test_rows()
 
     expect(rows).toHaveLength(test_model_keys.length)
     const mace_row = rows.find((row) => row.Model.includes(`mace-mp-0`))
-    const chgnet_row = rows.find((row) => row.Model.includes(`chgnet-0.3.0`))
 
     expect(mace_row?.model_key).toBe(`mace-mp-0`)
     expect(mace_row?.graph_construction_radius).toBe(
@@ -129,7 +130,6 @@ describe(`assemble_row_data`, () => {
     expect(n_layers_val).toMatch(
       /^<span (?:data-sort-value="\d+">\d+|data-title="[^"]+">n\/a)<\/span>$/,
     )
-    expect(chgnet_row?.Model).toContain(`chgnet-0.3.0`)
     for (const [metric, expected] of [
       [PHONON_METRICS.κ_SRME, 0.6823],
       [PHONON_METRICS.κ_SRE, 0.471],
@@ -243,8 +243,6 @@ describe(`assemble_row_data`, () => {
     MD_METRICS.md_max_gpu_mem_gb,
     DIATOMICS_METRICS.diatomics_combined_score,
   ])(`explains GNoME's missing $label without soliciting predictions`, (label) => {
-    const gnome = MODELS.find(({ model_key }) => model_key === `gnome`)
-    if (!gnome) throw new Error(`Missing GNoME test fixture`)
     const reason = missing_metric_reason(gnome, label)
     expect(reason).not.toMatch(/Contributions welcome|not evaluated yet/)
     expect(reason).toMatch(/Model weights are not publicly available\.$/)

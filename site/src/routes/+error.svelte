@@ -32,7 +32,7 @@
   {/if}
 
   <p>
-    Back to <a href=".">
+    Back to <a href="/">
       <img src="/favicon.svg" alt={pkg.name} height="30" />
       landing page
     </a>.

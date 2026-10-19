@@ -117,6 +117,7 @@
     <input type="checkbox" bind:checked={manual_cbar_max} />
     <input
       type="range"
+      aria-label="Color bar max"
       disabled={!manual_cbar_max}
       bind:value={cbar_max}
       min={0.01}

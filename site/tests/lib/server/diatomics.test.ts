@@ -1,4 +1,7 @@
+import { ACTIVE_MODELS, has_diatomics_curves } from '#lib/models.svelte.js'
+import * as predictions from '#lib/server/predictions.js'
 import { fetch_diatomics_data, read_md_per_system } from '#lib/server/predictions.js'
+import { load } from '#routes/benchmarks/diatomics/+page.server.js'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { gzipSync } from 'node:zlib'
@@ -6,6 +9,8 @@ import { describe, expect, it, onTestFinished, vi } from 'vite-plus/test'
 
 // skip retry backoff
 vi.mock(`node:timers/promises`, () => ({ setTimeout: () => Promise.resolve() }))
+
+const pred_file = { name: `missing.json.gz`, url: `https://figshare.com/files/123` }
 
 describe(`diatomics server data loader`, () => {
   it(`does not fall back to remote data when local pred_file is corrupt`, async () => {
@@ -16,12 +21,7 @@ describe(`diatomics server data loader`, () => {
 
     await expect(
       fetch_diatomics_data(
-        {
-          pred_file: {
-            name: `diatomics.json.gz`,
-            url: `https://figshare.com/files/123`,
-          },
-        },
+        { pred_file: { ...pred_file, name: `diatomics.json.gz` } },
         { fetch_fn, root_dir: tmp_dir },
       ),
     ).rejects.toThrow(/did not return gzip-compressed JSON/)
@@ -40,10 +40,7 @@ describe(`diatomics server data loader`, () => {
     )
 
     await expect(
-      fetch_diatomics_data(
-        { pred_file: { name: `missing.json.gz`, url: `https://figshare.com/files/123` } },
-        { fetch_fn, max_attempts: 3 },
-      ),
+      fetch_diatomics_data({ pred_file }, { fetch_fn, max_attempts: 3 }),
     ).rejects.toThrow(/Figshare WAF challenge: challenge/)
     expect(fetch_fn).toHaveBeenCalledTimes(1)
     // the WAF-gated figshare.com/files/<id> URL is rewritten to the ndownloader host
@@ -59,18 +56,12 @@ describe(`diatomics server data loader`, () => {
       const fetch_fn = vi.fn<typeof fetch>()
 
       await expect(
-        fetch_diatomics_data(
-          {
-            pred_file: { name: `missing.json.gz`, url: `https://figshare.com/files/123` },
-          },
-          { fetch_fn, max_attempts },
-        ),
+        fetch_diatomics_data({ pred_file }, { fetch_fn, max_attempts }),
       ).rejects.toThrow(`max_attempts must be a positive integer`)
       expect(fetch_fn).not.toHaveBeenCalled()
     },
   )
 
-  const pred_file = { name: `missing.json.gz`, url: `https://figshare.com/files/123` }
   const loaders = {
     diatomics: (fetch_fn: typeof fetch) =>
       fetch_diatomics_data({ pred_file }, { fetch_fn, max_attempts: 3 }),
@@ -102,4 +93,51 @@ describe(`diatomics server data loader`, () => {
       expect(fetch_fn).toHaveBeenCalledTimes(n_calls)
     },
   )
+
+  const load_page = () => load({} as Parameters<typeof load>[0])
+  const diatomics_keys = ACTIVE_MODELS.filter(has_diatomics_curves).map(
+    ({ model_key }) => model_key,
+  )
+
+  it(`page load returns model keys (not ModelData) with homonuclear energies only`, async () => {
+    const curves = {
+      distances: [1, 2],
+      'homo-nuclear': { 'H-H': { energies: [0, 1], forces: [[[0, 0, 0]]] } },
+      'hetero-nuclear': { 'H-He': { energies: [0, 1] } },
+    }
+    vi.spyOn(predictions, `fetch_diatomics_data`).mockResolvedValue(
+      curves as unknown as Awaited<ReturnType<typeof fetch_diatomics_data>>,
+    )
+    const data = await load_page()
+    if (!data) throw new Error(`diatomics load returned nothing`)
+    expect(data.diatomic_model_keys).toHaveLength(diatomics_keys.length)
+    expect(new Set(data.diatomic_model_keys)).toEqual(new Set(diatomics_keys))
+    expect(Object.keys(data).toSorted()).toEqual([
+      `diatomic_curves`,
+      `diatomic_model_keys`,
+      `reference_names`,
+    ])
+    expect(data.diatomic_curves[diatomics_keys[0]]).toEqual({
+      distances: [1, 2],
+      'homo-nuclear': { 'H-H': { energies: [0, 1] } },
+    })
+  })
+
+  it(`page load fails (and so the build) when any model's curves fail to download`, async () => {
+    const failing_key = diatomics_keys[1]
+    vi.spyOn(predictions, `fetch_diatomics_data`).mockImplementation(async (opts) => {
+      if (
+        opts.pred_file ===
+        ACTIVE_MODELS.find(({ model_key }) => model_key === failing_key)?.metrics
+          ?.diatomics?.pred_file
+      )
+        throw new Error(`HTTP 503`)
+      return { distances: [], 'homo-nuclear': {} }
+    })
+    const result = load_page()
+    await expect(result).rejects.toThrow(
+      `Failed to fetch diatomics curves for ${failing_key}`,
+    )
+    await expect(result).rejects.toHaveProperty(`cause.message`, `HTTP 503`)
+  })
 })

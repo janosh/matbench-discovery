@@ -4,6 +4,7 @@ import Page from '#routes/+page.svelte'
 import { flushSync, tick } from 'svelte'
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import {
+  button_for,
   doc_query,
   header_name,
   heatmap_toggle,
@@ -34,13 +35,8 @@ const pressed_toggle = (label: string): string | undefined =>
   toggle_buttons(label)
     .find((button) => button.getAttribute(`aria-checked`) === `true`)
     ?.textContent?.trim()
-const preset_button = (label: string): HTMLButtonElement => {
-  const button = toggle_buttons(label).find(
-    (candidate) => candidate.textContent?.trim() === label,
-  )
-  if (!button) throw new Error(`No preset button found for ${label}`)
-  return button
-}
+const preset_button = (label: string): HTMLButtonElement =>
+  button_for(label, `.button-group button`)
 const table_header = (label: string): HTMLTableCellElement => {
   const header = [...document.querySelectorAll<HTMLTableCellElement>(`thead th`)].find(
     (candidate) => header_name(candidate) === label,
@@ -80,8 +76,8 @@ describe(`Landing Page`, () => {
     ])
     expect(document.body.textContent).toContain(`Discovery test set:`)
     expect(
-      [...document.querySelectorAll(`.button-group [aria-label]`)].map((el) =>
-        el.getAttribute(`aria-label`),
+      [...document.querySelectorAll(`.button-group [aria-label]`)].map((element) =>
+        element.getAttribute(`aria-label`),
       ),
     ).toEqual(expect.arrayContaining([`Column presets`, `Discovery test set`]))
     expect([...document.querySelectorAll(`thead th`)].map(header_name)).toEqual([

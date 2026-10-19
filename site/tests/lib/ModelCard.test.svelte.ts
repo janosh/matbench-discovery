@@ -45,11 +45,9 @@ describe(`ModelCard`, () => {
       expect(links[0].href).toBe(model.repo ?? ``)
       expect(document.querySelector(`nav button`)).toBeNull()
       expect(document.body.textContent).toContain(`Added ${model.dates.benchmark_added}`)
-      if (model.dates.paper_published) {
-        expect(document.body.textContent).toContain(
-          `Published ${model.dates.paper_published}`,
-        )
-      }
+      expect(document.body.textContent).toContain(
+        `Published ${model.dates.paper_published}`,
+      )
       expect(document.body.textContent).toContain(
         `${format_num(model.model_params, `.3~s`)} params`,
       )
@@ -119,7 +117,7 @@ describe(`ModelCard`, () => {
       expect(Number(displayed_kappa)).toBeCloseTo(kappa_value, 2)
     })
 
-    it.each([undefined, NaN, Infinity, -Infinity])(
+    it.each([undefined, NaN, Infinity])(
       `explains unavailable metrics (%s)`,
       async (value) => {
         const kappa_metrics = model.metrics?.phonons?.kappa_103

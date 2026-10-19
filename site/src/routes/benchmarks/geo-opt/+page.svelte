@@ -5,9 +5,9 @@
   import struct_rmsd_cdf from '#figs/struct-rmsd-cdf.jsonl'
   import sym_ops_diff from '#figs/sym-ops-diff-bar.jsonl'
   import MetricsTable from '#lib/table/MetricsTable.svelte'
-  import type { Label } from '#lib/types.js'
+  import type { Label, ModelData } from '#lib/types.js'
   import ModelSelect from '#lib/ModelSelect.svelte'
-  import { ACTIVE_MODELS, make_table_filters } from '#lib/models.svelte.js'
+  import { ACTIVE_MODELS, task_page_filters } from '#lib/models.svelte.js'
   import { by_benchmark_added_desc } from '#lib'
   import { order_models } from '#lib/fig-helpers.js'
   import {
@@ -19,7 +19,6 @@
   } from '#lib/labels.js'
   import { UrlModelSelection } from '#lib/model-selection.svelte.js'
   import DynamicScatter from '#lib/plot/DynamicScatter.svelte'
-  import { bind_url_params } from '#lib/url-state.svelte.js'
   import { min } from 'd3-array'
   import { format_num } from 'matterviz/labels'
   import { pick_contrast_color } from 'matterviz/colors'
@@ -113,16 +112,12 @@
     spg_sankeys.models.filter(({ model_key }) => selected_model_key_set.has(model_key)),
   )
 
-  const filters = make_table_filters()
-
-  const read_url_params = (params: URLSearchParams) => {
-    model_selection.read(params)
-    filters.read(params)
-  }
-  bind_url_params(read_url_params, () => [
-    model_selection.url_entry,
-    ...filters.url_entries,
-  ])
+  const has_geo_opt_metrics = (model: ModelData) => model.metrics?.geo_opt != null
+  const { filters, in_view } = task_page_filters(
+    has_geo_opt_metrics,
+    model_selection.read,
+    () => [model_selection.url_entry],
+  )
 
   const n_min_relaxed_structures =
     min(
@@ -139,7 +134,7 @@
       <MetricsTable
         {filters}
         discovery_set="full_test_set"
-        model_filter={(model) => model.metrics?.geo_opt != null}
+        model_filter={has_geo_opt_metrics}
         column_labels={columns}
         show_row_numbers={false}
         default_sort={{ column: ALL_METRICS.RMSD.key, dir: `asc` }}
@@ -160,7 +155,7 @@
     </p>
     <DynamicScatter
       models={ACTIVE_MODELS}
-      model_filter={(model) => model.metrics?.geo_opt != null}
+      model_filter={in_view}
       bind:x_key={plot.x}
       bind:y_key={plot.y}
       color_key={METADATA_COLS.n_training_materials.key}

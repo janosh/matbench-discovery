@@ -41,20 +41,17 @@ describe(`Benchmarks Page`, () => {
     )
     expect(document.querySelectorAll(`.benchmark-grid .periodic-table`)).toHaveLength(5)
     expect(document.querySelector(`.data-files-list`)).not.toBeNull()
-    expect(doc_query(`a[href="/data/sets"]`)).not.toBeNull()
+    expect(document.querySelector(`a[href="/data/sets"]`)).not.toBeNull()
     for (const [idx, key] of expected.entries()) {
       const card = doc_query(
         `article:nth-child(${idx + 1})`,
         doc_query(`.benchmark-grid`),
       )
+      // tile styling and color bars are covered by the TestSet tests in DataPage.test.ts
       const table = doc_query(`h2 + figure .periodic-table`, card)
       const tiles = [...table.querySelectorAll<HTMLElement>(`[data-element-symbol]`)]
       expect(tiles.filter((tile) => tile.style.opacity !== `0.15`)).toHaveLength(
         [85, 85, 34, 22, 92][idx],
-      )
-      expect(table.querySelector(`.element-tile:not([data-element-symbol])`)).toBeNull()
-      expect(doc_query(`.colorbar`, table).textContent?.includes(`(log)`)).toBe(
-        key !== `diatomics`,
       )
       expect(card.textContent).toContain(MODELING_TASKS[key].description)
       expect(cards[idx].querySelector(`svg`)).not.toBeNull()

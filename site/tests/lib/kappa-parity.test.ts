@@ -10,27 +10,19 @@ import {
   load_kappa_parity_model,
 } from '#lib/parity/kappa-parity.js'
 import type { KappaParityBase, KappaParityModel } from '#lib/parity/kappa-parity.js'
-import { clear_asset_cache } from '#lib/asset-loader.js'
 import * as kappa_parity from '#lib/parity/kappa-parity.js'
 import * as kappa_modes from '#lib/parity/kappa-modes.js'
 import KappaParityPlot from '#lib/plot/KappaParityPlot.svelte'
-import { MODELS } from '#lib/models.svelte.js'
+import kappa_103_analysis from '#figs/kappa-103-analysis.jsonl'
+import { ACTIVE_MODELS, MODELS } from '#lib/models.svelte.js'
 import { tick } from 'svelte'
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  onTestFinished,
-  vi,
-} from 'vite-plus/test'
+import { describe, expect, it, onTestFinished, vi } from 'vite-plus/test'
 import {
   doc_query,
   get_scatter_plot_props,
   gzipped_json_response,
   mount,
-  request_url,
+  stub_json_routes,
 } from '../index.js'
 
 const plot_mocks = vi.hoisted(() => ({
@@ -44,13 +36,6 @@ vi.mock(`matterviz/plot`, () => ({ ScatterPlot: plot_mocks.ScatterPlot }))
 vi.mock(`matterviz/spectral`, () => {
   plot_mocks.spectral_loaded()
   return plot_mocks
-})
-
-beforeEach(clear_asset_cache)
-
-afterEach(() => {
-  vi.unstubAllGlobals()
-  clear_asset_cache()
 })
 
 const base: KappaParityBase = {
@@ -280,47 +265,91 @@ describe(`kappa parity data helpers`, () => {
   it(`loads base and per-model assets through the manifest`, async () => {
     const valid_base = manifest_sized_base()
     const valid_model = manifest_sized_model()
-    const base_url = kappa_parity_asset_url(kappa_parity_manifest.base.asset)
-    const model_url = kappa_parity_asset_url(kappa_model_asset(first_model_key))
-    const fetch_mock = vi.fn((url: RequestInfo | URL) => {
-      const href = request_url(url)
-      if (href === base_url) return gzipped_json_response(valid_base)
-      if (href === model_url) return gzipped_json_response({ model: valid_model })
-      return Promise.resolve(new Response(`missing`, { status: 404 }))
+    const fetch_mock = stub_json_routes({
+      [kappa_parity_asset_url(kappa_parity_manifest.base.asset)]: valid_base,
+      [kappa_parity_asset_url(kappa_model_asset(first_model_key))]: {
+        model: valid_model,
+      },
     })
-    vi.stubGlobal(`fetch`, fetch_mock)
 
     await expect(load_kappa_parity_base()).resolves.toEqual(valid_base)
     await expect(load_kappa_parity_model(first_model_key)).resolves.toEqual(valid_model)
+    expect(fetch_mock).toHaveBeenCalledTimes(2)
   })
 
-  it.each([`kappa_dft`, `n_sites`, `spacegroups`] as const)(
-    `rejects base %s with the wrong row count`,
-    async (field) => {
-      const valid_base = manifest_sized_base()
+  it.each([
+    ...([`kappa_dft`, `n_sites`, `spacegroups`] as const).map((field) => ({
+      field,
+      load: load_kappa_parity_base,
+      asset: (rows?: number[]) => manifest_sized_base(rows && { [field]: rows }),
+      valid: manifest_sized_base(),
+    })),
+    {
+      field: `${first_model_key}.kappa_ml`,
+      load: () => load_kappa_parity_model(first_model_key),
+      asset: (rows?: number[]) => ({
+        model: manifest_sized_model(rows && { kappa_ml: rows }),
+      }),
+      valid: manifest_sized_model(),
+    },
+  ])(
+    `rejects $field with the wrong row count, then retries`,
+    async ({ field, load, asset, valid }) => {
       const fetch_mock = vi
-        .fn(() => gzipped_json_response(valid_base))
-        .mockImplementationOnce(() =>
-          gzipped_json_response(manifest_sized_base({ [field]: [1] })),
-        )
+        .fn(() => gzipped_json_response(asset()))
+        .mockImplementationOnce(() => gzipped_json_response(asset([1])))
       vi.stubGlobal(`fetch`, fetch_mock)
-      await expect(load_kappa_parity_base()).rejects.toThrow(
-        `Invalid kappa parity ${field}: expected ${kappa_parity_manifest.row_count} rows`,
+      await expect(load()).rejects.toThrow(
+        `Invalid kappa parity ${field}: expected ${kappa_parity_manifest.row_count} rows, got 1`,
       )
-      await expect(load_kappa_parity_base()).resolves.toEqual(valid_base)
+      await expect(load()).resolves.toEqual(valid)
       expect(fetch_mock).toHaveBeenCalledTimes(2)
     },
   )
 
-  it(`rejects model data with the wrong row count`, async () => {
-    vi.stubGlobal(
-      `fetch`,
-      vi.fn(() =>
-        gzipped_json_response({ model: manifest_sized_model({ kappa_ml: [1] }) }),
+  it(`kappa-103 analysis payload matches the models' aggregate phonon metrics`, () => {
+    const n_materials = kappa_103_analysis.material_ids.length
+    for (const values of [
+      kappa_103_analysis.formulas,
+      kappa_103_analysis.spg_nums,
+      kappa_103_analysis.kappa_dft,
+    ]) {
+      expect(values).toHaveLength(n_materials)
+    }
+    expect(
+      kappa_103_analysis.spg_nums.every(
+        (spg_num) => Number.isInteger(spg_num) && spg_num >= 1 && spg_num <= 230,
       ),
-    )
-    await expect(load_kappa_parity_model(first_model_key)).rejects.toThrow(
-      `Invalid kappa parity ${first_model_key}.kappa_ml: expected ${kappa_parity_manifest.row_count} rows`,
-    )
+    ).toBe(true)
+
+    for (const entry of kappa_103_analysis.models) {
+      for (const values of [
+        entry.kappa_ml,
+        entry.srme,
+        entry.srme_censored,
+        entry.imag_modes,
+        entry.broken_sym,
+        entry.max_steps,
+        entry.freq_w1,
+      ]) {
+        expect(values).toHaveLength(n_materials)
+      }
+      const metrics = ACTIVE_MODELS.find(
+        (candidate) => candidate.model_key === entry.model_key,
+      )?.metrics?.phonons?.kappa_103
+      if (!metrics) throw new Error(`missing phonon metrics for ${entry.model_key}`)
+      const payload_failure_rate =
+        entry.srme_censored.filter((value) => value === true).length / n_materials
+      expect(payload_failure_rate).toBeCloseTo(metrics.κ_failure_rate, 4)
+
+      const payload_imaginary_rate =
+        entry.imag_modes.filter((value) => value === true).length / n_materials
+      expect(payload_imaginary_rate).toBeCloseTo(metrics.imaginary_mode_rate, 4)
+      if (metrics.spectrum_w1 === null) {
+        expect(entry.freq_w1_mean).toBeNull()
+      } else {
+        expect(entry.freq_w1_mean).toBeCloseTo(metrics.spectrum_w1, 4)
+      }
+    }
   })
 })

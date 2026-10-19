@@ -40,6 +40,8 @@
     leading?: Snippet
     trailing?: Snippet
   } = $props()
+  // radio groups need a name unique to this instance and its mobile/desktop copy
+  const uid = $props.id()
   let selected_count = $derived(comparison.keys.size)
   const target_outputs = Object.entries(TARGET_OUTPUTS) as [TargetOutput, string][]
   const counts = $derived.by(() => {
@@ -177,7 +179,7 @@
   </div>
 {/snippet}
 
-{#snippet target_filters()}
+{#snippet target_filters(mobile: boolean)}
   <div class="filter-content train-grid">
     <span class="hint">
       Every model predicts energy (E). <em>require</em>/<em>exclude</em> filter by the other
@@ -204,6 +206,8 @@
             {mode} ({counts.fs_modes[mode] ?? 0})
             <input
               type="radio"
+              name="fs-mode-{uid}-{mobile ? `mobile` : `desktop`}"
+              value={mode}
               checked={filters.fs_mode === mode}
               onchange={() => (filters.fs_mode = mode)}
             />
@@ -214,11 +218,16 @@
   </div>
 {/snippet}
 
-{#snippet filter_section(mobile: boolean, label: string, title: string, content: Snippet)}
+{#snippet filter_section(
+  mobile: boolean,
+  label: string,
+  title: string,
+  content: Snippet<[boolean]>,
+)}
   {#if mobile}
     <section class="sheet-section">
       <h3>{label}</h3>
-      {@render content()}
+      {@render content(mobile)}
     </section>
   {:else}
     <!-- no focus trap: focusing the first checkbox on open would pop its tooltip. The
@@ -238,7 +247,7 @@
           {label}
         </button>
       {/snippet}
-      {@render content()}
+      {@render content(mobile)}
     </Popover>
   {/if}
 {/snippet}
@@ -408,7 +417,6 @@
   .active-filters {
     flex-basis: 100%;
     display: flex;
-    flex-wrap: wrap; /* fallback where balance is unsupported */
     flex-wrap: balance;
     justify-content: center;
     align-items: center;

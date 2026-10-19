@@ -102,7 +102,7 @@ export function bind_comparison_url(): void {
 
 // A piece of a text cell: plain text, optionally linked (site-relative or external) and/or
 // with a hover tooltip carrying details that don't fit in the cell
-export type CellPart = { text: string; href?: string; title?: string }
+type CellPart = { text: string; href?: string; title?: string }
 // A comparison row is a metric/metadata label, optionally with a custom accessor for
 // values not addressable by a dotted path (protocol summaries). `parts`
 // renders text cells richly (links, tooltips); `title` adds a tooltip to numeric cells.
@@ -111,7 +111,7 @@ export type CompareRow = Label & {
   parts?: (model: ModelData) => CellPart[] | undefined
   title?: (model: ModelData) => string | undefined
 }
-export type CompareGroup = { title: string; href?: string; rows: CompareRow[] }
+type CompareGroup = { title: string; href?: string; rows: CompareRow[] }
 
 const row_value = (row: CompareRow, model: ModelData): unknown =>
   row.value ? row.value(model) : metric_value(model, row)
@@ -353,7 +353,7 @@ export const COMPARE_GROUPS: CompareGroup[] = [
   },
 ]
 
-export type CompareCell = {
+type CompareCell = {
   text: string
   parts?: CellPart[] // rich rendering of a text cell (links, per-part tooltips)
   title?: string // hover tooltip for a numeric cell

@@ -5,11 +5,13 @@ import type { ScatterPlot } from 'matterviz/plot'
 import { tick, type ComponentProps } from 'svelte'
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import {
-  heatmap_toggle,
+  button_for,
   doc_query,
+  expect_table_url_state,
   filter_summary_badge,
   get_scatter_plot_props,
   header_name,
+  heading_texts,
   mount,
   mount_with_url,
   sorted_header,
@@ -38,19 +40,6 @@ const toggle_labels = (): (string | undefined)[] =>
     button.textContent?.trim(),
   )
 
-const button_for = (label: string): HTMLButtonElement => {
-  const button = [...document.querySelectorAll<HTMLButtonElement>(`button`)].find(
-    (candidate) => candidate.textContent?.trim() === label,
-  )
-  if (!button) throw new Error(`No button found for ${label}`)
-  return button
-}
-
-const heading_texts = (): (string | undefined)[] =>
-  [...document.querySelectorAll(`h2`)].map((heading) =>
-    heading.textContent?.replaceAll(/\s+/g, ` `).trim(),
-  )
-
 describe(`Discovery Task Page`, () => {
   beforeEach(() => plot_mocks.ScatterPlot.mockClear())
 
@@ -62,10 +51,9 @@ describe(`Discovery Task Page`, () => {
     )
     expect(document.querySelector(`[aria-label="Discovery test set"]`)).not.toBeNull()
 
-    const table = document.querySelector(`section.full-bleed table`)
-    expect(table).not.toBeNull()
-
-    const headers = [...document.querySelectorAll(`th`)].map(header_name)
+    const headers = [...doc_query(`section.full-bleed table`).querySelectorAll(`th`)].map(
+      header_name,
+    )
     for (const col of [`Model`, `F1`, `DAF`, `Links`, `Added`]) {
       expect(headers).toContain(col)
     }
@@ -80,7 +68,6 @@ describe(`Discovery Task Page`, () => {
       `Methodology`,
     ])
     expect(doc_query(`#methodology + h3`).closest(`details`)).toBeNull()
-    expect(comparison_scatter_props()).toBeDefined()
     expect(document.body.textContent).toContain(`Convex Hull Construction`)
   })
 
@@ -155,10 +142,7 @@ describe(`Discovery Task Page`, () => {
     expect(filter_summary_badge(`Targets`)).toContain(`(F,S,gradient)`)
     expect(heading_texts()).toContainEqual(expect.stringContaining(`RMSD vs F1`))
     expect(filter_summary_badge(`Training data`)).toContain(`(2)`)
-    expect((await heatmap_toggle()).checked).toBe(false)
-    const header = sorted_header()
-    expect(header?.textContent).toContain(`F1`)
-    expect(header?.getAttribute(`aria-sort`)).toBe(`ascending`)
+    await expect_table_url_state(`F1`, `ascending`)
 
     // the default set is dropped from the URL, any other set is written back
     button_for(`Unique Prototypes`).click()

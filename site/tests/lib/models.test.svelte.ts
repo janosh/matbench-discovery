@@ -74,8 +74,7 @@ describe(`MODELS array`, () => {
 })
 
 describe(`MODEL_METADATA_PATHS`, () => {
-  it(`should be defined and be an object`, () => {
-    expect(typeof MODEL_METADATA_PATHS).toBe(`object`)
+  it(`covers every model key in the per-element error data`, () => {
     const model_keys = new Set(
       Object.values(MODEL_METADATA_PATHS).map((model) => model.model_key),
     )
@@ -252,14 +251,7 @@ describe(`update_models_cps`, () => {
     update_models_cps(MODELS, CPS_CONFIG)
   })
 
-  it(`should update CPS for models based on metrics and current weights`, () => {
-    update_models_cps(MODELS, CPS_CONFIG)
-
-    const models_with_cps = MODELS.filter((model) => !isNaN(Number(model.CPS)))
-    expect(models_with_cps.length).toBeGreaterThan(0)
-  })
-
-  it(`should set CPS to NaN when required metrics are missing`, () => {
+  it(`sets CPS to NaN for models missing a required metric`, () => {
     // weights requiring every metric to be present
     CPS_CONFIG.F1.weight = 0.3
     CPS_CONFIG.RMSD.weight = 0.3
@@ -295,7 +287,8 @@ describe(`update_models_cps`, () => {
     expect(model.CPS).not.toBe(calculate_cps(undefined, 0.2, undefined, rmsd_only_config))
   })
 
-  it(`should handle different weight configurations correctly`, () => {
+  // all-NaN arrays compare equal, so the inequalities also require some finite CPS
+  it(`different weight configs yield different CPS`, () => {
     // only F1 matters
     CPS_CONFIG.F1.weight = 1.0
     CPS_CONFIG.RMSD.weight = 0.0

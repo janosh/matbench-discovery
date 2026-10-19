@@ -268,6 +268,9 @@ export default {
     css: true,
     pool: `threads`,
     testTimeout: 15_000,
+    // undo vi.stubGlobal/vi.stubEnv after every test, so files need no manual cleanup
+    unstubGlobals: true,
+    unstubEnvs: true,
     coverage: {
       reporter: [`text`, `json-summary`],
     },

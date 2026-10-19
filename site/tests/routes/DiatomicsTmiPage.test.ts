@@ -1,7 +1,7 @@
 import DiatomicsTmiPage from '#routes/benchmarks/diatomics/tmi/+page.svelte'
 import { tick } from 'svelte'
-import { afterEach, expect, it, vi } from 'vite-plus/test'
-import { get_scatter_plot_props, mount_with_url } from '../index.js'
+import { expect, it, vi } from 'vite-plus/test'
+import { button_for, get_scatter_plot_props, mount_with_url } from '../index.js'
 
 const plot_mocks = vi.hoisted(() => ({
   ScatterPlot: vi.fn(),
@@ -13,16 +13,6 @@ type PlotSeries = { id: string; x: number[]; y: number[] }
 
 const plotted_series = (): PlotSeries[] =>
   (get_scatter_plot_props(plot_mocks.ScatterPlot) as { series: PlotSeries[] }).series
-
-function button_for(text: string, selector = `button`): HTMLButtonElement {
-  const button = [...document.querySelectorAll<HTMLButtonElement>(selector)].find(
-    (candidate) => candidate.textContent?.trim() === text,
-  )
-  if (!button) throw new Error(`${text} button not found`)
-  return button
-}
-
-afterEach(() => vi.unstubAllGlobals())
 
 it(`filters TMI elements and functionals while preserving curve gaps`, async () => {
   vi.stubGlobal(`IntersectionObserver`, undefined)

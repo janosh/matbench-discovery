@@ -3,12 +3,11 @@
   import TaskNavigation from '#lib/benchmark/TaskNavigation.svelte'
   import MetricsTable from '#lib/table/MetricsTable.svelte'
   import DiscoverySetToggle from '#lib/DiscoverySetToggle.svelte'
-  import { ACTIVE_MODELS, make_table_filters } from '#lib/models.svelte.js'
+  import { ACTIVE_MODELS, task_page_filters } from '#lib/models.svelte.js'
   import DynamicScatter from '#lib/plot/DynamicScatter.svelte'
-  import { bind_url_params } from '#lib/url-state.svelte.js'
   import { valid_query_param } from 'svelte-widgets/url-params'
   import * as labels from '#lib/labels.js'
-  import { DISCOVERY_SETS, type DiscoverySet } from '#lib/types.js'
+  import { DISCOVERY_SETS, type DiscoverySet, type ModelData } from '#lib/types.js'
   import HullConstructionNote from './hull-construction-note.md'
 
   const default_discovery_set: DiscoverySet = `unique_prototypes`
@@ -20,27 +19,20 @@
   const discovery_sets = new Set<DiscoverySet>(DISCOVERY_SETS)
 
   let discovery_set: DiscoverySet = $state(default_discovery_set)
-  const filters = make_table_filters()
-  let visible_models = $derived(
-    ACTIVE_MODELS.filter(
-      (model) =>
-        model.metrics?.discovery?.[discovery_set] != null && filters.matches(model),
-    ),
+  const has_discovery_metrics = (model: ModelData) =>
+    model.metrics?.discovery?.[discovery_set] != null
+  const { filters, in_view } = task_page_filters(
+    has_discovery_metrics,
+    (params) => {
+      discovery_set = valid_query_param(
+        params,
+        `set`,
+        default_discovery_set,
+        discovery_sets,
+      )
+    },
+    () => [[`set`, discovery_set, default_discovery_set]],
   )
-
-  const read_url_params = (params: URLSearchParams) => {
-    discovery_set = valid_query_param(
-      params,
-      `set`,
-      default_discovery_set,
-      discovery_sets,
-    )
-    filters.read(params)
-  }
-  bind_url_params(read_url_params, () => [
-    [`set`, discovery_set, default_discovery_set],
-    ...filters.url_entries,
-  ])
 </script>
 
 <h1 id="crystal-stability-prediction-metrics">Crystal Stability Prediction Metrics</h1>
@@ -71,7 +63,7 @@
         labels.METADATA_COLS.benchmark_added,
       ].includes(col)}
     {discovery_set}
-    model_filter={(model) => model.metrics?.discovery?.[discovery_set] != null}
+    model_filter={has_discovery_metrics}
     {filters}
     default_sort={{ column: labels.ALL_METRICS.F1.key, dir: `desc` }}
   />
@@ -89,7 +81,8 @@
 <!-- color by energy MAE: an orthogonal 3rd axis (the default color is F1, which is
 already the y-axis here, so it wastes the color channel) -->
 <DynamicScatter
-  models={visible_models}
+  models={ACTIVE_MODELS}
+  model_filter={in_view}
   bind:x_key={plot.x}
   bind:y_key={plot.y}
   color_key={labels.ALL_METRICS.MAE.key}
