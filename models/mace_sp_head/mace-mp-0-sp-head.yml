@@ -17,7 +17,7 @@ trained_by:
 repo: https://github.com/Ephemeral6/mace-sp-head
 doi: null
 paper: null
-pr_url: null
+pr_url: https://github.com/janosh/matbench-discovery/pull/407
 checkpoint_url: https://github.com/Ephemeral6/mace-sp-head/releases/download/v0.1.0/mace-mp-0-sp-head-heads.zip
 license:
   code: MIT
