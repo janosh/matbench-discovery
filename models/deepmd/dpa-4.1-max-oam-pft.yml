@@ -40,7 +40,7 @@ repo: https://github.com/deepmodeling/deepmd-kit
 doi: https://doi.org/10.48550/arXiv.2606.02419
 paper: https://arxiv.org/abs/2606.02419
 docs: https://github.com/deepmodeling/deepmd-kit
-pr_url: null # TODO: set to the upstream pull request URL once it is opened
+pr_url: null
 checkpoint_url: https://ndownloader.figshare.com/files/70836393
 license:
   code: LGPL-3.0
@@ -62,10 +62,16 @@ test_task: IS2RE-SR
 targets: EFSH_G
 training_sets: [MPtrj, OMat24, sAlex, MDR-MP PBE ω_q]
 fine_tune: true
-model_params: 99005146 # trainable parameters, counted from the checkpoint
+model_params: 99005146
 training_cost:
-  # PFT fine-tune only; the base model's cost is in dpa-4.1-max-oam.yml
+  reason: Includes DPA-4.1-Max-OAM training and additional phonon fine-tuning.
   entries:
+  - hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition
+    count: 16
+    hours_per_device: 210.38375
+  - hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition
+    count: 2
+    hours_per_device: 80.055
   - hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition
     count: 4
     hours_per_device: 7.86
@@ -79,50 +85,25 @@ hyperparams:
       protocol: phonondb-v1
       displacement_distance: 0.03
       save_forces: true
+  architecture:
+    preset: dpa4-max-v20260911
   training:
     optimizer: AdamW
-    learning_rate: 5.0e-06
-    epochs: 3
-  upstream_config:
-    base_model: dpa-4.1-max-oam
-    seed: 20261022 # the trainer default; no seed was passed
-    weight_decay: 0.001
-    warmup_steps: 50
-    ema_decay: 0.999
-    grad_clip_norm: 1000.0
-    cycles_per_epoch: 499
-    pft_structures_per_cycle: 16
-    max_graph_edges: 11000
-    finite_difference_step: 0.01 # Å, central differences for Hessian columns and anchor directions
-    loss_weights:
-      hessian: 2000
-      force: 20
-      stress: 5
-      energy: 0
-    soft_mode_protection:
-      weight: 100 # total, split evenly over the anchor terms of a step
-      anchors: 64 # MPtrj training structures chosen by a rule fixed before training (see notes.training)
-      max_anchors_per_step: 8
-      anchor_terms_per_step: 8 # min(8, 64 anchors), weight 12.5 each
-      candidate_modes_per_anchor: 6 # one drawn at random for each anchor term
-      supercell: [2, 2, 2]
-    cotrain:
-      dataset: MPtrj
-      max_atoms: 300
-      updates_per_cycle: 4
-      frames_per_update: 16
-      loss_weights:
-        energy: 500
-        force: 200
-        stress: 50
 notes:
-  description: 'DPA-4.1-Max-OAM-PFT is DPA-4.1-Max-OAM after phonon fine-tuning (PFT) on Hessians from the MDR-MP PBE ω_q dataset, with MPtrj co-training and a soft-mode protection term.'
-  training: 'Starts from the released DPA-4.1-Max-OAM checkpoint. PFT data: MDR-MP PBE ω_q (Figshare 31049869, CC-BY-4.0) with Hessian labels; forces and stresses are zero (equilibrium structures) and energies are not trained. We used a deduplicated subset: every entry whose chemical formula appears in κ-103 (70 formulas) was removed, leaving 8,350 training and 442 validation entries, and 366 training entries whose graphs exceed 11,000 edges were dropped, so 7,984 training entries were used. Each training cycle takes 16 PFT structures (loss weights: Hessian 2000, force 20, stress 5, energy 0) plus the soft-mode protection term (weight 100), followed by 4 MPtrj co-training updates of 16 frames each (energy, force and stress weights 500, 200 and 50). The protection term uses 64 anchors: MPtrj training structures of 3 to 8 atoms in which the base model has imaginary Gamma-point modes, chosen by a rule fixed before training that excludes every chemical formula in κ-103 (the rule is given in the training script). In each PFT step it draws 8 of the 64 anchors without replacement and, for each, one of its six softest modes at random: the lowest non-translational eigenvectors of the base model''s Hessian for the anchor''s 2x2x2 supercell, unstable modes included. Each term keeps the model''s Hessian along that mode close to the base model''s, and the protection weight of 100 is split evenly over the eight terms. Optimizer AdamW with a constant learning rate of 5e-6 after a 50-step linear warm-up and weight decay 1e-3; EMA decay 0.999, and the EMA weights are released. Training runs 3 epochs of 499 cycles on 4 NVIDIA RTX PRO 6000 Blackwell Server Edition GPUs (7.86 h). Script: models/deepmd/train_dpa_4_1_max_oam_pft.py.'
-  checkpoint: 'EMA weights at the end of epoch 3 (cycle 1,497) of the run with seed 20261022; 396,378,582 bytes, md5 0a36ac5b62b4d0512fd776546ca24c77.'
-  disclosure: 'The Hessian loss weight of 2000 was chosen with reference to κ-103: in earlier runs the κ-103 error decreased as the weight went from 300 to 1000, so we raised it further. The soft-mode anchors were selected by a rule fixed before training that excludes every chemical formula in κ-103, and their targets are the base model''s own Hessians rather than DFT labels. The submitted checkpoint is the fixed endpoint at the end of epoch 3, not an intermediate checkpoint.'
-  predictions: 'Discovery predictions are the 4-decimal output of the official writer. Metrics were computed with matbench-discovery commit 2b7bff925a6aff10240cf6ef0f59149f51adff7b, κ-103 with its runner and phono3py 3.30.0.'
-  md_diatomics: 'MD and diatomics used the frozen AOTInductor (.pt2) export of the checkpoint (dp --pt freeze), run with Python 3.14.7, PyTorch 2.13.0+cu130 and DeePMD-kit 3.2.1.dev36+ga78bdfe8d, one process per NVIDIA RTX PRO 6000 Blackwell Server Edition GPU. MD: 20 ps NVT for each of the 17 DynaMat v1.0 systems (80,000 steps of 0.25 fs, every 10th step recorded, seed 0); run_time_sec is the sum of the 17 per-system wall times. At frames 0, 4,000 and 8,000 of every trajectory, energies, forces and stresses from the eager checkpoint agree with the frozen model (largest differences over the 51 checks: 5.7e-7 eV/atom, 1.1e-5 eV/Å and 5.3e-8 eV/Å³). Energy and force RMSE need the private labeled reference and are not included. Diatomics: 92 homonuclear curves (H to U) at 119 geometrically spaced distances from 0.1 to 6 Å.'
-  diatomics_short_range: 'Diatomic curves were computed with the frozen (AOTInductor .pt2) export of the checkpoint. At short range the frozen and eager float32 models differ above the 1e-4 parity tolerance for Ne and Ar (relative L2 force difference 3.4e-4 and 1.7e-4); a float64 evaluation of the same parameters shows that both float32 paths deviate from it by similar amounts (Ne: 5.9e-4 frozen, 6.3e-4 eager; Ar: 9.8e-5 frozen, 1.4e-4 eager), so the difference is float32 round-off. Replacing the 12 parity-checked curves by their eager versions, or the Ne and Ar curves by their float64 versions, changes no mean metric by more than 2.1e-4 (relative) and leaves metric coverage unchanged. No elements were excluded.'
+  description: >-
+    DPA-4.1-Max-OAM-PFT is a phonon-fine-tuned DPA4 potential based on
+    DPA-4.1-Max-OAM. It retains the SE(3)-equivariant architecture and energy-derived
+    forces and stresses of the base model. Fine-tuning uses Hessian labels from MDR-MP
+    PBE ω_q, MPtrj co-training and a regularizer preserving the base model's soft-mode
+    response.
+  disclosure: >-
+    The Hessian-loss weight was selected using κ-103 results; κ-103 therefore informed
+    model development. Chemical formulas present in κ-103 were excluded from the PFT
+    data and anchor selection. The submitted checkpoint is the final training
+    endpoint.
+  evaluation: >-
+    MD energy and force RMSEs are not reported because the labeled reference data are
+    not publicly available.
 
 metrics:
   discovery:

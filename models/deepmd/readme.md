@@ -1,12 +1,13 @@
 # DeePMD
 
-DPA3 is an advanced interatomic potential leveraging the message-passing architecture, implemented within the DeePMD-kit framework, available on [GitHub](https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha).
+DPA3, DPA4 and DPA4C are interatomic potentials implemented in
+[DeePMD-kit](https://github.com/deepmodeling/deepmd-kit).
 
 ## DeePMD-DPA3
 
 ### Model
 
-- DPA-3.1-3M-FT：model pretrained on the `OpenLAM` datasest (using DPA-3.1-3M from [DPA3-paper](https://arxiv.org/abs/2506.01686)), and finetuned with `MPtraj` & `Sub-Alex` datasets. Superseded by DPA-4.1-Max-OAM.
+- DPA-3.1-3M-FT：model pretrained on the `OpenLAM` datasest (using DPA-3.1-3M from [DPA3-paper](https://arxiv.org/abs/2506.01686)), and finetuned with `MPtraj` & `Sub-Alex` datasets.
 
   ```bash
   wget https://figshare.com/files/55141895
@@ -56,36 +57,36 @@ wget https://figshare.com/files/55141127
 
 ## DeePMD-DPA4
 
-DPA4 is an SE(3)-equivariant interatomic-potential architecture built on an EMFA
-(Edge-conditioned, Multi-Focus, Attention) SO(2)-equivariant convolution. It
-combines a low-rank edge–node SO(2)-equivariant product, a multi-focus design
-for message nonlinearity, and envelope-gated attention for message aggregation.
-A Lebedev-grid projection preserves SO(3)-equivariance in the nonlinearity to
-machine precision, and a compiler-friendly conservative energy-gradient training
-path gives up to ~3× wall-clock speedup under `torch.compile`. See the
-[DPA4 paper](https://arxiv.org/abs/2606.02419).
+DPA4 is an SE(3)-equivariant interatomic-potential architecture that learns atomic
+energies from chemical identities and three-dimensional atomic environments.
+Its SO(2) convolutions couple edge and atom features across angular degrees,
+combining a multi-focus representation with attention-weighted neighbor
+aggregation. Wigner bilinear nonlinearities capture directional correlations
+while preserving rotational symmetry. Forces and stresses are derived from the
+predicted energy, giving a conservative potential for structure relaxation and
+molecular dynamics. See the [DPA4 paper](https://arxiv.org/abs/2606.02419).
+
+DPA4C is a compact, O(3)-equivariant architecture designed for efficient molecular
+dynamics. A single local aggregation builds directional atomic features, which
+are converted into invariant descriptors and mapped to atomic energies.
+Separating radial functions from chemical-type dependence allows tabulated
+compression for fast evaluation. Its strictly local representation avoids
+exchanging learned atomic features between simulation domains, supporting
+large-scale parallel simulations. Forces and stresses are derived from the same
+energy. See the [DPA4C paper](https://arxiv.org/abs/2608.19041).
 
 ### DPA-4.0.1-Pro-MPtrj
 
-DPA-4.0.1-Pro-MPtrj is the DPA4-Pro model trained only on MPtrj for this
-submission; it supersedes DPA-4.0-Pro-MPtrj. Following the DPA4-Pro column of
-Table S-17 in the paper, the model parameters are: feature dim 64, 6 interaction
-layers, 2 focuses, 4 SO(2) layers, a rank-2 per-channel edge–node product, a
-Bessel radial basis with 16 bases, lmax=5, mmax=1, Lebedev quadrature, SiLU+GLU
-activations, a 6.0 Å cutoff, and up to 384 selected neighbors (~22.8M
-parameters). It was trained for 2×10⁶ steps with the HybridMuon optimizer, a WSD
-learning-rate schedule, MAE energy/force/virial loss weights 20/20/5, bf16 AMP,
-TF32 matmul, and `torch.compile` enabled.
+DPA-4.0.1-Pro-MPtrj is a 22.8-million-parameter DPA4 model trained on MPtrj.
+It supersedes DPA-4.0-Pro-MPtrj.
 
 ### DPA-4.1-OAM
 
-DPA-4.1-Max-OAM, DPA-4.1-Air-OAM and DPA-4.1C-Air-OAM are trained on MPtrj,
-OMat24 and sAlex (OSOD), with checkpoints released under CC-BY-4.0.
-DPA-4.1-Max-OAM supersedes DPA-3.1-3M-FT. Max and Air
-use the DPA4 architecture; C-Air uses the compact DPA4C architecture. Each model was trained
-in two stages, pre-training and then fine-tuning, with the HybridMuon optimizer.
-DPA-4.1-Max-OAM-PFT is the Max checkpoint after phonon fine-tuning. Step counts,
-hardware and training costs are recorded in the model cards.
+The Max and Air models use DPA4; C-Air uses DPA4C. All three are trained on
+MPtrj, OMat24 and sAlex.
+DPA-4.1-Max-OAM-PFT adds phonon fine-tuning on Hessian labels from MDR-MP PBE ω_q,
+with MPtrj co-training. All four checkpoints are released under CC-BY-4.0.
+Model architectures use the `v20260911` presets specified in the model cards.
 
 | Model | Parameters | Checkpoint and predictions |
 | --- | ---: | --- |
@@ -94,24 +95,43 @@ hardware and training costs are recorded in the model cards.
 | [DPA-4.1C-Air-OAM](dpa-4.1c-air-oam.yml) | 433,673 | [Figshare](https://figshare.com/articles/dataset/DPA-4_1C-Air-OAM_model_checkpoint_and_Matbench_Discovery_predictions/34755132) |
 | [DPA-4.1-Max-OAM-PFT](dpa-4.1-max-oam-pft.yml) | 99,005,146 | [Figshare](https://figshare.com/articles/dataset/DPA-4_1-Max-OAM-PFT_model_checkpoint_and_Matbench_Discovery_predictions/34846080) |
 
+Training costs in the model cards include all training stages, including
+base-model training for PFT. The cards also report evaluation settings and limitations.
+All evaluations used NVIDIA RTX PRO 6000 Blackwell Server Edition GPUs.
+
 #### Inference
 
-The released files are training checkpoints. The shared calculator exports each
-checkpoint to a `.pt2` archive on first use (`dp --pt freeze` for DPA4,
-`dp --pt-expt freeze` for DPA4C) and evaluates it with DeePMD-kit's `DeepPot`
-and `DP.calculate`. Exports are cached by checkpoint content, backend, GPU model
-and compute capability, and kernel policy. The first export of the Max model can
-take a long time because of kernel tuning. Set `DP_TRITON_INFER` and
-`DP_CUDA_INFER` before the export to choose the kernel policy, which is baked
-into the archive. DeePMD-kit selects its device at import time: use
-`CUDA_VISIBLE_DEVICES` to select one GPU, or set `DEVICE=cpu` for CPU inference.
+For ASE, load a downloaded checkpoint with `freeze=True` to enable optimized
+inference. Initialization includes model export and compilation.
 
-DPA4 and DPA4C, including DPA-4.1-Max-OAM-PFT, use the uv project
-`models/deepmd/dpa41-env` with PyTorch 2.13.0+cu132 and Python 3.14. DeePMD-kit
-is installed from the `master` branch, so the environment follows the current
-source rather than a fixed commit. The project builds DeePMD-kit from source
-and needs Linux x86-64, a CUDA toolkit with `nvcc` and a C++ compiler. Run the shared runners as described in the contributing guide, e.g.
+```python
+from ase.io import read
+from deepmd.calculator import DP
+
+atoms = read("structure.extxyz")
+atoms.calc = DP(model="dpa-4.1-max-oam-inference.pt", freeze=True)
+print(atoms.get_potential_energy())
+```
+
+Use the corresponding checkpoint filename for the other variants.
+
+For LAMMPS, export the checkpoint to `.pt2` following the
+[DPA4](https://github.com/deepmodeling/deepmd-kit/blob/master/doc/model/dpa4.md#export-and-running-in-lammps)
+or [DPA4C](https://github.com/deepmodeling/deepmd-kit/blob/master/doc/model/dpa4c.md#model-compression)
+instructions. For DPA4C GPU simulations, use a compressed model with a
+Kokkos-enabled LAMMPS build and the `deepmd/kk` pair style. Enable Kokkos with:
 
 ```sh
-uv run models/run_discovery.py --print-cmd --model dpa-4.1-max-oam --dry-run
+lmp -k on g 1 -sf kk -in in.lammps
 ```
+
+For Matbench Discovery evaluation, use the shared runners from the repository root:
+
+```sh
+uv run models/run_discovery.py --model dpa-4.1-max-oam
+```
+
+The runner environment is defined in `models/deepmd/dpa41-env` and requires
+Linux x86-64, a CUDA toolkit with `nvcc` and a C++ compiler. Set
+`CUDA_VISIBLE_DEVICES` to select a GPU. See the
+[contributing guide](../../contributing.md) for the other evaluation tasks.

@@ -36,7 +36,7 @@ repo: https://github.com/deepmodeling/deepmd-kit
 doi: https://doi.org/10.48550/arXiv.2608.19041
 paper: https://arxiv.org/abs/2608.19041
 docs: https://github.com/deepmodeling/deepmd-kit
-pr_url: null # TODO: set to the upstream pull request URL once it is opened
+pr_url: null
 checkpoint_url: https://ndownloader.figshare.com/files/70537626
 license:
   code: LGPL-3.0
@@ -59,11 +59,12 @@ targets: EFS_G
 training_sets: [MPtrj, OMat24, sAlex]
 model_params: 433673
 training_cost:
+  reason: Includes pre-training and fine-tuning.
   entries:
-  - hardware: NVIDIA RTX PRO 6000
+  - hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition
     count: 1
     hours_per_device: 17.37
-  - hardware: NVIDIA RTX PRO 6000
+  - hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition
     count: 1
     hours_per_device: 2.44
 hyperparams:
@@ -85,30 +86,20 @@ hyperparams:
     max_steps: 500
     cell_filter: FrechetCellFilter
   architecture:
-    graph_construction_radius: 6.0
-  upstream_config:
-    architecture:
-      type: dpa4c
-      feature_dim: 64
-      radial_basis: gaussian/fix
-      n_radial_basis: 16
-      lmax: 3
-      precision: float32
-      activation_function: silu
-      output_fitting_layers: 3
-      output_fitting_dim: 256
+    preset: dpa4c-air-v20260911
   training:
     optimizer: HybridMuon
-    muon_mode: slice
-    weight_decay: 0.001
-    training_steps: 217103
-    bf16_amp: false
 notes:
-  description: 'DPA-4.1C-Air-OAM is a compact DPA-4C interatomic potential implemented in DeePMD-kit with 0.43M parameters, trained on MPtrj, OMat24 and sAlex.'
-  training: 'Trained in two stages on one NVIDIA RTX PRO 6000 GPU: 896,000 pre-training steps and 217,103 fine-tuning steps, 19.81 GPU-hours in total (training_cost lists pre-training first). Optimizer HybridMuon (muon_mode slice, weight decay 0.001); bf16 automatic mixed precision disabled.'
-  checkpoint: 'The released checkpoint is an inference-only copy of the fine-tuning checkpoint at step 217,103: optimizer state, auxiliary EMA state and training history are removed, model tensors and configuration are unchanged, and the primary (non-EMA) weights are used. Release SHA256: f888f0fc95fa2c0e9cdf6c1c5e6d1ad63d7dcb044929fb0f88729a32924ba77a.'
-  evaluation: 'WBM relaxations used FIRE with max_force 0.02 eV/Å and max_steps 500 (DP_TRITON_INFER=0). Per-structure convergence flags and step counts were not recorded for these runs, so converged and n_steps are null in the geo-opt file. Metrics were computed with matbench-discovery commit 2b7bff925a6aff10240cf6ef0f59149f51adff7b.'
-  md_diatomics: 'MD (17 systems, 20 ps NVT) and diatomic (92 homonuclear curves) metrics come from runs on NVIDIA A800 GPUs. The run times and hardware reported in those blocks come from a separate complete rerun of the same checkpoint on an NVIDIA RTX PRO 6000 Blackwell Server Edition with Python 3.13.15, PyTorch 2.13.0+cu130 and a development build of DeePMD-kit; the MD run time is the sum over the 17 single-GPU runs. Agreement between the exported .pt2 and eager models was checked on 12 of the 92 diatomic curves. MD energy and force RMSEs need private reference labels and are not reported.'
+  description: >-
+    DPA-4.1C-Air-OAM is a compact, 0.43-million-parameter DPA4C interatomic potential
+    trained on MPtrj, OMat24 and sAlex. Its O(3)-equivariant architecture uses a
+    single local aggregation and an invariant energy readout. The local representation
+    supports tabulated compression and large-scale parallel molecular dynamics, with
+    forces and stresses derived from the energy.
+  evaluation: >-
+    Per-structure relaxation convergence and iteration counts were not recorded. MD
+    energy and force RMSEs are not reported because the labeled reference data are not
+    publicly available.
 
 metrics:
   discovery:

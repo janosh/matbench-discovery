@@ -36,7 +36,7 @@ repo: https://github.com/deepmodeling/deepmd-kit
 doi: https://doi.org/10.48550/arXiv.2606.02419
 paper: https://arxiv.org/abs/2606.02419
 docs: https://github.com/deepmodeling/deepmd-kit
-pr_url: null # TODO: set to the upstream pull request URL once it is opened
+pr_url: null
 checkpoint_url: https://ndownloader.figshare.com/files/70537500
 license:
   code: LGPL-3.0
@@ -59,11 +59,12 @@ targets: EFS_G
 training_sets: [MPtrj, OMat24, sAlex]
 model_params: 99009258
 training_cost:
+  reason: Includes pre-training and fine-tuning.
   entries:
-  - hardware: NVIDIA RTX PRO 6000
+  - hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition
     count: 16
     hours_per_device: 210.38375
-  - hardware: NVIDIA RTX PRO 6000
+  - hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition
     count: 2
     hours_per_device: 80.055
 hyperparams:
@@ -85,40 +86,23 @@ hyperparams:
     max_steps: 500
     cell_filter: FrechetCellFilter
   architecture:
-    graph_construction_radius: 6.0
-    max_neighbors: 256
-  upstream_config:
-    architecture:
-      type: dpa4
-      feature_dim: 96
-      n_focuses: 2
-      n_layers: 8
-      so2_layers: 4
-      radial_basis: gaussian/fix
-      n_radial_basis: 16
-      lmax: 6
-      mmax: 1
-      rank: 4
-      attention_heads: 1
-      activation_function: silu
-      precision: float32
-      quadrature: Lebedev
-      ffn_hidden_dim: auto
+    preset: dpa4-max-v20260911
   training:
     optimizer: HybridMuon
-    muon_mode: slice
-    weight_decay: 0.001
-    training_steps: 314359
-    compile: true
-    bf16_amp: true
-    tf32_matmul: true
 notes:
-  description: 'DPA-4.1-Max-OAM is a DPA-4 interatomic potential implemented in DeePMD-kit with 99M parameters, trained on MPtrj, OMat24 and sAlex.'
-  training: 'Trained in two stages on NVIDIA RTX PRO 6000 GPUs: 998,000 pre-training steps on 16 GPUs and 314,359 fine-tuning steps on 2 GPUs, 3,526.25 GPU-hours in total (training_cost lists pre-training first). Optimizer HybridMuon (muon_mode slice, weight decay 0.001) with bf16 automatic mixed precision, TF32 matmul and torch.compile.'
-  checkpoint: 'The released checkpoint is an inference-only copy of the fine-tuning checkpoint at step 314,359: optimizer state, auxiliary EMA state and training history are removed, model tensors and configuration are unchanged, and the primary (non-EMA) weights are used. Release SHA256: fb19a96ef950e7853aca2cabaee1aa3b72e54f6d5e307732523f5be8aa3bdf78.'
-  evaluation: 'WBM relaxations used FIRE with max_force 0.02 eV/Å and max_steps 500 (DP_TRITON_INFER=0). Per-structure convergence flags and step counts were not recorded for these runs, so converged and n_steps are null in the geo-opt file. Metrics were computed with matbench-discovery commit 2b7bff925a6aff10240cf6ef0f59149f51adff7b.'
-  md_diatomics: 'MD (17 systems, 20 ps NVT) and diatomic (92 homonuclear curves) runs used NVIDIA RTX PRO 6000 Blackwell Server Edition GPUs with Python 3.13 and PyTorch 2.13.0+cu130; the Python 3.14 environment above is the reproduction environment for the shared runners. MD energy and force RMSEs need private reference labels and are not reported.'
-  diatomics_short_range: 'Some homonuclear curves have very large errors at short interatomic distances, largest for Ne, and the exported .pt2 and eager models differ numerically there. No elements were excluded from the diatomic metrics.'
+  description: >-
+    DPA-4.1-Max-OAM is a 99-million-parameter DPA4 interatomic potential trained on
+    MPtrj, OMat24 and sAlex. Its SE(3)-equivariant architecture combines
+    angular-degree coupling in SO(2) convolutions, multi-focus representations,
+    attention and Wigner bilinear nonlinearities. Forces and stresses are derived from
+    a single energy model.
+  evaluation: >-
+    Per-structure relaxation convergence and iteration counts were not recorded. MD
+    energy and force RMSEs are not reported because the labeled reference data are not
+    publicly available.
+  diatomics: >-
+    Some homonuclear pairs, especially Ne, exhibit large errors and numerical
+    sensitivity at short separations. No elements were excluded from the metrics.
 
 metrics:
   discovery:
