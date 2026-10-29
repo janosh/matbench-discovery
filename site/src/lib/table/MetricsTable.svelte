@@ -35,8 +35,8 @@
     is_invalid,
     table_to_delimited,
   } from 'matterviz/table'
-  import { escape_html, strip_html } from 'matterviz/utils'
-  import { download } from 'matterviz/io'
+  import { escape_html, strip_html } from 'svelte-widgets/utils'
+  import { download } from 'svelte-widgets/download'
   import { format_num } from 'matterviz/labels'
   import { ActionMenu, type CmdAction, Icon, Popover } from 'svelte-widgets'
   import {

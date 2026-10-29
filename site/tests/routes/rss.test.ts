@@ -2,7 +2,7 @@ import { by_benchmark_added_desc } from '#lib'
 import { MODELS } from '#lib/models.svelte.js'
 import { GET } from '#routes/rss.xml/+server.js'
 import pkg from '#site/package.json'
-import { escape_html } from 'matterviz/utils'
+import { escape_html } from 'svelte-widgets/utils'
 import { describe, expect, it, onTestFinished } from 'vite-plus/test'
 
 const base_url = pkg.homepage.endsWith(`/`) ? pkg.homepage : `${pkg.homepage}/`

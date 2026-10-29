@@ -14,7 +14,7 @@ import { competition_rank, RANKED_METRICS } from '#lib/rankings.js'
 import type { Author, Label, ModelData } from '#lib/types.js'
 import { bind_url_params } from '#lib/url-state.svelte.js'
 import { format_num } from 'matterviz/labels'
-import { escape_html } from 'matterviz/utils'
+import { escape_html } from 'svelte-widgets/utils'
 import type { RowData } from 'matterviz/table'
 import { SvelteSet } from 'svelte/reactivity'
 

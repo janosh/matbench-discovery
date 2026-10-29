@@ -3,7 +3,7 @@ import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import { Meta, Microsoft } from 'svelte-widgets/icons'
 import { format_num } from 'matterviz/labels'
 import { format_datetime } from 'matterviz/table'
-import { strip_html } from 'matterviz/utils'
+import { strip_html } from 'svelte-widgets/utils'
 
 import type {
   DiscoveryMetricsLabels,
