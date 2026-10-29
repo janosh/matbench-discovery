@@ -1,0 +1,43 @@
+[project]
+name = "matbench-discovery-dpa41"
+version = "0"
+requires-python = ">=3.14,<3.15"
+dependencies = [
+  "matbench-discovery[phonons,symmetry]",
+  "deepmd-kit @ git+https://github.com/deepmodeling/deepmd-kit@master",
+  "torch==2.13.0+cu132",
+  "e3nn==0.6.0",
+]
+
+[tool.uv]
+package = false
+environments = ["sys_platform == 'linux' and platform_machine == 'x86_64'"]
+
+[tool.uv.sources]
+matbench-discovery = { path = "../../..", editable = true }
+torch = { index = "pytorch-cu132" }
+
+[[tool.uv.index]]
+name = "pytorch-cu132"
+url = "https://download.pytorch.org/whl/cu132"
+explicit = true
+
+[tool.uv.extra-build-dependencies]
+deepmd-kit = [
+  "torch==2.13.0+cu132",
+  "numpy",
+  "setuptools-scm",
+  "hatch-fancy-pypi-readme",
+  "cmake>=3.24",
+  "ninja",
+]
+
+[tool.uv.extra-build-variables.deepmd-kit]
+DP_ENABLE_TENSORFLOW = "0"
+DP_ENABLE_PYTORCH = "1"
+DP_ENABLE_PADDLE = "0"
+DP_VARIANT = "cuda"
+CMAKE_BUILD_PARALLEL_LEVEL = "8"
+
+[tool.uv.config-settings-package.deepmd-kit]
+"cmake.define.CMAKE_CUDA_ARCHITECTURES" = "native"
