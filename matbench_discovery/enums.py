@@ -322,6 +322,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     hienet = auto(), "hienet/hienet.yml"
     m3gnet = auto(), "m3gnet/m3gnet.yml"
     mace_mp_0 = auto(), "mace/mace-mp-0.yml"
+    mace_mp_0_sp_head = auto(), "mace_sp_head/mace-mp-0-sp-head.yml"
     mace_mpa_0 = auto(), "mace/mace-mpa-0.yml"
     matris_10m_mp = auto(), "matris/matris-10m-mp.yml"
     matris_10m_oam = auto(), "matris/matris-10m-oam.yml"
