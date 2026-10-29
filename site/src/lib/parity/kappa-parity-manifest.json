@@ -56,16 +56,6 @@
         "sha256": "bace153a29f9ec4d60b7debc900abde94009676f0fa59db3b16fba7495204ce9"
       }
     },
-    "dpa-3.1-3m-ft": {
-      "modes": {
-        "asset": "kappa-parity-phonondb-v1-modes-dpa-3.1-3m-ft-cf927b077fd7e819.json.gz",
-        "sha256": "43d4ed51c92237f188f85c3fef793f20c537675e7e5eef0088e009cd45f5ad43"
-      },
-      "parity": {
-        "asset": "kappa-parity-phonondb-v1-model-dpa-3.1-3m-ft-1c1ec432723cbf47.json.gz",
-        "sha256": "7fe4501f429f7fc6ca6ff73e7d944e7348741481b6342c8fa7c659c69a066552"
-      }
-    },
     "dpa-4.0.1-pro-mptrj": {
       "modes": {
         "asset": "kappa-parity-phonondb-v1-modes-dpa-4.0.1-pro-mptrj-321658b2049606ee.json.gz",
@@ -74,6 +64,30 @@
       "parity": {
         "asset": "kappa-parity-phonondb-v1-model-dpa-4.0.1-pro-mptrj-1a85726130265412.json.gz",
         "sha256": "fee55e1a19433e40e79f9c8c132e78b2538fd5feba15eba13a657705f8590bed"
+      }
+    },
+    "dpa-4.1-air-oam": {
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-dpa-4.1-air-oam-8ecc8ff65b64d0b7.json.gz",
+        "sha256": "db3ae266d0a94418d574c1469af2af85418d3ddd2029051c545b6a08ef49da78"
+      }
+    },
+    "dpa-4.1-max-oam": {
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-dpa-4.1-max-oam-58383ba2c4128b11.json.gz",
+        "sha256": "4f7b5c9acf4940c8a7d5a051f03a8c20f1560fca772ac94bfacc6910baf07d71"
+      }
+    },
+    "dpa-4.1-max-oam-pft": {
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-dpa-4.1-max-oam-pft-e0502d24029e1faf.json.gz",
+        "sha256": "6a906a4b209db2003e7b7fa2174378f9afe2dda2bfc590db4ff78ab6d6b5620b"
+      }
+    },
+    "dpa-4.1c-air-oam": {
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-dpa-4.1c-air-oam-542ad426f3999ba1.json.gz",
+        "sha256": "4b955a498a03cdfebe0e915406add3b1741d13e378797e716a942f8b049bc66e"
       }
     },
     "eqnorm-mptrj": {
