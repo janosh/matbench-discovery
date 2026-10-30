@@ -1,0 +1,214 @@
+model_name: ALIGNN-FF MPtrj
+model_key: alignn-ff-mptrj
+model_version: 2026.10.11
+dates:
+  benchmark_added: '2026-10-30'
+  paper_published: '2026-09-16'
+lifecycle: active
+authors:
+- name: Jaehyung Lee
+  affiliation: Johns Hopkins University
+  email: jlee859@jh.edu
+- name: Kamal Choudhary
+  affiliation: Johns Hopkins University
+  email: kchoudh2@jhu.edu
+  orcid: https://orcid.org/0000-0001-9737-8074
+trained_by:
+- name: Jaehyung Lee
+  affiliation: Johns Hopkins University
+  email: jlee859@jh.edu
+
+repo: https://github.com/atomgptlab/alignn
+docs: https://atomgptlab.github.io/alignn/
+doi: https://doi.org/10.48550/arXiv.2609.19487
+paper: https://arxiv.org/abs/2609.19487
+pypi: https://pypi.org/project/alignn
+pr_url:       # required key, set once the submission PR exists
+# alignn_ff_mptrj.zip in figshare item doi:10.6084/m9.figshare.34846446
+checkpoint_url: https://figshare.com/files/70840341
+license:
+  code: MIT
+  code_url: https://github.com/atomgptlab/alignn/blob/main/LICENSE.rst
+  # the weights are published on figshare under CC BY 4.0
+  checkpoint: CC-BY-4.0
+  checkpoint_url: https://figshare.com/articles/dataset/34846446?file=70840341
+
+environment:
+  # torch 2.14 ships cp314 wheels and the whole ALIGNN stack resolves on
+  # 3.14, so this matches the runner rather than pinning an older Python
+  python_version: '3.14'
+  dependencies:
+  - alignn==2026.10.11
+  - torch>=2.6
+  - ase>=3.28
+  - jarvis-tools>=2024.10.30
+  - numpy
+  - scipy
+
+openness: OSOD
+architecture_types: [gnn]
+# energy, forces and stress were all in the training loss
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+# trainable parameters of the built model (buffers not counted)
+model_params: 4057473
+fine_tune: false
+training_sets: [MPtrj]
+training_cost:
+  entries:
+  - hardware: NVIDIA GB10
+    count: 8
+    hours_per_device: 187.9
+  reason: Elapsed time of the training job on 8 single-GPU nodes (Slurm).
+
+hyperparams:
+  evaluation:
+    max_force: 0.05
+    max_steps: 500
+    ase_optimizer: FIRE
+    cell_filter: FrechetCellFilter
+    kappa:
+      protocol: phonondb-v1
+      save_forces: true
+  architecture:
+    graph_construction_radius: 5.0
+    three_body_cutoff: 3.5
+    max_neighbors: 52
+    alignn_layers: 4
+    gcn_layers: 4
+    hidden_features: 256
+    element_embedding: true
+    # bond features are scaled by a polynomial envelope that reaches zero
+    # at this distance (inner_cutoff in the alignn config)
+    envelope_cutoff: 4.0
+  training:
+    batch_size: 16 # 2 per GPU on 8 GPUs
+    epochs: 30
+    learning_rate: 0.0003 # OneCycle peak
+    weight_decay: 1.0e-5
+    optimizer: AdamW
+    lr_scheduler: onecycle
+    loss: l1
+    loss_weights:
+      energy: 1.0
+      forces: 1.0
+      stress: 0.1
+
+notes:
+  description: |
+    ALIGNN 2.0 universal force field: a pure-PyTorch reimplementation of the
+    atomistic line graph neural network that removes the DGL dependency. The
+    model passes messages alternately over an atom graph and a line graph whose
+    nodes are bonds and whose edges carry bond angles. Energy is the only
+    directly predicted quantity. Forces and stress follow from one backward pass
+    through the interatomic displacement vectors, so the forces are conservative.
+    Each atom starts from its embedded CGCNN features plus a learned
+    per-element vector, which lets the model tell apart elements whose CGCNN
+    features are identical (Gd and Sm, Th and Np, La and Ce, Ho and Er). Bond
+    features are scaled by a smooth polynomial envelope that reaches zero at 4 A.
+  training: |
+    Trained from scratch on MPtrj with energy per atom, forces and stress all in
+    the loss (L1, weights 1, 1 and 0.1). Energies are the uncorrected MPtrj
+    values. 1,422,355 frames were used for training and 79,019 each for
+    validation and testing. Training ran for 30 epochs (OneCycle schedule, peak
+    learning rate 3e-4, AdamW, effective batch size 16 on 8 GPUs), and the
+    submitted checkpoint is the one with the lowest validation loss, which was
+    the final epoch.
+  known_limitations: |
+    MPtrj is PBE without a dispersion correction, and the model inherits that,
+    so layered van der Waals systems and other dispersion-bound structures are
+    not well described.
+  data_leakage: |
+    The model was trained only on MPtrj. No WBM structures, convex-hull data or
+    other Matbench Discovery test data were used for training, normalization,
+    hyperparameter choice or checkpoint selection, and the checkpoint was picked
+    by the MPtrj validation loss. Results of earlier ALIGNN-FF checkpoints on
+    this benchmark did shape two design choices. Large errors on WBM structures
+    containing Gd and Np showed that the CGCNN features cannot separate some
+    element pairs, which led to the per-element embedding (the problem was then
+    confirmed on the MPtrj and MatPES test splits). Phonon checks on earlier
+    checkpoints, including the near-total failure of one without the envelope,
+    led to switching the envelope on, with the envelope and neighbor settings
+    copied from the published ALIGNN MatPES models rather than tuned here. An
+    earlier fine-tuned checkpoint with the embedding was also evaluated on this
+    benchmark. This from-scratch model was chosen for submission before its own
+    results were available.
+metrics:
+  phonons:
+    kappa_103:
+      pred_file:
+        name: models/alignn_ff/alignn-ff-mptrj/2026-10-24-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/70919004
+        size: 16708471
+        md5: 25e459f5be2d1a2a45b1086fb4d44b03
+      hardware: NVIDIA GB10
+      run_time_sec: 8911.31
+      max_rss_gb: 2.672
+      max_gpu_mem_gb: 63.673
+      κ_SRME: 1.4515
+      κ_SRE: 1.3799
+      κ_SRD: -1.3672
+      κ_failure_rate: 0.1942
+      imaginary_mode_rate: 0.1942
+      spectrum_w1: 1.5946
+  discovery:
+    pred_file:
+      name: models/alignn_ff/alignn-ff-mptrj/2026-10-24-discovery.csv.gz
+      url: https://figshare.com/files/70840677
+    hardware: NVIDIA GB10
+    run_time_sec: 3066916.97
+    max_rss_gb: 2.268
+    max_gpu_mem_gb: 2.329
+    full_test_set:
+      F1: 0.694 # fraction
+      DAF: 3.685 # dimensionless
+      Precision: 0.632 # fraction
+      Recall: 0.768 # fraction
+      Accuracy: 0.884 # fraction
+      TP: 33878.0 # count
+      FP: 19704.0 # count
+      TN: 193167.0 # count
+      FN: 10214.0 # count
+      MAE: 0.05 # eV/atom
+      RMSE: 0.092 # eV/atom
+      R2: 0.736 # dimensionless
+      missing_preds: 2 # count
+    unique_prototypes:
+      F1: 0.697 # fraction
+      DAF: 4.108 # dimensionless
+      Precision: 0.628 # fraction
+      Recall: 0.783 # fraction
+      Accuracy: 0.895 # fraction
+      TP: 26116.0 # count
+      FP: 15473.0 # count
+      TN: 166641.0 # count
+      FN: 7258.0 # count
+      MAE: 0.052 # eV/atom
+      RMSE: 0.095 # eV/atom
+      R2: 0.737 # dimensionless
+      missing_preds: 0 # count
+  geo_opt:
+    pred_file:
+      name: models/alignn_ff/alignn-ff-mptrj/2026-10-24-geo-opt.jsonl.gz
+      url: https://figshare.com/files/70840686
+    symprec=1e-5:
+      rmsd: 0.0901 # unitless
+      n_sym_ops_mae: 3.4095 # unitless
+      symmetry_decrease: 0.2366 # fraction
+      symmetry_match: 0.586 # fraction
+      symmetry_increase: 0.1668 # fraction
+      n_structures: 256963 # count
+      analysis_file:
+        name: models/alignn_ff/alignn-ff-mptrj/2026-10-24-geo-opt-symprec=1e-5-moyo=0.18.0.csv.gz
+        url: https://figshare.com/files/70840683
+    symprec=1e-2:
+      rmsd: 0.0901 # unitless
+      n_sym_ops_mae: 1.9804 # unitless
+      symmetry_decrease: 0.0892 # fraction
+      symmetry_match: 0.7967 # fraction
+      symmetry_increase: 0.1072 # fraction
+      n_structures: 256963 # count
+      analysis_file:
+        name: models/alignn_ff/alignn-ff-mptrj/2026-10-24-geo-opt-symprec=1e-2-moyo=0.18.0.csv.gz
+        url: https://figshare.com/files/70840680

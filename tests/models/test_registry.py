@@ -207,7 +207,7 @@ def test_model_registry_identity() -> None:
         for path in glob(f"{ROOT}/models/[!_]*/")
     }
     # Families intentionally without an active Model enum entry.
-    inactive_only_families = {"alignn_ff"}
+    inactive_only_families: set[str] = set()
     assert active_families | inactive_only_families == model_dir_families
     assert active_families.isdisjoint(inactive_only_families)
 
