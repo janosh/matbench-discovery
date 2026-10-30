@@ -1,0 +1,281 @@
+model_name: MACE-SOYO-OAM
+model_key: mace-soyo-oam
+model_version: '0.1'
+dates:
+  benchmark_added: '2026-10-26'
+  paper_published:
+lifecycle: active
+repo: https://github.com/PrincessHakuryu/MACE-SOYO
+checkpoint_url: https://github.com/PrincessHakuryu/MACE-SOYO/releases/download/v0.1/mace_soyo_oam.pth
+doi:
+paper:
+pr_url:
+openness: OSOD
+architecture_types: [gnn]
+train_task: S2EFS
+training_sets: [OMat24, sAlex, MPtrj]
+test_task: IS2RE-SR
+targets: EFS_G
+model_params: 6475336
+training_cost:
+  entries:
+  - hardware: NVIDIA A100
+    count: 4
+    hours_per_device: 350.0
+
+license:
+  code: MIT
+  code_url: https://github.com/PrincessHakuryu/MACE-SOYO/blob/main/LICENSE
+  checkpoint: MIT
+  # URL that points to the license file for the model checkpoint, not the checkpoint file itself.
+  checkpoint_url: https://github.com/PrincessHakuryu/MACE-SOYO/blob/main/LICENSE
+
+authors:
+- name: Qi-Ming Liang
+  affiliation: Fudan University
+  email: HoshinoKasasagi@gmail.com
+  github: https://github.com/PrincessHakuryu
+  corresponding: false
+- name: Jia-Jie Du
+  affiliation: Fudan University
+  email: jjdu24@m.fudan.edu.cn
+  corresponding: false
+- name: Zhi-Pan Liu
+  affiliation: Fudan University,Shanghai Institute of Organic Chemistry
+  email: zpliu@fudan.edu.cn
+  corresponding: true
+trained_by:
+- name: Qi-Ming Liang
+  affiliation: Fudan University
+  email: HoshinoKasasagi@gmail.com
+  github: https://github.com/PrincessHakuryu
+  corresponding: false
+
+environment:
+  python_version: '3.14'
+  dependencies:
+  - MACE-SOYO @ git+https://github.com/PrincessHakuryu/MACE-SOYO.git@v0.1
+  - torch==2.12.0+cu126
+  - cuequivariance==0.12.0
+  - cuequivariance-torch==0.12.0
+  - cuequivariance-ops-cu12==0.12.0
+  - cuequivariance-ops-torch-cu12==0.12.0
+  - torch-sim-atomistic==0.6.1
+  - nvalchemi-toolkit-ops[torch]==0.4.1
+  - warp-lang==1.13.0
+  - torch-ema==0.3
+  - torch-geometric==2.7.0
+  - ase==3.29.0
+  - ase-db-backends==0.11.0
+  - lmdb==2.3.0
+  - h5py==3.16.0
+  - tables==3.11.1
+  - numpy>=2.4.6
+  - scipy==1.18.1
+  - PyYAML==6.0.3
+  - tqdm==4.70.1
+  - numexpr==2.14.2
+  - opt_einsum_fx==0.1.4
+  - cffi==2.1.1
+  find_links:
+  - https://download.pytorch.org/whl/cu126/torch/
+
+hyperparams:
+  evaluation:
+    max_force: 0.02
+    max_steps: 500
+    ase_optimizer: FIRE
+    cell_filter: FrechetCellFilter
+    kappa:
+      protocol: phonondb-v1
+      save_forces: true
+      displacement_distance: 0.03
+      force_max: 0.0001
+      max_steps: 300
+  architecture:
+    n_layers: 2
+    graph_construction_radius: 6.0
+  training:
+    epochs: 10
+    optimizer: AdamW+Muon
+  upstream_config:
+    loss: Huber
+    loss_weights:
+      energy: 1.0
+      force: 1.0
+      stress: 1.0
+    weight_decay: 0.001
+    compile_training: true
+    model_dtype: float32
+    clip_grad_norm: 10
+    ema_decay: 0.999
+    max_learning_rate: 0.001
+    min_learning_rate: 0.00001
+    learning_rate_schedule: WSD(Warm-up,Stable,Decay)
+    warmup_factor: 0.1
+    warmup_epochs: 0.2
+    wsd_decay_ratio: 0.65
+    batch_size: 128
+    num_bessel_basis: 16
+    num_heads: 2
+    use_spin_charge: false
+    readout_hidden: 64
+    node_dim: 512
+    max_l: 1
+    max_ell: 3
+    max_correlations: 3
+    use_zbl: true
+    pair_dim: 128
+    edge_weight_dim: 96
+
+notes:
+  description: MACE-SOYO is based on the MACE-MH-1 architecture, with modifications to edge weights, equivariant RMSNorm, and the readout. Compared with the original MACE-MH-1 implementation, inference and training are accelerated using AOTI and torch.compile, respectively. It also adopts the warmup–stable–decay (WSD) learning-rate schedule used in DPA4.
+  checkpoint: Download the .pth checkpoint from Github and follow the README to export it as an AOTI .pt2 package on the target GPU. Pass the exported .pt2 file explicitly via --checkpoint. The salexmp head is used for benchmark.
+
+
+metrics:
+  phonons:
+    kappa_103:
+      κ_SRME: 0.1837
+      κ_SRE: 0.0865
+      κ_SRD: -0.0498
+      κ_failure_rate: 0.0097
+      imaginary_mode_rate: 0.0097
+      spectrum_w1: 0.1204
+      pred_file:
+        name: models/mace-soyo/mace-soyo-oam/phonon-oam/2026-10-22-phonons-kappa-103.json.gz
+        url: https://ndownloader.figshare.com/files/70537098
+        size: 15679466
+        md5: 296690b28b4d8b29654602de716e3e31
+      force_file:
+        name: models/mace-soyo/mace-soyo-oam/phonon-oam/2026-10-22-phonons-kappa-103-forces.json.gz
+        url: https://ndownloader.figshare.com/files/70537104
+        size: 252614411
+        md5: 3be87ffaae5473978bfec9467f0ce72f
+      phonon_file:
+        name: models/mace-soyo/mace-soyo-oam/phonon-oam/2026-10-22-phonons-kappa-103-phonons.json.gz
+        url: https://ndownloader.figshare.com/files/70547589
+        size: 1325003533
+        md5: 071701a6ae93abd3e82e5878b2bfebf9
+      run_info_file:
+        name: models/mace-soyo/mace-soyo-oam/phonon-oam/2026-10-22-phonons-kappa-103-run-info.json
+        url: https://ndownloader.figshare.com/files/70537095
+        size: 5520
+        md5: 459446a497f8cc0e022a0d970e5ce81b
+      hardware: NVIDIA GeForce RTX 4090
+      run_time_sec: 2166.57
+      max_rss_gb: 4.607
+      max_gpu_mem_gb: 2.236
+  md:
+    pred_file:
+      name: models/mace-soyo/mace-soyo-oam/2026-10-22-md-metrics.csv.gz
+      url: https://ndownloader.figshare.com/files/70537092
+      size: 1488
+      md5: df63d5dfa837514df3e621ded90a75d5
+    hardware: NVIDIA H200 NVL
+    run_time_sec: 10720.95 # s
+    max_rss_gb: 5.691 # GB
+    max_gpu_mem_gb: 0.763 # GB
+    rdf_error: 3.5658 # %
+    adf_error: 1.541 # %
+    vdos_error: 22.5822 # %
+    pressure_mae: 0.7659 # GPa
+    pressure_wasserstein: 0.7692 # GPa
+    pressure_error: 44.7071 # %
+    n_systems: 17 # count
+  diatomics:
+    pred_file:
+      name: models/mace-soyo/mace-soyo-oam/diatomic-oam/2026-10-22-diatomics.json.gz
+      url: https://ndownloader.figshare.com/files/70537080
+      size: 238066
+      md5: d22aec572cc2977c6c78fc979e040234
+    hardware: NVIDIA H200 NVL
+    run_time_sec: 108.15
+    max_rss_gb: 3.699
+    max_gpu_mem_gb: 0.083
+    excluded_formula_reasons: {}
+    pbe_wall_dist_mae: 0.06762
+    pbe_energy_mae: 0.6026
+    pbe_bond_length_error: 0.1687
+    pbe_well_depth_error: 0.3643
+    pbe_vib_freq_error: 46.59
+    tortuosity: 1.009
+    energy_diff_flips: 1.609
+    energy_jump: 0.1071
+    force_flips: 1.598
+    force_total_variation: 186.7
+    force_jump: 0.9499
+    pbe_force_mae: 0.5593
+    pbe_vib_freq_coverage:
+      n_valid: 73
+      n_eligible: 73
+      failed_elements: []
+      missing_elements: []
+  discovery:
+    pred_file:
+      name: models/mace-soyo/mace-soyo-oam/discovery-oam/2026-10-22-discovery.csv.gz
+      url: https://ndownloader.figshare.com/files/70537083
+      size: 1315353
+      md5: f59c1e871c168031c5c303b412b2280b
+    hardware: NVIDIA GeForce RTX 4090
+    run_time_sec: 132009.47
+    max_rss_gb: 5.398
+    max_gpu_mem_gb: 0.263
+    full_test_set:
+      F1: 0.883 # fraction
+      DAF: 5.175 # dimensionless
+      Precision: 0.888 # fraction
+      Recall: 0.878 # fraction
+      Accuracy: 0.96 # fraction
+      TP: 38731.0 # count
+      FP: 4890.0 # count
+      TN: 207981.0 # count
+      FN: 5361.0 # count
+      MAE: 0.02 # eV/atom
+      RMSE: 0.067 # eV/atom
+      R2: 0.861 # dimensionless
+      missing_preds: 2 # count
+    unique_prototypes:
+      F1: 0.903 # fraction
+      DAF: 5.922 # dimensionless
+      Precision: 0.905 # fraction
+      Recall: 0.901 # fraction
+      Accuracy: 0.97 # fraction
+      TP: 30058.0 # count
+      FP: 3143.0 # count
+      TN: 178971.0 # count
+      FN: 3316.0 # count
+      MAE: 0.02 # eV/atom
+      RMSE: 0.067 # eV/atom
+      R2: 0.868 # dimensionless
+      missing_preds: 0 # count
+  geo_opt:
+    pred_file:
+      name: models/mace-soyo/mace-soyo-oam/2026-10-22-geo-opt.jsonl.gz
+      url: https://ndownloader.figshare.com/files/70537101
+      size: 104347504
+      md5: 8711762af4b8aa69e4b4d2e58e92bdf8
+    symprec=1e-5:
+      rmsd: 0.0619 # unitless
+      n_sym_ops_mae: 2.1821 # unitless
+      symmetry_decrease: 0.0678 # fraction
+      symmetry_match: 0.6863 # fraction
+      symmetry_increase: 0.2397 # fraction
+      n_structures: 256963 # count
+      analysis_file:
+        name: models/mace-soyo/mace-soyo-oam/2026-10-22-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://ndownloader.figshare.com/files/70537089
+        size: 6899869
+        md5: cc3dc2651704b0dee33bc3d28820081b
+    symprec=1e-2:
+      rmsd: 0.0619 # unitless
+      n_sym_ops_mae: 1.711 # unitless
+      symmetry_decrease: 0.0475 # fraction
+      symmetry_match: 0.8178 # fraction
+      symmetry_increase: 0.1273 # fraction
+      n_structures: 256963 # count
+      analysis_file:
+        name: models/mace-soyo/mace-soyo-oam/2026-10-22-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://ndownloader.figshare.com/files/70537086
+        size: 6861114
+        md5: 8c5ecb42cd977722183a91d0f40cbee4

@@ -715,6 +715,7 @@ const org_logos = {
   'Deep Principle': `/logos/deep-principle.svg`,
   DeePMD: `/logos/deepmd.svg`,
   'FAIR at Meta': Meta,
+  'Fudan University': `/logos/fudan-university.svg`,
   'Google DeepMind': `/logos/google-deepmind.svg`,
   'ICAMS, Ruhr University Bochum': `/logos/interdisciplinary-centre-for-advanced-materials-simulation-bochum.svg`,
   'Incheon National University': `/logos/incheon-national-university.svg`,

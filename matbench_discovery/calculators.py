@@ -436,7 +436,92 @@ def _mace(checkpoint: str, head: str | None = None) -> Callable[[str, str], Calc
         )
 
     return make_calc
+def _mace_soyo(head: str) -> Callable[..., Calculator]:
+    """Download and export a fixed benchmark checkpoint for the target GPU."""
+    if head == "mptraj":
+        model_key = "mace_soyo_mptrj"
+    elif head == "salexmp":
+        model_key = "mace_soyo_oam"
+    else:
+        raise ValueError(f"Unsupported Matbench MACE-SOYO head: {head!r}")
 
+    def make_calc(device: str) -> Calculator:
+        from pathlib import Path
+
+        import torch
+        from ase.build import bulk
+        from ase.io import write
+
+        if torch.device(device).type != "cuda" or not torch.cuda.is_available():
+            raise ValueError("MACE-SOYO requires CUDA; run this model on a GPU node.")
+
+        import mace_soyo
+
+        checkpoint = download_checkpoint(model_key, ext=".pth")
+        arch = "".join(map(str, torch.cuda.get_device_capability(device)))
+        os.makedirs(CHECKPOINT_DIR, exist_ok=True)
+        example = f"{CHECKPOINT_DIR}/mace-soyo-export-si-v1.extxyz"
+        with FileLock(f"{example}.lock"):
+            if not _is_non_empty_file(example):
+                tmp_example = f"{example}.tmp"
+                write(
+                    tmp_example,
+                    bulk("Si", "diamond", a=5.43, cubic=True),
+                    format="extxyz",
+                )
+                os.replace(tmp_example, example)
+        python_path = Path(sys.executable)
+        python_executable = str(python_path.parent.resolve() / python_path.name)
+        package_path = f"{CHECKPOINT_DIR}/{model_key}-cuda-sm{arch}-fp32-aoti.pt2"
+        with FileLock(f"{package_path}.prepare.lock"):
+            _run_to_atomic_output(
+                [
+                    python_executable,
+                    "-m",
+                    "mace_soyo.export.AOTI_export",
+                    "--ckpt-path",
+                    checkpoint,
+                    "--structure-file",
+                    example,
+                    "--output-path",
+                    "{output}",
+                    "--device",
+                    device,
+                    "--dtype",
+                    "float32",
+                    "--max-graphs",
+                    "20000",
+                ],
+                package_path,
+                source_paths=(
+                    checkpoint,
+                    example,
+                    *sorted(
+                        str(path)
+                        for path in Path(mace_soyo.__file__).parent.rglob("*.py")
+                    ),
+                ),
+                tool_packages=(
+                    "MACE-SOYO",
+                    "torch",
+                    "cuequivariance",
+                    "cuequivariance-torch",
+                    "cuequivariance-ops-cu12",
+                    "cuequivariance-ops-torch-cu12",
+                    "nvalchemi-toolkit-ops",
+                    "warp-lang",
+                    "ase",
+                ),
+            )
+
+        return mace_soyo.MACESoyoCalculator(
+            package_path=package_path,
+            head=head,
+            device=device,
+            use_d3=False,
+        )
+
+    return make_calc
 
 def _orb(variant: str) -> Callable[[str], Calculator]:
     def make_calc(device: str) -> Calculator:
@@ -864,6 +949,14 @@ def _deepmd_spec(
 
 CALCULATORS: _CalcRegistry = _CalcRegistry(
     {
+        "mace_soyo_mptrj": _runtime_calc_spec(
+            "mace_soyo_mptrj",
+            _mace_soyo(head="mptraj"),
+        ),
+        "mace_soyo_oam": _runtime_calc_spec(
+            "mace_soyo_oam",
+            _mace_soyo(head="salexmp"),
+        ),
         "mace_mp_0": _runtime_calc_spec("mace_mp_0", _mace("medium")),
         "mace_mpa_0": _runtime_calc_spec("mace_mpa_0", _mace("medium-mpa-0")),
         "orb_v2": _runtime_calc_spec("orb_v2", _orb("orb-v2")),
