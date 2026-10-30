@@ -1,0 +1,124 @@
+model_name: MACE-MP-0 SP-Head
+model_key: mace-mp-0-sp-head
+model_version: v0.1.0
+dates:
+  benchmark_added: '2026-10-30'
+  paper_published: null
+lifecycle: active
+authors:
+- name: Ephemeral6
+  affiliation: Independent (AI-agent-assisted submission, see notes)
+  url: https://github.com/Ephemeral6
+trained_by:
+- name: Ephemeral6
+  affiliation: Independent
+  github: https://github.com/Ephemeral6
+
+repo: https://github.com/Ephemeral6/mace-sp-head
+doi: null
+paper: null
+pr_url: https://github.com/janosh/matbench-discovery/pull/407
+checkpoint_url: https://github.com/Ephemeral6/mace-sp-head/releases/download/v0.1.0/mace-mp-0-sp-head-heads.zip
+license:
+  code: MIT
+  code_url: https://github.com/Ephemeral6/mace-sp-head/blob/main/LICENSE
+  checkpoint: MIT
+  checkpoint_url: https://github.com/Ephemeral6/mace-sp-head/blob/main/LICENSE
+
+environment:
+  dependencies:
+  - mace-torch==0.3.17
+  - torch==2.11.0+cu128
+  - e3nn==0.4.4
+  - lightgbm==4.7.0
+  - scikit-learn==1.9.1
+  - pymatgen==2026.10.16
+  - numpy==2.5.4
+  - pandas==3.1.0
+  python_version: '3.14'
+
+openness: OSOD
+architecture_types: [gnn]
+train_task: S2RE
+test_task: IS2RE
+targets: E
+training_sets: [MP 2022]
+model_params: 8268453 # 4,688,656 MACE-MP-0 (frozen) + 3,579,797 LightGBM tree nodes (3 seeds)
+n_estimators: 3
+
+notes:
+  hyperparams: |
+    Backbone: MACE-MP-0 medium, frozen (2023-12-03-mace-128-L1_epoch-199.model, MPtrj only), one
+    float32 single point per unrelaxed structure.
+    Head: LightGBM regressor of r = E_DFT_relaxed/atom - E_MACE(input)/atom; objective huber
+    (alpha 0.1), learning_rate 0.05, num_leaves 255, min_data_in_leaf 40, feature_fraction 0.5,
+    bagging_fraction 0.8, bagging_freq 1, lambda_l2 1.0, up to 5000 rounds, early stopping 200.
+    Features: MACE energy/atom, force statistics, Voigt stress, pressure, shear, volume/atom,
+    V*p^2, V*shear^2, log n_atoms, 256 mean-pooled invariant MACE node features, 94 element fractions.
+    Training data: 153,454 MP 2022 GGA/GGA+U relaxed structures (<=200 atoms) + 3 perturbed copies
+    each = 613,816 (log-uniform volume ratio 0.80-1.25, traceless symmetric shear std 0.02, rattle
+    std 0.05 A). 10 % of chemical systems held out from MP for early stopping. Ensemble: mean of 3 seeds.
+    Code: train_mace_sp_head.py / test_mace_sp_head_discovery.py / sp_features.py in the linked repo.
+  description: |
+    Relaxation-free stability prediction. A frozen MACE-MP-0 model (MPtrj only) is evaluated once
+    on the unrelaxed WBM structure. On an unrelaxed structure that energy is an upper bound of the
+    relaxed energy. The gap is the relaxation energy, which to second order is set by the forces
+    (-1/2 f^T H^-1 f) and the stress (-V sigma^2 / 2B). A LightGBM head learns this residual from
+    the single-point forces, stress and invariant MACE features. No geometry optimization is done
+    at inference: one force-field call per structure.
+
+    Without the head, the raw MACE-MP-0 single point on the initial structures gives unique-
+    prototype F1 0.554, DAF 4.699 and MAE 0.129 eV/atom. Its energies are systematically too
+    high, so precision is high (0.72) and recall low (0.45). The head lifts F1 to 0.654.
+  training: |
+    The head is trained on MP 2022 data only: relaxed structures plus perturbed copies (as in
+    CGCNN+P), each labeled with the relaxed uncorrected DFT energy. No WBM data was used for
+    training, early stopping or model selection. The three seeds give unique-prototype F1 0.6509,
+    0.6544 and 0.6526, and the submitted file is their mean. The MP2020 correction is applied as in
+    the official MLIP pipeline, using the WBM entry's calculation parameters, with oxide typing from
+    the initial structure.
+  caveats: |
+    The head splits partly on near-zero force statistics. For high-symmetry cells these are float32
+    noise, so per-structure predictions can differ by up to ~0.02 eV/atom (mean 5e-4) between runs
+    with different GPU batching. Rerunning the submitted test script from scratch reproduced the
+    metrics to within 2e-4 in F1.
+  ai_assistance: |
+    The method was designed, implemented, run and documented by an AI agent (Anthropic Claude via
+    Claude Code) operating the Ephemeral6 account. The full research log, including all WBM
+    evaluations, is in the linked repo (LOG.md).
+
+metrics:
+  discovery:
+    pred_file:
+      name: models/mace_sp_head/mace-mp-0-sp-head/2026-10-30-discovery.csv.gz
+      url: https://github.com/Ephemeral6/mace-sp-head/releases/download/v0.1.0/2026-10-30-discovery.csv.gz
+      size: 1527444
+      md5: f7c3c3cce819f1e83db7b60d171f2369
+    full_test_set:
+      F1: 0.648 # fraction
+      DAF: 3.891 # dimensionless
+      Precision: 0.668 # fraction
+      Recall: 0.63 # fraction
+      Accuracy: 0.883 # fraction
+      TP: 27762.0 # count
+      FP: 13824.0 # count
+      TN: 199047.0 # count
+      FN: 16330.0 # count
+      MAE: 0.073 # eV/atom
+      RMSE: 0.144 # eV/atom
+      R2: 0.366 # dimensionless
+      missing_preds: 0 # count
+    unique_prototypes:
+      F1: 0.654 # fraction
+      DAF: 4.344 # dimensionless
+      Precision: 0.664 # fraction
+      Recall: 0.644 # fraction
+      Accuracy: 0.894 # fraction
+      TP: 21496.0 # count
+      FP: 10872.0 # count
+      TN: 171242.0 # count
+      FN: 11878.0 # count
+      MAE: 0.074 # eV/atom
+      RMSE: 0.144 # eV/atom
+      R2: 0.392 # dimensionless
+      missing_preds: 0 # count

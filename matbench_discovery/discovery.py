@@ -59,6 +59,7 @@ ARCHIVED_DISCOVERY_MODELS: dict[str, str] = {
             "cgcnn_p",
             "ema_gnn",
             "esnet",
+            "mace_mp_0_sp_head",
             "megnet",
             "voronoi_rf",
             "wrenformer",
