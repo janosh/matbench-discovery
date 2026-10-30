@@ -2,14 +2,14 @@
 
 MACE-MP-0 SP-Head predicts the relaxed formation energy of a WBM crystal from its **unrelaxed**
 structure. It needs one frozen MACE-MP-0 (MPtrj-only) single point per structure and no geometry
-optimisation. A LightGBM head, trained on MP 2022 data only, adds the missing relaxation energy.
+optimization. A LightGBM head, trained on MP 2022 data only, adds the missing relaxation energy.
 It works from the single-point forces, stress and invariant MACE node features. The training set
-is relaxed MP structures plus perturbed copies, all labelled with the relaxed DFT energy.
+is relaxed MP structures plus perturbed copies, all labeled with the relaxed DFT energy.
 
 Unique prototypes, 3-seed mean ensemble:
 
 | model | F1 | DAF | MAE (eV/atom) | R² |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | this model | 0.654 | 4.344 | 0.074 | 0.392 |
 | raw MACE-MP-0 single point, no head | 0.554 | 4.699 | 0.129 | — |
 

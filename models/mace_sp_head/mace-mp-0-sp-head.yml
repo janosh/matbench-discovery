@@ -64,7 +64,7 @@ notes:
     on the unrelaxed WBM structure. On an unrelaxed structure that energy is an upper bound of the
     relaxed energy. The gap is the relaxation energy, which to second order is set by the forces
     (-1/2 f^T H^-1 f) and the stress (-V sigma^2 / 2B). A LightGBM head learns this residual from
-    the single-point forces, stress and invariant MACE features. No geometry optimisation is done
+    the single-point forces, stress and invariant MACE features. No geometry optimization is done
     at inference: one force-field call per structure.
 
     Without the head, the raw MACE-MP-0 single point on the initial structures gives unique-
@@ -72,7 +72,7 @@ notes:
     high, so precision is high (0.72) and recall low (0.45). The head lifts F1 to 0.654.
   training: |
     The head is trained on MP 2022 data only: relaxed structures plus perturbed copies (as in
-    CGCNN+P), each labelled with the relaxed uncorrected DFT energy. No WBM data was used for
+    CGCNN+P), each labeled with the relaxed uncorrected DFT energy. No WBM data was used for
     training, early stopping or model selection. The three seeds give unique-prototype F1 0.6509,
     0.6544 and 0.6526, and the submitted file is their mean. The MP2020 correction is applied as in
     the official MLIP pipeline, using the WBM entry's calculation parameters, with oxide typing from
