@@ -23,15 +23,16 @@ docs: https://atomgptlab.github.io/alignn/
 doi: https://doi.org/10.48550/arXiv.2609.19487
 paper: https://arxiv.org/abs/2609.19487
 pypi: https://pypi.org/project/alignn
-pr_url:       # required key, set once the submission PR exists
+pr_url: https://github.com/janosh/matbench-discovery/pull/409
 # alignn_ff_mptrj.zip in figshare item doi:10.6084/m9.figshare.34846446
 checkpoint_url: https://figshare.com/files/70840341
 license:
   code: MIT
   code_url: https://github.com/atomgptlab/alignn/blob/main/LICENSE.rst
   # the weights are published on figshare under CC BY 4.0
+  # (https://figshare.com/articles/dataset/34846446?file=70840341)
   checkpoint: CC-BY-4.0
-  checkpoint_url: https://figshare.com/articles/dataset/34846446?file=70840341
+  checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
 
 environment:
   # torch 2.14 ships cp314 wheels and the whole ALIGNN stack resolves on
