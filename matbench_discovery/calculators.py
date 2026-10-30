@@ -630,6 +630,15 @@ def _extract_alignn_model(archive_path: str) -> str:
             if file.read() == archive_identity:
                 return existing_dirs[0]
 
+    # a run stopped between creating the temporary directory and marking it leaves
+    # it empty, and an empty directory holds nothing to protect
+    if (
+        os.path.isdir(tmp_extract_dir)
+        and not os.path.islink(tmp_extract_dir)
+        and not os.listdir(tmp_extract_dir)
+    ):
+        os.rmdir(tmp_extract_dir)
+
     # only replace directories this loader made, which always hold .archive-stat
     for dir_path, marker_path in (
         (extract_dir, identity_path),
