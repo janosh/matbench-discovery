@@ -602,53 +602,74 @@ def _alignn_model_dirs(root_dir: str) -> list[str]:
     ]
 
 
+# an ALIGNN checkpoint ZIP holds a few files (about 44 MB uncompressed), so anything
+# far larger is rejected before extraction instead of filling the cache disk
+_ALIGNN_ZIP_MAX_MEMBERS = 100
+_ALIGNN_ZIP_MAX_BYTES = 2 * 1024**3
+
+
+def _alignn_extract_dir(archive_path: str) -> str:
+    """Return the directory an ALIGNN checkpoint ZIP is extracted into."""
+    return f"{os.path.splitext(archive_path)[0]}-extracted"
+
+
 def _extract_alignn_model(archive_path: str) -> str:
     """Safely and atomically extract an ALIGNN checkpoint ZIP holding one directory
     (at any depth, e.g. a zipped run folder) with config.json and best_model.pt.
+
+    Callers hold ``f"{_alignn_extract_dir(archive_path)}.lock"``.
     """
-    extract_dir = f"{os.path.splitext(archive_path)[0]}-extracted"
+    extract_dir = _alignn_extract_dir(archive_path)
     tmp_extract_dir = f"{extract_dir}.tmp"
     archive_identity = ":".join(map(str, _file_state(archive_path)))
     identity_path = f"{extract_dir}/.archive-stat"
-    with FileLock(f"{extract_dir}.lock"):
-        existing_dirs = _alignn_model_dirs(extract_dir)
-        if len(existing_dirs) == 1 and os.path.isfile(identity_path):
-            with open(identity_path, encoding="utf-8") as file:
-                if file.read() == archive_identity:
-                    return existing_dirs[0]
+    existing_dirs = _alignn_model_dirs(extract_dir)
+    if len(existing_dirs) == 1 and os.path.isfile(identity_path):
+        with open(identity_path, encoding="utf-8") as file:
+            if file.read() == archive_identity:
+                return existing_dirs[0]
 
-        shutil.rmtree(tmp_extract_dir, ignore_errors=True)
-        os.makedirs(tmp_extract_dir)
-        try:
-            with zipfile.ZipFile(archive_path) as archive:
-                real_extract_dir = os.path.realpath(tmp_extract_dir)
-                for member in archive.infolist():
-                    target_path = os.path.realpath(
-                        f"{tmp_extract_dir}/{member.filename}"
-                    )
-                    common_path = os.path.commonpath((real_extract_dir, target_path))
-                    if common_path != real_extract_dir:
-                        raise ValueError(
-                            f"Unsafe path {member.filename!r} in {archive_path}"
-                        )
-                archive.extractall(tmp_extract_dir)
-
-            model_dirs = _alignn_model_dirs(tmp_extract_dir)
-            if len(model_dirs) != 1:
+    shutil.rmtree(tmp_extract_dir, ignore_errors=True)
+    os.makedirs(tmp_extract_dir)
+    try:
+        with zipfile.ZipFile(archive_path) as archive:
+            members = archive.infolist()
+            total_size = sum(member.file_size for member in members)
+            if (
+                len(members) > _ALIGNN_ZIP_MAX_MEMBERS
+                or total_size > _ALIGNN_ZIP_MAX_BYTES
+            ):
                 raise ValueError(
-                    "Expected one directory with config.json and best_model.pt in "
-                    f"{archive_path}, got {model_dirs}"
+                    f"{archive_path} holds {len(members)} files and {total_size} "
+                    f"bytes uncompressed, above the {_ALIGNN_ZIP_MAX_MEMBERS} file "
+                    f"and {_ALIGNN_ZIP_MAX_BYTES} byte limits"
                 )
-            relative_model_dir = os.path.relpath(model_dirs[0], tmp_extract_dir)
-            with open(
-                f"{tmp_extract_dir}/.archive-stat", mode="w", encoding="utf-8"
-            ) as file:
-                file.write(archive_identity)
-            shutil.rmtree(extract_dir, ignore_errors=True)
-            os.replace(tmp_extract_dir, extract_dir)
-            return os.path.normpath(f"{extract_dir}/{relative_model_dir}")
-        finally:
-            shutil.rmtree(tmp_extract_dir, ignore_errors=True)
+            real_extract_dir = os.path.realpath(tmp_extract_dir)
+            for member in members:
+                target_path = os.path.realpath(f"{tmp_extract_dir}/{member.filename}")
+                common_path = os.path.commonpath((real_extract_dir, target_path))
+                if common_path != real_extract_dir:
+                    raise ValueError(
+                        f"Unsafe path {member.filename!r} in {archive_path}"
+                    )
+            archive.extractall(tmp_extract_dir)
+
+        model_dirs = _alignn_model_dirs(tmp_extract_dir)
+        if len(model_dirs) != 1:
+            raise ValueError(
+                "Expected one directory with config.json and best_model.pt in "
+                f"{archive_path}, got {model_dirs}"
+            )
+        relative_model_dir = os.path.relpath(model_dirs[0], tmp_extract_dir)
+        with open(
+            f"{tmp_extract_dir}/.archive-stat", mode="w", encoding="utf-8"
+        ) as file:
+            file.write(archive_identity)
+        shutil.rmtree(extract_dir, ignore_errors=True)
+        os.replace(tmp_extract_dir, extract_dir)
+        return os.path.normpath(f"{extract_dir}/{relative_model_dir}")
+    finally:
+        shutil.rmtree(tmp_extract_dir, ignore_errors=True)
 
 
 def _alignn(device: str, checkpoint: str, dtype: str = "float64") -> Calculator:
@@ -659,9 +680,12 @@ def _alignn(device: str, checkpoint: str, dtype: str = "float64") -> Calculator:
     # ALIGNN builds its tensors from torch's default dtype, so honoring the runner's
     # --dtype is a global switch made before the weights load
     torch.set_default_dtype({"float32": torch.float32, "float64": torch.float64}[dtype])
-    model_dir = _extract_alignn_model(checkpoint)
-    # forces and stress come from one backward pass through the predicted energy
-    return AlignnAtomwiseCalculator(path=model_dir, device=device)
+    # hold the lock until the weights are in memory, so a worker re-extracting a
+    # changed archive cannot delete files this one is still reading
+    with FileLock(f"{_alignn_extract_dir(checkpoint)}.lock"):
+        model_dir = _extract_alignn_model(checkpoint)
+        # forces and stress come from one backward pass through the predicted energy
+        return AlignnAtomwiseCalculator(path=model_dir, device=device)
 
 
 def _tace(model_key: str, *, accelerate: bool = True) -> Callable[..., Calculator]:
