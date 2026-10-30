@@ -9,11 +9,11 @@ repo: https://github.com/PrincessHakuryu/MACE-SOYO
 checkpoint_url: https://github.com/PrincessHakuryu/MACE-SOYO/releases/download/v0.1/mace_soyo_oam.pth
 doi:
 paper:
-pr_url:
+pr_url: https://github.com/janosh/matbench-discovery/pull/408
 openness: OSOD
 architecture_types: [gnn]
 train_task: S2EFS
-training_sets: [OMat24, sAlex, MPtrj]
+training_sets: [MPtrj, OMat24, sAlex]
 test_task: IS2RE-SR
 targets: EFS_G
 model_params: 6475336
@@ -143,22 +143,22 @@ metrics:
       imaginary_mode_rate: 0.0097
       spectrum_w1: 0.1204
       pred_file:
-        name: models/mace-soyo/mace-soyo-oam/phonon-oam/2026-10-22-phonons-kappa-103.json.gz
+        name: models/mace_soyo/mace-soyo-oam/phonon-oam/2026-10-22-phonons-kappa-103.json.gz
         url: https://ndownloader.figshare.com/files/70537098
         size: 15679466
         md5: 296690b28b4d8b29654602de716e3e31
       force_file:
-        name: models/mace-soyo/mace-soyo-oam/phonon-oam/2026-10-22-phonons-kappa-103-forces.json.gz
+        name: models/mace_soyo/mace-soyo-oam/phonon-oam/2026-10-22-phonons-kappa-103-forces.json.gz
         url: https://ndownloader.figshare.com/files/70537104
         size: 252614411
         md5: 3be87ffaae5473978bfec9467f0ce72f
       phonon_file:
-        name: models/mace-soyo/mace-soyo-oam/phonon-oam/2026-10-22-phonons-kappa-103-phonons.json.gz
+        name: models/mace_soyo/mace-soyo-oam/phonon-oam/2026-10-22-phonons-kappa-103-phonons.json.gz
         url: https://ndownloader.figshare.com/files/70547589
         size: 1325003533
         md5: 071701a6ae93abd3e82e5878b2bfebf9
       run_info_file:
-        name: models/mace-soyo/mace-soyo-oam/phonon-oam/2026-10-22-phonons-kappa-103-run-info.json
+        name: models/mace_soyo/mace-soyo-oam/phonon-oam/2026-10-22-phonons-kappa-103-run-info.json
         url: https://ndownloader.figshare.com/files/70537095
         size: 5520
         md5: 459446a497f8cc0e022a0d970e5ce81b
@@ -168,7 +168,7 @@ metrics:
       max_gpu_mem_gb: 2.236
   md:
     pred_file:
-      name: models/mace-soyo/mace-soyo-oam/2026-10-22-md-metrics.csv.gz
+      name: models/mace_soyo/mace-soyo-oam/2026-10-22-md-metrics.csv.gz
       url: https://ndownloader.figshare.com/files/70537092
       size: 1488
       md5: df63d5dfa837514df3e621ded90a75d5
@@ -185,7 +185,7 @@ metrics:
     n_systems: 17 # count
   diatomics:
     pred_file:
-      name: models/mace-soyo/mace-soyo-oam/diatomic-oam/2026-10-22-diatomics.json.gz
+      name: models/mace_soyo/mace-soyo-oam/diatomic-oam/2026-10-22-diatomics.json.gz
       url: https://ndownloader.figshare.com/files/70537080
       size: 238066
       md5: d22aec572cc2977c6c78fc979e040234
@@ -213,7 +213,7 @@ metrics:
       missing_elements: []
   discovery:
     pred_file:
-      name: models/mace-soyo/mace-soyo-oam/discovery-oam/2026-10-22-discovery.csv.gz
+      name: models/mace_soyo/mace-soyo-oam/discovery-oam/2026-10-22-discovery.csv.gz
       url: https://ndownloader.figshare.com/files/70537083
       size: 1315353
       md5: f59c1e871c168031c5c303b412b2280b
@@ -251,7 +251,7 @@ metrics:
       missing_preds: 0 # count
   geo_opt:
     pred_file:
-      name: models/mace-soyo/mace-soyo-oam/2026-10-22-geo-opt.jsonl.gz
+      name: models/mace_soyo/mace-soyo-oam/2026-10-22-geo-opt.jsonl.gz
       url: https://ndownloader.figshare.com/files/70537101
       size: 104347504
       md5: 8711762af4b8aa69e4b4d2e58e92bdf8
@@ -263,7 +263,7 @@ metrics:
       symmetry_increase: 0.2397 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/mace-soyo/mace-soyo-oam/2026-10-22-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        name: models/mace_soyo/mace-soyo-oam/2026-10-22-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
         url: https://ndownloader.figshare.com/files/70537089
         size: 6899869
         md5: cc3dc2651704b0dee33bc3d28820081b
@@ -275,7 +275,7 @@ metrics:
       symmetry_increase: 0.1273 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/mace-soyo/mace-soyo-oam/2026-10-22-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        name: models/mace_soyo/mace-soyo-oam/2026-10-22-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
         url: https://ndownloader.figshare.com/files/70537086
         size: 6861114
         md5: 8c5ecb42cd977722183a91d0f40cbee4

@@ -9,7 +9,7 @@ repo: https://github.com/PrincessHakuryu/MACE-SOYO
 checkpoint_url: https://github.com/PrincessHakuryu/MACE-SOYO/releases/download/v0.1/mace_soyo_mptraj.pth
 doi:
 paper:
-pr_url:
+pr_url: https://github.com/janosh/matbench-discovery/pull/408
 openness: OSOD
 architecture_types: [gnn]
 train_task: S2EFS
@@ -135,7 +135,7 @@ notes:
 metrics:
   discovery:
     pred_file:
-      name: models/mace-soyo/mace-soyo-mptrj/2026-10-19-discovery.csv.gz
+      name: models/mace_soyo/mace-soyo-mptrj/2026-10-19-discovery.csv.gz
       url: https://ndownloader.figshare.com/files/70344495
       size: 1316605
       md5: 2696b18477437cfae3cb6fe35ac38c6c
@@ -173,7 +173,7 @@ metrics:
       missing_preds: 0 # count
   geo_opt:
     pred_file:
-      name: models/mace-soyo/mace-soyo-mptrj/2026-10-19-geo-opt.jsonl.gz
+      name: models/mace_soyo/mace-soyo-mptrj/2026-10-19-geo-opt.jsonl.gz
       url: https://ndownloader.figshare.com/files/70344513
       size: 103631154
       md5: 724e3089ab8f669f0c42364872a31b41
@@ -185,7 +185,7 @@ metrics:
       symmetry_increase: 0.2327 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/mace-soyo/mace-soyo-mptrj/2026-10-19-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        name: models/mace_soyo/mace-soyo-mptrj/2026-10-19-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
         url: https://ndownloader.figshare.com/files/70344501
         size: 6805810
         md5: 628a392e72db21bfda041f221b1005b6
@@ -197,7 +197,7 @@ metrics:
       symmetry_increase: 0.1246 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/mace-soyo/mace-soyo-mptrj/2026-10-19-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        name: models/mace_soyo/mace-soyo-mptrj/2026-10-19-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
         url: https://ndownloader.figshare.com/files/70344498
         size: 6785439
         md5: 3b38ae3638ae905dfc1a2cea3ff1c416
@@ -210,22 +210,22 @@ metrics:
       imaginary_mode_rate: 0.0
       spectrum_w1: 0.3267
       pred_file:
-        name: models/mace-soyo/mace-soyo-mptrj/phonon/2026-10-19-phonons-kappa-103.json.gz
+        name: models/mace_soyo/mace-soyo-mptrj/phonon/2026-10-19-phonons-kappa-103.json.gz
         url: https://ndownloader.figshare.com/files/70344510
         size: 15680026
         md5: 27daa38eddebb6715a1cf5c0819382b2
       force_file:
-        name: models/mace-soyo/mace-soyo-mptrj/phonon/2026-10-19-phonons-kappa-103-forces.json.gz
+        name: models/mace_soyo/mace-soyo-mptrj/phonon/2026-10-19-phonons-kappa-103-forces.json.gz
         url: https://ndownloader.figshare.com/files/70344516
         size: 253592667
         md5: 7bca52157eb820fb0a634d676d240c51
       phonon_file:
-        name: models/mace-soyo/mace-soyo-mptrj/phonon/2026-10-19-phonons-kappa-103-phonons.json.gz
+        name: models/mace_soyo/mace-soyo-mptrj/phonon/2026-10-19-phonons-kappa-103-phonons.json.gz
         url: https://ndownloader.figshare.com/files/70361055
         size: 1376300566
         md5: 65fe11cb12f32b0f9042a67a6a9c50f4
       run_info_file:
-        name: models/mace-soyo/mace-soyo-mptrj/phonon/2026-10-19-phonons-kappa-103-run-info.json
+        name: models/mace_soyo/mace-soyo-mptrj/phonon/2026-10-19-phonons-kappa-103-run-info.json
         url: https://ndownloader.figshare.com/files/70344507
         size: 5524
         md5: 583d1a6470427d9b0dd746ad9400d6ee
@@ -235,7 +235,7 @@ metrics:
       max_gpu_mem_gb: 2.235
   md:
     pred_file:
-      name: models/mace-soyo/mace-soyo-mptrj/2026-10-19-md-metrics.csv.gz
+      name: models/mace_soyo/mace-soyo-mptrj/2026-10-19-md-metrics.csv.gz
       url: https://ndownloader.figshare.com/files/70344504
       size: 1491
       md5: a15d9f13aa356daded94157cfda5740a
@@ -252,7 +252,7 @@ metrics:
     n_systems: 17 # count
   diatomics:
     pred_file:
-      name: models/mace-soyo/mace-soyo-mptrj/diatomic/2026-10-19-diatomics.json.gz
+      name: models/mace_soyo/mace-soyo-mptrj/diatomic/2026-10-19-diatomics.json.gz
       url: https://ndownloader.figshare.com/files/70344492
       size: 247959
       md5: 54ff28ac676408088388eb4c08872702

@@ -436,6 +436,8 @@ def _mace(checkpoint: str, head: str | None = None) -> Callable[[str, str], Calc
         )
 
     return make_calc
+
+
 def _mace_soyo(head: str) -> Callable[..., Calculator]:
     """Download and export a fixed benchmark checkpoint for the target GPU."""
     if head == "mptraj":
@@ -522,6 +524,7 @@ def _mace_soyo(head: str) -> Callable[..., Calculator]:
         )
 
     return make_calc
+
 
 def _orb(variant: str) -> Callable[[str], Calculator]:
     def make_calc(device: str) -> Calculator:

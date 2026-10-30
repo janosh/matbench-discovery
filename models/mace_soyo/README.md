@@ -79,7 +79,6 @@ Evaluation settings:
   `force_max=1e-4` eV/Angstrom and `max_steps=300`.
 - MACE-SOYO hardware: RTX 4090 for discovery/phonons; H200 NVL for MD/diatomics.
 
-
 ## Training
 
 ### Recommended PyTorch version
@@ -94,10 +93,11 @@ to avoid any incompatibilities if the automatic gradcheck fails.
 Enable compiled training would speed up training for about 30% in MACE-SOYO.
 
 ### Time and VRAM
+
 Training Time and VRAM cost:
 Taking MPtraj as an example, the total training time is 5.0 GPU-days on 4 A100
 with compiled_training on.(100 epochs)The batchsize is 48 per GPU. The peak VRAM is up to 52GB.
-(Refernece: DPA4-Mini:5.8(150 epochs), DPA4-Neo:8.6(100 epochs)
+(Reference: DPA4-Mini:5.8(150 epochs), DPA4-Neo:8.6(100 epochs)
  https://arxiv.org/pdf/2606.02419 Table1, MACE-MH-1-cueq:8.3(100 epochs, test by us))
 
 Inference Time:
@@ -106,7 +106,7 @@ Using the supplied 576-atom [example/md.arc](example/md.arc), the average time p
 The inference timing benchmark was using the ASE calculator of these models,
 DP_TRITON_INFER=2, DP_TF32_INFER=0, DP_AMP_INFER=0 and vesin on for exporting and using DPA4 models,
 CUEQ and torch.compile on for MACE-mh-1.
-It needs to be mentioned that building neighbour matrix is also included in the time.
+It needs to be mentioned that building neighbor matrix is also included in the time.
 
 ### Data and configuration
 
@@ -153,7 +153,6 @@ checkpoints and AOTI packages. `pbc: true` means TTT; `false` means FFF and allo
 molecules without a cell. Periodic structures require a valid three-dimensional
 cell. An empty `valid_path` splits that dataset using `train_percent`,
 `valid_percent`, and `split_seed`.
-
 
 Energy and forces are required, in eV and eV/Å. Stress uses ASE's eV/Å³ convention;
 missing stress labels and nonperiodic structures are excluded from stress loss.
@@ -258,6 +257,7 @@ For a new name with a multihead source, choose its initializer explicitly:
   pbc: true
   e0_yaml_path: ./config/e0_new_task.yaml
 ```
+
 For molecular conditioning, set `use_spin_charge: true`. The loader reads graph
 labels `charge` and `spin` from ASE row data. Spin means multiplicity (singlet = 1).
 Conditioning is enabled only when both labels are present; it does not predict
@@ -469,6 +469,7 @@ Two GPUs, one MPI rank per GPU (CUDA-aware MPI required):
 CUDA_VISIBLE_DEVICES=0,1 OMP_NUM_THREADS=1 mpirun -np 2 lmp -k on g 2 -sf kk \
   -pk kokkos newton on neigh half comm device gpu/aware on -in in.lammps
 ```
+
 ## Future plan
 
 Keep formalizing the code, and add long-range interactions with multipole_particle_mesh_ewald.
