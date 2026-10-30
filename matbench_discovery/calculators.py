@@ -623,15 +623,29 @@ def _extract_alignn_model(archive_path: str) -> str:
     tmp_extract_dir = f"{extract_dir}.tmp"
     archive_identity = ":".join(map(str, _file_state(archive_path)))
     identity_path = f"{extract_dir}/.archive-stat"
+    tmp_identity_path = f"{tmp_extract_dir}/.archive-stat"
     existing_dirs = _alignn_model_dirs(extract_dir)
     if len(existing_dirs) == 1 and os.path.isfile(identity_path):
         with open(identity_path, encoding="utf-8") as file:
             if file.read() == archive_identity:
                 return existing_dirs[0]
 
+    # only replace directories this loader made, which always hold .archive-stat
+    for dir_path, marker_path in (
+        (extract_dir, identity_path),
+        (tmp_extract_dir, tmp_identity_path),
+    ):
+        if os.path.lexists(dir_path) and not os.path.isfile(marker_path):
+            raise ValueError(
+                f"Refusing to replace {dir_path}, which this loader did not create"
+            )
+
     shutil.rmtree(tmp_extract_dir, ignore_errors=True)
     os.makedirs(tmp_extract_dir)
     try:
+        # mark the temporary directory as this loader's before filling it
+        with open(tmp_identity_path, mode="w", encoding="utf-8") as file:
+            file.write(archive_identity)
         with zipfile.ZipFile(archive_path) as archive:
             members = archive.infolist()
             total_size = sum(member.file_size for member in members)
@@ -661,9 +675,8 @@ def _extract_alignn_model(archive_path: str) -> str:
                 f"{archive_path}, got {model_dirs}"
             )
         relative_model_dir = os.path.relpath(model_dirs[0], tmp_extract_dir)
-        with open(
-            f"{tmp_extract_dir}/.archive-stat", mode="w", encoding="utf-8"
-        ) as file:
+        # rewrite the marker in case the archive itself held an .archive-stat
+        with open(tmp_identity_path, mode="w", encoding="utf-8") as file:
             file.write(archive_identity)
         shutil.rmtree(extract_dir, ignore_errors=True)
         os.replace(tmp_extract_dir, extract_dir)
