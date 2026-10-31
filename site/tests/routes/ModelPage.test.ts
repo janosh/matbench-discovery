@@ -360,7 +360,18 @@ describe(`Model Detail Page`, () => {
     mount_page({ ...locator_model, hyperparams: undefined })
 
     expect(document.querySelector(`.hyperparams`)).toBeNull()
-    const link = document.querySelector<HTMLAnchorElement>(`.deps .dependency-detail`)
+    const names = [...document.querySelectorAll(`.deps li > a:first-child`)].map(
+      (name) => name.textContent?.trim() ?? ``,
+    )
+    expect(names).toHaveLength(locator_model.environment.dependencies.length)
+    expect(names).toEqual(
+      names.toSorted((name_a, name_b) =>
+        name_a.localeCompare(name_b, `en`, { sensitivity: `base` }),
+      ),
+    )
+    const link = document.querySelector<HTMLAnchorElement>(
+      `.deps .dependency-detail[aria-label="${locator_detail}"]`,
+    )
     if (!link) throw new Error(`missing dependency detail link`)
     const [leading, trailing] = link.querySelectorAll(`span`)
     if (!leading || !trailing) throw new Error(`missing dependency detail spans`)

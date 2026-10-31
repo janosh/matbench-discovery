@@ -4,7 +4,7 @@ version = "0"
 requires-python = ">=3.14"
 dependencies = [
   "matbench-discovery[phonons,symmetry]",
-  "GGNN @ git+https://github.com/SamsungDS/GGNN@16b5cae47437",
+  "ggnn @ git+https://github.com/SamsungDS/GGNN@16b5cae47437",
   "fairchem-core==1.10.0",
   "cuequivariance==0.9.0",
   "cuequivariance-ops-torch-cu12==0.9.0",

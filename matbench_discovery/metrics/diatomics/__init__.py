@@ -508,7 +508,7 @@ def write_metrics_to_yaml(
     A recompute (pred_file_path=None) keeps the file ref, excluded_formula_reasons
     and reproducibility verdict; a pred_file_path (inside the repo) registers a new
     run, dropping old file metadata even at the same filename. run_metadata is the
-    prediction file's own run_metadata ({} if absent): it yields the cost block
+    prediction file's own run_metadata (empty if absent): it yields the cost block
     (hpc.with_cost_block), an optional pred_file_url and a new run's exclusions.
     """
 

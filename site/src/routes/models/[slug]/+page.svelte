@@ -176,7 +176,13 @@
   let ranks = $derived(model_metric_ranks(model.model_key, ACTIVE_MODELS, RANKED_METRICS))
   let comparing = $derived(comparison.keys.has(model.model_key))
   let n_others = $derived(comparison.keys.size - (comparing ? 1 : 0))
-  let env_packages = $derived(model.environment.dependencies.map(parse_dependency_spec))
+  let env_packages = $derived(
+    model.environment.dependencies
+      .map(parse_dependency_spec)
+      .toSorted((dep_a, dep_b) =>
+        dep_a.name.localeCompare(dep_b.name, `en`, { sensitivity: `base` }),
+      ),
+  )
   let added_ago = $derived(
     model.dates.benchmark_added ? format_relative_time(model.dates.benchmark_added) : ``,
   )
@@ -703,13 +709,13 @@
   {/if}
 
   {#if env_packages.length}
-    <section class="deps">
-      <h2 id="dependencies">Dependencies</h2>
+    <details class="deps">
+      <summary><h2 id="dependencies">Dependencies ({env_packages.length})</h2></summary>
       <!-- widgets tooltip, not the native one: it only shows versions cut off by the ellipsis -->
       <ul {@attach tooltip()}>
-        {#each env_packages as { name, detail, href } (name + detail)}
+        {#each env_packages as { name, name_href, detail, href } (name + detail)}
           <li>
-            {name}
+            <a href={name_href} target="_blank" rel="noopener noreferrer">{name}</a>
             {#if detail}
               <a
                 class="dependency-detail"
@@ -726,7 +732,7 @@
           </li>
         {/each}
       </ul>
-    </section>
+    </details>
   {/if}
 </div>
 
@@ -856,24 +862,53 @@
       font-size: 0.8em;
     }
   }
-  section.deps ul {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1em;
-    padding: 0;
+  /* top-level so happy-dom (no CSS nesting) computes it in tests too */
+  details.deps li > a:first-child,
+  .dependency-detail span:first-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
-  section.deps ul li {
-    background-color: var(--chip-bg);
-    padding: 2pt 6pt;
-    border-radius: 3pt;
-    text-align: center;
-    margin: 0;
-    font-weight: lighter;
-    max-width: 12em;
-  }
-  section.deps ul li :is(a, strong) {
-    display: block;
-    font-weight: bold;
+  details.deps {
+    margin: 2em 0;
+    summary h2 {
+      display: inline;
+      cursor: pointer;
+    }
+    ul {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(18em, 100%), 1fr));
+      column-gap: 3em;
+      padding: 0;
+      list-style: none;
+    }
+    li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1em;
+      margin: 0;
+      padding: 2pt 0;
+      line-height: 1.3;
+      border-bottom: 1px solid var(--border);
+    }
+    /* last row of the 2-column grid */
+    li:is(:last-child, :nth-last-child(2):nth-child(odd)) {
+      border-bottom: none;
+    }
+    /* version numbers as light code, less prominent than the package name */
+    .dependency-detail {
+      display: flex;
+      min-width: 0;
+      white-space: nowrap;
+      font-family: monospace;
+      font-size: 0.9em;
+      opacity: 0.85;
+      span:last-child {
+        flex: none;
+      }
+    }
   }
   /* Compact fused parity tabs sit directly above the plot. */
   .energy-parity-controls {
@@ -907,25 +942,6 @@
   }
   :global(.energy-parity-tabs.button-group .options > button:last-child) {
     border-radius: 0 9999px 9999px 0;
-  }
-  /* version numbers as light code, less prominent than the package name */
-  section.deps ul li a {
-    display: flex;
-    min-width: 0;
-    max-width: 100%;
-    white-space: nowrap;
-    font-weight: normal;
-    font-family: monospace;
-    font-size: 0.9em;
-    opacity: 0.85;
-  }
-  .dependency-detail span:first-child {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .dependency-detail span:last-child {
-    flex: none;
   }
   :is(.meta-info, .links) {
     display: flex;

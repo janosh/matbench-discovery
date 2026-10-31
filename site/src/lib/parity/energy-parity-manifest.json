@@ -223,6 +223,18 @@
         "sha256": "c42fdcd81853ec488d8fc2c5a5dca438e5cab0a61ce880cd138ce168386a51db"
       }
     },
+    "mace-soyo-mptrj": {
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-mace-soyo-mptrj-51c851775b4b3871.json.gz",
+        "sha256": "6c88dc92c755bfcd55378331c5584b5491280ccc91de3e590c595e8ec7e8490a"
+      }
+    },
+    "mace-soyo-oam": {
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-mace-soyo-oam-9e4860bcd830739e.json.gz",
+        "sha256": "8fb93acd0269641f428743fef5f0068498d9a8b677935c97947edad016c99789"
+      }
+    },
     "matris-10m-mp": {
       "parity": {
         "asset": "energy-parity-wbm-v1-model-matris-10m-mp-6840fc3d56f1073b.json.gz",

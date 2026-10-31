@@ -2,6 +2,7 @@
   import type { Label, ModelData } from '#lib/types.js'
   import {
     cost_annotation,
+    format_metric,
     get_nested_number,
     is_finite_num,
     label_data_path,
@@ -130,8 +131,8 @@
                 {#if !has_value}
                   n/a
                 {:else}
-                  {format_num(value, metric.format)}
-                  <small>{unit ?? ``}</small>
+                  {format_metric(value, metric)}
+                  {#if unit !== `s`}<small>{unit ?? ``}</small>{/if}
                 {/if}
               </strong></span
             >

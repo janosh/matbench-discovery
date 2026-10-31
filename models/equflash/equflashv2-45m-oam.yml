@@ -46,7 +46,7 @@ environment:
   - torch==2.10.0+cu126
   - fairchem-core==1.10.0
   - cuequivariance==0.9.0
-  - GGNN @ git+https://github.com/SamsungDS/GGNN@16b5cae47437
+  - ggnn @ git+https://github.com/SamsungDS/GGNN@16b5cae47437
   python_version: '3.14'
   project: models/equflash/kappa-env
 openness: OSOD
