@@ -160,10 +160,7 @@
                   {#snippet trigger(trigger_props)}<span
                       role="button"
                       tabindex="0"
-                      {...trigger_props}
-                      >{@html row.label}{#if row.unit}<small>
-                          {row.unit}</small
-                        >{/if}</span
+                      {...trigger_props}>{@html row.label}</span
                     >{/snippet}
                   {@html row.description ?? ``}
                 </Popover>

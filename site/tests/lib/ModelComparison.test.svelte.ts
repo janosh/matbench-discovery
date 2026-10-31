@@ -13,6 +13,7 @@ import {
   COMPARE_GROUPS,
   compare_cells,
   comparison,
+  format_duration,
   mark_compared_rows,
   type CompareRow,
 } from '#lib/model-comparison.svelte.js'
@@ -109,6 +110,29 @@ function with_reactive_page_url(): void {
 beforeEach(reset_comparison)
 
 describe(`compare_cells`, () => {
+  it.each([
+    [0.4, `0s`],
+    [52, `52s`],
+    [108.15, `1m 48s`],
+    [10_720.95, `2h 58m 41s`],
+    [7_205, `2h 0m 5s`],
+    [220_585.84, `2d 13h 16m`],
+  ])(`formats %s s as %s`, (seconds, expected) => {
+    expect(format_duration(seconds)).toBe(expected)
+  })
+
+  it(`shows units on values: durations for seconds, plain decimals for small GB`, () => {
+    const [model] = MODELS.filter((entry) => entry.metrics?.md?.cost?.max_gpu_mem_gb)
+    if (!model) throw new Error(`no model with MD VRAM`)
+    const row_for = (key: string) =>
+      COMPARE_GROUPS.flatMap((group) => group.rows).find((row) => row.key === key)
+    const vram_row = row_for(ALL_METRICS.md_max_gpu_mem_gb.key)
+    const time_row = row_for(ALL_METRICS.md_run_time_sec.key)
+    if (!vram_row || !time_row) throw new Error(`missing cost rows`)
+    expect(compare_cells(vram_row, [model])[0].text).toMatch(/^\d+(\.\d+)? GB$/)
+    expect(compare_cells(time_row, [model])[0].text).toMatch(/^(\d+[dhms] ?){1,3}$/)
+  })
+
   const field = as_models([0.5, 1, 2, 3, 7, null])
   // compared models are field members where the value exists there (like active models on
   // the real leaderboard), else stand-ins outside the field (superseded/deprecated models)

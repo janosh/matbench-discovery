@@ -364,6 +364,37 @@ type CompareCell = {
   best?: boolean // best among the compared models (ties share it)
 }
 
+// Seconds as up to three consecutive units from the largest nonzero one: 2d 13h 16m, 4m 18s
+export function format_duration(seconds: number): string {
+  const units = [
+    [`d`, 86_400],
+    [`h`, 3_600],
+    [`m`, 60],
+    [`s`, 1],
+  ] as const
+  let rest = Math.round(seconds)
+  const counts = units.map(([unit, size]) => {
+    const count = Math.floor(rest / size)
+    rest -= count * size
+    return [count, unit] as const
+  })
+  const first = counts.findIndex(([count]) => count > 0)
+  if (first === -1) return `0s`
+  return counts
+    .slice(first, first + 3)
+    .map(([count, unit]) => `${count}${unit}`)
+    .join(` `)
+}
+
+// A numeric cell's value with its unit: durations for seconds, plain decimals otherwise
+// (SI prefixes would turn 0.76 GB into 760m)
+const value_text = (row: CompareRow, value: number): string => {
+  if (row.unit === `s`) return format_duration(value)
+  if (!row.unit) return format_num(value, row.format ?? `.3~g`)
+  const sep = [`%`, `×`].includes(row.unit) ? `` : ` `
+  return `${format_num(value, `.3~g`)}${sep}${row.unit}`
+}
+
 // One cell per compared model: formatted value plus leaderboard rank in the active cohort
 // and whether it's the best of the compared set. Text rows get neither.
 export function compare_cells(
@@ -387,7 +418,7 @@ export function compare_cells(
         return { text: `–`, title: escape_html(missing_metric_reason(model, row)) }
       return parts.length > 0 ? { text, parts } : { text }
     }
-    const text = format_num(value, row.format ?? `.3~g`)
+    const text = value_text(row, value)
     // times and speed-weighted scores carry their GPU (titles render as HTML, so escape)
     const cost = cost_annotation(model, row)
     const title = row.title?.(model) ?? (cost && escape_html(cost))
