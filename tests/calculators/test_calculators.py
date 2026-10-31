@@ -12,11 +12,15 @@ from types import ModuleType, SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
+from ase.calculators.calculator import Calculator
 from ase.calculators.emt import EMT
+from packaging.requirements import Requirement
+from packaging.version import Version
 
-from matbench_discovery import ROOT, calculators
+from matbench_discovery import ROOT, calculators, hpc
 from matbench_discovery.calculators import CALCULATORS, load_calculator
 from matbench_discovery.enums import Model
+from tests.utils import patch_model_metadata
 
 
 def test_load_calculator(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -81,6 +85,51 @@ def test_load_calculator(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Non
         load_calculator("does-not-exist")
 
 
+def test_load_calculator_with_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Runtime records weights' device/dtype and load time, rejecting ignored args."""
+    calc, runtime = calculators.load_calculator_with_runtime("emt")
+    assert isinstance(calc, EMT)
+    cpu = hpc.detect_hardware("cpu")
+    labels = ("backend", "device", "hardware", "acceleration", "n_processes")
+    assert [runtime[key] for key in labels] == ["none", "cpu", cpu, [], 1]
+    assert "dtype" not in runtime  # unknown for non-torch calculators w/o dtype arg
+    assert runtime["load_time_sec"] >= 0
+    assert "ase" in runtime["versions"]
+
+    torch = pytest.importorskip("torch")
+
+    class TorchCalc(EMT):
+        """EMT carrying a float32 torch module, like an MLIP calculator."""
+
+        def __init__(self) -> None:
+            super().__init__()
+            self.model = torch.nn.Linear(2, 2).to(torch.float32)
+
+    def float64_factory(device: str, dtype: str = "float64") -> EMT:
+        """Factory that ignores dtype (weights stay float32)."""
+        del device, dtype
+        return TorchCalc()
+
+    def no_dtype_factory(device: str) -> Calculator:
+        """Factory without a dtype option: the detected dtype is recorded."""
+        del device
+        return calculators._with_acceleration(TorchCalc(), "cuequivariance")  # noqa: SLF001
+
+    monkeypatch.setitem(
+        calculators.CALCULATORS, "mace_mp_0", calculators.CalcSpec(no_dtype_factory)
+    )
+    _, runtime = calculators.load_calculator_with_runtime("mace_mp_0", device="cpu")
+    assert (runtime["backend"], runtime["dtype"]) == ("torch", "float32")
+    assert runtime["acceleration"] == ["cuequivariance"]
+    with pytest.raises(ValueError, match="factory ignores the device"):
+        calculators.load_calculator_with_runtime("mace_mp_0", device="cuda")
+    monkeypatch.setitem(
+        calculators.CALCULATORS, "mace_mp_0", calculators.CalcSpec(float64_factory)
+    )
+    with pytest.raises(ValueError, match="weights are float32 but dtype='float64'"):
+        calculators.load_calculator_with_runtime("mace_mp_0", device="cpu")
+
+
 def test_equflash_uv_command_uses_isolated_override_project() -> None:
     """EquFlash installs via project env; YAML deps are provenance-only."""
     calc_spec = CALCULATORS["equflash_29m_oam"]
@@ -99,22 +148,26 @@ def test_equflash_uv_command_uses_isolated_override_project() -> None:
     assert calc_spec.project
 
 
-def test_uv_command_layers_model_packages_on_runner_env() -> None:
+def test_uv_command_layers_model_packages_on_runner_env(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """--with mode drops YAML Python and runner-provided pins, keeps model packages."""
-    calc_spec = CALCULATORS["mace_mp_0"]
-    yaml_env = Model.mace_mp_0.metadata["environment"]
-    assert yaml_env["python_version"] == "3.11"  # provenance only
-    assert "ase==3.22.1" in calc_spec.deps
-    command = calc_spec.uv_run_cmd("models/run_md.py", "--model", "mace_mp_0")
-    with_deps = [command[idx + 1] for idx, tok in enumerate(command) if tok == "--with"]
-    assert command[:3] == ["uv", "run", "--no-project"]
-    assert "--python" not in command
-    assert with_deps == list(calc_spec.runner_deps())
-    assert "torch==2.0.1" in with_deps
-    assert "mace-torch>=0.3.16" in with_deps
-    assert not any(dep.startswith(("ase", "numpy", "pymatgen")) for dep in with_deps), (
-        with_deps
-    )
+    environment = {
+        "python_version": "3.11",  # provenance only
+        "dependencies": ["ase==3.22.1", "Pymatgen>=2024", "torch==2.0.1", "fake-mlip"],
+        "find_links": ["https://data.pyg.org/whl/torch-2.0.1.html"],
+        "extra_index_urls": ["https://example.org/simple"],
+    }
+    patch_model_metadata(monkeypatch, Model.mace_mp_0, {"environment": environment})
+    calc_spec = calculators._runtime_calc_spec("mace_mp_0", EMT)()  # noqa: SLF001
+    assert calc_spec.deps == tuple(environment["dependencies"])
+    assert calc_spec.uv_run_cmd("models/run_md.py", "--model", "mace_mp_0") == [
+        *("uv", "run", "--no-project"),
+        *("--with", "torch==2.0.1", "--with", "fake-mlip"),
+        *("--find-links", "https://data.pyg.org/whl/torch-2.0.1.html"),
+        *("--extra-index-url", "https://example.org/simple"),
+        *("models/run_md.py", "--model", "mace_mp_0"),
+    ]
     provided = calculators.runner_provided_packages()
     assert {"ase", "numpy", "pymatgen", "phonopy", "matbench-discovery"} <= provided
     assert "torch" not in provided
@@ -162,17 +215,22 @@ def test_corrected_model_factory_contracts() -> None:
         ]
         assert value == expected or str(value).endswith(expected)
     assert "orb-v3-conservative-inf-mpa" in Model.orb_v3.metadata["checkpoint_url"]
-    # superseded TACE models pin torch 2.9.1 while AOTI export needs >=2.11, so they
-    # must stay eager, while the active ones opt into the OEQ/AOTI path
-    for model_key, expected_accelerate in {
-        "tace_v1_oam_m": False,
-        "tace_oam_rra_preview": False,
-        "tace_oam_l": True,
-        "tece_oam_rra_1_0": True,
-    }.items():
-        make_calc = CALCULATORS[model_key].make_calc
-        accelerate = inspect.getclosurevars(make_calc).nonlocals["accelerate"]
-        assert accelerate is expected_accelerate, model_key
+    # TACE's OEQ/AOTI export needs torch>=2.11, so TACE factories may only accelerate
+    # when their YAML pins a new enough torch (older pins must stay eager)
+    tace_keys = [
+        key
+        for key in CALCULATORS
+        if getattr(CALCULATORS[key].make_calc, "__qualname__", "").startswith("_tace.")
+    ]
+    assert len(tace_keys) >= 2, tace_keys
+    for model_key in tace_keys:
+        calc_spec = CALCULATORS[model_key]
+        accelerate = inspect.getclosurevars(calc_spec.make_calc).nonlocals["accelerate"]
+        torch_pin = next(
+            Requirement(dep) for dep in calc_spec.deps if dep.startswith("torch==")
+        )
+        torch_version = Version(next(iter(torch_pin.specifier)).version)
+        assert accelerate is (torch_version >= Version("2.11")), model_key
 
 
 def test_alphanet_factory_honors_requested_dtype(
@@ -277,8 +335,8 @@ def test_tace_factory_acceleration_paths(
     calc_calls: list[tuple[str, dict[str, object]]] = []
     export_calls: list[tuple[list[str], str, dict[str, str]]] = []
     ase_module = ModuleType("tace.interface.ase")
-    ase_module.__dict__["TACEAseCalc"] = lambda model, **kwargs: calc_calls.append(
-        (model, kwargs)
+    ase_module.__dict__["TACEAseCalc"] = lambda model, **kwargs: (
+        calc_calls.append((model, kwargs)) or SimpleNamespace()
     )
     torch_module = ModuleType("torch")
     torch_module.__dict__["cuda"] = SimpleNamespace(
@@ -306,7 +364,12 @@ def test_tace_factory_acceleration_paths(
     checkpoint = str(tmp_path / "model.pt")
     Path(checkpoint).write_bytes(b"checkpoint")
 
-    calculators._tace("tace_oam_l")("cuda", checkpoint=checkpoint)  # noqa: SLF001
+    calc = calculators._tace("tace_oam_l")("cuda", checkpoint=checkpoint)  # noqa: SLF001
+    # the enabled acceleration paths are recorded as cost labels
+    assert getattr(calc, calculators.ACCELERATION_ATTR) == (
+        "openequivariance",
+        "torch_aot_inductor",
+    )
 
     compiled = f"{tmp_path}/tace_oam_l-cuda-sm89-oeq-aoti.pt2"
     command, dest, env_overrides = export_calls[0]
@@ -325,7 +388,8 @@ def test_tace_factory_acceleration_paths(
     calculators._tace("tace_v1_oam_m", accelerate=False)(  # noqa: SLF001
         "cuda", checkpoint=checkpoint
     )
-    calculators._tace("tace_oam_l")("cpu", checkpoint=checkpoint)  # noqa: SLF001
+    eager = calculators._tace("tace_oam_l")("cpu", checkpoint=checkpoint)  # noqa: SLF001
+    assert not hasattr(eager, calculators.ACCELERATION_ATTR)
     assert len(export_calls) == 1
     assert calc_calls[1:] == [
         (packaged, accelerated),
@@ -368,6 +432,51 @@ def test_deepmd_archive_extraction_replaces_invalid_cache(tmp_path: Path) -> Non
         str(archive_path)
     )
     assert Path(updated_path).read_bytes() == b"updated frozen model"
+
+
+@pytest.mark.parametrize(
+    ("model_key", "eager"), [("nequip_oam_l_0_1", False), ("nequip_oam_xl_0_1", True)]
+)
+def test_nequip_factory_load_path(
+    model_key: str, eager: bool, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """NequIP/Allegro load AOTI .nequip.pt2s, except eager NequIP-OAM-XL (SIGFPEs)."""
+    compile_stub = Mock()
+    compiled_loader, eager_loader = Mock(return_value=EMT()), Mock(return_value=EMT())
+    nequip_ase = ModuleType("nequip.ase")
+    nequip_ase.NequIPCalculator = SimpleNamespace(  # ty: ignore[unresolved-attribute]
+        from_compiled_model=compiled_loader, _from_saved_model=eager_loader
+    )
+    monkeypatch.setitem(sys.modules, "nequip", ModuleType("nequip"))
+    monkeypatch.setitem(sys.modules, "nequip.ase", nequip_ase)
+    monkeypatch.setattr(calculators, "_run_to_atomic_output", compile_stub)
+
+    calc = CALCULATORS[model_key].make_calc("cuda")
+    if eager:
+        compile_stub.assert_not_called()
+        (registry,), kwargs = eager_loader.call_args
+        assert registry.startswith("nequip.net:mir-group/")
+        assert kwargs == {"device": "cuda", "compile_mode": "eager"}
+        assert not hasattr(calc, calculators.ACCELERATION_ATTR)
+        return
+    (command, output_path), _ = compile_stub.call_args
+    assert command[command.index("--mode") + 1] == "aotinductor"
+    assert output_path.endswith(f"{model_key}-cuda.nequip.pt2")
+    compiled_loader.assert_called_once_with(compile_path=output_path, device="cuda")
+    assert getattr(calc, calculators.ACCELERATION_ATTR) == ("torch_aot_inductor",)
+
+
+def test_dpa_4_0_1_loads_eager_checkpoint(monkeypatch: pytest.MonkeyPatch) -> None:
+    """DPA-4.0.1 loads its .pt eagerly (the frozen .pt2 breaks on isolated dimers)."""
+    deepmd_calculator = ModuleType("deepmd.calculator")
+    deepmd_calculator.DP = Mock(return_value=EMT())  # ty: ignore[unresolved-attribute]
+    monkeypatch.setitem(sys.modules, "deepmd", ModuleType("deepmd"))
+    monkeypatch.setitem(sys.modules, "deepmd.calculator", deepmd_calculator)
+
+    spec = CALCULATORS["dpa_4_0_1_pro_mptrj"]
+    assert spec.make_calc is calculators._deepmd_eager  # noqa: SLF001
+    assert isinstance(spec.make_calc("cuda", checkpoint="/ckpt/dpa.pt"), EMT)
+    deepmd_calculator.DP.assert_called_once_with("/ckpt/dpa.pt")  # no freeze, no .pt2
 
 
 def test_atomic_command_output_recovers_after_timeout(

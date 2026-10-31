@@ -7,27 +7,27 @@ dates:
 lifecycle: superseded
 superseded_by: dpa-3.1-3m-ft
 authors:
-  - name: Duo Zhang
-    affiliation: AI for Science Institute, Beijing
-    orcid: https://orcid.org/0000-0001-9591-2659
-  - name: Anyang Peng
-    affiliation: AI for Science Institute, Beijing
-    orcid: https://orcid.org/0000-0002-0630-2187
-  - name: Chun Cai
-    affiliation: AI for Science Institute, Beijing
-    orcid: https://orcid.org/0000-0001-6242-0439
-  - name: Linfeng Zhang
-    affiliation: AI for Science Institute, Beijing; DP Technology
-    email: linfeng.zhang.zlf@gmail.com
-    corresponding: true
-  - name: Han Wang
-    affiliation: Beijing Institute of Applied Physics and Computational Mathematics (IAPCM)
-    email: wang_han@iapcm.ac.cn
-    corresponding: true
+- name: Duo Zhang
+  affiliation: AI for Science Institute, Beijing
+  orcid: https://orcid.org/0000-0001-9591-2659
+- name: Anyang Peng
+  affiliation: AI for Science Institute, Beijing
+  orcid: https://orcid.org/0000-0002-0630-2187
+- name: Chun Cai
+  affiliation: AI for Science Institute, Beijing
+  orcid: https://orcid.org/0000-0001-6242-0439
+- name: Linfeng Zhang
+  affiliation: AI for Science Institute, Beijing; DP Technology
+  email: linfeng.zhang.zlf@gmail.com
+  corresponding: true
+- name: Han Wang
+  affiliation: Beijing Institute of Applied Physics and Computational Mathematics (IAPCM)
+  email: wang_han@iapcm.ac.cn
+  corresponding: true
 trained_by:
-  - name: Anyang Peng
-    affiliation: AI for Science Institute, Beijing
-    orcid: https://orcid.org/0000-0002-0630-2187
+- name: Anyang Peng
+  affiliation: AI for Science Institute, Beijing
+  orcid: https://orcid.org/0000-0002-0630-2187
 
 repo: https://github.com/deepmodeling/deepmd-kit
 doi: https://doi.org/10.1038/s41524-026-02146-2
@@ -43,12 +43,12 @@ license:
 
 environment:
   dependencies:
-    - 'deepmd-kit[torch]'
-    - torch==2.3.1
-    - torch-geometric==2.5.2
-    - ase==3.23.0
-    - pymatgen==2024.6.10
-    - numpy==1.26.4
+  - 'deepmd-kit[torch]'
+  - torch==2.3.1
+  - torch-geometric==2.5.2
+  - ase==3.23.0
+  - pymatgen==2024.6.10
+  - numpy==1.26.4
   python_version: '3.12'
 openness: OSCD
 architecture_types: [gnn]
@@ -149,29 +149,29 @@ metrics:
       size: 119945922
       md5: 80a234c2499ae944e86ed6cb57f57f49
     symprec=1e-5:
-      rmsd: 0.0679
-      n_sym_ops_mae: 2.1607
-      symmetry_decrease: 0.0654
-      symmetry_match: 0.719
-      symmetry_increase: 0.2095
-      n_structures: 256963
+      rmsd: 0.0679 # unitless
+      n_sym_ops_mae: 2.1607 # unitless
+      symmetry_decrease: 0.0654 # fraction
+      symmetry_match: 0.719 # fraction
+      symmetry_increase: 0.2095 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/deepmd/dpa3-v2-openlam/2025-03-14-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/53504528
-        size: 7274281
-        md5: f5dcf107fdbfafd97d64eec49cdbd263
+        name: models/deepmd/dpa3-v2-openlam/2025-03-14-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70334013
+        size: 6825417
+        md5: 3a84b884e26dc246fa13cbbc512dff1f
     symprec=1e-2:
-      rmsd: 0.0679
-      n_sym_ops_mae: 1.8814
-      symmetry_decrease: 0.0511
-      symmetry_match: 0.81
-      symmetry_increase: 0.1316
-      n_structures: 256963
+      rmsd: 0.0679 # unitless
+      n_sym_ops_mae: 1.8814 # unitless
+      symmetry_decrease: 0.0511 # fraction
+      symmetry_match: 0.81 # fraction
+      symmetry_increase: 0.1316 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/deepmd/dpa3-v2-openlam/2025-03-14-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/53504531
-        size: 7291540
-        md5: dc2add1c4fb8b2d17ae34dac0900a5d2
+        name: models/deepmd/dpa3-v2-openlam/2025-03-14-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70334016
+        size: 6821628
+        md5: 5c1afbff55ca3a2829d4800a9405ea4e
   phonons:
     kappa_103:
       κ_SRME: 0.688
@@ -185,15 +185,20 @@ metrics:
       κ_failure_rate: 0.0583
       imaginary_mode_rate: 0.0583
       spectrum_w1: 0.2838
-      phonon_file:
-        name: models/deepmd/dpa3-v2-openlam/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1274641682
-        md5: 6caaefa03a52eabcc416fb4ef66d22c7
-      force_file:
-        name: models/deepmd/dpa3-v2-openlam/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 8765576
-        md5: 746f1617a456611d0b910e09f257727b
-      run_info_file:
-        name: models/deepmd/dpa3-v2-openlam/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 8189
-        md5: 52feefb5eb2e24faea93e341ab8a4763
+      harmonic:
+        phonon_file:
+          name: models/deepmd/dpa3-v2-openlam/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334220
+          size: 23444843
+          md5: df5e6fbe99c83487078938c9cf27d1cf
+        force_file:
+          name: models/deepmd/dpa3-v2-openlam/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334226
+          size: 8765576
+          md5: 746f1617a456611d0b910e09f257727b
+        run_info_file:
+          name: models/deepmd/dpa3-v2-openlam/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334229
+          size: 8189
+          md5: 52feefb5eb2e24faea93e341ab8a4763
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 791.52, max_rss_gb: 3.831, max_gpu_mem_gb: 18.006}

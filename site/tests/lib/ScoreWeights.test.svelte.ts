@@ -79,7 +79,7 @@ describe(`ScoreWeights`, () => {
     input.value = value
     input.dispatchEvent(new Event(`change`, { bubbles: true }))
     flushSync()
-    expect(input.value).toBe(`50`)
+    expect(input.value).toBe(String(100 * DEFAULT_CPS_CONFIG.F1.weight))
     expect(config).toEqual(DEFAULT_CPS_CONFIG)
     // External URL restoration updates the same controls without local draft state.
     config.F1.weight = 0.7

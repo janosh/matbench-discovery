@@ -8,6 +8,7 @@ import { sync_url_params } from '#lib/url-state.svelte.js'
 import { goto } from '$app/navigation'
 import { valid_query_param } from 'svelte-widgets/url-params'
 import { describe, expect, it, vi } from 'vite-plus/test'
+import { query_param } from '../index.js'
 
 describe(`#lib data includes rendered YAML Markdown`, () => {
   it(`DATASETS entries expose computed slug and description_html`, () => {
@@ -226,6 +227,6 @@ describe(`sync_url_params`, () => {
 
     expect(location.search).toBe(`?weights=0.579,0.35,0.071`)
     // round-trip: literal commas parse back to the same value
-    expect(new URLSearchParams(location.search).get(`weights`)).toBe(`0.579,0.35,0.071`)
+    expect(query_param(`weights`)).toBe(`0.579,0.35,0.071`)
   })
 })

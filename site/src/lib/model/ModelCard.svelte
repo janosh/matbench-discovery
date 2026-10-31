@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Label, ModelData } from '#lib/types.js'
   import {
+    cost_annotation,
     get_nested_number,
     is_finite_num,
     label_data_path,
@@ -11,6 +12,7 @@
   import { model_metric_ranks, rank_color, RANKED_METRICS } from '#lib/rankings.js'
   import pkg from '#site/package.json'
   import { format_num } from 'matterviz/labels'
+  import { strip_html } from 'svelte-widgets/utils'
   import { Icon, Popover } from 'svelte-widgets'
   import {
     Calendar,
@@ -114,6 +116,7 @@
       {@const value = get_nested_number(model, label_data_path(metric))}
       {@const has_value = is_finite_num(value)}
       {@const rank_entry = ranks.find((entry) => entry.metric.key === key)}
+      {@const cost = has_value ? cost_annotation(model, metric) : undefined}
       <li class:active={sort_by == key}>
         <Popover trigger_mode="hover" trap_focus={false} aria-label="Metric description">
           {#snippet trigger(trigger_props)}
@@ -127,7 +130,7 @@
                 {#if !has_value}
                   n/a
                 {:else}
-                  {format_num(value)}
+                  {format_num(value, metric.format)}
                   <small>{unit ?? ``}</small>
                 {/if}
               </strong></span
@@ -135,6 +138,7 @@
           {/snippet}
           {#if has_value}
             {@html description}
+            {#if cost}<br />{cost}{/if}
           {:else}
             {missing_metric_reason(model, metric)}
           {/if}
@@ -143,7 +147,9 @@
           <a
             class="metric-rank"
             href={rank_entry.metric.rank_href}
-            aria-label="{key}: rank {rank_entry.rank} of {rank_entry.n_models}"
+            aria-label="{strip_html(
+              label,
+            )}: rank {rank_entry.rank} of {rank_entry.n_models}"
             ><b style:color={rank_color(rank_entry.rank, rank_entry.n_models)}
               >#{rank_entry.rank}</b
             ><span>/{rank_entry.n_models}</span></a

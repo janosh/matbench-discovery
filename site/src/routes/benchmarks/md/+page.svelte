@@ -39,7 +39,9 @@
 </p>
 <p>
   Reference data: <a href="#test-set">DynaMat</a>. The combined molecular dynamics score
-  (CMDS, higher is better) combines trajectory fidelity with rollout speed.
+  (CMDS, higher is better) combines trajectory fidelity with rollout speed. Speed is the
+  rollout wall time as reported on each model's own GPU (shown on hover), not normalized
+  across hardware.
 </p>
 
 <TaskNavigation />
@@ -59,6 +61,7 @@
     col_filter={(col) => visible_cols[col.key] ?? true}
     default_sort={{ column: MD_METRICS.md_combined_score.key, dir: `desc` }}
     {filters}
+    repro_task="md"
   />
 </section>
 
@@ -74,9 +77,10 @@
 <p>
   This defaults to a cost-vs-fidelity Pareto: each model's total rollout wall time against
   its CMDS, with marker size showing model parameters and color the training-set size. Use
-  the axis/color/size selectors to compare any pair of metrics: the RDF, ADF and vDOS
-  errors range from 0% (perfect match with the AIMD reference) to 100% (as different from
-  the reference as an ideal gas / non-overlapping distributions).
+  the axis/color/size selectors to compare any pair of metrics: the ADF and vDOS errors
+  range from 0% (perfect match with the AIMD reference) to a 100% cap: as different from
+  the reference as a featureless angular distribution (ADF), or displaced by at least the
+  reference's own spectral width (vDOS). Column tooltips give the exact definitions.
 </p>
 
 <DynamicScatter
@@ -92,19 +96,16 @@
 <TestSet task="md" />
 
 <h2 id="methodology">Methodology</h2>
-<details>
-  <summary>Simulation protocol, reference data, and metric definitions</summary>
-  <p>
-    Each model runs NVT simulations from the same initial structures and thermodynamic
-    conditions as the reference first-principles trajectories. The resulting trajectories
-    are compared via radial distribution functions (RDF), angular distribution functions
-    (ADF), pressure distributions from the stress tensor trace, and the vibrational
-    density of states (vDOS) obtained from the velocity autocorrelation function.
-    Energy-fluctuation and force RMSEs are shown as maintainer-computed private-label
-    diagnostics when available, but they are excluded from CMDS.
-  </p>
-  <MdNote />
-</details>
+<p>
+  Each model runs NVT simulations from the same initial structures and thermodynamic
+  conditions as the reference first-principles trajectories. The resulting trajectories
+  are compared via radial distribution functions (RDF), angular distribution functions
+  (ADF), pressure distributions from the stress tensor trace, and the vibrational density
+  of states (vDOS) obtained from the velocity autocorrelation function. Energy-fluctuation
+  and force RMSEs are shown as maintainer-computed private-label diagnostics when
+  available, but they are excluded from CMDS.
+</p>
+<MdNote />
 
 <style>
   .beta-badge {

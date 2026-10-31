@@ -1,7 +1,12 @@
 import { goto } from '$app/navigation'
 import { page } from '$app/state'
 import data_files from '$pkg/data-files.yml'
-import { DIATOMICS_METRICS, DISCOVERY_SET_LABELS, HYPERPARAMS } from '#lib/labels.js'
+import {
+  DIATOMICS_METRICS,
+  DISCOVERY_SET_LABELS,
+  HYPERPARAMS,
+  MD_METRICS,
+} from '#lib/labels.js'
 import { training_set_link } from '#lib/metrics.js'
 import { comparison } from '#lib/model-comparison.svelte.js'
 import {
@@ -21,7 +26,10 @@ import {
   mount_with_url,
   navigate,
   open_column_menu,
+  patch_model,
   query_param,
+  reset_comparison,
+  selected_only_toggle,
 } from '../index.js'
 import app_css from '#site/src/app.css?raw'
 
@@ -83,10 +91,7 @@ const model_col_only = col_keys_filter(`Model`)
 
 describe(`MetricsTable`, () => {
   // the module-level comparison store persists across tests
-  beforeEach(() => {
-    comparison.keys.clear()
-    comparison.open = false
-  })
+  beforeEach(reset_comparison)
   // model behind each rendered row, resolved from its Model-cell link
   const row_models = (): ModelData[] =>
     [...document.querySelectorAll(`tbody td[data-col="Model"]`)].map((cell) => {
@@ -304,6 +309,27 @@ describe(`MetricsTable`, () => {
     },
   )
 
+  it(`names the GPU of MD wall time, t/t_min and CMDS in tooltips`, async () => {
+    const model = ACTIVE_MODELS[0]
+    const cost = { source: `runner`, hardware: `A100`, run_time_sec: 2e4 } as const
+    const md = { cost, vdos_error: 1, adf_error: 1, pressure_error: 1, combined_score: 1 }
+    patch_model(model, { metrics: { ...model.metrics, md } })
+    const { md_run_time_sec, md_time_multiplier, md_combined_score } = MD_METRICS
+    mount_table({
+      model_filter: (candidate: ModelData) => candidate.model_key === model.model_key,
+      column_labels: [md_run_time_sec, md_time_multiplier, md_combined_score],
+      filters: all_targets_filters(),
+    })
+    await tick()
+    const gpu = `on A100 (benchmark runner), not normalized across hardware`
+    const titles = [...document.querySelectorAll<HTMLElement>(`tbody [data-title]`)]
+    expect(titles.map((cell) => cell.dataset.title)).toEqual([
+      `Timed ${gpu}`,
+      `Timed ${gpu}`,
+      `Speed subscore timed ${gpu}`,
+    ])
+  })
+
   it.each([
     {
       name: `metadata`,
@@ -407,21 +433,6 @@ describe(`MetricsTable`, () => {
     expect(header_cells()[0].classList.contains(`sticky-col`)).toBe(true)
   })
 
-  it(`marks models with excluded metric samples`, async () => {
-    mount_table({
-      model_filter: (model: ModelData) => model.model_name === `AlphaNet-v1-OAM`,
-      col_filter: (col: Label) => col.label === `Model`,
-    })
-    await tick()
-
-    const model_cell = doc_query(`td[data-col="Model"]`)
-    const marker = model_cell.querySelector(
-      `span[title="Diatomics metrics exclude He-He due to exploding errors"]`,
-    )
-    expect(model_cell.textContent).toContain(`AlphaNet-v1-OAM`)
-    expect(marker?.textContent).toBe(`*`)
-  })
-
   describe(`Column Sorting`, () => {
     // Added sorts by timestamp (chronological, not alphabetical); Training Set
     // and Params sort by their numeric data-sort-value, not display text
@@ -485,15 +496,7 @@ describe(`MetricsTable`, () => {
       // a long dataset key that the middle ellipsis splits mid-link
       const model = ACTIVE_MODELS.find(sampled_models)
       if (!model) throw new Error(`No sampled model`)
-      const { training_sets, n_training_materials, n_training_structures } = model
-      onTestFinished(() => {
-        Object.assign(model, {
-          training_sets,
-          n_training_materials,
-          n_training_structures,
-        })
-      })
-      Object.assign(model, {
+      patch_model(model, {
         training_sets: [`MPtrj`, `COSMOSDataset`],
         n_training_materials: 1000,
         n_training_structures: 2000,
@@ -630,16 +633,14 @@ describe(`MetricsTable`, () => {
       expect(rows_with_links).toBeGreaterThan(links_cells.length / 2)
 
       const missing_icon_titles = links_cells.flatMap((cell) =>
-        [...cell.querySelectorAll(`span[title$="not available"] svg`)].map((icon) =>
+        [...cell.querySelectorAll(`span[title$="(not available)"] svg`)].map((icon) =>
           icon.closest(`span`)?.getAttribute(`title`),
         ),
       )
-
       // Note: this might fail if all models have all links, which is unlikely
       expect(missing_icon_titles.length).toBeGreaterThan(0)
-      expect(missing_icon_titles.every((title) => title?.match(/not available/))).toBe(
-        true,
-      )
+      // titled like the link they stand in for, never by raw data keys like pr_url
+      expect(missing_icon_titles.filter((title) => title?.includes(`_`))).toEqual([])
 
       // Find all pred_files buttons (every row renders one)
       const pred_file_buttons = [
@@ -760,10 +761,7 @@ describe(`MetricsTable`, () => {
 
   describe(`Double-click selection functionality`, () => {
     const get_rows = () => document.querySelectorAll(`tbody tr`)
-    const get_toggle = () =>
-      document.querySelector<HTMLInputElement>(
-        `input[aria-label="Toggle between showing only selected models and all models"]`,
-      )
+    const get_toggle = selected_only_toggle
     const get_toggle_label = () => get_toggle()?.closest(`label`)
     const double_click_row = (row: Element) => {
       row.dispatchEvent(new MouseEvent(`dblclick`, { bubbles: true }))
@@ -794,6 +792,8 @@ describe(`MetricsTable`, () => {
       expect(highlights()).toEqual([true, false])
       expect([...comparison.keys]).toEqual([first_key])
       expect(get_toggle_label()?.textContent).toContain(`1 selected`)
+      // an aria-label would override (and here contradict) the visible label text
+      expect(get_toggle()?.hasAttribute(`aria-label`)).toBe(false)
       expect(compare_btn.textContent).toContain(`Compare (1)`)
 
       double_click_row(get_rows()[1])
@@ -1243,37 +1243,12 @@ describe(`MetricsTable`, () => {
       },
     )
 
-    it(`initializes all columns and displays visible columns in column_order`, async () => {
-      const state = { column_order: [] as string[] }
-      mount_table({
-        get column_order() {
-          return state.column_order
-        },
-        set column_order(val) {
-          state.column_order = val
-        },
-        col_filter: (col: Label) => [`Model`, `F1`, `DAF`].includes(col.key ?? col.label),
-      })
-      await tick()
-
-      // After mounting, column_order should be initialized with ALL columns
-      // (not just visible ones - the visible filter is separate)
-      expect(state.column_order.length).toBeGreaterThan(10)
-      // visible headers follow column_order
-      const visible_ids = [`Model`, `F1`, `DAF`]
-      expect(header_names()).toStrictEqual(visible_ids)
-      expect(state.column_order.filter((id) => visible_ids.includes(id))).toEqual(
-        visible_ids,
-      )
-    })
-
-    it(`preserves column_order when toggling column visibility`, async () => {
-      const state = {
+    it(`initializes column_order with all columns and keeps it when visibility changes`, async () => {
+      const state = $state({
         col_filter: (col: Label) =>
           [`Model`, `F1`, `DAF`, `CPS`].includes(col.key ?? col.label),
         column_order: [] as string[],
-      }
-
+      })
       mount_table({
         get col_filter() {
           return state.col_filter
@@ -1287,25 +1262,21 @@ describe(`MetricsTable`, () => {
       })
       await tick()
 
+      // ALL columns enter column_order (the visible filter is separate), and the
+      // visible headers follow it
       const initial_order = [...state.column_order]
       expect(initial_order.length).toBeGreaterThan(10)
-      const [f1_idx, daf_idx, cps_idx] = [
-        initial_order.indexOf(`F1`),
-        initial_order.indexOf(`DAF`),
-        initial_order.indexOf(`CPS`),
-      ]
+      const visible_ids = [`Model`, `CPS`, `F1`, `DAF`].toSorted(
+        (id_a, id_b) => initial_order.indexOf(id_a) - initial_order.indexOf(id_b),
+      )
+      expect(header_names()).toStrictEqual(visible_ids)
 
+      // hiding CPS keeps every column at its position
       state.col_filter = (col: Label) =>
         [`Model`, `F1`, `DAF`].includes(col.key ?? col.label)
       await tick()
-
-      expect(state.column_order).toHaveLength(initial_order.length)
-      expect(state.column_order).toContain(`CPS`) // Still in order, just not visible
-
-      // Positions should be unchanged
-      expect(state.column_order.indexOf(`F1`)).toBe(f1_idx)
-      expect(state.column_order.indexOf(`DAF`)).toBe(daf_idx)
-      expect(state.column_order.indexOf(`CPS`)).toBe(cps_idx)
+      expect(header_names()).toStrictEqual(visible_ids.filter((id) => id !== `CPS`))
+      expect(state.column_order).toStrictEqual(initial_order)
     })
 
     it(`sets columns as draggable without initial drag state`, () => {

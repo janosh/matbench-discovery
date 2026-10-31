@@ -16,6 +16,9 @@ export type OrgLogo =
 
 type ScoredMetrics<Metrics> = Metrics & { combined_score?: number }
 
+// tasks with per-model run cost (GPU, wall time) and rerun checks (reproducibility)
+export type TimedTask = `diatomics` | `md`
+
 export type ModelData = ModelMetadata & {
   metrics?: ModelMetadata[`metrics`] & {
     diatomics?: ScoredMetrics<DiatomicsMetrics>
@@ -53,5 +56,5 @@ export interface GitHubActivityData {
   forks: number
   commits_last_year: number
   contributors: number
-  model_key?: string // URL slug for model detail page
+  model_key: string // URL slug for model detail page
 }

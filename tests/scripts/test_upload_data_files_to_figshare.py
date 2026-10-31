@@ -36,7 +36,8 @@ def test_sync_matches_remote_by_rel_path(
     local_file.write_bytes(b"wbm summary")
     local_md5 = hashlib.md5(b"wbm summary").hexdigest()  # noqa: S324
     yaml_path = tmp_path / "data-files.yml"
-    yaml_path.write_text("{}\n", encoding="utf-8")
+    registry = {DATA_FILE.name: {"description": "WBM summary"}}
+    write_registry(yaml_path, registry)
 
     calls: list[tuple[str, object]] = []
     remote_file = {
@@ -74,7 +75,7 @@ def test_sync_matches_remote_by_rel_path(
     with open(yaml_path, encoding="utf-8") as file:
         written = round_trip_yaml.load(file)
     if dry_run:
-        assert written == {}
+        assert written == registry
         assert "[dry-run] Would upload" in capsys.readouterr().out
     else:
         file_id = 8 if expect_upload else 7
@@ -82,15 +83,61 @@ def test_sync_matches_remote_by_rel_path(
         assert written[DATA_FILE.name]["url"].endswith(f"/{file_id}")
 
 
+def write_registry(yaml_path: Path, registry: dict[str, dict[str, str]]) -> None:
+    """Write a minimal data-files.yml registry."""
+    with open(yaml_path, mode="w", encoding="utf-8") as file:
+        round_trip_yaml.dump(registry, file)
+
+
 @pytest.mark.parametrize(
-    ("argv", "dry_run"),
-    [([], False), (["-n"], True), (["--dry-run"], True), (["--dryrun"], None)],
+    ("registry", "write_file", "error", "match"),
+    [
+        # an explicitly requested file that is missing locally must not be skipped
+        ({DATA_FILE.name: {"description": "WBM summary"}}, False, FileNotFoundError,
+         "Requested --files missing locally"),
+        # new entries need a real description, no "Description needed" placeholder
+        ({DATA_FILE.name: {"description": ""}}, True, ValueError, "Add a description"),
+    ],
+)  # fmt: skip
+def test_sync_rejects_missing_or_undescribed_files(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    registry: dict[str, dict[str, str]],
+    write_file: bool,
+    error: type[Exception],
+    match: str,
+) -> None:
+    """Invalid requests fail before any Figshare call."""
+    if write_file:
+        local_file = tmp_path / DATA_FILE.rel_path
+        local_file.parent.mkdir(parents=True)
+        local_file.write_bytes(b"wbm summary")
+    yaml_path = tmp_path / "data-files.yml"
+    write_registry(yaml_path, registry)
+    monkeypatch.setattr(upload_data, "DATA_DIR", str(tmp_path))
+    # reaching Figshare would raise AttributeError instead of the validation error
+    monkeypatch.delattr(upload_data.figshare, "article_exists")
+    with pytest.raises(error, match=match):
+        upload_data.main(str(yaml_path), 1, PYPROJECT, files=[DATA_FILE])
+
+
+@pytest.mark.parametrize(
+    ("argv", "expected"),
+    [
+        ([], {"files": None, "dry_run": False}),
+        (["-n", "--files", DATA_FILE.name], {"files": [DATA_FILE], "dry_run": True}),
+        (["--dry"], "unrecognized arguments: --dry"),  # no prefix abbreviations
+        (["--files", "not_a_data_file"], "invalid DataFiles value"),
+    ],
 )
-def test_cli_rejects_unknown_flags(argv: list[str], dry_run: bool | None) -> None:
-    """Typos in flags exit instead of falling through to a real upload."""
+def test_cli_parses_or_rejects_args(
+    capsys: pytest.CaptureFixture[str], argv: list[str], expected: dict | str
+) -> None:
+    """Valid args parse; typos exit with usage errors before any upload."""
     parser = upload_data.build_parser()
-    if dry_run is None:
+    if isinstance(expected, str):
         with pytest.raises(SystemExit, match="2"):
             parser.parse_args(argv)
+        assert expected in capsys.readouterr().err
     else:
-        assert parser.parse_args(argv).dry_run is dry_run
+        assert vars(parser.parse_args(argv)) == expected

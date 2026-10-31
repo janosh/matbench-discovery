@@ -1,9 +1,7 @@
 """Files download functions."""
 
-import builtins
 import hashlib
 import os
-import sys
 import tempfile
 import time
 from urllib.parse import urlsplit
@@ -12,13 +10,13 @@ import requests
 
 from matbench_discovery import file_digest
 
-# Figshare intermittently serves 5xx and drops connections; retry those after these
-# delays (s). 4xx errors (missing file, no access) fail at once.
-DOWNLOAD_RETRY_DELAYS: tuple[float, ...] = (1, 2, 4, 8)
+# Figshare intermittently serves 5xx and drops connections; downloads and API calls
+# retry those after these delays (s). 4xx errors (missing file, no access) fail at once.
+HTTP_RETRY_DELAYS: tuple[float, ...] = (1, 2, 4, 8)
 
 
-def _is_transient(exc: requests.RequestException) -> bool:
-    """Return whether a download error is worth retrying: 5xx or dropped connection."""
+def is_transient(exc: requests.RequestException) -> bool:
+    """Return whether a request error is worth retrying: 5xx or dropped connection."""
     if isinstance(exc, requests.HTTPError):
         return exc.response is not None and exc.response.status_code >= 500
     # ConnectionError includes ConnectTimeout. ReadTimeout is deliberately not retried:
@@ -74,7 +72,7 @@ def download_file(
     os.close(file_descriptor)
     download_finished = False
     try:
-        for attempt, delay in enumerate((*DOWNLOAD_RETRY_DELAYS, None), start=1):
+        for attempt, delay in enumerate((*HTTP_RETRY_DELAYS, None), start=1):
             # Stream large files to avoid loading entire file into memory
             file_hash = hashlib.md5()  # noqa: S324
             try:
@@ -90,7 +88,7 @@ def download_file(
                         file_hash.update(chunk)
                 break
             except requests.RequestException as exc:
-                if delay is None or not _is_transient(exc):
+                if delay is None or not is_transient(exc):
                     if attempt > 1:
                         exc.add_note(f"Failed after {attempt} attempts")
                     raise
@@ -141,29 +139,13 @@ def maybe_auto_download_file(
     headers: dict[str, str] | None = None,
     md5: str | None = None,
 ) -> None:
-    """Download a missing or checksum-stale file after confirmation."""
+    """Download a missing or checksum-stale file, else reuse the cached copy."""
     if os.path.isfile(abs_path):
         if md5 is None:
             return
         if (cached_md5 := file_digest(abs_path, "md5")) == md5:
             return
-        print(
-            f"Cached file {abs_path!r} has MD5 {cached_md5}, expected {md5}; "
-            "re-downloading"
-        )
+        print(f"Cached file {abs_path!r} has MD5 {cached_md5}, expected {md5}")
 
-    auto_download_files = os.getenv("MBD_AUTO_DOWNLOAD_FILES", "true").lower() == "true"
-
-    # default to 'y' if auto-download is on or no interactive session (TTY/iPython)
-    is_ipython = hasattr(builtins, "__IPYTHON__")
-    answer = (
-        "y"
-        if auto_download_files or not (is_ipython or sys.stdin.isatty())
-        else input(
-            f"{abs_path!r} associated with {label=} does not exist. Download it "
-            "now? This will cache the file for future use. [y/n] "
-        )
-    )
-    if answer.lower().strip() == "y":
-        print(f"Downloading {label!r} from {url!r} to {abs_path!r}")
-        download_file(abs_path, url, headers=headers, md5=md5)
+    print(f"Downloading {label!r} from {url!r} to {abs_path!r}")
+    download_file(abs_path, url, headers=headers, md5=md5)

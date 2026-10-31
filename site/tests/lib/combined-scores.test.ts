@@ -314,8 +314,10 @@ it.each([
 ])(
   `writes metrics.$task.combined_score and deletes it when components are missing`,
   ({ task, update, complete, incomplete, expected }) => {
+    // run time lives in the task's cost block
+    const { run_time_sec, ...rest } = complete
     const models = [
-      { metrics: { [task]: { ...complete } } },
+      { metrics: { [task]: { ...rest, cost: { run_time_sec } } } },
       { metrics: { [task]: { ...incomplete, combined_score: 0.99 } } },
       { metrics: {} },
     ] as unknown as ModelData[]

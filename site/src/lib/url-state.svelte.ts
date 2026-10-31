@@ -54,7 +54,7 @@ export const FS_MODES = [`any`, `direct`, `gradient`] as const
 type FsMode = (typeof FS_MODES)[number]
 const DEFAULT_TARGETS = { F: `require` } as const
 export const DEFAULT_TARGETS_PARAM = `F`
-// Filter configuration shared by browser-history snapshots and table exports.
+// Filter configuration shared by filter presets and table exports.
 type FilterConfig = {
   training: Record<string, TrainFilterMode>
   openness: readonly Openness[]
@@ -174,29 +174,20 @@ export class UrlTableFilters {
     this.fs_mode = `any`
   }
 
-  apply = (config: FilterConfig): void => {
-    // Snapshots survive deploys; discard obsolete constraints that no current
-    // checkbox or URL parameter could represent.
-    this.training = Object.fromEntries(
-      Object.entries(config.training).filter(
-        ([key, mode]) =>
-          this.training_sets.includes(key) && is_one_of(TRAIN_FILTER_MODES, mode),
-      ),
-    )
-    // filter OPENNESS_OPTIONS (not spread the config) to keep canonical order and
-    // drop invalid tokens from stale snapshots
-    const shown = OPENNESS_OPTIONS.filter((op) => config.openness.includes(op))
-    this.openness = shown.length > 0 ? shown : [...OPENNESS_OPTIONS]
-    this.targets = Object.fromEntries(
-      Object.entries(config.targets ?? DEFAULT_TARGETS).filter(
-        ([key, mode]) =>
-          is_one_of(target_output_keys, key) && is_one_of(TRAIN_FILTER_MODES, mode),
-      ),
-    )
-    this.fs_mode = is_one_of(FS_MODES, config.fs_mode) ? config.fs_mode : `any`
+  // replace every constraint at once (e.g. the "Compliant models" preset)
+  apply = ({
+    training,
+    openness,
+    targets = DEFAULT_TARGETS,
+    fs_mode = `any`,
+  }: FilterConfig): void => {
+    this.training = { ...training }
+    this.openness = OPENNESS_OPTIONS.filter((op) => openness.includes(op))
+    this.targets = { ...targets }
+    this.fs_mode = fs_mode
   }
 
-  // Copy active filters so snapshots do not change with subsequent UI edits.
+  // Copy active filters so exports do not change with subsequent UI edits.
   get config(): FilterConfig {
     return {
       training: { ...this.training },
@@ -232,8 +223,10 @@ export class UrlTableFilters {
       if (is_one_of(FS_MODES, token)) fs_mode = token
       else {
         const exclude = token.startsWith(`-`)
-        const key = (exclude ? token.slice(1) : token) as TargetOutput
-        if (key in TARGET_OUTPUTS) targets[key] = exclude ? `exclude` : `require`
+        const key = exclude ? token.slice(1) : token
+        // not `key in TARGET_OUTPUTS`, which accepts prototype keys like toString
+        if (is_one_of(target_output_keys, key))
+          targets[key] = exclude ? `exclude` : `require`
       }
     }
     this.targets = targets_param === null ? { ...DEFAULT_TARGETS } : targets

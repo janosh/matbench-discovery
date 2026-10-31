@@ -2,7 +2,7 @@
 
 import json
 import re
-from collections.abc import Iterator, Mapping
+from collections.abc import Mapping
 from pathlib import Path
 
 import numpy as np
@@ -11,7 +11,7 @@ import yaml
 from ase.data import atomic_numbers, covalent_radii, vdw_alvarez
 
 from matbench_discovery import ROOT
-from matbench_discovery.data import file_ref_url, make_file_ref
+from matbench_discovery.data import file_ref_url, make_file_ref, update_yaml_file
 from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.metrics import diatomics
 from matbench_discovery.metrics.diatomics import (
@@ -19,12 +19,13 @@ from matbench_discovery.metrics.diatomics import (
     DiatomicCurves,
     eval_window,
 )
+from tests.utils import patch_model_metadata
 
 
 def write_diatomics_yaml(
     model: Model, yaml_path: Path, metrics: Mapping[str, object]
 ) -> None:
-    """Write temp model YAML and clear cached metadata."""
+    """Write temp model YAML and clear cached metadata (fixture restores it)."""
     yaml_path.write_text(
         yaml.safe_dump(
             {"model_name": "test_model", "metrics": {"diatomics": dict(metrics)}}
@@ -37,15 +38,13 @@ def write_diatomics_yaml(
 @pytest.fixture
 def diatomics_model(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> Iterator[tuple[Model, Path]]:
+) -> tuple[Model, Path]:
     """Model.mace_mp_0 with a fresh temp YAML patched in as its yaml_path."""
     model = Model.mace_mp_0
-    yaml_path = tmp_path / model.rel_path
-    yaml_path.parent.mkdir(parents=True)
-    monkeypatch.setattr(Model, "_base_dir", str(tmp_path))
+    yaml_path = tmp_path / "model.yml"
+    patch_model_metadata(monkeypatch, model, yaml_path=str(yaml_path))
     write_diatomics_yaml(model, yaml_path, {})
-    yield model, yaml_path
-    model.__dict__.pop("metadata", None)
+    return model, yaml_path
 
 
 def test_diatomic_classes() -> None:
@@ -337,13 +336,10 @@ def test_diatomic_curve_metrics(
 
     # all energy + force metrics are computed (DiatomicCurve always carries forces)
     metrics = diatomics.calc_diatomic_metrics(ref_curves, pred_curves)
-    assert "H" in metrics
-    assert set(metrics["H"]) >= {
-        MbdKey.tortuosity,
-        MbdKey.energy_jump,
-        MbdKey.energy_diff_flips,
-        MbdKey.pbe_energy_mae,
-    }
+    assert set(metrics) == {"H", "He"}
+    for elem_metrics in metrics.values():
+        assert set(map(str, elem_metrics)) == diatomics.DIATOMIC_METRIC_KEYS
+        assert np.isfinite(list(elem_metrics.values())).all()
 
     # energy-only prediction files are invalid benchmark data
     distances = np.linspace(0.3, 3.5, 8)
@@ -388,7 +384,11 @@ def test_diatomic_curve_metrics(
         interp_results = diatomics.calc_diatomic_metrics(
             modified_ref_curves, pred_curves, interpolate=interpolate
         )
-        assert "H" in interp_results
+        # interpolation onto the shifted grid still yields every finite metric
+        for elem, elem_metrics in interp_results.items():
+            assert set(elem_metrics) == set(metrics[elem])
+            assert np.isfinite(list(elem_metrics.values())).all()
+        assert interp_results.keys() == metrics.keys()
 
     with pytest.raises(
         ValueError,
@@ -406,7 +406,7 @@ def test_diatomic_curve_metrics(
 
 
 def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
-    """Test writing diatomic metrics to YAML file."""
+    """Metrics and the file's cost block land in YAML, keeping curated metadata."""
     model, yaml_path = diatomics_model
     pred_file = "models/mace/mace-mp-0/2025-02-13-diatomics.json.gz"
     pred_file_url = "https://figshare.com/files/fake-url-00000"
@@ -419,24 +419,23 @@ def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
 
     for refs in (existing_file_refs, {"pred_file": make_file_ref(pred_file)}):
         write_diatomics_yaml(model, yaml_path, refs)
-        assert diatomics.write_metrics_to_yaml(model, {}) == refs
+        assert diatomics.write_metrics_to_yaml(model, {}, run_metadata={}) == refs
         assert yaml.safe_load(yaml_path.read_text())["metrics"]["diatomics"] == refs
 
     # New runs, including overwrites at the same path, cannot inherit old provenance.
     new_pred_file = "models/mace/mace-mp-0/2026-06-28-diatomics.json.gz"
+    old_cost = {"cost": {"source": "runner", "hardware": "H200", "run_time_sec": 99}}
     for path_arg in (pred_file, new_pred_file, f"{ROOT}/{new_pred_file}"):
-        write_diatomics_yaml(
-            model,
-            yaml_path,
-            existing_file_refs
-            | {"hardware": "old GPU", "run_time_sec": 99, "max_gpu_mem_gb": 7},
-        )
-        assert diatomics.write_metrics_to_yaml(model, {}, pred_file_path=path_arg) == {
-            "pred_file": make_file_ref(path_arg.removeprefix(f"{ROOT}/")),
-        }
+        write_diatomics_yaml(model, yaml_path, existing_file_refs | old_cost)
+        assert diatomics.write_metrics_to_yaml(
+            model, {}, pred_file_path=path_arg, run_metadata={}
+        ) == {"pred_file": make_file_ref(path_arg.removeprefix(f"{ROOT}/"))}
     with pytest.raises(ValueError, match="must be inside repo root"):
         diatomics.write_metrics_to_yaml(
-            model, {}, pred_file_path=f"{yaml_path.parent}/outside.json.gz"
+            model,
+            {},
+            pred_file_path=f"{yaml_path.parent}/outside.json.gz",
+            run_metadata={},
         )
 
     write_diatomics_yaml(model, yaml_path, existing_file_refs)
@@ -448,62 +447,68 @@ def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
         MbdKey.energy_jump: 2.5,
         MbdKey.tortuosity: 3.5,
     }
-    result = diatomics.write_metrics_to_yaml(model, metrics_by_element)
-
+    result = diatomics.write_metrics_to_yaml(model, metrics_by_element, run_metadata={})
     assert (
         yaml.safe_load(yaml_path.read_text())["metrics"]["diatomics"]
         == result
-        == {
-            **existing_file_refs,
-            **expected_metrics,
-        }
+        == {**existing_file_refs, **expected_metrics}
     )
 
     # pred_file_path overrides the existing pred_file (dropping its url/size/md5);
-    # run_metadata is recorded ahead of the metric values
+    # the file's cost block is recorded right after pred_file, audit keys ignored
     write_diatomics_yaml(model, yaml_path, existing_file_refs)
-    expected_run_metadata = {
-        "hardware": "NVIDIA H100 80GB HBM3",
-        "run_time_sec": 120.0,
-        "max_rss_gb": 4.2,
-        "max_gpu_mem_gb": 11.5,
+    run_cost = {"hardware": "H100", "run_time_sec": 120.0, "max_gpu_mem_gb": 11.5}
+    file_run_metadata = {
+        "cost_source": "runner",
+        **run_cost,
+        "excluded_formula_reasons": {"He-He": "exploding errors"},
+        "versions": {"ase": "3.29.0"},
+        "hostnames": ["node-a"],
     }
     result = diatomics.write_metrics_to_yaml(
         model,
         metrics_by_element,
         pred_file_path=new_pred_file,
-        run_metadata={
-            **expected_run_metadata,
-            "excluded_formula_reasons": {"He-He": "exploding errors"},
-            "invalid_key": "ignored",
-        },
+        run_metadata=file_run_metadata,
     )
     assert result == {
         "pred_file": make_file_ref(new_pred_file),
-        **expected_run_metadata,
+        "cost": {"source": "runner", **run_cost},
         "excluded_formula_reasons": {"He-He": "exploding errors"},
         **expected_metrics,
     }
-    yaml_content = yaml_path.read_text(encoding="utf-8")
-    assert yaml_content.index("hardware:") < yaml_content.index("energy_jump:")
-    assert "max_rss_gb: 4.2" in yaml_content
-    assert "max_gpu_mem_gb: 11.5" in yaml_content
+    assert list(result)[:2] == ["pred_file", "cost"]
 
-    # empty current exclusions clear stale ones but preserve other run metadata
-    model.__dict__.pop("metadata", None)
-    recomputed = diatomics.write_metrics_to_yaml(
-        model, metrics_by_element, run_metadata={"excluded_formula_reasons": {}}
+    # recomputes re-derive the cost from the file while curated exclusions written
+    # after Model.metadata was cached survive
+    assert model.metrics["diatomics"]["cost"]["run_time_sec"] == 120  # caches
+    update_yaml_file(
+        yaml_path,
+        "metrics.diatomics",
+        {"cost": {"source": "runner", "hardware": "H100", "run_time_sec": 7.0}}
+        | {"excluded_formula_reasons": {"Li-Li": "curated"}},
     )
-    for key, value in expected_run_metadata.items():
-        assert recomputed[key] == value
-    assert recomputed["excluded_formula_reasons"] == {}
+    recomputed = diatomics.write_metrics_to_yaml(
+        model, metrics_by_element, run_metadata=file_run_metadata
+    )
+    assert recomputed["cost"] == result["cost"]
+    assert recomputed["excluded_formula_reasons"] == {"Li-Li": "curated"}
+    assert yaml.safe_load(yaml_path.read_text())["metrics"]["diatomics"] == recomputed
 
-    model.__dict__.pop("metadata", None)
-    recomputed = diatomics.write_metrics_to_yaml(model, metrics_by_element)
-    assert {
-        key: recomputed[key]
-        for key in ("hardware", "run_time_sec", "max_rss_gb", "max_gpu_mem_gb")
-    } == expected_run_metadata
+    # a recompute keeps the reproducibility verdict, a new registration drops it
+    repro = {"status": "reproduced", "rel_changes": {"tortuosity": 0.0}}
+    update_yaml_file(yaml_path, "metrics.diatomics", {"reproducibility": repro})
+    kept = diatomics.write_metrics_to_yaml(
+        model, metrics_by_element, run_metadata=file_run_metadata
+    )
+    assert kept["reproducibility"] == repro
+    replaced = diatomics.write_metrics_to_yaml(
+        model,
+        metrics_by_element,
+        pred_file_path=new_pred_file,
+        run_metadata=file_run_metadata,
+    )
+    assert "reproducibility" not in replaced
 
 
 def test_eval_window(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -588,7 +593,9 @@ def test_write_metrics_drops_deprecated_and_handles_nan(
     coverage = diatomics.VibFreqCoverage(
         n_valid=1, n_eligible=3, failed_elements=["He"], missing_elements=["Li"]
     )
-    result = diatomics.write_metrics_to_yaml(model, metrics, vib_freq_coverage=coverage)
+    result = diatomics.write_metrics_to_yaml(
+        model, metrics, run_metadata={}, vib_freq_coverage=coverage
+    )
 
     assert "smoothness" not in result  # deprecated key fully dropped
     assert "smoothness" not in yaml_path.read_text(encoding="utf-8")
@@ -606,6 +613,7 @@ def test_write_metrics_drops_deprecated_and_handles_nan(
     all_nan = diatomics.write_metrics_to_yaml(
         model,
         {"H": {MbdKey.tortuosity: float("nan"), MbdKey.energy_jump: float("-inf")}},
+        run_metadata={},
     )
     assert "tortuosity" not in all_nan
     assert "energy_jump" not in all_nan

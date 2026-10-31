@@ -1,24 +1,20 @@
 <script lang="ts">
   import { ButtonGroup } from 'svelte-widgets'
   import { bind_url_params } from '#lib/url-state.svelte.js'
-  import { valid_query_param } from 'svelte-widgets/url-params'
   import { ScatterPlot } from 'matterviz/plot'
-  import {
-    element_data,
-    element_group_keys,
-    element_groups,
-    type ElementGroupKey,
-  } from 'matterviz/element'
+  import { element_data, element_groups } from 'matterviz/element'
   import { SvelteSet } from 'svelte/reactivity'
   import type { PageData } from './$types'
-  import { make_plot_observer } from '../observe-plot.js'
+  import {
+    DFT_REF_COLORS,
+    ElementGroupParam,
+    make_plot_observer,
+  } from '../diatomics.svelte.js'
 
   let { data }: { data: PageData } = $props()
   let magmom_curves = $derived(data.magmom_curves)
 
-  // same fixed reference colors as the main diatomics page
-  const xc_colors: Record<string, string> = { PBE: `#4c78e0`, r2SCAN: `#f032e6` }
-  const visible_functionals = new SvelteSet(Object.keys(xc_colors))
+  const visible_functionals = new SvelteSet(Object.keys(DFT_REF_COLORS))
 
   type PointMeta = {
     functional: string
@@ -26,14 +22,10 @@
     spin_candidate: string | null
   }
 
-  let selected_element_group = $state<ElementGroupKey>(`all`)
-  let selected_group = $derived(
-    element_groups.find((group) => group.value === selected_element_group) ??
-      element_groups[0],
-  )
+  const element_group = new ElementGroupParam()
   let formulas = $derived(
     element_data
-      .filter(selected_group.includes)
+      .filter(element_group.group.includes)
       .map((element) => ({ formula: `${element.symbol}-${element.symbol}`, element }))
       .filter(({ formula }) => formula in magmom_curves),
   )
@@ -41,17 +33,7 @@
   const visible_plots = new SvelteSet<string>()
   const observe_plot = make_plot_observer(visible_plots)
 
-  bind_url_params(
-    (params) => {
-      selected_element_group = valid_query_param(
-        params,
-        `elements`,
-        `all`,
-        element_group_keys,
-      )
-    },
-    () => [[`elements`, selected_element_group, `all`]],
-  )
+  bind_url_params(element_group.read, () => [element_group.url_entry])
 
   const series_for = (formula: string) =>
     Object.entries(magmom_curves[formula] ?? {})
@@ -69,13 +51,13 @@
             spin_candidate: curve.spin_candidates[point_idx],
           })),
           point_style: {
-            fill: xc_colors[functional] ?? `gray`,
+            fill: DFT_REF_COLORS[functional] ?? `gray`,
             radius: 1.5,
             stroke_width: 0,
             ...(atom_idx === 1 ? { fill_opacity: 0.5 } : {}),
           },
           line_style: {
-            stroke: xc_colors[functional] ?? `gray`,
+            stroke: DFT_REF_COLORS[functional] ?? `gray`,
             // atom 2 dashed so overlapping FM branches (m1 == m2) stay legible
             ...(atom_idx === 1 ? { line_dash: `4 3` } : {}),
           },
@@ -104,7 +86,7 @@
 </p>
 
 <div class="legend">
-  {#each Object.entries(xc_colors) as [functional, color] (functional)}
+  {#each Object.entries(DFT_REF_COLORS) as [functional, color] (functional)}
     {@const visible = visible_functionals.has(functional)}
     <button
       class:visible
@@ -122,7 +104,7 @@
 <ButtonGroup
   label="Element group filter"
   options={element_groups}
-  bind:value={selected_element_group}
+  bind:value={element_group.key}
   style="margin-block: 1em"
 />
 

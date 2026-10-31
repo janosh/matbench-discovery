@@ -80,9 +80,9 @@ df_mp_cse[Key.structure] = [
     Structure.from_dict(cse[Key.structure])
     for cse in tqdm(df_mp_cse.entry, desc="Hydrating structures")
 ]
-# raise_errors: symmetry detection must succeed for every structure
+# raises if symmetry detection fails for any structure
 df_mp_cse[f"{Key.protostructure}_moyo"] = [
-    prototype.get_protostructure_label(struct, raise_errors=True)
+    prototype.get_protostructure_label(struct)
     for struct in tqdm(df_mp_cse.structure, desc="Calculating proto-structure labels")
 ]
 df_mp[f"{Key.protostructure}_moyo"] = df_mp_cse[f"{Key.protostructure}_moyo"]

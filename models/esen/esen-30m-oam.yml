@@ -41,13 +41,12 @@ license:
   checkpoint_url: https://huggingface.co/facebook/OMAT24/blob/main/LICENSE
 
 environment:
+  # Display/provenance pins; install is owned by project (override-dependencies).
   dependencies:
   - 'fairchem-core[torch-extras]==1.10.0'
-  - torch==2.4.0
-  - numpy<2
-  - scipy<1.15
-  python_version: '3.12'
-  find_links: ['https://data.pyg.org/whl/torch-2.4.0+cu121.html']
+  - torch==2.10.0+cu126
+  python_version: '3.14'
+  project: models/eqv2/fairchem-env
 openness: OSOD
 architecture_types: [gnn]
 train_task: S2EFS
@@ -76,12 +75,12 @@ notes:
 metrics:
   diatomics:
     pred_file:
-      name: models/esen/esen-30m-oam/2026-06-29-diatomics.json.gz
-      url: https://figshare.com/files/66104600
-      size: 372993
-      md5: 66298a7d0d44568c6c234c3c51ec9608
-    hardware: NVIDIA H200
-    run_time_sec: 869.53
+      name: models/esen/esen-30m-oam/2026-10-19-diatomics.json.gz
+      url: https://figshare.com/files/70349760
+      size: 374485
+      md5: 3b2b843bc4ce486a8f777d92f25a0d56
+    cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 794.72, load_time_sec: 22.73, max_rss_gb: 2.424, max_gpu_mem_gb: 0.216}
+    excluded_formula_reasons: {}
     pbe_wall_dist_mae: 0.2307
     pbe_energy_mae: 1.061
     pbe_bond_length_error: 0.1681
@@ -102,6 +101,18 @@ metrics:
       - K
       - Rb
       missing_elements: []
+    reproducibility:
+      checked: '2026-10-20'
+      status: reproduced
+      tolerance: 0.001
+      runs:
+      - label: published run (2026-06-29, H200)
+        file:
+          name: models/esen/esen-30m-oam/2026-06-29-diatomics.json.gz
+          url: https://figshare.com/files/66104600
+          size: 372993
+          md5: 66298a7d0d44568c6c234c3c51ec9608
+      rel_changes: {}
   discovery:
     pred_file:
       name: models/esen/esen-30m-oam/2025-03-17-discovery.csv.gz
@@ -139,41 +150,40 @@ metrics:
   geo_opt:
     pred_file:
       name: models/esen/esen-30m-oam/2025-03-17-geo-opt.jsonl.gz
-      url: https://figshare.com/files/53153477
-      size: 208230661
-      md5: 287fa43e6cdce2f26bf09c877941c437
+      url: https://figshare.com/files/70328247
+      size: 209503717
+      md5: 4c21e6efdc64b5a7000f1d1fff0de3d5
     symprec=1e-2:
-      rmsd: 0.0608
-      n_sym_ops_mae: 2.1015
-      symmetry_decrease: 0.1616
-      symmetry_match: 0.7103
-      symmetry_increase: 0.1085
-      n_structures: 256963
+      rmsd: 0.0608 # unitless
+      n_sym_ops_mae: 2.1015 # unitless
+      symmetry_decrease: 0.1616 # fraction
+      symmetry_match: 0.7103 # fraction
+      symmetry_increase: 0.1085 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/esen/esen-30m-oam/2025-03-17-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/53504561
-        size: 7512150
-        md5: 7e323ab44ffcb286777b08a86fcb3a47
+        name: models/esen/esen-30m-oam/2025-03-17-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333707
+        size: 6989286
+        md5: a65a76a4eef5f3a753461e246168dbfe
     symprec=1e-5:
-      rmsd: 0.0608
-      n_sym_ops_mae: 4.1631
-      symmetry_decrease: 0.4739
-      symmetry_match: 0.3636
-      symmetry_increase: 0.1188
-      n_structures: 256963
+      rmsd: 0.0608 # unitless
+      n_sym_ops_mae: 4.1632 # unitless
+      symmetry_decrease: 0.474 # fraction
+      symmetry_match: 0.3636 # fraction
+      symmetry_increase: 0.1188 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/esen/esen-30m-oam/2025-03-17-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/53504564
-        size: 7349445
-        md5: 927aed03811ad26ad6014f99bafb52cf
+        name: models/esen/esen-30m-oam/2025-03-17-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333710
+        size: 6925912
+        md5: 0889f2dc34dbb628b8aa58caf1688cb4
   md:
     pred_file:
       name: models/esen/esen-30m-oam/2026-06-28-md-metrics.csv.gz
-      url: https://figshare.com/files/66048875
-      size: 1585
-      md5: a31c36236a1dfe404fbbbc289a44d462
-    hardware: NVIDIA H200
-    run_time_sec: 213187.13
+      url: https://figshare.com/files/66574847
+      size: 1748
+      md5: 83188370995a3c7a7e1502e1febffbe8
+    cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 213187.12}
     energy_rmse: 0.5077
     force_rmse: 50.7907
     rdf_error: 3.308
@@ -196,15 +206,20 @@ metrics:
       κ_failure_rate: 0.0097
       imaginary_mode_rate: 0.0
       spectrum_w1: 0.1392
-      phonon_file:
-        name: models/esen/esen-30m-oam/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1290143333
-        md5: f62c2f98271e165677696098635024d3
-      force_file:
-        name: models/esen/esen-30m-oam/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 8746899
-        md5: 28650ae26fb7629f56fd8aa5c0b721bb
-      run_info_file:
-        name: models/esen/esen-30m-oam/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 8218
-        md5: 6b75f4a2737a6a1c79634ba8040f9692
+      harmonic:
+        phonon_file:
+          name: models/esen/esen-30m-oam/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334436
+          size: 23044970
+          md5: dcd8a70e5175169639568ad90531b6a6
+        force_file:
+          name: models/esen/esen-30m-oam/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334439
+          size: 8746899
+          md5: 28650ae26fb7629f56fd8aa5c0b721bb
+        run_info_file:
+          name: models/esen/esen-30m-oam/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334442
+          size: 8218
+          md5: 6b75f4a2737a6a1c79634ba8040f9692
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 669.82, max_rss_gb: 2.55, max_gpu_mem_gb: 90.639}

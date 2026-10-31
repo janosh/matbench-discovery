@@ -1,7 +1,9 @@
+import { by_benchmark_added_desc } from '#lib'
 import { ACTIVE_MODELS, has_diatomics_curves } from '#lib/models.svelte.js'
 import * as predictions from '#lib/server/predictions.js'
 import { fetch_diatomics_data, read_md_per_system } from '#lib/server/predictions.js'
 import { load } from '#routes/benchmarks/diatomics/+page.server.js'
+import { createHash } from 'node:crypto'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { gzipSync } from 'node:zlib'
@@ -94,6 +96,40 @@ describe(`diatomics server data loader`, () => {
     },
   )
 
+  // local builds must never silently use data differing from the registered artifact
+  const registered = `system\nCu`
+  const figshare_url = `https://figshare.com/files/1`
+  it.each([
+    [registered, figshare_url, registered, 0, undefined],
+    [`system\nAg`, figshare_url, registered, 1, undefined], // same size: only md5 catches it
+    [`system\nAg`, undefined, registered, 0, `and no url is registered`],
+    [
+      `system\nAg`,
+      figshare_url,
+      `system\nAg`,
+      1,
+      `${figshare_url} differs from its registered artifact (md5`,
+    ],
+    [`system\nCu,extra`, undefined, registered, 0, `size 15 != registered 9`],
+  ])(
+    `pred_file: local %j, url %s, remote %j`,
+    async (local, url, remote, n_fetches, error) => {
+      const tmp_dir = await mkdtemp(`${tmpdir()}/pred-file-test-`)
+      onTestFinished(() => rm(tmp_dir, { recursive: true }))
+      await writeFile(`${tmp_dir}/pred-file`, local)
+      const md5 = createHash(`md5`).update(registered).digest(`hex`)
+      const file = { name: `pred-file`, size: registered.length, md5, url }
+      const fetch_fn = vi.fn<typeof fetch>(async () => new Response(remote))
+      const result = read_md_per_system(
+        { metrics: { md: { pred_file: file } } },
+        { fetch_fn, root_dir: tmp_dir },
+      )
+      if (error) await expect(result).rejects.toThrow(error)
+      else await expect(result).resolves.toEqual([{ system: `Cu` }])
+      expect(fetch_fn).toHaveBeenCalledTimes(n_fetches)
+    },
+  )
+
   const load_page = () => load({} as Parameters<typeof load>[0])
   const diatomics_keys = ACTIVE_MODELS.filter(has_diatomics_curves).map(
     ({ model_key }) => model_key,
@@ -110,8 +146,12 @@ describe(`diatomics server data loader`, () => {
     )
     const data = await load_page()
     if (!data) throw new Error(`diatomics load returned nothing`)
-    expect(data.diatomic_model_keys).toHaveLength(diatomics_keys.length)
-    expect(new Set(data.diatomic_model_keys)).toEqual(new Set(diatomics_keys))
+    // newest first: the page's color palette and curve picker follow this order
+    expect(data.diatomic_model_keys).toEqual(
+      ACTIVE_MODELS.filter(has_diatomics_curves)
+        .toSorted(by_benchmark_added_desc)
+        .map(({ model_key }) => model_key),
+    )
     expect(Object.keys(data).toSorted()).toEqual([
       `diatomic_curves`,
       `diatomic_model_keys`,

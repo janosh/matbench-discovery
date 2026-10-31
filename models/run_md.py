@@ -35,7 +35,7 @@ import shlex
 from matbench_discovery import today
 from matbench_discovery.calculators import (
     CALCULATORS,
-    load_calculator,
+    load_calculator_with_runtime,
     resolve_cli_calculator,
 )
 from matbench_discovery.data import artifact_filename
@@ -70,6 +70,9 @@ def main() -> int:
     parser.add_argument("--record-interval", type=int, default=10)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument(
+        "--device", choices=("cpu", "cuda"), help="Calculator device. default auto"
+    )
+    parser.add_argument(
         "--write-yaml", action="store_true", help="Write metrics to the model YAML"
     )
     args = parser.parse_args()
@@ -101,8 +104,9 @@ def main() -> int:
                 "record-interval": args.record_interval,
                 "seed": args.seed,
                 "dtype": args.dtype,
+                "device": args.device,
             },
-            ("write-yaml", "dry-run"),
+            ("write-yaml", "dry-run", "replace-author-reported"),
         )
         if args.systems is not None:
             run_args.extend(("--systems", *args.systems))
@@ -124,7 +128,9 @@ def main() -> int:
     arch_dir = os.path.dirname(model.rel_path) if model else args.model
     out_dir = args.out_dir or f"{module_dir}/{arch_dir}/{today}-md-nvt"
 
-    calculator = load_calculator(args.model, dtype=args.dtype)
+    calculator, runtime = load_calculator_with_runtime(
+        args.model, device=args.device, dtype=args.dtype
+    )
     df_md = run_md_benchmark(
         calculator=calculator,
         model_key=args.model,
@@ -137,6 +143,7 @@ def main() -> int:
         record_interval=args.record_interval,
         seed=args.seed,
         dry_run=args.dry_run,
+        runtime=runtime,
     )
 
     from matbench_discovery.metrics import md as md_metrics
@@ -154,7 +161,12 @@ def main() -> int:
         csv_path = f"{os.path.splitext(model.yaml_path)[0]}/{artifact_name}"
         os.makedirs(os.path.dirname(csv_path), exist_ok=True)
         df_md.to_csv(csv_path)
-        md_metrics.write_metrics_to_yaml(model, model_metrics, pred_file_path=csv_path)
+        md_metrics.write_metrics_to_yaml(
+            model,
+            model_metrics,
+            pred_file_path=csv_path,
+            replace_author_reported=args.replace_author_reported,
+        )
         print(f"Wrote metrics.md to {model.yaml_path}")
     return 0
 

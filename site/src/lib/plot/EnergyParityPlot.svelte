@@ -119,7 +119,7 @@
             point_ids: parity.point_ids,
             size_values: parity.size_values,
             label: model.model_name,
-            color: model.color ?? `#4dabf7`,
+            color: model.color,
           },
         ]
       : [],
@@ -410,10 +410,10 @@ title, so label the section for screen readers instead -->
     transform: translateY(-50%);
   }
   .structure-status.left {
-    right: calc(100% + var(--popup-gap, 1em));
+    right: calc(100% + var(--popup-gap));
   }
   .structure-status.right {
-    left: calc(100% + var(--popup-gap, 1em));
+    left: calc(100% + var(--popup-gap));
   }
   :global(.energy-parity-plot .structure-popup:not(:hover) .control-buttons) {
     opacity: 0 !important;

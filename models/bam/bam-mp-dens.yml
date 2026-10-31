@@ -104,29 +104,47 @@ notes:
 metrics:
   md:
     pred_file:
-      name: models/bam/bam-mp-dens/2026-10-16-md-metrics.csv.gz
-      url: https://figshare.com/files/70285329
-      size: 1500
-      md5: 4a91088226787dbb40ef92f08b91db3f
-    hardware: NVIDIA A100 80GB PCIe
-    run_time_sec: 117635.89 # s
-    max_rss_gb: 3.142 # GB
-    max_gpu_mem_gb: 8.899 # GB
-    rdf_error: 6.2346 # %
-    adf_error: 2.6016 # %
-    vdos_error: 30.281 # %
-    pressure_mae: 0.7637 # GPa
-    pressure_wasserstein: 0.7651 # GPa
-    pressure_error: 64.5269 # %
+      name: models/bam/bam-mp-dens/2026-10-19-md-metrics.csv.gz
+      url: https://figshare.com/files/70349799
+      size: 2002
+      md5: 2d1e37e70ba9a820bfd1b466576af30b
+    cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float32, acceleration: [], n_processes: 17, run_time_sec: 53100.26, load_time_sec: 518.23, max_rss_gb: 2.872, max_gpu_mem_gb: 8.929}
+    energy_rmse: 1.5871 # meV/atom
+    force_rmse: 161.6609 # meV/Å
+    rdf_error: 6.1614 # %
+    adf_error: 2.5529 # %
+    vdos_error: 30.0704 # %
+    pressure_mae: 0.7627 # GPa
+    pressure_wasserstein: 0.7644 # GPa
+    pressure_error: 64.5421 # %
     n_systems: 17 # count
+    reproducibility:
+      checked: '2026-10-20'
+      status: inconclusive
+      note: The published author run has no frame-wise energy/force RMSE to compare, and its trajectory metrics moved by at most 1.9% (ADF), consistent with rollout chaos.
+      tolerance: 0.001
+      runs:
+      - label: published run (2026-10-16, A100)
+        file:
+          name: models/bam/bam-mp-dens/2026-10-16-md-metrics.csv.gz
+          url: https://figshare.com/files/70333551
+          size: 1500
+          md5: 4a91088226787dbb40ef92f08b91db3f
+      rel_changes:
+        rdf_error: 0.0119
+        adf_error: 0.0191
+        vdos_error: 0.007
+        pressure_mae: 0.00124
+        pressure_wasserstein: 0.000913
+        pressure_error: 0.000236
   diatomics:
     pred_file:
-      name: models/bam/bam-mp-dens/2026-10-16-diatomics.json.gz
-      url: https://figshare.com/files/70285338
-      size: 237257
-      md5: f0316d1e693e716dca0a78d4f7d4c75c
-    hardware: NVIDIA A100 80GB PCIe
-    run_time_sec: 374.7
+      name: models/bam/bam-mp-dens/2026-10-19-diatomics.json.gz
+      url: https://figshare.com/files/70349730
+      size: 237705
+      md5: cd139874f920f9f25c219be10e512ecc
+    cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 352.25, load_time_sec: 33.8, max_rss_gb: 2.648, max_gpu_mem_gb: 0.184}
+    excluded_formula_reasons: {}
     pbe_wall_dist_mae: 0.2706
     pbe_energy_mae: 1.187
     pbe_bond_length_error: 0.2008
@@ -144,14 +162,25 @@ metrics:
       n_eligible: 73
       failed_elements: []
       missing_elements: []
+    reproducibility:
+      checked: '2026-10-20'
+      status: reproduced
+      tolerance: 0.001
+      runs:
+      - label: published run (2026-10-16, A100)
+        file:
+          name: models/bam/bam-mp-dens/2026-10-16-diatomics.json.gz
+          url: https://figshare.com/files/70285338
+          size: 237257
+          md5: f0316d1e693e716dca0a78d4f7d4c75c
+      rel_changes: {}
   discovery:
     pred_file:
       name: models/bam/bam-mp-dens/2026-10-12-discovery.csv.gz
       url: https://figshare.com/files/70285251
       size: 1438844
       md5: 6d00bb556e053933477e1f121670eef3
-    hardware: NVIDIA A100 40GB
-    run_time_sec: 467344
+    cost: {source: author_reported, hardware: NVIDIA A100 40GB, run_time_sec: 467344}
     full_test_set:
       F1: 0.75 # fraction
       DAF: 4.072 # dimensionless
@@ -194,10 +223,10 @@ metrics:
       symmetry_increase: 0.2076 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/bam/bam-mp-dens/2026-10-12-geo-opt-symprec=1e-5-moyo=0.13.0.csv.gz
-        url: https://figshare.com/files/70285299
-        size: 7995792
-        md5: e545b402d060202b8e9b8041d4d89278
+        name: models/bam/bam-mp-dens/2026-10-12-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333605
+        size: 7326907
+        md5: 63b122be5bc31d2492448b48766a257e
     symprec=1e-2:
       rmsd: 0.0832 # unitless
       n_sym_ops_mae: 1.8647 # unitless
@@ -206,37 +235,38 @@ metrics:
       symmetry_increase: 0.1207 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/bam/bam-mp-dens/2026-10-12-geo-opt-symprec=1e-2-moyo=0.13.0.csv.gz
-        url: https://figshare.com/files/70285308
-        size: 8100968
-        md5: 4f420c13bb9a809aa195431c2a265380
+        name: models/bam/bam-mp-dens/2026-10-12-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333611
+        size: 7379584
+        md5: fc58f94b7d8d742ce184c78f591ac86e
   phonons:
     kappa_103:
-      run_info_file:
-        name: models/bam/bam-mp-dens/harmonic/2026-10-19-phonons-kappa-103-run-info.json
-        url: https://figshare.com/files/70313988
-        size: 5177
-        md5: d54b79f747d71b24eccccb3a985464e2
-      phonon_file:
-        name: models/bam/bam-mp-dens/harmonic/2026-10-19-phonons-kappa-103-phonons.json.gz
-        url: https://figshare.com/files/70313931
-        size: 1337363209
-        md5: ba895dd2afc63fa3d820a823df86ce6f
-      force_file:
-        name: models/bam/bam-mp-dens/harmonic/2026-10-19-phonons-kappa-103-forces.json.gz
-        url: https://figshare.com/files/70313985
-        size: 8815871
-        md5: fd2e3f9e35a2c77038f98b3950bed150
       pred_file:
         name: models/bam/bam-mp-dens/2026-10-09-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/70285317
+        url: https://figshare.com/files/70334175
         size: 16118884
         md5: 1cdefa2e007bbe0055eecbc7f71b9ada
-      hardware: NVIDIA A100 80GB PCIe
-      run_time_sec: 12859
+      cost: {source: author_reported, hardware: NVIDIA A100 80GB PCIe, run_time_sec: 12859}
       κ_SRME: 0.7659
       κ_SRE: 0.5722
       κ_SRD: -0.4148
       κ_failure_rate: 0.0583
       imaginary_mode_rate: 0.0583
       spectrum_w1: 1.2795
+      harmonic:
+        phonon_file:
+          name: models/bam/bam-mp-dens/harmonic/2026-10-19-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334169
+          size: 23718873
+          md5: 9b5b48569504b845d039d02ebd05b322
+        force_file:
+          name: models/bam/bam-mp-dens/harmonic/2026-10-19-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334172
+          size: 8815871
+          md5: fd2e3f9e35a2c77038f98b3950bed150
+        run_info_file:
+          name: models/bam/bam-mp-dens/harmonic/2026-10-19-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334166
+          size: 5177
+          md5: d54b79f747d71b24eccccb3a985464e2
+        cost: {source: runner, hardware: NVIDIA A100-SXM4-40GB, n_shards: 1, run_time_sec: 867.03, max_rss_gb: 2.702, max_gpu_mem_gb: 32.202}

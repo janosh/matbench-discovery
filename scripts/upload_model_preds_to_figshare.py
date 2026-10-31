@@ -24,7 +24,9 @@ with open(f"{ROOT}/pyproject.toml", mode="rb") as toml_file:
 
 
 def process_exclusion_prefixes(items: list[str], all_items: list[str]) -> list[str]:
-    """Apply ``!`` exclusions to explicit items or the complete item list."""
+    """Apply ``!`` exclusions to explicit items or all items; unknown names error."""
+    if unknown := {item.removeprefix("!") for item in items} - {*all_items}:
+        cli_parser.error(f"unknown names {sorted(unknown)}")
     include_items = [item for item in items if not item.startswith("!")]
     excluded_items = {item[1:] for item in items if item.startswith("!")}
     # explicit inclusions win; otherwise start from all items minus the exclusions
@@ -74,21 +76,18 @@ def resolve_artifact_path(
 
 def set_file_ref_url(
     data: dict[str, Any],
-    key_path: tuple[str, ...],
+    key_path: tuple[str | int, ...],
     file_url: str,
     *,
     size: int,
     md5: str,
 ) -> None:
-    """Set ``url``, ``size`` and ``md5`` on a nested FileRef."""
+    """Set ``url``, ``size`` and ``md5`` on the FileRef at an iter_file_refs path."""
     *parts, last = key_path
-    target = data
+    target: Any = data
     for part in parts:
         target = target[part]
-    ref = target.get(last)
-    if not isinstance(ref, dict):
-        raise TypeError(f"Expected FileRef object at {'.'.join(key_path)}, got {ref!r}")
-    target[last] = {**ref, "url": file_url, "size": size, "md5": md5}
+    target[last] = {**target[last], "url": file_url, "size": size, "md5": md5}
 
 
 def update_one_modeling_task_article(
@@ -215,9 +214,8 @@ def update_one_modeling_task_article(
                     input("Delete these files before uploading? [y/N] ").lower() == "y"
                 ):
                     for similar_name, similar_id in similar_files:
-                        if similar_id is not None and figshare.delete_file(
-                            article_id, similar_id
-                        ):
+                        if similar_id is not None:
+                            figshare.delete_file(article_id, similar_id)
                             deleted_files[similar_name] = similar_id
                             # keep local view in sync to classify uploads correctly
                             existing_files.pop(similar_name, None)
@@ -335,7 +333,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
     processed_models = process_exclusion_prefixes(
         args.models, [model.name for model in Model]
     )
-    args.models = [Model(model_name) for model_name in processed_models]
+    args.models = [Model[model_name] for model_name in processed_models]
 
     if dry_run := args.dry_run:
         print("\nDry run mode - no files will be uploaded")

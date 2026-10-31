@@ -309,7 +309,7 @@ describe(`TableControls`, () => {
     mount(TableControls, { target: document.body, props })
     await tick()
 
-    const toggle_btn = doc_query(`.column-toggles > button`)
+    const toggle_btn = doc_query(`.column-picker > button`)
     expect(toggle_btn.textContent?.trim()).toBe(`Columns`)
     expect(toggle_btn.getAttribute(`aria-expanded`)).toBe(`false`)
     expect(document.querySelector(`.column-menu`)).toBeNull()

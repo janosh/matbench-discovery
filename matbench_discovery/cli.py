@@ -1,7 +1,6 @@
 """Central argument parser for Matbench Discovery scripts."""
 
 import multiprocessing as mp
-import os
 import sys
 from argparse import ArgumentParser, ArgumentTypeError, Namespace
 from collections.abc import Sequence
@@ -20,12 +19,6 @@ def parse_model(value: str) -> Model:
 cli_parser = ArgumentParser(
     description="CLI flags for evaluation, payload and analysis scripts.",
     allow_abbrev=False,
-)
-
-cli_parser.add_argument(
-    "--auto-download",
-    action="store_true",
-    help="Auto-confirm file downloads without prompting.",
 )
 
 models_arg = cli_parser.add_argument(
@@ -51,6 +44,11 @@ cli_parser.add_argument(
 cli_parser.add_argument(
     "--md-run-dir",
     help="Combine MD metric CSVs from this directory instead of the declared file.",
+)
+cli_parser.add_argument(
+    "--replace-author-reported",
+    action="store_true",
+    help="Let artifact-backed cost replace an author_reported YAML cost block.",
 )
 cli_parser.add_argument(
     "--overwrite",
@@ -89,13 +87,11 @@ def parse_cli_args(raw_args: Sequence[str] | None = None) -> Namespace:
     Unknown flags exit with an error so typos can't silently fall back to defaults.
     The one exception is Jupyter: kernels pass their own flags (e.g. --f=kernel.json)
     when running a script's ``# %%`` cells interactively. The result is cached as
-    ``cli_args`` and --auto-download takes effect here.
+    ``cli_args``.
     """
     args, unknown = cli_parser.parse_known_args(raw_args)
     if unknown and "ipykernel" not in sys.modules:
         cli_parser.error(f"unrecognized arguments: {' '.join(unknown)}")
-    if args.auto_download:
-        os.environ["MBD_AUTO_DOWNLOAD_FILES"] = "true"
     globals()["cli_args"] = args
     return args
 

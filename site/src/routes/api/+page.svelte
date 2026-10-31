@@ -10,24 +10,26 @@
   ).toSorted(([path_a], [path_b]) => path_a.localeCompare(path_b))
 </script>
 
-<h1 id="api" class="toc-exclude">API</h1>
+<div class="api">
+  <h1 id="api" class="toc-exclude">API</h1>
 
-<Intro />
+  <Intro />
 
-{#each modules as [path, MdFile] (path)}
-  <MdFile />
-{/each}
+  {#each modules as [path, MdFile] (path)}
+    <MdFile />
+  {/each}
+</div>
 
 <style>
   /* select all but first module h1s */
-  :global(h1[id^='module-']:not(:nth-of-type(2))) {
+  .api :global(h1[id^='module-']:not(:nth-of-type(2))) {
     margin-top: 2em;
   }
-  :global(h1 > kbd) {
+  .api :global(h1 > kbd) {
     font-size: 25pt;
   }
-  :global(hr) {
-    border: 1px solid gray;
+  .api :global(hr) {
+    border: 1px solid var(--border);
     margin-bottom: 2em;
   }
 </style>

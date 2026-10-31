@@ -47,8 +47,8 @@ license:
   checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
 
 environment:
-  dependencies: ['nequip>=0.14', 'allegro>=0.7.1', 'torch<2.10']
-  python_version: '3.12'
+  dependencies: ['nequip>=0.14', 'allegro>=0.7.1', 'torch==2.11.0']
+  python_version: '3.14'
 openness: OSOD
 architecture_types: [gnn]
 train_task: S2EFS
@@ -106,12 +106,12 @@ notes:
 metrics:
   diatomics:
     pred_file:
-      name: models/allegro/allegro-oam-l-0.1/2026-06-28-diatomics.json.gz
-      url: https://figshare.com/files/66104579
-      size: 263223
-      md5: 412e833e6f847e92e36f2f1b4345c182
-    hardware: NVIDIA H200
-    run_time_sec: 67.67
+      name: models/allegro/allegro-oam-l-0.1/2026-10-19-diatomics.json.gz
+      url: https://figshare.com/files/70350108
+      size: 266315
+      md5: 9ed7b3c5ba99a9a05fdfc2b0e126f708
+    cost: {source: runner, hardware: NVIDIA H200, device: cuda, acceleration: [torch_aot_inductor], n_shards: 1, n_processes: 1, run_time_sec: 16.86, load_time_sec: 26.7, max_rss_gb: 1.492, max_gpu_mem_gb: 0.076}
+    excluded_formula_reasons: {}
     pbe_wall_dist_mae: 0.1462
     pbe_energy_mae: 0.9207
     pbe_bond_length_error: 0.1206
@@ -129,6 +129,18 @@ metrics:
       n_eligible: 73
       failed_elements: []
       missing_elements: []
+    reproducibility:
+      checked: '2026-10-20'
+      status: reproduced
+      tolerance: 0.001
+      runs:
+      - label: published run (2026-06-28, H200)
+        file:
+          name: models/allegro/allegro-oam-l-0.1/2026-06-28-diatomics.json.gz
+          url: https://figshare.com/files/66104579
+          size: 263223
+          md5: 412e833e6f847e92e36f2f1b4345c182
+      rel_changes: {}
   discovery:
     pred_file:
       name: models/allegro/allegro-oam-l-0.1/2025-09-08-discovery.csv.gz
@@ -170,37 +182,36 @@ metrics:
       size: 107007627
       md5: d725bf21722d32a024ea6e72512b3610
     symprec=1e-2:
-      rmsd: 0.0651
-      n_sym_ops_mae: 1.7418
-      symmetry_decrease: 0.0542
-      symmetry_match: 0.816
-      symmetry_increase: 0.1226
-      n_structures: 256963
+      rmsd: 0.0651 # unitless
+      n_sym_ops_mae: 1.7418 # unitless
+      symmetry_decrease: 0.0542 # fraction
+      symmetry_match: 0.816 # fraction
+      symmetry_increase: 0.1226 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/allegro/allegro-oam-l-0.1/2025-09-08-geo-opt-symprec=1e-2-moyo=0.4.4.csv.gz
-        url: https://figshare.com/files/57731044
-        size: 9231246
-        md5: 5b7a3817a90f3f63e6251f0bb6b52131
+        name: models/allegro/allegro-oam-l-0.1/2025-09-08-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333593
+        size: 8207440
+        md5: 92b9ce27fc9c658860b2fdb94a1dce07
     symprec=1e-5:
-      rmsd: 0.0651
-      n_sym_ops_mae: 1.924
-      symmetry_decrease: 0.0753
-      symmetry_match: 0.7163
-      symmetry_increase: 0.2023
-      n_structures: 256963
+      rmsd: 0.0651 # unitless
+      n_sym_ops_mae: 1.9239 # unitless
+      symmetry_decrease: 0.0753 # fraction
+      symmetry_match: 0.7163 # fraction
+      symmetry_increase: 0.2023 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/allegro/allegro-oam-l-0.1/2025-09-08-geo-opt-symprec=1e-5-moyo=0.4.4.csv.gz
-        url: https://figshare.com/files/57731047
-        size: 9048813
-        md5: 6bd64b6af8c5fe79f78c50a5f67581d2
+        name: models/allegro/allegro-oam-l-0.1/2025-09-08-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333596
+        size: 8136783
+        md5: 6feb33a1fc60275eed9b1fcf6a595a04
   md:
     pred_file:
       name: models/allegro/allegro-oam-l-0.1/2026-06-28-md-metrics.csv.gz
-      url: https://figshare.com/files/66048848
-      size: 1575
-      md5: 275b5833af7b3b7ad265b3b0d8c7db69
-    hardware: NVIDIA H200
-    run_time_sec: 228312.52
+      url: https://figshare.com/files/70333548
+      size: 1749
+      md5: 53b471fd42ac0c44aee2f93f94336a2b
+    cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 228312.5}
     energy_rmse: 0.7413
     force_rmse: 84.8288
     rdf_error: 3.7793
@@ -214,7 +225,7 @@ metrics:
     kappa_103:
       pred_file:
         name: models/allegro/allegro-oam-l-0.1/2025-09-08-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/57576247
+        url: https://figshare.com/files/70334136
         size: 10783908
         md5: 55ed67d6efbc6cc459b9b1c1423c4cf8
       κ_SRME: 0.3186
@@ -223,15 +234,20 @@ metrics:
       κ_failure_rate: 0.0097
       imaginary_mode_rate: 0.0097
       spectrum_w1: 0.186
-      phonon_file:
-        name: models/allegro/allegro-oam-l-0.1/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1434341167
-        md5: a1b600ecfeeb20a58753e6fcd2009de6
-      force_file:
-        name: models/allegro/allegro-oam-l-0.1/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 8765190
-        md5: 6388f2eef9c2099a660e214f26613782
-      run_info_file:
-        name: models/allegro/allegro-oam-l-0.1/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 8379
-        md5: 38dead20021a787caa49815de1849611
+      harmonic:
+        phonon_file:
+          name: models/allegro/allegro-oam-l-0.1/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334139
+          size: 24011009
+          md5: 16f3486c3e998b587ea9b96299e51720
+        force_file:
+          name: models/allegro/allegro-oam-l-0.1/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334142
+          size: 8765190
+          md5: 6388f2eef9c2099a660e214f26613782
+        run_info_file:
+          name: models/allegro/allegro-oam-l-0.1/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334145
+          size: 8379
+          md5: 38dead20021a787caa49815de1849611
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 516.23, max_rss_gb: 2.485, max_gpu_mem_gb: 118.956}

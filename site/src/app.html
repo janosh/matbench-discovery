@@ -2,22 +2,6 @@
 <html lang="en">
   <head>
     <meta name="author" content="Janosh Riebesell" />
-    <!-- FOUC mirror of svelte-widgets apply_theme_mode. -->
-    <script>
-      {
-        let effective_theme
-        try {
-          effective_theme = localStorage.getItem(`theme`)
-        } catch {}
-        if (effective_theme !== `light` && effective_theme !== `dark`)
-          effective_theme = globalThis.matchMedia?.(`(prefers-color-scheme: dark)`)
-            ?.matches
-            ? `dark`
-            : `light`
-        document.documentElement.style.colorScheme = effective_theme
-        document.documentElement.dataset.theme = effective_theme
-      }
-    </script>
     <meta
       name="keywords"
       content="materials discovery, inorganic crystal stability, machine learning, interatomic potential, Bayesian optimization, high-throughput search, convex hull, formation energy"

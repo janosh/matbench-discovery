@@ -47,8 +47,8 @@ license:
   checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
 
 environment:
-  dependencies: ['nequip>=0.14', 'allegro>=0.7.1', 'torch<2.10']
-  python_version: '3.12'
+  dependencies: ['nequip>=0.14', 'allegro>=0.7.1', 'torch==2.11.0']
+  python_version: '3.14'
 openness: OSOD
 architecture_types: [gnn]
 train_task: S2EFS
@@ -105,12 +105,12 @@ notes:
 metrics:
   diatomics:
     pred_file:
-      name: models/allegro/allegro-mp-l-0.1/2026-06-28-diatomics.json.gz
-      url: https://figshare.com/files/66104582
-      size: 254636
-      md5: d3c985f1612ac6fa6954421a3d50f668
-    hardware: NVIDIA H200
-    run_time_sec: 84.64
+      name: models/allegro/allegro-mp-l-0.1/2026-10-19-diatomics.json.gz
+      url: https://figshare.com/files/70350105
+      size: 257707
+      md5: 4c7e30137baf50de0a903f01bbc9bf2b
+    cost: {source: runner, hardware: NVIDIA H200, device: cuda, acceleration: [torch_aot_inductor], n_shards: 1, n_processes: 1, run_time_sec: 21.6, load_time_sec: 25.43, max_rss_gb: 1.529, max_gpu_mem_gb: 0.116}
+    excluded_formula_reasons: {}
     pbe_wall_dist_mae: 0.2426
     pbe_energy_mae: 1.23
     pbe_bond_length_error: 0.1123
@@ -128,6 +128,18 @@ metrics:
       n_eligible: 73
       failed_elements: []
       missing_elements: []
+    reproducibility:
+      checked: '2026-10-20'
+      status: reproduced
+      tolerance: 0.001
+      runs:
+      - label: published run (2026-06-28, H200)
+        file:
+          name: models/allegro/allegro-mp-l-0.1/2026-06-28-diatomics.json.gz
+          url: https://figshare.com/files/66104582
+          size: 254636
+          md5: d3c985f1612ac6fa6954421a3d50f668
+      rel_changes: {}
   discovery:
     pred_file:
       name: models/allegro/allegro-mp-l-0.1/2025-09-08-discovery.csv.gz
@@ -169,37 +181,36 @@ metrics:
       size: 105632042
       md5: a7672379e84c57f628945d2d5085329b
     symprec=1e-5:
-      rmsd: 0.0816
-      n_sym_ops_mae: 1.902
-      symmetry_decrease: 0.0712
-      symmetry_match: 0.7211
-      symmetry_increase: 0.2015
-      n_structures: 256963
+      rmsd: 0.0816 # unitless
+      n_sym_ops_mae: 1.902 # unitless
+      symmetry_decrease: 0.0712 # fraction
+      symmetry_match: 0.7211 # fraction
+      symmetry_increase: 0.2015 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/allegro/allegro-mp-l-0.1/2025-09-08-geo-opt-symprec=1e-5-moyo=0.4.4.csv.gz
-        url: https://figshare.com/files/57731050
-        size: 8231604
-        md5: 9a7b9d5afd3db7823d0974277ae5198c
+        name: models/allegro/allegro-mp-l-0.1/2025-09-08-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333587
+        size: 7615920
+        md5: 46db4d58138a96ed04f35e204e71ec6b
     symprec=1e-2:
-      rmsd: 0.0816
-      n_sym_ops_mae: 1.7918
-      symmetry_decrease: 0.0572
-      symmetry_match: 0.8125
-      symmetry_increase: 0.123
-      n_structures: 256963
+      rmsd: 0.0816 # unitless
+      n_sym_ops_mae: 1.7918 # unitless
+      symmetry_decrease: 0.0572 # fraction
+      symmetry_match: 0.8125 # fraction
+      symmetry_increase: 0.123 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/allegro/allegro-mp-l-0.1/2025-09-08-geo-opt-symprec=1e-2-moyo=0.4.4.csv.gz
-        url: https://figshare.com/files/57731053
-        size: 8347710
-        md5: 5c2b5ae8b03e67f9c77273893c0811f6
+        name: models/allegro/allegro-mp-l-0.1/2025-09-08-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333590
+        size: 7645807
+        md5: 12c5ec07c7db7319b249e5937c64705e
   md:
     pred_file:
       name: models/allegro/allegro-mp-l-0.1/2026-06-28-md-metrics.csv.gz
-      url: https://figshare.com/files/66048845
-      size: 1580
-      md5: 0636a4234ff42301c743058c1a092880
-    hardware: NVIDIA H200
-    run_time_sec: 288641.53
+      url: https://figshare.com/files/70333545
+      size: 1746
+      md5: 5a27da1b68c6c312116673c8299b5472
+    cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 288641.52}
     energy_rmse: 1.0896
     force_rmse: 114.7238
     rdf_error: 4.2778
@@ -213,7 +224,7 @@ metrics:
     kappa_103:
       pred_file:
         name: models/allegro/allegro-mp-l-0.1/2025-09-08-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/57576301
+        url: https://figshare.com/files/70334118
         size: 10867066
         md5: bf29271bd238a0dc8ca5279010a02d97
       κ_SRME: 0.5039
@@ -222,15 +233,20 @@ metrics:
       κ_failure_rate: 0.0194
       imaginary_mode_rate: 0.0194
       spectrum_w1: 0.3761
-      phonon_file:
-        name: models/allegro/allegro-mp-l-0.1/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1535385918
-        md5: a7e7a3b885e7c206dddeee508fc890ad
-      force_file:
-        name: models/allegro/allegro-mp-l-0.1/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 8814254
-        md5: c523e6c5f4c71f914150f2fe8527b2c7
-      run_info_file:
-        name: models/allegro/allegro-mp-l-0.1/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 8396
-        md5: c673f77b473b5ecbd43f58a2184af8d6
+      harmonic:
+        phonon_file:
+          name: models/allegro/allegro-mp-l-0.1/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334124
+          size: 24465329
+          md5: 54ba27e740036da9177d1132b0547082
+        force_file:
+          name: models/allegro/allegro-mp-l-0.1/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334130
+          size: 8814254
+          md5: c523e6c5f4c71f914150f2fe8527b2c7
+        run_info_file:
+          name: models/allegro/allegro-mp-l-0.1/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334133
+          size: 8396
+          md5: c673f77b473b5ecbd43f58a2184af8d6
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 575.8, max_rss_gb: 2.529, max_gpu_mem_gb: 146.332}

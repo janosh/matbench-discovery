@@ -136,29 +136,29 @@ metrics:
       size: 121234826
       md5: 6202e0c12812a4510087d172adfd41f6
     symprec=1e-5:
-      rmsd: 0.0773
-      n_sym_ops_mae: 5.7108
-      symmetry_decrease: 0.593
-      symmetry_match: 0.3362
-      symmetry_increase: 0.0619
-      n_structures: 256959
+      rmsd: 0.0773 # unitless
+      n_sym_ops_mae: 5.7108 # unitless
+      symmetry_decrease: 0.593 # fraction
+      symmetry_match: 0.3362 # fraction
+      symmetry_increase: 0.0619 # fraction
+      n_structures: 256959 # count
       analysis_file:
-        name: models/matris/matris-v050-mptrj/2025-03-12-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/53504666
-        size: 7238165
-        md5: 2ced92214be973e1313281582c0d4eae
+        name: models/matris/matris-v050-mptrj/2025-03-12-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70334031
+        size: 6845392
+        md5: 3243f01179ba867ba15aa1b47ec278a3
     symprec=1e-2:
-      rmsd: 0.0773
-      n_sym_ops_mae: 2.0591
-      symmetry_decrease: 0.0955
-      symmetry_match: 0.7874
-      symmetry_increase: 0.1091
-      n_structures: 256959
+      rmsd: 0.0773 # unitless
+      n_sym_ops_mae: 2.0591 # unitless
+      symmetry_decrease: 0.0955 # fraction
+      symmetry_match: 0.7874 # fraction
+      symmetry_increase: 0.1091 # fraction
+      n_structures: 256959 # count
       analysis_file:
-        name: models/matris/matris-v050-mptrj/2025-03-12-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/53504669
-        size: 7359164
-        md5: 11752bef916acef4d58d23ac2f90dd6b
+        name: models/matris/matris-v050-mptrj/2025-03-12-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70334037
+        size: 6870583
+        md5: c3cf8db3fed6a736c3bcf182b5d3d6a5
   phonons:
     kappa_103:
       κ_SRME: 0.8651

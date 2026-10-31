@@ -9,10 +9,9 @@ import contextlib
 import dataclasses
 import json
 import os
-import socket
 import time
 import zipfile
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import IO, Any, cast
@@ -30,7 +29,13 @@ from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
 from tqdm import tqdm
 
 from matbench_discovery import today
-from matbench_discovery.hpc import COST_PROVENANCE_KEYS
+from matbench_discovery.hpc import (
+    LOAD_CHARGED,
+    check_resume_labels,
+    memory_peaks,
+    merge_audit_metadata,
+    reset_gpu_peak_memory,
+)
 from matbench_discovery.metrics import md as md_metrics
 from matbench_discovery.trajectory import Trajectory
 
@@ -280,8 +285,9 @@ class NvtParams:
 # so its full state is these five fields; restoring them reproduces an uninterrupted
 # run to ~1e-14. Schema-tagged + ASE-version-gated so a renamed attr or upgrade fails
 # closed (recompute) rather than silently corrupting trajectories.
-# Schema 2 added rollout_sec (cumulative rollout wall time surviving resumes).
-CHECKPOINT_SCHEMA = 2
+# Schema 3: the cost units of the sessions so far (runtime + steady-state run time +
+# memory peaks), whose run labels a resume must match (never mixing GPUs).
+CHECKPOINT_SCHEMA = 3
 NpzValue = np.ndarray | np.generic | str | int | float | bool
 
 
@@ -294,35 +300,6 @@ def run_info_path(traj_path: str) -> str:
     persistent sidecar rather than an in-memory return value.
     """
     return f"{traj_path.removesuffix('.extxyz')}-run-info.json"
-
-
-def collect_run_info(rollout_sec: float, params: NvtParams) -> dict[str, object]:
-    """Assemble a completed rollout's run-info sidecar contents.
-
-    Cost fields (COST_PROVENANCE_KEYS) flow into the per-system metric CSVs:
-    ``run_time_sec`` (wall time, accumulated across resumes by the caller),
-    ``max_rss_gb`` (host RSS high-water mark since process start - exact per system in
-    one-system-per-job cluster runs), ``max_gpu_mem_gb`` (peak CUDA memory since the
-    rollout-start reset) and ``hardware``. ``nvt_params`` records the parameters that
-    define the trajectory so a later run with different settings recomputes instead of
-    silently reusing it (see validate_pred_trajectory). The rest is audit-only
-    provenance: completion timestamp, host/job identity (how the 2026-07 timing salvage
-    traced trajectories back to Slurm logs) and key package versions.
-    """
-    from matbench_discovery.hpc import detect_hardware, package_versions, peak_memory_gb
-
-    run_info: dict[str, object] = {
-        "run_time_sec": round(rollout_sec, 2),
-        **peak_memory_gb(),
-        "hardware": detect_hardware(),
-        "nvt_params": dataclasses.asdict(params),
-        # same timestamp/hostname formats as the kappa and discovery run metadata
-        "completed_at": datetime.now(UTC).isoformat(),
-        "hostname": socket.gethostname(),
-    }
-    if slurm_job_id := os.getenv("SLURM_JOB_ID"):
-        run_info["slurm_job_id"] = slurm_job_id
-    return run_info | {"versions": package_versions(("ase", "numpy", "torch"))}
 
 
 def read_run_info(traj_path: str) -> dict[str, object]:
@@ -341,6 +318,20 @@ def read_run_info(traj_path: str) -> dict[str, object]:
     if not isinstance(run_info, dict):
         raise TypeError(f"MD run-info sidecar {path} must hold a JSON object")
     return run_info
+
+
+def run_info_row(run_info: Mapping[str, object]) -> dict[str, float | int | str]:
+    """A run-info sidecar's cost fields as per-system CSV columns. ``acceleration``
+    is ``+``-joined, ``none`` for [] (decoded by metrics.md.aggregate_md_cost).
+    """
+    row: dict[str, float | int | str] = {}
+    for key in md_metrics.MD_COST_COLS:
+        value = run_info.get(key)
+        if key == "acceleration" and isinstance(value, list):
+            row[key] = "+".join(map(str, value)) or "none"
+        elif isinstance(value, str | int | float) and not isinstance(value, bool):
+            row[key] = value
+    return row
 
 
 def _atomic_write(path: str, write: Callable[[IO[bytes]], object]) -> None:
@@ -378,9 +369,10 @@ def _nvt_state_attrs(
 
 def _load_checkpoint(
     ckpt_path: str, *, atoms: Atoms, params: NvtParams, n_steps: int
-) -> dict[str, np.ndarray] | None:
-    """Load a checkpoint if present, readable, schema/ASE/parameter-matched; else None
-    (so the caller recomputes from scratch rather than resuming a stale/foreign state).
+) -> tuple[dict[str, np.ndarray], list[dict[str, Any]]] | None:
+    """Load a checkpoint with its sessions' cost units if present,
+    readable and schema/ASE/parameter-matched; else None (so the caller recomputes
+    from scratch rather than resuming a stale/foreign state).
     """
     if not os.path.isfile(ckpt_path):
         return None
@@ -403,7 +395,7 @@ def _load_checkpoint(
         return None
 
     try:
-        rollout_sec = float(ckpt["rollout_sec"])
+        sessions = json.loads(str(ckpt["sessions"]))
         stored = NvtParams(
             temperature_kelvin=float(ckpt["temperature_kelvin"]),
             time_step_fs=float(ckpt["time_step_fs"]),
@@ -417,19 +409,19 @@ def _load_checkpoint(
             stored == params
             and nsteps <= n_steps
             and n_frames <= target_frames
-            and np.isfinite(rollout_sec)
-            and rollout_sec >= 0
+            and isinstance(sessions, list)
+            and all(isinstance(session, dict) for session in sessions)
             and nsteps == (n_frames - 1) * params.record_interval
             and list(ckpt["symbols"]) == atoms.get_chemical_symbols()
             and np.allclose(ckpt["cell"], atoms.cell.array)
             and np.array_equal(ckpt["pbc"], atoms.pbc)
         )
-    except KeyError, TypeError, ValueError:
+    except KeyError, TypeError, ValueError:  # JSONDecodeError is a ValueError
         consistent = False
     if not consistent:
         print(f"  ignoring checkpoint {ckpt_path}: schema/version/parameters mismatch")
         return None
-    return ckpt
+    return ckpt, sessions
 
 
 def _restore_nvt_state(
@@ -460,6 +452,7 @@ def run_nvt_md_resumable(
     progress_interval: int = 1_000,
     progress_label: str = "MD rollout",
     checkpoint_every_n_frames: int = 200,
+    runtime: Mapping[str, Any],
 ) -> list[Atoms]:
     """Run an NVT rollout that survives interruption (timeouts/preemption).
 
@@ -469,9 +462,13 @@ def run_nvt_md_resumable(
     deterministic trajectory. Only on completion is ``.part`` atomically promoted to
     ``out_path`` and the checkpoint removed. Returns the full trajectory.
 
-    Rollout wall time is accumulated across resumes (persisted in the checkpoint) and,
-    once the rollout completes, written with the detected hardware to a
-    ``run_info_path(out_path)`` JSON sidecar, so its cost survives later reuse.
+    Each session's cost unit (``runtime`` from calculators.load_calculator_with_runtime,
+    steady-state run time, memory peaks) persists in the checkpoint and, on
+    completion, all are merged into a ``run_info_path(out_path)`` sidecar, so the
+    rollout's cost survives later reuse.
+
+    Raises:
+        ValueError: If a checkpoint written under other run labels would be resumed.
     """
     # .part.extxyz (not .part) so ASE infers the extxyz format on read/write/append
     part_path = f"{out_path.removesuffix('.extxyz')}.part.extxyz"
@@ -498,15 +495,13 @@ def run_nvt_md_resumable(
         seed=seed,
     )
 
-    from matbench_discovery.hpc import reset_gpu_peak_memory
-
-    ckpt = _load_checkpoint(ckpt_path, atoms=atoms, params=params, n_steps=n_steps)
+    loaded = _load_checkpoint(ckpt_path, atoms=atoms, params=params, n_steps=n_steps)
     frames_written = 0
-    prior_rollout_sec = 0.0  # wall time spent in earlier (timed-out) sessions
-    session_start = time.perf_counter()
+    sessions: list[dict[str, Any]] = []  # cost units of earlier (timed-out) sessions
     # attribute peak VRAM to this rollout even when one process runs several systems
-    reset_gpu_peak_memory()
-    if ckpt is not None and os.path.isfile(part_path):
+    reset_gpu_peak_memory(runtime)
+    if loaded is not None and os.path.isfile(part_path):
+        ckpt, stored_sessions = loaded
         n_ckpt = int(ckpt["n_frames"])
         # keep only checkpointed frames; a kill may have appended an un-checkpointed
         # (possibly malformed) tail, so read just the first n_ckpt and rewrite cleanly
@@ -516,11 +511,20 @@ def run_nvt_md_resumable(
             print(f"  resume failed reading {part_path} ({exc}); recomputing")
             kept = []
         if len(kept) == n_ckpt:
+            check_resume_labels(stored_sessions[-1], runtime, ckpt_path)
+            sessions = stored_sessions
             _restore_nvt_state(dynamics, ckpt)
             ase.io.write(part_path, kept)  # truncate to the checkpointed frames
             frames_written = n_ckpt
-            prior_rollout_sec = float(ckpt["rollout_sec"])
             print(f"  resuming {out_path} from frame {frames_written}/{target_frames}")
+    session_start = time.perf_counter()
+
+    def session_unit() -> dict[str, Any]:
+        """This session's cost unit so far (after MD steps ran)."""
+        run_time_sec = time.perf_counter() - session_start
+        return {**runtime, "run_time_sec": run_time_sec} | memory_peaks(
+            runtime, succeeded=True
+        )
 
     if frames_written == 0:  # fresh start: clear any stale partial files
         for stale in (part_path, ckpt_path):
@@ -552,7 +556,8 @@ def run_nvt_md_resumable(
                 symbols=np.array(dynamics.atoms.get_chemical_symbols()),
                 cell=dynamics.atoms.cell.array,
                 pbc=dynamics.atoms.pbc,
-                rollout_sec=prior_rollout_sec + (time.perf_counter() - session_start),
+                # so a killed session's cost still counts after resume
+                sessions=json.dumps([*sessions, session_unit()]),
             )
 
     dynamics.attach(record_and_checkpoint, interval=record_interval)
@@ -568,8 +573,15 @@ def run_nvt_md_resumable(
         raise RuntimeError(
             f"{out_path} rollout produced {len(frames)} frames != {target_frames}"
         )
-    rollout_sec = prior_rollout_sec + (time.perf_counter() - session_start)
-    run_info_json = json.dumps(collect_run_info(rollout_sec, params), indent=2)
+    # cost keys only from the merge, never one session's values; nvt_params make a
+    # later run with other settings recompute (validate_pred_trajectory)
+    cost_cols = md_metrics.MD_COST_COLS
+    run_info = {key: val for key, val in runtime.items() if key not in cost_cols} | {
+        **merge_audit_metadata([*sessions, session_unit()], strict=True),
+        "nvt_params": dataclasses.asdict(params),
+        "completed_at": datetime.now(UTC).isoformat(),
+    }
+    run_info_json = json.dumps(run_info, indent=2)
     _atomic_write(
         run_info_path(out_path), lambda file: file.write(run_info_json.encode())
     )
@@ -644,6 +656,7 @@ def run_md_benchmark(
     record_interval: int = 10,
     seed: int = 0,
     dry_run: bool = False,
+    runtime: Mapping[str, Any],
 ) -> pd.DataFrame:
     """Run NVT rollouts and compute MD metrics for one model across reference systems.
 
@@ -653,9 +666,8 @@ def run_md_benchmark(
     labeled reference file is provided, diagnostic energy/force RMSEs are computed from
     that file's hidden labels. Writes one gzipped per-system metrics CSV and returns
     the per-system DataFrame. Each row also carries ``n_atoms`` plus the rollout's cost
-    provenance (COST_PROVENANCE_KEYS: wall time, peak host/GPU memory, hardware) read
-    from the trajectory's run-info sidecar, which survives metric-recompute jobs that
-    reuse cached rollouts.
+    provenance (metrics.md.MD_COST_COLS) read from the trajectory's run-info sidecar,
+    which survives metric-recompute jobs that reuse cached rollouts.
 
     Args:
         calculator: ASE calculator for the model under test.
@@ -673,6 +685,8 @@ def run_md_benchmark(
         dry_run: Smoke test: one system, a handful of MD steps, and a capped reference
             slice, to verify the model + pipeline run error-free in seconds without
             writing outputs. Returned metrics are not meaningful.
+        runtime: calculators.load_calculator_with_runtime() provenance, recorded in
+            each new rollout's run info.
 
     Returns:
         pd.DataFrame: One row per system indexed by system name.
@@ -768,7 +782,9 @@ def run_md_benchmark(
                     record_interval=record_interval,
                     seed=seed,
                     progress_label=progress_label,
+                    runtime=runtime,
                 )
+                runtime = {**runtime, **LOAD_CHARGED}  # its first rollout carries it
 
         system_metrics = md_metrics.evaluate_md_system(
             ref_trajectory,
@@ -802,10 +818,7 @@ def run_md_benchmark(
             "n_atoms": ref_trajectory.n_atoms,
         }
         if not dry_run:  # rollout cost provenance (absent for legacy trajectories)
-            run_info = read_run_info(pred_traj_path)
-            for key in COST_PROVENANCE_KEYS:
-                if isinstance(value := run_info.get(key), str | int | float):
-                    row[key] = value
+            row |= run_info_row(read_run_info(pred_traj_path))
         rows.append(row | system_metrics)
 
     df_md = pd.DataFrame(rows).set_index("system")

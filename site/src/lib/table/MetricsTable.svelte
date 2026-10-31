@@ -21,7 +21,7 @@
     MODELS,
     score_weight_records,
   } from '#lib/models.svelte.js'
-  import type { DiscoverySet, Label, ModelData } from '#lib/types.js'
+  import type { DiscoverySet, Label, ModelData, TimedTask } from '#lib/types.js'
   import type {
     CellSnippet,
     CellSnippetArgs,
@@ -29,14 +29,10 @@
     RowData,
     TableSort,
   } from 'matterviz/table'
-  import {
-    cell_text,
-    HeatmapTable,
-    is_invalid,
-    table_to_delimited,
-  } from 'matterviz/table'
-  import { escape_html, strip_html } from 'matterviz/utils'
-  import { download } from 'matterviz/io'
+  import { cell_text, HeatmapTable, is_invalid } from 'matterviz/table'
+  import { table_to_text } from 'svelte-widgets/table'
+  import { escape_html, strip_html } from 'svelte-widgets/utils'
+  import { download } from 'svelte-widgets/download'
   import { format_num } from 'matterviz/labels'
   import { ActionMenu, type CmdAction, Icon, Popover } from 'svelte-widgets'
   import {
@@ -55,9 +51,10 @@
     DISCOVERY_SET_LABELS,
     HYPERPARAMS,
     METADATA_COLS,
+    REPRO_COLS,
     plain_label,
   } from '../labels.js'
-  import { assemble_row_data, metric_value } from '../metrics.js'
+  import { assemble_row_data, cost_annotation, metric_value } from '../metrics.js'
 
   type MetricsRow = ReturnType<typeof assemble_row_data>[number]
   type LinkData = MetricsRow[`Links`]
@@ -113,6 +110,7 @@
     default_sort = { column: `CPS`, dir: `desc` }, // omitted from shared URLs
     sort = $bindable({ ...default_sort }),
     column_preset = `default`,
+    repro_task,
     ...rest
   }: HTMLAttributes<HTMLDivElement> & {
     discovery_set?: DiscoverySet
@@ -125,6 +123,8 @@
     default_sort?: TableSort
     sort?: TableSort
     column_preset?: string
+    // task page whose rerun checks get a Reproducible column
+    repro_task?: TimedTask
   } = $props()
   // rows left after search/filters in the table's displayed order (all pages), bound
   // from HeatmapTable so export and comparison seeding follow what the table shows
@@ -147,8 +147,9 @@
     void column_preset
     return []
   })
+  // task pages get their Reproducible column last
   const column_defaults = $derived(
-    column_labels.map((col): Column => ({
+    column_labels.concat(repro_task ? REPRO_COLS[repro_task] : []).map((col): Column => ({
       ...col,
       id: col.group ? `${col.key} (${col.group})` : col.key,
       cell: cells[col.key],
@@ -287,7 +288,7 @@
         ),
         numeric: [],
       }
-      const text = table_to_delimited(matrix, export_format === `csv` ? `,` : `\t`)
+      const text = table_to_text(matrix, export_format === `csv` ? `csv` : `tsv`)
       if (export_format === `copy_html`) {
         const html_row = (values: string[], tag: `th` | `td`) =>
           `<tr>${values.map((value) => `<${tag} style="border: 1px solid #ccc; padding: 4px 8px; text-align: left">${escape_html(value)}</${tag}>`).join(``)}</tr>`
@@ -452,7 +453,10 @@
       >n/a</span
     >
   {:else if typeof val === `number`}
-    {format_num(val, col.format ?? `.3f`)}
+    <!-- times, slowdowns and speed-weighted scores name their GPU in the tooltip -->
+    <span data-title={cost_annotation((row as MetricsRow).model, col as Label)}
+      >{format_num(val, col.format ?? `.3f`)}</span
+    >
   {:else}
     {val}
   {/if}
@@ -467,7 +471,7 @@
         <Icon {icon} />
       </a>
     {:else}
-      <span title="{key} not available">
+      <span title="{title} (not available)">
         <Icon icon={Unavailable} />
       </span>
     {/if}

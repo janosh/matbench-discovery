@@ -5,7 +5,7 @@ interval) and ``temperature_kelvin`` as group attributes. Energies and forces ar
 intentionally stripped before publishing so the benchmark reference set cannot be used
 as a supervised validation set.
 
-    python scripts/md_convert_references_to_hdf5.py \
+    uv run --with-editable . scripts/md_convert_references_to_hdf5.py \
         --ref-dir ~/data/dynamat-v1.0/reference_AIMD_trajectories \
         --settings-csv ~/data/dynamat-v1.0/reference_AIMD_timestep_and_stride.csv \
         --out data/md/2026-06-29-dynamat-v1.0-reference-trajectories.h5
@@ -19,7 +19,7 @@ Only the resulting HDF5 needs to be hosted/distributed.
 import argparse
 import os
 import time
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from glob import glob
 
 import pandas as pd
@@ -75,8 +75,13 @@ def find_reference_trajectory(ref_dir: str, system_name: str) -> str:
     return traj_files[0]
 
 
-def main() -> int:
-    """Pack per-system extxyz references + settings CSV into one multi-group HDF5."""
+def main(argv: Sequence[str] | None = None) -> int:
+    """Pack per-system extxyz references + settings CSV into one multi-group HDF5.
+
+    Raises:
+        ValueError: if a system's equipartition temperature is off its target by >3x
+            (wrong settings-CSV dt_fs). --out is then left untouched.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--ref-dir", required=True, help="Raw per-system extxyz dir")
     parser.add_argument(
@@ -84,14 +89,16 @@ def main() -> int:
     )
     parser.add_argument("--out", required=True, help="Output reference HDF5 path")
     parser.add_argument("--systems", nargs="*", help="Subset of system dir names")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     settings = load_settings(args.settings_csv)
-    system_dirs = sorted(
-        entry.name
-        for entry in os.scandir(args.ref_dir)
-        if entry.is_dir() and (not args.systems or entry.name in args.systems)
-    )
+    available_dirs = {path.name for path in os.scandir(args.ref_dir) if path.is_dir()}
+    if unknown_systems := sorted(set(args.systems or ()) - available_dirs):
+        parser.error(
+            f"Unknown --systems {unknown_systems}, not found under {args.ref_dir!r}. "
+            f"Available: {sorted(available_dirs)}"
+        )
+    system_dirs = sorted(set(args.systems or ()) or available_dirs)
     if not system_dirs:
         parser.error(f"No system directories found under {args.ref_dir!r}")
 
@@ -119,12 +126,11 @@ def main() -> int:
             )
             temperature_ratio = t_equi / temperature_kelvin
             if not 1 / 3 < temperature_ratio < 3:
-                print(
-                    f"  WARNING {system_name}: equipartition T={t_equi:.0f} K vs "
-                    f"target {temperature_kelvin:.0f} K (ratio {temperature_ratio:.2f})"
-                    f" -- dt_fs={dt_fs} fs is likely wrong (off by ~"
-                    f"{temperature_ratio**-0.5:.1f}x)",
-                    flush=True,
+                raise ValueError(
+                    f"{system_name}: equipartition T={t_equi:.0f} K vs target "
+                    f"{temperature_kelvin:.0f} K (ratio {temperature_ratio:.2f}) -- "
+                    f"dt_fs={dt_fs} fs in {args.settings_csv} is likely wrong (off by "
+                    f"~{temperature_ratio**-0.5:.1f}x)"
                 )
             print(
                 f"{system_name}: {trajectory.n_frames} frames, dt={dt_fs} fs, "

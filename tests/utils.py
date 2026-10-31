@@ -2,13 +2,16 @@
 
 import importlib.util
 import sys
+from collections.abc import Mapping
 from types import ModuleType
 from typing import Any
 
 import numpy as np
+import pytest
 import requests
 
 from matbench_discovery import ROOT
+from matbench_discovery.enums import Model
 
 
 def import_repo_script(module_name: str, rel_path: str) -> ModuleType:
@@ -88,3 +91,25 @@ def make_mock_response(content: bytes, status_code: int = 200) -> requests.Respo
     response._content = content  # noqa: SLF001
     response._content_consumed = True  # noqa: SLF001
     return response
+
+
+def patch_model_metadata(
+    monkeypatch: pytest.MonkeyPatch,
+    model: Model,
+    metadata: Mapping[str, Any] | None = None,
+    *,
+    yaml_path: str | None = None,
+) -> None:
+    """Patch one member's yaml_path and cached metadata, restored on teardown."""
+    if yaml_path is not None:
+        original_yaml_path = Model.yaml_path
+
+        def patched_yaml_path(member: Model) -> str:
+            """Return the temp YAML for the patched member only."""
+            return yaml_path if member is model else original_yaml_path.fget(member)
+
+        monkeypatch.setattr(Model, "yaml_path", property(patched_yaml_path))
+    # setitem records the original cache state (incl. absence) for teardown
+    monkeypatch.setitem(vars(model), "metadata", dict(metadata or {}))
+    if metadata is None:
+        monkeypatch.delitem(vars(model), "metadata")

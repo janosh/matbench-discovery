@@ -55,10 +55,11 @@ def main() -> int:
             interpolate=200,
         )
         metrics = drop_metric_exclusions(model.name, metrics)
-        # Preserve source metadata by leaving run_metadata unset.
         mean_metrics = diatomics.write_metrics_to_yaml(
             model,
             metrics,
+            # YAML cost is re-derived from the file's own run_metadata
+            run_metadata=pred_data.get("run_metadata") or {},
             vib_freq_coverage=diatomics.calc_vib_freq_coverage(
                 pbe_ref_curves, pred_curves, metrics
             ),

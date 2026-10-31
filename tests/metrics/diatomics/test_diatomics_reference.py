@@ -58,89 +58,54 @@ def test_counts_magmom_discontinuities(
     assert count_magmom_discontinuities(magmoms) == expected
 
 
-def test_replaces_isolated_spin_branch_energy_drop() -> None:
-    """A one-point deep adiabatic spin drop is replaced by the neighbor spin.
-
-    The drop is kept below the 20 eV collapsed-SCF threshold so it exercises the
-    isolated-spin-branch-drop path, not the per-candidate collapse filter.
-    """
-    candidate_points: CandidatePoints = {
-        0: [make_point(1, 0), make_point(2, 0.05), make_point(3, 0)],
-        6: [make_point(1, 5), make_point(2, -10, 6), make_point(3, 5)],
-    }
-
-    merged, replacements = merge_postprocessed_min_energy_curve(candidate_points)
-
-    assert [point["spin_candidate"] for point in merged] == ["0", "0", "0"]
-    assert [point["energies"][-1] for point in merged] == [0, 0.05, 0]
-    assert merged[1]["dropped_spin_candidate"] == "6"
-    assert replacements[0].kind == "isolated_spin_branch_drop"
-    assert replacements[0].distance == 2
-    assert replacements[0].original_spin == "6"
-    assert replacements[0].original_energy == -10
-    assert replacements[0].replacement_energy == 0.05
-
-
-def test_replaces_drop_between_different_neighbor_spin_branches() -> None:
-    """A one-point drop between two smooth neighbor spins uses the smoother branch."""
-    candidate_points: CandidatePoints = {
-        0: [make_point(1, 0), make_point(2, 1), make_point(3, 5)],
-        6: [make_point(1, 5), make_point(2, -10, 6), make_point(3, 5)],
-        10: [make_point(1, 5), make_point(2, 0, 10), make_point(3, 0, 10)],
-    }
-
-    merged, replacements = merge_postprocessed_min_energy_curve(candidate_points)
-
-    assert [point["spin_candidate"] for point in merged] == ["0", "10", "10"]
-    assert [point["energies"][-1] for point in merged] == [0, 0, 0]
-    assert replacements[0].kind == "isolated_spin_branch_drop"
-    assert replacements[0].original_spin == "6"
-    assert replacements[0].replacement_spin == "10"
-
-
-def test_removes_isolated_upward_energy_bump() -> None:
-    """A one-point same-branch upward SCF glitch is removed from the curve."""
-    candidate_points: CandidatePoints = {
-        4: [
-            make_point(1, 0, 4),
-            make_point(2, -1, 4),
-            make_point(3, -0.2, 4),
-            make_point(4, -1.1, 4),
-            make_point(5, 0, 4),
-        ]
-    }
-
-    merged, edits = merge_postprocessed_min_energy_curve(candidate_points)
-
-    assert [point["distance"] for point in merged] == [1, 2, 4, 5]
-    assert [point["energies"][-1] for point in merged] == [0, -1, -1.1, 0]
-    assert edits[0].kind == "isolated_energy_bump"
-    assert edits[0].replacement_spin is None
-
-
 @pytest.mark.parametrize(
-    ("candidate_points", "expected_spins", "expected_energies"),
+    ("candidate_points", "expected_points", "expected_edits"),
     [
-        (
+        # one-point deep adiabatic spin drop is replaced by the neighbor spin; the drop
+        # stays below the 20 eV collapsed-SCF threshold so it exercises this path, not
+        # the per-candidate collapse filter
+        pytest.param(
+            {
+                0: [make_point(1, 0), make_point(2, 0.05), make_point(3, 0)],
+                6: [make_point(1, 5), make_point(2, -10, 6), make_point(3, 5)],
+            },
+            [(1, "0", 0), (2, "0", 0.05), (3, "0", 0)],
+            [("isolated_spin_branch_drop", 2, "6", "0", -10, 0.05)],
+            id="isolated_drop",
+        ),
+        # one-point drop between two smooth neighbor spins uses the smoother branch
+        pytest.param(
+            {
+                0: [make_point(1, 0), make_point(2, 1), make_point(3, 5)],
+                6: [make_point(1, 5), make_point(2, -10, 6), make_point(3, 5)],
+                10: [make_point(1, 5), make_point(2, 0, 10), make_point(3, 0, 10)],
+            },
+            [(1, "0", 0), (2, "10", 0), (3, "10", 0)],
+            [("isolated_spin_branch_drop", 2, "6", "10", -10, 0)],
+            id="drop_between_neighbor_spins",
+        ),
+        pytest.param(
             {
                 0: [make_point(1, 0), make_point(2, 1), make_point(3, 5)],
                 6: [make_point(1, 5), make_point(2, -20), make_point(3, 0)],
             },
-            ["0", "6", "6"],
-            [0, -20, 0],
+            [(1, "0", 0), (2, "6", -20), (3, "6", 0)],
+            [],
+            id="neighbor_spins_differ",  # not isolated, so kept
         ),
-        (
+        pytest.param(
             {
                 0: [make_point(1, 0), make_point(2, -2), make_point(3, 0)],
                 6: [make_point(1, 5), make_point(2, -4), make_point(3, 5)],
             },
-            ["0", "6", "0"],
-            [0, -4, 0],
+            [(1, "0", 0), (2, "6", -4), (3, "0", 0)],
+            [],
+            id="drop_below_threshold",
         ),
         # near-degenerate (<=0.2 eV) branch flicker IS the adiabatic minimum: the
         # per-distance minimum is reported as computed, the published per-point
         # magmoms + spin_candidates make the flicker visible
-        (
+        pytest.param(
             {
                 2: [
                     make_point(1, 0),
@@ -155,23 +120,65 @@ def test_removes_isolated_upward_energy_bump() -> None:
                     make_point(4, 1, 4),
                 ],
             },
-            ["2", "4", "4", "2"],
-            [0, -1.0, -0.95, 0],
+            [(1, "2", 0), (2, "4", -1.0), (3, "4", -0.95), (4, "2", 0)],
+            [],
+            id="low_gain_islands",
+        ),
+        # one-point same-branch upward SCF glitch is removed from the curve
+        pytest.param(
+            {
+                4: [
+                    make_point(dist, energy, 4)
+                    for dist, energy in enumerate((0, -1, -0.2, -1.1, 0), start=1)
+                ]
+            },
+            [(1, "4", 0), (2, "4", -1), (4, "4", -1.1), (5, "4", 0)],
+            [("isolated_energy_bump", 3, "4", None, -0.2, None)],
+            id="upward_bump",
+        ),
+        # a collapsed candidate point cannot win the per-distance minimum merge
+        pytest.param(
+            {
+                0: [make_point(1, -74.0), make_point(2, -74.1), make_point(3, -74.2)],
+                "afm": [
+                    make_point(1, -73.9),
+                    make_point(2, -261),
+                    make_point(3, -74.1),
+                ],
+            },
+            [(1, "0", -74.0), (2, "0", -74.1), (3, "0", -74.2)],
+            [("collapsed_scf_point", 2, "afm", None, -261, None)],
+            id="collapsed_point",
         ),
     ],
-    ids=["neighbor_spins_differ", "drop_below_threshold", "low_gain_islands"],
 )
-def test_keeps_non_isolated_or_small_spin_branch_drops(
+def test_merge_postprocessed_min_energy_curve(
     candidate_points: CandidatePoints,
-    expected_spins: list[str],
-    expected_energies: list[float],
+    expected_points: list[tuple[float, str, float]],
+    expected_edits: list[tuple[object, ...]],
 ) -> None:
-    """Only isolated severe spin-branch drops are postprocessed."""
-    merged, replacements = merge_postprocessed_min_energy_curve(candidate_points)
-
-    assert replacements == []
-    assert [point["spin_candidate"] for point in merged] == expected_spins
-    assert [point["energies"][-1] for point in merged] == expected_energies
+    """Only isolated severe spin drops, bumps and collapsed points are postprocessed."""
+    merged, edits = merge_postprocessed_min_energy_curve(candidate_points)
+    by_distance = {point["distance"]: point for point in merged}
+    assert [
+        (dist, point["spin_candidate"], point["energies"][-1])
+        for dist, point in by_distance.items()
+    ] == expected_points
+    assert [
+        (
+            edit.kind,
+            edit.distance,
+            edit.original_spin,
+            edit.replacement_spin,
+            edit.original_energy,
+            edit.replacement_energy,
+        )
+        for edit in edits
+    ] == expected_edits
+    for edit in edits:  # replaced spin-branch points record the candidate they dropped
+        if edit.kind == "isolated_spin_branch_drop":
+            dropped = by_distance[edit.distance]["dropped_spin_candidate"]
+            assert dropped == edit.original_spin
 
 
 @pytest.mark.parametrize(
@@ -200,19 +207,3 @@ def test_drop_collapsed_scf_points(
     assert len(edits) == n_dropped
     assert all(edit.kind == "collapsed_scf_point" for edit in edits)
     assert all(edit.original_spin == "8" for edit in edits)
-
-
-def test_merge_excludes_collapsed_points_from_min_merge() -> None:
-    """A collapsed candidate point cannot win the per-distance minimum merge."""
-    candidate_points: CandidatePoints = {
-        0: [make_point(1, -74.0), make_point(2, -74.1), make_point(3, -74.2)],
-        "afm": [make_point(1, -73.9), make_point(2, -261.0), make_point(3, -74.1)],
-    }
-
-    merged, edits = merge_postprocessed_min_energy_curve(candidate_points)
-
-    assert [point["spin_candidate"] for point in merged] == ["0", "0", "0"]
-    assert [point["energies"][-1] for point in merged] == [-74.0, -74.1, -74.2]
-    assert [edit.kind for edit in edits] == ["collapsed_scf_point"]
-    assert edits[0].original_spin == "afm"
-    assert edits[0].original_energy == -261.0

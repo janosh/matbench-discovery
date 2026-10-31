@@ -7,6 +7,7 @@ import pytest
 
 from matbench_discovery import cli
 from matbench_discovery.enums import Model, TestSubset
+from tests.utils import patch_model_metadata
 
 
 @pytest.mark.parametrize(
@@ -109,10 +110,19 @@ def test_payload_scope_is_explicit(
         assert cli.is_full_model_run() is full_roster
 
 
-def test_complete_models_drops_inactive(monkeypatch: pytest.MonkeyPatch) -> None:
-    """complete_models drops inactive CLI models even when they appear first."""
-    inactive = next(model for model in Model if not model.is_active)
-    monkeypatch.setattr(cli.cli_args, "models", [inactive, Model.chgnet_0_3_0])
+def test_complete_models(monkeypatch: pytest.MonkeyPatch) -> None:
+    """complete_models keeps only active CLI models with a discovery pred_file."""
+    pred_metrics = {"discovery": {"pred_file": {"name": "models/fake/preds.csv.gz"}}}
+    metadata_by_model: dict[Model, dict[str, object]] = {
+        # inactive listed first must not shadow later complete models
+        Model.alignn: {"lifecycle": "superseded", "metrics": pred_metrics},
+        Model.chgnet_0_3_0: {"lifecycle": "active", "metrics": pred_metrics},
+        Model.m3gnet: {"lifecycle": "active", "metrics": None},  # bare `metrics:`
+        Model.mace_mp_0: {"lifecycle": "active", "metrics": {"discovery": None}},
+    }
+    for model, metadata in metadata_by_model.items():
+        patch_model_metadata(monkeypatch, model, metadata)
+    monkeypatch.setattr(cli.cli_args, "models", list(metadata_by_model))
     assert cli.complete_models() == [Model.chgnet_0_3_0]
 
 

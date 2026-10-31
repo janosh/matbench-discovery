@@ -1,14 +1,21 @@
+import { DEFAULT_CDS_CONFIG } from '#lib/combined-scores.svelte.js'
 import { ACTIVE_MODELS, has_diatomics_curves } from '#lib/models.svelte.js'
 import DiatomicsPage from '#routes/benchmarks/diatomics/+page.svelte'
 import { tick } from 'svelte'
 import { PLOT_COLORS } from 'matterviz/colors'
-import { describe, expect, it, onTestFinished } from 'vite-plus/test'
+import { describe, expect, it } from 'vite-plus/test'
 import {
   button_for,
   doc_query,
   expect_table_url_state,
+  expect_task_page_layout,
+  header_name,
   mount_with_url,
   open_filter_menu,
+  patch_model,
+  query_param,
+  selected_chips,
+  selected_only_toggle,
 } from '../index.js'
 
 // Real model entries with overridden names/CDS: the page resolves its model keys from
@@ -43,13 +50,10 @@ const mount_page = async (search = ``): Promise<void> => {
     fixture_scores,
   ).entries()) {
     const model = fixture_models[idx]
-    const { model_name, metrics } = model
-    Object.assign(model, {
+    const { metrics } = model
+    patch_model(model, {
       model_name: `Model ${suffix.toUpperCase()}`,
       metrics: { ...metrics, diatomics: { ...metrics?.diatomics, combined_score } },
-    })
-    onTestFinished(() => {
-      Object.assign(model, { model_name, metrics })
     })
   }
   await mount_with_url(DiatomicsPage, `http://localhost/benchmarks/diatomics${search}`, {
@@ -59,10 +63,7 @@ const mount_page = async (search = ``): Promise<void> => {
 
 const selected_options = () =>
   doc_query(`ul[aria-label="selected options"]`, model_select())
-const selected_labels = () =>
-  [...selected_options().querySelectorAll(`:scope > li`)].map((item) =>
-    item.textContent?.trim(),
-  )
+const selected_labels = () => selected_chips(model_select())
 
 async function select_model_option(model_name: string): Promise<void> {
   model_select().querySelector<HTMLInputElement>(`input`)?.click()
@@ -80,19 +81,18 @@ describe(`Diatomics Page URL state`, () => {
   it(`defaults to the top three CDS models with curves plus DFT references`, async () => {
     await mount_page()
 
-    expect(document.querySelectorAll(`.score-weights input[type="number"]`)).toHaveLength(
-      4,
+    expect_task_page_layout(
+      [
+        `Leaderboard`,
+        `CDS vs twall`,
+        `Test set: Diatomic curves`,
+        `Diatomic Energy Curves`,
+        `Methodology`,
+      ],
+      Object.keys(DEFAULT_CDS_CONFIG).length,
     )
-    expect(doc_query(`.score-weights`).closest(`details`)).toBeNull()
-
-    expect([...document.querySelectorAll(`h2`)].map((heading) => heading.id)).toEqual([
-      `leaderboard`,
-      `model-comparison`,
-      `test-set`,
-      `diatomic-energy-curves`,
-      `methodology`,
-    ])
-    expect(doc_query<HTMLDetailsElement>(`#methodology + details`).open).toBe(false)
+    const headers = document.querySelectorAll(`section.full-bleed thead th`)
+    expect(header_name([...headers].at(-1) ?? document.body)).toBe(`Reproducible`)
     expect(selected_labels()).toEqual([
       `PBE (DFT)`,
       `r2SCAN (DFT)`,
@@ -107,21 +107,21 @@ describe(`Diatomics Page URL state`, () => {
     ).click()
     await tick()
     expect(selected_labels()).toEqual([`PBE (DFT)`, `r2SCAN (DFT)`])
-    expect(new URL(location.href).searchParams.get(`models`)).toBe(`PBE,r2SCAN`)
+    expect(query_param(`models`)).toBe(`PBE,r2SCAN`)
   })
 
   it(`restores selected curve models from the models query param and syncs edits`, async () => {
     await mount_page(`?models=unknown,${key_b},${key_b}`)
 
     expect(selected_labels()).toEqual([`Model B`])
-    expect(new URL(location.href).searchParams.get(`models`)).toBe(key_b)
+    expect(query_param(`models`)).toBe(key_b)
     const selected_item = doc_query<HTMLLIElement>(`li`, selected_options())
     // Model B is the second model, so it takes the second palette entry
     expect(selected_item.style.background).toContain(PLOT_COLORS[1])
     expect(selected_item.style.color).not.toBe(``)
 
     await select_model_option(`Model A`)
-    expect(new URL(location.href).searchParams.get(`models`)).toBe(`${key_a},${key_b}`)
+    expect(query_param(`models`)).toBe(`${key_a},${key_b}`)
   })
 
   it(`restores selected element subset from the elements query param`, async () => {
@@ -141,9 +141,8 @@ describe(`Diatomics Page URL state`, () => {
       `[aria-label="require MPtrj"]`,
       await open_filter_menu(`Training data`),
     )
-    const selected_only = doc_query<HTMLInputElement>(
-      `[aria-label="Toggle between showing only selected models and all models"]`,
-    )
+    const selected_only = selected_only_toggle()
+    if (!selected_only) throw new Error(`No show-selected-only toggle`)
     expect(training_filter.checked).toBe(true)
     expect(selected_only.checked).toBe(true)
 

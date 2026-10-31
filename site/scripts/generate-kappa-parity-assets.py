@@ -40,6 +40,7 @@ from pymatgen.core import Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatviz.enums import Key
 
+from matbench_discovery import ROOT
 from matbench_discovery.enums import DataFiles, MbdKey
 from matbench_discovery.metrics.phonons import calculate_kappa_avg
 from matbench_discovery.phonons import read_kappa_json
@@ -50,8 +51,8 @@ if TYPE_CHECKING:
     import numpy.typing as npt
     import pandas as pd
 
-OUT_DIR: Final = "site/static/kappa-parity"
-MANIFEST_PATH: Final = "site/src/lib/parity/kappa-parity-manifest.json"
+OUT_DIR: Final = f"{ROOT}/site/static/kappa-parity"
+MANIFEST_PATH: Final = f"{ROOT}/site/src/lib/parity/kappa-parity-manifest.json"
 ASSET_PREFIX: Final = "kappa-parity-phonondb-v1"
 LOCAL_ASSET_BASE_URL: Final = "/kappa-parity/assets"
 # round conductivities to 0.0001 W/mK and structure positions to 0.001 A

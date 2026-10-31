@@ -7,14 +7,18 @@ import { GEO_OPT_SYMMETRY_METRICS, HYPERPARAMS } from '#lib/labels.js'
 import type { ModelData } from '#lib/types.js'
 import { tick } from 'svelte'
 import GeoOptPage from '#routes/benchmarks/geo-opt/+page.svelte'
-import { describe, expect, it, onTestFinished } from 'vite-plus/test'
+import { describe, expect, it } from 'vite-plus/test'
 import {
   doc_query,
   expect_table_url_state,
+  expect_task_page_layout,
   filter_summary_badge,
   heading_texts,
   mount_with_url,
   open_column_menu,
+  push_model,
+  query_param,
+  selected_chips,
 } from '../index.js'
 
 // Mirrors the page's geo-opt presence check and default table filters.
@@ -58,14 +62,14 @@ describe(`Geo Opt Task Page`, () => {
       `WBM test set`,
     )
     expect(doc_query(`#test-set`).textContent).toContain(`WBM`)
-    expect(heading_texts()).toStrictEqual([
+    expect_task_page_layout([
       `Leaderboard`,
       `Model Comparison`,
       `Aggregate Diagnostics`,
       `Test set: WBM`,
       `Methodology`,
     ])
-    expect(doc_query<HTMLDetailsElement>(`#methodology + details`).open).toBe(false)
+    expect(doc_query(`#methodology + p`).textContent).toContain(`RMSD`)
     expect(document.body.textContent).toContain(`RMSD is symprec-invariant`)
     doc_query(`.collapsible-legend .scatter`)
     expect(cdf_labels().length).toBeGreaterThan(0)
@@ -80,12 +84,7 @@ describe(`Geo Opt Task Page`, () => {
       .toSorted(by_benchmark_added_desc)
       .slice(0, 5)
       .map((model) => model.dates.benchmark_added)
-    const selected_dates = [
-      ...document.querySelectorAll(
-        `.plot-controls .multiselect ul[aria-label="selected options"] > li`,
-      ),
-    ].map((item) => {
-      const name = item.textContent?.trim()
+    const selected_dates = selected_chips(`.plot-controls`).map((name) => {
       const model = MODELS.find((candidate) => candidate.model_name === name)
       if (!model) throw new Error(`unknown selected model ${name}`)
       return model.dates.benchmark_added
@@ -111,7 +110,7 @@ describe(`Geo Opt Task Page`, () => {
     expect(cdf_labels()).toStrictEqual([label])
     expect(histogram_labels()).toStrictEqual([label])
     expect(sankey_labels()).toStrictEqual([label])
-    expect(new URL(location.href).searchParams.get(`models`)).toBe(model_key)
+    expect(query_param(`models`)).toBe(model_key)
   })
 
   it.each([``, `unknown`])(
@@ -143,7 +142,7 @@ describe(`Geo Opt Task Page`, () => {
 
   it(`renders geo-opt columns, groups and units and excludes models without geo-opt metrics`, async () => {
     const model_key = `no-geo-opt-regression`
-    ACTIVE_MODELS.push({
+    push_model(ACTIVE_MODELS, {
       model_key,
       model_name: model_key,
       model_version: `test`,
@@ -158,9 +157,6 @@ describe(`Geo Opt Task Page`, () => {
         diatomics: { energy_mae: 1 },
       },
     } as unknown as ModelData)
-    onTestFinished(() => {
-      ACTIVE_MODELS.pop()
-    })
     await mount_with_url(GeoOptPage, `http://localhost/benchmarks/geo-opt?models=`)
 
     const headers = [...document.querySelectorAll(`th`)]
@@ -222,7 +218,7 @@ describe(`Geo Opt Task Page`, () => {
     await mount_with_url(GeoOptPage, `http://localhost/benchmarks/geo-opt?models=`)
 
     const column_menu = await open_column_menu()
-    expect(column_menu.className).toContain(`sections-container`)
+    expect(column_menu.className).toContain(`grouped`)
     expect(
       [...column_menu.querySelectorAll(`.section-header`)].map((button) =>
         button.textContent?.trim().replace(/^[▶▼]\s*/, ``),

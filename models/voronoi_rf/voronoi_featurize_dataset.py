@@ -7,6 +7,7 @@ import os
 import sys
 from importlib.metadata import version
 
+import numpy as np
 import pandas as pd
 import wandb
 from pymatgen.core import Structure
@@ -15,7 +16,7 @@ from tqdm import tqdm
 
 from matbench_discovery import ROOT, today
 from matbench_discovery.enums import DataFiles
-from matbench_discovery.hpc import df_slurm_chunk, slurm_submit
+from matbench_discovery.hpc import slurm_submit
 
 sys.path.append(f"{ROOT}/models")
 
@@ -62,7 +63,10 @@ print(f"{data_path=}")
 # WBM files are JSON Lines, the MP computed structure entries one JSON document
 df_in = pd.read_json(data_path, lines=data_name == "wbm").set_index(Key.mat_id)
 if slurm_array_task_count > 1:
-    df_in = df_slurm_chunk(df_in, slurm_array_task_count, slurm_array_task_id)
+    # 1-based array task IDs; split row indices since np.array_split(df) breaks on
+    # pandas 3 (DataFrame.swapaxes was removed)
+    task_rows = np.array_split(np.arange(len(df_in)), slurm_array_task_count)
+    df_in = df_in.iloc[task_rows[slurm_array_task_id - 1]]
 
 if data_name == "mp":  # extract structure dicts from ComputedStructureEntry
     struct_dicts = [cse["structure"] for cse in df_in.entry]

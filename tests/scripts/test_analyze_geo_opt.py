@@ -51,17 +51,24 @@ def fake_analysis(material_ids: list[str]) -> pd.DataFrame:
 
 
 @pytest.mark.parametrize(
-    ("debug_mode", "cached"),
-    [(0, True), (3, False), (3, True)],
-    ids=["cached-full", "debug-fresh", "debug-cached"],
+    ("debug_mode", "cached", "geo_opt_metrics"),
+    [
+        (0, True, {}),
+        # a null symprec entry in the model YAML reads as no published analysis
+        (0, True, {"symprec=1e-2": None}),
+        (3, False, {}),
+        (3, True, {}),
+    ],
+    ids=["cached-full", "cached-full-null-yaml", "debug-fresh", "debug-cached"],
 )
 def test_analyze_model_symprec_metrics_and_debug_paths(
     debug_mode: int,
     cached: bool,
+    geo_opt_metrics: dict[str, object],
     analyze_geo_opt: ModuleType,
     tmp_path: Path,
 ) -> None:
-    """Cached CSVs still yield metrics; debug runs never touch the real outputs."""
+    """Cached CSVs skip the relaxed-structure file; debug runs spare real outputs."""
     material_ids = [f"wbm-1-{idx}" for idx in range(5)]
     geo_opt_path = write_geo_opt_file(tmp_path / "model", material_ids)
     analysis_name = f"2026-07-01-geo-opt-symprec=1e-2-moyo={MOYO_VERSION}.csv.gz"
@@ -86,14 +93,17 @@ def test_analyze_model_symprec_metrics_and_debug_paths(
     def fake_sym_info(structs: dict[str, Structure], **_kwargs: object) -> pd.DataFrame:
         return pd.DataFrame(index=pd.Index(structs, name="material_id"))
 
+    pred_file = {"name": os.path.relpath(geo_opt_path, tmp_path)}
+    metrics = {"geo_opt": {"pred_file": pred_file, **geo_opt_metrics}}
     with (
+        patch.object(analyze_geo_opt, "ROOT", str(tmp_path)),
         patch.object(
             Model,
             "geo_opt_path",
             new_callable=PropertyMock,
             return_value=str(geo_opt_path),
-        ),
-        patch.object(Model, "metrics", new_callable=PropertyMock, return_value={}),
+        ) as mock_geo_opt_path,
+        patch.object(Model, "metrics", new_callable=PropertyMock, return_value=metrics),
         patch.object(
             analyze_geo_opt.symmetry,
             "get_sym_info_from_structs",
@@ -119,6 +129,8 @@ def test_analyze_model_symprec_metrics_and_debug_paths(
     # metrics are derived from the (cached or fresh) analysis in every mode
     assert df_metrics["n_structures"].iloc[0] == n_analyzed
     assert mock_sym_info.call_count == (0 if cached else 1)
+    # a cached analysis must not resolve (download) or parse the multi-GB file
+    assert mock_geo_opt_path.call_count == (0 if cached else 1)
     assert os.path.isfile(expected_csv_path)
     if debug_mode:
         # debug subsets land in debug/ and are never written to the model YAML
@@ -129,3 +141,25 @@ def test_analyze_model_symprec_metrics_and_debug_paths(
         # script joins with "/", so normalize before comparing (Windows uses "\")
         written_csv_path = os.path.normpath(mock_write.call_args.args[3])
         assert written_csv_path == os.path.normpath(full_csv_path)
+
+
+def test_write_dft_reference_never_overwrites(
+    analyze_geo_opt: ModuleType, tmp_path: Path
+) -> None:
+    """--write-dft-reference writes a new dated file, never clobbering an old one."""
+    df_sym = pd.DataFrame(
+        {"spg_num": [225]}, index=pd.Index(["wbm-1-1"], name="material_id")
+    )
+    with patch.object(
+        analyze_geo_opt.symmetry, "get_sym_info_from_structs", return_value=df_sym
+    ):
+        analyze_geo_opt.write_dft_reference({}, 1e-2, MOYO_VERSION, str(tmp_path))
+        with pytest.raises(FileExistsError, match="Refusing to overwrite"):
+            analyze_geo_opt.write_dft_reference({}, 1e-2, MOYO_VERSION, str(tmp_path))
+    (out_path,) = (tmp_path / "wbm").iterdir()
+    assert out_path.name.endswith(
+        f"-dft-geo-opt-symprec=1e-2-moyo={MOYO_VERSION}.csv.gz"
+    )
+    pd.testing.assert_frame_equal(
+        pd.read_csv(out_path, index_col="material_id"), df_sym
+    )

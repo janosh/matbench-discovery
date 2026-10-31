@@ -47,26 +47,19 @@ def resolve_verified_file(
 
 
 class LabelEnum(StrEnum):
-    """StrEnum with optional label and description attributes plus dict() methods."""
+    """StrEnum whose members carry an optional pretty label."""
 
-    def __new__(
-        cls, val: str, label: str | None = None, desc: str | None = None
-    ) -> Self:
+    def __new__(cls, val: str, label: str | None = None) -> Self:
         """Create a new class."""
         member = str.__new__(cls, val)
         member._value_ = val
-        member.__dict__ |= dict(label=label, desc=desc)
+        member.__dict__["label"] = label
         return member
 
     @property
     def label(self) -> str:
         """Make label read-only."""
         return self.__dict__["label"]
-
-    @property
-    def description(self) -> str:
-        """Make description read-only."""
-        return self.__dict__["desc"]
 
 
 @unique
@@ -85,7 +78,6 @@ class MbdKey(LabelEnum):
     e_form_wbm = "e_form_per_atom_wbm", f"WBM E<sub>form</sub> {eV_per_atom}"
     each_true = "e_above_hull_mp2020_corrected_ppd_mp", "E<sub>MP hull dist</sub>"
     each_wbm = "e_above_hull_wbm", "E<sub>WBM hull dist</sub>"
-    each_err_models = "each_err_models", "E<sub>hull dist</sub> mean error of models"
     openness = "openness", "Openness"
 
     init_protostructure_spglib = (
@@ -166,13 +158,13 @@ class Targets(LabelEnum):
     """Thermodynamic stability prediction task types."""
 
     E = "E", "Energy"
-    EF_G = "EF_G", "EF<sub>G</sub>", "Energy with gradient-based Forces"
-    EF_D = "EF_D", "EF<sub>D</sub>", "Energy with direct Forces"
-    EFS_G = "EFS_G", "EFS<sub>G</sub>", "Energy with gradient-based Forces and Stress"
-    EFS_D = "EFS_D", "EFS<sub>D</sub>", "Energy with direct Forces and Stress"
-    EFS_GM = "EFS_GM", "EFS<sub>G</sub>M", "Energy with gradient-based Forces and Stress; plus Magmoms"  # fmt: skip
-    EFS_DM = "EFS_DM", "EFS<sub>D</sub>M", "Energy with direct Forces and Stress; plus Magmoms"  # fmt: skip
-    EFSH_G = "EFSH_G", "EFSH<sub>G</sub>", "Energy with gradient-based Forces, Stress, and Hessian"  # fmt: skip
+    EF_G = "EF_G", "EF<sub>G</sub>"  # Energy with gradient-based Forces
+    EF_D = "EF_D", "EF<sub>D</sub>"  # Energy with direct Forces
+    EFS_G = "EFS_G", "EFS<sub>G</sub>"  # gradient-based Forces and Stress
+    EFS_D = "EFS_D", "EFS<sub>D</sub>"  # direct Forces and Stress
+    EFS_GM = "EFS_GM", "EFS<sub>G</sub>M"  # gradient-based F and S plus Magmoms
+    EFS_DM = "EFS_DM", "EFS<sub>D</sub>M"  # direct F and S plus Magmoms
+    EFSH_G = "EFSH_G", "EFSH<sub>G</sub>"  # gradient-based F, S and Hessian
 
 
 @unique
@@ -272,7 +264,6 @@ class Files(StrEnum, metaclass=MetaFiles):
         return self.__dict__["file_path"]
 
 
-# ruff: noqa: E501 (ignore long lines in class Model)
 class Model(Files, base_dir=f"{ROOT}/models"):
     """Generated registry of non-aborted model YAML files.
 
@@ -302,6 +293,10 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     dpa_3_1_mptrj = auto(), "deepmd/dpa-3.1-mptrj.yml"
     dpa_4_0_1_pro_mptrj = auto(), "deepmd/dpa-4.0.1-pro-mptrj.yml"
     dpa_4_0_pro_mptrj = auto(), "deepmd/dpa-4.0-pro-mptrj.yml"
+    dpa_4_1_air_oam = auto(), "deepmd/dpa-4.1-air-oam.yml"
+    dpa_4_1_max_oam = auto(), "deepmd/dpa-4.1-max-oam.yml"
+    dpa_4_1_max_oam_pft = auto(), "deepmd/dpa-4.1-max-oam-pft.yml"
+    dpa_4_1c_air_oam = auto(), "deepmd/dpa-4.1c-air-oam.yml"
     ema_gnn = auto(), "ema_gnn/ema-gnn.yml"
     eqnorm_mptrj = auto(), "eqnorm/eqnorm-mptrj.yml"
     equflash_29m_oam = auto(), "equflash/equflash-29m-oam.yml"
@@ -367,11 +362,6 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         return self.metadata["model_name"]
 
     @property
-    def pr_url(self) -> str:
-        """Pull request URL in which the model was originally added to the repo."""
-        return self.metadata["pr_url"]
-
-    @property
     def key(self) -> str:
         """Key associated with the file URL."""
         return self.metadata["model_key"]
@@ -407,8 +397,8 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         )
 
         section = self.metrics.get(metrics_key) or {}
-        if nested_key is not None:
-            section = section.get(nested_key) or {}
+        for key in nested_key.split(".") if nested_key else ():
+            section = section.get(key) or {}
         pred_file = section.get(file_key) or {}
         if not (rel_path := file_ref_name(pred_file)):
             if required:
@@ -442,15 +432,24 @@ class Model(Files, base_dir=f"{ROOT}/models"):
 
     @property
     def kappa_103_phonon_path(self) -> str | None:
-        """Harmonic phonon sidecar (band path, eigenvectors, DOS) for the kappa run."""
+        """Harmonic phonon sidecar (band path, eigenvectors, DOS) from
+        ``kappa_103.harmonic`` for a harmonic-only rerun, else from ``kappa_103``.
+        """
+        kappa_103 = (self.metrics.get("phonons") or {}).get("kappa_103") or {}
+        nested_key = "kappa_103.harmonic" if "harmonic" in kappa_103 else "kappa_103"
         return self._metric_pred_path(
-            "phonons", nested_key="kappa_103", file_key="phonon_file"
+            "phonons", nested_key=nested_key, file_key="phonon_file"
         )
 
     @property
     def md_path(self) -> str | None:
         """MD prediction path, downloading when a URL is present."""
         return self._metric_pred_path("md")
+
+    @property
+    def diatomics_path(self) -> str | None:
+        """Diatomics prediction path, downloading when a URL is present."""
+        return self._metric_pred_path("diatomics")
 
     @property
     def is_active(self) -> bool:
@@ -542,11 +541,6 @@ class DataFiles(Files):
     def label(self) -> str:
         """No pretty label for DataFiles, use name instead."""
         return self.name
-
-    @property
-    def description(self) -> str:
-        """Description associated with the file."""
-        return self.yaml[self.name]["description"]
 
     @property
     def rel_path(self) -> str:

@@ -10,6 +10,7 @@ import os from 'node:os'
 import path from 'node:path'
 import zlib from 'node:zlib'
 import { default_highlighter } from 'svelte-widgets/highlight'
+import { heading_anchor_html } from 'svelte-widgets/heading-anchors'
 import { make_config } from 'svelte-widgets/vite-config'
 import { parse_yaml, yaml_plugin } from 'svelte-widgets/yaml'
 import ts from 'typescript'
@@ -52,8 +53,7 @@ export const svelte_config = {
           /@label:(?<id>(?:fig|tab):[^\s]+)/g,
           (_match, id) => {
             if (!fig_index.includes(id)) fig_index.push(id)
-            const link_icon = `<a aria-hidden="true" tabindex="-1" href="#${id}"><svg width="16" height="16" viewBox="0 0 16 16"><use xlink:href="#octicon-link"></use></svg></a>`
-            return `<strong id='${id}'>${link_icon}Fig. ${fig_index.length}</strong>`
+            return `<strong id='${id}'>${heading_anchor_html(id)}Fig. ${fig_index.length}</strong>`
           },
         )
 
@@ -147,7 +147,7 @@ function yaml_schema_to_typescript_plugin(): Plugin {
       if (!output) throw new Error(`No schema output configured for ${base_name}.yml`)
 
       const model_metadata_ts = await json_to_ts(parsed_yaml, output.type_name, {
-        // Should match fmt config in vite.config.ts
+        // mirrors make_config()'s shared fmt options; vp fmt below has the final say
         style: { semi: false, singleQuote: true, printWidth: 90 },
         // no-redundant-type-constituents fires on `string | 'missing'` unions from
         // literal-or-string schema fields and has no oxlint autofix, so suppress it

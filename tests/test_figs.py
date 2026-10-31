@@ -87,15 +87,6 @@ def test_sankey_flow_canonicalization() -> None:
     }
 
 
-def test_write_json_gz_roundtrip(tmp_path: Path) -> None:
-    """write_json_gz creates parent directories and round-trips JSON."""
-    payload = {"models": [{"label": "demo", "x": [1, 2], "y": [3.5, 4.5]}]}
-    out_path = f"{tmp_path}/sub/dir/demo.json.gz"
-    assert figs.write_json_gz(out_path, payload) > 0
-    with gzip.open(out_path) as file:
-        assert json.load(file) == payload
-
-
 @pytest.mark.parametrize(
     ("role", "file_name", "error_cls", "error_match"),
     [
@@ -126,30 +117,32 @@ def test_artifact_manifest(
         figs.artifact_manifest(role, path)
 
 
-def test_discovery_provenance_hashes_only_caller_recipe_sources() -> None:
-    """Discovery identity does not hash data.py or invent unused recipe sources."""
+@pytest.mark.parametrize("hull_dist", [True, False])
+def test_discovery_provenance_recipe_sources(hull_dist: bool) -> None:
+    """Hull-dist payloads add payload_numerics + stability_metrics sources."""
     with patch.object(figs, "build_payload_provenance", return_value={}) as builder:
-        figs.build_discovery_payload_provenance(
-            generator=__file__, test_subset="test", parameters={}
-        )
-        assert builder.call_args.kwargs["source_files"] == {}
         figs.build_discovery_payload_provenance(
             generator=__file__,
             test_subset="test",
             parameters={},
-            source_files={"payload_numerics": payload_numerics.__file__},
+            source_files={"extra": __file__},
+            hull_dist=hull_dist,
         )
-    assert builder.call_args.kwargs["source_files"] == {
-        "payload_numerics": payload_numerics.__file__
-    }
+    sources = builder.call_args.kwargs["source_files"]
+    hull_roles = {"payload_numerics", "stability_metrics"} if hull_dist else set()
+    assert set(sources) == {"extra"} | hull_roles
+
+
+JSON_GZ_PAYLOAD = {"models": [{"label": "demo", "x": [1, 2], "y": [3.5, 4.5]}]}
 
 
 @pytest.mark.parametrize(
     ("existing_bytes", "preserve_existing"),
     [
+        pytest.param(None, False, id="new-file-in-missing-dir"),
         pytest.param(
             gzip.compress(
-                json.dumps({"y": [1, 2]}, separators=(",", ":")).encode(),
+                json.dumps(JSON_GZ_PAYLOAD, separators=(",", ":")).encode(),
                 compresslevel=1,
             ),
             True,
@@ -159,21 +152,22 @@ def test_discovery_provenance_hashes_only_caller_recipe_sources() -> None:
         pytest.param(b"this is not a gzip stream", False, id="not-gzip"),
     ],
 )
-def test_write_json_gz_handles_existing_file(
-    tmp_path: Path, existing_bytes: bytes, preserve_existing: bool
+def test_write_json_gz(
+    tmp_path: Path, existing_bytes: bytes | None, preserve_existing: bool
 ) -> None:
-    """write_json_gz preserves equivalent gzip bytes and rewrites corrupt files."""
-    path = f"{tmp_path}/demo.json.gz"
-    with open(path, "wb") as file:
-        file.write(existing_bytes)
-    figs.write_json_gz(path, {"y": [1, 2]})
-    with open(path, "rb") as file:
-        written_bytes = file.read()
+    """write_json_gz makes parent dirs, keeps equal gzip bytes, rewrites bad files."""
+    out_dir = tmp_path / "sub" / "dir"
+    path = f"{out_dir}/demo.json.gz"
+    if existing_bytes is not None:
+        out_dir.mkdir(parents=True)
+        (out_dir / "demo.json.gz").write_bytes(existing_bytes)
+    size = figs.write_json_gz(path, JSON_GZ_PAYLOAD)
+    written_bytes = (out_dir / "demo.json.gz").read_bytes()
+    assert size == len(written_bytes)
     if preserve_existing:
         assert written_bytes == existing_bytes
     else:
-        with gzip.open(path) as file:
-            assert json.load(file) == {"y": [1, 2]}
+        assert json.loads(gzip.decompress(written_bytes)) == JSON_GZ_PAYLOAD
 
 
 def make_metadata(
@@ -238,10 +232,11 @@ def test_write_jsonl_is_canonical_and_byte_deterministic(tmp_path: Path) -> None
     """Schema-v2 JSONL is base-first, sorted, canonical, terminated and stable."""
     path = f"{tmp_path}/payload.jsonl"
     models = [
-        make_model(tmp_path, "model-b", [2]) | {"color": "red"},
-        make_model(tmp_path, "model-a", [1]) | {"visible": False},
+        make_model(tmp_path, "model-b", [2]),
+        make_model(tmp_path, "model-a", [1]),
     ]
     write_test_payload(path, tmp_path, models)
+    assert [model["model_key"] for model in models] == ["model-b", "model-a"]
     with open(path, "rb") as file:
         first_bytes = file.read()
     assert first_bytes.endswith(b"\n")
@@ -259,7 +254,6 @@ def test_write_jsonl_is_canonical_and_byte_deterministic(tmp_path: Path) -> None
         "model-b",
     ]
     assert all(line == figs.canonical_json(json.loads(line)) for line in lines)
-    assert all("color" not in line and "visible" not in line for line in lines[1:])
     write_test_payload(path, tmp_path, models)
     with open(path, "rb") as file:
         assert file.read() == first_bytes
@@ -271,6 +265,8 @@ def test_write_jsonl_is_canonical_and_byte_deterministic(tmp_path: Path) -> None
         ({"input_artifacts": []}, 1, "non-empty"),
         ({}, 2, "unique"),
         ({"key": "model-a"}, 1, "Legacy"),
+        ({"color": "red"}, 1, "site styling keys"),
+        ({"visible": False}, 1, "site styling keys"),
     ],
 )
 def test_writer_rejects_invalid_model_identity(

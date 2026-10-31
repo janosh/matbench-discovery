@@ -1,6 +1,6 @@
 import { goto } from '$app/navigation'
 import { comparison, mark_compared_rows } from '#lib/model-comparison.svelte.js'
-import { HYPERPARAMS, METADATA_COLS } from '#lib/labels.js'
+import { HYPERPARAMS, MD_METRICS, METADATA_COLS } from '#lib/labels.js'
 import DynamicScatter from '#lib/plot/DynamicScatter.svelte'
 import { get_d3_interpolator } from 'matterviz/colors'
 import { type ComponentProps, tick } from 'svelte'
@@ -8,10 +8,12 @@ import { afterEach, beforeEach, expect, it, vi } from 'vite-plus/test'
 import {
   choose_scatter_property,
   doc_query,
+  mock_element_size,
   mount,
   mount_with_url,
   navigate,
   query_param,
+  reset_comparison,
 } from '../index.js'
 
 const viridis = get_d3_interpolator(`interpolateViridis`)
@@ -48,12 +50,11 @@ const mount_scatter = async (props: Partial<ComponentProps<typeof DynamicScatter
   await tick()
 }
 
-beforeEach(() => {
-  comparison.keys.clear()
-  vi.spyOn(HTMLElement.prototype, `clientWidth`, `get`).mockReturnValue(800)
-  vi.spyOn(HTMLElement.prototype, `clientHeight`, `get`).mockReturnValue(600)
+beforeEach(async () => {
+  await reset_comparison()
+  mock_element_size(800, 600)
 })
-afterEach(() => comparison.keys.clear())
+afterEach(reset_comparison)
 
 it.each([
   [1, 99, HYPERPARAMS.model_params.key, []],
@@ -496,4 +497,19 @@ it(`shares model picks across plots and table rows while preserving point callba
   comparison.toggle(`absent-model`)
   await tick()
   expect(opacities()).toEqual([`1`, `1`, `1`, `1`])
+})
+
+it(`point tooltips on a wall-time axis name the GPU`, async () => {
+  const cost = { hardware: `H200`, source: `salvaged`, run_time_sec: 1 }
+  const models = make_models(1, 100).map((model) => ({
+    ...model,
+    metrics: { md: { cost } },
+  }))
+  const x_key = MD_METRICS.md_run_time_sec.key
+  await mount_scatter({ models, x_key, hovered: true, legend: null })
+  doc_query(`path.marker`).dispatchEvent(new MouseEvent(`click`, { bubbles: true }))
+  await tick()
+  expect(doc_query(`.plot-tooltip`).textContent).toContain(
+    `Timed on H200 (earlier cluster run)`,
+  )
 })

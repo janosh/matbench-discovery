@@ -42,8 +42,9 @@ def get_sym_info_from_structs(
     results: dict[str, dict[str, str | int | list[str] | float | None]] = {}
     iterator = structures.items()
     if pbar:
-        pbar_kwargs = pbar if isinstance(pbar, dict) else {}
-        pbar_kwargs.setdefault("desc", "Analyzing symmetry")
+        pbar_kwargs = {"desc": "Analyzing symmetry"} | (
+            pbar if isinstance(pbar, dict) else {}
+        )
         iterator = tqdm(iterator, total=len(structures), **pbar_kwargs)
 
     for struct_key, struct in iterator:
@@ -89,8 +90,8 @@ def pred_vs_ref_struct_symmetry(
 ) -> pd.DataFrame:
     """Get RMSD and compare symmetry between ML and DFT reference structures.
 
-    Modifies the df_sym_pred DataFrame in place by adding columns for symmetry
-    differences and RMSDs.
+    Returns a copy of df_sym_pred with added columns for symmetry differences and
+    RMSDs; the input DataFrame is left unchanged.
 
     Args:
         df_sym_pred (pd.DataFrame): symmetry information for ML model as returned by

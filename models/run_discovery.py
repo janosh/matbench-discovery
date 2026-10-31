@@ -28,7 +28,6 @@ import argparse
 import glob
 import os
 import shlex
-from functools import partial
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -37,7 +36,7 @@ if TYPE_CHECKING:
 from matbench_discovery import repo_relative_path, today
 from matbench_discovery.calculators import (
     CALCULATORS,
-    load_calculator,
+    load_calculator_with_runtime,
     resolve_cli_calculator,
 )
 from matbench_discovery.data import (
@@ -48,7 +47,6 @@ from matbench_discovery.data import (
 )
 from matbench_discovery.discovery import (
     ARCHIVED_DISCOVERY_MODELS,
-    COST_PROVENANCE_KEYS,
     DISCOVERY_PRED_COL,
     DiscoveryArtifacts,
     RelaxationSettings,
@@ -63,6 +61,7 @@ from matbench_discovery.hpc import (
     effective_shard_args,
     partition_material_ids,
     slurm_shard_selection,
+    with_cost_block,
 )
 from matbench_discovery.runner_cli import (
     add_common_runner_args,
@@ -153,7 +152,7 @@ def _print_cmd_args(args: argparse.Namespace, model_key: str) -> list[str]:
             "n-shards": args.n_shards,
             "shard-index": args.shard_index,
         },
-        ("dry-run", "merge-shards", "write-yaml"),
+        ("dry-run", "merge-shards", "write-yaml", "replace-author-reported"),
     )
 
 
@@ -168,26 +167,14 @@ def _repo_relative_path(path: str) -> str:
         return absolute_path
 
 
-def _update_artifact_metadata(
-    section: dict[str, Any], *, updates: dict[str, Any]
-) -> dict[str, Any]:
-    """Replace cost provenance and apply regenerated artifact metadata.
-
-    Cost provenance is cleared before the merge so omitted fields (e.g. missing
-    max_gpu_mem_gb) cannot linger from a prior YAML write.
-    """
-    for key in COST_PROVENANCE_KEYS:
-        section.pop(key, None)
-    section.update(updates)
-    return section
-
-
 def _write_yaml_results(
     model: Model,
     artifacts: DiscoveryArtifacts,
-    run_metadata: Mapping[str, Any] | None = None,
+    run_metadata: Mapping[str, Any],
+    *,
+    replace_author_reported: bool = False,
 ) -> None:
-    """Update artifact paths, cost provenance, and all discovery subsets."""
+    """Register the new artifacts, their cost block and all discovery subsets."""
     from matbench_discovery.data import df_wbm
     from matbench_discovery.metrics import discovery as discovery_metrics
 
@@ -200,26 +187,29 @@ def _write_yaml_results(
         uniq_proto_prevalence=discovery_metrics.wbm_uniq_proto_prevalence(),
     )
 
-    # rollout cost provenance, mirroring the MD and diatomics runners (fields are
-    # dropped upstream unless every shard reported them on uniform hardware)
-    cost_data = {
-        key: value
-        for key in COST_PROVENANCE_KEYS
-        if (value := (run_metadata or {}).get(key)) is not None
-    }
-    for task, path in (
-        ("discovery", artifacts.pred_file_path),
-        ("geo_opt", artifacts.geo_opt_file_path),
-    ):
-        artifact_data = {"pred_file": make_file_ref(_repo_relative_path(path))}
-        if task == "discovery":
-            artifact_data |= cost_data
-        update_yaml_file(
-            model.yaml_path,
-            f"metrics.{task}",
-            partial(_update_artifact_metadata, updates=artifact_data),
+    def update_discovery(section: dict[str, Any]) -> dict[str, Any]:
+        """Swap in the new pred/run-info refs and the run's own cost block."""
+        for key, path in (
+            ("pred_file", artifacts.pred_file_path),
+            ("run_info_file", artifacts.run_info_path),
+        ):
+            section[key] = make_file_ref(_repo_relative_path(path))
+        return with_cost_block(
+            section,
+            run_metadata,
+            after="run_info_file",
+            same_artifact=False,
+            context=f"{model.name} metrics.discovery",
+            replace_author_reported=replace_author_reported,
         )
-        print(f"Updated {task}.pred_file; re-upload if a prior Figshare URL existed")
+
+    geo_opt_ref = make_file_ref(_repo_relative_path(artifacts.geo_opt_file_path))
+    for task, update in (
+        ("discovery", update_discovery),
+        ("geo_opt", {"pred_file": geo_opt_ref}),
+    ):
+        update_yaml_file(model.yaml_path, f"metrics.{task}", update)
+        print(f"Updated {task} file refs; re-upload if a prior Figshare URL existed")
     discovery_metrics.write_all_metrics_to_yaml(
         model, metrics_by_subset, metric_reference, model_preds
     )
@@ -311,6 +301,15 @@ def main(raw_args: Sequence[str] | None = None) -> int:
             parser.error(
                 f"Merged {merged_run.n_shards} shards, expected {args.n_shards}"
             )
+        # a merge where every relaxation failed must not register as a run
+        if not any(
+            record.structure is not None and record.energy is not None
+            for record in merged_run.records
+        ):
+            parser.error(
+                f"{model_key}: merged shards hold 0 successful relaxations out of "
+                f"{len(merged_run.records):,} attempts"
+            )
         if args.write_yaml and model is not None:
             try:
                 validate_yaml_write_settings(model_key, merged_run.settings)
@@ -326,11 +325,17 @@ def main(raw_args: Sequence[str] | None = None) -> int:
             f"({artifacts.n_failed:,} failures) to {artifacts.pred_file_path}"
         )
         print(f"Wrote relaxed structures to {artifacts.geo_opt_file_path}")
+        print(f"Wrote run provenance to {artifacts.run_info_path}")
         if args.write_yaml:
             if model is None:
                 print(f"Skipping YAML write: {model_key!r} is not a Model")
             else:
-                _write_yaml_results(model, artifacts, merged_run.run_metadata)
+                _write_yaml_results(
+                    model,
+                    artifacts,
+                    merged_run.run_metadata,
+                    replace_author_reported=args.replace_author_reported,
+                )
                 print(f"Updated discovery and geo-opt metadata in {model.yaml_path}")
         return 0
 
@@ -352,8 +357,12 @@ def main(raw_args: Sequence[str] | None = None) -> int:
         material_id: atoms_by_id[material_id] for material_id in assigned_material_ids
     }
     shard_path = f"{shard_dir}/shard-{shard_index:03d}-of-{n_shards:03d}.jsonl"
+    calculator, runtime = load_calculator_with_runtime(
+        model_key, device=args.device, dtype=args.dtype
+    )
     shard = run_discovery_shard(
-        calculator=load_calculator(model_key, device=args.device, dtype=args.dtype),
+        calculator=calculator,
+        runtime=runtime,
         model_key=model_key,
         atoms_by_id=atoms_by_id,
         assigned_material_ids=assigned_material_ids,

@@ -39,7 +39,7 @@
   color_scale={scale}
   bind:active_element
   show_photo={false}
-  missing={{ color: `rgba(255,255,255,0.3)` }}
+  missing={{ color: `var(--ptable-missing-bg)` }}
   {...rest}
 >
   {#snippet inset()}

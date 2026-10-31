@@ -72,7 +72,7 @@ async function read_asset_text(url: string): Promise<string> {
   // raw .gz (served without Content-Encoding) still starts with the gzip magic bytes and
   // gets inflated; if the server already decompressed it, the bytes pass through as text
   const { content } = await classify_payload(await response.blob(), [url], {
-    compression_by_magic: true,
+    wrappers_may_be_decoded: true,
   })
   if (typeof content !== `string`) throw new Error(`Expected text asset at ${url}`)
   return content

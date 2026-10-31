@@ -1,26 +1,26 @@
 [project]
 name = "matbench-discovery-equflash-kappa"
 version = "0"
-requires-python = ">=3.12,<3.13"
+requires-python = ">=3.14"
 dependencies = [
   "matbench-discovery[phonons,symmetry]",
   "GGNN @ git+https://github.com/SamsungDS/GGNN@16b5cae47437",
   "fairchem-core==1.10.0",
-  "cuequivariance==0.6.0",
-  "cuequivariance-ops-torch-cu12==0.6.0",
-  "cuequivariance-torch==0.6.0",
+  "cuequivariance==0.9.0",
+  "cuequivariance-ops-torch-cu12==0.9.0",
+  "cuequivariance-torch==0.9.0",
   "e3nn==0.5.6",
-  "torch==2.9.1+cu126",
-  "torch-geometric==2.6.1",
-  "torch-scatter==2.1.2+pt29cu126",
-  "torch-sparse==0.6.18+pt29cu126",
+  "torch==2.10.0+cu126",
+  "torch-geometric==2.7.0",
+  "torch-scatter==2.1.2+pt210cu126",
+  "torch-sparse==0.6.18+pt210cu126",
   "ase-db-backends==0.11.0",
   "nvalchemi-toolkit-ops==0.3.0",
   "numba==0.65.1",
   "hydra-core==1.3.3",
-  "lmdb==1.6.2",
+  "lmdb==1.7.5",
   "pydantic==2.13.4",
-  "spglib==2.6.0",
+  "spglib==2.7.0",
   "torchtnt==0.2.4",
   "submitit==1.5.3",
   "huggingface-hub==1.19.0",
@@ -32,11 +32,13 @@ dependencies = [
 
 [tool.uv]
 package = false
-find-links = ["https://data.pyg.org/whl/torch-2.9.1+cu126.html"]
+# PyG local-version wheels are linux x86_64 only
+environments = ["sys_platform == 'linux' and platform_machine == 'x86_64'"]
+find-links = ["https://data.pyg.org/whl/torch-2.10.0+cu126.html"]
 override-dependencies = [
   "numpy>=2,<2.5",
   "scipy==1.16.1",
-  "torch==2.9.1+cu126",
+  "torch==2.10.0+cu126",
 ]
 
 [tool.uv.sources]

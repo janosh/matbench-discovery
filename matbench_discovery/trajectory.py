@@ -309,18 +309,15 @@ class Trajectory:
         atomic_numbers = np.asarray(symbols2numbers(list(species)))
 
         # per-frame floats parsed from the comment lines
-        def comment_field(
-            pattern: str, width: int, *, drop_if_partial: bool = False
-        ) -> np.ndarray | None:
+        def comment_field(pattern: str, width: int) -> np.ndarray | None:
             """Flat (n_frames * width,) floats from a per-frame comment field, or None
-            if no frame carries it. Mixed availability raises (matching from_ase) unless
-            ``drop_if_partial``, which returns None instead (md_step's looser rule).
+            if no frame carries it. Mixed availability raises (matching from_ase).
             """
             rgx = re.compile(pattern)
             found = [m.group(1) if (m := rgx.search(c)) else None for c in comments]
             n_missing = found.count(None)
-            if n_missing == n_frames or (n_missing and drop_if_partial):
-                return None  # absent on every frame, or partial for an optional field
+            if n_missing == n_frames:
+                return None
             if n_missing:
                 raise ValueError(
                     f"{path!r}: frame {found.index(None)} is missing a comment "
@@ -347,7 +344,7 @@ class Trajectory:
             # ASE Fortran-reshapes the 9-vec, then Voigt-orders [xx,yy,zz,yz,xz,xy]
             stress = stress.reshape(n_frames, 9)[:, [0, 4, 8, 7, 6, 3]]
 
-        steps = comment_field(r"\bmd_step=(\S+)", 1, drop_if_partial=True)
+        steps = comment_field(r"\bmd_step=(\S+)", 1)
         md_step = steps.astype(int) if steps is not None else None
 
         pbc_str = uniform_comment(r'pbc="([^"]*)"', "pbc", "T T T")

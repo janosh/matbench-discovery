@@ -82,6 +82,15 @@ export type ModelMetadata = {
    * Whether this checkpoint is a fine-tune of another training run.
    */
   fine_tune?: boolean
+  /**
+   * Benchmark tasks whose test set (its results or its materials) informed training, tuning or checkpoint selection, explained in notes.disclosure. Flagged on leaderboards.
+   *
+   * @minItems 1
+   */
+  test_set_informed?: [
+    'discovery' | 'geo_opt' | 'phonons' | 'diatomics' | 'md',
+    ...('discovery' | 'geo_opt' | 'phonons' | 'diatomics' | 'md')[],
+  ]
   hyperparams?: Hyperparams
   notes?: {
     description?: string
@@ -157,6 +166,24 @@ export type PhononMetrics = {
 }
 /**
  * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "KappaMetrics".
+ */
+export type KappaMetrics = {
+  pred_file?: NullableFileRef
+  force_file?: NullableFileRef
+  phonon_file?: NullableFileRef
+  run_info_file?: NullableFileRef
+  harmonic?: HarmonicRun
+  cost?: Cost
+  κ_SRME: number
+  κ_SRE: number
+  κ_SRD: number
+  κ_failure_rate: number
+  imaginary_mode_rate: number
+  spectrum_w1: number | null
+}
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "nullable_file_ref".
  */
 export type NullableFileRef = FileRef | null
@@ -195,10 +222,8 @@ export type DiscoveryMetrics = {
   status?: 'complete' | 'partial' | 'not_available' | 'not_applicable' | 'pending'
   reason?: string | null
   pred_file?: NullableFileRef
-  hardware?: string
-  run_time_sec?: number
-  max_rss_gb?: number
-  max_gpu_mem_gb?: number
+  run_info_file?: NullableFileRef
+  cost?: Cost
   full_test_set?: DiscoveryMetricsSet
   unique_prototypes?: DiscoveryMetricsSet
 }
@@ -210,10 +235,7 @@ export type DiatomicsMetrics = {
   status?: 'complete' | 'partial' | 'not_available' | 'not_applicable' | 'pending'
   reason?: string | null
   pred_file?: NullableFileRef
-  hardware?: string
-  run_time_sec?: number
-  max_rss_gb?: number
-  max_gpu_mem_gb?: number
+  cost?: Cost
   excluded_formula_reasons?: Record<string, string>
   tortuosity?: number
   energy_diff_flips?: number
@@ -233,6 +255,33 @@ export type DiatomicsMetrics = {
   force_flips?: number
   force_total_variation?: number
   force_jump?: number
+  reproducibility?: Reproducibility
+}
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "Reproducibility".
+ */
+export type Reproducibility = {
+  checked: string
+  status: 'reproduced' | 'drifted' | 'inconclusive'
+  cause?: 'protocol_change' | 'environment_change' | 'nondeterministic' | 'unknown'
+  note?: string
+  tolerance: 0.001
+  /**
+   * @minItems 1
+   */
+  runs: [
+    {
+      label: string
+      file: FileRef
+    },
+    ...{
+      label: string
+      file: FileRef
+    }[],
+  ]
+  rel_changes: Record<string, number>
+  repeat_rel_change?: number
 }
 /**
  * This interface was referenced by `undefined`'s JSON-Schema
@@ -242,10 +291,7 @@ export type MdMetrics = {
   status?: 'complete' | 'partial' | 'not_available' | 'not_applicable' | 'pending'
   reason?: string | null
   pred_file?: NullableFileRef
-  hardware?: string
-  run_time_sec?: number
-  max_rss_gb?: number
-  max_gpu_mem_gb?: number
+  cost?: Cost
   energy_rmse?: number
   force_rmse?: number
   rdf_error?: number
@@ -255,6 +301,7 @@ export type MdMetrics = {
   pressure_wasserstein?: number
   pressure_error?: number
   n_systems?: number
+  reproducibility?: Reproducibility
 }
 /**
  * License type:
@@ -456,26 +503,6 @@ export interface TrainingCostEntry {
 }
 /**
  * This interface was referenced by `undefined`'s JSON-Schema
- * via the `definition` "KappaMetrics".
- */
-export interface KappaMetrics {
-  pred_file?: NullableFileRef
-  force_file?: NullableFileRef
-  phonon_file?: NullableFileRef
-  run_info_file?: NullableFileRef
-  hardware?: string
-  run_time_sec?: number
-  max_rss_gb?: number
-  max_gpu_mem_gb?: number
-  κ_SRME: number
-  κ_SRE: number
-  κ_SRD: number
-  κ_failure_rate: number
-  imaginary_mode_rate: number
-  spectrum_w1: number | null
-}
-/**
- * This interface was referenced by `undefined`'s JSON-Schema
  * via the `definition` "FileRef".
  */
 export interface FileRef {
@@ -483,6 +510,40 @@ export interface FileRef {
   url?: HttpUrl
   size?: number
   md5?: string
+}
+/**
+ * Harmonic-only rerun supplementing the kappa_103 conductivity run.
+ *
+ * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "HarmonicRun".
+ */
+export interface HarmonicRun {
+  phonon_file: FileRef
+  force_file?: FileRef
+  run_info_file: FileRef
+  cost?: Cost
+}
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "Cost".
+ */
+export interface Cost {
+  source: 'runner' | 'salvaged' | 'author_reported'
+  hardware: string
+  device?: 'cuda' | 'cpu' | 'gpu' | 'mps'
+  dtype?: 'float64' | 'float32' | 'bfloat16' | 'float16'
+  acceleration?: (
+    | 'cuequivariance'
+    | 'openequivariance'
+    | 'torch_aot_inductor'
+    | 'prophet_kernels'
+  )[]
+  n_shards?: number
+  n_processes?: number
+  run_time_sec?: number
+  load_time_sec?: number
+  max_rss_gb?: number
+  max_gpu_mem_gb?: number
 }
 /**
  * This interface was referenced by `undefined`'s JSON-Schema

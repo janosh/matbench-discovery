@@ -84,7 +84,12 @@ def main() -> int:
             shown = f"{value:.4f}" if isinstance(value, float) else value
             print(f"\t{key}={shown}")
         # Recomputing an existing file must retain its URL, size and checksum.
-        md_metrics.write_metrics_to_yaml(model, metrics, pred_file_path=new_pred_file)
+        md_metrics.write_metrics_to_yaml(
+            model,
+            metrics,
+            pred_file_path=new_pred_file,
+            replace_author_reported=cli_args.replace_author_reported,
+        )
         print(f"\tUpdated {model.yaml_path}")
         return None
 
