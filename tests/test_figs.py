@@ -117,22 +117,17 @@ def test_artifact_manifest(
         figs.artifact_manifest(role, path)
 
 
-@pytest.mark.parametrize(
-    ("edited", "same_hash"),
-    [
-        ('"""Doc."""\ndef f(x):\n    """Other doc."""\n    return x+1  # one\n', True),
-        ("def f(x):\n    return x + 2\n", False),
-    ],
-)
-def test_recipe_source_code_ignores_docs_and_formatting(
-    tmp_path: Path, edited: str, same_hash: bool
-) -> None:
+def test_recipe_source_code_ignores_docs_and_formatting(tmp_path: Path) -> None:
     """Comment, docstring and formatting edits keep recipe hashes; code edits don't."""
-    original, changed = tmp_path / "original.py", tmp_path / "edited.py"
-    original.write_text('def f(x):\n    """Doc."""\n    return x + 1\n')
-    changed.write_text(edited)
-    codes = {figs.recipe_source_code(str(path)) for path in (original, changed)}
-    assert (len(codes) == 1) is same_hash
+    sources = {
+        "base": 'def f(x):\n    """Doc."""\n    return x + 1\n',
+        "docs": '"""Mod."""\ndef f(x):\n    """New."""\n    return x+1  # one\n',
+        "code": "def f(x):\n    return x + 2\n",
+    }
+    for name, text in sources.items():
+        (tmp_path / f"{name}.py").write_text(text)
+    code = {name: figs.recipe_source_code(f"{tmp_path}/{name}.py") for name in sources}
+    assert code["base"] == code["docs"] != code["code"]
 
 
 @pytest.mark.parametrize("hull_dist", [True, False])

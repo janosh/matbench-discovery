@@ -26,27 +26,6 @@ OUT_DIR = f"{ROOT}/site/src/routes/api/modules"
 PREFIX = f"{matbench_discovery.__name__}."
 
 
-def escape_svelte_braces(md_text: str) -> str:
-    """Entity-escape braces outside code, which the site's markdown preprocessor
-    would otherwise parse as Svelte expressions (e.g. "({} if absent)" in a docstring).
-    """
-    lines, in_fence = [], False
-    for line in md_text.split("\n"):
-        if line.lstrip().startswith("```"):
-            in_fence = not in_fence
-        elif not in_fence:
-            # odd indices are inline code spans (``double`` or `single` backticks)
-            segments = re.split(r"(``.+?``|`[^`]+`)", line)
-            segments[::2] = [
-                seg.replace("{", "&#123;").replace("}", "&#125;")
-                for seg in segments[::2]
-            ]
-            lines.append("".join(segments))
-            continue
-        lines.append(line)
-    return "\n".join(lines)
-
-
 inspect.signature = functools.partial(
     inspect.signature, annotation_format=annotationlib.Format.STRING
 )
@@ -84,7 +63,6 @@ for mod_name in modules:
         'src="https://img.shields.io/badge/-source-cccccc?style=flat-square"',
         'src="https://img.shields.io/badge/source-blue?style=flat" alt="source link"',
     )
-    md_text = escape_svelte_braces(md_text)
     file_name = mod_name.removeprefix(PREFIX).replace(".", "-")
     to_md_file(md_text, file_name, OUT_DIR, watermark=False)
 
