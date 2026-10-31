@@ -32,7 +32,11 @@ export function parse_dependency_spec(dep: string) {
     const url = vcs_browser_href(locator)
     const href = url.startsWith(`http`) ? url : pypi_href(name)
     // a VCS install's name links its repo, which may not be on PyPI
-    const repo = /^git\+(?<repo>https?:\/\/[^@]+?)(?:\.git)?@/.exec(locator)?.groups?.repo
+    // drop any user@ credentials so the link points at the repo host
+    const repo_match =
+      /^git\+(?<scheme>https?:\/\/)(?:[^@/]+@)?(?<path>[^@]+?)(?:\.git)?@/.exec(locator)
+    const repo =
+      repo_match?.groups && `${repo_match.groups.scheme}${repo_match.groups.path}`
     return { name, name_href: repo ?? pypi_href(name), detail: locator, href }
   }
   const pin_match = PIN_SPEC.exec(trimmed)

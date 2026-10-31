@@ -870,7 +870,7 @@
     }
     ul {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(18em, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(min(18em, 100%), 1fr));
       column-gap: 3em;
       padding: 0;
       list-style: none;
@@ -925,7 +925,10 @@
   }
   /* version numbers as light code, less prominent than the package name */
   details.deps li > a:first-child {
-    flex: none;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   details.deps .dependency-detail {
     display: flex;

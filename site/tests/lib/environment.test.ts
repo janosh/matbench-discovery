@@ -93,6 +93,16 @@ describe(`parse_dependency_spec`, () => {
       },
     },
     {
+      // user@ credentials stay out of the repo link
+      dep: `pkg @ git+https://user@github.com/org/repo.git@v1`,
+      expected: {
+        name: `pkg`,
+        name_href: `https://github.com/org/repo`,
+        detail: `git+https://user@github.com/org/repo.git@v1`,
+        href: `https://user@github.com/org/repo.git@v1`,
+      },
+    },
+    {
       // plain https locator used as-is
       dep: `aviary @ https://github.com/CompRhys/aviary/releases/tag/v0.1.0`,
       expected: {

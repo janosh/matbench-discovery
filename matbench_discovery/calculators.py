@@ -471,11 +471,11 @@ def _mace_soyo(head: str) -> Callable[..., Calculator]:
             # the exporter traces the model on an example structure (versioned by name)
             os.makedirs(CHECKPOINT_DIR, exist_ok=True)
             example = f"{CHECKPOINT_DIR}/mace-soyo-export-si-v1.extxyz"
-            if not _is_non_empty_file(example):
-                tmp_example = f"{example}.{os.getpid()}.tmp"
-                silicon = bulk("Si", "diamond", a=5.43, cubic=True)
-                write(tmp_example, silicon, format="extxyz")
-                os.replace(tmp_example, example)
+            with FileLock(f"{example}.lock"):
+                if not _is_non_empty_file(example):
+                    silicon = bulk("Si", "diamond", a=5.43, cubic=True)
+                    write(f"{example}.tmp", silicon, format="extxyz")
+                    os.replace(f"{example}.tmp", example)
             arch = "".join(map(str, torch.cuda.get_device_capability(device)))
             digest, _state = _stable_file_sha256(checkpoint)
             package = f"{CHECKPOINT_DIR}/mace-soyo-{digest[:16]}-sm{arch}-fp32.pt2"
