@@ -31,8 +31,7 @@ export function parse_dependency_spec(dep: string) {
     const locator = at_match[2].trim()
     const url = vcs_browser_href(locator)
     const href = url.startsWith(`http`) ? url : pypi_href(name)
-    // a VCS install's name links its repo, which may not be on PyPI
-    // drop any user@ credentials so the link points at the repo host
+    // a VCS install's name links its repo (may not be on PyPI), minus any user@ credentials
     const repo_match =
       /^git\+(?<scheme>https?:\/\/)(?:[^@/]+@)?(?<path>[^@]+?)(?:\.git)?@/.exec(locator)
     const repo =

@@ -752,7 +752,7 @@
     }
     a {
       display: inline-flex;
-      align-items: center;
+      align-items: baseline;
       color: var(--text-color);
       gap: 0.3em;
       padding: 0.25em 0.5em;
@@ -843,7 +843,7 @@
         gap: 0.6em;
         padding-block: 0.35em;
         border-top: 1px solid var(--border);
-        align-items: center;
+        align-items: baseline;
       }
     }
     dt {
@@ -861,6 +861,14 @@
       color: var(--text-secondary);
       font-size: 0.8em;
     }
+  }
+  /* top-level so happy-dom (no CSS nesting) computes it in tests too */
+  details.deps li > a:first-child,
+  .dependency-detail span:first-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   details.deps {
     margin: 2em 0;
@@ -888,6 +896,18 @@
     /* last row of the 2-column grid */
     li:is(:last-child, :nth-last-child(2):nth-child(odd)) {
       border-bottom: none;
+    }
+    /* version numbers as light code, less prominent than the package name */
+    .dependency-detail {
+      display: flex;
+      min-width: 0;
+      white-space: nowrap;
+      font-family: monospace;
+      font-size: 0.9em;
+      opacity: 0.85;
+      span:last-child {
+        flex: none;
+      }
     }
   }
   /* Compact fused parity tabs sit directly above the plot. */
@@ -922,29 +942,6 @@
   }
   :global(.energy-parity-tabs.button-group .options > button:last-child) {
     border-radius: 0 9999px 9999px 0;
-  }
-  /* version numbers as light code, less prominent than the package name */
-  details.deps li > a:first-child {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  details.deps .dependency-detail {
-    display: flex;
-    min-width: 0;
-    white-space: nowrap;
-    font-family: monospace;
-    font-size: 0.9em;
-    opacity: 0.85;
-  }
-  .dependency-detail span:first-child {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .dependency-detail span:last-child {
-    flex: none;
   }
   :is(.meta-info, .links) {
     display: flex;
