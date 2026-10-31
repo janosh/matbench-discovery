@@ -15,11 +15,17 @@ import {
   HYPERPARAMS,
   MD_METRICS,
   METADATA_COLS,
+  REPRO_COLS,
 } from '#lib/labels.js'
-import type { ModelMetadata, TargetType } from '#lib/schema/model.js'
-import type { DiscoverySet, Label, ModelData } from '#lib/types.js'
-import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
-import { escape_html, strip_html } from 'matterviz/utils'
+import type {
+  Cost,
+  ModelMetadata,
+  Reproducibility,
+  TargetType,
+} from '#lib/schema/model.js'
+import type { DiscoverySet, Label, ModelData, TimedTask } from '#lib/types.js'
+import MODELING_TASKS from '$pkg/modeling-tasks.yml'
+import { escape_html, strip_html } from 'svelte-widgets/utils'
 import { format_num } from 'matterviz/labels'
 import { is_invalid, sort_table_rows, type CellVal } from 'matterviz/table'
 import { resolve_path } from 'svelte-widgets/json-tree/path'
@@ -117,14 +123,14 @@ export function missing_metric_reason(model: ModelData, metric: Label): string {
           ? `diatomics`
           : undefined)
     const task_key =
-      raw_task && Object.hasOwn(MODELINGS_TASKS, raw_task)
+      raw_task && Object.hasOwn(MODELING_TASKS, raw_task)
         ? (raw_task as keyof NonNullable<ModelData['metrics']>)
         : undefined
     if (!task_key && !is_cps) {
       return [`${strip_html(label.label)}: not reported.`]
     }
 
-    const task_name = task_key ? MODELINGS_TASKS[task_key].label : `CPS`
+    const task_name = task_key ? MODELING_TASKS[task_key].label : `CPS`
     const task_data = task_key ? model.metrics?.[task_key] : undefined
     const detail = task_data?.reason ? ` ${task_data.reason}` : ``
     if (task_data?.status === `not_applicable`) {
@@ -165,7 +171,7 @@ export function missing_metric_reason(model: ModelData, metric: Label): string {
                 ? entries.map(({ key }) => ({
                     key,
                     label: key,
-                    path: `metrics.diatomics`,
+                    path: `metrics.diatomics${key === `run_time_sec` ? `.cost` : ``}`,
                     description: ``,
                   }))
                 : [],
@@ -195,6 +201,78 @@ export function missing_metric_reason(model: ModelData, metric: Label): string {
 // Append "(higher|lower)=better" hint to a column tooltip where applicable
 export const append_better_hint = ({ description, better }: Label): string =>
   better ? `${description} (${better}=better)` : description
+
+// === Inference cost provenance ===
+// Speeds are scored as reported on each model's own GPU (never hardware-normalized), so
+// every displayed time or speed-weighted score names its GPU and timing source on hover.
+const COST_SOURCES: Record<Cost[`source`], string> = {
+  runner: `benchmark runner`,
+  salvaged: `earlier cluster run`,
+  author_reported: `author-reported`,
+}
+const TIMED_TASKS = [`md`, `diatomics`] as const
+const TIMED_SUFFIXES = [`run_time_sec`, `time_multiplier`, `max_gpu_mem_gb`, `max_rss_gb`]
+
+// `<GPU> (<timing source>)` of a task's metrics.<task>.cost, undefined when untimed
+export function cost_tag(model: object, task: TimedTask): string | undefined {
+  const { source, hardware, run_time_sec }: Partial<Cost> =
+    get_nested_value(model, `metrics.${task}.cost`) ?? {}
+  if (!source || run_time_sec === undefined) return undefined
+  return `${hardware} (${COST_SOURCES[source]})`
+}
+
+// Seconds as up to three consecutive units from the largest nonzero one: 2d 13h 16m, 4m 18s
+const DURATION_UNITS = [
+  [`d`, 86_400],
+  [`h`, 3600],
+  [`m`, 60],
+  [`s`, 1],
+] as const
+export function format_duration(seconds: number): string {
+  let rest = Math.round(seconds)
+  const counts = DURATION_UNITS.map(([unit, size]) => {
+    const count = Math.floor(rest / size)
+    rest %= size
+    return { count, unit }
+  })
+  const first = counts.findIndex(({ count }) => count > 0)
+  if (first === -1) return `0s`
+  return counts
+    .slice(first, first + 3)
+    .map(({ count, unit }) => `${count}${unit}`)
+    .join(` `)
+}
+
+// A metric value as shown in cards and tables: durations for seconds, else the label's format
+export const format_metric = (
+  value: number,
+  { unit, format }: Pick<Label, `unit` | `format`>,
+): string => (unit === `s` ? format_duration(value) : format_num(value, format))
+
+// Tooltip naming the timing GPU of a model's time/memory value or speed-weighted score
+// (only while Speed has weight), undefined for metrics independent of inference speed
+export function cost_annotation(
+  model: object,
+  { key }: Pick<Label, `key`>,
+): string | undefined {
+  const scored =
+    key === MD_METRICS.md_combined_score.key && CMDS_CONFIG.run_time_sec.weight > 0
+      ? `md`
+      : key === DIATOMICS_METRICS.diatomics_combined_score.key &&
+          CDS_CONFIG.speed.weight > 0
+        ? `diatomics`
+        : undefined
+  const task =
+    scored ??
+    TIMED_TASKS.find((timed) =>
+      TIMED_SUFFIXES.some((suffix) => key === `${timed}_${suffix}`),
+    )
+  const tag = task && cost_tag(model, task)
+  return (
+    tag &&
+    `${scored ? `Speed subscore timed` : `Timed`} on ${tag}, not normalized across hardware`
+  )
+}
 
 export function training_set_link(key: string) {
   if (!Object.hasOwn(DATASETS, key)) {
@@ -338,34 +416,35 @@ export function assemble_row_data(
     const excluded_formula_reasons = diatomics_metrics?.excluded_formula_reasons ?? {}
     // group excluded formulas by reason for a compact tooltip like
     // "Diatomics metrics exclude A-A, B-B due to <reason>; C-C due to <other>"
-    let model_exclusion_marker = ``
+    let name_markers = ``
     if (Object.keys(excluded_formula_reasons).length > 0) {
-      // manual grouping instead of Map.groupBy, which is newer than Vite's default
-      // browser baseline and would throw at runtime in e.g. Safari < 17.4
-      const formulas_by_reason = new Map<string, string[]>()
-      for (const [formula, reason] of Object.entries(excluded_formula_reasons)) {
-        const group = formulas_by_reason.get(reason) ?? []
-        group.push(formula)
-        formulas_by_reason.set(reason, group)
-      }
+      const formulas_by_reason = Map.groupBy(
+        Object.entries(excluded_formula_reasons),
+        ([, reason]) => reason,
+      )
       const exclusion_note = escape_html(
         `Diatomics metrics exclude ${[...formulas_by_reason]
           .map(
-            ([reason, formulas]) =>
-              `${formulas.join(`, `)}${reason ? ` due to ${reason}` : ``}`,
+            ([reason, entries]) =>
+              `${entries.map(([formula]) => formula).join(`, `)}${reason ? ` due to ${reason}` : ``}`,
           )
           .join(`; `)}`,
       )
-      model_exclusion_marker =
+      name_markers =
         `<span title="${exclusion_note}" aria-label="${exclusion_note}">` +
         `<span aria-hidden="true">*</span></span>`
+    }
+    if (model.test_set_informed) {
+      const tasks = model.test_set_informed.map((task) => MODELING_TASKS[task].label)
+      const note = `${tasks.join(` and `)} test set${tasks.length > 1 ? `s` : ``} informed this model's development (see model notes)`
+      name_markers += `<span title="${note}" aria-label="${note}">†</span>`
     }
 
     const row: MetricsRowData = {
       model_key: model.model_key,
       model_name: model.model_name,
       model,
-      Model: `<a title="Version: ${model.model_version ?? `unknown`}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>${model_exclusion_marker}`,
+      Model: `<a title="Version: ${model.model_version ?? `unknown`}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>${name_markers}`,
       ...Object.fromEntries(
         Object.values(ALL_METRICS).map((label) => [
           label.key,
@@ -377,6 +456,8 @@ export function assemble_row_data(
       [MD_METRICS.md_time_multiplier.key]: md_time_multiplier(model),
       [DIATOMICS_METRICS.diatomics_time_multiplier.key]: diatomics_time_multiplier(model),
       'Training Set': format_train_set(model.training_sets, model),
+      [REPRO_COLS.md.key]: repro_cell_html(model, `md`),
+      [REPRO_COLS.diatomics.key]: repro_cell_html(model, `diatomics`),
       [HYPERPARAMS.model_params.key]:
         `<span title="${format_num(model.model_params, `,`)} trainable model parameters" data-sort-value="${model.model_params}">${format_num(model.model_params)}</span>`,
       [HYPERPARAMS.ase_optimizer.key]: ase_optimizer ?? `n/a`,
@@ -436,3 +517,22 @@ export const sort_models = (
     })),
     [{ key: `value`, ascending: order === `asc` }],
   ).map(({ model }) => model)
+
+// === Reproducibility ===
+// Leaderboard Reproducible cell for rerun checks of registered task results
+// (metrics.<task>.reproducibility): status text, sort rank (unchecked last) and color
+const REPRO_CELLS: Record<Reproducibility[`status`], [string, number, string]> = {
+  reproduced: [`✓ Reproduced`, 0, `inherit`],
+  inconclusive: [`? Inconclusive`, 1, `var(--text-secondary)`],
+  drifted: [`≠ Drifted`, 2, `var(--warning)`],
+}
+export function repro_cell_html(model: ModelData, task: TimedTask): string {
+  const repro = model.metrics?.[task]?.reproducibility
+  if (!repro) {
+    return `<span title="No rerun check yet" data-sort-value="3" style="color: var(--text-secondary)">not checked</span>`
+  }
+  const { status, cause, note } = repro
+  const [text, rank, color] = REPRO_CELLS[status]
+  const title = `Rerun ${status}${status === `reproduced` ? ` within 0.1%` : ``}${cause ? ` (${cause.replaceAll(`_`, ` `)})` : ``}${note ? `: ${note}` : ``}`
+  return `<span title="${escape_html(title)}" data-sort-value="${rank}" style="white-space: nowrap; color: ${color}">${text}</span>`
+}

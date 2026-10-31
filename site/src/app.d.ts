@@ -13,6 +13,14 @@ declare module '*.json.gz' {
   export default data
 }
 
+declare module '#lib/diatomics-dft.json.gz' {
+  // VASP homonuclear references: functional -> formula -> curve on its own distance grid
+  type Curve = { distances: number[]; energies: number[]; forces: number[][][] }
+  type Spin = { magmoms: ([number, number] | null)[]; spin_candidates: (string | null)[] }
+  const data: Record<string, Record<string, Curve & Spin>>
+  export default data
+}
+
 declare module '*.jsonl' {
   // line-delimited multi-model figure payloads, reassembled at build time by the
   // json_payload plugin in vite.config.ts, typed per payload in src/figs/payloads.d.ts

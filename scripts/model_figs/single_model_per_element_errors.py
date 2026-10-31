@@ -6,10 +6,10 @@ import json
 import pandas as pd
 
 from matbench_discovery import SITE_DIR, figs, payload_numerics, preds
-from matbench_discovery.cli import cli_args
+from matbench_discovery.cli import cli_args, complete_models
 from matbench_discovery.preds import elements
 
-models_to_plot = cli_args.models
+models_to_plot = complete_models()
 
 df_predictions, df_each_err = preds.load_prediction_errors(
     models_to_plot, subset=cli_args.test_subset
@@ -54,6 +54,7 @@ figs.write_site_payload(
                 "coordinate_decimals": payload_numerics.COORD_DECIMALS,
             },
             packages=("pymatgen",),
+            hull_dist=False,
         ),
     },
 )
@@ -93,6 +94,7 @@ figs.write_site_payload(
             source_files=prediction_error_source,
             parameters={"output_decimals": 4},
             packages=("pymatgen",),
+            hull_dist=False,
         ),
         "mp_occurrences": json.loads(df_elem_err[preds.TRAIN_COUNT_COL].to_json()),
         "test_set_standard_deviation": json.loads(

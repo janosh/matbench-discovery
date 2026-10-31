@@ -13,13 +13,17 @@ import functools
 import hashlib
 import inspect
 import os
+import re
 import shutil
+import socket
 import subprocess
 import sys
+import time
 import zipfile
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from importlib.metadata import PackageNotFoundError, requires, version
+from typing import Any
 from urllib.parse import urlsplit
 
 from ase.calculators.calculator import Calculator
@@ -32,6 +36,14 @@ CHECKPOINT_DIR = f"{DEFAULT_CACHE_DIR}/md-checkpoints"
 DEFAULT_DTYPE = "float64"
 # generous: AOTInductor exports (TACE) compile every kernel ahead of time
 DERIVED_ARTIFACT_TIMEOUT_SEC = 30 * 60
+# attribute factories set on calculators to record the acceleration they enabled
+ACCELERATION_ATTR = "mbd_acceleration"
+
+
+def _with_acceleration(calculator: Calculator, *flags: str) -> Calculator:
+    """Record a factory's enabled acceleration paths for the cost labels."""
+    vars(calculator)[ACCELERATION_ATTR] = tuple(flags)
+    return calculator
 
 
 def _is_non_empty_file(path: str) -> bool:
@@ -140,6 +152,7 @@ def _run_to_atomic_output(
     source_paths: Sequence[str] = (),
     tool_packages: Sequence[str] = (),
     env_overrides: Mapping[str, str] | None = None,
+    timeout_sec: int = DERIVED_ARTIFACT_TIMEOUT_SEC,
 ) -> None:
     """Atomically cache output by command, source contents, and tool versions.
 
@@ -161,13 +174,15 @@ def _run_to_atomic_output(
         except PackageNotFoundError:
             tool_versions.append((package, "unknown"))
     recipe = (
-        tuple(command),
+        # the interpreter path varies per uv run; tool_packages pin the environment
+        tuple("python" if arg == sys.executable else arg for arg in command),
         tuple(digest for _path, digest, _state in source_identities),
         tuple(tool_versions),
     )
     recipe_hash = hashlib.sha256(repr(recipe).encode()).hexdigest()
-    cached_dest = _cached_file_sha256(dest)
     with FileLock(f"{dest}.lock"):
+        # read inside the lock so a waiter reuses what the lock holder just wrote
+        cached_dest = _cached_file_sha256(dest)
         if any(
             _file_state(path) != state for path, _digest, state in source_identities
         ):
@@ -190,7 +205,7 @@ def _run_to_atomic_output(
             subprocess.run(
                 rendered_command,
                 check=True,
-                timeout=DERIVED_ARTIFACT_TIMEOUT_SEC,
+                timeout=timeout_sec,
                 env={**os.environ, **env_overrides} if env_overrides else None,
             )
             if not _is_non_empty_file(tmp_dest):
@@ -427,13 +442,62 @@ def _mace(checkpoint: str, head: str | None = None) -> Callable[[str, str], Calc
         from mace.calculators import mace_mp
 
         kwargs = {"head": head} if head else {}
-        return mace_mp(
+        enable_cueq = device == "cuda"
+        calc = mace_mp(
             model=checkpoint,
             device=device,
             default_dtype=dtype,
-            enable_cueq=device == "cuda",
+            enable_cueq=enable_cueq,
             **kwargs,
         )
+        return _with_acceleration(calc, *(("cuequivariance",) if enable_cueq else ()))
+
+    return make_calc
+
+
+def _mace_soyo(head: str) -> Callable[..., Calculator]:
+    """Export a MACE-SOYO checkpoint to an AOTI package once per GPU arch."""
+
+    def make_calc(device: str, checkpoint: str) -> Calculator:
+        import mace_soyo
+        import torch
+        from ase.build import bulk
+        from ase.io import write
+
+        if torch.device(device).type != "cuda":
+            raise ValueError(f"MACE-SOYO requires CUDA, got {device=}")
+        package = checkpoint
+        if not checkpoint.endswith(".pt2"):
+            # the exporter traces the model on an example structure (versioned by name)
+            os.makedirs(CHECKPOINT_DIR, exist_ok=True)
+            example = f"{CHECKPOINT_DIR}/mace-soyo-export-si-v1.extxyz"
+            with FileLock(f"{example}.lock"):
+                if not _is_non_empty_file(example):
+                    silicon = bulk("Si", "diamond", a=5.43, cubic=True)
+                    write(f"{example}.tmp", silicon, format="extxyz")
+                    os.replace(f"{example}.tmp", example)
+            arch = "".join(map(str, torch.cuda.get_device_capability(device)))
+            digest, _state = _stable_file_sha256(checkpoint)
+            package = f"{CHECKPOINT_DIR}/mace-soyo-{digest[:16]}-sm{arch}-fp32.pt2"
+            _run_to_atomic_output(
+                [
+                    *(sys.executable, "-m", "mace_soyo.export.AOTI_export"),
+                    *("--ckpt-path", checkpoint, "--structure-file", example),
+                    *("--output-path", "{output}", "--device", device),
+                    *("--dtype", "float32"),
+                ],
+                package,
+                source_paths=(checkpoint,),
+                tool_packages=(
+                    *("mace-soyo", "torch", "cuequivariance", "cuequivariance-torch"),
+                    *("cuequivariance-ops-torch-cu12", "nvalchemi-toolkit-ops"),
+                    "warp-lang",
+                ),
+            )
+        calc = mace_soyo.MACESoyoCalculator(
+            package_path=package, head=head, device=device, use_d3=False
+        )
+        return _with_acceleration(calc, "cuequivariance", "torch_aot_inductor")
 
     return make_calc
 
@@ -710,6 +774,67 @@ def _alignn(device: str, checkpoint: str, dtype: str = "float64") -> Calculator:
         return AlignnAtomwiseCalculator(path=model_dir, device=device)
 
 
+def _deepmd_graph(backend: str, **neighbor_options: str) -> Callable[..., Calculator]:
+    """Export a DPA4/DPA4C checkpoint once per GPU model and kernel policy.
+
+    neighbor_options pick the DP neighbor builder matching the exported interface.
+    """
+
+    def make_calc(device: str, checkpoint: str) -> Calculator:
+        import torch
+        from deepmd.calculator import DP
+        from deepmd.pt_expt.utils.env import DEVICE
+
+        target = torch.device(device)
+        # DeePMD picks its device at import, so a mismatch would silently run elsewhere
+        if (target.type, target.index or 0) != (DEVICE.type, DEVICE.index or 0):
+            raise ValueError(
+                f"DeePMD initialized on {DEVICE}, but {device} was requested. Request "
+                "cpu with DEVICE=cpu, or pick one GPU with CUDA_VISIBLE_DEVICES and "
+                "request cuda."
+            )
+        if checkpoint.endswith(".pt2"):
+            return DP(checkpoint, **neighbor_options)
+        # exports bake in GPU-tuned kernels and inference precision, so key by both
+        on_gpu = target.type == "cuda"
+        kernel_env = {
+            key: os.environ.get(key, default) if on_gpu else "0"
+            for key, default in (("DP_TRITON_INFER", "2"), ("DP_CUDA_INFER", "1"))
+        } | {"DP_AMP_INFER": os.environ.get("DP_AMP_INFER", "0")}
+        gpu = torch.cuda.get_device_name(target) if on_gpu else "cpu"
+        gpu = re.sub(r"[^\w.-]+", "-", gpu).strip("-")
+        digest, _state = _stable_file_sha256(checkpoint)
+        frozen = (
+            f"{CHECKPOINT_DIR}/dpa4-{digest[:16]}-{backend[2:]}-{gpu}-"
+            f"{'-'.join(kernel_env.values())}.pt2"
+        )
+        _run_to_atomic_output(
+            ["dp", backend, "freeze", "-c", checkpoint, "-o", "{output}"],
+            frozen,
+            source_paths=(checkpoint,),
+            tool_packages=("deepmd-kit", "torch", "triton"),
+            env_overrides=kernel_env,
+            timeout_sec=3 * 60 * 60,  # first-use kernel tuning of large DPA4 models
+        )
+        return DP(frozen, **neighbor_options)
+
+    return make_calc
+
+
+# pt exports edge_vec/nlist artifacts, pt-expt graph ones; DeepPot rejects crossings
+_DPA4_GRAPH = _deepmd_graph("--pt", nlist_backend="native")
+_DPA4C_GRAPH = _deepmd_graph("--pt-expt", neighbor_graph_method="cell")
+
+
+def _deepmd_eager(device: str, checkpoint: str) -> Calculator:  # noqa: ARG001
+    """Evaluate a DeePMD .pt checkpoint eagerly: deepmd 3.2's frozen .pt2 (see
+    _deepmd_freeze) shape-guards nall != nloc, failing on ghost-free isolated dimers.
+    """
+    from deepmd.calculator import DP
+
+    return DP(checkpoint)
+
+
 def _tace(model_key: str, *, accelerate: bool = True) -> Callable[..., Calculator]:
     def make_calc(device: str, checkpoint: str) -> Calculator:
         from tace.interface.ase import TACEAseCalc
@@ -749,9 +874,10 @@ def _tace(model_key: str, *, accelerate: bool = True) -> Callable[..., Calculato
                 # TACE never unsets them, which would silently accelerate later calcs.
                 env_overrides={"TACE_USE_OEQ": "1", "TACE_USE_COMPILE": "1"},
             )
-        return TACEAseCalc(
+        calc = TACEAseCalc(
             compiled, device=device, enable_oeq=True, enable_compile=True
         )
+        return _with_acceleration(calc, "openequivariance", "torch_aot_inductor")
 
     return make_calc
 
@@ -767,35 +893,48 @@ def _prophet(device: str, checkpoint: str) -> Calculator:
     """Load Prophet on the runner-selected device."""
     from prophet import KairosCalculator
 
-    return KairosCalculator(
-        model_path=checkpoint,
-        use_kernel=device.startswith("cuda"),
-        use_compile=False,
-        device=device,
+    use_kernel = device.startswith("cuda")
+    calc = KairosCalculator(
+        model_path=checkpoint, use_kernel=use_kernel, use_compile=False, device=device
     )
+    return _with_acceleration(calc, *(("prophet_kernels",) if use_kernel else ()))
 
 
-def _nequip(model_key: str) -> Callable[[str], Calculator]:
+def _nequip(
+    model_key: str, *, compile_aoti: bool = True
+) -> Callable[[str], Calculator]:
+    """NequIP/Allegro calculator from the model's nequip.net registry entry.
+
+    compile_aoti=False evaluates the saved model eagerly (no nequip-compile), for
+    models whose AOTI package crashes: no torch release ships a CUDA c-shim for
+    aten._linalg_det, and NequIP-OAM-XL's proxy-executor fallback dies with SIGFPE.
+    """
+
     def make_calc(device: str) -> Calculator:
         from nequip.ase import NequIPCalculator
 
         from matbench_discovery.enums import Model
 
-        # checkpoint_url is a nequip.net registry model; nequip-compile fetches it and
-        # compiles it (needs a GPU) to a .nequip.pth that from_compiled_model loads.
-        # torchscript not aotinductor: aotinductor's missing c-shim for
-        # aten._linalg_det incorrectly compiles atomic_energy on the OAM models.
-        # Cache + lock so it builds once.
         url = Model.from_ref(model_key).metadata["checkpoint_url"]
         registry = f"nequip.net:{url.split('nequip.net/models/')[-1]}"
-        compiled = f"{CHECKPOINT_DIR}/{model_key}-{device}.nequip.pth"
+        if not compile_aoti:
+            # private nequip API, but the only eager loader for saved/registry models
+            return NequIPCalculator._from_saved_model(  # noqa: SLF001
+                registry, device=device, compile_mode="eager"
+            )
+        # nequip-compile fetches the registry model and compiles it (needs a GPU) to a
+        # .nequip.pt2 that from_compiled_model loads. aotinductor because torch>=2.10
+        # dropped TorchScript compilation and older torch's TorchScript breaks on
+        # Python 3.14 annotations (torch<2.10 AOTI lacked the aten._linalg_det c-shim,
+        # miscompiling atomic_energy on the OAM models). Cache + lock: builds once.
+        compiled = f"{CHECKPOINT_DIR}/{model_key}-{device}.nequip.pt2"
         _run_to_atomic_output(
             [
                 "nequip-compile",
                 registry,
                 "{output}",
                 "--mode",
-                "torchscript",
+                "aotinductor",
                 "--device",
                 device,
                 "--target",
@@ -804,9 +943,10 @@ def _nequip(model_key: str) -> Callable[[str], Calculator]:
             compiled,
             tool_packages=("nequip",),
         )
-        return NequIPCalculator.from_compiled_model(
+        calc = NequIPCalculator.from_compiled_model(
             compile_path=compiled, device=device
         )
+        return _with_acceleration(calc, "torch_aot_inductor")
 
     return make_calc
 
@@ -915,7 +1055,7 @@ def _chgnet(device: str) -> Calculator:
     return CHGNetCalculator(use_device=device)
 
 
-def _m3gnet(device: str) -> Calculator:  # noqa: ARG001 - matgl manages device
+def _m3gnet(device: str) -> Calculator:
     import matgl
     from matgl.ext.ase import PESCalculator
 
@@ -923,7 +1063,11 @@ def _m3gnet(device: str) -> Calculator:  # noqa: ARG001 - matgl manages device
     # backend and removed this checkpoint entirely in v4, so pin matgl<4 + DGL.
     # matgl 3.x set_backend expects the uppercase "DGL"/"PYG" literal.
     matgl.set_backend("DGL")
-    return PESCalculator(matgl.load_model("M3GNet-MP-2021.2.8-PES"))
+    # load_model returns a CPU model and PESCalculator has no device argument; its
+    # calculate() moves each graph to the potential's device, so place the potential
+    # on the requested device (earlier runs silently stayed on CPU)
+    potential = matgl.load_model("M3GNet-MP-2021.2.8-PES").to(device)
+    return PESCalculator(potential)
 
 
 def _equflash(device: str, checkpoint: str) -> Calculator:
@@ -983,6 +1127,12 @@ def _deepmd_spec(
 
 CALCULATORS: _CalcRegistry = _CalcRegistry(
     {
+        "mace_soyo_mptrj": _checkpoint_spec(
+            "mace_soyo_mptrj", _mace_soyo("mptraj"), ext=".pth"
+        ),
+        "mace_soyo_oam": _checkpoint_spec(
+            "mace_soyo_oam", _mace_soyo("salexmp"), ext=".pth"
+        ),
         "mace_mp_0": _runtime_calc_spec("mace_mp_0", _mace("medium")),
         "mace_mpa_0": _runtime_calc_spec("mace_mpa_0", _mace("medium-mpa-0")),
         "orb_v2": _runtime_calc_spec("orb_v2", _orb("orb-v2")),
@@ -1016,7 +1166,10 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
         "prophet_oame_mbd": _checkpoint_spec("prophet_oame_mbd", _prophet, ext=".pt"),
         "nequip_mp_l_0_1": _named_spec(_nequip, "nequip_mp_l_0_1"),
         "nequip_oam_l_0_1": _named_spec(_nequip, "nequip_oam_l_0_1"),
-        "nequip_oam_xl_0_1": _named_spec(_nequip, "nequip_oam_xl_0_1"),
+        # eager: its AOTI package SIGFPEs in the aten._linalg_det proxy fallback
+        "nequip_oam_xl_0_1": _runtime_calc_spec(
+            "nequip_oam_xl_0_1", _nequip("nequip_oam_xl_0_1", compile_aoti=False)
+        ),
         "allegro_mp_l_0_1": _named_spec(_nequip, "allegro_mp_l_0_1"),
         "allegro_oam_l_0_1": _named_spec(_nequip, "allegro_oam_l_0_1"),
         "matris_10m_oam": _checkpoint_spec(
@@ -1074,9 +1227,18 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
         "dpa_4_0_pro_mptrj": _deepmd_spec(
             "dpa_4_0_pro_mptrj", _deepmd_freeze, ext=".pt"
         ),
+        # eager for every task: its registered diatomics ran the eager checkpoint and
+        # the frozen .pt2 fails on ghost-free isolated dimers (NB its 2026-09-05
+        # kappa harmonic run used the frozen .pt2 via _deepmd_freeze)
         "dpa_4_0_1_pro_mptrj": _deepmd_spec(
-            "dpa_4_0_1_pro_mptrj", _deepmd_freeze, ext=".pt"
+            "dpa_4_0_1_pro_mptrj", _deepmd_eager, ext=".pt"
         ),
+        "dpa_4_1_air_oam": _deepmd_spec("dpa_4_1_air_oam", _DPA4_GRAPH, ext=".pt"),
+        "dpa_4_1_max_oam": _deepmd_spec("dpa_4_1_max_oam", _DPA4_GRAPH, ext=".pt"),
+        "dpa_4_1_max_oam_pft": _deepmd_spec(
+            "dpa_4_1_max_oam_pft", _DPA4_GRAPH, ext=".pt"
+        ),
+        "dpa_4_1c_air_oam": _deepmd_spec("dpa_4_1c_air_oam", _DPA4C_GRAPH, ext=".pt"),
         "equflash_29m_oam": _checkpoint_spec("equflash_29m_oam", _equflash, ext=".pt"),
         "equflashv2_45m_oam": _checkpoint_spec(
             "equflashv2_45m_oam", _equflash, ext=".pt"
@@ -1183,3 +1345,70 @@ def load_calculator(
             )
         kwargs["checkpoint"] = checkpoint
     return calc_spec.make_calc(device, **kwargs)
+
+
+def load_calculator_with_runtime(
+    model_key: str,
+    device: str | None = None,
+    dtype: str = DEFAULT_DTYPE,
+    checkpoint: str | None = None,
+) -> tuple[Calculator, dict[str, Any]]:
+    """load_calculator() plus the per-process run provenance every task runner
+    records with its costs: where the model actually runs (hpc.detect_runtime),
+    acceleration flags, the factory call's wall time (lazy JIT warm-up stays in the
+    tasks' steady-state run time), package versions and host/Slurm identity.
+
+    Raises:
+        ValueError: If a torch model's weights are not on the requested device type
+            or not in the requested dtype (for factories that take a dtype).
+    """
+    from packaging.requirements import Requirement
+
+    from matbench_discovery.hpc import detect_runtime, package_versions
+
+    model_key = resolve_calculator_key(model_key)
+    device = resolve_device(model_key, device)
+    load_start = time.perf_counter()
+    calculator = load_calculator(
+        model_key, device=device, dtype=dtype, checkpoint=checkpoint
+    )
+    load_time_sec = round(time.perf_counter() - load_start, 2)
+    runtime: dict[str, Any] = {
+        "cost_source": "runner",
+        **detect_runtime(calculator, requested_device=device),
+    }
+    if runtime["backend"] == "torch" and runtime["device"] != device.split(":", 1)[0]:
+        raise ValueError(
+            f"{model_key} weights are on {runtime['device']!r} but {device=} was "
+            "requested: the calculator factory ignores the device"
+        )
+    calc_spec = CALCULATORS[model_key]
+    if "dtype" in inspect.signature(calc_spec.make_calc).parameters:
+        if runtime.get("dtype", dtype) != dtype:
+            raise ValueError(
+                f"{model_key} weights are {runtime['dtype']} but {dtype=} was requested"
+            )
+        runtime["dtype"] = dtype
+    runtime |= {
+        "acceleration": list(getattr(calculator, ACCELERATION_ATTR, ())),
+        "load_time_sec": load_time_sec,
+        "n_processes": 1,
+        "hostname": socket.gethostname(),
+    }
+    for env_key in ("SLURM_JOB_ID", "SLURM_ARRAY_TASK_ID"):
+        if env_value := os.getenv(env_key):
+            runtime[env_key.casefold()] = env_value
+    model_packages = (Requirement(dep).name for dep in calc_spec.deps)
+    runtime["versions"] = package_versions(
+        (
+            *("ase", "numpy", "pymatgen", "torch", "jax", "tensorflow", "scipy"),
+            # kappa: seekpath alone fixes the band path, labels and q-point sampling
+            *("matbench-discovery", "phonopy", "phono3py", "seekpath", "spglib"),
+            *("moyopy", *model_packages),
+        )
+    )
+    print(
+        f"Loaded {model_key} on {runtime['hardware']} ({runtime['device']}, "
+        f"{runtime.get('dtype', 'dtype n/a')}) in {load_time_sec} s"
+    )
+    return calculator, runtime

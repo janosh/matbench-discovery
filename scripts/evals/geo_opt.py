@@ -42,7 +42,7 @@ for model in cli_args.models:
     if not file_ref_name(metrics.get("pred_file")):
         continue
 
-    symprec_metrics = metrics.get(symprec_str, {})
+    symprec_metrics = metrics.get(symprec_str) or {}
     analysis_ref = symprec_metrics.get("analysis_file")
     if not (analysis_name := file_ref_name(analysis_ref)):
         print(f"Warning: {model.label} has no analysis file for {symprec_str}")

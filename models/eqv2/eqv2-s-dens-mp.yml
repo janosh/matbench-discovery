@@ -46,13 +46,12 @@ license:
   checkpoint_url: https://huggingface.co/facebook/OMAT24/blob/main/LICENSE
 
 environment:
+  # Display/provenance pins; install is owned by project (override-dependencies).
   dependencies:
   - 'fairchem-core[torch-extras]==1.10.0'
-  - torch==2.4.0
-  - numpy<2
-  - scipy<1.15
-  python_version: '3.12'
-  find_links: ['https://data.pyg.org/whl/torch-2.4.0+cu121.html']
+  - torch==2.10.0+cu126
+  python_version: '3.14'
+  project: models/eqv2/fairchem-env
 openness: OSOD
 architecture_types: [transformer]
 train_task: S2EFS
@@ -104,12 +103,12 @@ notes:
 metrics:
   diatomics:
     pred_file:
-      name: models/eqv2/eqv2-s-dens-mp/2026-06-29-diatomics.json.gz
-      url: https://figshare.com/files/66104591
-      size: 705266
-      md5: 73f5e18d8e0bc98982acb4eda73a715f
-    hardware: NVIDIA H200
-    run_time_sec: 435.9
+      name: models/eqv2/eqv2-s-dens-mp/2026-10-19-diatomics.json.gz
+      url: https://figshare.com/files/70349754
+      size: 709351
+      md5: 6b016d5739bb07bb4f2c9c98ecc78ca6
+    cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 478.75, load_time_sec: 22.34, max_rss_gb: 2.23, max_gpu_mem_gb: 0.234}
+    excluded_formula_reasons: {}
     pbe_wall_dist_mae: 1.262
     pbe_energy_mae: 2.96
     pbe_bond_length_error: 1.038
@@ -129,6 +128,18 @@ metrics:
       - Rb
       - Sr
       missing_elements: []
+    reproducibility:
+      checked: '2026-10-20'
+      status: reproduced
+      tolerance: 0.001
+      runs:
+      - label: published run (2026-06-29, H200)
+        file:
+          name: models/eqv2/eqv2-s-dens-mp/2026-06-29-diatomics.json.gz
+          url: https://figshare.com/files/66104591
+          size: 705266
+          md5: 73f5e18d8e0bc98982acb4eda73a715f
+      rel_changes: {}
   discovery:
     pred_file:
       name: models/eqv2/eqv2-s-dens-mp/2024-10-18-discovery.csv.gz
@@ -166,41 +177,40 @@ metrics:
   geo_opt:
     pred_file:
       name: models/eqv2/eqv2-s-dens-mp/2024-10-18-geo-opt.jsonl.gz
-      url: https://figshare.com/files/53153468
-      size: 216323234
-      md5: 77a5e20ff95239aa3a64c25b2664afbc
+      url: https://figshare.com/files/70327953
+      size: 217166844
+      md5: a5fdfd11e44a0617bcc4beb9cd09d137
     symprec=1e-5:
-      rmsd: 0.0757
-      n_sym_ops_mae: 10.1045
-      symmetry_decrease: 0.8671
-      symmetry_match: 0.1322
-      symmetry_increase: 0.0006
-      n_structures: 256614
+      rmsd: 0.0757 # unitless
+      n_sym_ops_mae: 10.1045 # unitless
+      symmetry_decrease: 0.8671 # fraction
+      symmetry_match: 0.1322 # fraction
+      symmetry_increase: 0.0006 # fraction
+      n_structures: 256614 # count
       analysis_file:
-        name: models/eqv2/eqv2-s-dens-mp/2024-10-18-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/53504534
-        size: 6375057
-        md5: 479afff2378ae0343816918939d5f6f8
+        name: models/eqv2/eqv2-s-dens-mp/2024-10-18-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333692
+        size: 6224438
+        md5: 0df11eaa4355e741a216f0b6810aab8c
     symprec=1e-2:
-      rmsd: 0.0757
-      n_sym_ops_mae: 3.7426
-      symmetry_decrease: 0.3724
-      symmetry_match: 0.5396
-      symmetry_increase: 0.0653
-      n_structures: 256614
+      rmsd: 0.0757 # unitless
+      n_sym_ops_mae: 3.7426 # unitless
+      symmetry_decrease: 0.3724 # fraction
+      symmetry_match: 0.5396 # fraction
+      symmetry_increase: 0.0653 # fraction
+      n_structures: 256614 # count
       analysis_file:
-        name: models/eqv2/eqv2-s-dens-mp/2024-10-18-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/53504540
-        size: 7504183
-        md5: 9e522b6cfb62c727f8c7d6a9b58da97a
+        name: models/eqv2/eqv2-s-dens-mp/2024-10-18-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333695
+        size: 6971081
+        md5: 7b785d894804b160067db12f7d7f9043
   md:
     pred_file:
       name: models/eqv2/eqv2-s-dens-mp/2026-06-28-md-metrics.csv.gz
-      url: https://figshare.com/files/66048869
-      size: 1585
-      md5: b8d9f8e307a23eab7f7b9840f2bbe2dd
-    hardware: NVIDIA H200
-    run_time_sec: 93184.12
+      url: https://figshare.com/files/66574820
+      size: 1750
+      md5: 090e7134ff78b28e1bcbbd42d978d6f3
+    cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 93184.11}
     energy_rmse: 6.0618
     force_rmse: 110.1912
     rdf_error: 5.8936
@@ -223,15 +233,20 @@ metrics:
       κ_failure_rate: 0.0194
       imaginary_mode_rate: 0.0194
       spectrum_w1: 1.2869
-      phonon_file:
-        name: models/eqv2/eqv2-s-dens-mp/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1291126923
-        md5: b631c9d513196634cfb4325e2bff4b54
-      force_file:
-        name: models/eqv2/eqv2-s-dens-mp/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 8809274
-        md5: 8187d08e2df1034e5aba63340d5b7b9d
-      run_info_file:
-        name: models/eqv2/eqv2-s-dens-mp/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 8223
-        md5: db0f959a6094f1a643517c86de0307cc
+      harmonic:
+        phonon_file:
+          name: models/eqv2/eqv2-s-dens-mp/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334406
+          size: 22708771
+          md5: d96034da81b9f257eed65bf0215a38fc
+        force_file:
+          name: models/eqv2/eqv2-s-dens-mp/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334409
+          size: 8809274
+          md5: 8187d08e2df1034e5aba63340d5b7b9d
+        run_info_file:
+          name: models/eqv2/eqv2-s-dens-mp/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334412
+          size: 8223
+          md5: db0f959a6094f1a643517c86de0307cc
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 937.38, max_rss_gb: 2.528, max_gpu_mem_gb: 28.782}

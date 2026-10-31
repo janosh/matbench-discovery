@@ -30,7 +30,7 @@ trained_by:
   orcid: https://orcid.org/0009-0004-6801-7033
 
 repo: https://github.com/HPC-AI-Team/MatRIS
-docs: null
+docs:
 paper: https://arxiv.org/abs/2603.02002
 doi: https://doi.org/10.48550/arXiv.2603.02002
 pr_url: https://github.com/janosh/matbench-discovery/pull/293
@@ -43,12 +43,12 @@ license:
 
 environment:
   dependencies:
-  - matris @ git+https://github.com/HPC-AI-Team/MatRIS
-  - torch==2.6.0
+  - matris @ git+https://github.com/HPC-AI-Team/MatRIS@677c6401227fcbc0553ed2dbf7f207a49ccb6e73
+  - torch==2.10.0
   - numpy<3
   - ase==3.26.0
   - pymatgen==2025.10.07
-  python_version: '3.12'
+  python_version: '3.14'
 openness: OSOD
 architecture_types: [gnn]
 train_task: S2EFSM
@@ -95,12 +95,12 @@ notes:
 metrics:
   diatomics:
     pred_file:
-      name: models/matris/matris-10m-mp/2026-06-28-diatomics.json.gz
-      url: https://figshare.com/files/66104633
-      size: 240049
-      md5: 99623b97eccf78c789a592397b42208b
-    hardware: NVIDIA H200
-    run_time_sec: 788.18
+      name: models/matris/matris-10m-mp/2026-10-19-diatomics.json.gz
+      url: https://figshare.com/files/70350111
+      size: 245699
+      md5: d71905ef9ce4ae6af4dbc34a78ec42f9
+    cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 387.23, load_time_sec: 0.59, max_rss_gb: 1.829, max_gpu_mem_gb: 0.111}
+    excluded_formula_reasons: {}
     pbe_wall_dist_mae: 0.6548
     pbe_energy_mae: 3.293
     pbe_bond_length_error: 0.7708
@@ -119,6 +119,18 @@ metrics:
       failed_elements:
       - Cd
       missing_elements: []
+    reproducibility:
+      checked: '2026-10-20'
+      status: reproduced
+      tolerance: 0.001
+      runs:
+      - label: published run (2026-06-28, H200)
+        file:
+          name: models/matris/matris-10m-mp/2026-06-28-diatomics.json.gz
+          url: https://figshare.com/files/66104633
+          size: 240049
+          md5: 99623b97eccf78c789a592397b42208b
+      rel_changes: {}
   discovery:
     pred_file:
       name: models/matris/matris-10m-mp/2025-10-29-discovery.csv.gz
@@ -160,37 +172,36 @@ metrics:
       size: 141527414
       md5: ac4f5e71eea2a4f3cbd23f29fe072974
     symprec=1e-5:
-      rmsd: 0.0717
-      n_sym_ops_mae: 3.1952
-      symmetry_decrease: 0.2395
-      symmetry_match: 0.5766
-      symmetry_increase: 0.172
-      n_structures: 256932
+      rmsd: 0.0717 # unitless
+      n_sym_ops_mae: 3.1953 # unitless
+      symmetry_decrease: 0.2395 # fraction
+      symmetry_match: 0.5766 # fraction
+      symmetry_increase: 0.172 # fraction
+      n_structures: 256932 # count
       analysis_file:
-        name: models/matris/matris-10m-mp/2025-10-29-geo-opt-symprec=1e-5-moyo=0.4.6.csv.gz
-        url: https://figshare.com/files/59234123
-        size: 7438183
-        md5: 7f3d0a13b79b276d794ee84ae912af1a
+        name: models/matris/matris-10m-mp/2025-10-29-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333860
+        size: 6967461
+        md5: 84b47b1c5f310490d071f0340bc0fd46
     symprec=1e-2:
-      rmsd: 0.0717
-      n_sym_ops_mae: 1.9203
-      symmetry_decrease: 0.0789
-      symmetry_match: 0.7992
-      symmetry_increase: 0.1145
-      n_structures: 256932
+      rmsd: 0.0717 # unitless
+      n_sym_ops_mae: 1.9202 # unitless
+      symmetry_decrease: 0.0789 # fraction
+      symmetry_match: 0.7992 # fraction
+      symmetry_increase: 0.1145 # fraction
+      n_structures: 256932 # count
       analysis_file:
-        name: models/matris/matris-10m-mp/2025-10-29-geo-opt-symprec=1e-2-moyo=0.4.6.csv.gz
-        url: https://figshare.com/files/59234135
-        size: 7367366
-        md5: 4aaefdbd9503e866c7bd0a9124b8b1ee
+        name: models/matris/matris-10m-mp/2025-10-29-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333863
+        size: 6878973
+        md5: 9a8135fc21a7438348ed478826e679d9
   md:
     pred_file:
       name: models/matris/matris-10m-mp/2026-06-28-md-metrics.csv.gz
-      url: https://figshare.com/files/66048899
-      size: 1585
-      md5: 2356dadd90a1ff8e56875cbc0bea7add
-    hardware: NVIDIA H200
-    run_time_sec: 508484.08
+      url: https://figshare.com/files/66574937
+      size: 1748
+      md5: 913cb365a99bc095597a119b294104cf
+    cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 508484.1}
     energy_rmse: 0.9355
     force_rmse: 100.3604
     rdf_error: 4.2261
@@ -213,15 +224,20 @@ metrics:
         url: https://figshare.com/files/68221372
         size: 8421196
         md5: 27fb54978badcf104ce4f52a6d66d8b2
-      phonon_file:
-        name: models/matris/matris-10m-mp/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1311794095
-        md5: 6968e65bf0399dff82bc3c693de5b32f
-      force_file:
-        name: models/matris/matris-10m-mp/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 8767150
-        md5: 391f6ac83cd5a925a7bf4b0705b35eb4
-      run_info_file:
-        name: models/matris/matris-10m-mp/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 7654
-        md5: aea1f619732a139c336bd4767c314816
+      harmonic:
+        phonon_file:
+          name: models/matris/matris-10m-mp/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334529
+          size: 23649585
+          md5: 99eec59a2ae4ec371972b506850d6648
+        force_file:
+          name: models/matris/matris-10m-mp/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334532
+          size: 8767150
+          md5: 391f6ac83cd5a925a7bf4b0705b35eb4
+        run_info_file:
+          name: models/matris/matris-10m-mp/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334535
+          size: 7654
+          md5: aea1f619732a139c336bd4767c314816
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 1150.53, max_rss_gb: 2.279, max_gpu_mem_gb: 88.601}

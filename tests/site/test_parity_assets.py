@@ -74,7 +74,9 @@ def model_has_phonon_sidecar(model: Model, kind: str) -> bool:
     if kind != "kappa":
         return False
     kappa = (model.metrics.get("phonons") or {}).get("kappa_103") or {}
-    return bool(kappa.get("phonon_file"))
+    # full kappa runs store it top-level, harmonic-only reruns under `harmonic`
+    harmonic = kappa.get("harmonic") or {}
+    return bool(kappa.get("phonon_file") or harmonic.get("phonon_file"))
 
 
 @pytest.fixture(scope="module")
@@ -235,18 +237,21 @@ def test_parity_asset_cache_checks_bytes_and_avoids_downloads(
     assert session.get.call_count == int(cache_state == "missing")
 
 
+def read_workflow(name: str) -> str:
+    """Return the text of one GitHub Actions workflow file."""
+    with open(f"{ROOT}/.github/workflows/{name}", encoding="utf-8") as file:
+        return file.read()
+
+
 @pytest.mark.parametrize(
     ("pr_state", "head_sha", "accepted"),
     [("open", "a" * 40, True), ("open", "b" * 40, False), ("closed", "a" * 40, False)],
 )
-def test_workflows_refresh_and_deploy_exact_parity_assets(
+def test_ingest_resolver_accepts_only_reviewed_open_pr(
     tmp_path: Path, pr_state: str, head_sha: str, accepted: bool
 ) -> None:
-    """Automation refreshes, deploys, and prunes exact parity assets."""
-    with open(
-        f"{ROOT}/.github/workflows/update-site-figs.yml", encoding="utf-8"
-    ) as file:
-        workflow = file.read()
+    """The ingest resolver accepts only an open PR at the reviewed head SHA."""
+    workflow = read_workflow("update-site-figs.yml")
     resolver = yaml.safe_load(workflow)["jobs"]["update-site-figs"]["steps"][0]
     output_file = tmp_path / "outputs"
     bash_path = shutil.which("bash")
@@ -289,6 +294,11 @@ def test_workflows_refresh_and_deploy_exact_parity_assets(
         assert f"head_sha={head_sha}\n" in output_file.read_text()
     else:
         assert not output_file.is_file()
+
+
+def test_workflows_refresh_and_deploy_exact_parity_assets() -> None:
+    """Automation refreshes, deploys, and prunes exact parity assets."""
+    workflow = read_workflow("update-site-figs.yml")
     refresh = workflow.split("- name: Refresh payloads without secrets", 1)[1].split(
         "- name: Recheck submission head before archival", 1
     )[0]
@@ -313,8 +323,7 @@ def test_workflows_refresh_and_deploy_exact_parity_assets(
     )
     assert '"${MODEL_ARGS[@]}" --payloads-only' in refresh
     assert "--full-roster \\\n            --payloads-only" in refresh
-    with open(f"{ROOT}/.github/workflows/gh-pages.yml", encoding="utf-8") as file:
-        deploy = file.read()
+    deploy = read_workflow("gh-pages.yml")
     assert (
         ".base.asset, (.model_assets[] | .[].asset), "
         "((.structure_bundles // [])[] | .asset)" in deploy
@@ -341,8 +350,7 @@ def test_workflows_refresh_and_deploy_exact_parity_assets(
     assert "now - 3600" in cleanup
     assert 'comm -23 - "$protected"' in cleanup
     assert "gh release delete-asset v1.0.0" in cleanup
-    with open(f"{ROOT}/.github/workflows/model-pr-guard.yml", encoding="utf-8") as file:
-        guard = file.read()
+    guard = read_workflow("model-pr-guard.yml")
     assert "parity/(energy|kappa)-parity-manifest" in guard
 
 
@@ -787,13 +795,25 @@ def test_parity_generators_reject_empty_target_lists(
 
 
 @pytest.mark.parametrize(
-    "option", ["--structure-shard-size", "--structure-bundle-size"]
+    "argv",
+    [
+        *(
+            [option, value]
+            for option in ("--structure-shard-size", "--structure-bundle-size")
+            for value in ("0", "-1")
+        ),
+        # debug row limits must never overwrite the committed manifest
+        ["--limit-rows", "5"],
+        ["--limit-rows", "5", "--manifest", energy_assets.MANIFEST_PATH],
+        ["--limit-rows", "0", "--manifest", "scratch.json"],
+    ],
 )
-@pytest.mark.parametrize("value", ["0", "-1"])
-def test_energy_rejects_non_positive_structure_sizes(option: str, value: str) -> None:
-    """Structure shard and bundle sizes must be positive."""
+def test_energy_rejects_invalid_args(argv: list[str]) -> None:
+    """Sizes and row limits must be positive; row limits need a scratch manifest."""
     with pytest.raises(SystemExit):
-        energy_assets.parse_args([option, value])
+        energy_assets.parse_args(argv)
+    scratch_args = energy_assets.parse_args(["--limit-rows", "5", "--manifest", "x"])
+    assert scratch_args.limit_rows == 5
 
 
 @pytest.mark.parametrize("missing", ["structure", "metadata"])

@@ -26,4 +26,4 @@ jobs:
       - uses: ./.github/actions/setup-site
 
       - name: Run prek
-        uses: j178/prek-action@v3.0.0
+        uses: j178/prek-action@main

@@ -93,22 +93,19 @@ def canonicalize_wyckoffs(element_wyckoffs: str, spg_num: int) -> str:
     return min(scored_wyckoffs, key=lambda x: (x[1], x[0]))[0]
 
 
-def get_protostructure_label(
-    struct: AnyStructure, *, symprec: float = 0.1, raise_errors: bool = False
-) -> str | None:
+def get_protostructure_label(struct: AnyStructure, *, symprec: float = 0.1) -> str:
     """Get AFLOW-style proto-structure label using Moyopy for symmetry detection.
 
     Args:
         struct (AnyStructure): pymatgen Structure object or ase.Atoms object.
         symprec (float): Initial symmetry precision for Moyopy. Defaults to 0.1.
-        raise_errors (bool): Whether to raise ValueError for failing structures or
-            return the error message as string instead of the prototype label. Defaults
-            to False.
 
     Returns:
-        str: protostructure_label which is constructed as `aflow_label:chemsys` or
-            explanation of failure if symmetry detection failed and `raise_errors`
-            is False.
+        str: protostructure_label which is constructed as `aflow_label:chemsys`.
+
+    Raises:
+        ValueError: If the detected Wyckoff multiplicities do not reproduce the
+            structure's composition (failed symmetry detection).
     """
     import moyopy.interface
     from pymatgen.core import Structure
@@ -180,12 +177,9 @@ def get_protostructure_label(
     # Verify multiplicities match composition
     observed_formula = Composition(element_dict).reduced_formula
     if observed_formula != pmg_struct.reduced_formula:
-        err_msg = (
+        raise ValueError(
             f"Invalid WP multiplicities - {prototype_label}, expected "
             f"{observed_formula} to be {pmg_struct.reduced_formula}"
         )
-        if raise_errors:
-            raise ValueError(err_msg)
-        return err_msg
 
     return prototype_label

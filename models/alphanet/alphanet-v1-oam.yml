@@ -55,14 +55,14 @@ license:
 environment:
   dependencies:
   - alphanet @ git+https://github.com/zmyybc/AlphaNet
-  - torch==2.5.1
-  - torch-geometric==2.6.1
+  - torch==2.10.0
+  - torch-geometric==2.7.0
   - torch-scatter
   - numpy<2
   - ase==3.24.0
   - pymatgen==2024.6.10
-  python_version: '3.12'
-  find_links: ['https://data.pyg.org/whl/torch-2.5.1+cu121.html']
+  python_version: '3.14'
+  find_links: ['https://data.pyg.org/whl/torch-2.10.0+cu128.html']
 openness: OSOD
 architecture_types: [gnn]
 train_task: S2EFS
@@ -104,14 +104,13 @@ notes:
 metrics:
   diatomics:
     pred_file:
-      name: models/alphanet/alphanet-v1-oam/2026-06-28-diatomics.json.gz
-      url: https://figshare.com/files/66104576
-      size: 216965
-      md5: 6b87823ef069ca5595ac8c81b79387a2
+      name: models/alphanet/alphanet-v1-oam/2026-10-19-diatomics.json.gz
+      url: https://figshare.com/files/70349724
+      size: 222196
+      md5: 02749b138bfe47a187e801e223520b6f
+    cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 190.52, load_time_sec: 4.05, max_rss_gb: 2.073, max_gpu_mem_gb: 0.092}
     excluded_formula_reasons:
       He-He: exploding errors
-    hardware: NVIDIA H200
-    run_time_sec: 196.1
     pbe_wall_dist_mae: 0.1274
     pbe_energy_mae: 0.8921
     pbe_bond_length_error: 0.3002
@@ -129,6 +128,18 @@ metrics:
       n_eligible: 73
       failed_elements: []
       missing_elements: []
+    reproducibility:
+      checked: '2026-10-20'
+      status: reproduced
+      tolerance: 0.001
+      runs:
+      - label: published run (2026-06-28, H200)
+        file:
+          name: models/alphanet/alphanet-v1-oam/2026-06-28-diatomics.json.gz
+          url: https://figshare.com/files/66104576
+          size: 216965
+          md5: 6b87823ef069ca5595ac8c81b79387a2
+      rel_changes: {}
   discovery:
     pred_file:
       name: models/alphanet/alphanet-v1-oam/2025-07-24-discovery.csv.gz
@@ -170,37 +181,36 @@ metrics:
       size: 154869476
       md5: 6580087ae3a8fbc779e1ebc3d7c6b9cd
     symprec=1e-5:
-      rmsd: 0.0793
-      n_sym_ops_mae: 10.0801
-      symmetry_decrease: 0.8505
-      symmetry_match: 0.1416
-      symmetry_increase: 0.0067
-      n_structures: 256963
+      rmsd: 0.0793 # unitless
+      n_sym_ops_mae: 10.0801 # unitless
+      symmetry_decrease: 0.8505 # fraction
+      symmetry_match: 0.1416 # fraction
+      symmetry_increase: 0.0067 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/alphanet/alphanet-v1-oam/2025-07-24-geo-opt-symprec=1e-5-moyo=0.4.4.csv.gz
-        url: https://figshare.com/files/56871815
-        size: 6383005
-        md5: a81f0006faa608f9e6fb358271539544
+        name: models/alphanet/alphanet-v1-oam/2025-07-24-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333599
+        size: 6221408
+        md5: a2599409f5c7266e11e53cc82577b1d7
     symprec=1e-2:
-      rmsd: 0.0793
-      n_sym_ops_mae: 2.6275
-      symmetry_decrease: 0.1446
-      symmetry_match: 0.7431
-      symmetry_increase: 0.1037
-      n_structures: 256963
+      rmsd: 0.0793 # unitless
+      n_sym_ops_mae: 2.6275 # unitless
+      symmetry_decrease: 0.1446 # fraction
+      symmetry_match: 0.7431 # fraction
+      symmetry_increase: 0.1037 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/alphanet/alphanet-v1-oam/2025-07-24-geo-opt-symprec=1e-2-moyo=0.4.4.csv.gz
-        url: https://figshare.com/files/56871818
-        size: 7406512
-        md5: b84e36c20508ee3f80167f939eb7e883
+        name: models/alphanet/alphanet-v1-oam/2025-07-24-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333602
+        size: 6870956
+        md5: 741696369ee7a645a1ee012d2a730e45
   md:
     pred_file:
       name: models/alphanet/alphanet-v1-oam/2026-06-28-md-metrics.csv.gz
-      url: https://figshare.com/files/66048851
-      size: 1560
-      md5: db07ab792645174041a53b1a7aaa146e
-    hardware: NVIDIA H200
-    run_time_sec: 33750.92
+      url: https://figshare.com/files/66574754
+      size: 1712
+      md5: ff833ff0ff43e9e195bb6690cc448001
+    cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 33750.92}
     energy_rmse: 1.3423
     force_rmse: 142.3046
     rdf_error: 5.2445
@@ -212,18 +222,6 @@ metrics:
     n_systems: 17
   phonons:
     kappa_103:
-      run_info_file:
-        name: models/alphanet/alphanet-v1-oam/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 7834
-        md5: 07290f72279e0e03b96a175b0d0bb7b5
-      phonon_file:
-        name: models/alphanet/alphanet-v1-oam/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1207370385
-        md5: 2a4d99152d76ed5c63281c503a04ed5c
-      force_file:
-        name: models/alphanet/alphanet-v1-oam/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 8372780
-        md5: 44ab1fe099bb088c16fbfdec74daf58f
       κ_SRME: 0.6435
       pred_file:
         name: models/alphanet/alphanet-v1-oam/2025-04-20-phonons-kappa-103.json.gz
@@ -235,3 +233,20 @@ metrics:
       κ_failure_rate: 0.0388
       imaginary_mode_rate: 0.0388
       spectrum_w1: 0.2395
+      harmonic:
+        phonon_file:
+          name: models/alphanet/alphanet-v1-oam/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334151
+          size: 22677880
+          md5: 13192c4cebd82b235169052232d60e1a
+        force_file:
+          name: models/alphanet/alphanet-v1-oam/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334154
+          size: 8372780
+          md5: 44ab1fe099bb088c16fbfdec74daf58f
+        run_info_file:
+          name: models/alphanet/alphanet-v1-oam/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334148
+          size: 7834
+          md5: 07290f72279e0e03b96a175b0d0bb7b5
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 459.58, max_rss_gb: 2.324, max_gpu_mem_gb: 12.769}

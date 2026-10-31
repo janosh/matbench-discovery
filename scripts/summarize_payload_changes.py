@@ -23,10 +23,10 @@ def canonical_json(value: object) -> str:
     return json.dumps(value, allow_nan=False, separators=(",", ":"), sort_keys=True)
 
 
-def _git_output(*args: str) -> str:
-    """Return text output from a checked Git command."""
+def _git_output(*args: str, cwd: str | None = None) -> str:
+    """Return text output from a checked Git command run in cwd."""
     command = ["git", *args]
-    return subprocess.check_output(command, text=True)
+    return subprocess.check_output(command, text=True, cwd=cwd)
 
 
 def _parse_payload(
@@ -124,7 +124,10 @@ def _change_summary(
 
 
 def summarize() -> str:
-    """Return a Markdown summary of all changed multi-model payload records."""
+    """Return a Markdown summary of all changed multi-model payload records in the
+    Git work tree containing the cwd (CI runs this trusted script inside pr-tree).
+    """
+    repo_root = _git_output("rev-parse", "--show-toplevel").strip()
     changes = {
         entry[3:]: entry[:2]
         for entry in _git_output(
@@ -136,17 +139,18 @@ def summarize() -> str:
             "--",
             "site/src/figs",
             "site/src/routes/models/per-element-each-errors.jsonl",
+            cwd=repo_root,
         ).split("\0")
         if entry and entry[3:].endswith(".jsonl")
     }
     rows: list[str] = []
     for path, status in sorted(changes.items()):
         new_text = ""
-        if os.path.isfile(path):
-            with open(path, encoding="utf-8") as file:
+        if os.path.isfile(abs_path := f"{repo_root}/{path}"):
+            with open(abs_path, encoding="utf-8") as file:
                 new_text = file.read()
         old_text = (
-            _git_output("show", f"HEAD:{path.replace(os.sep, '/')}")
+            _git_output("show", f"HEAD:{path.replace(os.sep, '/')}", cwd=repo_root)
             if status != "??" and "A" not in status
             else ""
         )

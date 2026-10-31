@@ -7,25 +7,25 @@ dates:
 lifecycle: superseded
 superseded_by: sevennet-l3i5
 authors:
-  - name: Yutack Park
-    affiliation: Seoul National University
-    email: parkyutack@snu.ac.kr
-    orcid: https://orcid.org/0009-0008-8690-935X
-  - name: Jaesun Kim
-    affiliation: Seoul National University
-    orcid: https://orcid.org/0009-0000-6646-1318
-  - name: Seungwoo Hwang
-    affiliation: Seoul National University
-    orcid: https://orcid.org/0000-0002-1523-8340
-  - name: Seungwu Han
-    affiliation: Seoul National University, Korea Institute for Advanced Study
-    email: hansw@snu.ac.kr
-    orcid: https://orcid.org/0000-0003-3958-0922
-    corresponding: true
+- name: Yutack Park
+  affiliation: Seoul National University
+  email: parkyutack@snu.ac.kr
+  orcid: https://orcid.org/0009-0008-8690-935X
+- name: Jaesun Kim
+  affiliation: Seoul National University
+  orcid: https://orcid.org/0009-0000-6646-1318
+- name: Seungwoo Hwang
+  affiliation: Seoul National University
+  orcid: https://orcid.org/0000-0002-1523-8340
+- name: Seungwu Han
+  affiliation: Seoul National University, Korea Institute for Advanced Study
+  email: hansw@snu.ac.kr
+  orcid: https://orcid.org/0000-0003-3958-0922
+  corresponding: true
 trained_by:
-  - name: Saerom Choi
-    affiliation: Samsung Advanced Institute of Technology, Seoul National University
-    orcid: https://orcid.org/0009-0004-2240-5428
+- name: Saerom Choi
+  affiliation: Samsung Advanced Institute of Technology, Seoul National University
+  orcid: https://orcid.org/0009-0004-2240-5428
 
 repo: https://github.com/MDIL-SNU/SevenNet
 doi: https://doi.org/10.1021/acs.jctc.4c00190
@@ -42,13 +42,13 @@ license:
 
 environment:
   dependencies:
-    - sevenn
-    - torch==2.2.1
-    - torch-geometric==2.5.2
-    - torch_scatter==2.1.2
-    - ase==3.22.1
-    - pymatgen==2024.6.10
-    - numpy==1.26.4
+  - sevenn
+  - torch==2.2.1
+  - torch-geometric==2.5.2
+  - torch_scatter==2.1.2
+  - ase==3.22.1
+  - pymatgen==2024.6.10
+  - numpy==1.26.4
   python_version: '3.12'
 openness: OSOD
 architecture_types: [gnn]
@@ -131,33 +131,31 @@ metrics:
       size: 143322218
       md5: 5ef0c5b66e4e7e8567eb83a9370b6068
     symprec=1e-5:
-      rmsd: 0.0193
-      n_sym_ops_mae: 2.5921
-      symmetry_decrease: 0.3557
-      symmetry_match: 0.4535
-      symmetry_increase: 0.1446
-      n_structures: 256963     # count
+      rmsd: 0.0848 # unitless
+      n_sym_ops_mae: 2.7178 # unitless
+      symmetry_decrease: 0.3667 # fraction
+      symmetry_match: 0.4412 # fraction
+      symmetry_increase: 0.1451 # fraction
+      n_structures: 256963 # count
+      analysis_file:
+        name: models/sevennet/sevennet-0/2024-07-11-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70334043
+        size: 7858059
+        md5: cb7d1942802cb4f86fd151fe8d8ad7d8
     symprec=1e-2:
-      rmsd: 0.0193
-      n_sym_ops_mae: 1.9558
-      symmetry_decrease: 0.0831
-      symmetry_match: 0.7823
-      symmetry_increase: 0.1262
-      n_structures: 256614     # count
+      rmsd: 0.0848 # unitless
+      n_sym_ops_mae: 1.9379 # unitless
+      symmetry_decrease: 0.0895 # fraction
+      symmetry_match: 0.788 # fraction
+      symmetry_increase: 0.1134 # fraction
+      n_structures: 256963 # count
+      analysis_file:
+        name: models/sevennet/sevennet-0/2024-07-11-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70334049
+        size: 8094513
+        md5: 68c1d9dbbc94c16babedc55f6eef79fd
   phonons:
     kappa_103:
-      run_info_file:
-        name: models/sevennet/sevennet-0/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 8013
-        md5: 19d1f4518ea13d6ae880a477903180d5
-      phonon_file:
-        name: models/sevennet/sevennet-0/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1337970321
-        md5: cf21f89ec3a573aa092b00c2f5708c4e
-      force_file:
-        name: models/sevennet/sevennet-0/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 8818269
-        md5: 73baefb8b0a85ea847b84e75575e13b0
       κ_SRME: 0.762
       pred_file:
         name: models/sevennet/sevennet-0/2024-11-09-phonons-kappa-103.json.gz
@@ -169,3 +167,20 @@ metrics:
       κ_failure_rate: 0.0777
       imaginary_mode_rate: 0.0777
       spectrum_w1: 0.7701
+      harmonic:
+        phonon_file:
+          name: models/sevennet/sevennet-0/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334661
+          size: 23633106
+          md5: 8ca1e3e30d3581ace6231e1734929e50
+        force_file:
+          name: models/sevennet/sevennet-0/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334664
+          size: 8818269
+          md5: 73baefb8b0a85ea847b84e75575e13b0
+        run_info_file:
+          name: models/sevennet/sevennet-0/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334658
+          size: 8013
+          md5: 19d1f4518ea13d6ae880a477903180d5
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 445.26, max_rss_gb: 2.351, max_gpu_mem_gb: 5.023}

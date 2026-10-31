@@ -67,16 +67,34 @@
         "sha256": "89696b62809adf7080ec5de17b6ecaffd818f595908b1877a7556ff3dadfee1d"
       }
     },
-    "dpa-3.1-3m-ft": {
-      "parity": {
-        "asset": "energy-parity-wbm-v1-model-dpa-3.1-3m-ft-0f198d3016f13af5.json.gz",
-        "sha256": "86ee4881ba549d6b4f2fb319fd0833dc02ddd1a8d8a57c989210fe04e184f168"
-      }
-    },
     "dpa-4.0.1-pro-mptrj": {
       "parity": {
         "asset": "energy-parity-wbm-v1-model-dpa-4.0.1-pro-mptrj-19c3c8e40db64393.json.gz",
         "sha256": "6993da5c7bf38ae96ddd8f2a6024b698059dde7804474572b6419ade8a6e7133"
+      }
+    },
+    "dpa-4.1-air-oam": {
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-dpa-4.1-air-oam-4aceaad5c3770c02.json.gz",
+        "sha256": "a07a0edf131d12d57b01a50fa4d102807b96b037b2897c2f7a329f60ca491d80"
+      }
+    },
+    "dpa-4.1-max-oam": {
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-dpa-4.1-max-oam-f25d1abbd5546e11.json.gz",
+        "sha256": "85747b5ec9ffcb83e206be4414e60fdd086225b9e6bfa4a24dd55fc8bcdb0d55"
+      }
+    },
+    "dpa-4.1-max-oam-pft": {
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-dpa-4.1-max-oam-pft-2fdf95ffc514d512.json.gz",
+        "sha256": "6b6b68b9a19eb3f9fab397127cdb5d47e4c68d0f357c1819500dce1c5641e777"
+      }
+    },
+    "dpa-4.1c-air-oam": {
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-dpa-4.1c-air-oam-0af6efc474642f27.json.gz",
+        "sha256": "519a3625dd8d543bc4a1dd86861d8c8c4a72cc121c488a4f8dfccb2396acf6f5"
       }
     },
     "ema-gnn": {
@@ -203,6 +221,18 @@
       "parity": {
         "asset": "energy-parity-wbm-v1-model-mace-mpa-0-4929e5bb5473ff6a.json.gz",
         "sha256": "c42fdcd81853ec488d8fc2c5a5dca438e5cab0a61ce880cd138ce168386a51db"
+      }
+    },
+    "mace-soyo-mptrj": {
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-mace-soyo-mptrj-51c851775b4b3871.json.gz",
+        "sha256": "6c88dc92c755bfcd55378331c5584b5491280ccc91de3e590c595e8ec7e8490a"
+      }
+    },
+    "mace-soyo-oam": {
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-mace-soyo-oam-9e4860bcd830739e.json.gz",
+        "sha256": "8fb93acd0269641f428743fef5f0068498d9a8b677935c97947edad016c99789"
       }
     },
     "matris-10m-mp": {

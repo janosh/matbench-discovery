@@ -213,15 +213,24 @@ def test_build_route_and_comparison_element_counts(wbm_formulas: list[str]) -> N
             check_exact=True,
         )
 
-    payload = build_element_counts_payload(
-        counts["mp-element-counts-by-occurrence"], df_wbm[Key.formula]
-    )
-    assert set(payload) == {"raw", "normalized"}
-    assert all(
-        {"label", "x", "y"} <= set(series)
-        for variant in payload.values()
-        for series in variant
-    )
+
+def test_element_counts_payload_normalizes_each_dataset_by_own_size() -> None:
+    """Normalized counts divide by each dataset's own size and skip absent elements."""
+    # 20 MP structures: Li in 15, O in 12, Kr in 11; Kr never appears in WBM
+    mp_counts = pd.Series({"Li": 15, "O": 12, "Kr": 11}, dtype="Int64")
+    wbm_formulas = pd.Series(["LiO"] * 30 + ["Li"] * 10)  # 40 WBM structures
+    wbm_x, mp_x = ["O", "Li"], ["Kr", "O", "Li"]
+    payload = build_element_counts_payload(mp_counts, wbm_formulas, n_mp_structures=20)
+    assert payload == {
+        "raw": [
+            {"label": "WBM", "x": wbm_x, "y": [30.0, 40.0]},
+            {"label": "MP", "x": mp_x, "y": [11.0, 12.0, 15.0]},
+        ],
+        "normalized": [
+            {"label": "WBM", "x": wbm_x, "y": [75.0, 100.0]},
+            {"label": "MP", "x": mp_x, "y": [55.0, 60.0, 75.0]},
+        ],
+    }
 
 
 def test_available_static_builders_match_committed_payloads() -> None:
@@ -248,6 +257,7 @@ def test_available_static_builders_match_committed_payloads() -> None:
         "element-counts-mp-vs-wbm": build_element_counts_payload(
             route_mp_counts,
             df_wbm.query(MbdKey.uniq_proto)[Key.formula],
+            n_mp_structures=len(df_mp),
         ),
     }
     for name, expected in expected_payloads.items():

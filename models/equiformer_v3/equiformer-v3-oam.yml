@@ -47,19 +47,13 @@ license:
 
 
 environment:
+  # Display/provenance pins; install is owned by project (override-dependencies).
+  # The published metrics were measured with EquiformerV3's own fairchem-core fork.
   dependencies:
-  - 'fairchem-core[torch-extras]==1.10.0'
-  - torch==2.4.0
-  - numpy<2
-  - scipy<1.15
-  - ase==3.25.0
-  - ase-db-backends==0.10.0
-  - e3nn==0.5.6
-  - tqdm==4.67.1
-  - wandb==0.21.0
-  - pyyaml==6.0.2
-  python_version: '3.12'
-  find_links: ['https://data.pyg.org/whl/torch-2.4.0+cu121.html']
+  - fairchem-core @ git+https://github.com/atomicarchitects/equiformer_v3@a7300c58df683dc99cb48027d5bfd4c887486c48#subdirectory=packages/fairchem-core
+  - torch==2.10.0+cu126
+  python_version: '3.14'
+  project: models/equiformer_v3/fairchem-env
 openness: OSOD
 architecture_types: [transformer]
 train_task: S2EFS
@@ -147,29 +141,29 @@ metrics:
       size: 110210090
       md5: 84e9c30ff3e15892cf57da5e425ad381
     symprec=1e-5:
-      rmsd: 0.0595
-      n_sym_ops_mae: 4.0648
-      symmetry_decrease: 0.4554
-      symmetry_match: 0.3711
-      symmetry_increase: 0.1299
-      n_structures: 256963
+      rmsd: 0.0595 # unitless
+      n_sym_ops_mae: 4.0648 # unitless
+      symmetry_decrease: 0.4554 # fraction
+      symmetry_match: 0.3711 # fraction
+      symmetry_increase: 0.1299 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/equiformer_v3/equiformer-v3-oam/2026-04-07-geo-opt-symprec=1e-5-moyo=0.7.9.csv.gz
-        url: https://figshare.com/files/63520848
-        size: 8561122
-        md5: d3f224dfd4b059a4ed8937acb6dfaf66
+        name: models/equiformer_v3/equiformer-v3-oam/2026-04-07-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333680
+        size: 7801954
+        md5: e6d7191b0185c82e8ad9f2f149a570fd
     symprec=1e-2:
-      rmsd: 0.0595
-      n_sym_ops_mae: 1.9824
-      symmetry_decrease: 0.129
-      symmetry_match: 0.7424
-      symmetry_increase: 0.1137
-      n_structures: 256963
+      rmsd: 0.0595 # unitless
+      n_sym_ops_mae: 1.9823 # unitless
+      symmetry_decrease: 0.129 # fraction
+      symmetry_match: 0.7424 # fraction
+      symmetry_increase: 0.1137 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/equiformer_v3/equiformer-v3-oam/2026-04-07-geo-opt-symprec=1e-2-moyo=0.7.9.csv.gz
-        url: https://figshare.com/files/63520845
-        size: 9125520
-        md5: 060d2294e62bb5306c86270559ca2dd4
+        name: models/equiformer_v3/equiformer-v3-oam/2026-04-07-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333683
+        size: 8062013
+        md5: 3ae169f3944b2d6843a1e98b8e58bd05
   phonons:
     kappa_103:
       pred_file:
@@ -185,14 +179,11 @@ metrics:
       spectrum_w1: 0.0649
   diatomics:
     pred_file:
-      name: models/equiformer_v3/equiformer-v3-oam/2026-09-12-diatomics.json.gz
-      size: 540818
-      md5: 97cdbeb8239dd444c6fc8fbc8e5663a6
-      url: https://figshare.com/files/68484277
-    hardware: NVIDIA H200
-    run_time_sec: 621.84
-    max_rss_gb: 2.237
-    max_gpu_mem_gb: 0.327
+      name: models/equiformer_v3/equiformer-v3-oam/2026-10-19-diatomics.json.gz
+      url: https://figshare.com/files/70349748
+      size: 539863
+      md5: c2a6423bcdacdc9ff60d2b51abbb89db
+    cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 612.65, load_time_sec: 22.53, max_rss_gb: 2.436, max_gpu_mem_gb: 0.328}
     excluded_formula_reasons: {}
     pbe_wall_dist_mae: 0.5899
     pbe_energy_mae: 1.838
@@ -216,16 +207,25 @@ metrics:
       - Sr
       - V
       missing_elements: []
+    reproducibility:
+      checked: '2026-10-20'
+      status: reproduced
+      tolerance: 0.001
+      runs:
+      - label: published run (2026-09-12, H200)
+        file:
+          name: models/equiformer_v3/equiformer-v3-oam/2026-09-12-diatomics.json.gz
+          url: https://figshare.com/files/68484277
+          size: 540818
+          md5: 97cdbeb8239dd444c6fc8fbc8e5663a6
+      rel_changes: {}
   md:
     pred_file:
       name: models/equiformer_v3/equiformer-v3-oam/2026-09-12-md-metrics.csv.gz
       size: 3698
       md5: 6d79e3f527f56003517e39b9bf196fef
       url: https://figshare.com/files/68487184
-    hardware: NVIDIA H200
-    run_time_sec: 173945.84 # s
-    max_rss_gb: 2.868 # GB
-    max_gpu_mem_gb: 39.208 # GB
+    cost: {source: runner, hardware: NVIDIA H200, run_time_sec: 173945.84, max_rss_gb: 2.868, max_gpu_mem_gb: 39.208}
     energy_rmse: 0.4413 # meV/atom
     force_rmse: 42.976 # meV/Å
     rdf_error: 3.2709 # %

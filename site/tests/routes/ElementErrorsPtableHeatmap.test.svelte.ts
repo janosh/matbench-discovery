@@ -4,7 +4,7 @@ import { per_element_each_errors as per_elem_each_errors } from '#lib/per-elemen
 import { describe, expect, it } from 'vite-plus/test'
 import { tick } from 'svelte'
 import { format_num } from 'matterviz/labels'
-import { doc_query, mount_with_url } from '../index.js'
+import { doc_query, mount_with_url, query_param, selected_chips } from '../index.js'
 
 const models_with_errors = ACTIVE_MODELS.filter(
   ({ model_key }) => model_key in per_elem_each_errors,
@@ -32,18 +32,20 @@ describe(`ElementErrorsPtableHeatmap`, () => {
         keys.split(`,`).map(() => `n/a`),
       )
       expect(helium.querySelector(`.value`)).toBeNull()
-      expect(helium.style.backgroundColor).toBe(`rgba(255, 255, 255, 0.3)`)
+      expect(helium.style.backgroundColor).toBe(`var(--ptable-missing-bg)`)
       expect(doc_query(`small`, inset).textContent).toBe(
         normalized ? `normalized` : `eV/atom`,
       )
 
       doc_query(`[data-element-symbol="H"]`).dispatchEvent(new MouseEvent(`mouseenter`))
       await tick()
-      const std = normalized ? 0.1709639053 : 1
+      const std = normalized
+        ? (per_elem_each_errors[`Test set standard deviation`].H ?? NaN)
+        : 1
       expect([...inset.querySelectorAll(`b`)].map((value) => value.textContent)).toEqual(
-        (keys.includes(`,`) ? [0.5663, 0.3445] : [0.5663]).map((value) =>
-          format_num(value / std),
-        ),
+        keys
+          .split(`,`)
+          .map((key) => format_num((per_elem_each_errors[key].H ?? NaN) / std)),
       )
     },
   )
@@ -56,9 +58,7 @@ describe(`ElementErrorsPtableHeatmap`, () => {
         `http://localhost/benchmarks/discovery/tmi${query}`,
       )
 
-      const chips = document.querySelectorAll(`ul[aria-label="selected options"] li`)
-      expect(chips).toHaveLength(1)
-      expect(chips[0].textContent?.trim()).toBe(models_with_errors[0].model_name)
+      expect(selected_chips()).toEqual([models_with_errors[0].model_name])
       expect(location.search).toBe(``)
     },
   )
@@ -71,12 +71,10 @@ describe(`ElementErrorsPtableHeatmap`, () => {
       `http://localhost/benchmarks/discovery/tmi?element_models=${keys[0]},unknown,${keys.join(`,`)}&element_normalized=0&element_manual_max=1&element_max=0.4`,
     )
     const chips = [...document.querySelectorAll(`ul[aria-label="selected options"] li`)]
-    expect(chips.map((chip) => chip.textContent?.trim())).toEqual(
+    expect(selected_chips()).toEqual(
       models.slice(0, 4).map(({ model_name }) => model_name),
     )
-    expect(new URLSearchParams(location.search).get(`element_models`)).toBe(
-      keys.slice(0, 4).join(`,`),
-    )
+    expect(query_param(`element_models`)).toBe(keys.slice(0, 4).join(`,`))
     const [manual, normalized] = document.querySelectorAll<HTMLInputElement>(
       `form input[type="checkbox"]`,
     )

@@ -1,0 +1,35 @@
+# EquiformerV3 ships its own fairchem-core v1 fork; the published metrics were measured
+# with this fork. Its torch~=2.x/numpy<2 pins have no cp314 wheels, so overrides lift
+# them onto the Python 3.14 runner stack (same pattern as models/equflash/kappa-env)
+[project]
+name = "matbench-discovery-equiformer-v3"
+version = "0"
+requires-python = ">=3.14"
+dependencies = [
+  "matbench-discovery",
+  "fairchem-core @ git+https://github.com/atomicarchitects/equiformer_v3@a7300c58df683dc99cb48027d5bfd4c887486c48#subdirectory=packages/fairchem-core",
+  "torch==2.10.0+cu126",
+  "e3nn==0.5.6",
+  "torch-geometric==2.7.0",
+  "torch-scatter==2.1.2+pt210cu126",
+  "torch-sparse==0.6.18+pt210cu126",
+  "torch-cluster==1.6.3+pt210cu126",
+  "torchtnt==0.2.4",
+  "ase-db-backends==0.11.0",
+]
+
+[tool.uv]
+package = false
+# PyG local-version wheels are linux x86_64 only
+environments = ["sys_platform == 'linux' and platform_machine == 'x86_64'"]
+find-links = ["https://data.pyg.org/whl/torch-2.10.0+cu126.html"]
+override-dependencies = ["numpy>=2,<2.5", "scipy==1.16.1", "torch==2.10.0+cu126"]
+
+[tool.uv.sources]
+matbench-discovery = { path = "../../..", editable = true }
+torch = { index = "pytorch-cu126" }
+
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true

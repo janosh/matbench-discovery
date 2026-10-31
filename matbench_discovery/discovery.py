@@ -6,10 +6,8 @@ import copy
 import hashlib
 import json
 import os
-import socket
 import time
-from dataclasses import asdict, dataclass, replace
-from datetime import UTC, datetime
+from dataclasses import asdict, dataclass, field, replace
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -30,11 +28,9 @@ from matbench_discovery.ase_relax import (
 )
 from matbench_discovery.enums import DataFiles, Model
 from matbench_discovery.hpc import (
-    COST_PROVENANCE_KEYS,
-    detect_hardware,
+    check_resume_labels,
+    memory_peaks,
     merge_audit_metadata,
-    package_versions,
-    peak_memory_gb,
     reset_gpu_peak_memory,
 )
 
@@ -44,7 +40,8 @@ if TYPE_CHECKING:
     from ase import Atoms
     from ase.calculators.calculator import Calculator
 
-DISCOVERY_SHARD_SCHEMA_VERSION = 1
+# schema 2: segment_start events (process runtime), records with run time + memory
+DISCOVERY_SHARD_SCHEMA_VERSION = 2
 DISCOVERY_PRED_COL = "e_form_per_atom"
 DISCOVERY_STRUCT_COL = "structure"
 DISCOVERY_ID_COL = "material_id"
@@ -109,11 +106,17 @@ class RelaxationSettings:
         ase_optimizer: str | None = None,
         cell_filter: str | None = None,
     ) -> RelaxationSettings:
-        """Load settings from a model YAML and apply explicit overrides."""
-        try:
-            hyperparams = Model.from_ref(model_key).metadata.get("hyperparams", {})
-        except ValueError:  # Debug calculators such as EMT have no model YAML.
-            hyperparams = {}
+        """Load settings from a model YAML and apply explicit overrides.
+
+        Raises:
+            ValueError: If model_key is neither a registered model nor the "emt"
+                debug calculator (which has no model YAML).
+        """
+        hyperparams = (
+            {}
+            if model_key == "emt"
+            else Model.from_ref(model_key).metadata.get("hyperparams", {})
+        )
         if not isinstance(hyperparams, dict):
             raise TypeError(f"{model_key} hyperparams must be a mapping")
         evaluation = hyperparams.get("evaluation", {})
@@ -147,6 +150,9 @@ class RelaxationRecord:
     """One attempted WBM relaxation, including failures for complete coverage.
 
     The defaults describe a failed attempt; successful relaxations set them all.
+    ``run_time_sec`` is the attempt's wall time and ``max_rss_gb``/``max_gpu_mem_gb``
+    the segment's running memory peaks after it (RSS includes loading WBM), so a
+    later-killed segment's cost still counts after resuming.
     """
 
     material_id: str
@@ -155,6 +161,9 @@ class RelaxationRecord:
     converged: bool = False
     n_steps: int = 0
     error: str | None = None
+    run_time_sec: float = 0.0
+    max_rss_gb: float | None = None
+    max_gpu_mem_gb: float | None = None
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> RelaxationRecord:
@@ -170,6 +179,9 @@ class RelaxationRecord:
             converged=bool(data.get("converged", False)),
             n_steps=int(data.get("n_steps", 0)),
             error=str(error) if (error := data.get("error")) is not None else None,
+            run_time_sec=float(data["run_time_sec"]),
+            max_rss_gb=data.get("max_rss_gb"),
+            max_gpu_mem_gb=data.get("max_gpu_mem_gb"),
         )
 
 
@@ -204,13 +216,35 @@ class ShardHeader:
         )
 
 
+@dataclass
+class ShardSegment:
+    """One execution (OS process) of a resumable shard: its segment_start runtime
+    (calculators.load_calculator_with_runtime) and the records it wrote.
+    """
+
+    runtime: dict[str, Any]
+    material_ids: list[str] = field(default_factory=list)
+
+    def cost_unit(
+        self, records_by_id: Mapping[str, RelaxationRecord]
+    ) -> dict[str, Any]:
+        """Merge unit: runtime, summed record run time, final memory peaks."""
+        records = [records_by_id[material_id] for material_id in self.material_ids]
+        return {
+            **self.runtime,
+            "run_time_sec": sum(rec.run_time_sec for rec in records),
+            "max_rss_gb": records[-1].max_rss_gb,
+            "max_gpu_mem_gb": records[-1].max_gpu_mem_gb,
+        }
+
+
 @dataclass(frozen=True)
 class LoadedShard:
-    """Parsed shard header, records, and run-metadata segments."""
+    """Parsed shard header, records and execution segments."""
 
     header: ShardHeader
     records: tuple[RelaxationRecord, ...]
-    run_metadata_segments: tuple[dict[str, Any], ...]
+    segments: tuple[ShardSegment, ...]
     ignored_trailing_line: bool = False
 
 
@@ -227,10 +261,11 @@ class MergedDiscoveryRun:
 
 @dataclass(frozen=True)
 class DiscoveryArtifacts:
-    """Final discovery prediction and geometry-optimization artifacts."""
+    """Final discovery prediction, geometry-optimization and run-info artifacts."""
 
     pred_file_path: str
     geo_opt_file_path: str
+    run_info_path: str
     predictions: pd.DataFrame
     n_success: int
     n_failed: int
@@ -341,8 +376,8 @@ def _json_default(value: object) -> object:
     raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
 
 
-def _append_shard_event(shard_path: str, event: Mapping[str, Any]) -> dict[str, Any]:
-    """Append and fsync one JSONL event, returning its JSON-normalized mapping."""
+def _append_shard_event(shard_path: str, event: Mapping[str, Any]) -> None:
+    """Append and fsync one JSONL event."""
     payload = json.dumps(event, default=_json_default, allow_nan=False)
     with open(shard_path, mode="ab+") as file:
         file.seek(0, os.SEEK_END)
@@ -353,24 +388,15 @@ def _append_shard_event(shard_path: str, event: Mapping[str, Any]) -> dict[str, 
         file.write(payload.encode() + b"\n")
         file.flush()
         os.fsync(file.fileno())
-    return json.loads(payload)
 
 
-def _rewrite_shard(shard_path: str, shard: LoadedShard) -> None:
-    """Atomically normalize a shard after recovering a truncated final line."""
+def _drop_truncated_line(shard_path: str) -> None:
+    """Atomically drop a shard's truncated final line (an interrupted append)."""
+    with open(shard_path, encoding="utf-8") as file:
+        lines = file.readlines()
     tmp_path = f"{shard_path}.tmp"
-    events: list[dict[str, Any]] = [
-        {"type": "header", **asdict(shard.header)},
-        *({"type": "record", **asdict(record)} for record in shard.records),
-        *(
-            {"type": "run_metadata", "run_metadata": metadata}
-            for metadata in shard.run_metadata_segments
-        ),
-    ]
     with open(tmp_path, mode="w", encoding="utf-8") as file:
-        for event in events:
-            file.write(json.dumps(event, default=_json_default, allow_nan=False))
-            file.write("\n")
+        file.writelines(lines[:-1])
         file.flush()
         # fsync before the rename so a power loss cannot replace hours of durably
         # appended records with a partially written file
@@ -413,44 +439,31 @@ def read_discovery_shard(shard_path: str) -> LoadedShard:
         )
 
     records: list[RelaxationRecord] = []
-    run_metadata_segments: list[dict[str, Any]] = []
-    for event in events[1:]:
+    segments: list[ShardSegment] = []
+    for line_number, event in enumerate(events[1:], start=2):
         event_type = event.get("type")
-        if event_type == "record":
-            records.append(RelaxationRecord.from_dict(event))
-        elif event_type == "run_metadata":
-            metadata = event.get("run_metadata")
-            if not isinstance(metadata, dict):
-                raise TypeError(f"run_metadata event in {shard_path} must be a mapping")
-            run_metadata_segments.append(metadata)
-        else:
+        where = f"{event_type} event {line_number} in {shard_path}"
+        if event_type == "segment_start":
+            if not isinstance(runtime := event.get("runtime"), dict):
+                raise TypeError(f"{where} needs a runtime mapping")
+            segments.append(ShardSegment(runtime=runtime))
+        elif event_type != "record":
             raise ValueError(f"Unknown shard event type {event_type!r} in {shard_path}")
+        elif not segments:
+            raise ValueError(f"{where} precedes any segment_start")
+        else:
+            record = RelaxationRecord.from_dict(event)
+            records.append(record)
+            segments[-1].material_ids.append(record.material_id)
 
     if len(records) != len({record.material_id for record in records}):
         raise ValueError(f"Duplicate material records in {shard_path}")
     return LoadedShard(
         header=header,
         records=tuple(records),
-        run_metadata_segments=tuple(run_metadata_segments),
+        segments=tuple(segments),
         ignored_trailing_line=ignored_trailing_line,
     )
-
-
-def _run_segment_metadata(run_time_sec: float) -> dict[str, Any]:
-    """Collect provenance for one execution segment of a resumable shard."""
-    metadata: dict[str, Any] = {
-        "hardware": detect_hardware(),
-        "run_time_sec": round(run_time_sec, 2),
-        "completed_at": datetime.now(UTC).isoformat(),
-        "hostname": socket.gethostname(),
-        "versions": package_versions(("ase", "numpy", "pymatgen")),
-        **peak_memory_gb(),
-    }
-    if slurm_job_id := os.getenv("SLURM_JOB_ID"):
-        metadata["slurm_job_id"] = slurm_job_id
-    if slurm_array_task_id := os.getenv("SLURM_ARRAY_TASK_ID"):
-        metadata["slurm_array_task_id"] = slurm_array_task_id
-    return metadata
 
 
 def _discard_interrupted_header(shard_path: str) -> None:
@@ -482,8 +495,14 @@ def run_discovery_shard(
     n_shards: int,
     settings: RelaxationSettings,
     dataset_material_ids: Sequence[str],
+    runtime: Mapping[str, Any],
 ) -> LoadedShard:
     """Run or resume one shard, appending a durable record after each structure.
+
+    Each execution appends a ``segment_start`` event holding ``runtime``
+    (calculators.load_calculator_with_runtime), then records with their run time
+    and memory peaks. A resume under other run labels than an earlier segment's
+    raises (hpc.check_resume_labels).
 
     A lock file serializes concurrent writers (e.g. duplicate sbatch submissions or
     a Slurm requeue overlapping a lingering process), which would otherwise
@@ -509,7 +528,7 @@ def run_discovery_shard(
                     f"Existing shard header in {shard_path} does not match this run"
                 )
             if existing_shard.ignored_trailing_line:
-                _rewrite_shard(shard_path, existing_shard)
+                _drop_truncated_line(shard_path)
         else:
             _append_shard_event(shard_path, {"type": "header", **asdict(header)})
             existing_shard = read_discovery_shard(shard_path)
@@ -527,11 +546,18 @@ def run_discovery_shard(
         ]
         if not pending_ids:
             return existing_shard
+        # every segment that wrote records must share the run labels (versions too,
+        # so a resume after the env re-resolved fails now, not at the final merge)
+        for idx, segment in enumerate(existing_shard.segments):
+            if segment.material_ids:
+                check_resume_labels(segment.runtime, runtime, f"{shard_path} {idx=}")
 
-        reset_gpu_peak_memory()
-        start_time = time.perf_counter()
-        records = list(existing_shard.records)
+        reset_gpu_peak_memory(runtime)
+        _append_shard_event(
+            shard_path, {"type": "segment_start", "runtime": dict(runtime)}
+        )
         for material_id in tqdm(pending_ids, desc=f"{model_key} discovery shard"):
+            start_time = time.perf_counter()
             try:
                 record = relax_atoms(atoms_by_id[material_id], calculator, settings)
             except Exception as exc:  # noqa: BLE001 - every failure needs a record
@@ -539,35 +565,22 @@ def run_discovery_shard(
                     material_id=material_id, error=f"{type(exc).__name__}: {exc}"
                 )
                 print(f"Failed to relax {material_id}: {record.error}")
+            cost = {
+                "run_time_sec": round(time.perf_counter() - start_time, 3),
+                # failures may legitimately never reach the GPU
+                **memory_peaks(runtime, succeeded=record.error is None),
+            }
+            record = replace(record, **cost)
             try:
-                record_event = _append_shard_event(
-                    shard_path, {"type": "record", **asdict(record)}
-                )
+                _append_shard_event(shard_path, {"type": "record", **asdict(record)})
             except (TypeError, ValueError) as exc:
                 # a non-JSON-serializable relaxed structure must not become a poison
                 # pill that crashes this run and every resume at the same material
-                record = RelaxationRecord(
-                    material_id=material_id,
-                    error=f"unserializable relaxation record: {exc}",
-                )
+                error = f"unserializable relaxation record: {exc}"
+                record = replace(RelaxationRecord(material_id, error=error), **cost)
                 print(f"Failed to serialize {material_id}: {record.error}")
-                record_event = _append_shard_event(
-                    shard_path, {"type": "record", **asdict(record)}
-                )
-            records.append(RelaxationRecord.from_dict(record_event))
-
-        segment_metadata = _run_segment_metadata(time.perf_counter() - start_time)
-        _append_shard_event(
-            shard_path, {"type": "run_metadata", "run_metadata": segment_metadata}
-        )
-        return LoadedShard(
-            header=header,
-            records=tuple(records),
-            run_metadata_segments=(
-                *existing_shard.run_metadata_segments,
-                segment_metadata,
-            ),
-        )
+                _append_shard_event(shard_path, {"type": "record", **asdict(record)})
+        return read_discovery_shard(shard_path)
 
 
 def merge_discovery_shards(
@@ -602,7 +615,6 @@ def merge_discovery_shards(
         )
 
     records_by_id: dict[str, RelaxationRecord] = {}
-    metadata_segments: list[dict[str, Any]] = []
     for shard in shards:
         header = shard.header
         if (
@@ -627,7 +639,6 @@ def merge_discovery_shards(
             if record.material_id in records_by_id:
                 raise ValueError(f"Duplicate material record {record.material_id!r}")
             records_by_id[record.material_id] = record
-        metadata_segments.extend(shard.run_metadata_segments)
 
     merged_ids = set(records_by_id)
     if merged_ids != expected_id_set:
@@ -637,12 +648,14 @@ def merge_discovery_shards(
             f"extra={sorted(merged_ids - expected_id_set)}"
         )
 
-    run_metadata = merge_audit_metadata(metadata_segments)
-    # cost fields are all-or-nothing (like scripts/evals/md.py): a shard that never
-    # recorded run_metadata would silently understate the summed cost
-    if any(not shard.run_metadata_segments for shard in shards):
-        for cost_key in COST_PROVENANCE_KEYS:
-            run_metadata.pop(cost_key, None)
+    # one merge unit per execution segment that wrote records
+    cost_units = [
+        segment.cost_unit(records_by_id)
+        for shard in shards
+        for segment in shard.segments
+        if segment.material_ids
+    ]
+    run_metadata = merge_audit_metadata(cost_units, strict=True)
     run_metadata |= {
         "model_key": model_key,
         "n_shards": first_header.n_shards,
@@ -762,7 +775,10 @@ def write_discovery_artifacts(
     df_predictions.index.name = DISCOVERY_ID_COL
     numeric_cols = df_predictions.select_dtypes(include="number").columns
     df_predictions[numeric_cols] = df_predictions[numeric_cols].round(4)
-    for output_path in (pred_file_path, geo_opt_file_path):
+    run_info_path = (
+        f"{pred_file_path.removesuffix('.gz').removesuffix('.csv')}-run-info.json"
+    )
+    for output_path in (pred_file_path, geo_opt_file_path, run_info_path):
         if output_parent := os.path.dirname(output_path):
             os.makedirs(output_parent, exist_ok=True)
     # to_csv infers gzip from the .gz suffix; index.name is already DISCOVERY_ID_COL
@@ -774,9 +790,15 @@ def write_discovery_artifacts(
         compression="gzip" if geo_opt_file_path.endswith(".gz") else None,
     )
 
+    # merged cost + audit provenance, so the YAML cost block is artifact-backed
+    with open(run_info_path, mode="w", encoding="utf-8") as file:
+        json.dump({"run_metadata": merged_run.run_metadata}, file, indent=2)
+        file.write("\n")
+
     return DiscoveryArtifacts(
         pred_file_path=pred_file_path,
         geo_opt_file_path=geo_opt_file_path,
+        run_info_path=run_info_path,
         predictions=df_predictions,
         n_success=len(geo_opt_rows),
         n_failed=len(merged_run.records) - len(geo_opt_rows),

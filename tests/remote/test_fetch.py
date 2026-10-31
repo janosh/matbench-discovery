@@ -102,33 +102,48 @@ def test_download_file_current_directory(
     assert dest_path.read_bytes() == b"test content"
 
 
-@pytest.mark.parametrize("token_env", ["HF_TOKEN", "HUGGING_FACE_HUB_TOKEN"])
-@pytest.mark.parametrize("status_code", [200, 401, 403, 404])
+HF_URL = "https://huggingface.co/org/repo/resolve/main/file.csv.gz"
+HF_BEARER = {"Authorization": "Bearer hf_test"}
+
+
 @pytest.mark.parametrize(
-    ("url", "use_token"),
+    ("url", "token_env", "headers", "status_code", "expected_headers", "hf_note"),
     [
-        ("https://huggingface.co/org/repo/resolve/main/file.csv.gz", True),
-        ("https://cdn-lfs.huggingface.co/file", True),
-        ("https://huggingface.co.example.org/file", False),
-        ("https://example.org/huggingface.co/file", False),
-        ("https://example.org/file?source=huggingface.co", False),
-        ("https://huggingface.co@other.example/file", False),
-        ("http://huggingface.co/file", False),
+        # token from either env var, sent to huggingface.co and its subdomains
+        (HF_URL, "HF_TOKEN", None, 401, HF_BEARER, True),
+        (HF_URL, "HUGGING_FACE_HUB_TOKEN", None, 404, HF_BEARER, False),
+        ("https://cdn-lfs.huggingface.co/f", "HF_TOKEN", None, 200, HF_BEARER, False),
+        # gated-repo note on 401/403 from HF hosts even without a token
+        (HF_URL, None, None, 403, None, True),
+        # look-alike hosts and plain HTTP never receive the token or the note
+        ("https://huggingface.co.x.org/f", "HF_TOKEN", None, 403, None, False),
+        ("https://x.org/huggingface.co/f", "HF_TOKEN", None, 200, None, False),
+        ("https://x.org/f?s=huggingface.co", "HF_TOKEN", None, 200, None, False),
+        ("https://huggingface.co@x.org/f", "HF_TOKEN", None, 401, None, False),
+        ("http://huggingface.co/f", "HUGGING_FACE_HUB_TOKEN", None, 403, None, False),
+        # explicit Authorization wins over the env token regardless of casing
+        *[
+            (HF_URL, "HF_TOKEN", explicit, 200, explicit, False)
+            for explicit in ({"Authorization": "x"}, {"authorization": "x"})
+        ],
     ],
 )
-def test_download_file_adds_huggingface_token(
+def test_download_file_huggingface_auth(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
-    token_env: str,
-    status_code: int,
     url: str,
-    use_token: bool,
+    token_env: str | None,
+    headers: dict[str, str] | None,
+    status_code: int,
+    expected_headers: dict[str, str] | None,
+    hf_note: bool,
 ) -> None:
-    """Only HTTPS HuggingFace hosts receive automatically supplied bearer tokens."""
+    """Only HTTPS HuggingFace hosts get env bearer tokens and gated-repo notes."""
     dest_path = tmp_path / "file.csv.gz"
     monkeypatch.delenv("HF_TOKEN", raising=False)
     monkeypatch.delenv("HUGGING_FACE_HUB_TOKEN", raising=False)
-    monkeypatch.setenv(token_env, "hf_test")
+    if token_env:
+        monkeypatch.setenv(token_env, "hf_test")
 
     with (
         patch(
@@ -138,17 +153,14 @@ def test_download_file_adds_huggingface_token(
             pytest.raises(requests.HTTPError) if status_code != 200 else nullcontext()
         ) as error,
     ):
-        download_file(str(dest_path), url)
+        download_file(str(dest_path), url, headers=headers)
 
     if error is None:
         assert dest_path.read_bytes() == b"test"
     else:
-        notes = " ".join(error.value.__notes__)
-        assert ("HF_TOKEN" in notes) is (use_token and status_code in (401, 403))
+        assert ("HF_TOKEN" in " ".join(error.value.__notes__)) is hf_note
         assert not dest_path.is_file()
-    assert mock_get.call_args.kwargs["headers"] == (
-        {"Authorization": "Bearer hf_test"} if use_token else None
-    )
+    assert mock_get.call_args.kwargs["headers"] == expected_headers
 
 
 def test_download_file_keeps_completed_part_file_on_replace_error(
@@ -261,96 +273,37 @@ def test_overlapping_downloads_use_independent_temporary_files(tmp_path: Path) -
     assert list(tmp_path.iterdir()) == [destination]
 
 
-@pytest.mark.parametrize("auth_header", ["Authorization", "authorization"])
-def test_explicit_authorization_is_preserved(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-    auth_header: str,
-) -> None:
-    """Explicit authentication takes precedence regardless of header casing."""
-    monkeypatch.setenv("HF_TOKEN", "hf_environment")
-    headers = {auth_header: "Bearer explicit"}
-    with patch("requests.get", return_value=make_mock_response(b"data")) as mock_get:
-        download_file(
-            str(tmp_path / "model"), "https://huggingface.co/model", headers=headers
-        )
-    assert mock_get.call_args.kwargs["headers"] == headers
-
-
-@pytest.mark.parametrize(
-    ("auto_download", "stdin_isatty", "answer", "should_download"),
-    [
-        (None, True, "n", True),
-        ("true", True, "n", True),
-        ("false", True, "n", False),
-        ("false", True, "y", True),
-        ("false", False, "n", True),
-    ],
-    ids=["auto_unset", "auto_enabled", "declined", "confirmed", "non_interactive"],
-)
-def test_maybe_auto_download_file_prompt_modes(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-    capsys: pytest.CaptureFixture,
-    auto_download: str | None,
-    stdin_isatty: bool,
-    answer: str,
-    *,
-    should_download: bool,
-) -> None:
-    """maybe_auto_download_file honors env, prompt and non-interactive defaults."""
-    url = "https://example.com/file.txt"
-    abs_path = f"{tmp_path}/test/file.txt"
-    os.makedirs(os.path.dirname(abs_path), exist_ok=True)
-    mock_response = make_mock_response(b"test content")
-
-    if auto_download is None:
-        monkeypatch.delenv("MBD_AUTO_DOWNLOAD_FILES", raising=False)
-    else:
-        monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", auto_download)
-    with (
-        patch("requests.get", return_value=mock_response),
-        patch("builtins.input", return_value=answer),
-        patch("sys.stdin.isatty", return_value=stdin_isatty),
-    ):
-        maybe_auto_download_file(url, abs_path, label="test")
-
-    stdout, stderr = capsys.readouterr()
-    assert stderr == ""
-    if should_download:
-        assert f"Downloading 'test' from {url!r}" in stdout
-        assert os.path.isfile(abs_path)
-        assert Path(abs_path).read_bytes() == b"test content"
-    else:
-        assert stdout == ""
-        assert not os.path.isfile(abs_path)
-
-
 @pytest.mark.parametrize(
     ("md5", "expected_content", "should_download"),
     [
         (None, b"cached", False),
         (hashlib.md5(b"cached").hexdigest(), b"cached", False),  # noqa: S324
         (hashlib.md5(b"fresh").hexdigest(), b"fresh", True),  # noqa: S324
+        (None, None, True),
     ],
-    ids=["unchecked", "checksum_match", "checksum_mismatch"],
+    ids=["unchecked", "checksum_match", "checksum_mismatch", "missing"],
 )
 def test_maybe_auto_download_file_validates_existing_file(
     tmp_path: Path,
     md5: str | None,
-    expected_content: bytes,
+    expected_content: bytes | None,
     should_download: bool,
+    capsys: pytest.CaptureFixture,
 ) -> None:
-    """Existing files are reused only when their optional checksum matches."""
+    """Missing files download; existing ones are reused only on a checksum match."""
     url = "https://example.com/file.txt"
     abs_path = f"{tmp_path}/test/file.txt"
     os.makedirs(os.path.dirname(abs_path), exist_ok=True)
-    Path(abs_path).write_bytes(b"cached")
+    if expected_content is not None:
+        Path(abs_path).write_bytes(b"cached")
 
     with patch("requests.get", return_value=make_mock_response(b"fresh")) as mock_get:
         maybe_auto_download_file(url, abs_path, label="test", md5=md5)
-    assert Path(abs_path).read_bytes() == expected_content
+    assert Path(abs_path).read_bytes() == (expected_content or b"fresh")
     assert mock_get.called is should_download
+    assert (f"Downloading 'test' from {url!r}" in capsys.readouterr().out) is (
+        should_download
+    )
 
 
 @pytest.mark.parametrize(

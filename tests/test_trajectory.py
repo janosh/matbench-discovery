@@ -313,8 +313,17 @@ def test_from_extxyz_real_format_stress_energy(tmp_path: Path) -> None:
             ),
             "count line says 5 atoms",
         ),
+        # md_step on frame 1 only: partial md_step fails loud like from_ase
+        (
+            (
+                '2\nLattice="4 0 0 0 4 0 0 0 4" '
+                'Properties=species:S:1:pos:R:3 pbc="T T T" md_step=10\n'
+                "Cu 0 0 0\nCu 1 1 1\n"
+            ),
+            "frame 0 is missing a comment field",
+        ),
     ],
-    ids=["varying_count", "species", "pbc", "properties", "count_line"],
+    ids=["varying_count", "species", "pbc", "properties", "count_line", "md_step"],
 )
 def test_from_extxyz_rejects_inconsistent_metadata(
     tmp_path: Path, frame1: str, match: str

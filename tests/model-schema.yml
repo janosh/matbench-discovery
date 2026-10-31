@@ -69,6 +69,59 @@ definitions:
     type: string
     enum: [E, EF_G, EF_D, EFS_G, EFSH_G, EFS_D, EFS_GM, EFS_DM]
 
+  # === Inference cost provenance ===
+  # One atomic cost mapping per task section (and kappa_103.harmonic) for the run
+  # that produced the artifact next to it (see contributing.md)
+  Cost:
+    type: object
+    additionalProperties: false
+    required: [source, hardware]
+    properties:
+      source:
+        type: string
+        enum: [runner, salvaged, author_reported]
+      hardware:
+        type: string
+      device:
+        type: string
+        enum: [cuda, cpu, gpu, mps]
+      dtype:
+        type: string
+        enum: [float64, float32, bfloat16, float16]
+      acceleration:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          enum: [cuequivariance, openequivariance, torch_aot_inductor, prophet_kernels]
+      n_shards: &positive_int
+        type: integer
+        minimum: 1
+      n_processes: *positive_int
+      run_time_sec: &positive_number
+        type: number
+        exclusiveMinimum: 0
+      load_time_sec:
+        type: number
+        minimum: 0
+      max_rss_gb: *positive_number
+      max_gpu_mem_gb: *positive_number
+
+  HarmonicRun:
+    type: object
+    additionalProperties: false
+    description: Harmonic-only rerun supplementing the kappa_103 conductivity run.
+    required: [phonon_file, run_info_file]
+    properties:
+      phonon_file:
+        $ref: '#/definitions/FileRef'
+      force_file:
+        $ref: '#/definitions/FileRef'
+      run_info_file:
+        $ref: '#/definitions/FileRef'
+      cost:
+        $ref: '#/definitions/Cost'
+
   KappaSettings:
     type: object
     additionalProperties: false
@@ -135,14 +188,10 @@ definitions:
         $ref: '#/definitions/nullable_file_ref'
       run_info_file:
         $ref: '#/definitions/nullable_file_ref'
-      hardware:
-        type: string
-      run_time_sec:
-        type: number
-      max_rss_gb:
-        type: number
-      max_gpu_mem_gb:
-        type: number
+      harmonic:
+        $ref: '#/definitions/HarmonicRun'
+      cost:
+        $ref: '#/definitions/Cost'
       κ_SRME:
         type: number
         minimum: 0
@@ -166,6 +215,16 @@ definitions:
       spectrum_w1:
         type: [number, 'null']
         minimum: 0
+    allOf:
+      # harmonic artifacts sit either beside pred_file (same run) or in harmonic
+      # (separate rerun), never both
+      - if:
+          required: [harmonic]
+        then:
+          not:
+            anyOf:
+              - required: [phonon_file]
+              - required: [force_file]
     required:
       - κ_SRME
       - κ_SRE
@@ -290,14 +349,10 @@ definitions:
       reason: *task_reason
       pred_file:
         $ref: '#/definitions/nullable_file_ref'
-      hardware:
-        type: string
-      run_time_sec:
-        type: number
-      max_rss_gb:
-        type: number
-      max_gpu_mem_gb:
-        type: number
+      run_info_file:
+        $ref: '#/definitions/nullable_file_ref'
+      cost:
+        $ref: '#/definitions/Cost'
       full_test_set:
         $ref: '#/definitions/DiscoveryMetricsSet'
       unique_prototypes:
@@ -312,14 +367,8 @@ definitions:
       reason: *task_reason
       pred_file:
         $ref: '#/definitions/nullable_file_ref'
-      hardware:
-        type: string
-      run_time_sec:
-        type: number
-      max_rss_gb:
-        type: number
-      max_gpu_mem_gb:
-        type: number
+      cost:
+        $ref: '#/definitions/Cost'
       excluded_formula_reasons:
         type: object
         additionalProperties:
@@ -365,6 +414,8 @@ definitions:
         type: number
       force_jump:
         type: number
+      reproducibility:
+        $ref: '#/definitions/Reproducibility'
     allOf: *task_status_reason_rule
 
   MdMetrics:
@@ -375,14 +426,8 @@ definitions:
       reason: *task_reason
       pred_file:
         $ref: '#/definitions/nullable_file_ref'
-      hardware:
-        type: string
-      run_time_sec:
-        type: number
-      max_rss_gb:
-        type: number
-      max_gpu_mem_gb:
-        type: number
+      cost:
+        $ref: '#/definitions/Cost'
       energy_rmse:
         type: number
       force_rmse:
@@ -403,7 +448,65 @@ definitions:
       # from the stored components, so it can never go stale and stays reweightable
       n_systems:
         type: integer
+      reproducibility:
+        $ref: '#/definitions/Reproducibility'
     allOf: *task_status_reason_rule
+
+  Reproducibility: # rerun check of the section's pred_file (see contributing.md)
+    type: object
+    additionalProperties: false
+    required: [checked, status, tolerance, runs, rel_changes]
+    properties:
+      checked:
+        type: string
+        pattern: '^\d{4}-\d{2}-\d{2}$'
+      status:
+        type: string
+        enum: [reproduced, drifted, inconclusive]
+      cause:
+        type: string
+        enum: [protocol_change, environment_change, nondeterministic, unknown]
+      note:
+        type: string
+        minLength: 1
+      tolerance:
+        const: 0.001
+      runs:
+        type: array
+        minItems: 1
+        items:
+          type: object
+          additionalProperties: false
+          required: [label, file]
+          properties:
+            label:
+              type: string
+              minLength: 1
+            file:
+              $ref: '#/definitions/FileRef'
+      rel_changes: # nonzero per-metric max relative change over runs vs pred_file
+        type: object
+        additionalProperties: *positive_number
+      repeat_rel_change: # max relative change between identical same-env runs
+        type: number
+        minimum: 0
+    allOf:
+      # cause is required iff drifted; drifted and inconclusive need a note
+      - if:
+          properties:
+            status:
+              const: drifted
+        then:
+          required: [cause, note]
+        else:
+          not:
+            required: [cause]
+      - if:
+          properties:
+            status:
+              const: inconclusive
+        then:
+          required: [note]
 
   # Define license types from dataset schema
   license_enum:
@@ -678,6 +781,13 @@ properties:
   fine_tune:
     type: boolean
     description: Whether this checkpoint is a fine-tune of another training run.
+  test_set_informed:
+    type: array
+    items:
+      enum: [discovery, geo_opt, phonons, diatomics, md]
+    minItems: 1
+    uniqueItems: true
+    description: Benchmark tasks whose test set (its results or its materials) informed training, tuning or checkpoint selection, explained in notes.disclosure. Flagged on leaderboards.
   hyperparams:
     $ref: '#/definitions/Hyperparams'
   notes:

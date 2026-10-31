@@ -219,8 +219,13 @@ def build_route_element_counts(
 def build_element_counts_payload(
     mp_occurrence_counts: pd.Series,
     wbm_unique_formulas: pd.Series,
+    *,
+    n_mp_structures: int,
 ) -> dict[str, Any]:
-    """Build raw and normalized MP/WBM element-count comparison series."""
+    """Build raw and normalized MP/WBM element-count comparison series. Normalized
+    series are the percentage of each dataset's own structures (n_mp_structures, WBM
+    unique-prototype formulas) containing an element; absent elements are omitted.
+    """
     df_counts = pd.DataFrame(index=mp_occurrence_counts.index)
     df_counts["MP"] = pd.to_numeric(mp_occurrence_counts, errors="coerce").astype(float)
     df_counts["WBM"] = pmv.count_elements(
@@ -228,19 +233,17 @@ def build_element_counts_payload(
     )
     min_count = 10  # only show elements with at least 10 structures
     df_counts = df_counts[df_counts.sum(axis=1) > min_count]
+    dataset_sizes = {"WBM": len(wbm_unique_formulas), "MP": n_mp_structures}
 
-    payload: dict[str, Any] = {}
-    for normalized in (False, True):
-        scale = len(wbm_unique_formulas) / 100 if normalized else 1
-        scaled_counts = df_counts / scale
-        payload["normalized" if normalized else "raw"] = [
-            {
-                "label": dataset,
-                "x": [
-                    str(symbol) for symbol in scaled_counts[dataset].sort_values().index
-                ],
-                "y": payload_numerics.round_list(scaled_counts[dataset].sort_values()),
-            }
-            for dataset in ("WBM", "MP")
-        ]
-    return payload
+    def series(dataset: str, scale: float) -> dict[str, Any]:
+        """One dataset's sorted counts divided by scale."""
+        counts = (df_counts[dataset].dropna() / scale).sort_values()
+        x_vals = [str(symbol) for symbol in counts.index]
+        return {"label": dataset, "x": x_vals, "y": payload_numerics.round_list(counts)}
+
+    return {
+        "raw": [series(dataset, 1) for dataset in dataset_sizes],
+        "normalized": [
+            series(name, size / 100) for name, size in dataset_sizes.items()
+        ],
+    }

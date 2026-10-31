@@ -1,8 +1,5 @@
 """Tests for discovery classification and regression metrics."""
 
-import os
-import subprocess
-import sys
 from pathlib import Path
 from types import SimpleNamespace
 from typing import cast
@@ -17,7 +14,6 @@ from sklearn.metrics import (
     r2_score,
 )
 
-from matbench_discovery import ROOT
 from matbench_discovery.data import load_discovery_predictions
 from matbench_discovery.enums import MbdKey, Model, TestSubset
 from matbench_discovery.metrics.discovery import (
@@ -27,6 +23,7 @@ from matbench_discovery.metrics.discovery import (
     stable_metrics,
     write_all_metrics_to_yaml,
 )
+from tests.utils import import_repo_script, patch_model_metadata
 
 df_full_discovery_metrics = pd.DataFrame.from_dict(
     {
@@ -287,39 +284,43 @@ def test_df_discovery_metrics() -> None:
     assert df_full_discovery_metrics.isna().sum().sum() == 0, "NaNs in metrics"
 
 
-def test_discovery_eval_skips_incomplete_cli_model() -> None:
-    """Test discovery eval skips incomplete CLI models before writing metrics."""
-    result = subprocess.run(
-        [sys.executable, "scripts/evals/discovery.py", "--models", "alphanet-v1-mptrj"],
-        cwd=ROOT,
-        env=os.environ | {"CI": "1"},
-        text=True,
-        capture_output=True,
-        check=False,
-    )
-    output = f"{result.stdout}\n{result.stderr}"
+def test_discovery_eval_skips_incomplete_cli_model(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Discovery eval skips incomplete CLI models without loading predictions."""
+    from matbench_discovery import data
 
-    assert result.returncode == 0, output
-    assert "Skipping AlphaNet-v1-MPtrj: incomplete discovery metrics" in output
-    assert "Loading preds" not in output
-    assert "Error processing" not in output
-    assert "KeyError" not in output
+    eval_discovery = import_repo_script("eval_discovery", "scripts/evals/discovery.py")
+    model = Model.alignn
+    metadata = {"model_name": "Fake Net", "lifecycle": "active", "metrics": {}}
+    patch_model_metadata(monkeypatch, model, metadata)
+    monkeypatch.setattr(eval_discovery.cli_args, "models", [model])
+
+    def fail_load(**_kwargs: object) -> None:
+        """Fail if the eval loads WBM predictions for an all-incomplete selection."""
+        raise AssertionError("load_discovery_predictions must not be called")
+
+    monkeypatch.setattr(data, "load_discovery_predictions", fail_load)
+
+    assert eval_discovery.main() == 0
+    stdout = capsys.readouterr().out
+    assert "Skipping Fake Net: incomplete discovery metrics" in stdout
+    assert "Processing" not in stdout
 
 
 def test_discovery_prediction_frames(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Full-roster frames round, align hull energies, and average valid errors."""
-    material_ids = pd.Index(["wbm-2-1", "wbm-1-1", "wbm-3-1"])
+    """Full-roster frames round, align hull energies, and match metric float order."""
+    material_ids = pd.Index(["wbm-2-1", "wbm-1-1", "wbm-3-1", "wbm-4-1"])
     raw = pd.DataFrame(
         {
-            MbdKey.e_form_dft: [-1.0004, -0.5, 0.0],
-            MbdKey.each_true: [-0.1004, 0.2, 0.0],
-            **{key: [-1.1254, -0.25, np.nan] for key in full_discovery_model_keys},
+            MbdKey.e_form_dft: [-1.0004, -0.5, 0.0, -0.063],
+            MbdKey.each_true: [-0.1004, 0.2, 0.0, -0.074],
+            **dict.fromkeys(full_discovery_model_keys, (-1.1254, -0.25, np.nan, 0.011)),
         },
         index=material_ids,
     )
-    # One missing prediction must not poison the cross-model mean.
     raw.loc[material_ids[0], Model.mace_mpa_0.key] = np.nan
 
     def load_predictions(*, models: list[Model], subset: object = None) -> pd.DataFrame:
@@ -331,30 +332,25 @@ def test_discovery_prediction_frames(
     monkeypatch.setattr(
         "matbench_discovery.preds.load_df_wbm_with_preds", load_predictions
     )
-    # Exercise the loader without retaining synthetic predictions in its global cache.
-    cache_info = load_discovery_predictions.cache_info()
-    df_preds, df_each_pred, df_each_err = load_discovery_predictions.__wrapped__()
-    assert load_discovery_predictions.cache_info() == cache_info
-    assert set(df_each_pred) == full_discovery_model_keys
-    assert set(df_each_err) == full_discovery_model_keys | {str(MbdKey.each_err_models)}
+    df_preds, df_each_pred, df_each_err = load_discovery_predictions()
+    assert set(df_each_pred) == set(df_each_err) == full_discovery_model_keys
     for frame in (df_preds, df_each_pred, df_each_err):
         pd.testing.assert_index_equal(frame.index, material_ids)
+    rounded = raw.round(3)
+    pd.testing.assert_frame_equal(df_preds, rounded, check_exact=True)
     for model_key in full_discovery_model_keys:
+        # bit-identical to metrics' each_true + pred - e_form: the last row is exactly
+        # 0.0 (stable) in that order but 3.5e-18 (unstable) as pred+(each_true-e_form)
+        expected_each_pred = (
+            rounded[MbdKey.each_true] + rounded[model_key] - rounded[MbdKey.e_form_dft]
+        )
+        np.testing.assert_array_equal(df_each_pred[model_key], expected_each_pred)
         missing = model_key == Model.mace_mpa_0.key
-        # Two f64 additions/subtractions near unity: allow fewer than five eps.
+        # one f64 subtraction near unity: fewer than five eps
         np.testing.assert_allclose(
-            df_each_pred[model_key],
-            [np.nan if missing else -0.225, 0.45, np.nan],
+            df_each_err[model_key],
+            [np.nan if missing else -0.125, 0.25, np.nan, 0.074],
             rtol=0,
             atol=1e-15,
         )
-        np.testing.assert_array_equal(
-            df_each_err[model_key], [np.nan if missing else -0.125, 0.25, np.nan]
-        )
-    for frame in (df_preds, df_each_err):
-        np.testing.assert_array_equal(
-            frame[MbdKey.each_err_models], [0.125, 0.25, np.nan]
-        )
-    pd.testing.assert_frame_equal(
-        df_preds.drop(columns=MbdKey.each_err_models), raw.round(3), check_exact=True
-    )
+    assert df_each_pred.iloc[-1].eq(0).all()

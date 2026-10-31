@@ -52,19 +52,19 @@ environment:
   dependencies:
   - nequix
   - 'jax[cuda12]'
-  - e3nn-jax==0.20.7
+  - e3nn-jax
   - jraph==0.0.6.dev0
-  - equinox==0.11.11
+  - equinox
   - optax==0.2.5
   - ase==3.24.0
   - tqdm==4.67.1
   - wandb==0.19.11
   - pyyaml==6.0.2
-  - matscipy==1.1.1
+  - matscipy
   - h5py==3.14.0
   - wandb-osh==1.2.2
   - cloudpickle==3.1.1
-  python_version: '3.12'
+  python_version: '3.14'
 openness: OSOD
 architecture_types: [gnn]
 train_task: S2EFS
@@ -73,6 +73,7 @@ targets: EFSH_G
 training_sets: [MPtrj, MDR-MP PBE ω_q]
 fine_tune: true
 model_params: 707658
+test_set_informed: [phonons]
 training_cost:
   entries:
   - hardware: NVIDIA A100
@@ -129,16 +130,18 @@ notes:
     uv sync --extra pft
     bash data/download_pbe_mdr_preprocessed.sh
     uv run nequix/pft/train.py configs/nequix-mp-1-pft.yml
+  disclosure: >-
+    Fine-tuned on MDR-MP PBE ω_q Hessian labels whose training split contains 70 of the 103 κ-103 materials (2 more in validation, 6 in test; `data/pbe_mdr_split.json` in [atomicarchitects/nequix](https://github.com/atomicarchitects/nequix)), so κ-103 materials informed training.
 
 metrics:
   diatomics:
     pred_file:
-      name: models/nequix/nequix-mp-1-pft/2026-06-28-diatomics.json.gz
-      url: https://figshare.com/files/66104672
-      size: 242584
-      md5: 37446dee095789d2271d384dae61adc4
-    hardware: NVIDIA H200
-    run_time_sec: 57.29
+      name: models/nequix/nequix-mp-1-pft/2026-10-19-diatomics.json.gz
+      url: https://figshare.com/files/70350126
+      size: 246573
+      md5: a6e8ed76ccce0a261ad4613bc3a30da6
+    cost: {source: runner, hardware: NVIDIA H200, device: gpu, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 62.04, load_time_sec: 10.61, max_rss_gb: 5.784}
+    excluded_formula_reasons: {}
     pbe_wall_dist_mae: 0.6389
     pbe_energy_mae: 1.682
     pbe_bond_length_error: 0.2585
@@ -156,6 +159,18 @@ metrics:
       n_eligible: 73
       failed_elements: []
       missing_elements: []
+    reproducibility:
+      checked: '2026-10-20'
+      status: reproduced
+      tolerance: 0.001
+      runs:
+      - label: published run (2026-06-28, H200)
+        file:
+          name: models/nequix/nequix-mp-1-pft/2026-06-28-diatomics.json.gz
+          url: https://figshare.com/files/66104672
+          size: 242584
+          md5: 37446dee095789d2271d384dae61adc4
+      rel_changes: {}
   discovery:
     pred_file:
       name: models/nequix/nequix-mp-1-pft/2026-01-12-discovery.csv.gz
@@ -197,37 +212,36 @@ metrics:
       size: 104224729
       md5: eb6a8f03eee8acf49c8c93b681dd098d
     symprec=1e-2:
-      rmsd: 0.0866
-      n_sym_ops_mae: 1.7984
-      symmetry_decrease: 0.054
-      symmetry_match: 0.8109
-      symmetry_increase: 0.1276
-      n_structures: 256963
+      rmsd: 0.0866 # unitless
+      n_sym_ops_mae: 1.7984 # unitless
+      symmetry_decrease: 0.054 # fraction
+      symmetry_match: 0.8109 # fraction
+      symmetry_increase: 0.1276 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/nequix/nequix-mp-1-pft/2026-01-12-geo-opt-symprec=1e-2-moyo=0.7.4.csv.gz
-        url: https://figshare.com/files/61021306
-        size: 8402588
-        md5: 045c47309c18650ff72bf32ab2d82403
+        name: models/nequix/nequix-mp-1-pft/2026-01-12-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333908
+        size: 7555323
+        md5: 23fac6a2c41d643868127f23eb683cf5
     symprec=1e-5:
-      rmsd: 0.0866
-      n_sym_ops_mae: 2.0578
-      symmetry_decrease: 0.0602
-      symmetry_match: 0.6976
-      symmetry_increase: 0.2362
-      n_structures: 256963
+      rmsd: 0.0866 # unitless
+      n_sym_ops_mae: 2.0577 # unitless
+      symmetry_decrease: 0.0602 # fraction
+      symmetry_match: 0.6976 # fraction
+      symmetry_increase: 0.2362 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/nequix/nequix-mp-1-pft/2026-01-12-geo-opt-symprec=1e-5-moyo=0.7.4.csv.gz
-        url: https://figshare.com/files/61021309
-        size: 8316389
-        md5: f0c9e0985141a750d56e5f76dc348d3c
+        name: models/nequix/nequix-mp-1-pft/2026-01-12-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333911
+        size: 7528351
+        md5: f6b2975a55aab5f60981972c81d9cf01
   md:
     pred_file:
       name: models/nequix/nequix-mp-1-pft/2026-06-28-md-metrics.csv.gz
-      url: https://figshare.com/files/66048920
-      size: 1552
-      md5: e771b77da2bcb6fc2c7f65dee85afe3f
-    hardware: NVIDIA H200
-    run_time_sec: 41426.12
+      url: https://figshare.com/files/66575000
+      size: 1720
+      md5: 59e8fadb90ac20a2d2e1f0fbdae17b3d
+    cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 41426.12}
     energy_rmse: 1.4143
     force_rmse: 131.0959
     rdf_error: 5.9298
@@ -250,15 +264,20 @@ metrics:
       κ_failure_rate: 0.0097
       imaginary_mode_rate: 0.0097
       spectrum_w1: 0.1979
-      phonon_file:
-        name: models/nequix/nequix-mp-1-pft/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1315646068
-        md5: a28560f16b0c6eefd63aafd52c27344f
-      force_file:
-        name: models/nequix/nequix-mp-1-pft/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 8680038
-        md5: a8ed406ef9c5fb4203f8239d88d2fba1
-      run_info_file:
-        name: models/nequix/nequix-mp-1-pft/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 8409
-        md5: 0747ffa24b8dd417518a6250adc865fe
+      harmonic:
+        phonon_file:
+          name: models/nequix/nequix-mp-1-pft/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334607
+          size: 23626088
+          md5: c97eea9e136345418f7efda0f69e1292
+        force_file:
+          name: models/nequix/nequix-mp-1-pft/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334613
+          size: 8680038
+          md5: a8ed406ef9c5fb4203f8239d88d2fba1
+        run_info_file:
+          name: models/nequix/nequix-mp-1-pft/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334616
+          size: 8409
+          md5: 0747ffa24b8dd417518a6250adc865fe
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 3525.14, max_rss_gb: 6.906}

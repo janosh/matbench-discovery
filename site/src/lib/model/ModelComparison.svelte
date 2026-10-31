@@ -105,12 +105,7 @@
       </MultiSelect>
       <label class="option-sort">
         Sort
-        <!-- not bind:value: Svelte reads `option:checked`, which happy-dom can't match -->
-        <select
-          value={option_sort}
-          onchange={(event) =>
-            (option_sort = event.currentTarget.value === `added` ? `added` : `cps`)}
-        >
+        <select bind:value={option_sort}>
           <option value="cps">by CPS</option>
           <option value="added">by newest</option>
         </select>
@@ -165,10 +160,7 @@
                   {#snippet trigger(trigger_props)}<span
                       role="button"
                       tabindex="0"
-                      {...trigger_props}
-                      >{@html row.label}{#if row.unit}<small>
-                          {row.unit}</small
-                        >{/if}</span
+                      {...trigger_props}>{@html row.label}</span
                     >{/snippet}
                   {@html row.description ?? ``}
                 </Popover>

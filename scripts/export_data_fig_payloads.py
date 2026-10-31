@@ -100,8 +100,7 @@ def main() -> None:
     if not os.path.isfile(MP_TRJ_SUMMARY_PATH):
         raise FileNotFoundError(
             f"MPtrj summary cache not found at {MP_TRJ_SUMMARY_PATH}. Regenerate it "
-            "from the extXYZ source with python data/mp/eda_mp_trj.py, then rerun "
-            "python scripts/export_data_fig_payloads.py."
+            "from the extXYZ source with data/mp/eda_mp_trj.py, then rerun this."
         )
 
     df_mp_trj = pd.read_json(MP_TRJ_SUMMARY_PATH)
@@ -146,6 +145,7 @@ def main() -> None:
         build_element_counts_payload(
             route_counts["mp-element-counts-by-occurrence"],
             df_wbm.query(MbdKey.uniq_proto)[Key.formula],
+            n_mp_structures=len(df_mp),
         ),
     )
 

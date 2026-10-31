@@ -6,6 +6,7 @@
   import { model_metric_ranks, rank_color, RANKED_METRICS } from '#lib/rankings.js'
   import PtableInset from '#lib/PtableInset.svelte'
   import {
+    cost_annotation,
     discovery_task_tooltips,
     get_nested_value,
     is_finite_num,
@@ -15,6 +16,7 @@
     openness_tooltips,
     targets_tooltips,
   } from '#lib/metrics.js'
+  import { has_energy_parity_model } from '#lib/parity/energy-parity.js'
   import { has_kappa_parity_model } from '#lib/parity/kappa-parity.js'
   import EnergyParityPlot from '#lib/plot/EnergyParityPlot.svelte'
   import KappaParityPlot from '#lib/plot/KappaParityPlot.svelte'
@@ -45,7 +47,7 @@
     Versions,
   } from 'svelte-widgets/icons'
   import { format_relative_time, get_org_logo, MD_METRICS } from '#lib/labels.js'
-  import { format_num } from 'matterviz/labels'
+  import { format_num, humanize } from 'matterviz/labels'
   import { HeatmapTable } from 'matterviz/table'
   import { JsonTree } from 'matterviz/layout'
   import { ColorBar } from 'matterviz/plot'
@@ -145,7 +147,9 @@
     return Boolean(
       results &&
       typeof results === `object` &&
-      Object.keys(results).some((key) => ![`status`, `reason`].includes(key)),
+      Object.keys(results).some(
+        (key) => ![`status`, `reason`, `reproducibility`].includes(key),
+      ),
     )
   }
   let selected_metric = $derived(
@@ -161,7 +165,7 @@
         ? `model=${key}`
         : task === `diatomics`
           ? `models=PBE,r2SCAN,${key}`
-          : `compare=${key}`
+          : `compare=${[...new Set([...comparison.keys, key])].join(`,`)}`
   // Registry tests enforce a shared calculator for every declared phonon protocol.
   let runner_command = $derived(
     model.hyperparams?.evaluation?.kappa
@@ -172,7 +176,13 @@
   let ranks = $derived(model_metric_ranks(model.model_key, ACTIVE_MODELS, RANKED_METRICS))
   let comparing = $derived(comparison.keys.has(model.model_key))
   let n_others = $derived(comparison.keys.size - (comparing ? 1 : 0))
-  let env_packages = $derived(model.environment.dependencies.map(parse_dependency_spec))
+  let env_packages = $derived(
+    model.environment.dependencies
+      .map(parse_dependency_spec)
+      .toSorted((dep_a, dep_b) =>
+        dep_a.name.localeCompare(dep_b.name, `en`, { sensitivity: `base` }),
+      ),
+  )
   let added_ago = $derived(
     model.dates.benchmark_added ? format_relative_time(model.dates.benchmark_added) : ``,
   )
@@ -214,7 +224,7 @@
   {@const org_logo = affiliation ? get_org_logo(affiliation) : undefined}
   {@const author_links = [
     [email ? `mailto:${email}` : undefined, `Email`, Email],
-    [orcid, `Orcid`, ORCID],
+    [orcid, `ORCID`, ORCID],
     [url, `Website`, Globe],
     [github, `GitHub`, GitHub],
   ] as const}
@@ -364,6 +374,7 @@
       {@const available = has_task_results(task)}
       {@const value = metric_value(model, metric)}
       {@const rank_entry = ranks.find((entry) => entry.metric.key === metric.key)}
+      {@const cost = is_finite_num(value) ? cost_annotation(model, metric) : undefined}
       <Popover trigger_mode="hover" trap_focus={false} aria-label="Metric rank">
         {#snippet trigger(trigger_props)}
           <a
@@ -403,6 +414,7 @@
         {/if}
         {#if is_finite_num(value)}
           {@html metric.description ?? ``}
+          {#if cost}<br />{cost}{/if}
         {:else}
           {missing_metric_reason(model, metric)}
         {/if}
@@ -411,7 +423,7 @@
   </section>
 
   <section class="model-info" aria-labelledby="model-info">
-    <h2 id="model-info">Model Info</h2>
+    <h2 id="model-info">Model info</h2>
     <div class="info-grid">
       {#each Object.entries(model_info_groups) as [label, items] (label)}
         <div>
@@ -436,7 +448,7 @@
     </div>
   </section>
 
-  <h2 id="training-set">Training Set</h2>
+  <h2 id="training-set">Training set</h2>
   <section class="training-set">
     {#each model.training_sets as dataset_key (dataset_key)}
       {@const { n_structures, name, slug, n_materials, license } = DATASETS[dataset_key]}
@@ -513,19 +525,21 @@
           <!-- segmented tab bar controls the parity plot; the active button shows a
           spinner while its plot's data is still loading -->
           <div class="energy-parity-controls">
-            <ButtonGroup
-              class="energy-parity-tabs"
-              bind:value={energy_parity_tab}
-              label="Energy parity diagnostics"
-              options={energy_parity_options.map((option) => ({
-                ...option,
-                loading:
-                  (energy_parity_tab === option.value &&
-                    energy_parity_statuses[option.value] !== `ready` &&
-                    energy_parity_statuses[option.value] !== `error`) ||
-                  undefined,
-              }))}
-            />
+            {#if has_energy_parity_model(model.model_key)}
+              <ButtonGroup
+                class="energy-parity-tabs"
+                bind:value={energy_parity_tab}
+                label="Energy parity diagnostics"
+                options={energy_parity_options.map((option) => ({
+                  ...option,
+                  loading:
+                    (energy_parity_tab === option.value &&
+                      energy_parity_statuses[option.value] !== `ready` &&
+                      energy_parity_statuses[option.value] !== `error`) ||
+                    undefined,
+                }))}
+              />
+            {/if}
             {#if missing_preds != undefined && DATASETS.WBM.n_structures !== null}
               <span
                 class="missing-preds"
@@ -544,7 +558,7 @@
             {/if}
           </div>
           {#each energy_parity_options as { value: energy_kind } (energy_kind)}
-            {#if mounted_energy_tabs.has(energy_kind)}
+            {#if has_energy_parity_model(model.model_key) && mounted_energy_tabs.has(energy_kind)}
               <EnergyParityPlot
                 hidden={energy_parity_tab !== energy_kind}
                 {model}
@@ -570,9 +584,7 @@
               bind:active_element
               tile_props={{ float_fmt: `.2f` }}
               show_photo={false}
-              missing={{
-                color: `light-dark(rgba(255,255,255,0.3), rgba(255,255,255,0.5))`,
-              }}
+              missing={{ color: `var(--ptable-missing-bg)` }}
             >
               {#snippet inset()}
                 <TableInset style="align-content: center">
@@ -582,12 +594,12 @@
                         element={active_element}
                         elem_counts={heatmap_values}
                         show_percent={false}
-                        unit="<small style='font-weight: lighter;'>eV / atom</small>"
+                        unit="<small style='font-weight: lighter;'>eV/atom</small>"
                       />
                     {/if}
                   </div>
                   <ColorBar
-                    title="|E<sub>ML,hull</sub> - E<sub>DFT,hull</sub>| (eV / atom)"
+                    title="|E<sub>ML,hull</sub> - E<sub>DFT,hull</sub>| (eV/atom)"
                     title_side="top"
                     color_scale={{
                       scheme: color_scale,
@@ -653,7 +665,7 @@
   </section>
 
   <section class="authors">
-    <h2 id="model-authors">Model Authors</h2>
+    <h2 id="model-authors">Model authors</h2>
     <ol>
       {#each model.authors as author (author.name)}
         <li>
@@ -665,7 +677,7 @@
 
   {#if model.trained_by}
     <section class="trained-by">
-      <h2 id="trained-by">Trained By</h2>
+      <h2 id="trained-by">Trained by</h2>
       <ol>
         {#each model.trained_by as author (author.name)}
           <li>
@@ -679,7 +691,7 @@
   {#if model.notes?.html}
     <section class="notes">
       {#each Object.entries(model.notes.html) as [key, note] (key)}
-        <h2>{key}</h2>
+        <h2 id={key}>{humanize(key)}</h2>
         <div>{@html note}</div>
       {/each}
     </section>
@@ -697,13 +709,13 @@
   {/if}
 
   {#if env_packages.length}
-    <section class="deps">
-      <h2 id="dependencies">Dependencies</h2>
+    <details class="deps">
+      <summary><h2 id="dependencies">Dependencies ({env_packages.length})</h2></summary>
       <!-- widgets tooltip, not the native one: it only shows versions cut off by the ellipsis -->
       <ul {@attach tooltip()}>
-        {#each env_packages as { name, detail, href } (name + detail)}
+        {#each env_packages as { name, name_href, detail, href } (name + detail)}
           <li>
-            {name}
+            <a href={name_href} target="_blank" rel="noopener noreferrer">{name}</a>
             {#if detail}
               <a
                 class="dependency-detail"
@@ -720,7 +732,7 @@
           </li>
         {/each}
       </ul>
-    </section>
+    </details>
   {/if}
 </div>
 
@@ -850,24 +862,53 @@
       font-size: 0.8em;
     }
   }
-  section.deps ul {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1em;
-    padding: 0;
+  /* top-level so happy-dom (no CSS nesting) computes it in tests too */
+  details.deps li > a:first-child,
+  .dependency-detail span:first-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
-  section.deps ul li {
-    background-color: var(--chip-bg);
-    padding: 2pt 6pt;
-    border-radius: 3pt;
-    text-align: center;
-    margin: 0;
-    font-weight: lighter;
-    max-width: 12em;
-  }
-  section.deps ul li :is(a, strong) {
-    display: block;
-    font-weight: bold;
+  details.deps {
+    margin: 2em 0;
+    summary h2 {
+      display: inline;
+      cursor: pointer;
+    }
+    ul {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(18em, 100%), 1fr));
+      column-gap: 3em;
+      padding: 0;
+      list-style: none;
+    }
+    li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1em;
+      margin: 0;
+      padding: 2pt 0;
+      line-height: 1.3;
+      border-bottom: 1px solid var(--border);
+    }
+    /* last row of the 2-column grid */
+    li:is(:last-child, :nth-last-child(2):nth-child(odd)) {
+      border-bottom: none;
+    }
+    /* version numbers as light code, less prominent than the package name */
+    .dependency-detail {
+      display: flex;
+      min-width: 0;
+      white-space: nowrap;
+      font-family: monospace;
+      font-size: 0.9em;
+      opacity: 0.85;
+      span:last-child {
+        flex: none;
+      }
+    }
   }
   /* Compact fused parity tabs sit directly above the plot. */
   .energy-parity-controls {
@@ -901,25 +942,6 @@
   }
   :global(.energy-parity-tabs.button-group .options > button:last-child) {
     border-radius: 0 9999px 9999px 0;
-  }
-  /* version numbers as light code, less prominent than the package name */
-  section.deps ul li a {
-    display: flex;
-    min-width: 0;
-    max-width: 100%;
-    white-space: nowrap;
-    font-weight: normal;
-    font-family: var(--font-mono, monospace);
-    font-size: 0.9em;
-    opacity: 0.85;
-  }
-  .dependency-detail span:first-child {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .dependency-detail span:last-child {
-    flex: none;
   }
   :is(.meta-info, .links) {
     display: flex;

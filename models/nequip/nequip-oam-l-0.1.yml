@@ -47,8 +47,8 @@ license:
   checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
 
 environment:
-  dependencies: ['nequip>=0.14', 'torch<2.10']
-  python_version: '3.12'
+  dependencies: ['nequip>=0.14', 'torch==2.11.0']
+  python_version: '3.14'
 openness: OSOD
 architecture_types: [gnn]
 train_task: S2EFS
@@ -104,12 +104,12 @@ notes:
 metrics:
   diatomics:
     pred_file:
-      name: models/nequip/nequip-oam-l-0.1/2026-06-28-diatomics.json.gz
-      url: https://figshare.com/files/66104642
-      size: 260978
-      md5: 24f5921af62f2150cf650f2491080e25
-    hardware: NVIDIA H200
-    run_time_sec: 456.98
+      name: models/nequip/nequip-oam-l-0.1/2026-10-19-diatomics.json.gz
+      url: https://figshare.com/files/70350123
+      size: 263260
+      md5: 87e2e4d2591312bc6457c79351008490
+    cost: {source: runner, hardware: NVIDIA H200, device: cuda, acceleration: [torch_aot_inductor], n_shards: 1, n_processes: 1, run_time_sec: 54.51, load_time_sec: 29.34, max_rss_gb: 1.509, max_gpu_mem_gb: 0.066}
+    excluded_formula_reasons: {}
     pbe_wall_dist_mae: 0.06374
     pbe_energy_mae: 0.618
     pbe_bond_length_error: 0.2472
@@ -127,6 +127,25 @@ metrics:
       n_eligible: 73
       failed_elements: []
       missing_elements: []
+    reproducibility:
+      checked: '2026-10-20'
+      status: reproduced
+      tolerance: 0.001
+      runs:
+      - label: published run (2026-06-28, H200)
+        file:
+          name: models/nequip/nequip-oam-l-0.1/2026-06-28-diatomics.json.gz
+          url: https://figshare.com/files/70349778
+          size: 260978
+          md5: 24f5921af62f2150cf650f2491080e25
+      - label: identical H200 repeat
+        file:
+          name: models/nequip/nequip-oam-l-0.1/repeat/2026-10-20-diatomics.json.gz
+          url: https://figshare.com/files/70368357
+          size: 263260
+          md5: 2f9172dfa50a3f6b76113513c2a9ce62
+      rel_changes: {}
+      repeat_rel_change: 0.0
   discovery:
     pred_file:
       name: models/nequip/nequip-oam-l-0.1/2025-08-27-discovery.csv.gz
@@ -168,37 +187,36 @@ metrics:
       size: 107819208
       md5: 0d0c4d92c4ed6b12bd1278dce414ae03
     symprec=1e-5:
-      rmsd: 0.0647
-      n_sym_ops_mae: 1.9352
-      symmetry_decrease: 0.0792
-      symmetry_match: 0.7125
-      symmetry_increase: 0.2018
-      n_structures: 256963
+      rmsd: 0.0647 # unitless
+      n_sym_ops_mae: 1.9351 # unitless
+      symmetry_decrease: 0.0792 # fraction
+      symmetry_match: 0.7125 # fraction
+      symmetry_increase: 0.2018 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/nequip/nequip-oam-l-0.1/2025-08-27-geo-opt-symprec=1e-5-moyo=0.4.4.csv.gz
-        url: https://figshare.com/files/57731032
-        size: 9046755
-        md5: 1eab178007279afbb2ff29f2732eb1d3
+        name: models/nequip/nequip-oam-l-0.1/2025-08-27-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333887
+        size: 8139542
+        md5: da3b664ad26512f3849dd4b5ce3f4f10
     symprec=1e-2:
-      rmsd: 0.0647
-      n_sym_ops_mae: 1.7483
-      symmetry_decrease: 0.0543
-      symmetry_match: 0.816
-      symmetry_increase: 0.1226
-      n_structures: 256963
+      rmsd: 0.0647 # unitless
+      n_sym_ops_mae: 1.7483 # unitless
+      symmetry_decrease: 0.0543 # fraction
+      symmetry_match: 0.816 # fraction
+      symmetry_increase: 0.1226 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/nequip/nequip-oam-l-0.1/2025-08-27-geo-opt-symprec=1e-2-moyo=0.4.4.csv.gz
-        url: https://figshare.com/files/57731035
-        size: 9235677
-        md5: 88ff54c22d93253374b9bae71f17b53f
+        name: models/nequip/nequip-oam-l-0.1/2025-08-27-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333890
+        size: 8212559
+        md5: 73cecce3bcc055388123640d1afc701a
   md:
     pred_file:
       name: models/nequip/nequip-oam-l-0.1/2026-06-28-md-metrics.csv.gz
-      url: https://figshare.com/files/66048911
-      size: 1587
-      md5: d5d56a13957953015a9b677f22f98db1
-    hardware: NVIDIA H200
-    run_time_sec: 65073.83
+      url: https://figshare.com/files/70333566
+      size: 1740
+      md5: 863970179ecceec8aa872c974c023a50
+    cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 65073.83}
     energy_rmse: 0.7021
     force_rmse: 74.8646
     rdf_error: 3.568
@@ -212,7 +230,7 @@ metrics:
     kappa_103:
       pred_file:
         name: models/nequip/nequip-oam-l-0.1/2025-08-27-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/57475504
+        url: https://figshare.com/files/70334568
         size: 10822229
         md5: 0171f6895c19eee96d5f45fcd155d801
       κ_SRME: 0.1657
@@ -221,15 +239,20 @@ metrics:
       κ_failure_rate: 0.0
       imaginary_mode_rate: 0.0
       spectrum_w1: 0.1257
-      phonon_file:
-        name: models/nequip/nequip-oam-l-0.1/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1286144727
-        md5: 7eccbed6c15dd2f4c7823cb1f6d298a0
-      force_file:
-        name: models/nequip/nequip-oam-l-0.1/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 8706835
-        md5: 9755efc0efaf487c255e1656265f7f59
-      run_info_file:
-        name: models/nequip/nequip-oam-l-0.1/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 8088
-        md5: b877552a9f56ccf735a5b3833bcfaba7
+      harmonic:
+        phonon_file:
+          name: models/nequip/nequip-oam-l-0.1/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334571
+          size: 23537688
+          md5: 902e5310c31e574613dbd502124964c7
+        force_file:
+          name: models/nequip/nequip-oam-l-0.1/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334583
+          size: 8706835
+          md5: 9755efc0efaf487c255e1656265f7f59
+        run_info_file:
+          name: models/nequip/nequip-oam-l-0.1/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334586
+          size: 8088
+          md5: b877552a9f56ccf735a5b3833bcfaba7
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 527.8, max_rss_gb: 2.547, max_gpu_mem_gb: 11.491}

@@ -23,6 +23,7 @@
     title_case,
   } from '#lib/labels.js'
   import {
+    cost_annotation,
     get_nested_value,
     is_finite_num,
     label_data_path,
@@ -443,7 +444,7 @@
         scales.color === `arcsinh` ? { type: `arcsinh`, threshold: 0.25 } : scales.color,
     }}
     size_scale={{
-      radius_range: [5, 10],
+      radius_range: [4, 13],
       type: scales.size,
     }}
     color_bar={{
@@ -498,6 +499,11 @@
           {@html axes.size_value.label}:
           {format_value_or_num(metadata.size_value, axes.size_value.format)}<br />
         {/if}
+        <!-- time or speed-weighted axes name their GPU -->
+        {@const cost = [axes.x, axes.y]
+          .map((axis) => axis && cost_annotation(metadata, axis))
+          .find(Boolean)}
+        {#if cost}<small>{cost}</small><br />{/if}
         {#if model_selection}<small>Click to select or deselect this model.</small>{/if}
       {/if}
     {/snippet}

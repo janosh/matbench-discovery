@@ -5,8 +5,9 @@ const PKG = `([A-Za-z0-9][A-Za-z0-9._-]*(?:\\[[^\\]]+\\])?)`
 const AT_SPEC = new RegExp(`^${PKG}\\s*@\\s*(.+)$`)
 const PIN_SPEC = new RegExp(`^${PKG}\\s*(==|>=|<=|!=|~=|<|>)\\s*(.+)$`)
 
+// local version labels (torch's +cu126) have no PyPI release page
 const pypi_href = (name: string, version = ``): string =>
-  `https://pypi.org/project/${name.replace(/\[[^\]]*\]$/, ``)}/${version}`
+  `https://pypi.org/project/${name.replace(/\[[^\]]*\]$/, ``)}/${version.replace(/\+.*$/, ``)}`
 
 const vcs_browser_href = (locator: string): string => {
   const url = locator.replace(/^git\+/, ``)
@@ -30,7 +31,12 @@ export function parse_dependency_spec(dep: string) {
     const locator = at_match[2].trim()
     const url = vcs_browser_href(locator)
     const href = url.startsWith(`http`) ? url : pypi_href(name)
-    return { name, detail: locator, href }
+    // a VCS install's name links its repo (may not be on PyPI), minus any user@ credentials
+    const repo_match =
+      /^git\+(?<scheme>https?:\/\/)(?:[^@/]+@)?(?<path>[^@]+?)(?:\.git)?@/.exec(locator)
+    const repo =
+      repo_match?.groups && `${repo_match.groups.scheme}${repo_match.groups.path}`
+    return { name, name_href: repo ?? pypi_href(name), detail: locator, href }
   }
   const pin_match = PIN_SPEC.exec(trimmed)
   if (pin_match) {
@@ -38,7 +44,8 @@ export function parse_dependency_spec(dep: string) {
     const operator = pin_match[2]
     const version = pin_match[3].trim()
     const href = pypi_href(name, operator === `==` ? version : undefined)
-    return { name, detail: `${operator}${version}`, href }
+    return { name, name_href: pypi_href(name), detail: `${operator}${version}`, href }
   }
-  return { name: trimmed, detail: ``, href: pypi_href(trimmed) }
+  const href = pypi_href(trimmed)
+  return { name: trimmed, name_href: href, detail: ``, href }
 }

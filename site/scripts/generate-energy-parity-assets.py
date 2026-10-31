@@ -25,14 +25,15 @@ from asset_helpers import (
 )
 from pymatviz.enums import Key
 
+from matbench_discovery import ROOT
 from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import DataFiles, MbdKey
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-OUT_DIR: Final = "site/static/energy-parity"
-MANIFEST_PATH: Final = "site/src/lib/parity/energy-parity-manifest.json"
+OUT_DIR: Final = f"{ROOT}/site/static/energy-parity"
+MANIFEST_PATH: Final = f"{ROOT}/site/src/lib/parity/energy-parity-manifest.json"
 ASSET_PREFIX: Final = "energy-parity-wbm-v1"
 LOCAL_ASSET_BASE_URL: Final = "/energy-parity/assets"
 STRUCTURE_SHARD_SIZE: Final = 512
@@ -66,14 +67,19 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--manifest", default=MANIFEST_PATH)
     parser.add_argument("--asset-prefix", default=ASSET_PREFIX)
     parser.add_argument("--local-asset-base-url", default=LOCAL_ASSET_BASE_URL)
-    parser.add_argument("--limit-rows", type=int, default=None)
+    parser.add_argument("--limit-rows", type=positive_int, default=None)
     parser.add_argument(
         "--structure-shard-size", type=positive_int, default=STRUCTURE_SHARD_SIZE
     )
     parser.add_argument(
         "--structure-bundle-size", type=positive_int, default=STRUCTURE_BUNDLE_SIZE
     )
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    # a debug subset must never overwrite the committed manifest
+    manifest = Path(args.manifest).resolve()
+    if args.limit_rows and manifest == Path(MANIFEST_PATH).resolve():
+        parser.error("--limit-rows requires a scratch --manifest path")
+    return args
 
 
 def valid_structure_bundles(

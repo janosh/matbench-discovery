@@ -13,6 +13,17 @@ from matbench_discovery.data import MAX_E_FORM_ERROR_THRESHOLD
 from matbench_discovery.enums import MbdKey, Model, TestSubset
 
 
+def pred_hull_dist[T: (pd.Series, pd.DataFrame)](
+    e_form_pred: T, each_true: pd.Series, e_form_dft: pd.Series
+) -> T:
+    """Predicted hull distance (eV/atom) each_true + e_form_pred - e_form_dft for
+    one model (Series) or one column per model (DataFrame). With 3-decimal inputs,
+    hundreds of prototypes land exactly on the stability threshold where this float
+    operation order decides the class, so all metrics and payloads must use it.
+    """
+    return e_form_pred.add(each_true, axis=0).sub(e_form_dft, axis=0)
+
+
 def classify_stable(
     each_true: Sequence[float | None] | pd.Series | np.ndarray,
     each_pred: Sequence[float | None] | pd.Series | np.ndarray,
@@ -230,7 +241,7 @@ def calc_discovery_metrics(
 
     model_preds = _align_preds(df_wbm, model_preds)
     each_true = df_wbm[MbdKey.each_true]
-    each_pred = each_true + model_preds - df_wbm[MbdKey.e_form_dft]
+    each_pred = pred_hull_dist(model_preds, each_true, df_wbm[MbdKey.e_form_dft])
     uniq_proto_idx = df_wbm.index[df_wbm[MbdKey.uniq_proto].astype(bool)]
     metrics_by_subset = {
         TestSubset.full_test_set: stable_metrics(each_true, each_pred, fillna=True),

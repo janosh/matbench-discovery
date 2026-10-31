@@ -4,6 +4,7 @@ import {
   energy_parity_asset_url,
   energy_parity_stats,
   get_energy_parity_point,
+  has_energy_parity_model,
   load_energy_parity_base,
   load_energy_parity_model,
   load_wbm_structure,
@@ -128,6 +129,13 @@ const manifest_sized_model = (
 })
 
 describe(`energy parity data helpers`, () => {
+  it(`only reports models present in the manifest`, () => {
+    // superseded models keep detail pages but drop out of the manifest
+    expect(has_energy_parity_model(`alchembert`)).toBe(true)
+    expect(has_energy_parity_model(`dpa-3.1-3m-ft`)).toBe(false)
+    expect(has_energy_parity_model(undefined)).toBe(false)
+  })
+
   it(`builds typed scatter arrays and preserves source row ids`, () => {
     const series = build_energy_parity_series(base, model, `e-form`)
 

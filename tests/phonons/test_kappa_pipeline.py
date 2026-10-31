@@ -50,7 +50,7 @@ from matbench_discovery.phonons.schema import (
     normalize_kappa_result,
     voigt_6_to_full_3x3,
 )
-from tests.utils import make_harmonic_record
+from tests.utils import make_harmonic_record, patch_model_metadata
 
 if TYPE_CHECKING:
     from ase.calculators.calculator import Calculator
@@ -205,6 +205,14 @@ def make_atoms_by_id() -> dict[str, Atoms]:
     return atoms_by_id
 
 
+# per-process runtime provenance (load_calculator_with_runtime shape) of the stub
+KAPPA_TEST_RUNTIME = (
+    {"cost_source": "runner", "backend": "none", "device": "cpu"}
+    | {"hardware": "test hardware", "acceleration": [], "load_time_sec": 2.0}
+    | {"n_processes": 1, "versions": {"ase": "test"}}
+)
+
+
 @pytest.fixture
 def shard_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
     """Provide a deterministic dataset, calculator, computation, and shard path."""
@@ -243,6 +251,7 @@ def shard_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> SimpleNamespac
             dry_run=dry_run,
             checkpoint=checkpoint,
             dtype=dtype,
+            runtime=KAPPA_TEST_RUNTIME,
         )
 
     return SimpleNamespace(
@@ -345,14 +354,33 @@ def test_checkpoint_digest_hashes_artifact_bytes(
     )
 
 
-def test_generated_models_use_stable_registry_provenance() -> None:
-    """Generated NequIP caches do not change merge identity across hosts."""
+@pytest.mark.parametrize("explicit_checkpoint", [False, True])
+def test_generated_models_use_stable_registry_provenance(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, explicit_checkpoint: bool
+) -> None:
+    """Merge identity is the registry ID unless an explicit checkpoint is passed."""
+    from matbench_discovery.calculators import CALCULATORS
     from models import run_kappa
 
     model = Model.nequip_mp_l_0_1
-    assert (
-        run_kappa.resolved_artifact_identifier(model, None)
-        == model.metadata["checkpoint_url"]
+    # pin the runtime-compiled spec shape (no managed or required checkpoint)
+    # before patching metadata, since resolving the lazy spec reads the real YAML
+    monkeypatch.setitem(
+        CALCULATORS,
+        model.name,
+        replace(
+            CALCULATORS[model.name], requires_checkpoint=False, auto_checkpoint=False
+        ),
+    )
+    registry_id = "https://example.com/models/synthetic-model-v1"
+    patch_model_metadata(monkeypatch, model, {"checkpoint_url": registry_id})
+    checkpoint_path = None
+    if explicit_checkpoint:
+        checkpoint_path = f"{tmp_path}/model.pt"
+        with open(checkpoint_path, mode="wb") as file:
+            file.write(b"checkpoint")
+    assert run_kappa.resolved_artifact_identifier(model, checkpoint_path) == (
+        os.path.abspath(checkpoint_path) if checkpoint_path else registry_id
     )
 
 
@@ -396,32 +424,37 @@ def test_kappa_output_paths_reuse_exactly_one_prior_shard_tree(tmp_path: Path) -
 
 
 @pytest.mark.parametrize(
-    ("argv", "exit_code", "expected_text"),
+    ("argv", "requires_checkpoint", "exit_code", "expected_text"),
     [
         # models without a downloadable artifact reject implicit calculator loading
-        (["--model", "equiformer_v3_mp", "--print-cmd"], 2, "requires --checkpoint"),
+        (["--model", "mace_mp_0", "--print-cmd"], True, 2, "requires --checkpoint"),
         (
-            ["--model", "equiformer_v3_mp", "--merge-shards", "--write-yaml"],
+            ["--model", "mace_mp_0", "--merge-shards", "--write-yaml"],
+            True,
             2,
             "requires --checkpoint",
         ),
         (
-            ["--model", "equiformer_v3_mp", "--checkpoint", "model.pt", "--print-cmd"],
+            ["--model", "mace_mp_0", "--checkpoint", "model.pt", "--print-cmd"],
+            True,
             0,
             "--checkpoint model.pt",
         ),
         (
             ["--model", "mace_mp_0", "--harmonic-only", "--print-cmd"],
+            False,
             0,
             "--harmonic-only",
         ),
         (
             [
                 *("--model", "mace_mp_0", "--harmonic-only"),
-                *("--merge-shards", "--write-yaml"),
+                *("--merge-shards", "--write-yaml", "--print-cmd"),
             ],
-            2,
-            "cannot replace conductivity",
+            False,
+            0,
+            # harmonic reruns register their artifacts + cost under kappa_103.harmonic
+            "--merge-shards --write-yaml --harmonic-only",
         ),
     ],
     ids=[
@@ -434,13 +467,22 @@ def test_kappa_output_paths_reuse_exactly_one_prior_shard_tree(tmp_path: Path) -
 )
 def test_kappa_cli_checkpoint_and_mode_args(
     capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
     argv: list[str],
+    requires_checkpoint: bool,
     exit_code: int,
     expected_text: str,
 ) -> None:
     """The kappa CLI requires declared checkpoints and guards harmonic-only YAML."""
+    from matbench_discovery.calculators import CALCULATORS
     from models import run_kappa
 
+    # synthetic checkpoint requirement decouples the test from live registry pins
+    monkeypatch.setitem(
+        CALCULATORS,
+        "mace_mp_0",
+        replace(CALCULATORS["mace_mp_0"], requires_checkpoint=requires_checkpoint),
+    )
     if exit_code:
         with pytest.raises(SystemExit, match=str(exit_code)):
             run_kappa.main(argv)
@@ -830,7 +872,7 @@ def test_resumable_shards_strict_merge_and_artifacts(
         run_metadata={**failed_record.run_metadata, "hardware": "different hardware"},
     )
     atomic_write_json(failed_record_path, asdict(mismatched_retry))
-    with pytest.raises(ValueError, match="different hardware or package versions"):
+    with pytest.raises(ValueError, match="cannot resume under different run labels"):
         shard_env.run(settings=settings, n_shards=2, retry_failures=True)
     atomic_write_json(failed_record_path, asdict(failed_record))
     shard_env.run(
@@ -869,6 +911,11 @@ def test_resumable_shards_strict_merge_and_artifacts(
     atomic_write_json(mixed_record_path, asdict(original_record))
 
     merged_run = merge_kappa_shards(shard_dir, model_key="test_model")
+    run_metadata = merged_run.run_metadata  # cost labels merge from the records
+    assert (run_metadata["n_processes"], run_metadata["load_time_sec"]) == (3, 6.0)
+    assert (run_metadata["cost_source"], run_metadata["hardware"]) == (
+        *("runner", "test hardware"),
+    )
     stem = f"{tmp_path}/2026-07-01-phonons-kappa-103"
     pred_path = f"{stem}.json.gz"
     artifacts = write_kappa_artifacts(merged_run, pred_file_path=pred_path)
@@ -921,7 +968,9 @@ def test_resumable_shards_strict_merge_and_artifacts(
                 )
             ),
         )
-        with pytest.raises(ValueError, match="different hardware or package versions"):
+        with pytest.raises(
+            ValueError, match="cannot resume under different run labels"
+        ):
             shard_env.run(settings=settings, n_shards=2)
     assert len(computation_stub.material_ids) == n_calls_before
     atomic_write_json(missing_record_path, asdict(missing_record))

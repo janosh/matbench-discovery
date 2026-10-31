@@ -46,13 +46,12 @@ license:
   checkpoint_url: https://huggingface.co/facebook/OMAT24/blob/main/LICENSE
 
 environment:
+  # Display/provenance pins; install is owned by project (override-dependencies).
   dependencies:
   - 'fairchem-core[torch-extras]==1.10.0'
-  - torch==2.4.0
-  - numpy<2
-  - scipy<1.15
-  python_version: '3.12'
-  find_links: ['https://data.pyg.org/whl/torch-2.4.0+cu121.html']
+  - torch==2.10.0+cu126
+  python_version: '3.14'
+  project: models/eqv2/fairchem-env
 openness: OSOD
 architecture_types: [transformer]
 train_task: S2EFS
@@ -100,12 +99,12 @@ notes:
 metrics:
   diatomics:
     pred_file:
-      name: models/eqv2/eqv2-m-omat-salex-mp/2026-06-29-diatomics.json.gz
-      url: https://figshare.com/files/66104594
-      size: 708572
-      md5: 28c3c8ef5ae29bb255f755ce58fe0b7c
-    hardware: NVIDIA H200
-    run_time_sec: 617.58
+      name: models/eqv2/eqv2-m-omat-salex-mp/2026-10-19-diatomics.json.gz
+      url: https://figshare.com/files/70349751
+      size: 712629
+      md5: 0c186fb4c2af6551935b530c7e0a1635
+    cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 650.41, load_time_sec: 24.39, max_rss_gb: 2.263, max_gpu_mem_gb: 0.516}
+    excluded_formula_reasons: {}
     pbe_wall_dist_mae: 0.7243
     pbe_energy_mae: 2.154
     pbe_bond_length_error: 0.3791
@@ -123,6 +122,18 @@ metrics:
       n_eligible: 73
       failed_elements: []
       missing_elements: []
+    reproducibility:
+      checked: '2026-10-20'
+      status: reproduced
+      tolerance: 0.001
+      runs:
+      - label: published run (2026-06-29, H200)
+        file:
+          name: models/eqv2/eqv2-m-omat-salex-mp/2026-06-29-diatomics.json.gz
+          url: https://figshare.com/files/66104594
+          size: 708572
+          md5: 28c3c8ef5ae29bb255f755ce58fe0b7c
+      rel_changes: {}
   discovery:
     pred_file:
       name: models/eqv2/eqv2-m-omat-salex-mp/2024-10-18-discovery.csv.gz
@@ -160,41 +171,40 @@ metrics:
   geo_opt:
     pred_file:
       name: models/eqv2/eqv2-m-omat-salex-mp/2024-10-18-geo-opt.jsonl.gz
-      url: https://figshare.com/files/53153471
-      size: 196094654
-      md5: ecfaad1911d3a899c9ed30b3294a03c2
+      url: https://figshare.com/files/70327950
+      size: 197152265
+      md5: 1213bbac261de149a1d9bd19802d0398
     symprec=1e-5:
-      rmsd: 0.0691
-      n_sym_ops_mae: 9.7872
-      symmetry_decrease: 0.852
-      symmetry_match: 0.1422
-      symmetry_increase: 0.0045
-      n_structures: 256963
+      rmsd: 0.0691 # unitless
+      n_sym_ops_mae: 9.7872 # unitless
+      symmetry_decrease: 0.852 # fraction
+      symmetry_match: 0.1422 # fraction
+      symmetry_increase: 0.0045 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/eqv2/eqv2-m-omat-salex-mp/2024-10-18-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/53504543
-        size: 6626182
-        md5: 5627056ead5fe975a9616a748f447c41
+        name: models/eqv2/eqv2-m-omat-salex-mp/2024-10-18-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333686
+        size: 6429074
+        md5: 6f4d9d940eb540929bdcf20646395b18
     symprec=1e-2:
-      rmsd: 0.0691
-      n_sym_ops_mae: 1.9989
-      symmetry_decrease: 0.1118
-      symmetry_match: 0.7725
-      symmetry_increase: 0.1052
-      n_structures: 256963
+      rmsd: 0.0691 # unitless
+      n_sym_ops_mae: 1.9989 # unitless
+      symmetry_decrease: 0.1118 # fraction
+      symmetry_match: 0.7725 # fraction
+      symmetry_increase: 0.1052 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/eqv2/eqv2-m-omat-salex-mp/2024-10-18-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/53504549
-        size: 7389394
-        md5: e99b38519cacab639e65cf777e43e5e2
+        name: models/eqv2/eqv2-m-omat-salex-mp/2024-10-18-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333689
+        size: 6892677
+        md5: 9b92c24ac407560159dd1fbd575b0409
   md:
     pred_file:
       name: models/eqv2/eqv2-m-omat-salex-mp/2026-06-28-md-metrics.csv.gz
-      url: https://figshare.com/files/66048866
-      size: 1579
-      md5: b346ac84feea4aa80103765e1670c57b
-    hardware: NVIDIA H200
-    run_time_sec: 151213.2
+      url: https://figshare.com/files/66574808
+      size: 1732
+      md5: c672647e77f1896510d5a1bdd7e060fd
+    cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 151213.21}
     energy_rmse: 0.6491
     force_rmse: 44.5524
     rdf_error: 3.474
@@ -217,15 +227,20 @@ metrics:
       κ_failure_rate: 0.0583
       imaginary_mode_rate: 0.0583
       spectrum_w1: 2.3255
-      phonon_file:
-        name: models/eqv2/eqv2-m-omat-salex-mp/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1307790494
-        md5: 7604118d0818247d892998807430e28a
-      force_file:
-        name: models/eqv2/eqv2-m-omat-salex-mp/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 8849392
-        md5: ae7ef82f463fac4c0bb7a7554526551c
-      run_info_file:
-        name: models/eqv2/eqv2-m-omat-salex-mp/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 8234
-        md5: d7b469c4289b3ba742951717213ae429
+      harmonic:
+        phonon_file:
+          name: models/eqv2/eqv2-m-omat-salex-mp/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334397
+          size: 22353651
+          md5: 104ee58a77c25f5e918e0e6438868351
+        force_file:
+          name: models/eqv2/eqv2-m-omat-salex-mp/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334400
+          size: 8849392
+          md5: ae7ef82f463fac4c0bb7a7554526551c
+        run_info_file:
+          name: models/eqv2/eqv2-m-omat-salex-mp/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334403
+          size: 8234
+          md5: d7b469c4289b3ba742951717213ae429
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 950.21, max_rss_gb: 2.61, max_gpu_mem_gb: 52.258}

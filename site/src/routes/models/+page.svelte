@@ -52,25 +52,25 @@
     [`n_best`, `${model_limit}`, `${MODELS.length}`],
   ])
 
-  const rd_bu = get_d3_interpolator(`interpolateRdBu`)
-  function bg_color(val: number, min: number, max: number) {
-    if (isNaN(val)) return `rgba(255, 255, 255, 0.6)` // Default background for NaN values
-    return rd_bu((val - min) / (max - min))
-  }
-
   let lower_is_better = $derived(sort_by.better === `lower`)
 
   let models = $derived(sort_models(MODELS, sort_by_path, order))
 
-  let [best_val, worst_val] = $derived.by(() => {
+  // range of the sort metric across models (NaN when it has no direction, e.g. names)
+  let [min_val, max_val] = $derived.by(() => {
     if (!sort_by.better) return [NaN, NaN]
     const vals = models
       .map((model) => get_nested_value(model, sort_by_path))
       .filter((val): val is number => typeof val === `number` && !isNaN(val))
-    if (!vals.length) return [0, 1]
-    const [min_val, max_val] = [Math.min(...vals), Math.max(...vals)]
-    return lower_is_better ? [max_val, min_val] : [min_val, max_val]
+    return vals.length ? [Math.min(...vals), Math.max(...vals)] : [0, 1]
   })
+  // RdBu from red (worst, 0) to blue (best, 1)
+  const rd_bu = get_d3_interpolator(`interpolateRdBu`)
+  const bg_color = (val: number): string => {
+    if (isNaN(val)) return `rgba(255, 255, 255, 0.6)` // Default background for NaN values
+    const frac = (val - min_val) / (max_val - min_val)
+    return rd_bu(lower_is_better ? 1 - frac : frac)
+  }
 </script>
 
 <h1 id="models">Models</h1>
@@ -145,7 +145,7 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
       title_style="font-size: 1.5em;"
       color_scale={{
         scheme: `interpolateRdBu`,
-        value_range: lower_is_better ? [worst_val, best_val] : [best_val, worst_val],
+        value_range: [min_val, max_val],
         palette_range: lower_is_better ? [1, 0] : [0, 1],
       }}
       style="min-width: 0; flex: 1"
@@ -159,7 +159,7 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
   <ol class="models full-bleed">
     {#each models.slice(0, model_limit) as model (model.model_key)}
       {@const metric_val = sort_by.better ? get_nested_value(model, sort_by_path) : 0}
-      {@const bg_clr = bg_color(metric_val as number, best_val, worst_val)}
+      {@const bg_clr = bg_color(metric_val as number)}
       {@const text_color = pick_contrast_color({ background: bg_clr, backdrop: `white` })}
       <li
         animate:flip={{ duration: 400 }}

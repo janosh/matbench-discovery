@@ -5,11 +5,11 @@ data set and separate true/false positives/negatives.
 """
 
 # %%
-from matbench_discovery import ROOT, STABILITY_THRESHOLD, figs, payload_numerics
+from matbench_discovery import STABILITY_THRESHOLD, figs, payload_numerics
 from matbench_discovery.cli import cli_args, complete_models
 from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey
-from matbench_discovery.metrics.discovery import classify_stable, stable_metrics
+from matbench_discovery.metrics import discovery
 
 test_subset = cli_args.test_subset
 models_to_plot = complete_models()
@@ -23,17 +23,18 @@ n_bins = 64
 hist_range = (-0.45, 0.45)
 clf_models: list[dict[str, object]] = []
 for model in models_to_plot:
-    each_pred = (
-        df_preds[MbdKey.each_true] + df_preds[model.key] - df_preds[MbdKey.e_form_dft]
+    # leaderboard rounding, so F1 and TP/FN/FP/TN masks match the YAML's metrics
+    metric_reference, model_preds = discovery.prepare_model_predictions(
+        df_preds, df_preds[model.key]
     )
-    true_pos, false_neg, false_pos, true_neg = classify_stable(
-        df_preds[MbdKey.each_true], each_pred
+    each_true = metric_reference[MbdKey.each_true]
+    each_pred = discovery.pred_hull_dist(
+        model_preds, each_true, metric_reference[MbdKey.e_form_dft]
     )
-    f1_score = stable_metrics(
-        df_preds[MbdKey.each_true],
-        each_pred,
-        stability_threshold=STABILITY_THRESHOLD,
-    )["F1"]
+    true_pos, false_neg, false_pos, true_neg = discovery.classify_stable(
+        each_true, each_pred
+    )
+    f1_score = discovery.stable_metrics(each_true, each_pred, fillna=True)["F1"]
     clf_models.append(
         {
             **figs.discovery_model_identity(model),
@@ -56,10 +57,6 @@ bin_centers = payload_numerics.histogram([], bins=n_bins, value_range=hist_range
 provenance = figs.build_discovery_payload_provenance(
     generator=__file__,
     test_subset=test_subset.value,
-    source_files={
-        "payload_numerics": payload_numerics.__file__,
-        "stability_metrics": f"{ROOT}/matbench_discovery/metrics/discovery.py",
-    },
     parameters={
         "coordinate_decimals": payload_numerics.COORD_DECIMALS,
         "f1_decimals": 4,
@@ -68,7 +65,6 @@ provenance = figs.build_discovery_payload_provenance(
         "stability_threshold": STABILITY_THRESHOLD,
     },
     packages=("scikit-learn",),
-    prediction_round_decimals=None,
 )
 figs.write_site_payload(
     "hist-clf-pred-hull-dist",

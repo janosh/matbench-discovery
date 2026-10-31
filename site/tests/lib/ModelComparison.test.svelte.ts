@@ -2,6 +2,7 @@ import { afterNavigate, onNavigate, type AfterNavigate } from '$app/navigation'
 import { page } from '$app/state'
 import DATASETS from '$data/datasets.yml'
 import { ALL_METRICS } from '#lib/labels.js'
+import { format_duration } from '#lib/metrics.js'
 import {
   ACTIVE_MODELS,
   bind_score_weights,
@@ -31,7 +32,13 @@ import {
   test,
   vi,
 } from 'vite-plus/test'
-import { doc_query, get_scatter_plot_props, mount, query_param } from '../index.js'
+import {
+  doc_query,
+  get_scatter_plot_props,
+  mount,
+  query_param,
+  reset_comparison,
+} from '../index.js'
 
 // happy-dom never measures the plot, so capture ScatterPlot's props instead of its SVG
 const plot_mocks = vi.hoisted(() => ({ ScatterPlot: vi.fn() }))
@@ -100,12 +107,32 @@ function with_reactive_page_url(): void {
   })
 }
 
-beforeEach(() => {
-  comparison.keys.clear()
-  comparison.open = false
-})
+beforeEach(reset_comparison)
 
 describe(`compare_cells`, () => {
+  it.each([
+    [0.4, `0s`],
+    [52, `52s`],
+    [108.15, `1m 48s`],
+    [10_720.95, `2h 58m 41s`],
+    [7205, `2h 0m 5s`],
+    [220_585.84, `2d 13h 16m`],
+  ])(`formats %s s as %s`, (seconds, expected) => {
+    expect(format_duration(seconds)).toBe(expected)
+  })
+
+  it(`shows units on values: durations for seconds, plain decimals for small GB`, () => {
+    const model = MODELS.find((entry) => entry.metrics?.md?.cost?.max_gpu_mem_gb)
+    if (!model) throw new Error(`no model with MD VRAM`)
+    const row_for = (key: string) =>
+      COMPARE_GROUPS.flatMap((group) => group.rows).find((entry) => entry.key === key)
+    const vram_row = row_for(ALL_METRICS.md_max_gpu_mem_gb.key)
+    const time_row = row_for(ALL_METRICS.md_run_time_sec.key)
+    if (!vram_row || !time_row) throw new Error(`missing cost rows`)
+    expect(compare_cells(vram_row, [model])[0].text).toMatch(/^\d+(?:\.\d+)? GB$/)
+    expect(compare_cells(time_row, [model])[0].text).toMatch(/^(?:\d+[dhms] ?){1,3}$/)
+  })
+
   const field = as_models([0.5, 1, 2, 3, 7, null])
   // compared models are field members where the value exists there (like active models on
   // the real leaderboard), else stand-ins outside the field (superseded/deprecated models)
@@ -186,6 +213,36 @@ describe(`compare_cells`, () => {
         },
       ])[0].title,
     ).toContain(`Missing &lt;reference&gt; &amp; metadata.`)
+  })
+
+  it(`names the GPU and source of speed rows on hover`, () => {
+    const with_md = (model_key: string, md: object) =>
+      ({ ...MODELS[0], model_key, metrics: { md } }) as ModelData
+    const models = [
+      with_md(`authors`, {
+        cost: { run_time_sec: 3e4, hardware: `A100 <80GB>`, source: `author_reported` },
+        combined_score: 0.7,
+      }),
+      with_md(`untimed`, { cost: { hardware: `H200` } }),
+    ]
+    const all_rows = COMPARE_GROUPS.flatMap(({ rows }) => rows)
+    const cell = (key: string) => {
+      const cmp_row = all_rows.find((candidate) => candidate.key === key)
+      if (!cmp_row) throw new Error(`No ${key} row`)
+      return compare_cells(cmp_row, models, models)
+    }
+    // numeric-cell titles render as HTML, so YAML hardware strings arrive escaped
+    expect(cell(`md_run_time_sec`)[0].title).toBe(
+      `Timed on A100 &lt;80GB&gt; (author-reported), not normalized across hardware`,
+    )
+    expect(cell(`combined_score`)[0]).toMatchObject({
+      text: `0.700`,
+      title: expect.stringMatching(/^Speed subscore timed on A100 &lt;80GB&gt;/),
+    })
+    expect(cell(`md_hardware`).map(({ text }) => text)).toEqual([
+      `A100 <80GB> (author-reported)`,
+      `–`,
+    ])
   })
 
   it(`links training sets, papers, repos and authors of real models`, () => {
@@ -615,7 +672,7 @@ describe(`ModelComparison dialog`, () => {
       ])
       expect(query_param(`cps_weights`)).toBe(`0,1,0`)
     } finally {
-      await navigate(`/`)
+      await navigate(`/`, `popstate`)
       cleanup()
     }
   })

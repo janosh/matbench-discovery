@@ -8,6 +8,7 @@ https://huggingface.co/spaces/atomind/mlip-arena, respectively.
 
 import gzip
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any, Self, TypedDict
 
@@ -23,7 +24,7 @@ from matbench_discovery.data import (
     update_yaml_file,
 )
 from matbench_discovery.enums import MbdKey, Model
-from matbench_discovery.hpc import COST_PROVENANCE_KEYS
+from matbench_discovery.hpc import with_cost_block
 from matbench_discovery.metrics.diatomics.energy import (
     calc_energy_diff_flips,
     calc_energy_jump,
@@ -475,65 +476,76 @@ def calc_vib_freq_coverage(
     )
 
 
-def write_metrics_to_yaml(
-    model: Model,
-    metrics: dict[str, dict[str, float]],
-    pred_file_path: str | None = None,
-    run_metadata: dict[str, str | float | dict[str, str]] | None = None,
-    *,
-    vib_freq_coverage: VibFreqCoverage | None = None,
-) -> dict[str, DiatomicsYamlValue]:
-    """Write finite per-element means and fit coverage to metrics.diatomics.
-
-    Recomputing the declared prediction retains its file reference and run metadata.
-    Supplying pred_file_path starts a new run, discarding old costs and file metadata
-    even at the same filename. Absolute paths must lie inside the repository.
-    run_metadata can supply costs, excluded_formula_reasons and pred_file_url.
-
-    Return the complete written block, with provenance before the metric means.
-    Absent metrics and vib_freq_coverage are removed, including on all-nonfinite input.
+def diatomic_metric_means(metrics: dict[str, dict[str, float]]) -> dict[str, float]:
+    """Finite per-element means per metric at 4 significant figures, in first-seen
+    metric order. All-nonfinite metrics are omitted.
     """
-    # Collect finite values in one pass, retaining first-seen metric order even when
-    # an element's fit is degenerate. All-nonfinite metrics are omitted below.
     metric_values: dict[str, list[float]] = {}
     for elem_metrics in metrics.values():
         for metric, value in elem_metrics.items():
             values = metric_values.setdefault(str(metric), [])
             if value is not None and np.isfinite(value):
                 values.append(value)
-
-    # Only a recompute can reuse the recorded source metadata.
-    existing = (model.metrics.get("diatomics") or {}) if pred_file_path is None else {}
-    run_metadata = run_metadata or {}
-    block: dict[str, DiatomicsYamlValue] = {}
-    existing_pred_file = existing.get("pred_file")
-    pred_name = file_ref_name(existing_pred_file)
-    if pred_file_path is not None:
-        pred_name = repo_relative_path(pred_file_path)
-    if pred_name is not None:
-        pred_file_url = run_metadata.get("pred_file_url")
-        block["pred_file"] = merge_file_ref(
-            existing_pred_file,
-            pred_name,
-            url=pred_file_url if isinstance(pred_file_url, str) else None,
-        )
-
-    run_metadata_keys = (*COST_PROVENANCE_KEYS, "excluded_formula_reasons")
-    for key in run_metadata_keys:
-        if (val := run_metadata.get(key)) is None:
-            val = existing.get(key)
-        if val is not None:
-            block[key] = val
-    block.update(
-        (metric, float(f"{np.mean(values):.4}"))
+    return {
+        metric: float(f"{np.mean(values):.4}")
         for metric, values in metric_values.items()
         if values
-    )
-    if vib_freq_coverage is not None:
-        block["pbe_vib_freq_coverage"] = vib_freq_coverage
+    }
 
-    update_yaml_file(
-        model.yaml_path, "metrics.diatomics", block, preserve_existing=False
-    )
+
+def write_metrics_to_yaml(
+    model: Model,
+    metrics: dict[str, dict[str, float]],
+    pred_file_path: str | None = None,
+    *,
+    run_metadata: Mapping[str, object],
+    vib_freq_coverage: VibFreqCoverage | None = None,
+    replace_author_reported: bool = False,
+) -> dict[str, DiatomicsYamlValue]:
+    """Write finite per-element means and fit coverage to metrics.diatomics and
+    return the written block (provenance first; absent metrics are removed).
+
+    A recompute (pred_file_path=None) keeps the file ref, excluded_formula_reasons
+    and reproducibility verdict; a pred_file_path (inside the repo) registers a new
+    run, dropping old file metadata even at the same filename. run_metadata is the
+    prediction file's own run_metadata (empty if absent): it yields the cost block
+    (hpc.with_cost_block), an optional pred_file_url and a new run's exclusions.
+    """
+
+    def build_block(previous: dict[str, Any]) -> dict[str, Any]:
+        """Build the section from the prior one read under update_yaml_file's lock."""
+        recompute = pred_file_path is None
+        existing = previous if recompute else {}  # only a recompute reuses metadata
+        block: dict[str, Any] = {}
+        pred_name = file_ref_name(existing.get("pred_file"))
+        if pred_file_path is not None:
+            pred_name = repo_relative_path(pred_file_path)
+        if pred_name is not None:
+            url = run_metadata.get("pred_file_url")
+            block["pred_file"] = merge_file_ref(
+                existing.get("pred_file"),
+                pred_name,
+                url=url if isinstance(url, str) else None,
+            )
+        if exclusions := existing.get("excluded_formula_reasons") or run_metadata.get(
+            "excluded_formula_reasons"
+        ):
+            block["excluded_formula_reasons"] = exclusions
+        block |= diatomic_metric_means(metrics)
+        if vib_freq_coverage is not None:
+            block["pbe_vib_freq_coverage"] = vib_freq_coverage
+        if recompute and "reproducibility" in previous:
+            block["reproducibility"] = previous["reproducibility"]
+        return with_cost_block(
+            block,
+            run_metadata,
+            after="pred_file",
+            existing=previous,
+            same_artifact=recompute,
+            context=f"{model.name} metrics.diatomics",
+            replace_author_reported=replace_author_reported,
+        )
+
+    written = update_yaml_file(model.yaml_path, "metrics.diatomics", build_block)
     print(f"Wrote {model.label} diatomic metrics to {model.yaml_path}")
-    return block
+    return dict(written["metrics"]["diatomics"])

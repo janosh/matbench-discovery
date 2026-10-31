@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import zlib from 'node:zlib'
 import { build } from 'vite'
+import { heading_anchor_html } from 'svelte-widgets/heading-anchors'
 import { describe, expect, it, vi } from 'vite-plus/test'
 import pkg from '../../package.json' with { type: 'json' }
 import vite_config, { svelte_config } from '../../vite.config.js'
@@ -30,8 +31,10 @@ it(`bundles compressed JSON imports in production workers`, async () => {
     const worker_file = fs
       .readdirSync(assets_dir)
       .find((file) => file.startsWith(`worker-`))
-    expect(worker_file).toBeDefined()
-    expect(fs.readFileSync(`${assets_dir}/${worker_file}`, `utf8`)).toContain(`Cu`)
+    if (!worker_file) throw new Error(`No worker chunk in ${assets_dir}`)
+    const worker_code = fs.readFileSync(`${assets_dir}/${worker_file}`, `utf8`)
+    // the gzipped payload is inlined as parsed JSON, not left as a binary import
+    expect(worker_code).toContain(`JSON.parse(\`{"symbol":"Cu"}\`)`)
   } finally {
     fs.rmSync(root, { recursive: true, force: true })
   }
@@ -40,12 +43,13 @@ it(`bundles compressed JSON imports in production workers`, async () => {
 describe(`parse_dependency_spec`, () => {
   it.each([
     {
-      // trim + extras + local version label; PyPI href drops extras
+      // trim + extras + local version label; PyPI hrefs drop extras and the label
       dep: `  fairchem-core[torch-extras]==1.10.0+cu128  `,
       expected: {
         name: `fairchem-core[torch-extras]`,
+        name_href: `https://pypi.org/project/fairchem-core/`,
         detail: `==1.10.0+cu128`,
-        href: `https://pypi.org/project/fairchem-core/1.10.0+cu128`,
+        href: `https://pypi.org/project/fairchem-core/1.10.0`,
       },
     },
     {
@@ -53,6 +57,7 @@ describe(`parse_dependency_spec`, () => {
       dep: `mace-torch >= 0.3.16`,
       expected: {
         name: `mace-torch`,
+        name_href: `https://pypi.org/project/mace-torch/`,
         detail: `>=0.3.16`,
         href: `https://pypi.org/project/mace-torch/`,
       },
@@ -62,6 +67,7 @@ describe(`parse_dependency_spec`, () => {
       dep: `hienet @ git+https://github.com/divelab/AIRS.git#subdirectory=OpenMat/HIENet`,
       expected: {
         name: `hienet`,
+        name_href: `https://pypi.org/project/hienet/`,
         detail: `git+https://github.com/divelab/AIRS.git#subdirectory=OpenMat/HIENet`,
         href: `https://github.com/divelab/AIRS.git#subdirectory=OpenMat/HIENet`,
       },
@@ -71,6 +77,7 @@ describe(`parse_dependency_spec`, () => {
       dep: `tace @ git+https://github.com/xvzemin/tace@81f65a4c188bd09cec8d1419388f7afdcc1b6fd0`,
       expected: {
         name: `tace`,
+        name_href: `https://github.com/xvzemin/tace`,
         detail: `git+https://github.com/xvzemin/tace@81f65a4c188bd09cec8d1419388f7afdcc1b6fd0`,
         href: `https://github.com/xvzemin/tace/commit/81f65a4c188bd09cec8d1419388f7afdcc1b6fd0`,
       },
@@ -80,8 +87,19 @@ describe(`parse_dependency_spec`, () => {
       dep: `aviary @ git+https://github.com/CompRhys/aviary.git@v0.1.0`,
       expected: {
         name: `aviary`,
+        name_href: `https://github.com/CompRhys/aviary`,
         detail: `git+https://github.com/CompRhys/aviary.git@v0.1.0`,
         href: `https://github.com/CompRhys/aviary/tree/v0.1.0`,
+      },
+    },
+    {
+      // user@ credentials stay out of the repo link
+      dep: `pkg @ git+https://user@github.com/org/repo.git@v1`,
+      expected: {
+        name: `pkg`,
+        name_href: `https://github.com/org/repo`,
+        detail: `git+https://user@github.com/org/repo.git@v1`,
+        href: `https://user@github.com/org/repo.git@v1`,
       },
     },
     {
@@ -89,6 +107,7 @@ describe(`parse_dependency_spec`, () => {
       dep: `aviary @ https://github.com/CompRhys/aviary/releases/tag/v0.1.0`,
       expected: {
         name: `aviary`,
+        name_href: `https://pypi.org/project/aviary/`,
         detail: `https://github.com/CompRhys/aviary/releases/tag/v0.1.0`,
         href: `https://github.com/CompRhys/aviary/releases/tag/v0.1.0`,
       },
@@ -98,6 +117,7 @@ describe(`parse_dependency_spec`, () => {
       dep: `pkg @ file:///tmp/wheel.whl`,
       expected: {
         name: `pkg`,
+        name_href: `https://pypi.org/project/pkg/`,
         detail: `file:///tmp/wheel.whl`,
         href: `https://pypi.org/project/pkg/`,
       },
@@ -106,6 +126,7 @@ describe(`parse_dependency_spec`, () => {
       dep: `ase`,
       expected: {
         name: `ase`,
+        name_href: `https://pypi.org/project/ase/`,
         detail: ``,
         href: `https://pypi.org/project/ase/`,
       },
@@ -144,9 +165,15 @@ it(`manuscript preprocessing numbers figure labels and resolves forward referenc
   const labels = [...content.matchAll(/@label:(?<id>fig:[^\s]+)/g)]
   expect(labels).toHaveLength(5)
   for (const [idx, [, label]] of labels.entries()) {
-    expect(result?.code).toContain(`<strong id='${label}'>`)
-    expect(result?.code).toContain(`Fig. ${idx + 1}</strong>`)
+    // self-contained anchor icon whose fragment keeps ':' literal so SvelteKit's
+    // prerender crawler matches the id
+    const anchor = heading_anchor_html(label)
+    expect(anchor).toContain(`href="#${label}"`)
+    expect(result?.code).toContain(
+      `<strong id='${label}'>${anchor}Fig. ${idx + 1}</strong>`,
+    )
   }
+  expect(result?.code).not.toContain(`<use`)
   expect(result?.code).toContain(`<a href="#fig:cumulative-precision-recall">fig. 2</a>`)
   expect(result?.code).not.toMatch(/@(?:label|fig):/)
   expect(await figure_markup?.({ content, filename: `unrelated.md` })).toEqual({

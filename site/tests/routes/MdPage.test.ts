@@ -1,26 +1,25 @@
 import { ACTIVE_MODELS } from '#lib/models.svelte.js'
+import { DEFAULT_CMDS_CONFIG } from '#lib/combined-scores.svelte.js'
 import { is_finite_num } from '#lib/metrics.js'
 import MdPage from '#routes/benchmarks/md/+page.svelte'
 import { describe, expect, it } from 'vite-plus/test'
 import {
   doc_query,
   expect_table_url_state,
+  expect_task_page_layout,
   filter_summary_badge,
   has_md_metrics,
   header_name,
   heading_texts,
   mount,
   mount_with_url,
+  patch_model,
+  REPRO_CASES,
 } from '../index.js'
 
 describe(`MD Task Page`, () => {
   it(`renders page structure with filtered leaderboard and scatter`, () => {
     mount(MdPage, { target: document.body })
-    expect(document.querySelectorAll(`.score-weights input[type="number"]`)).toHaveLength(
-      4,
-    )
-    expect(doc_query(`.score-weights`).closest(`details`)).toBeNull()
-
     expect(document.querySelector(`h1`)?.textContent).toContain(
       `Molecular Dynamics Metrics`,
     )
@@ -41,14 +40,11 @@ describe(`MD Task Page`, () => {
     expect(headers.filter((header) => header === `twall`)).toHaveLength(1)
     expect(headers.filter((header) => header === `t/tmin`)).toHaveLength(1)
 
-    expect(heading_texts()).toEqual([
-      `Leaderboard`,
-      `CMDS vs twall`,
-      `Test set: DynaMat v1.0`,
-      `Methodology`,
-    ])
-    const methodology = doc_query<HTMLDetailsElement>(`#methodology + details`)
-    expect(methodology.open).toBe(false)
+    expect_task_page_layout(
+      [`Leaderboard`, `CMDS vs twall`, `Test set: DynaMat v1.0`, `Methodology`],
+      Object.keys(DEFAULT_CMDS_CONFIG).length,
+    )
+    const methodology = doc_query(`#methodology + p`)
     expect(table.compareDocumentPosition(methodology)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     )
@@ -78,6 +74,21 @@ describe(`MD Task Page`, () => {
     expect(shown.length).toBeLessThan(sized.length)
     expect(doc_query(`.property-picker .selected-label small`).textContent).toMatch(
       new RegExp(`\\b${shown.length}\\s+models`),
+    )
+  })
+
+  it(`shows a Reproducible status column last`, () => {
+    const model = ACTIVE_MODELS.find(has_md_metrics)
+    if (!model) throw new Error(`No model with MD metrics`)
+    const md = { ...model.metrics?.md, reproducibility: REPRO_CASES.drifted }
+    patch_model(model, { metrics: { ...model.metrics, md } })
+    mount(MdPage, { target: document.body })
+
+    const headers = [...document.querySelectorAll(`section.full-bleed thead th`)]
+    expect(header_name(headers.at(-1) ?? document.body)).toBe(`Reproducible`)
+    const row = doc_query(`section.full-bleed a[href="/models/${model.model_key}"]`)
+    expect(row.closest(`tr`)?.querySelector(`td:last-child`)?.textContent?.trim()).toBe(
+      `≠ Drifted`,
     )
   })
 })

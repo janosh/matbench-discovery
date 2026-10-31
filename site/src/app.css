@@ -1,4 +1,4 @@
-@import '@wooorm/starry-night/style/core';
+@import 'svelte-widgets/highlight/theme.css';
 
 .custom-tooltip > .tooltip-content {
   font-weight: 400;
@@ -9,38 +9,6 @@
   text-align: left;
 }
 :root {
-  /* Theme-aware colors consumed by Starry Night's core styles */
-  --color-prettylights-syntax-brackethighlighter-angle: light-dark(#59636e, #9198a1);
-  --color-prettylights-syntax-brackethighlighter-unmatched: light-dark(#82071e, #f85149);
-  --color-prettylights-syntax-carriage-return-bg: light-dark(#cf222e, #b62324);
-  --color-prettylights-syntax-carriage-return-text: light-dark(#f6f8fa, #f0f6fc);
-  --color-prettylights-syntax-comment: light-dark(#59636e, #9198a1);
-  --color-prettylights-syntax-constant: light-dark(#0550ae, #79c0ff);
-  --color-prettylights-syntax-constant-other-reference-link: light-dark(#0a3069, #a5d6ff);
-  --color-prettylights-syntax-entity: light-dark(#6639ba, #d2a8ff);
-  --color-prettylights-syntax-entity-tag: light-dark(#0550ae, #7ee787);
-  --color-prettylights-syntax-invalid-illegal-bg: light-dark(#82071e, #8e1519);
-  --color-prettylights-syntax-invalid-illegal-text: light-dark(#f6f8fa, #f0f6fc);
-  --color-prettylights-syntax-keyword: light-dark(#cf222e, #ff7b72);
-  --color-prettylights-syntax-markup-bold: light-dark(#1f2328, #f0f6fc);
-  --color-prettylights-syntax-markup-changed-bg: light-dark(#ffd8b5, #5a1e02);
-  --color-prettylights-syntax-markup-changed-text: light-dark(#953800, #ffdfb6);
-  --color-prettylights-syntax-markup-deleted-bg: light-dark(#ffebe9, #67060c);
-  --color-prettylights-syntax-markup-deleted-text: light-dark(#82071e, #ffdcd7);
-  --color-prettylights-syntax-markup-heading: light-dark(#0550ae, #1f6feb);
-  --color-prettylights-syntax-markup-ignored-bg: light-dark(#0550ae, #1158c7);
-  --color-prettylights-syntax-markup-ignored-text: light-dark(#d1d9e0, #f0f6fc);
-  --color-prettylights-syntax-markup-inserted-bg: light-dark(#dafbe1, #033a16);
-  --color-prettylights-syntax-markup-inserted-text: light-dark(#116329, #aff5b4);
-  --color-prettylights-syntax-markup-italic: light-dark(#1f2328, #f0f6fc);
-  --color-prettylights-syntax-markup-list: light-dark(#3b2300, #f2cc60);
-  --color-prettylights-syntax-meta-diff-range: light-dark(#8250df, #d2a8ff);
-  --color-prettylights-syntax-storage-modifier-import: light-dark(#1f2328, #f0f6fc);
-  --color-prettylights-syntax-string: light-dark(#0a3069, #a5d6ff);
-  --color-prettylights-syntax-string-regexp: light-dark(#116329, #7ee787);
-  --color-prettylights-syntax-sublimelinter-gutter-mark: light-dark(#818b98, #3d444d);
-  --color-prettylights-syntax-variable: light-dark(#953800, #ffa657);
-
   /* Site theme */
   --page-bg: light-dark(#fefefe, #061e25);
   --surface-bg: light-dark(#eee, #222);
@@ -55,6 +23,7 @@
   --btn-bg-hover: light-dark(rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.2));
   --border: light-dark(rgba(0, 0, 0, 0.2), rgba(255, 255, 255, 0.125));
   --highlight: light-dark(seagreen, mediumseagreen);
+  --warning: light-dark(#b45309, orange);
   --table-odd: light-dark(rgba(0, 0, 0, 0.03), rgba(0, 0, 0, 0.5));
   --heatmap-sticky-cell-odd-bg:
     linear-gradient(var(--table-odd), var(--table-odd)), var(--page-bg);
@@ -63,6 +32,8 @@
   --chip-bg: light-dark(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.08));
   --shadow: light-dark(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.5));
   --struct-bg: var(--pre-bg);
+  /* periodic-table heatmap tiles without a value */
+  --ptable-missing-bg: light-dark(rgba(0, 0, 0, 0.08), rgba(255, 255, 255, 0.3));
 
   /* Component variables and layout */
   --github-corner-color: var(--page-bg);
@@ -92,10 +63,10 @@
     color-mix(in srgb, currentcolor 12%, transparent)
   );
 
-  /* matterviz ToggleMenu (column-select) pane: its currentColor-based defaults are
+  /* ColumnPicker (column-select) pane: its currentColor-based defaults are
   near-invisible in light mode; use the theme border + shadow instead */
-  --tgl-dropdown-border: var(--border);
-  --tgl-dropdown-shadow: 0 4px 12px var(--shadow);
+  --column-picker-menu-border: var(--border);
+  --column-picker-menu-shadow: 0 4px 12px var(--shadow);
 
   /* ButtonGroup site theme */
   --btn-group-display: flex;
@@ -301,7 +272,7 @@ blockquote > :is(:first-child, :last-child) {
   transition: 0.3s;
 }
 :where(h1, h2, h3, h4, h5, h6):target {
-  color: var(--accent-color, cornflowerblue);
+  color: var(--link-color);
 }
 :where(h2, h3, h4, h5, h6).toc-clicked {
   color: var(--link-hover);
@@ -396,6 +367,11 @@ kbd {
   }
 }
 
+/* the light-on-dark logo needs darkening wherever it appears on the light theme */
+:root[data-theme='light'] img[src='/favicon.svg'] {
+  filter: brightness(0.2);
+}
+
 /* Shared lazy-rendered grid for the diatomics task and spin-state detail page. */
 .diatomics-grid {
   display: grid;
@@ -403,7 +379,7 @@ kbd {
   gap: 55pt 15pt;
 }
 .diatomic-plot-shell {
-  min-height: var(--plot-height, 300px);
+  min-height: 300px;
 }
 .diatomic-plot-placeholder {
   display: grid;

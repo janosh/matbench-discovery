@@ -1,0 +1,230 @@
+model_name: DPA-4.1C-Air-OAM
+model_key: dpa-4.1c-air-oam
+model_version: null
+dates:
+  benchmark_added: '2026-10-31'
+  paper_published: '2026-08-19'
+lifecycle: active
+authors:
+- name: Tiancheng Li
+  affiliation: AI for Science Institute, Beijing; Peking University
+  email: LTC201806070316@outlook.com
+  orcid: https://orcid.org/0009-0009-2459-0635
+  github: https://github.com/OutisLi
+- name: Duo Zhang
+  affiliation: AI for Science Institute, Beijing
+  email: zhduodyx@pku.edu.cn
+  orcid: https://orcid.org/0000-0001-9591-2659
+  corresponding: true
+- name: Linfeng Zhang
+  affiliation: AI for Science Institute, Beijing; DP Technology
+  email: linfeng.zhang.zlf@gmail.com
+  corresponding: true
+- name: Han Wang
+  affiliation: Beijing Institute of Applied Physics and Computational Mathematics (IAPCM)
+  email: wang_han@iapcm.ac.cn
+  corresponding: true
+
+trained_by:
+- name: Tiancheng Li
+  affiliation: AI for Science Institute, Beijing; Peking University
+  email: LTC201806070316@outlook.com
+  orcid: https://orcid.org/0009-0009-2459-0635
+  github: https://github.com/OutisLi
+
+repo: https://github.com/deepmodeling/deepmd-kit
+doi: https://doi.org/10.48550/arXiv.2608.19041
+paper: https://arxiv.org/abs/2608.19041
+docs: https://github.com/deepmodeling/deepmd-kit
+pr_url: https://github.com/janosh/matbench-discovery/pull/404
+checkpoint_url: https://ndownloader.figshare.com/files/70537626
+license:
+  code: LGPL-3.0
+  code_url: https://github.com/deepmodeling/deepmd-kit/blob/master/LICENSE
+  checkpoint: CC-BY-4.0
+  checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
+
+environment:
+  dependencies:
+  - deepmd-kit @ git+https://github.com/deepmodeling/deepmd-kit@1ded5d2429467fb16cb1d6c3d3059fac881f82a7
+  - torch==2.13.0+cu132
+  - e3nn==0.6.0
+  python_version: '3.14'
+  project: models/deepmd/dpa41-env
+openness: OSOD
+architecture_types: [gnn]
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+training_sets: [MPtrj, OMat24, sAlex]
+model_params: 433673
+training_cost:
+  reason: Includes pre-training and fine-tuning.
+  entries:
+  - hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition
+    count: 1
+    hours_per_device: 17.37
+  - hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition
+    count: 1
+    hours_per_device: 2.44
+hyperparams:
+  evaluation:
+    kappa:
+      protocol: phonondb-v1
+      displacement_distance: 0.03
+      temperatures:
+      - 300
+      ase_optimizer: FIRE
+      ase_filter: FrechetCellFilter
+      force_max: 0.0001
+      max_steps: 300
+      symprec: 1.0e-05
+      conductivity_broken_symm: false
+      save_forces: true
+    ase_optimizer: FIRE
+    max_force: 0.02
+    max_steps: 500
+    cell_filter: FrechetCellFilter
+  architecture:
+    preset: dpa4c-air-v20260911
+  training:
+    optimizer: HybridMuon
+notes:
+  description: >-
+    DPA-4.1C-Air-OAM is a compact, 0.43-million-parameter DPA4C interatomic potential
+    trained on MPtrj, OMat24 and sAlex. Its O(3)-equivariant architecture uses a
+    single local aggregation and an invariant energy readout. The local representation
+    supports tabulated compression and large-scale parallel molecular dynamics, with
+    forces and stresses derived from the energy.
+  evaluation: >-
+    Per-structure relaxation convergence and iteration counts were not recorded. MD
+    energy and force RMSEs are not reported because the labeled reference data are not
+    publicly available.
+
+metrics:
+  discovery:
+    pred_file:
+      name: models/deepmd/dpa-4.1c-air-oam/2026-10-06-discovery.csv.gz
+      size: 1315918
+      md5: c1f8f7ed35dde8e6812a2e8048a5cd05
+      url: https://ndownloader.figshare.com/files/70537575
+    full_test_set:
+      F1: 0.7833981263854388
+      DAF: 4.48614662695746
+      Precision: 0.7697729909590421
+      Recall: 0.7975142883062687
+      Accuracy: 0.924327626934617
+      TP: 35164
+      FP: 10517
+      TN: 202354
+      FN: 8928
+      MAE: 0.033558590603243295
+      RMSE: 0.07545339635136702
+      R2: 0.8242214288365581
+      missing_preds: 2
+    unique_prototypes:
+      F1: 0.7985909291061206
+      DAF: 5.120072435523673
+      Precision: 0.7827137760386695
+      Recall: 0.8151255468328639
+      Accuracy: 0.9363212800712801
+      TP: 27204
+      FP: 7552
+      TN: 174562
+      FN: 6170
+      MAE: 0.03446718610781111
+      RMSE: 0.0761017618492258
+      R2: 0.8292107565241316
+      missing_preds: 0
+  geo_opt:
+    pred_file:
+      name: models/deepmd/dpa-4.1c-air-oam/2026-10-06-geo-opt.jsonl.gz
+      size: 100124274
+      md5: 2fc433e96481da5b2f125093f1417606
+      url: https://ndownloader.figshare.com/files/70537578
+    symprec=1e-5:
+      rmsd: 0.07663044407171458
+      n_sym_ops_mae: 2.0076742566050365
+      symmetry_decrease: 0.042620922078275864
+      symmetry_match: 0.7097597708619529
+      symmetry_increase: 0.24259523744663627
+      n_structures: 256963
+      analysis_file:
+        name: models/deepmd/dpa-4.1c-air-oam/2026-10-06-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        size: 1361532
+        md5: 0d8d99fc3f5ae08a1fdef8c6c6c26253
+        url: https://ndownloader.figshare.com/files/70537584
+    symprec=1e-2:
+      rmsd: 0.07663044407171458
+      n_sym_ops_mae: 1.7491389810984461
+      symmetry_decrease: 0.04883193300202753
+      symmetry_match: 0.8143390293544207
+      symmetry_increase: 0.12929487902927658
+      n_structures: 256963
+      analysis_file:
+        name: models/deepmd/dpa-4.1c-air-oam/2026-10-06-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        size: 1356575
+        md5: ffe20e956c148e6648fa727953a4ff39
+        url: https://ndownloader.figshare.com/files/70537587
+  phonons:
+    kappa_103:
+      κ_SRME: 0.6057758562639031
+      κ_SRE: 0.39881286950331
+      κ_SRD: -0.2951015884004126
+      κ_failure_rate: 0.019417475728155338
+      imaginary_mode_rate: 0.019417475728155338
+      spectrum_w1: 0.6905689320388348
+      pred_file:
+        name: models/deepmd/dpa-4.1c-air-oam/2026-10-06-phonons-kappa-103.json.gz
+        size: 11068216
+        md5: 994d63cd7c326c2a1a2eebb2a3d7e3f9
+        url: https://ndownloader.figshare.com/files/70537590
+      force_file:
+        name: models/deepmd/dpa-4.1c-air-oam/2026-10-06-phonons-kappa-103-forces.json.gz
+        size: 57748672
+        md5: 36907b5991b7e247afeea563903cf7ce
+        url: https://ndownloader.figshare.com/files/70537593
+      run_info_file:
+        name: models/deepmd/dpa-4.1c-air-oam/2026-10-06-phonons-kappa-103-run-info.json
+        size: 967
+        md5: b1a77c25e3de0cdfde9a9c4bd6d71029
+        url: https://ndownloader.figshare.com/files/70537611
+  md:
+    pred_file:
+      name: models/deepmd/dpa-4.1c-air-oam/2026-10-23-md-metrics.csv.gz
+      size: 1494
+      md5: 67dd91bf75793886dfd1baaadb99fde2
+      url: https://ndownloader.figshare.com/files/70537620
+    cost: {source: runner, hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition, run_time_sec: 3029.08, max_rss_gb: 2.203, max_gpu_mem_gb: 0.028}
+    rdf_error: 4.784529998218454
+    adf_error: 1.8119237873418275
+    vdos_error: 27.083786040487112
+    pressure_mae: 0.7320819603678083
+    pressure_wasserstein: 0.7365955804442023
+    pressure_error: 54.05820751943165
+    n_systems: 17
+  diatomics:
+    pred_file:
+      name: models/deepmd/dpa-4.1c-air-oam/2026-10-23-diatomics.json.gz
+      size: 535384
+      md5: 2bd61132cf078d7aece14dacdd06fc39
+      url: https://ndownloader.figshare.com/files/70537623
+    force_total_variation: 781.1246963966124
+    force_jump: 688.7474168851094
+    tortuosity: 1.0537340853999067
+    pbe_energy_mae: 1.174544625286625
+    energy_jump: 5.786936584560352
+    pbe_vib_freq_error: 55.72429542221719
+    pbe_wall_dist_mae: 0.09983985029499562
+    pbe_force_mae: 2.3092932323674886
+    pbe_well_depth_error: 0.4409058297461942
+    pbe_bond_length_error: 0.1365985039563471
+    energy_diff_flips: 1.632183908045977
+    force_flips: 1.7701149425287357
+    cost: {source: runner, hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition, run_time_sec: 29.59, max_rss_gb: 1.796, max_gpu_mem_gb: 0.026}
+    excluded_formula_reasons: {}
+    pbe_vib_freq_coverage:
+      n_valid: 73
+      n_eligible: 73
+      failed_elements: []
+      missing_elements: []

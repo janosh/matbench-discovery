@@ -42,12 +42,12 @@ license:
 environment:
   dependencies:
   - sevenn
-  - torch==2.2.1
-  - torch-geometric==2.5.2
+  - torch==2.10.0
+  - torch-geometric==2.7.0
   - ase==3.22.1
   - pymatgen==2024.6.10
   - numpy==1.26.4
-  python_version: '3.12'
+  python_version: '3.14'
 openness: OSOD
 architecture_types: [gnn]
 train_task: S2EFS
@@ -96,8 +96,7 @@ metrics:
       md5: c028b11d9256fa0355eeeccb67ac22de
     excluded_formula_reasons:
       He-He: exploding errors
-    hardware: NVIDIA A100-SXM4-80GB
-    run_time_sec: 2733.1
+    cost: {source: salvaged, hardware: NVIDIA A100-SXM4-80GB, run_time_sec: 2733.1}
     pbe_wall_dist_mae: 0.228
     pbe_energy_mae: 1.149
     pbe_bond_length_error: 0.1928
@@ -116,6 +115,39 @@ metrics:
       failed_elements:
       - F
       missing_elements: []
+    reproducibility:
+      checked: '2026-10-20'
+      status: drifted
+      cause: environment_change
+      note: Rerun with the current sevenn stack drifts up to 4.6% and drops the Ac/Pa/Th/U curves; the published run recorded no package versions, and identical reruns agree exactly.
+      tolerance: 0.001
+      runs:
+      - label: H200 rerun, current stack (sevenn 0.13.0, torch 2.10.0)
+        file:
+          name: models/sevennet/sevennet-l3i5/2026-10-19-diatomics.json.gz
+          url: https://figshare.com/files/70368315
+          size: 218527
+          md5: 64ef399903716d4df614c77309330230
+      - label: identical H200 repeat
+        file:
+          name: models/sevennet/sevennet-l3i5/repeat/2026-10-20-diatomics.json.gz
+          url: https://figshare.com/files/70368318
+          size: 218524
+          md5: 492975123d9be253be806f2aa7d10f05
+      rel_changes:
+        pbe_wall_dist_mae: 0.0114
+        pbe_energy_mae: 0.0218
+        pbe_bond_length_error: 0.00519
+        pbe_well_depth_error: 0.0456
+        pbe_vib_freq_error: 0.0249
+        tortuosity: 0.0028
+        energy_diff_flips: 0.00512
+        energy_jump: 0.0063
+        force_flips: 0.00729
+        force_total_variation: 0.0394
+        force_jump: 0.039
+        pbe_force_mae: 0.0377
+      repeat_rel_change: 0.0
   discovery:
     pred_file:
       name: models/sevennet/sevennet-l3i5/2024-12-10-discovery.csv.gz
@@ -157,37 +189,36 @@ metrics:
       size: 143322218
       md5: e0595138dada18001796768384a366c2
     symprec=1e-5:
-      rmsd: 0.0847
-      n_sym_ops_mae: 2.7178
-      symmetry_decrease: 0.3667
-      symmetry_match: 0.4412
-      symmetry_increase: 0.1451
-      n_structures: 256963
+      rmsd: 0.0848 # unitless
+      n_sym_ops_mae: 2.7178 # unitless
+      symmetry_decrease: 0.3667 # fraction
+      symmetry_match: 0.4412 # fraction
+      symmetry_increase: 0.1451 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/sevennet/sevennet-l3i5/2024-12-10-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/53504699
-        size: 8710977
-        md5: 4ec969804d3fe0628c0accc635e7bacb
+        name: models/sevennet/sevennet-l3i5/2024-12-10-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333944
+        size: 7858059
+        md5: aa73366725750462cfc10f2b22948525
     symprec=1e-2:
-      rmsd: 0.0847
-      n_sym_ops_mae: 1.9379
-      symmetry_decrease: 0.0895
-      symmetry_match: 0.788
-      symmetry_increase: 0.1134
-      n_structures: 256963
+      rmsd: 0.0848 # unitless
+      n_sym_ops_mae: 1.9379 # unitless
+      symmetry_decrease: 0.0895 # fraction
+      symmetry_match: 0.788 # fraction
+      symmetry_increase: 0.1134 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/sevennet/sevennet-l3i5/2024-12-10-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/53504702
-        size: 9194881
-        md5: ee6cdc6651567d2611e1786455c6aeb8
+        name: models/sevennet/sevennet-l3i5/2024-12-10-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333947
+        size: 8094516
+        md5: 7d1ed179a19d3fb01b08aaa69648a713
   md:
     pred_file:
       name: models/sevennet/sevennet-l3i5/2026-06-28-md-metrics.csv.gz
-      url: https://figshare.com/files/66048932
-      size: 1573
-      md5: 1e3efc2c98fecb84a2f1d295901a8b2e
-    hardware: NVIDIA H200
-    run_time_sec: 54360.02
+      url: https://figshare.com/files/66575030
+      size: 1720
+      md5: 625d49a274038ada7a1ac65e50c45ae8
+    cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 54360.01}
     energy_rmse: 1.2403
     force_rmse: 123.3479
     rdf_error: 5.0235
@@ -199,18 +230,6 @@ metrics:
     n_systems: 17
   phonons:
     kappa_103:
-      run_info_file:
-        name: models/sevennet/sevennet-l3i5/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 8020
-        md5: a77f6cd15130759afcef06bab2e4f979
-      phonon_file:
-        name: models/sevennet/sevennet-l3i5/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1297387131
-        md5: 1fb89172e133115871419cc58f673ac7
-      force_file:
-        name: models/sevennet/sevennet-l3i5/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 8847410
-        md5: 4f65b91e32060baa13f2ccecc8e4ec03
       κ_SRME: 0.5496
       pred_file:
         name: models/sevennet/sevennet-l3i5/2024-12-10-phonons-kappa-103.json.gz
@@ -222,3 +241,20 @@ metrics:
       κ_failure_rate: 0.0291
       imaginary_mode_rate: 0.0291
       spectrum_w1: 0.5195
+      harmonic:
+        phonon_file:
+          name: models/sevennet/sevennet-l3i5/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334670
+          size: 23463724
+          md5: 759847bc8bd96870ddbbff39f6ca7ad2
+        force_file:
+          name: models/sevennet/sevennet-l3i5/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334673
+          size: 8847410
+          md5: 4f65b91e32060baa13f2ccecc8e4ec03
+        run_info_file:
+          name: models/sevennet/sevennet-l3i5/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334667
+          size: 8020
+          md5: a77f6cd15130759afcef06bab2e4f979
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 499.95, max_rss_gb: 2.346, max_gpu_mem_gb: 11.469}

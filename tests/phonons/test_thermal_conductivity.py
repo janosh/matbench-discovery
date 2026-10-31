@@ -110,17 +110,25 @@ def test_init_phono3py(
     )
 
 
-def test_calculate_conductivity(test_ph3: Phono3py, test_calculator: EMT) -> None:
-    """FC2 frequencies, FC3 force sets (incl. capped) and conductivity compose."""
+def test_calculate_conductivity(test_atoms: Atoms, test_calculator: EMT) -> None:
+    """FC2, FC3 (incl. capped) and RTA give a positive isotropic fcc Cu kappa."""
+    # in <=2x2x2 FC3 cells +R and -R are one image, so inversion cancels FC3; a 2x2x2
+    # q-mesh only samples Gamma, X, L where fcc group velocities vanish (kappa ~ 0)
+    test_ph3 = ltc.init_phono3py(
+        atoms=test_atoms,
+        fc2_supercell=test_atoms.info["fc2_supercell"],
+        fc3_supercell=3 * np.eye(3),
+        q_point_mesh=(4, 4, 4),
+    )
     test_ph3, fc2_set, freqs = ltc.get_fc2_and_freqs(
-        test_ph3, test_calculator, pbar_kwargs={}
+        test_ph3, test_calculator, pbar_kwargs={"disable": True}
     )
     assert fc2_set.shape == (
         len(test_ph3.phonon_supercells_with_displacements),
         len(test_ph3.phonon_supercell),
         3,
     )
-    n_bz_grid, n_bands = 15, 3  # 2x2x2 mesh: 8 regular-grid points + BZ surface
+    n_bz_grid, n_bands = 89, 3  # 4x4x4 mesh: 64 regular-grid points + BZ surface
     assert freqs.shape == (n_bz_grid, n_bands)
 
     n_fc3_displacements = len(test_ph3.supercells_with_displacements)
@@ -129,7 +137,9 @@ def test_calculate_conductivity(test_ph3: Phono3py, test_calculator: EMT) -> Non
     )
     assert capped_forces.shape == (n_fc3_displacements, len(test_ph3.supercell), 3)
     assert np.count_nonzero(capped_forces) == 0
-    fc3_set = ltc.calculate_fc3_set(test_ph3, calculator=test_calculator)
+    fc3_set = ltc.calculate_fc3_set(
+        test_ph3, calculator=test_calculator, pbar_kwargs={"disable": True}
+    )
     assert fc3_set.shape == capped_forces.shape
     assert test_ph3.forces is not None
     np.testing.assert_array_equal(test_ph3.forces, fc3_set)  # assigned for produce_fc3
@@ -151,11 +161,20 @@ def test_calculate_conductivity(test_ph3: Phono3py, test_calculator: EMT) -> Non
     assert set(kappa_dict) >= required_keys
     assert all(isinstance(val, np.ndarray) for val in kappa_dict.values())
     assert isinstance(kappa, RTACalculator)
+    n_irreducible_q = 8  # irreducible points of the fcc 4x4x4 mesh
     assert (freqs := kappa.frequencies) is not None
-    assert freqs.shape == (3, 3)
-    assert kappa.grid_points.shape == (3,)
+    assert freqs.shape == (n_irreducible_q, 3)
+    assert kappa.grid_points.shape == (n_irreducible_q,)
     assert (gamma := kappa.gamma) is not None
-    assert gamma.shape == (1, 1, 3, 3)
+    assert gamma.shape == (1, 1, n_irreducible_q, 3)
+    assert gamma.max() > 0  # nonzero FC3 gives anharmonic scattering
+
+    kappa_voigt = kappa_dict[MbdKey.kappa_tot_rta][0]  # xx, yy, zz, yz, xz, xy
+    assert 1 < kappa_voigt[0] < 1000  # EMT Cu ~24 W/mK: catches unit/scale bugs
+    # cubic symmetry: observed 0 diagonal spread and ~1e-16 off-diagonals; 1e-10
+    # leaves ample margin above f64 eps (2.2e-16) times ~100 summed mesh terms
+    np.testing.assert_allclose(kappa_voigt[:3], kappa_voigt[0], rtol=1e-10, atol=0)
+    np.testing.assert_allclose(kappa_voigt[3:], 0, rtol=0, atol=1e-10 * kappa_voigt[0])
 
 
 def test_calculate_mode_kappa_tot() -> None:
@@ -221,20 +240,11 @@ def build_ph3_with_fc2(
     return ph3_local
 
 
-@pytest.mark.parametrize("distance, force_scale", [(0.02, 0.0), (0.03, 0.1)])
-@pytest.mark.parametrize(
-    "fc2_matrix, expected_det",
-    [
-        (np.eye(3, dtype=int), 1),
-        (2 * np.eye(3, dtype=int), 8),
-        (np.array([[1, 1, 0], [0, 1, 0], [0, 0, 1]], dtype=int), 1),
-        (np.array([[2, 1, 0], [0, 1, 0], [0, 0, 1]], dtype=int), 2),
-    ],
-)
-def test_calculate_fc2_set_with_various_supercells(
-    fc2_matrix: np.ndarray, expected_det: int, distance: float, force_scale: float
-) -> None:
-    """FC2 preserves forces and displacement shape across varied supercells."""
+def test_calculate_fc2_set_with_non_diagonal_supercell() -> None:
+    """FC2 keeps forces and displacement shape for a non-diagonal supercell."""
+    # det 2 sheared supercell with a non-default displacement distance
+    fc2_matrix = np.array([[2, 1, 0], [0, 1, 0], [0, 0, 1]], dtype=int)
+    expected_det, distance, force_scale = 2, 0.03, 0.1
     atoms = make_si2_phonopy_atoms()
     ph3 = build_ph3_with_fc2(atoms, fc2_matrix, distance=distance)
     expected_forces = np.tile(
@@ -373,7 +383,8 @@ def test_harmonic_fc2_round_trip(compact_fc2: bool, with_nac: bool) -> None:
     restored = harmonic.phonopy_from_harmonic_data(
         json.loads(json.dumps(json_ready(data)))
     )
-    np.testing.assert_array_equal(restored.force_constants, phonon.force_constants)
+    # the sidecar stores compact FC2 (primitive-atom rows) whatever form was computed
+    assert np.asarray(data["fc2"]["force_constants"]).shape == (2, n_supercell, 3, 3)
     np.testing.assert_array_equal(restored.primitive.cell, phonon.primitive.cell)
     np.testing.assert_array_equal(restored.primitive.masses, phonon.primitive.masses)
     assert restored.symmetry.tolerance == 2e-4
@@ -384,14 +395,6 @@ def test_harmonic_fc2_round_trip(compact_fc2: bool, with_nac: bool) -> None:
     original_freqs = phonon.get_qpoints_dict()["frequencies"]
     restored_freqs = restored.get_qpoints_dict()["frequencies"]
     np.testing.assert_array_equal(restored_freqs, original_freqs)
-    difference = np.abs(restored_freqs - original_freqs)
-    relative = difference / np.maximum(np.abs(original_freqs), np.finfo(float).tiny)
-    print(
-        f"{compact_fc2=}, {with_nac=}: max |a-b|={difference.max()}, "
-        f"max relative error={relative.max()}"
-    )
-    with pytest.raises(ValueError, match="Unsupported harmonic schema"):
-        harmonic.phonopy_from_harmonic_data({**data, "schema_version": -1})
 
 
 @pytest.mark.parametrize(

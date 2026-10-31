@@ -2,6 +2,7 @@ import { MODELS } from '#lib/models.svelte.js'
 import { ALL_METRICS } from '#lib/labels.js'
 import { sort_models } from '#lib/metrics.js'
 import ModelsPage from '#routes/models/+page.svelte'
+import { get_d3_interpolator } from 'matterviz/colors'
 import { tick } from 'svelte'
 import { describe, expect, it, vi } from 'vite-plus/test'
 import { doc_query, mount, mount_with_url } from '../index.js'
@@ -78,6 +79,20 @@ describe(`Models Page`, () => {
     } finally {
       MODELS[1].model_name = original_name
     }
+  })
+
+  it.each([
+    [ALL_METRICS.F1.key, `desc`],
+    [ALL_METRICS.RMSD.key, `asc`], // lower = better
+  ])(`colors the best %s card blue and the worst red`, async (sort, dir) => {
+    await mount_with_url(ModelsPage, `http://localhost/models?sort=${sort}&dir=${dir}`)
+    expect(doc_query(`ul li.active button`).id).toBe(sort)
+    const rd_bu = get_d3_interpolator(`interpolateRdBu`)
+    const backgrounds = [...model_cards()].map(
+      (card) => doc_query(`h2`, card).style.backgroundColor,
+    )
+    expect(backgrounds[0]).toBe(rd_bu(1)) // sorted best first
+    expect(backgrounds).toContain(rd_bu(0))
   })
 
   it.each([

@@ -1,7 +1,10 @@
 import { page } from '$app/state'
 import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from '#lib/labels.js'
 import {
+  cost_annotation,
+  cost_tag,
   discovery_task_tooltips,
+  format_metric,
   is_finite_num,
   metric_value,
   missing_metric_reason,
@@ -14,7 +17,7 @@ import { competition_rank, RANKED_METRICS } from '#lib/rankings.js'
 import type { Author, Label, ModelData } from '#lib/types.js'
 import { bind_url_params } from '#lib/url-state.svelte.js'
 import { format_num } from 'matterviz/labels'
-import { escape_html } from 'matterviz/utils'
+import { escape_html } from 'svelte-widgets/utils'
 import type { RowData } from 'matterviz/table'
 import { SvelteSet } from 'svelte/reactivity'
 
@@ -46,7 +49,7 @@ class Comparison {
   // replace the selection (unknown keys dropped), skipping the write when nothing changed
   set = (keys: string[]): void => {
     const next = keys.filter((key) => model_by_key.has(key))
-    if (next.join(',') === [...this.keys].join(',')) return
+    if (next.join(`,`) === [...this.keys].join(`,`)) return
     this.keys.clear()
     for (const key of next) this.keys.add(key)
   }
@@ -327,8 +330,8 @@ export const COMPARE_GROUPS: CompareGroup[] = [
       text_row(
         `md_hardware`,
         `Hardware`,
-        `Device the MD rollouts were timed on`,
-        (model) => text_part(model.metrics?.md?.hardware),
+        `GPU and source of the MD rollout timing, not normalized across hardware`,
+        (model) => text_part(cost_tag(model, `md`)),
       ),
     ],
   },
@@ -346,8 +349,8 @@ export const COMPARE_GROUPS: CompareGroup[] = [
       text_row(
         `diatomics_hardware`,
         `Hardware`,
-        `Device the diatomic sweep was timed on`,
-        (model) => text_part(model.metrics?.diatomics?.hardware),
+        `GPU and source of the diatomic sweep timing, not normalized across hardware`,
+        (model) => text_part(cost_tag(model, `diatomics`)),
       ),
     ],
   },
@@ -360,6 +363,13 @@ type CompareCell = {
   rank?: number // 1-based competition rank among `field` models with a value
   n?: number // number of field models with a value
   best?: boolean // best among the compared models (ties share it)
+}
+
+// A numeric cell's value with its unit (durations already read as time)
+const value_text = (row: CompareRow, value: number): string => {
+  const text = format_metric(value, { unit: row.unit, format: row.format ?? `.3~g` })
+  if (!row.unit || row.unit === `s`) return text
+  return `${text}${[`%`, `×`].includes(row.unit) ? `` : ` `}${row.unit}`
 }
 
 // One cell per compared model: formatted value plus leaderboard rank in the active cohort
@@ -385,8 +395,10 @@ export function compare_cells(
         return { text: `–`, title: escape_html(missing_metric_reason(model, row)) }
       return parts.length > 0 ? { text, parts } : { text }
     }
-    const text = format_num(value, row.format ?? `.3~g`)
-    const title = row.title?.(model)
+    const text = value_text(row, value)
+    // times and speed-weighted scores carry their GPU (titles render as HTML, so escape)
+    const cost = cost_annotation(model, row)
+    const title = row.title?.(model) ?? (cost && escape_html(cost))
     const cell: CompareCell = title ? { text, title } : { text }
     if (!row.better) return cell
     // a compared model outside the field (superseded/deprecated) ranks against the field

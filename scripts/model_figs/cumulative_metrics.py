@@ -9,7 +9,7 @@ expected hit rate for a given DFT calculation budget.
 # %%
 import numpy as np
 
-from matbench_discovery import ROOT, STABILITY_THRESHOLD, figs, payload_numerics
+from matbench_discovery import STABILITY_THRESHOLD, figs, payload_numerics
 from matbench_discovery.cli import cli_args, complete_models
 from matbench_discovery.data import load_discovery_predictions
 from matbench_discovery.enums import MbdKey, TestSubset
@@ -67,10 +67,6 @@ n_stable = int((df_preds[MbdKey.each_true] <= STABILITY_THRESHOLD).sum())
 provenance = figs.build_discovery_payload_provenance(
     generator=__file__,
     test_subset=test_subset.value,
-    source_files={
-        "payload_numerics": payload_numerics.__file__,
-        "stability_metrics": f"{ROOT}/matbench_discovery/metrics/discovery.py",
-    },
     parameters={
         "coordinate_decimals": payload_numerics.COORD_DECIMALS,
         "curve_end_decimals": 5,

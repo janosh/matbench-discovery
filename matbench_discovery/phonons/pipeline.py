@@ -9,7 +9,6 @@ import hashlib
 import json
 import math
 import os
-import socket
 import sys
 import tempfile
 import time
@@ -31,13 +30,13 @@ from matbench_discovery import ROOT, file_digest
 from matbench_discovery.ase_relax import canonical_filter_name, canonical_optimizer_name
 from matbench_discovery.enums import DataFiles, Model
 from matbench_discovery.hpc import (
-    detect_hardware,
+    LOAD_CHARGED,
+    check_resume_labels,
+    memory_peaks,
     merge_audit_metadata,
     partition_material_ids,
-    peak_memory_gb,
     reset_gpu_peak_memory,
 )
-from matbench_discovery.hpc import package_versions as installed_package_versions
 from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons.adapters import StandardKappaAdapter, get_kappa_adapter
 from matbench_discovery.phonons.schema import normalize_kappa_result
@@ -233,7 +232,8 @@ class KappaRunManifest:
     adapter_name: str
     source_hash: str
     checkpoint_hash: str | None
-    dtype: str
+    # detected runtime (hpc.detect_runtime); dtype None if the backend hides it
+    dtype: str | None
     device: str
     dry_run: bool = False
     schema_version: int = KAPPA_MANIFEST_SCHEMA_VERSION
@@ -260,7 +260,7 @@ class KappaRunManifest:
             adapter_name=str(data["adapter_name"]),
             source_hash=str(data["source_hash"]),
             checkpoint_hash=_optional_str(data.get("checkpoint_hash")),
-            dtype=str(data["dtype"]),
+            dtype=_optional_str(data.get("dtype")),
             device=str(data["device"]),
             dry_run=bool(data.get("dry_run", False)),
             schema_version=schema_version,
@@ -292,9 +292,9 @@ class KappaRunManifest:
         if self.settings_hash != self.settings.digest:
             raise ValueError("Kappa manifest settings_hash is invalid")
         self.settings.validate_for_adapter(self.adapter_name)
-        if self.dtype not in {"float32", "float64"}:
+        if self.dtype not in {"float64", "float32", "bfloat16", "float16", None}:
             raise ValueError(f"Kappa manifest has invalid dtype {self.dtype!r}")
-        if self.device not in {"cpu", "cuda"}:
+        if self.device not in {"cpu", "cuda", "gpu", "mps"}:  # gpu: JAX/TensorFlow
             raise ValueError(f"Kappa manifest has invalid device {self.device!r}")
 
 
@@ -522,7 +522,7 @@ def build_kappa_manifest(
     settings: KappaSettings,
     adapter: StandardKappaAdapter,
     n_shards: int,
-    dtype: str,
+    dtype: str | None,
     device: str,
     checkpoint: str | None = None,
     dry_run: bool = False,
@@ -749,12 +749,19 @@ def run_kappa_shard(
     settings: KappaSettings,
     adapter: StandardKappaAdapter | None = None,
     checkpoint: str | None = None,
-    dtype: str = "float64",
+    dtype: str | None = "float64",
     device: str = "cpu",
     retry_failures: bool = False,
     dry_run: bool = False,
+    runtime: Mapping[str, Any],
 ) -> tuple[KappaRecord, ...]:
-    """Run or resume one atom-balanced shard with atomic records per material."""
+    """Run or resume one atom-balanced shard with atomic records per material.
+
+    Each record's run metadata holds ``runtime``
+    (calculators.load_calculator_with_runtime) with the manifest's dtype/device, its
+    run time and memory peaks (accumulated over retries) and the process's model
+    load if it is the process's first computed material (hpc.LOAD_CHARGED).
+    """
     adapter = adapter or get_kappa_adapter(model_key)
     manifest = build_kappa_manifest(
         model_key=model_key,
@@ -778,9 +785,9 @@ def run_kappa_shard(
     for sub_dir in (KAPPA_RECORD_DIR, *SIDECAR_DIRS.values()):
         os.makedirs(f"{shard_dir}/{sub_dir}", exist_ok=True)
     calculator = adapter.prepare_calculator(calculator, settings)
-    hardware = detect_hardware()
-    versions = package_versions(model_key)
     assigned_ids = manifest.assignments[shard_index]
+    runtime = {**runtime, **_manifest_provenance(manifest)}
+    labels_checked = False
 
     for material_id in tqdm(
         assigned_ids, desc=f"{model_key} kappa shard {shard_index}"
@@ -808,16 +815,15 @@ def run_kappa_shard(
                     continue
                 if failed and not retry_failures:
                     continue
-                if (
-                    existing_record.run_metadata.get("hardware") != hardware
-                    or existing_record.run_metadata.get("versions") != versions
-                ):
-                    raise ValueError(
-                        "Cannot combine a retry with different hardware or "
-                        "package versions"
-                    )
+            if not labels_checked:  # first pending material
+                # earlier records (incl. retried ones) must share this run's labels
+                for other_id in assigned_ids:
+                    if os.path.isfile(other_path := record_path(shard_dir, other_id)):
+                        previous = read_kappa_record(other_path).run_metadata
+                        check_resume_labels(previous, runtime, other_path)
+                labels_checked = True
 
-            reset_gpu_peak_memory()
+            reset_gpu_peak_memory(runtime)
             start_time = time.perf_counter()
             computation = calculate_kappa_for_structure(
                 atoms=atoms_by_id[material_id],
@@ -832,18 +838,21 @@ def run_kappa_shard(
                 ),
             )
             elapsed = time.perf_counter() - start_time
-            metadata = material_run_metadata(
-                elapsed,
-                hardware=hardware,
-                versions=versions,
-                manifest=manifest,
-                shard_index=shard_index,
-                previous_metadata=(
-                    existing_record.run_metadata
-                    if existing_record is not None
-                    else None
-                ),
-            )
+            previous = existing_record.run_metadata if existing_record else {}
+            metadata = {  # a retry accumulates the earlier attempts' cost
+                **runtime,
+                **{key: runtime[key] + previous.get(key, 0) for key in LOAD_CHARGED},
+                "run_time_sec": elapsed + previous.get("run_time_sec", 0),
+                "shard_index": shard_index,
+                "completed_at": datetime.now(UTC).isoformat(),
+            }
+            # successes only: a failure may never have reached the GPU
+            succeeded = computation.error is None
+            for key, value in memory_peaks(runtime, succeeded=succeeded).items():
+                metadata[key] = max(value, previous.get(key, value))
+            if existing_record is not None:
+                metadata["retry_count"] = previous.get("retry_count", 0) + 1
+            runtime = {**runtime, **LOAD_CHARGED}
             record = KappaRecord(
                 material_id=material_id,
                 result=computation.result,
@@ -1149,78 +1158,6 @@ def stream_sidecar_artifact(
         ) as output_file,
     ):
         write_json_records(output_file, sidecar_payloads())
-
-
-def package_versions(model_key: str | None = None) -> dict[str, str]:
-    """Collect core and model-backend package versions used by an execution."""
-    from packaging.requirements import InvalidRequirement, Requirement
-
-    from matbench_discovery.calculators import CALCULATORS
-
-    package_names = {
-        "ase",
-        "jax",
-        "matbench-discovery",
-        "moyopy",
-        "numpy",
-        "phono3py",
-        "phonopy",
-        "scipy",
-        # seekpath alone determines the band path, labels and q-point sampling
-        "seekpath",
-        "spglib",
-        "tensorflow",
-        "torch",
-    }
-    if model_key is not None and (calc_spec := CALCULATORS.get(model_key)):
-        for dependency in calc_spec.deps:
-            try:
-                package_names.add(Requirement(dependency).name)
-            except InvalidRequirement:
-                continue
-    return installed_package_versions(package_names)
-
-
-def material_run_metadata(
-    run_time_sec: float,
-    *,
-    hardware: str,
-    versions: Mapping[str, str],
-    manifest: KappaRunManifest,
-    shard_index: int,
-    previous_metadata: Mapping[str, Any] | None = None,
-) -> dict[str, Any]:
-    """Collect timing, memory, run hashes, and audit provenance for one material."""
-    current_memory = peak_memory_gb()
-    if previous_metadata is not None:
-        run_time_sec += float(previous_metadata.get("run_time_sec", 0))
-        for memory_key in ("max_rss_gb", "max_gpu_mem_gb"):
-            memory_values = [
-                float(value)
-                for value in (
-                    current_memory.get(memory_key),
-                    previous_metadata.get(memory_key),
-                )
-                if isinstance(value, int | float)
-            ]
-            if memory_values:
-                current_memory[memory_key] = max(memory_values)
-    metadata: dict[str, Any] = {
-        **_manifest_provenance(manifest),
-        "hardware": hardware,
-        "run_time_sec": float(run_time_sec),
-        "shard_index": shard_index,
-        "completed_at": datetime.now(UTC).isoformat(),
-        "hostname": socket.gethostname(),
-        "versions": dict(versions),
-        **current_memory,
-    }
-    if previous_metadata is not None:
-        metadata["retry_count"] = int(previous_metadata.get("retry_count", 0)) + 1
-    for environment_key in ("SLURM_JOB_ID", "SLURM_ARRAY_TASK_ID"):
-        if environment_value := os.getenv(environment_key):
-            metadata[environment_key.casefold()] = environment_value
-    return metadata
 
 
 def dry_run_settings(settings: KappaSettings) -> KappaSettings:
