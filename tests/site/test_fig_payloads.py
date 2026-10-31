@@ -386,10 +386,9 @@ def test_multi_model_payload_provenance_matches_computation() -> None:
         audit = payload["audit"]
         sources = identity["recipe"]["sources"]
         for source in sources:
-            with open(f"{ROOT}/{source['path']}", "rb") as file:
-                source_bytes = file.read()
-            assert source["size"] == len(source_bytes), source["path"]
-            assert source["sha256"] == hashlib.sha256(source_bytes).hexdigest(), name
+            code = figs.recipe_source_code(f"{ROOT}/{source['path']}")
+            assert source["size"] == len(code), source["path"]
+            assert source["sha256"] == hashlib.sha256(code).hexdigest(), name
 
         expected_roles = RECIPE_ROLES[name]
         roles = {source["role"] for source in sources}

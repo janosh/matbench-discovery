@@ -117,6 +117,24 @@ def test_artifact_manifest(
         figs.artifact_manifest(role, path)
 
 
+@pytest.mark.parametrize(
+    ("edited", "same_hash"),
+    [
+        ('"""Doc."""\ndef f(x):\n    """Other doc."""\n    return x+1  # one\n', True),
+        ("def f(x):\n    return x + 2\n", False),
+    ],
+)
+def test_recipe_source_code_ignores_docs_and_formatting(
+    tmp_path: Path, edited: str, same_hash: bool
+) -> None:
+    """Comment, docstring and formatting edits keep recipe hashes; code edits don't."""
+    original, changed = tmp_path / "original.py", tmp_path / "edited.py"
+    original.write_text('def f(x):\n    """Doc."""\n    return x + 1\n')
+    changed.write_text(edited)
+    codes = {figs.recipe_source_code(str(path)) for path in (original, changed)}
+    assert (len(codes) == 1) is same_hash
+
+
 @pytest.mark.parametrize("hull_dist", [True, False])
 def test_discovery_provenance_recipe_sources(hull_dist: bool) -> None:
     """Hull-dist payloads add payload_numerics + stability_metrics sources."""

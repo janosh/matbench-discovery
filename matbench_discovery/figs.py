@@ -11,6 +11,7 @@ one shared ``_base`` record followed by one line per immutable ``model_key``.
 
 from __future__ import annotations
 
+import ast
 import contextlib
 import gzip
 import hashlib
@@ -71,12 +72,29 @@ def discovery_model_identity(model: Model) -> dict[str, Any]:
     return model_payload_identity(model, "discovery_predictions", model.discovery_path)
 
 
+def recipe_source_code(path: str) -> bytes:
+    """Return a Python file's code without comments, docstrings or formatting, so
+    edits that cannot change a computation leave payload recipe hashes unchanged.
+    """
+    with open(path, encoding="utf-8") as file:
+        tree = ast.parse(file.read())  # parsing drops comments and formatting
+    for node in ast.walk(tree):
+        is_scope = isinstance(
+            node, ast.Module | ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef
+        )
+        if is_scope and ast.get_docstring(node, clean=False) is not None:
+            node.body = node.body[1:] or [ast.Pass()]
+    return ast.unparse(tree).encode()
+
+
 def _source_manifest(role: str, path: str) -> dict[str, str | int]:
-    """Build a content manifest for one repo-owned recipe source file."""
+    """Build a content manifest for one repo-owned Python recipe source file."""
     from matbench_discovery import ROOT, repo_relative_path
 
     relative_path = repo_relative_path(path)
-    return artifact_manifest(role, f"{ROOT}/{relative_path}") | {"path": relative_path}
+    code = recipe_source_code(f"{ROOT}/{relative_path}")
+    sha256 = hashlib.sha256(code).hexdigest()
+    return {"role": role, "sha256": sha256, "size": len(code), "path": relative_path}
 
 
 def build_payload_provenance(

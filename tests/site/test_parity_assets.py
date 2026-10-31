@@ -266,8 +266,6 @@ def test_deploy_fetches_and_prunes_exact_parity_assets() -> None:
     assert "now - 3600" in cleanup
     assert 'comm -23 - "$protected"' in cleanup
     assert "gh release delete-asset v1.0.0" in cleanup
-    guard = read_workflow("model-pr-guard.yml")
-    assert "parity/(energy|kappa)-parity-manifest" in guard
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="runs the Ubuntu setup shell")

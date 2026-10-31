@@ -1,16 +1,12 @@
 name: Model PR guard
 
-# 1) Model registry, schema, URL and parity checks. New submissions use
-#    `lifecycle: pending`, so they pass before ingestion adds their payloads and parity
-#    assets and sets them active.
-# 2) Payload-format changes without regenerated payloads fail unless the PR also
-#    updates committed site payloads or carries the `payloads-unchanged` label.
-# 3) Model registry/schema guardrails (tests/models/) always run.
-# Runs on all PRs (~1 min for non-model PRs), main pushes, and weekly drift checks.
+# Model registry, schema, URL and parity checks. New submissions use
+# `lifecycle: pending`, so they pass before ingestion adds their payloads and parity
+# assets and sets them active. Stale payloads fail the main suite's provenance tests.
+# Runs on all PRs, main pushes, and weekly drift checks.
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, labeled, unlabeled]
   push:
     branches: [main]
   schedule:
@@ -19,7 +15,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: read # list PR changed files in the payload-consistency check
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -37,36 +32,6 @@ jobs:
       - uses: astral-sh/setup-uv@v10.2.0
         with:
           python-version: "3.14"
-
-      # guard 2 (see header): payload generators vs committed site payloads.
-      - name: Require payload updates when payload-shaping code changes
-        if: github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'payloads-unchanged')
-        env:
-          CHANGED_FILES: ${{ github.event.pull_request.changed_files }}
-          GH_TOKEN: ${{ github.token }}
-          PR: ${{ github.event.pull_request.number }}
-        run: |
-          if (( CHANGED_FILES > 3000 )); then
-            echo "::error::PR has $CHANGED_FILES changed files; GitHub's API exposes at most 3000."
-            exit 1
-          fi
-          gh api --paginate --slurp \
-            "repos/$GITHUB_REPOSITORY/pulls/$PR/files" \
-            > "$RUNNER_TEMP/pr-files.json"
-          RETURNED_FILES=$(jq '[.[][]] | length' "$RUNNER_TEMP/pr-files.json")
-          if (( RETURNED_FILES != CHANGED_FILES )); then
-            echo "::error::GitHub returned $RETURNED_FILES of $CHANGED_FILES changed files."
-            exit 1
-          fi
-          CHANGED=$(jq -r '.[][] | .filename' "$RUNNER_TEMP/pr-files.json")
-          GENERATOR_PATTERN=$(<.github/payload-generator-paths.regex)
-          [ -z "$GENERATOR_PATTERN" ] && { echo "::error::Empty generator pattern"; exit 1; }
-          GEN=$(grep -E "$GENERATOR_PATTERN" <<< "$CHANGED" || true)
-          PAYLOADS=$(grep -E '^(site/src/figs/.*\.(jsonl|json\.gz)|site/src/routes/(data/.*\.json|models/per-element-each-errors\.jsonl)|site/src/lib/(diatomics-dft\.json\.gz|parity/(energy|kappa)-parity-manifest\.json))$' <<< "$CHANGED" || true)
-          if [ -n "$GEN" ] && [ -z "$PAYLOADS" ]; then
-            echo "::error::PR changes payload-generating code ($(tr '\n' ' ' <<< "$GEN")) but no committed generated payloads (site/src/figs data files, route-local JSON, parity manifests, or diatomics-dft.json.gz). Regenerate the affected payloads locally, or apply the 'payloads-unchanged' label if output is provably unchanged."
-            exit 1
-          fi
 
       # Reuse the site's immutable downloads; release metadata is still checked live.
       - name: Restore parity assets
