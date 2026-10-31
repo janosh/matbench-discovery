@@ -163,9 +163,7 @@ def check_hist_clf() -> None:
 
 
 def test_hist_clf_f1_matches_registry() -> None:
-    """Every hist-clf payload F1 matches its model YAML's unique-prototype F1 (the
-    YAML rounds to 3 decimals, the payload to 4: half a unit in each).
-    """
+    """hist-clf payload F1s match their YAML F1 within rounding (3 vs 4 decimals)."""
     for record in load_payload("hist-clf-pred-hull-dist")["models"]:
         yaml_metrics = Model.from_ref(record["model_key"]).metrics["discovery"]
         yaml_f1 = yaml_metrics[TestSubset.uniq_protos.value]["F1"]

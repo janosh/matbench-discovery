@@ -176,9 +176,7 @@ def write_yaml_results(
     *,
     replace_author_reported: bool = False,
 ) -> None:
-    """Evaluate complete predictions and update model YAML metrics/provenance (a
-    harmonic-only run, with no conductivity to score, under ``kappa_103.harmonic``).
-    """
+    """Score predictions into the model YAML (harmonic-only: kappa_103.harmonic)."""
     from matbench_discovery.metrics import phonons as phonon_metrics
 
     validate_yaml_write_provenance(model, merged_run)

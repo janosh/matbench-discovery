@@ -86,9 +86,7 @@ def test_load_calculator(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Non
 
 
 def test_load_calculator_with_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Runtime provenance records where weights actually live, timed load and
-    process identity, and rejects factories ignoring the requested device/dtype.
-    """
+    """Runtime records weights' device/dtype and load time, rejecting ignored args."""
     calc, runtime = calculators.load_calculator_with_runtime("emt")
     assert isinstance(calc, EMT)
     cpu = hpc.detect_hardware("cpu")
@@ -442,10 +440,7 @@ def test_deepmd_archive_extraction_replaces_invalid_cache(tmp_path: Path) -> Non
 def test_nequip_factory_load_path(
     model_key: str, eager: bool, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """NequIP/Allegro compile to an AOTI .nequip.pt2 (torch>=2.10 has no TorchScript
-    compile and older torch's TorchScript breaks on Python 3.14), except
-    NequIP-OAM-XL, whose AOTI package SIGFPEs and so loads the registry model eagerly.
-    """
+    """NequIP/Allegro load AOTI .nequip.pt2s, except eager NequIP-OAM-XL (SIGFPEs)."""
     compile_stub = Mock()
     compiled_loader, eager_loader = Mock(return_value=EMT()), Mock(return_value=EMT())
     nequip_ase = ModuleType("nequip.ase")
@@ -472,9 +467,7 @@ def test_nequip_factory_load_path(
 
 
 def test_dpa_4_0_1_loads_eager_checkpoint(monkeypatch: pytest.MonkeyPatch) -> None:
-    """DPA-4.0.1 evaluates its .pt checkpoint eagerly for every task: the frozen .pt2
-    trips a shape guard on ghost-free isolated dimers.
-    """
+    """DPA-4.0.1 loads its .pt eagerly (the frozen .pt2 breaks on isolated dimers)."""
     deepmd_calculator = ModuleType("deepmd.calculator")
     deepmd_calculator.DP = Mock(return_value=EMT())  # ty: ignore[unresolved-attribute]
     monkeypatch.setitem(sys.modules, "deepmd", ModuleType("deepmd"))

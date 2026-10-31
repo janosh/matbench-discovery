@@ -906,11 +906,7 @@ def test_calc_md_metrics() -> None:
 def test_calc_md_metrics_all_or_nothing_columns(
     cols: dict[str, list[float]], dropped: tuple[str, ...]
 ) -> None:
-    """E/F diagnostics and pressures publish only with consistent per-system
-    coverage (a subset mean would misrepresent the model while n_systems suggests
-    full coverage), but complete sibling columns are kept. Cost columns merge
-    all-or-nothing via hpc.merge_audit_metadata (tested there).
-    """
+    """E/F and pressure means publish only with full per-system coverage."""
     df_md = pd.DataFrame({"rdf_error": [10.0, 20.0]} | cols)
     metrics = md_metrics.calc_md_metrics(df_md)
     assert set(dropped).isdisjoint(metrics)
@@ -920,9 +916,7 @@ def test_calc_md_metrics_all_or_nothing_columns(
 
 
 def test_write_metrics_to_yaml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Metrics should be written under metrics.md with units and rounding, and the
-    cost atomically from the artifact as one flow-style line after pred_file.
-    """
+    """metrics.md gets units, rounding and the artifact's cost after pred_file."""
     yaml_path = tmp_path / "model.yml"
     yaml_path.write_text("model_name: test\nmetrics: {}\n", encoding="utf-8")
     model = Model.mace_mp_0

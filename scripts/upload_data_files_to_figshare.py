@@ -43,13 +43,12 @@ def main(
             existing_yaml = round_trip_yaml.load(file)
 
     # validate every file before touching Figshare so a bad request changes nothing
-    def is_local(data_file: DataFiles) -> bool:
-        """Whether the data file exists locally."""
-        return os.path.isfile(f"{DATA_DIR}/{data_file.rel_path}")
-
+    local = {
+        item for item in DataFiles if os.path.isfile(f"{DATA_DIR}/{item.rel_path}")
+    }
     if files is None:
-        files = [data_file for data_file in DataFiles if is_local(data_file)]
-    elif missing := [data_file.name for data_file in files if not is_local(data_file)]:
+        files = [data_file for data_file in DataFiles if data_file in local]
+    elif missing := [data_file.name for data_file in files if data_file not in local]:
         raise FileNotFoundError(f"Requested --files missing locally: {missing}")
     if undescribed := [
         data_file.name

@@ -111,13 +111,11 @@ const read_registered_prediction = async (
   const local = await read_local_prediction(path)
   const mismatch = local && registered_mismatch(local, file)
   if (local && !mismatch) return { bytes: local, source: path }
-  if (!file.url) {
-    if (mismatch)
-      throw new Error(
-        `Local ${path} differs from its registered artifact (${mismatch}) and no url is registered`,
-      )
-    return undefined
-  }
+  if (mismatch && !file.url)
+    throw new Error(
+      `Local ${path} differs from its registered artifact (${mismatch}) and no url is registered`,
+    )
+  if (!file.url) return undefined
   const bytes = await fetch_prediction_bytes(file.url, fetch_fn, max_attempts)
   const remote_mismatch = registered_mismatch(bytes, file)
   if (remote_mismatch)

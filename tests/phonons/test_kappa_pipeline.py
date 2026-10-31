@@ -206,16 +206,11 @@ def make_atoms_by_id() -> dict[str, Atoms]:
 
 
 # per-process runtime provenance (load_calculator_with_runtime shape) of the stub
-KAPPA_TEST_RUNTIME = {
-    "cost_source": "runner",
-    "backend": "none",
-    "device": "cpu",
-    "hardware": "test hardware",
-    "acceleration": [],
-    "load_time_sec": 2.0,
-    "n_processes": 1,
-    "versions": {"ase": "test"},
-}
+KAPPA_TEST_RUNTIME = (
+    {"cost_source": "runner", "backend": "none", "device": "cpu"}
+    | {"hardware": "test hardware", "acceleration": [], "load_time_sec": 2.0}
+    | {"n_processes": 1, "versions": {"ase": "test"}}
+)
 
 
 @pytest.fixture
@@ -363,9 +358,7 @@ def test_checkpoint_digest_hashes_artifact_bytes(
 def test_generated_models_use_stable_registry_provenance(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, explicit_checkpoint: bool
 ) -> None:
-    """Generated caches keep the registry ID as merge identity across hosts unless
-    an explicit checkpoint file is passed.
-    """
+    """Merge identity is the registry ID unless an explicit checkpoint is passed."""
     from matbench_discovery.calculators import CALCULATORS
     from models import run_kappa
 

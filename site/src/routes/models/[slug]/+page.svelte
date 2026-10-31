@@ -551,18 +551,16 @@
               </span>
             {/if}
           </div>
-          {#if has_energy_parity_model(model.model_key)}
-            {#each energy_parity_options as { value: energy_kind } (energy_kind)}
-              {#if mounted_energy_tabs.has(energy_kind)}
-                <EnergyParityPlot
-                  hidden={energy_parity_tab !== energy_kind}
-                  {model}
-                  {energy_kind}
-                  onstatus={(status) => (energy_parity_statuses[energy_kind] = status)}
-                />
-              {/if}
-            {/each}
-          {/if}
+          {#each energy_parity_options as { value: energy_kind } (energy_kind)}
+            {#if has_energy_parity_model(model.model_key) && mounted_energy_tabs.has(energy_kind)}
+              <EnergyParityPlot
+                hidden={energy_parity_tab !== energy_kind}
+                {model}
+                {energy_kind}
+                onstatus={(status) => (energy_parity_statuses[energy_kind] = status)}
+              />
+            {/if}
+          {/each}
 
           {#if model.model_key && model.model_key in per_elem_each_errors}
             {@const raw_heatmap = per_elem_each_errors[model.model_key]}

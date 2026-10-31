@@ -96,9 +96,7 @@ def test_make_block_repeat_rel_change() -> None:
 
 
 def test_score_files(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Diatomics drop curated exclusions; MD drops cost, scales RMSEs to meV and
-    requires the registered file's system coverage.
-    """
+    """Diatomics drop exclusions; MD drops cost, scales RMSEs and checks coverage."""
     model = Model.mace_mp_0
     dists = np.linspace(0.3, 6.0, 120)
     curves = {}

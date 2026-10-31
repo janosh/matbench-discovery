@@ -152,11 +152,8 @@
     return []
   })
   // task pages get their Reproducible column last
-  const table_labels = $derived(
-    repro_task ? [...column_labels, REPRO_COLS[repro_task]] : column_labels,
-  )
   const column_defaults = $derived(
-    table_labels.map((col): Column => ({
+    column_labels.concat(repro_task ? REPRO_COLS[repro_task] : []).map((col): Column => ({
       ...col,
       id: col.group ? `${col.key} (${col.group})` : col.key,
       cell: cells[col.key],

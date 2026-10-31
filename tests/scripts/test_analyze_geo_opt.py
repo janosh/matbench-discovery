@@ -68,9 +68,7 @@ def test_analyze_model_symprec_metrics_and_debug_paths(
     analyze_geo_opt: ModuleType,
     tmp_path: Path,
 ) -> None:
-    """Cached CSVs still yield metrics without resolving the relaxed-structure file;
-    debug runs never touch the real outputs.
-    """
+    """Cached CSVs skip the relaxed-structure file; debug runs spare real outputs."""
     material_ids = [f"wbm-1-{idx}" for idx in range(5)]
     geo_opt_path = write_geo_opt_file(tmp_path / "model", material_ids)
     analysis_name = f"2026-07-01-geo-opt-symprec=1e-2-moyo={MOYO_VERSION}.csv.gz"

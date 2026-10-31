@@ -103,7 +103,7 @@ def make_block(
             change = rel_change(run[metric], registered[metric])
             rel_changes[metric] = max(rel_changes.get(metric, 0.0), change)
     all_scores = (registered, *run_scores)
-    keys = MD_FRAMEWISE_KEYS if task == "md" else {k for s in all_scores for k in s}
+    keys = MD_FRAMEWISE_KEYS if task == "md" else set().union(*all_scores)
     if any(key not in scores for key in keys for scores in all_scores):
         status = "inconclusive"
     else:

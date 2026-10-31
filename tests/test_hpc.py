@@ -234,9 +234,7 @@ def test_merge_audit_metadata(
 def test_merge_audit_metadata_mixed_labels_drop_cost(
     changed: dict[str, object],
 ) -> None:
-    """A mixed or partial run label drops the whole cost block with a warning, never
-    the merge; only mixed package versions raise when strict.
-    """
+    """Mixed run labels drop the cost (warning); mixed versions raise if strict."""
     labels = {"cost_source": "runner", "hardware": "H200", "acceleration": ["cueq"]}
     unit = labels | {"n_shards": 1, "run_time_sec": 1.0, "versions": {"numpy": "1"}}
     assert hpc.merge_audit_metadata([unit] * 2, strict=True) == unit | {
@@ -307,9 +305,7 @@ def test_with_cost_block(
     replace: bool,
     expected: dict[str, object] | str | None,
 ) -> None:
-    """Cost comes whole from the artifact or stays YAML-only, never mixed, is never
-    silently replaced when author_reported and lands right after ``after``.
-    """
+    """Cost comes whole from artifact or YAML, never mixed or silently replaced."""
     section = {"F1": 0.5, "pred_file": "a"} | ({"cost": existing} if existing else {})
     write = partial(
         hpc.with_cost_block,
@@ -335,9 +331,7 @@ def test_with_cost_block(
 
 
 def test_detect_runtime_probe_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Calculators without reachable torch weights are labeled by the requested
-    device (torch-weight detection is covered by test_load_calculator_with_runtime).
-    """
+    """Calculators without reachable torch weights get the requested device."""
     for framework in ("jax", "tensorflow"):
         monkeypatch.delitem(sys.modules, framework, raising=False)
     monkeypatch.setattr(hpc, "detect_hardware", lambda _device: "NVIDIA H200")
@@ -365,9 +359,7 @@ def test_detect_runtime_probe_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_memory_peaks(
     runtime: dict[str, str], expected_gpu_gb: float | None, succeeded_raises: bool
 ) -> None:
-    """memory_peaks reports host RSS and only measurable VRAM, read on the weights'
-    device, and rejects GPU labels without VRAM after successful work.
-    """
+    """memory_peaks reports RSS + weight-device VRAM, rejecting GPU labels w/o VRAM."""
     allocated = Mock(return_value=(expected_gpu_gb or 0) * 1e9)
     cuda = SimpleNamespace(is_available=lambda: True, max_memory_allocated=allocated)
     with patch.dict(sys.modules, torch=SimpleNamespace(cuda=cuda)):

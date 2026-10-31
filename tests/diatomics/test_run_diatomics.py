@@ -142,9 +142,7 @@ def write_diatomics_shard(
     curves: dict[str, dict[str, list[float] | list[list[list[float]]]]],
     run_metadata: dict[str, object] | None = None,
 ) -> None:
-    """Write a minimal run_diatomics shard file for merge-shards tests (all from one
-    package environment unless ``run_metadata`` overrides ``versions``).
-    """
+    """Write a minimal run_diatomics shard (one package env unless overridden)."""
     shard_dir.mkdir(parents=True, exist_ok=True)
     shard_path = shard_dir / f"Z{z_value:03d}-diatomics.json.gz"
     shard_data = {
@@ -255,9 +253,7 @@ def test_run_diatomics_fails_without_curves(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """A run where every pair failed exits non-zero naming the model, and an
-    unsharded run writes no (empty) final artifact.
-    """
+    """All-failed runs exit non-zero naming the model and write no artifact."""
 
     def all_pairs_fail(
         _calculator: object, _model_key: str, z_group: list[int], _distances: object

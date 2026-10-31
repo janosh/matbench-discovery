@@ -25,9 +25,7 @@ from tests.utils import patch_model_metadata
 def write_diatomics_yaml(
     model: Model, yaml_path: Path, metrics: Mapping[str, object]
 ) -> None:
-    """Write temp model YAML and clear cached metadata (the diatomics_model fixture
-    restores the original cache on teardown).
-    """
+    """Write temp model YAML and clear cached metadata (fixture restores it)."""
     yaml_path.write_text(
         yaml.safe_dump(
             {"model_name": "test_model", "metrics": {"diatomics": dict(metrics)}}

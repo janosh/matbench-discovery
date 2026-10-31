@@ -53,11 +53,8 @@ DFT_REFERENCE_FILES: Final[dict[float, DataFiles]] = {
 
 
 def load_model_structs(model: Model, debug_mode: int) -> dict[str, Structure]:
-    """Download (if needed), verify and parse a model's geo-opt JSON Lines into
-    Structures keyed by ID (slow, GBs of RAM): only for uncached analyses.
-    """
-    geo_opt_path = model.geo_opt_path
-    if geo_opt_path is None:
+    """Parse a model's geo-opt JSON Lines into Structures by ID (slow, GBs of RAM)."""
+    if (geo_opt_path := model.geo_opt_path) is None:
         raise ValueError(f"{model.label} has no metrics.geo_opt.pred_file")
     try:
         df_ml_structs = pd.read_json(geo_opt_path, lines=True)

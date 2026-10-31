@@ -64,9 +64,7 @@ def _make_reference_h5(
     system: str = "bulkCu_300K_test",
     labeled: bool = False,
 ) -> str:
-    """Write ``frames`` as a single-system reference HDF5 with dt=0.25 fs and
-    T=300 K, optionally retaining energy/force labels like the private reference.
-    """
+    """Write frames as a 300 K, dt=0.25 fs reference HDF5, optionally labeled."""
     reference = Trajectory.from_ase(frames)
     ref_file = str(tmp_path / ("private-ref.h5" if labeled else "ref.h5"))
     # dt = saved-frame cadence = time_step_fs * record_interval = 0.25 * 1
@@ -388,9 +386,7 @@ def _run_short_resumable(
 def test_run_nvt_md_resume_reproduces(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Repeated resume reproduces an uninterrupted run frame-for-frame and
-    accumulates its cost across sessions.
-    """
+    """Repeated resume reproduces an uninterrupted run and accumulates its cost."""
     import matbench_discovery.md as md_mod
 
     # every perf_counter call advances 1 s, so steady-state run time is deterministic
@@ -469,9 +465,7 @@ def test_run_nvt_md_resumable_ignores_corrupt_checkpoint(tmp_path: Path) -> None
 def test_load_checkpoint_rejects_changed_run_parameters(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, changed: dict[str, float] | None
 ) -> None:
-    """A checkpoint resumes only under the same seed, T, dt, schema version and run
-    labels (hardware).
-    """
+    """Checkpoints resume only under the same seed, T, dt, schema and hardware."""
     import matbench_discovery.md as md_mod
 
     atoms = bulk("Cu", cubic=True) * (2, 2, 2)

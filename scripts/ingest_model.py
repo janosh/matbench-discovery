@@ -113,9 +113,7 @@ def banner(text: str) -> None:
 
 
 def run_cmd(*cmd: str) -> bool:
-    """Run a command from ROOT (so relative paths in it resolve from any cwd),
-    streaming output; return True on zero exit.
-    """
+    """Run a command from ROOT, streaming output; return True on zero exit."""
     print(f">> {' '.join(cmd)}")
     return subprocess.run(cmd, check=False, cwd=ROOT).returncode == 0
 

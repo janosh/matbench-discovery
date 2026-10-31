@@ -444,7 +444,7 @@
         scales.color === `arcsinh` ? { type: `arcsinh`, threshold: 0.25 } : scales.color,
     }}
     size_scale={{
-      radius_range: [5, 10],
+      radius_range: [4, 13],
       type: scales.size,
     }}
     color_bar={{

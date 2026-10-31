@@ -100,9 +100,7 @@ def patch_model_metadata(
     *,
     yaml_path: str | None = None,
 ) -> None:
-    """Point one member's YAML reads/writes at ``yaml_path`` and replace its cached
-    metadata (or clear the cache so it re-reads the YAML), restored on teardown.
-    """
+    """Patch one member's yaml_path and cached metadata, restored on teardown."""
     if yaml_path is not None:
         original_yaml_path = Model.yaml_path
 

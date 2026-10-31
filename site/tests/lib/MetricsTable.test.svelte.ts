@@ -311,18 +311,8 @@ describe(`MetricsTable`, () => {
 
   it(`names the GPU of MD wall time, t/t_min and CMDS in tooltips`, async () => {
     const model = ACTIVE_MODELS[0]
-    const cost = {
-      source: `author_reported`,
-      hardware: `A100`,
-      run_time_sec: 2e4,
-    } as const
-    const md = {
-      cost,
-      vdos_error: 10,
-      adf_error: 10,
-      pressure_error: 10,
-      combined_score: 0.8,
-    }
+    const cost = { source: `runner`, hardware: `A100`, run_time_sec: 2e4 } as const
+    const md = { cost, vdos_error: 1, adf_error: 1, pressure_error: 1, combined_score: 1 }
     patch_model(model, { metrics: { ...model.metrics, md } })
     const { md_run_time_sec, md_time_multiplier, md_combined_score } = MD_METRICS
     mount_table({
@@ -331,7 +321,7 @@ describe(`MetricsTable`, () => {
       filters: all_targets_filters(),
     })
     await tick()
-    const gpu = `on A100 (author-reported), not normalized across hardware`
+    const gpu = `on A100 (benchmark runner), not normalized across hardware`
     const titles = [...document.querySelectorAll<HTMLElement>(`tbody [data-title]`)]
     expect(titles.map((cell) => cell.dataset.title)).toEqual([
       `Timed ${gpu}`,

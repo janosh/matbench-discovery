@@ -24,9 +24,7 @@ with open(f"{ROOT}/pyproject.toml", mode="rb") as toml_file:
 
 
 def process_exclusion_prefixes(items: list[str], all_items: list[str]) -> list[str]:
-    """Apply ``!`` exclusions to explicit items or the complete item list, exiting
-    with a usage error on unknown names (also behind ``!``).
-    """
+    """Apply ``!`` exclusions to explicit items or all items; unknown names error."""
     if unknown := {item.removeprefix("!") for item in items} - {*all_items}:
         cli_parser.error(f"unknown names {sorted(unknown)}")
     include_items = [item for item in items if not item.startswith("!")]
@@ -84,9 +82,7 @@ def set_file_ref_url(
     size: int,
     md5: str,
 ) -> None:
-    """Set ``url``, ``size`` and ``md5`` on the FileRef at a data.iter_file_refs key
-    path (dict keys and list indices).
-    """
+    """Set ``url``, ``size`` and ``md5`` on the FileRef at an iter_file_refs path."""
     *parts, last = key_path
     target: Any = data
     for part in parts:

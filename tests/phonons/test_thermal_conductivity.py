@@ -111,9 +111,7 @@ def test_init_phono3py(
 
 
 def test_calculate_conductivity(test_atoms: Atoms, test_calculator: EMT) -> None:
-    """FC2 frequencies, FC3 force sets (incl. capped) and conductivity compose into a
-    finite, positive and isotropic kappa tensor for cubic fcc Cu.
-    """
+    """FC2, FC3 (incl. capped) and RTA give a positive isotropic fcc Cu kappa."""
     # in <=2x2x2 FC3 cells +R and -R are one image, so inversion cancels FC3; a 2x2x2
     # q-mesh only samples Gamma, X, L where fcc group velocities vanish (kappa ~ 0)
     test_ph3 = ltc.init_phono3py(
@@ -243,9 +241,7 @@ def build_ph3_with_fc2(
 
 
 def test_calculate_fc2_set_with_non_diagonal_supercell() -> None:
-    """FC2 preserves nonzero forces and displacement shape for a non-diagonal
-    supercell matrix.
-    """
+    """FC2 keeps forces and displacement shape for a non-diagonal supercell."""
     # det 2 sheared supercell with a non-default displacement distance
     fc2_matrix = np.array([[2, 1, 0], [0, 1, 0], [0, 0, 1]], dtype=int)
     expected_det, distance, force_scale = 2, 0.03, 0.1

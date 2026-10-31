@@ -1,6 +1,7 @@
 """Tests for thermal conductivity metrics."""
 
 from collections.abc import Mapping
+from functools import partial
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
@@ -681,9 +682,7 @@ def test_write_metrics_to_yaml(
 
 
 def test_write_harmonic_to_yaml(tmp_path: Path) -> None:
-    """A harmonic-only rerun lands in kappa_103.harmonic with its own cost and fresh
-    file refs, moving out top-level harmonic refs but keeping the conductivity run.
-    """
+    """Harmonic-only reruns land in kappa_103.harmonic with their own cost/refs."""
     phonon_path, run_info_path, force_path = (
         f"{_KAPPA_MODEL_DIR}/harmonic/2026-09-05-phonons-kappa-103-{name}"
         for name in ("phonons.json.gz", "run-info.json", "forces.json.gz")
@@ -699,23 +698,19 @@ def test_write_harmonic_to_yaml(tmp_path: Path) -> None:
     }
     model = kappa_yaml_model(tmp_path, initial)
 
-    def write(
-        run_metadata: Mapping[str, object], force_file: str | None = None
-    ) -> dict:
-        """Register the harmonic rerun artifacts with the given run metadata."""
-        return phonon_metrics.write_harmonic_to_yaml(
-            model,
-            run_metadata=run_metadata,
-            phonon_file_path=phonon_path,
-            run_info_path=run_info_path,
-            force_file_path=force_file,
-        )
-
+    write = partial(
+        phonon_metrics.write_harmonic_to_yaml,
+        model,
+        phonon_file_path=phonon_path,
+        run_info_path=run_info_path,
+    )
     refs = {
         "phonon_file": {"name": phonon_path},
         "run_info_file": {"name": run_info_path},
     }
-    harmonic = write({**RUN_METADATA, "n_structures": 103}, force_path)
+    harmonic = write(
+        run_metadata=RUN_METADATA | {"n_structures": 103}, force_file_path=force_path
+    )
     assert harmonic == refs | {"force_file": {"name": force_path}, **RUN_COST}
     assert read_kappa_103(model) == conductivity_run | {"harmonic": harmonic}
 
@@ -727,6 +722,8 @@ def test_write_harmonic_to_yaml(tmp_path: Path) -> None:
         {"phonon_file": uploaded, "cost": {"source": "salvaged"}},
     )
     rerun = RUN_METADATA | {"run_time_sec": 99.0}
-    assert write(rerun) == refs | {"cost": {**RUN_COST["cost"], "run_time_sec": 99.0}}
+    assert write(run_metadata=rerun) == refs | {
+        "cost": {**RUN_COST["cost"], "run_time_sec": 99.0}
+    }
     with pytest.raises(ValueError, match="records no cost"):
-        write({"n_structures": 103})
+        write(run_metadata={"n_structures": 103})

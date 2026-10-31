@@ -94,24 +94,18 @@ definitions:
         items:
           type: string
           enum: [cuequivariance, openequivariance, torch_aot_inductor, prophet_kernels]
-      n_shards:
+      n_shards: &positive_int
         type: integer
         minimum: 1
-      n_processes:
-        type: integer
-        minimum: 1
-      run_time_sec:
+      n_processes: *positive_int
+      run_time_sec: &positive_number
         type: number
         exclusiveMinimum: 0
       load_time_sec:
         type: number
         minimum: 0
-      max_rss_gb:
-        type: number
-        exclusiveMinimum: 0
-      max_gpu_mem_gb:
-        type: number
-        exclusiveMinimum: 0
+      max_rss_gb: *positive_number
+      max_gpu_mem_gb: *positive_number
 
   HarmonicRun:
     type: object
@@ -492,9 +486,7 @@ definitions:
               $ref: '#/definitions/FileRef'
       rel_changes: # nonzero per-metric max relative change over runs vs pred_file
         type: object
-        additionalProperties:
-          type: number
-          exclusiveMinimum: 0
+        additionalProperties: *positive_number
       repeat_rel_change: # max relative change between identical same-env runs
         type: number
         minimum: 0

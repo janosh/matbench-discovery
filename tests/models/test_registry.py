@@ -346,10 +346,7 @@ def test_environments_drive_calculator_dependencies() -> None:
 
 @pytest.mark.parametrize("model", list(Model), ids=lambda model: model.name)
 def test_yaml_cost_matches_local_artifact(model: Model) -> None:
-    """Every YAML cost block equals the cost its registered artifact records (MD CSV
-    aggregate, diatomics/run-info run_metadata); artifacts not present locally are
-    skipped, never downloaded.
-    """
+    """YAML cost blocks equal their local artifact's recorded cost (no downloads)."""
     problems = cost_provenance_problems(model.metrics, ROOT)
     assert not problems, f"{model.name} YAML cost vs artifact:\n" + "\n".join(problems)
 
@@ -362,18 +359,12 @@ def definition_errors(definition: str, instance: dict[str, Any]) -> list[str]:
     return [err.message for err in Draft7Validator(schema).iter_errors(instance)]
 
 
-RUNNER_COST = {
-    "source": "runner",
-    "hardware": "NVIDIA H200",
-    "device": "cuda",
-    "dtype": "float64",
-    "acceleration": ["cuequivariance"],
-    "n_processes": 17,
-    "run_time_sec": 1.5,
-    "load_time_sec": 0.0,
-    "max_rss_gb": 2.0,
-    "max_gpu_mem_gb": 1.0,
-}
+RUNNER_COST = (
+    {"source": "runner", "hardware": "NVIDIA H200", "device": "cuda"}
+    | {"dtype": "float64", "acceleration": ["cuequivariance"], "n_processes": 17}
+    | {"run_time_sec": 1.5, "load_time_sec": 0.0}
+    | {"max_rss_gb": 2.0, "max_gpu_mem_gb": 1.0}
+)
 
 
 @pytest.mark.parametrize(
@@ -421,9 +412,7 @@ def test_kappa_schema_rejects_duplicate_harmonic_refs() -> None:
 
 @pytest.mark.parametrize("model", Model, ids=str)
 def test_reproducibility_run_files_match_md5(model: Model) -> None:
-    """Reproducibility runs never re-register the pred_file itself, and local run
-    artifacts match their recorded size and md5.
-    """
+    """Repro runs never reuse pred_file and local run files match size/md5."""
     for section in (model.metrics.get(task) or {} for task in ("diatomics", "md")):
         for run in (section.get("reproducibility") or {}).get("runs", []):
             ref = run["file"]

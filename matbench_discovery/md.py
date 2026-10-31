@@ -302,29 +302,6 @@ def run_info_path(traj_path: str) -> str:
     return f"{traj_path.removesuffix('.extxyz')}-run-info.json"
 
 
-def collect_run_info(
-    params: NvtParams, runtime: Mapping[str, Any], sessions: list[dict[str, Any]]
-) -> dict[str, object]:
-    """Assemble a completed rollout's run-info sidecar: the runtime provenance (run
-    labels, versions, host/Slurm identity, how the 2026-07 timing salvage traced
-    trajectories back to Slurm logs) with the cost of all its (timeout/preemption)
-    ``sessions`` merged by hpc.merge_audit_metadata, plus ``nvt_params`` (a later
-    run with other settings recomputes instead of reusing the trajectory, see
-    validate_pred_trajectory).
-
-    Cost fields (metrics.md.MD_COST_COLS) flow into the per-system metric CSVs;
-    ``max_rss_gb`` is exact per system in one-system-per-job cluster runs.
-    """
-    cost_cols = md_metrics.MD_COST_COLS
-    labels = {key: val for key, val in runtime.items() if key not in cost_cols}
-    return {  # cost keys only from the merge, never one session's fallback values
-        **labels,
-        **merge_audit_metadata(sessions, strict=True),
-        "nvt_params": dataclasses.asdict(params),
-        "completed_at": datetime.now(UTC).isoformat(),
-    }
-
-
 def read_run_info(traj_path: str) -> dict[str, object]:
     """Load a rollout's run-info sidecar, or an empty dict when absent (rollouts that
     predate sidecars). A corrupt sidecar raises: silently dropping it would publish
@@ -596,7 +573,14 @@ def run_nvt_md_resumable(
         raise RuntimeError(
             f"{out_path} rollout produced {len(frames)} frames != {target_frames}"
         )
-    run_info = collect_run_info(params, runtime, [*sessions, session_unit()])
+    # cost keys only from the merge, never one session's values; nvt_params make a
+    # later run with other settings recompute (validate_pred_trajectory)
+    cost_cols = md_metrics.MD_COST_COLS
+    run_info = {key: val for key, val in runtime.items() if key not in cost_cols} | {
+        **merge_audit_metadata([*sessions, session_unit()], strict=True),
+        "nvt_params": dataclasses.asdict(params),
+        "completed_at": datetime.now(UTC).isoformat(),
+    }
     run_info_json = json.dumps(run_info, indent=2)
     _atomic_write(
         run_info_path(out_path), lambda file: file.write(run_info_json.encode())

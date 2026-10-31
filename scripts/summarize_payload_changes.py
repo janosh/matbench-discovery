@@ -124,11 +124,8 @@ def _change_summary(
 
 
 def summarize() -> str:
-    """Return a Markdown summary of all changed multi-model payload records.
-
-    Diffs the Git work tree containing the cwd (not this script's checkout): CI runs
-    the trusted script from inside the separate pr-tree checkout. Paths resolve
-    against that tree's top level, so running from a subdirectory works too.
+    """Return a Markdown summary of all changed multi-model payload records in the
+    Git work tree containing the cwd (CI runs this trusted script inside pr-tree).
     """
     repo_root = _git_output("rev-parse", "--show-toplevel").strip()
     changes = {

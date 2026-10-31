@@ -79,9 +79,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     """Pack per-system extxyz references + settings CSV into one multi-group HDF5.
 
     Raises:
-        ValueError: if a system's equipartition temperature disagrees with its target
-            by more than 3x, i.e. its settings-CSV dt_fs is wrong. Nothing is written
-            to --out then (write_reference_h5 replaces it atomically on success).
+        ValueError: if a system's equipartition temperature is off its target by >3x
+            (wrong settings-CSV dt_fs). --out is then left untouched.
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--ref-dir", required=True, help="Raw per-system extxyz dir")
@@ -93,9 +92,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     settings = load_settings(args.settings_csv)
-    available_dirs = {
-        entry.name for entry in os.scandir(args.ref_dir) if entry.is_dir()
-    }
+    available_dirs = {path.name for path in os.scandir(args.ref_dir) if path.is_dir()}
     if unknown_systems := sorted(set(args.systems or ()) - available_dirs):
         parser.error(
             f"Unknown --systems {unknown_systems}, not found under {args.ref_dir!r}. "

@@ -23,11 +23,7 @@ package = false
 # PyG local-version wheels are linux x86_64 only
 environments = ["sys_platform == 'linux' and platform_machine == 'x86_64'"]
 find-links = ["https://data.pyg.org/whl/torch-2.10.0+cu126.html"]
-override-dependencies = [
-  "numpy>=2,<2.5",
-  "scipy==1.16.1",
-  "torch==2.10.0+cu126",
-]
+override-dependencies = ["numpy>=2,<2.5", "scipy==1.16.1", "torch==2.10.0+cu126"]
 
 [tool.uv.sources]
 matbench-discovery = { path = "../../..", editable = true }

@@ -98,9 +98,7 @@ def test_calc_diatomic_curve_results(
     cu_max_dist: float,
     expected_cu: str,
 ) -> None:
-    """Symbol/number pairs yield full curves, reusing matching caches, replacing
-    stale ones and resetting curves that fail mid-sweep.
-    """
+    """Pairs give full curves, reuse matching caches, replace stale, reset failures."""
     # mixed symbol/number pair specs, incl. H-H requested in both forms
     pairs = [(1, 1), ("H", 1), (8, "O"), ("Cu", 29)]
     initial_results = copy.deepcopy(initial_results)  # results are updated in-place

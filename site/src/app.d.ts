@@ -16,11 +16,8 @@ declare module '*.json.gz' {
 declare module '#lib/diatomics-dft.json.gz' {
   // VASP homonuclear references: functional -> formula -> curve on its own distance grid
   type Curve = { distances: number[]; energies: number[]; forces: number[][][] }
-  type Magmoms = {
-    magmoms: ([number, number] | null)[]
-    spin_candidates: (string | null)[]
-  }
-  const data: Record<string, Record<string, Curve & Magmoms>>
+  type Spin = { magmoms: ([number, number] | null)[]; spin_candidates: (string | null)[] }
+  const data: Record<string, Record<string, Curve & Spin>>
   export default data
 }
 

@@ -201,10 +201,9 @@ describe(`compare_cells`, () => {
       }),
       with_md(`untimed`, { cost: { hardware: `H200` } }),
     ]
+    const all_rows = COMPARE_GROUPS.flatMap(({ rows }) => rows)
     const cell = (key: string) => {
-      const cmp_row = COMPARE_GROUPS.flatMap(({ rows }) => rows).find(
-        (candidate) => candidate.key === key,
-      )
+      const cmp_row = all_rows.find((candidate) => candidate.key === key)
       if (!cmp_row) throw new Error(`No ${key} row`)
       return compare_cells(cmp_row, models, models)
     }

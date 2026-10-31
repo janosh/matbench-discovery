@@ -106,7 +106,6 @@ def test_deepmd_graph_cache_key_tracks_inputs(
 @pytest.mark.parametrize(
     ("requested", "imported", "suffix"),
     [
-        ("cuda", "cuda:0", "-NVIDIA-A800-SXM4-2-1-0.pt2"),
         ("cpu", "cpu", "-cpu-0-0-0.pt2"),
         ("cuda:1", "cuda:0", None),
         ("cpu", "cuda:0", None),

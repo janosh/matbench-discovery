@@ -119,9 +119,7 @@ def test_artifact_manifest(
 
 @pytest.mark.parametrize("hull_dist", [True, False])
 def test_discovery_provenance_recipe_sources(hull_dist: bool) -> None:
-    """Hull-dist payloads hash payload_numerics + metrics.discovery, others only
-    their caller's sources (never data.py).
-    """
+    """Hull-dist payloads add payload_numerics + stability_metrics sources."""
     with patch.object(figs, "build_payload_provenance", return_value={}) as builder:
         figs.build_discovery_payload_provenance(
             generator=__file__,

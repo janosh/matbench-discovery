@@ -339,9 +339,7 @@ def test_merge_write_yaml_requires_verified_settings(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """--merge-shards --write-yaml refuses shards run with overridden settings or
-    without any successful relaxation.
-    """
+    """--merge-shards --write-yaml refuses overridden settings or 0 successes."""
     merged_run = MergedDiscoveryRun(
         model_key="mace_mp_0",
         settings=shard_settings,

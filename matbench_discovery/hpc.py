@@ -58,7 +58,7 @@ def detect_hardware(device: str) -> str:
     return torch.cuda.get_device_name(torch.device(device))
 
 
-def _torch_runtime(obj: object, *, max_depth: int = 4) -> dict[str, str] | None:
+def _torch_runtime(obj: object) -> dict[str, str] | None:
     """Device, dtype and hardware of the first floating-point torch parameter or
     buffer reachable from ``obj`` (breadth-first over attributes and container
     items), None when no torch module is reachable.
@@ -70,7 +70,7 @@ def _torch_runtime(obj: object, *, max_depth: int = 4) -> dict[str, str] | None:
     skip_types = (str, bytes, int, float, type, types.ModuleType, types.FunctionType)
     seen: set[int] = set()
     frontier: list[object] = [obj]
-    for _ in range(max_depth + 1):
+    for _depth in range(5):  # obj plus up to 4 attribute/container hops
         next_frontier: list[object] = []
         for item in frontier:
             if id(item) in seen or isinstance(item, skip_types) or len(seen) > 20_000:
@@ -113,11 +113,7 @@ def detect_runtime(calculator: object, *, requested_device: str) -> dict[str, st
         import jax
 
         if gpus := [dev for dev in jax.devices() if dev.platform == "gpu"]:
-            return {
-                "backend": backend,
-                "device": "gpu",
-                "hardware": gpus[0].device_kind,
-            }
+            return {"backend": "jax", "device": "gpu", "hardware": gpus[0].device_kind}
     elif backend == "tensorflow":
         import tensorflow as tf
 
@@ -191,10 +187,8 @@ def memory_peaks(runtime: Mapping[str, Any], *, succeeded: bool) -> dict[str, fl
         import torch
 
         if torch.cuda.is_available():
-            device = runtime.get("torch_device")
-            mem["max_gpu_mem_gb"] = round(
-                torch.cuda.max_memory_allocated(device) / 1e9, 3
-            )
+            peak = torch.cuda.max_memory_allocated(runtime.get("torch_device"))
+            mem["max_gpu_mem_gb"] = round(peak / 1e9, 3)
     except Exception:  # noqa: BLE001, S110
         pass
     if succeeded and not mem.get("max_gpu_mem_gb", 0) > 0:
@@ -547,10 +541,12 @@ def merge_audit_metadata(
 
 def cost_block(metadata: Mapping[str, object]) -> dict[str, object]:
     """The YAML cost mapping (COST_KEYS, canonical order, None values omitted) of
-    flat run metadata, whose ``cost_source`` becomes ``source``.
+    flat run metadata, whose ``cost_source`` becomes ``source``. Legacy metadata
+    without a cost_source keeps only its trustworthy LEGACY_ARTIFACT_COST_KEYS.
     """
     flat = {**metadata, "source": metadata.get("cost_source")}
-    return {key: flat[key] for key in COST_KEYS if flat.get(key) is not None}
+    keys = LEGACY_ARTIFACT_COST_KEYS if flat["source"] is None else COST_KEYS
+    return {key: flat[key] for key in keys if flat.get(key) is not None}
 
 
 # a cost names hardware and run time (merges dropping either leave labels/RSS only)
@@ -617,10 +613,6 @@ def _resolve_cost(
     existing_block = dict(existing.get("cost") or {})
     existing_source = existing_block.get("source")
     new_block = cost_block(artifact_cost or {})
-    if "source" not in new_block:  # legacy artifact: trustworthy keys only
-        new_block = {
-            key: new_block[key] for key in LEGACY_ARTIFACT_COST_KEYS if key in new_block
-        }
     if existing_block and existing_source not in COST_SOURCES:
         raise ValueError(
             f"{context}: existing cost {existing_block} has no valid source "

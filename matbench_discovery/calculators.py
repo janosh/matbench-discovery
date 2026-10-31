@@ -152,7 +152,7 @@ def _run_to_atomic_output(
     source_paths: Sequence[str] = (),
     tool_packages: Sequence[str] = (),
     env_overrides: Mapping[str, str] | None = None,
-    timeout_sec: int | None = None,
+    timeout_sec: int = DERIVED_ARTIFACT_TIMEOUT_SEC,
 ) -> None:
     """Atomically cache output by command, source contents, and tool versions.
 
@@ -203,9 +203,7 @@ def _run_to_atomic_output(
             subprocess.run(
                 rendered_command,
                 check=True,
-                timeout=(
-                    DERIVED_ARTIFACT_TIMEOUT_SEC if timeout_sec is None else timeout_sec
-                ),
+                timeout=timeout_sec,
                 env={**os.environ, **env_overrides} if env_overrides else None,
             )
             if not _is_non_empty_file(tmp_dest):

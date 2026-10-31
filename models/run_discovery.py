@@ -174,9 +174,7 @@ def _write_yaml_results(
     *,
     replace_author_reported: bool = False,
 ) -> None:
-    """Register the new artifacts, their cost block (atomically from the merged run
-    metadata via hpc.with_cost_block) and all discovery subsets.
-    """
+    """Register the new artifacts, their cost block and all discovery subsets."""
     from matbench_discovery.data import df_wbm
     from matbench_discovery.metrics import discovery as discovery_metrics
 

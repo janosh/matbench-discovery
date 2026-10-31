@@ -250,9 +250,7 @@ def test_model_md_path_returns_path_for_dict_md(
 def test_kappa_103_phonon_path_layouts(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, harmonic_rerun: bool
 ) -> None:
-    """The phonon sidecar resolves from kappa_103.harmonic for harmonic-only reruns,
-    else from kappa_103 when the conductivity run itself produced it.
-    """
+    """The phonon sidecar resolves from kappa_103.harmonic or kappa_103 itself."""
     model = Model.mace_mp_0
     sub_dir = "harmonic/" if harmonic_rerun else ""
     rel_path = f"models/mace/mace-mp-0/{sub_dir}2026-09-05-phonons-kappa-103.json.gz"

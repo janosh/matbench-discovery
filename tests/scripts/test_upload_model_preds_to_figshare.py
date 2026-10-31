@@ -46,9 +46,7 @@ def test_upload_writes_file_refs_back_to_yaml(
     file_type: Literal["all", "analysis", "pred"],
     same_hash: bool,
 ) -> None:
-    """Uploads (or same-hash matches) write url+size+md5 only for the filtered refs,
-    including reproducibility run files nested in lists (file_type=all only).
-    """
+    """Uploads or same-hash matches write url/size/md5 to the filtered refs only."""
     for rel_path in (PRED_REL, ANALYSIS_REL, REPRO_REL):
         (tmp_path / rel_path).parent.mkdir(parents=True, exist_ok=True)
         (tmp_path / rel_path).write_bytes(b"artifact")
@@ -70,30 +68,27 @@ def test_upload_writes_file_refs_back_to_yaml(
         lambda path: repo_relative_path(path, str(tmp_path)),
     )
     figshare = upload.figshare
-    monkeypatch.setattr(figshare, "article_exists", lambda _id: True)
-    monkeypatch.setattr(
-        figshare, "get_file_hash_and_size", lambda path: (f"md5-{path[-12:]}", 8)
-    )
-    monkeypatch.setattr(figshare, "find_similar_files", lambda *_args: [])
     uploads: list[str] = []
     published: list[int] = []
     existing_ids = {PRED_REL: 5, ANALYSIS_REL: 6, REPRO_REL: 7}
-    monkeypatch.setattr(figshare, "get_existing_files", lambda _id: {})
-    monkeypatch.setattr(
-        figshare,
-        "file_exists_with_same_hash",
-        lambda _id, name, *_args, **_kwargs: (
-            (True, existing_ids[name]) if same_hash else (False, None)
-        ),
-    )
 
     def fake_upload(_article_id: int, _path: str, **kwargs: object) -> tuple[int, bool]:
         """Record the upload name and return a fresh file ID."""
         uploads.append(str(kwargs["file_name"]))
         return 10 + len(uploads), True
 
-    monkeypatch.setattr(figshare, "upload_file_if_needed", fake_upload)
-    monkeypatch.setattr(figshare, "publish_article", published.append)
+    for name, stub in {
+        "article_exists": lambda _id: True,
+        "get_file_hash_and_size": lambda path: (f"md5-{path[-12:]}", 8),
+        "find_similar_files": lambda *_args: [],
+        "get_existing_files": lambda _id: {},
+        "file_exists_with_same_hash": lambda _id, name, *_args, **_kwargs: (
+            (True, existing_ids[name]) if same_hash else (False, None)
+        ),
+        "upload_file_if_needed": fake_upload,
+        "publish_article": published.append,
+    }.items():
+        monkeypatch.setattr(figshare, name, stub)
     upload.update_one_modeling_task_article(
         "geo_opt", [MODEL], modeling_tasks=TASKS, file_type=file_type
     )

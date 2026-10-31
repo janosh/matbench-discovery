@@ -88,17 +88,11 @@ describe(`Models Page`, () => {
     await mount_with_url(ModelsPage, `http://localhost/models?sort=${sort}&dir=${dir}`)
     expect(doc_query(`ul li.active button`).id).toBe(sort)
     const rd_bu = get_d3_interpolator(`interpolateRdBu`)
-    // let the DOM normalize color strings the same way it does the card styles
-    const normalized = (color: string) => {
-      const probe = document.createElement(`span`)
-      probe.style.backgroundColor = color
-      return probe.style.backgroundColor
-    }
     const backgrounds = [...model_cards()].map(
       (card) => doc_query(`h2`, card).style.backgroundColor,
     )
-    expect(backgrounds[0]).toBe(normalized(rd_bu(1))) // sorted best first
-    expect(backgrounds).toContain(normalized(rd_bu(0)))
+    expect(backgrounds[0]).toBe(rd_bu(1)) // sorted best first
+    expect(backgrounds).toContain(rd_bu(0))
   })
 
   it.each([
