@@ -363,6 +363,7 @@ describe(`Model Detail Page`, () => {
     const names = [...document.querySelectorAll(`.deps li > a:first-child`)].map(
       (name) => name.textContent?.trim() ?? ``,
     )
+    expect(names).toHaveLength(locator_model.environment.dependencies.length)
     expect(names).toEqual(
       names.toSorted((name_a, name_b) =>
         name_a.localeCompare(name_b, `en`, { sensitivity: `base` }),
