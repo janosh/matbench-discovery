@@ -5,7 +5,7 @@ import pytest
 from matbench_discovery.enums import Model
 from scripts.evals import evaluate_models
 
-MODEL_A, MODEL_B = Model.mace_mp_0, Model.chgnet_0_3_0
+MODEL_A, MODEL_B = Model["mace_mp_0"], Model["chgnet_0_3_0"]
 Outcome = str | Exception | None  # skip reason, raised error, or success
 
 

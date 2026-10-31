@@ -710,7 +710,8 @@ properties:
     $ref: '#/definitions/Dates'
   lifecycle:
     type: string
-    enum: [active, superseded, deprecated, aborted]
+    enum: [pending, active, superseded, deprecated, aborted]
+    description: New submissions are pending (validated but kept off the leaderboard) until ingestion adds their site payloads and sets them active.
   superseded_by:
     type: string
     description: model_key of the newer model replacing this one

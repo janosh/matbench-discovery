@@ -126,7 +126,8 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    dates:
      benchmark_added: '2023-01-01'
      paper_published: '2022-12-05'
-   lifecycle: active # active, superseded, deprecated, or aborted
+   # submit as pending; ingestion sets active (later: superseded, deprecated or aborted)
+   lifecycle: pending
    authors:
      - name: John Doe
        affiliation: Some University, Some National Lab
@@ -312,7 +313,7 @@ cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float64, acce
 
 Maintainers record reruns of a registered task under `metrics.{diatomics,md}.reproducibility` with `scripts/evals/reproducibility.py --task {diatomics,md} --models <model> --run LABEL PATH [URL]`, where PATH is a canonical artifact in the model dir or a subfolder like `repeat/` (for MD a combined per-system CSV). Runs are scored with the task's own metric code against the registered `pred_file`: `rel_changes` lists each nonzero max relative change, `repeat_rel_change` (`--repeat A B`) the noise floor between identical runs. The `status` is `reproduced` when every diatomic metric, or for MD the frame-wise `energy_rmse`/`force_rmse` (chaotic trajectory metrics are only listed), changed by at most `tolerance` (fixed at 1e-3), else `drifted` (needs `--cause` and `--note`); a verdict metric missing from any file makes it `inconclusive` (needs `--note`). Registering a new `pred_file` drops the block.
 
-The `Model` enum is generated during ingestion from each model YAML's required `model_key`; do not edit [`matbench_discovery/enums.py`](https://github.com/janosh/matbench-discovery/blob/main/matbench_discovery/enums.py) in submission PRs. Models with `lifecycle: aborted` are omitted, while `Model.active()` selects models with `lifecycle: active`.
+The `Model` enum is built at import from every model YAML's `model_key`, so a new YAML is all a submission needs. Submit with `lifecycle: pending`: CI validates the model without requiring site payloads, and ingestion sets it `active` when it adds them. Models with `lifecycle: aborted` are omitted, while `Model.active()` selects models with `lifecycle: active`.
 
 > [!WARNING]
 > Do not include a `filter_bad_preds.py` script or equivalent. This was a historical flaw in the evaluation and now all OOM outlier prediction handling is handled internally and consistently removing the need for this filtering stage.

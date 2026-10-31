@@ -242,7 +242,7 @@ def test_load_df_wbm_with_preds(
 
 def test_load_df_wbm_with_preds_mock_data_models(mock_wbm_preds: Mock) -> None:
     """Default loading selects active models; inactive ones load by any ref."""
-    inactive_model = Model.alphanet_v1_mptrj
+    inactive_model = Model["alphanet_v1_mptrj"]
     inactive_model_refs = (inactive_model, inactive_model.name, inactive_model.label)
     df_default = load_df_wbm_with_preds(pbar=False)
     inactive_cols = [
@@ -258,13 +258,13 @@ def test_load_df_wbm_with_preds_mock_data_models(mock_wbm_preds: Mock) -> None:
     assert inactive_cols == [[*df_wbm, inactive_model.key]] * len(inactive_model_refs)
     n_loads = len(Model.active()) + len(inactive_model_refs)
     assert mock_wbm_preds.call_count == n_loads
-    assert df_default[Model.mace_mpa_0.key].notna().any()
+    assert df_default[Model["mace_mpa_0"].key].notna().any()
 
 
 @pytest.mark.network
 def test_load_df_wbm_max_error_threshold() -> None:
     """Tighter outlier thresholds monotonically increase missing predictions."""
-    model = Model.mace_mp_0
+    model = Model["mace_mp_0"]
     df_no_threshold = load_df_wbm_with_preds(models=[model], max_error_threshold=None)
     df_high_threshold = load_df_wbm_with_preds(models=[model], max_error_threshold=10)
     df_low_threshold = load_df_wbm_with_preds(models=[model], max_error_threshold=0.1)
@@ -316,7 +316,7 @@ def test_load_df_wbm_with_preds_subset(
     """Subset selectors return exactly the requested WBM material IDs."""
     # Default model selection is covered above; one prediction column exercises
     # subsetting without loading every model for each selector.
-    model = Model.mace_mpa_0
+    model = Model["mace_mpa_0"]
     df_subset = load_df_wbm_with_preds(models=[model], subset=subset, pbar=False)
     assert mock_wbm_preds.call_count == 1
     if subset is None or (isinstance(subset, str) and subset == "full_test_set"):
@@ -334,7 +334,7 @@ def test_prediction_errors_and_element_enrichment(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Prediction errors stay independent from optional per-element enrichment."""
-    models = [Model.mace_mp_0, Model.mace_mpa_0]
+    models = [Model["mace_mp_0"], Model["mace_mpa_0"]]
     raw = pd.DataFrame(
         {
             Key.formula: ["Fe2O3", "FeO"],

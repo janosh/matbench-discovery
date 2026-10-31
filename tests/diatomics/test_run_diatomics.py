@@ -14,7 +14,7 @@ from matbench_discovery.enums import Model
 from tests.utils import import_repo_script, patch_model_metadata
 
 # synthetic curated exclusions, decoupled from any real model YAML's live pins
-CURATED_MODEL = Model.mace_mp_0
+CURATED_MODEL = Model["mace_mp_0"]
 CURATED_REASONS = {"He-He": "synthetic curated reason"}
 
 

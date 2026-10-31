@@ -12,7 +12,7 @@ from matbench_discovery import repo_relative_path
 from matbench_discovery.data import round_trip_yaml
 from matbench_discovery.enums import Model
 
-MODEL = Model.mace_mp_0
+MODEL = Model["mace_mp_0"]
 PRED_REL = "models/arch/model/geo-opt.jsonl.gz"
 ANALYSIS_REL = "models/arch/model/geo-opt-symprec=1e-2.csv.gz"
 REPRO_REL = "models/arch/model/old-run.jsonl.gz"  # reproducibility.runs[0].file

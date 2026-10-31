@@ -101,10 +101,7 @@ def test_ingest_guard_exempts_only_files_the_overlay_never_copies() -> None:
     assert exempt_match, "update-site-figs.yml no longer defines EXEMPT_PATHS"
     exempt_paths = json.loads(exempt_match[1])
     # pinned exactly: growing this set widens the ingestion trust boundary
-    assert sorted(exempt_paths) == [
-        "matbench_discovery/calculators.py",
-        "matbench_discovery/enums.py",
-    ]
+    assert exempt_paths == ["matbench_discovery/calculators.py"]
     for path in exempt_paths:  # exempt only because the overlay refuses to copy them
         assert overlay.MODEL_YAML_PATTERN.fullmatch(path) is None
 

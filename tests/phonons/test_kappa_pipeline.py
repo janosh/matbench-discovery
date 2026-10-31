@@ -362,7 +362,7 @@ def test_generated_models_use_stable_registry_provenance(
     from matbench_discovery.calculators import CALCULATORS
     from models import run_kappa
 
-    model = Model.nequip_mp_l_0_1
+    model = Model["nequip_mp_l_0_1"]
     # pin the runtime-compiled spec shape (no managed or required checkpoint)
     # before patching metadata, since resolving the lazy spec reads the real YAML
     monkeypatch.setitem(
@@ -530,7 +530,7 @@ def test_yaml_write_requires_verified_settings_and_dataset(
     )
     validate = functools.partial(
         run_kappa.validate_yaml_write_provenance,
-        Model.mace_mp_0,
+        Model["mace_mp_0"],
         merged_run,
         canonical_dataset_path=dataset_path,
     )

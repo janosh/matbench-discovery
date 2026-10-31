@@ -919,7 +919,7 @@ def test_write_metrics_to_yaml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     """metrics.md gets units, rounding and the artifact's cost after pred_file."""
     yaml_path = tmp_path / "model.yml"
     yaml_path.write_text("model_name: test\nmetrics: {}\n", encoding="utf-8")
-    model = Model.mace_mp_0
+    model = Model["mace_mp_0"]
     patch_model_metadata(monkeypatch, model, yaml_path=str(yaml_path))
 
     cost = {

@@ -10,7 +10,6 @@ from unittest.mock import patch
 import pytest
 import requests
 
-import scripts.generate_model_enum as model_enum_generator
 from matbench_discovery import DATA_DIR, ROOT, file_digest
 from matbench_discovery.enums import (
     ArchitectureType,
@@ -217,7 +216,7 @@ def test_model_md_path_returns_path_for_dict_md(
     """Resolve nested local predictions but reject paths outside the model directory."""
     from matbench_discovery import enums as enums_mod
 
-    model = Model.mace_mp_0
+    model = Model["mace_mp_0"]
     rel_path = f"models/mace/mace-mp-0/{subdirectory}2026-09-06-md-metrics.csv.gz"
     patch_model_metadata(
         monkeypatch,
@@ -251,7 +250,7 @@ def test_kappa_103_phonon_path_layouts(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, harmonic_rerun: bool
 ) -> None:
     """The phonon sidecar resolves from kappa_103.harmonic or kappa_103 itself."""
-    model = Model.mace_mp_0
+    model = Model["mace_mp_0"]
     sub_dir = "harmonic/" if harmonic_rerun else ""
     rel_path = f"models/mace/mace-mp-0/{sub_dir}2026-09-05-phonons-kappa-103.json.gz"
     phonon_ref = {"phonon_file": {"name": rel_path}}
@@ -322,54 +321,45 @@ def test_model_metadata_accessors(
     expected: dict[str, Any],
 ) -> None:
     """label/key/metrics read YAML metadata; bare `metrics:` reads as no metrics."""
-    model = Model.alignn
+    model = Model["alignn"]
     metadata = {"model_name": "Fake Net", "model_key": "fake-net", "metrics": metrics}
     patch_model_metadata(monkeypatch, model, metadata)
     assert (model.label, model.key, model.metrics) == ("Fake Net", "fake-net", expected)
     assert model.md_path is None  # no md pred_file means no MD predictions
 
 
-def test_generated_model_enum_is_current() -> None:
-    """Committed Model members match the YAML-driven generator."""
-    with open(f"{ROOT}/matbench_discovery/enums.py", encoding="utf-8") as file:
-        source = file.read()
-    assert model_enum_generator.generate_source(source) == source
-
-
-def test_model_enum_generator_rejects_global_key_collisions(
+def test_model_members_reject_global_key_collisions(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Canonical keys are unique across active and aborted YAMLs."""
+    from matbench_discovery import enums as enums_mod
+
     for lifecycle in ("active", "aborted"):
         path = tmp_path / "models" / lifecycle / "model.yml"
         path.parent.mkdir(parents=True)
         path.write_text(f"model_key: model-a\nlifecycle: {lifecycle}\n")
-    monkeypatch.setattr(model_enum_generator, "ROOT", str(tmp_path))
-    source = (
-        f"class Model:\n{model_enum_generator.BEGIN_MARKER}\n"
-        f"{model_enum_generator.END_MARKER}\n"
-    )
+    monkeypatch.setattr(enums_mod, "ROOT", str(tmp_path))
     with pytest.raises(ValueError, match="collides"):
-        model_enum_generator.generate_source(source)
+        enums_mod._model_members()  # noqa: SLF001
 
 
 @pytest.mark.parametrize(
     "input_value, expected_model",
     [
         # Exact matches
-        ("mace_mp_0", Model.mace_mp_0),
-        ("eqv2_s_dens_mp", Model.eqv2_s_dens_mp),
+        ("mace_mp_0", Model["mace_mp_0"]),
+        ("eqv2_s_dens_mp", Model["eqv2_s_dens_mp"]),
         # Dash conversion
-        ("mace-mp-0", Model.mace_mp_0),
-        ("eqv2-s-dens-mp", Model.eqv2_s_dens_mp),
-        ("chgnet-0.3.0", Model.chgnet_0_3_0),
-        ("cgcnn-p", Model.cgcnn_p),
+        ("mace-mp-0", Model["mace_mp_0"]),
+        ("eqv2-s-dens-mp", Model["eqv2_s_dens_mp"]),
+        ("chgnet-0.3.0", Model["chgnet_0_3_0"]),
+        ("cgcnn-p", Model["cgcnn_p"]),
         # Case insensitive
-        ("MACE-MP-0", Model.mace_mp_0),
-        ("EQV2-S-DENS-MP", Model.eqv2_s_dens_mp),
+        ("MACE-MP-0", Model["mace_mp_0"]),
+        ("EQV2-S-DENS-MP", Model["eqv2_s_dens_mp"]),
         # Mixed separators
-        ("mace-mp_0", Model.mace_mp_0),
-        ("mace_mp-0", Model.mace_mp_0),
+        ("mace-mp_0", Model["mace_mp_0"]),
+        ("mace_mp-0", Model["mace_mp_0"]),
         (123, None),
         (None, None),
         ([], None),
@@ -397,7 +387,7 @@ def test_model_md_path_passes_huggingface_token(
     monkeypatch.setattr("matbench_discovery.enums.ROOT", str(tmp_path))
     patch_model_metadata(
         monkeypatch,
-        Model.alignn,
+        Model["alignn"],
         {
             "model_name": "Gated MD",
             "model_key": "alignn",
@@ -406,7 +396,7 @@ def test_model_md_path_passes_huggingface_token(
     )
 
     with patch("requests.get", return_value=make_mock_response(b"md")) as mock_get:
-        assert Model.alignn.md_path == abs_path
+        assert Model["alignn"].md_path == abs_path
 
     assert os.path.isfile(abs_path)
     assert mock_get.call_args.args == (url,)
@@ -433,7 +423,7 @@ def test_model_prediction_urls(url_session: requests.Session) -> None:
 
     tasks: dict[str, str] = {}
     for model in Model.active():
-        if model.name == Model.mace_mpa_0.name:
+        if model.name == Model["mace_mpa_0"].name:
             continue
         tasks[model.metadata["pr_url"]] = model.name
         metrics = model.metrics

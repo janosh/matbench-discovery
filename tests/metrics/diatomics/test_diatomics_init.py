@@ -39,8 +39,8 @@ def write_diatomics_yaml(
 def diatomics_model(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> tuple[Model, Path]:
-    """Model.mace_mp_0 with a fresh temp YAML patched in as its yaml_path."""
-    model = Model.mace_mp_0
+    """Model["mace_mp_0"] with a fresh temp YAML patched in as its yaml_path."""
+    model = Model["mace_mp_0"]
     yaml_path = tmp_path / "model.yml"
     patch_model_metadata(monkeypatch, model, yaml_path=str(yaml_path))
     write_diatomics_yaml(model, yaml_path, {})

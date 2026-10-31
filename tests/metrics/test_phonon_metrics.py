@@ -536,7 +536,9 @@ def test_kappa_analysis_uses_shared_spectrum_helpers(
     df_true = df_true.set_axis(material_ids)
     df_pred[Key.ph_freqs] = [np.array([[0.0, 1.0, 2.0]]), np.array([[0.5, 1.0, 2.0]])]
     df_true[Key.ph_freqs] = [np.array([[0.0, 1.0, 2.0]])] * len(material_ids)
-    payload = model_payload(Model.mace_mp_0, __file__, df_pred, df_true, material_ids)
+    payload = model_payload(
+        Model["mace_mp_0"], __file__, df_pred, df_true, material_ids
+    )
 
     expected_w1 = [
         phonon_metrics.phonon_spectrum_w1(df_pred.loc[mat_id], df_true.loc[mat_id])

@@ -40,7 +40,7 @@ data_path = DataFiles.mp_energies.path
 target_col = Key.formation_energy_per_atom
 data_name = "mp"
 ensemble_size = 10
-job_name = f"{today}-train-{Model.wrenformer}-ens={ensemble_size}-robust-{data_name}"
+job_name = f"{today}-train-{Model['wrenformer']}-ens={ensemble_size}-robust-{data_name}"
 module_dir = os.path.dirname(__file__)
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{job_name}")
 
@@ -98,7 +98,7 @@ test_loader = df_to_in_mem_dataloader(
     **data_loader_kwargs,
 )
 
-model_name = f"{Model.wrenformer}-robust-{data_name}"
+model_name = f"{Model['wrenformer']}-robust-{data_name}"
 model_params = dict(
     task_dict={target_col: "regression"},
     robust=True,

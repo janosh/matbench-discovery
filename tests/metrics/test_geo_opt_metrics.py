@@ -161,16 +161,16 @@ def test_write_geo_opt_metrics_to_yaml(
     symprec = 1e-2
     symprec_key = "symprec=1e-2"
 
-    real_yaml_path = Path(Model.alignn.yaml_path)
+    real_yaml_path = Path(Model["alignn"].yaml_path)
     original = real_yaml_path.read_bytes()
     yaml_path = tmp_path / "model.yml"
     prior_block = {"analysis_file": existing_ref} if existing_ref else {}
     with yaml_path.open("w", encoding="utf-8") as file:
         round_trip_yaml.dump({"metrics": {"geo_opt": {symprec_key: prior_block}}}, file)
-    patch_model_metadata(monkeypatch, Model.alignn, yaml_path=str(yaml_path))
+    patch_model_metadata(monkeypatch, Model["alignn"], yaml_path=str(yaml_path))
 
     geo_opt.write_metrics_to_yaml(
-        pd.DataFrame([metrics_data]), Model.alignn, symprec, analysis_file_path
+        pd.DataFrame([metrics_data]), Model["alignn"], symprec, analysis_file_path
     )
     with yaml_path.open(encoding="utf-8") as file:
         actual_block = round_trip_yaml.load(file)["metrics"]["geo_opt"][symprec_key]

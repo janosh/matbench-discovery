@@ -1,8 +1,8 @@
 name: Model PR guard
 
-# 1) Un-ingested model submissions fail tests/site/test_parity_assets.py until a
-#    maintainer applies `ingest-model` (full ingest via update-site-figs.yml) or runs
-#    `uv run --with-editable . scripts/ingest_model.py <model> --archive` locally.
+# 1) Model registry, schema, URL and parity checks. New submissions use
+#    `lifecycle: pending`, so they pass before ingestion adds their payloads and parity
+#    assets and sets them active.
 # 2) Payload-format changes without regenerated payloads fail unless the PR also
 #    updates committed site payloads or carries the `payloads-unchanged` label.
 # 3) Model registry/schema guardrails (tests/models/) always run.

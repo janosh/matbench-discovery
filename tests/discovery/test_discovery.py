@@ -492,7 +492,7 @@ def test_relaxation_settings_load_yaml_and_overrides(
 ) -> None:
     """YAML hyperparameters load, flags take precedence, unknown models raise."""
     evaluation = {"max_force": 0.02, "max_steps": 300, "cell_filter": None}
-    model = Model.mace_mp_0
+    model = Model["mace_mp_0"]
     patch_model_metadata(
         monkeypatch,
         model,

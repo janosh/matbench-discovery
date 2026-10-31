@@ -117,7 +117,7 @@ def test_analyze_model_symprec_metrics_and_debug_paths(
         patch.object(analyze_geo_opt.geo_opt, "write_metrics_to_yaml") as mock_write,
     ):
         df_metrics = analyze_geo_opt.analyze_model_symprec(
-            Model.alignn,
+            Model["alignn"],
             SYMPREC,
             MOYO_VERSION,
             df_dft_analysis=pd.DataFrame(),

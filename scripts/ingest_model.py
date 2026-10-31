@@ -29,6 +29,7 @@ from matbench_discovery.calculators import CALCULATORS
 from matbench_discovery.data import (
     file_ref_url,
     iter_file_refs,
+    round_trip_yaml,
     task_coverage,
     validate_artifact_path,
 )
@@ -424,6 +425,20 @@ def read_head_yaml(path: str) -> dict[str, object] | None:
     return metadata
 
 
+def activate_pending(model: Model) -> None:
+    """Set a pending submission's lifecycle to active, since ingestion is what adds
+    its site payloads; other lifecycles are left alone.
+    """
+    if model.metadata["lifecycle"] != "pending":
+        return
+    with open(model.yaml_path, encoding="utf-8") as file:
+        metadata = round_trip_yaml.load(file)
+    metadata["lifecycle"] = "active"
+    with open(model.yaml_path, mode="w", encoding="utf-8") as file:
+        round_trip_yaml.dump(metadata, file)
+    vars(model).pop("metadata", None)  # drop the cached pending metadata
+
+
 def classify_yaml_changes(
     changed_paths: Sequence[str], removed_paths: Sequence[str]
 ) -> dict[str, object]:
@@ -465,7 +480,8 @@ def classify_yaml_changes(
         "targeted_models": [
             Model.from_ref(key).name
             for key, metadata in sorted(new_by_key.items())
-            if old_by_key.get(key) != metadata and metadata.get("lifecycle") == "active"
+            if old_by_key.get(key) != metadata
+            and metadata.get("lifecycle") in ("pending", "active")
         ],
     }
 
@@ -543,6 +559,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             checks,
             validate_runner=not args.validate_only,
         )
+        if not checks.n_failed:  # evals and payloads only cover active models
+            activate_pending(model)
         overwrite = ("--overwrite",) if args.overwrite else ()
         run_model_steps(
             "STEP 2: Running evaluation scripts", EVAL_STEPS, model, checks,

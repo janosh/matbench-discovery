@@ -291,7 +291,7 @@ def test_discovery_eval_skips_incomplete_cli_model(
     from matbench_discovery import data
 
     eval_discovery = import_repo_script("eval_discovery", "scripts/evals/discovery.py")
-    model = Model.alignn
+    model = Model["alignn"]
     metadata = {"model_name": "Fake Net", "lifecycle": "active", "metrics": {}}
     patch_model_metadata(monkeypatch, model, metadata)
     monkeypatch.setattr(eval_discovery.cli_args, "models", [model])
@@ -321,7 +321,7 @@ def test_discovery_prediction_frames(
         },
         index=material_ids,
     )
-    raw.loc[material_ids[0], Model.mace_mpa_0.key] = np.nan
+    raw.loc[material_ids[0], Model["mace_mpa_0"].key] = np.nan
 
     def load_predictions(*, models: list[Model], subset: object = None) -> pd.DataFrame:
         """Exercise real roster selection without loading gigabytes to check shapes."""
@@ -345,7 +345,7 @@ def test_discovery_prediction_frames(
             rounded[MbdKey.each_true] + rounded[model_key] - rounded[MbdKey.e_form_dft]
         )
         np.testing.assert_array_equal(df_each_pred[model_key], expected_each_pred)
-        missing = model_key == Model.mace_mpa_0.key
+        missing = model_key == Model["mace_mpa_0"].key
         # one f64 subtraction near unity: fewer than five eps
         np.testing.assert_allclose(
             df_each_err[model_key],

@@ -201,7 +201,12 @@ def test_model_registry_identity() -> None:
 
     registry_keys = set(CALCULATORS) | set(ARCHIVED_DISCOVERY_MODELS)
     assert registry_keys - {"emt"} <= Model.__members__.keys()
-    active_families = {model.family for model in Model.active()}
+    # pending submissions own their family directory before ingestion activates them
+    active_families = {
+        model.family
+        for model in Model
+        if model.metadata["lifecycle"] in ("pending", "active")
+    }
     # normpath: Windows globs may end in `\`; basename of a trailing-sep path is "".
     model_dir_families = {
         os.path.basename(os.path.normpath(path))

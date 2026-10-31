@@ -19,7 +19,7 @@ def patch_eval_md(
     monkeypatch: pytest.MonkeyPatch,
     *,
     systems: list[str],
-    model: Model = Model.mace_mp_0,
+    model: Model = Model["mace_mp_0"],
 ) -> ModuleType:
     """Import scripts/evals/md.py and patch it to use a tiny test reference set."""
     eval_md = import_repo_script("eval_md", "scripts/evals/md.py")
@@ -52,7 +52,7 @@ def test_md_evals_preserves_precision_and_rejects_incomplete_coverage(
     use_run_dir: bool,
 ) -> None:
     """Explicit source selection preserves precision and rejects incomplete coverage."""
-    model, good_model = Model.mace_mp_0, Model.chgnet_0_3_0
+    model, good_model = Model["mace_mp_0"], Model["chgnet_0_3_0"]
     eval_md = patch_eval_md(tmp_path, monkeypatch, systems=["sysA", "sysB", "sysC"])
     monkeypatch.setattr(eval_md.cli_args, "models", [model, good_model])
     # The generic output flag must never change the selected data source.
@@ -111,7 +111,7 @@ def test_md_recompute_and_import_prediction_file_reference(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Recompute retains source metadata; importing shards writes a fresh artifact."""
-    model = Model.mace_mp_0
+    model = Model["mace_mp_0"]
     eval_md = patch_eval_md(tmp_path, monkeypatch, systems=["sysA"])
     csv_path = tmp_path / "2026-09-12-md-metrics.csv.gz"
     pd.DataFrame({"system": ["sysA"], "rdf_error": [2.5]}).to_csv(csv_path, index=False)

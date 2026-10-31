@@ -9,7 +9,10 @@ export type ModelMetadata = {
    */
   model_version: string | null
   dates: Dates
-  lifecycle: 'active' | 'superseded' | 'deprecated' | 'aborted'
+  /**
+   * New submissions are pending (validated but kept off the leaderboard) until ingestion adds their site payloads and sets them active.
+   */
+  lifecycle: 'pending' | 'active' | 'superseded' | 'deprecated' | 'aborted'
   /**
    * model_key of the newer model replacing this one
    */

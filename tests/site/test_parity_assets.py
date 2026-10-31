@@ -315,7 +315,7 @@ def test_workflows_refresh_and_deploy_exact_parity_assets() -> None:
         assert refresh.count(script) == full_roster_refresh.count(script) == 1
     assert "site/src/lib/parity/{energy,kappa}-parity-manifest.json" in workflow
     assert (
-        "git add matbench_discovery/enums.py models site/src/figs site/src/lib/parity"
+        "git add models site/src/figs site/src/lib/parity site/src/routes/models"
         in workflow
     )
     assert workflow.index("generate-kappa-parity-assets.py") < workflow.index(
@@ -476,7 +476,11 @@ def refresh_manifest() -> tuple[dict[str, Any], dict[str, Any]]:
                 }
                 for kind in ("parity", "modes")
             }
-            for model_key in (Model.mace_mp_0.key, Model.chgnet_0_3_0.key, "retired")
+            for model_key in (
+                Model["mace_mp_0"].key,
+                Model["chgnet_0_3_0"].key,
+                "retired",
+            )
         },
     }
     return manifest, base
@@ -487,7 +491,7 @@ def test_targeted_parity_requires_matching_base(
 ) -> None:
     """Targeted refresh rejects missing, stale, or malformed manifest entries."""
     manifest, base = refresh_manifest
-    model_key = Model.mace_mp_0.key
+    model_key = Model["mace_mp_0"].key
     kinds = manifest["model_assets"][model_key]
     with pytest.raises(FileNotFoundError, match="existing manifest"):
         asset_helpers.retained_parity_assets(None, (), base, "parity-v1")
@@ -527,10 +531,10 @@ def test_retained_parity_assets_drops_targeted_and_inactive_models(
 ) -> None:
     """Retain immutable base and active peers, including their complete asset kinds."""
     assert asset_helpers.resolve_models(["mace_mp_0", "mace-mp-0"]) == (
-        Model.mace_mp_0,
+        Model["mace_mp_0"],
     )
     manifest, base = refresh_manifest
-    target_keys = (Model.mace_mp_0.key,) if targeted else ()
+    target_keys = (Model["mace_mp_0"].key,) if targeted else ()
     expected = {
         key: kinds
         for key, kinds in manifest["model_assets"].items()
@@ -549,7 +553,7 @@ def test_prune_unreferenced_assets_keeps_exactly_the_manifest(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, replace_fails: bool
 ) -> None:
     """Pruning after the write deletes only files the new manifest does not name."""
-    model_key = Model.mace_mp_0.key
+    model_key = Model["mace_mp_0"].key
     # a peer whose key extends the target key must survive: name-prefix matching alone
     # would delete `<key>-variant` when refreshing `<key>`
     extended_key = f"{model_key}-variant"
@@ -780,7 +784,7 @@ def test_targeted_energy_requires_matching_structure_bundles(
     monkeypatch.setattr(energy_assets, "read_manifest", lambda _path: {})
 
     with pytest.raises(ValueError, match="structures changed; run a full refresh"):
-        energy_assets.main(["--models", Model.mace_mp_0.name])
+        energy_assets.main(["--models", Model["mace_mp_0"].name])
 
 
 @pytest.mark.parametrize(

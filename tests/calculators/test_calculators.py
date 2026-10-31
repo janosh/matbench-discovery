@@ -159,7 +159,7 @@ def test_uv_command_layers_model_packages_on_runner_env(
         "find_links": ["https://data.pyg.org/whl/torch-2.0.1.html"],
         "extra_index_urls": ["https://example.org/simple"],
     }
-    patch_model_metadata(monkeypatch, Model.mace_mp_0, {"environment": environment})
+    patch_model_metadata(monkeypatch, Model["mace_mp_0"], {"environment": environment})
     calc_spec = calculators._runtime_calc_spec("mace_mp_0", EMT)()  # noqa: SLF001
     assert calc_spec.deps == tuple(environment["dependencies"])
     assert calc_spec.uv_run_cmd("models/run_md.py", "--model", "mace_mp_0") == [
@@ -215,7 +215,7 @@ def test_corrected_model_factory_contracts() -> None:
             field_name
         ]
         assert value == expected or str(value).endswith(expected)
-    assert "orb-v3-conservative-inf-mpa" in Model.orb_v3.metadata["checkpoint_url"]
+    assert "orb-v3-conservative-inf-mpa" in Model["orb_v3"].metadata["checkpoint_url"]
     # TACE's OEQ/AOTI export needs torch>=2.11, so TACE factories may only accelerate
     # when their YAML pins a new enough torch (older pins must stay eager)
     tace_keys = [
