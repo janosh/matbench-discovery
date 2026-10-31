@@ -101,7 +101,7 @@ metrics:
     kappa_103:
       pred_file:
         name: models/alignn_ff/alignn-ff-mptrj/2026-10-24-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/70919004
+        url: https://figshare.com/files/70945011
         size: 16708471
         md5: 25e459f5be2d1a2a45b1086fb4d44b03
       cost: {source: author_reported, hardware: NVIDIA GB10, run_time_sec: 8911.31, max_rss_gb: 2.672, max_gpu_mem_gb: 63.673}
@@ -114,7 +114,9 @@ metrics:
   discovery:
     pred_file:
       name: models/alignn_ff/alignn-ff-mptrj/2026-10-24-discovery.csv.gz
-      url: https://figshare.com/files/70840677
+      url: https://figshare.com/files/70944999
+      size: 1323687
+      md5: 31835d3f2892507aa10e5cc46ef22baa
     cost: {source: author_reported, hardware: NVIDIA GB10, run_time_sec: 3066916.97, max_rss_gb: 2.268, max_gpu_mem_gb: 2.329}
     full_test_set:
       F1: 0.694 # fraction
@@ -147,7 +149,9 @@ metrics:
   geo_opt:
     pred_file:
       name: models/alignn_ff/alignn-ff-mptrj/2026-10-24-geo-opt.jsonl.gz
-      url: https://figshare.com/files/70840686
+      url: https://figshare.com/files/70945002
+      size: 105718510
+      md5: 773ada061cd2e0e46df61804a1672fc8
     symprec=1e-5:
       rmsd: 0.0901 # unitless
       n_sym_ops_mae: 3.4095 # unitless
@@ -157,6 +161,9 @@ metrics:
       n_structures: 256963 # count
       analysis_file:
         name: models/alignn_ff/alignn-ff-mptrj/2026-10-24-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70945005
+        size: 6856047
+        md5: b95567ba2ad3b9b8a971674d67cd16d9
     symprec=1e-2:
       rmsd: 0.0901 # unitless
       n_sym_ops_mae: 1.9804 # unitless
@@ -166,3 +173,6 @@ metrics:
       n_structures: 256963 # count
       analysis_file:
         name: models/alignn_ff/alignn-ff-mptrj/2026-10-24-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70945008
+        size: 6796196
+        md5: 92a61e82ff024f70e66d376cac2f106d
