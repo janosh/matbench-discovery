@@ -27,6 +27,7 @@ const create_mock_github_data = (
   forks: 250,
   commits_last_year: 120,
   contributors: 15,
+  model_key: `test-model`,
   ...overrides,
 })
 
@@ -81,7 +82,7 @@ describe(`GitHubActivityScatter`, () => {
         point_style: { fill: `#4dabf7` },
         metadata: [
           { name: `Zero Commits`, repo: `org/zero`, model_key: `zero-model` },
-          { name: `Popular`, repo: `org/popular`, model_key: undefined },
+          { name: `Popular`, repo: `org/popular`, model_key: `test-model` },
         ],
         color_values: [1, 10_000],
         size_values: [1, 1000],
@@ -104,37 +105,17 @@ describe(`GitHubActivityScatter`, () => {
     })
   })
 
-  it(`passes rest props and disables labels when requested`, () => {
+  it(`passes rest props through and navigates to the clicked model's page`, () => {
+    const overrides = { model_key: `slug with space`, name: `Display Name` }
     mount(GitHubActivityScatter, {
       target: document.body,
       props: {
-        github_data: [create_mock_github_data()],
-        show_model_labels: false,
+        github_data: [create_mock_github_data(overrides)],
         style: `height: 800px;`,
       },
     })
-
     expect(get_scatter_plot_props(plot_mocks.ScatterPlot)).toMatchObject({
-      series: [{ point_label: [] }],
       style: `height: 800px;`,
-    })
-  })
-
-  it.each([
-    {
-      name: `model key`,
-      overrides: { model_key: `preferred-slug`, name: `Display Name` },
-      expected_path: `/models/preferred-slug`,
-    },
-    {
-      name: `name fallback`,
-      overrides: { name: `Name With Space` },
-      expected_path: `/models/Name%20With%20Space`,
-    },
-  ])(`navigates to model page using $name`, ({ overrides, expected_path }) => {
-    mount(GitHubActivityScatter, {
-      target: document.body,
-      props: { github_data: [create_mock_github_data(overrides)] },
     })
 
     const scatter_plot_props = get_scatter_plot_props(
@@ -146,6 +127,6 @@ describe(`GitHubActivityScatter`, () => {
       point: { metadata },
     })
     expect(goto).toHaveBeenCalledTimes(1)
-    expect(goto).toHaveBeenCalledWith(expected_path)
+    expect(goto).toHaveBeenCalledWith(`/models/slug%20with%20space`)
   })
 })

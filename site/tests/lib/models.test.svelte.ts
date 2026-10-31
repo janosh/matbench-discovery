@@ -195,6 +195,12 @@ describe(`make_table_filters`, () => {
     filters.read(new URLSearchParams(`targets=`))
     expect(filters.targets).toStrictEqual({})
     expect(filters.targets_param).toBe(``)
+    // prototype keys are not outputs: they must not become constraints hiding every model
+    filters.read(new URLSearchParams(`targets=toString,-constructor,__proto__,S`))
+    expect(filters.targets).toStrictEqual({ S: `require` })
+    expect(
+      filters.matches({ training_sets: [], openness: `OSOD`, targets: `EFS_G` }),
+    ).toBe(true)
   })
 
   it(`set_training cycles require -> off and toggle_openness keeps at least one`, () => {
@@ -212,21 +218,6 @@ describe(`make_table_filters`, () => {
     expect(filters.openness).toHaveLength(1) // refuses to hide the last value
     filters.clear()
     expect(filters.n_active).toBe(0)
-  })
-
-  it(`apply drops stale dataset keys and invalid modes from snapshots`, () => {
-    const filters = make_table_filters()
-    filters.apply({
-      // A browser-history snapshot can contain keys removed in a later deploy.
-      training: {
-        MPtrj: `require`,
-        'Renamed Dataset': `exclude`,
-        OMat24: `bogus` as `exclude`,
-      },
-      openness: [`OSOD`, `bogus` as `OSCD`],
-    })
-    expect(filters.training).toStrictEqual({ MPtrj: `require` })
-    expect(filters.openness).toStrictEqual([`OSOD`])
   })
 })
 

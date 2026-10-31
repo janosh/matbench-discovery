@@ -6,14 +6,20 @@ import {
   MD_METRICS,
   PHONON_METRICS,
 } from '#lib/labels.js'
+import { CMDS_CONFIG } from '#lib/combined-scores.svelte.js'
 import {
   assemble_row_data,
+  cost_annotation,
   format_train_set,
+  get_nested_value,
+  label_data_path,
   missing_metric_reason,
+  repro_cell_html,
   sort_models,
 } from '#lib/metrics.js'
 import type { ModelData } from '#lib/types.js'
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it, onTestFinished } from 'vite-plus/test'
+import { REPRO_CASES } from '../index.js'
 
 // labels own their direction (no fallback list), so a metric added without `better` would
 // silently lose its heatmap orientation and better-hint
@@ -130,14 +136,12 @@ describe(`assemble_row_data`, () => {
     expect(n_layers_val).toMatch(
       /^<span (?:data-sort-value="\d+">\d+|data-title="[^"]+">n\/a)<\/span>$/,
     )
-    for (const [metric, expected] of [
-      [PHONON_METRICS.κ_SRME, 0.6823],
-      [PHONON_METRICS.κ_SRE, 0.471],
-      [PHONON_METRICS.κ_SRD, -0.2845],
-      [PHONON_METRICS.κ_failure_rate, 0.0291],
-      [PHONON_METRICS.imaginary_mode_rate, 0],
-      [PHONON_METRICS.spectrum_w1, 0.8709],
-    ] as const) {
+    // phonon cells carry the raw YAML values from each label's data path
+    const mace = MODELS.find(({ model_key }) => model_key === `mace-mp-0`)
+    if (!mace) throw new Error(`Missing mace-mp-0`)
+    for (const metric of Object.values(PHONON_METRICS)) {
+      const expected = get_nested_value(mace, label_data_path(metric))
+      expect(typeof expected, metric.key).toBe(`number`)
       expect(mace_row?.[metric.key]).toBe(expected)
     }
     const cps_vals = rows.map((row) => row.CPS) as number[]
@@ -234,6 +238,16 @@ describe(`assemble_row_data`, () => {
     },
   )
 
+  it(`reads the CDS speed input from the diatomics cost block`, () => {
+    const diatomics = { cost: { source: `runner`, hardware: `H200`, run_time_sec: 100 } }
+    const model = { ...tece_model, metrics: { diatomics } } as ModelData
+    const reason = missing_metric_reason(
+      model,
+      DIATOMICS_METRICS.diatomics_combined_score,
+    )
+    expect(reason).not.toMatch(/runtime|run time|wall time/i)
+  })
+
   it.each([
     ALL_METRICS.CPS,
     ALL_METRICS.RMSD,
@@ -273,7 +287,7 @@ describe(`assemble_row_data`, () => {
           model_name,
           metrics: {
             ...tece_model.metrics,
-            [task]: run_time_sec === undefined ? {} : { run_time_sec },
+            [task]: run_time_sec === undefined ? {} : { cost: { run_time_sec } },
           },
         })),
       )
@@ -316,8 +330,18 @@ describe(`assemble_row_data`, () => {
         `Diatomics metrics exclude H-H due to unsupported &quot;quoted&quot; reason; ` +
         `He-He, Li-Li due to exploding errors`,
     },
+    {
+      model_key: `nequix-mp-1-pft`,
+      diatomics: undefined,
+      expected_title: `Phonons test set informed this model's development (see model notes)`,
+    },
+    {
+      model_key: `dpa-4.1-max-oam-pft`,
+      diatomics: undefined,
+      expected_title: `Discovery and Phonons test sets informed this model's development (see model notes)`,
+    },
   ])(
-    `renders reason-aware diatomics exclusion tooltip for $model_key`,
+    `renders name-marker tooltip for $model_key`,
     ({ model_key, diatomics, expected_title }) => {
       const test_models = [
         ...MODELS,
@@ -360,4 +384,51 @@ it.each([
   ] as unknown as ModelData[]
   const names = sort_models(models, sort_by, order).map(({ model_name }) => model_name)
   expect(names).toStrictEqual(expected)
+})
+
+describe(`cost and reproducibility`, () => {
+  const cost = { source: `salvaged`, hardware: `NVIDIA H200`, run_time_sec: 1e4 }
+  const timed = { metrics: { md: { cost }, diatomics: { cost } } }
+  const tag = `NVIDIA H200 (earlier cluster run), not normalized across hardware`
+  it.each([
+    [MD_METRICS.md_run_time_sec, timed, `Timed on ${tag}`],
+    [DIATOMICS_METRICS.diatomics_max_rss_gb, timed, `Timed on ${tag}`],
+    [MD_METRICS.md_combined_score, timed, `Speed subscore timed on ${tag}`],
+    [DIATOMICS_METRICS.diatomics_combined_score, timed, `Speed subscore timed on ${tag}`],
+    [MD_METRICS.md_run_time_sec, { metrics: { md: {} } }, undefined],
+    [ALL_METRICS.CPS, timed, undefined],
+  ])(`cost_annotation(%s)`, (label, model, expected) => {
+    expect(cost_annotation(model, label)).toBe(expected)
+  })
+
+  it(`drops the GPU from combined scores once Speed has no weight`, () => {
+    const { weight } = CMDS_CONFIG.run_time_sec
+    CMDS_CONFIG.run_time_sec.weight = 0
+    onTestFinished(() => {
+      CMDS_CONFIG.run_time_sec.weight = weight
+    })
+    expect(cost_annotation(timed, MD_METRICS.md_combined_score)).toBeUndefined()
+  })
+
+  it.each([
+    [REPRO_CASES.reproduced, `✓ Reproduced`, `0`, `Rerun reproduced within 0.1%`],
+    [
+      REPRO_CASES.drifted,
+      `≠ Drifted`,
+      `2`,
+      `Rerun drifted (environment change): torch 2.9`,
+    ],
+    [REPRO_CASES.inconclusive, `? Inconclusive`, `1`, `Rerun inconclusive`],
+    [undefined, `not checked`, `3`, `No rerun check yet`],
+  ])(`repro_cell_html(%o)`, (reproducibility, text, rank, title) => {
+    const model = { ...MODELS[0], metrics: { md: { reproducibility } } }
+    const cell = new DOMParser()
+      .parseFromString(repro_cell_html(model, `md`), `text/html`)
+      .querySelector(`span`)
+    expect([cell?.textContent, cell?.dataset.sortValue, cell?.title]).toEqual([
+      text,
+      rank,
+      title,
+    ])
+  })
 })

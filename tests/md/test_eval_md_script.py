@@ -11,7 +11,7 @@ import yaml
 
 from matbench_discovery.data import make_file_ref
 from matbench_discovery.enums import Model
-from tests.utils import import_repo_script
+from tests.utils import import_repo_script, patch_model_metadata
 
 
 def patch_eval_md(
@@ -125,10 +125,7 @@ def test_md_recompute_and_import_prediction_file_reference(
     metadata = {"model_name": "test model", "metrics": {"md": {"pred_file": ref}}}
     yaml_path = tmp_path / "model.yml"
     yaml_path.write_text(yaml.safe_dump(metadata))
-    monkeypatch.setattr(model, "metadata", metadata)
-    monkeypatch.setattr(
-        type(model), "yaml_path", property(lambda _self: str(yaml_path))
-    )
+    patch_model_metadata(monkeypatch, model, metadata, yaml_path=str(yaml_path))
     monkeypatch.setattr(type(model), "md_path", property(lambda _self: str(csv_path)))
 
     assert eval_md.main() == 0

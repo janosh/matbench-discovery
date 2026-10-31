@@ -7,6 +7,7 @@ import {
   RMSD_BASELINE,
 } from '#lib/labels.js'
 import type { DiatomicsMetrics, MdMetrics } from '#lib/schema/model.js'
+import { untrack } from 'svelte'
 import type { Label, ModelData } from '#lib/types.js'
 
 export const DEFAULT_CPS_CONFIG = {
@@ -91,7 +92,7 @@ export const DEFAULT_CMDS_CONFIG = {
   run_time_sec: {
     ...MD_METRICS.md_run_time_sec,
     label: `Speed`,
-    description: `Wall time to roll out all 17 DynaMat v1.0 NVT trajectories, scored on a log scale from 9,000 s (subscore 1) to 300,000 s (subscore 0). H100/H200 backfills assume equal speed; actual GPUs are recorded in prediction files. Models without recorded timings get no CMDS unless this weight is zeroed`,
+    description: `Wall time to roll out all 17 DynaMat v1.0 NVT trajectories (steady-state compute, excluding model load/compile), scored on a log scale from 9,000 s (subscore 1) to 300,000 s (subscore 0). Speeds are compared as reported on each model's own GPU, shown on hover, and are not normalized across hardware. Models without recorded timings get no CMDS unless this weight is zeroed`,
     weight: DEFAULT_CMDS_WEIGHTS.run_time_sec,
   },
   pressure_error: {
@@ -149,12 +150,19 @@ export function calculate_cmds(
 function write_combined_scores(
   models: ModelData[],
   task: `md` | `diatomics`,
-  score: (metrics: DiatomicsMetrics | MdMetrics) => number | null,
+  score: (
+    metrics: (DiatomicsMetrics | MdMetrics) & { run_time_sec?: number },
+  ) => number | null,
 ) {
   for (const model of models) {
     const metrics = model.metrics?.[task]
     if (!metrics) continue
-    const value = score(metrics)
+    // run time lives in the task's cost block; untracked since this effect writes metrics
+    const values = untrack(() => ({
+      ...metrics,
+      run_time_sec: metrics.cost?.run_time_sec,
+    }))
+    const value = score(values)
     if (value === null) Reflect.deleteProperty(metrics, `combined_score`)
     else Object.assign(metrics, { combined_score: value })
   }
@@ -225,7 +233,7 @@ export const DEFAULT_CDS_CONFIG: CdsConfig = {
   speed: {
     key: `cds_speed`,
     label: `Speed`,
-    description: `Wall time of the full diatomic sweep, scored on a log scale from 50s (subscore 1) to 5000s (subscore 0). Caveat: hardware varies by submission (recorded in each model YAML); models without recorded timings get no CDS unless this weight is zeroed`,
+    description: `Wall time of the full diatomic sweep (steady-state compute, excluding model load/compile), scored on a log scale from 50 s (subscore 1) to 5,000 s (subscore 0). Speeds are compared as reported on each model's own GPU, shown on hover, and are not normalized across hardware. Models without recorded timings get no CDS unless this weight is zeroed`,
     weight: DEFAULT_CDS_WEIGHTS.speed,
   },
   physicality: {

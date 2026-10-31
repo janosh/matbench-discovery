@@ -10,7 +10,7 @@ components (like CPS), never here or in model YAMLs.
 """
 
 import math
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from fractions import Fraction
 from typing import TYPE_CHECKING, Any
 
@@ -27,7 +27,7 @@ from matbench_discovery.data import (
     make_file_ref,
     update_yaml_file,
 )
-from matbench_discovery.hpc import COST_PROVENANCE_KEYS
+from matbench_discovery.hpc import COST_KEYS, merge_audit_metadata, with_cost_block
 from matbench_discovery.trajectory import Trajectory
 
 if TYPE_CHECKING:
@@ -65,9 +65,6 @@ def _check_density(values: np.ndarray, label: str, *, check_area: bool = True) -
 # per-system CSVs written by run_md_benchmark, energy_rmse/force_rmse are still in
 # eV/atom and eV/Å (calc_energy_force_rmse output); calc_md_metrics scales them x1000.
 METRIC_UNITS = {
-    "run_time_sec": "s",
-    "max_rss_gb": "GB",
-    "max_gpu_mem_gb": "GB",
     "energy_rmse": "meV/atom",
     "force_rmse": "meV/Å",
     "rdf_error": "%",
@@ -79,10 +76,10 @@ METRIC_UNITS = {
     "n_systems": "count",
 }
 # mean-aggregated per-system error columns
-PER_SYSTEM_METRIC_COLS = tuple(
-    key
-    for key in METRIC_UNITS
-    if key != "n_systems" and key not in COST_PROVENANCE_KEYS
+PER_SYSTEM_METRIC_COLS = tuple(key for key in METRIC_UNITS if key != "n_systems")
+# per-system CSV cost columns: flat rollout run-info keys (md.run_info_row)
+MD_COST_COLS = tuple(
+    "cost_source" if key == "source" else key for key in COST_KEYS if key != "n_shards"
 )
 
 
@@ -690,7 +687,22 @@ def evaluate_md_system(
     return metrics
 
 
-def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, float | str]:
+def aggregate_md_cost(df_md: pd.DataFrame) -> dict[str, object]:
+    """Model-level cost of the per-system CSV cost columns (MD_COST_COLS), merged
+    like any other run units by hpc.merge_audit_metadata (parallel per-system jobs ~
+    one serial sweep). A mixed or partly present label (e.g. a straggler rerun
+    reusing a cached pre-provenance rollout) drops the whole block with a warning.
+    """
+    cols = [col for col in MD_COST_COLS if col in df_md]
+    rows = df_md[cols].astype(object).where(df_md[cols].notna(), None)
+    units = rows.to_dict("records")
+    for unit in units:  # CSV encoding of md.run_info_row
+        if isinstance(flags := unit.get("acceleration"), str):
+            unit["acceleration"] = [] if flags == "none" else flags.split("+")
+    return merge_audit_metadata(units)
+
+
+def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, object]:
     """Aggregate per-system MD metric rows (one row per system with a subset of
     PER_SYSTEM_METRIC_COLS columns) into model-level metrics.
 
@@ -700,14 +712,7 @@ def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, float | str]:
     pressure columns disagree on which rows are NaN. The combined MD score (CMDS) is
     deliberately absent: it is site-computed (see module docstring). Private-label
     energy/force RMSE rows are in eV but reported here in meV for readability.
-
-    Run provenance columns (COST_PROVENANCE_KEYS) aggregate differently:
-    ``run_time_sec`` is summed over systems (parallel per-system jobs ~ one serial
-    sweep, mirroring the diatomics shard merge), the memory peaks take the max over
-    systems (the largest system sets the hardware requirement) and ``hardware``
-    passes through. All are all-or-nothing like the private-label diagnostics: a
-    partial sum/max or mixed-GPU label would misrepresent the model's cost, so they
-    are only published when every system row agrees.
+    Cost columns aggregate via aggregate_md_cost.
     """
     metric_cols = [col for col in PER_SYSTEM_METRIC_COLS if col in df_md]
     if not metric_cols:
@@ -715,27 +720,7 @@ def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, float | str]:
             f"No recognized MD metric columns in {list(df_md.columns)=}, "
             f"expected a subset of {PER_SYSTEM_METRIC_COLS}"
         )
-    metrics: dict[str, float | str] = {}
-    # hardware is uniform when every row has the same non-null label; a missing,
-    # incomplete or mixed column also drops the GPU-dependent costs (summed wall time,
-    # peak VRAM): a total over an H200 and an A100 (or rows of unknown provenance)
-    # would misrepresent the model's cost with no hardware label left to qualify it.
-    # Host RSS is kept: it reflects model/system size, not the GPU.
-    hardware_uniform = False
-    if "hardware" in df_md:
-        hardware_vals = df_md["hardware"].unique()
-        hardware_uniform = len(hardware_vals) == 1 and pd.notna(hardware_vals[0])
-        if hardware_uniform:
-            metrics["hardware"] = str(hardware_vals[0])
-    for col, agg, gpu_dependent in (
-        ("run_time_sec", "sum", True),
-        ("max_rss_gb", "max", False),
-        ("max_gpu_mem_gb", "max", True),
-    ):
-        if gpu_dependent and not hardware_uniform:
-            continue
-        if col in df_md and df_md[col].notna().all():
-            metrics[col] = float(df_md[col].agg(agg))
+    metrics: dict[str, object] = aggregate_md_cost(df_md)
     metrics |= {
         col: float(df_md[col].mean())
         * (1000 if col in ("energy_rmse", "force_rmse") else 1)
@@ -762,33 +747,53 @@ def calc_md_metrics(df_md: pd.DataFrame) -> dict[str, float | str]:
 
 def write_metrics_to_yaml(
     model: Model,
-    metrics: dict[str, float | str],
+    metrics: Mapping[str, object],
     pred_file_path: str | None = None,
     pred_file_url: str | None = None,
+    *,
+    replace_author_reported: bool = False,
 ) -> dict[str, Any]:
     """Write model-level MD metrics from calc_md_metrics to the metrics.md section
     of a model YAML file, with unit comments and optional pred_file references.
+
+    The ``cost`` mapping comes atomically from the ``metrics`` cost keys via
+    hpc.with_cost_block. ``pred_file_path=None`` recomputes the registered CSV
+    (keeping its file ref), a path registers a new CSV.
     """
-    block: dict[str, Any] = {}
-    if pred_file_path is not None:
-        relative_path = repo_relative_path(pred_file_path)
-        block["pred_file"] = make_file_ref(relative_path, url=pred_file_url)
-    elif pred_file_url is not None:
+    if pred_file_path is None and pred_file_url is not None:
         raise ValueError("pred_file_url requires pred_file_path")
+    artifact_cost = {key: val for key, val in metrics.items() if key in MD_COST_COLS}
+    scores: dict[str, Any] = {}
     for key, value in metrics.items():
-        if key == "n_systems":
-            block[key] = int(value)
-        else:
-            block[key] = value if isinstance(value, str) else float(round(value, 4))
+        if key in MD_COST_COLS:
+            continue
+        if not isinstance(value, int | float):
+            raise TypeError(f"MD metric {key}={value!r} must be a number")
+        scores[key] = int(value) if key == "n_systems" else float(round(value, 4))
 
     def replace_metrics(existing: dict[str, Any]) -> dict[str, Any]:
-        """Retain source metadata on recompute, never stale calculated metrics."""
-        provenance = {
-            key: value
-            for key, value in existing.items()
-            if pred_file_path is None and key in ("pred_file", *COST_PROVENANCE_KEYS)
-        }
-        return commented_map_with_units(provenance | block, METRIC_UNITS)
+        """Keep the registered file ref on recompute, never stale metrics or costs."""
+        block: dict[str, Any] = {}
+        if pred_file_path is not None:
+            block["pred_file"] = make_file_ref(
+                repo_relative_path(pred_file_path), url=pred_file_url
+            )
+        elif "pred_file" in existing:
+            block["pred_file"] = existing["pred_file"]
+        block = with_cost_block(
+            block | scores,
+            artifact_cost,
+            after="pred_file",
+            existing=existing,
+            same_artifact=pred_file_path is None,
+            context=f"{model.name} metrics.md",
+            replace_author_reported=replace_author_reported,
+        )
+        # a recompute of the same CSV keeps its reproducibility verdict (scores are
+        # unchanged); registering a new CSV invalidates it
+        if pred_file_path is None and "reproducibility" in existing:
+            block["reproducibility"] = existing["reproducibility"]
+        return commented_map_with_units(block, METRIC_UNITS)
 
     return update_yaml_file(model.yaml_path, "metrics.md", replace_metrics)["metrics"][
         "md"

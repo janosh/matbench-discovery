@@ -142,7 +142,7 @@
   {color_scale}
   tile_props={{ float_fmt: `.2` }}
   show_photo={false}
-  missing={{ color: `rgba(255,255,255,0.3)` }}
+  missing={{ color: `var(--ptable-missing-bg)` }}
 >
   {#snippet inset({ active_element })}
     {#if active_element}

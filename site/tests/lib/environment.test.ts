@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import zlib from 'node:zlib'
 import { build } from 'vite'
+import { heading_anchor_html } from 'svelte-widgets/heading-anchors'
 import { describe, expect, it, vi } from 'vite-plus/test'
 import pkg from '../../package.json' with { type: 'json' }
 import vite_config, { svelte_config } from '../../vite.config.js'
@@ -30,8 +31,10 @@ it(`bundles compressed JSON imports in production workers`, async () => {
     const worker_file = fs
       .readdirSync(assets_dir)
       .find((file) => file.startsWith(`worker-`))
-    expect(worker_file).toBeDefined()
-    expect(fs.readFileSync(`${assets_dir}/${worker_file}`, `utf8`)).toContain(`Cu`)
+    if (!worker_file) throw new Error(`No worker chunk in ${assets_dir}`)
+    const worker_code = fs.readFileSync(`${assets_dir}/${worker_file}`, `utf8`)
+    // the gzipped payload is inlined as parsed JSON, not left as a binary import
+    expect(worker_code).toContain(`JSON.parse(\`{"symbol":"Cu"}\`)`)
   } finally {
     fs.rmSync(root, { recursive: true, force: true })
   }
@@ -144,9 +147,15 @@ it(`manuscript preprocessing numbers figure labels and resolves forward referenc
   const labels = [...content.matchAll(/@label:(?<id>fig:[^\s]+)/g)]
   expect(labels).toHaveLength(5)
   for (const [idx, [, label]] of labels.entries()) {
-    expect(result?.code).toContain(`<strong id='${label}'>`)
-    expect(result?.code).toContain(`Fig. ${idx + 1}</strong>`)
+    // self-contained anchor icon whose fragment keeps ':' literal so SvelteKit's
+    // prerender crawler matches the id
+    const anchor = heading_anchor_html(label)
+    expect(anchor).toContain(`href="#${label}"`)
+    expect(result?.code).toContain(
+      `<strong id='${label}'>${anchor}Fig. ${idx + 1}</strong>`,
+    )
   }
+  expect(result?.code).not.toContain(`<use`)
   expect(result?.code).toContain(`<a href="#fig:cumulative-precision-recall">fig. 2</a>`)
   expect(result?.code).not.toMatch(/@(?:label|fig):/)
   expect(await figure_markup?.({ content, filename: `unrelated.md` })).toEqual({

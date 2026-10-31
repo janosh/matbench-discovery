@@ -21,7 +21,7 @@ cli.parse_cli_args([])
 @pytest.fixture(autouse=True)
 def no_download_retry_delay(monkeypatch: pytest.MonkeyPatch) -> None:
     """Keep download_file's transient-error retries instant in tests."""
-    monkeypatch.setattr(fetch, "DOWNLOAD_RETRY_DELAYS", (0,) * 4)
+    monkeypatch.setattr(fetch, "HTTP_RETRY_DELAYS", (0,) * 4)
 
 
 @pytest.fixture(scope="session")

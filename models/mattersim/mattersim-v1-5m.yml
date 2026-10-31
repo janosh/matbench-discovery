@@ -89,10 +89,9 @@ license:
 environment:
   dependencies:
   - mattersim
-  - Graphormer==v1
   - numpy==1.26.2
   - pymatgen==2024.5.1
-  python_version: '3.12'
+  python_version: '3.14'
 openness: OSCD
 architecture_types: [gnn]
 train_task: S2EFS
@@ -136,12 +135,12 @@ notes:
 metrics:
   diatomics:
     pred_file:
-      name: models/mattersim/mattersim-v1-5m/2026-06-28-diatomics.json.gz
-      url: https://figshare.com/files/66104636
-      size: 216465
-      md5: 190a0f65ecf24f23afabf6a293ee4d9f
-    hardware: NVIDIA H100 80GB HBM3
-    run_time_sec: 170.22
+      name: models/mattersim/mattersim-v1-5m/2026-10-19-diatomics.json.gz
+      url: https://figshare.com/files/70349772
+      size: 222488
+      md5: c35909cba1a239fc0f2c0c00164d666c
+    cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 143.53, load_time_sec: 4.91, max_rss_gb: 1.99, max_gpu_mem_gb: 0.164}
+    excluded_formula_reasons: {}
     pbe_wall_dist_mae: 0.0969
     pbe_energy_mae: 1.298
     pbe_bond_length_error: 0.3823
@@ -160,6 +159,18 @@ metrics:
       failed_elements:
       - F
       missing_elements: []
+    reproducibility:
+      checked: '2026-10-20'
+      status: reproduced
+      tolerance: 0.001
+      runs:
+      - label: published run (2026-06-28, H100)
+        file:
+          name: models/mattersim/mattersim-v1-5m/2026-06-28-diatomics.json.gz
+          url: https://figshare.com/files/66104636
+          size: 216465
+          md5: 190a0f65ecf24f23afabf6a293ee4d9f
+      rel_changes: {}
   discovery:
     pred_file:
       name: models/mattersim/mattersim-v1-5m/2024-12-16-discovery.csv.gz
@@ -201,37 +212,36 @@ metrics:
       size: 152125160
       md5: e0210a52ce5a55147abe9003355fd08c
     symprec=1e-2:
-      rmsd: 0.0733
-      n_sym_ops_mae: 1.7451
-      symmetry_decrease: 0.0524
-      symmetry_match: 0.8148
-      symmetry_increase: 0.1254
-      n_structures: 256963
+      rmsd: 0.0733 # unitless
+      n_sym_ops_mae: 1.7451 # unitless
+      symmetry_decrease: 0.0524 # fraction
+      symmetry_match: 0.8148 # fraction
+      symmetry_increase: 0.1254 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/mattersim/mattersim-v1-5m/2024-12-19-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/53504675
-        size: 7302403
-        md5: 845b4581ef3b76ca1f097235051a51d5
+        name: models/mattersim/mattersim-v1-5m/2024-12-19-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333872
+        size: 6827237
+        md5: aad80a58aec4e5ebfcfbbff3b6b39d90
     symprec=1e-5:
-      rmsd: 0.0733
-      n_sym_ops_mae: 2.1408
-      symmetry_decrease: 0.0755
-      symmetry_match: 0.6874
-      symmetry_increase: 0.2305
-      n_structures: 256963
+      rmsd: 0.0733 # unitless
+      n_sym_ops_mae: 2.1407 # unitless
+      symmetry_decrease: 0.0755 # fraction
+      symmetry_match: 0.6874 # fraction
+      symmetry_increase: 0.2305 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/mattersim/mattersim-v1-5m/2024-12-19-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/53504678
-        size: 7320420
-        md5: a8279590ef8265b26372420bc8ef8b7e
+        name: models/mattersim/mattersim-v1-5m/2024-12-19-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333875
+        size: 6861818
+        md5: a2ff2498edb3004606ef914648db0c25
   md:
     pred_file:
       name: models/mattersim/mattersim-v1-5m/2026-06-28-md-metrics.csv.gz
-      url: https://figshare.com/files/66048905
-      size: 1567
-      md5: 4233a44a6de72bc2643317c317d758c2
-    hardware: NVIDIA H200
-    run_time_sec: 33705.03
+      url: https://figshare.com/files/66574958
+      size: 1728
+      md5: bf453f2b62087acfc08efcffad3fcdfd
+    cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 33705.03}
     energy_rmse: 1.1775
     force_rmse: 112.7295
     rdf_error: 4.5991
@@ -254,15 +264,20 @@ metrics:
       κ_failure_rate: 0.0291
       imaginary_mode_rate: 0.0291
       spectrum_w1: 0.2503
-      phonon_file:
-        name: models/mattersim/mattersim-v1-5m/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1257260373
-        md5: 267672675e53deeac13e2a8a84a9672a
-      force_file:
-        name: models/mattersim/mattersim-v1-5m/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 8815419
-        md5: 8c02bb04c3f813b3cc0335836dd63bbe
-      run_info_file:
-        name: models/mattersim/mattersim-v1-5m/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 9956
-        md5: 50cad8072ba1ba133cf8588c0732ffb4
+      harmonic:
+        phonon_file:
+          name: models/mattersim/mattersim-v1-5m/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334547
+          size: 23283243
+          md5: 16cdec860e7afc0e25f409f92ccdb4bb
+        force_file:
+          name: models/mattersim/mattersim-v1-5m/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334550
+          size: 8815419
+          md5: 8c02bb04c3f813b3cc0335836dd63bbe
+        run_info_file:
+          name: models/mattersim/mattersim-v1-5m/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334553
+          size: 9956
+          md5: 50cad8072ba1ba133cf8588c0732ffb4
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 425.86, max_rss_gb: 2.519, max_gpu_mem_gb: 8.801}

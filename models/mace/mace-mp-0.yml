@@ -50,11 +50,11 @@ environment:
   - cuequivariance
   - cuequivariance-torch
   - cuequivariance-ops-torch-cu12
-  - torch==2.0.1
+  - torch==2.10.0
   - ase==3.22.1
   - pymatgen==2023.7.14
   - numpy==1.25.0
-  python_version: '3.11'
+  python_version: '3.14'
 openness: OSOD
 architecture_types: [gnn]
 train_task: S2EFS
@@ -82,12 +82,12 @@ notes:
 metrics:
   diatomics:
     pred_file:
-      name: models/mace/mace-mp-0/2026-06-28-diatomics.json.gz
-      url: https://figshare.com/files/66104621
-      size: 260122
-      md5: 3fe6d0f47807e86d264aebce98e7145b
-    hardware: NVIDIA H100 80GB HBM3
-    run_time_sec: 269.09
+      name: models/mace/mace-mp-0/2026-10-19-diatomics.json.gz
+      url: https://figshare.com/files/70349766
+      size: 263733
+      md5: c20b7180fde199f3fb48339ce2067e7e
+    cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float64, acceleration: [cuequivariance], n_shards: 1, n_processes: 1, run_time_sec: 227.96, load_time_sec: 9.67, max_rss_gb: 4.231, max_gpu_mem_gb: 0.117}
+    excluded_formula_reasons: {}
     pbe_wall_dist_mae: 0.3994
     pbe_energy_mae: 1.457
     pbe_bond_length_error: 0.2947
@@ -107,6 +107,25 @@ metrics:
       - Pa
       - Se
       missing_elements: []
+    reproducibility:
+      checked: '2026-10-20'
+      status: reproduced
+      tolerance: 0.001
+      runs:
+      - label: published run (2026-06-28, H100)
+        file:
+          name: models/mace/mace-mp-0/2026-06-28-diatomics.json.gz
+          url: https://figshare.com/files/66104621
+          size: 260122
+          md5: 3fe6d0f47807e86d264aebce98e7145b
+      - label: identical H200 repeat
+        file:
+          name: models/mace/mace-mp-0/repeat/2026-10-20-diatomics.json.gz
+          url: https://figshare.com/files/70368351
+          size: 263732
+          md5: 0a27b9695208822232cdc6864847bbc5
+      rel_changes: {}
+      repeat_rel_change: 0.0
   discovery:
     pred_file:
       name: models/mace/mace-mp-0/2023-12-11-discovery.csv.gz
@@ -148,37 +167,36 @@ metrics:
       size: 112613820
       md5: a3d7c066ca81de0bc6505370a9072a7a
     symprec=1e-5:
-      rmsd: 0.0915
-      n_sym_ops_mae: 1.838
-      symmetry_decrease: 0.0335
-      symmetry_match: 0.7385
-      symmetry_increase: 0.2239
-      n_structures: 249254
+      rmsd: 0.0915 # unitless
+      n_sym_ops_mae: 1.838 # unitless
+      symmetry_decrease: 0.0335 # fraction
+      symmetry_match: 0.7385 # fraction
+      symmetry_increase: 0.2239 # fraction
+      n_structures: 249254 # count
       analysis_file:
-        name: models/mace/mace-mp-0/2023-12-11-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/53504606
-        size: 6909771
-        md5: 41abb8879d11fed37368ef98b6e2e8fb
+        name: models/mace/mace-mp-0/2023-12-11-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333848
+        size: 6484295
+        md5: 67dd4d3e15f76e0cfb53466e9a3d8b87
     symprec=1e-2:
-      rmsd: 0.0915
-      n_sym_ops_mae: 1.8464
-      symmetry_decrease: 0.0599
-      symmetry_match: 0.8112
-      symmetry_increase: 0.122
-      n_structures: 249254
+      rmsd: 0.0915 # unitless
+      n_sym_ops_mae: 1.8464 # unitless
+      symmetry_decrease: 0.0599 # fraction
+      symmetry_match: 0.8112 # fraction
+      symmetry_increase: 0.122 # fraction
+      n_structures: 249254 # count
       analysis_file:
-        name: models/mace/mace-mp-0/2023-12-11-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/53504657
-        size: 6961100
-        md5: c24e3e19c92278197611c28b2824ec32
+        name: models/mace/mace-mp-0/2023-12-11-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333851
+        size: 6509794
+        md5: f01b85acc4d685f232835dd237373836
   md:
     pred_file:
       name: models/mace/mace-mp-0/2026-06-28-md-metrics.csv.gz
-      url: https://figshare.com/files/66048893
-      size: 1555
-      md5: 0ef0c3563f0cd0c2b28e4cc0f4737840
-    hardware: NVIDIA H200
-    run_time_sec: 29398.56
+      url: https://figshare.com/files/66574919
+      size: 1721
+      md5: f51cc38f0af49bef8a53bb8bd8076ba8
+    cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 29398.56}
     energy_rmse: 1.717
     force_rmse: 165.6567
     rdf_error: 7.2668
@@ -190,18 +208,6 @@ metrics:
     n_systems: 17
   phonons:
     kappa_103:
-      run_info_file:
-        name: models/mace/mace-mp-0/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 8300
-        md5: cc22278aae8a42f96e9b35d35a488f38
-      phonon_file:
-        name: models/mace/mace-mp-0/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1128298009
-        md5: 3645352492948ab7bdee7db9981ccf5d
-      force_file:
-        name: models/mace/mace-mp-0/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 6897649
-        md5: 972807b1b0d858286e9ce41f5a07f6b7
       κ_SRME: 0.6823
       pred_file:
         name: models/mace/mace-mp-0/2024-11-09-phonons-kappa-103.json.gz
@@ -213,3 +219,20 @@ metrics:
       κ_failure_rate: 0.0291
       imaginary_mode_rate: 0.0
       spectrum_w1: 0.8709
+      harmonic:
+        phonon_file:
+          name: models/mace/mace-mp-0/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334514
+          size: 24273308
+          md5: 243b42fc775e6956e24b07173162fa38
+        force_file:
+          name: models/mace/mace-mp-0/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334517
+          size: 6897649
+          md5: 972807b1b0d858286e9ce41f5a07f6b7
+        run_info_file:
+          name: models/mace/mace-mp-0/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334511
+          size: 8300
+          md5: cc22278aae8a42f96e9b35d35a488f38
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 524.31, max_rss_gb: 4.588, max_gpu_mem_gb: 2.468}

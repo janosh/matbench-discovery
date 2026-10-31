@@ -65,7 +65,7 @@
   .org-preview {
     display: inline-flex;
     align-items: center;
-    gap: var(--org-logo-gap, 0.3em);
+    gap: 0.3em;
     justify-content: center;
     font-size: 1.2em;
   }

@@ -20,18 +20,16 @@
   import DynamicScatter from '#lib/plot/DynamicScatter.svelte'
   import ScoreWeights from '#lib/ScoreWeights.svelte'
   import { UrlModelSelection } from '#lib/model-selection.svelte.js'
-  import { valid_query_param } from 'svelte-widgets/url-params'
   import DiatomicsNote from './diatomics-note.md'
-  import {
-    element_data,
-    element_group_keys,
-    element_groups,
-    type ElementGroupKey,
-  } from 'matterviz/element'
+  import { element_data, element_groups } from 'matterviz/element'
   import { pick_contrast_color, PLOT_COLORS } from 'matterviz/colors'
   import { SvelteSet } from 'svelte/reactivity'
   import type { PageData } from './$types'
-  import { make_plot_observer } from './observe-plot.js'
+  import {
+    DFT_REF_COLORS,
+    ElementGroupParam,
+    make_plot_observer,
+  } from './diatomics.svelte.js'
 
   let { data }: { data: PageData } = $props()
   // resolve keys from the live MODELS so CDS re-weighting re-ranks the defaults
@@ -59,19 +57,12 @@
   // cost-vs-fidelity Pareto: sweep wall time (x) vs CDS (y), size = model params,
   // color = training-set size (the two scaling levers)
 
-  // DFT references get fixed, high-contrast colors (not in the model palette) so they
-  // read as ground truth
-  const ref_colors: Record<string, string> = { PBE: `#000000`, r2SCAN: `#f032e6` }
   const color_for = (key: string): string =>
-    ref_colors[key] ??
+    DFT_REF_COLORS[key] ??
     PLOT_COLORS[(model_idx_by_key[key] ?? -1) % PLOT_COLORS.length] ??
     `gray`
 
-  let selected_element_group = $state<ElementGroupKey>(`all`)
-  let selected_group = $derived(
-    element_groups.find((group) => group.value === selected_element_group) ??
-      element_groups[0],
-  )
+  const element_group = new ElementGroupParam()
 
   let selectable_keys = $derived([...reference_names, ...data.diatomic_model_keys])
   let selectable_options = $derived(
@@ -112,7 +103,7 @@
   let diatomics_to_render = $derived(
     // Only render diatomics where at least one model has data
     element_data
-      .filter(selected_group.includes)
+      .filter(element_group.group.includes)
       .map(({ symbol }) => `${symbol}-${symbol}`)
       .filter((formula) =>
         selected_model_keys.some(
@@ -126,14 +117,9 @@
     has_diatomics_curves,
     (params) => {
       model_selection.read(params)
-      selected_element_group = valid_query_param(
-        params,
-        `elements`,
-        `all`,
-        element_group_keys,
-      )
+      element_group.read(params)
     },
-    () => [model_selection.url_entry, [`elements`, selected_element_group, `all`]],
+    () => [model_selection.url_entry, element_group.url_entry],
   )
 
   const curves_for_formula = (formula: string) =>
@@ -172,9 +158,9 @@
 <h2 id="leaderboard">Leaderboard</h2>
 <p>
   <strong>Interpret with caution:</strong> PBE can be unreliable for stretched diatomics,
-  and speed compares heterogeneous hardware. Models marked * lack curves and are scored on
-  their remaining elements. See <a href="#methodology">methodology</a> for reference quality
-  checks and scoring exclusions.
+  and speed is measured on each model's own GPU (shown on hover), not normalized across
+  hardware. Models marked * lack curves and are scored on their remaining elements. See
+  <a href="#methodology">methodology</a> for reference quality checks and scoring exclusions.
 </p>
 
 <section class="full-bleed">
@@ -183,6 +169,7 @@
     col_filter={(col) => visible_cols[col.key] ?? true}
     default_sort={{ column: DIATOMICS_METRICS.diatomics_combined_score.key, dir: `desc` }}
     {filters}
+    repro_task="diatomics"
   />
 </section>
 
@@ -219,7 +206,7 @@
         model_selection.selected = selectable_options.filter((option) =>
           reference_names.includes(option.value),
         )
-        selected_element_group = `all`
+        element_group.key = `all`
       }}>Explore DFT reference curves</a
     > using the curve viewer below. Select models there to compare predictions.
   </p>
@@ -231,7 +218,7 @@
   <ButtonGroup
     label="Element group filter"
     options={element_groups}
-    bind:value={selected_element_group}
+    bind:value={element_group.key}
   />
 
   <ModelSelect options={selectable_options} bind:value={model_selection.selected} />
@@ -258,10 +245,7 @@
 </div>
 
 <h2 id="methodology">Methodology</h2>
-<details>
-  <summary>Reference provenance, scoring exclusions, and contributions</summary>
-  <DiatomicsNote />
-</details>
+<DiatomicsNote />
 
 <style>
   h1 {

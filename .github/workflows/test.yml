@@ -5,14 +5,8 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
-  # release.yml calls this workflow, avoiding a duplicate release-triggered run
   workflow_dispatch:
-    inputs:
-      task:
-        type: choice
-        options: [tests, release]
-        default: tests
-        description: Only run tests or release matbench-discovery to PyPI after tests pass.
+  # release.yml calls this workflow, avoiding a duplicate release-triggered run
   workflow_call:
 
 # least-privilege default for GITHUB_TOKEN; all jobs here only read the repo
@@ -37,7 +31,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@v9.0.0
+      - uses: astral-sh/setup-uv@v10.2.0
         with:
           python-version: "3.14"
 
@@ -87,12 +81,12 @@ jobs:
           persist-credentials: false
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v9.0.0
+        uses: astral-sh/setup-uv@v10.2.0
         with:
           python-version: "3.14"
 
-      # same cache as update-site-figs.yml: scripts/evals/discovery.py downloads
-      # every active model's WBM predictions, several GB on a cold cache
+      # scripts/evals/discovery.py downloads every active model's WBM predictions
+      # plus the MP/WBM inputs, several GB on a cold cache
       - name: Cache model prediction + analysis files
         uses: actions/cache@v6
         with:

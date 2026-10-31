@@ -44,9 +44,11 @@ def test_pred_vs_ref_struct_symmetry(tetragonal_struct: Structure) -> None:
     df_dft_in = df_dft.assign(**{Key.structure: [tetragonal_struct]})
 
     # must use same keys for both structures to match them in RMSD calculation
+    cols_in = list(df_ml_in)
     df_compared = symmetry.pred_vs_ref_struct_symmetry(
         df_ml_in, df_dft_in, {key: pred_struct}, {key: tetragonal_struct}
     )
+    assert list(df_ml_in) == cols_in  # returns a copy, input left unchanged
 
     spg_ml, spg_dft = df_ml[Key.spg_num].iloc[0], df_dft[Key.spg_num].iloc[0]
     assert spg_dft == 47
@@ -110,7 +112,7 @@ def test_analyze_symmetry_is_cell_choice_invariant(
 
 
 def test_analyze_symmetry_with_ase_atoms(cubic_struct: Structure) -> None:
-    """Test analyze_symmetry with ASE Atoms objects."""
+    """ASE Atoms give the right symmetry and match equivalent pymatgen Structures."""
     from ase import Atoms
     from ase.spacegroup import crystal
 
@@ -118,26 +120,28 @@ def test_analyze_symmetry_with_ase_atoms(cubic_struct: Structure) -> None:
     atoms = crystal("Cu", [(0, 0, 0)], spacegroup=225, cellpar=[a, a, a, 90, 90, 90])
     assert isinstance(atoms, Atoms)
 
-    df_ase = symmetry.get_sym_info_from_structs({"ase": atoms})
+    pbar_kwargs = {"disable": True}
+    df_ase = symmetry.get_sym_info_from_structs({"ase": atoms}, pbar=pbar_kwargs)
+    assert pbar_kwargs == {"disable": True}  # caller's dict is not mutated
 
-    assert len(df_ase) == 1
+    assert df_ase.index.tolist() == ["ase"]
     assert df_ase.index.name == Key.mat_id
-    assert isinstance(df_ase[Key.spg_num].iloc[0], int)
-    assert isinstance(df_ase[Key.n_sym_ops].iloc[0], int)
+    fcc_row = df_ase.loc["ase"]
+    # conventional 4-atom fcc cell: 48 point ops x 4 centering translations
+    assert fcc_row[Key.spg_num] == 225
+    assert fcc_row[MbdKey.international_spg_name] == "F m -3 m"
+    assert fcc_row[Key.hall_symbol] == "-F 4 2 3"
+    assert fcc_row[Key.n_sym_ops] == 192
+    assert fcc_row[Key.wyckoff_symbols] == ["a"] * 4
 
     df_mixed = symmetry.get_sym_info_from_structs({"pmg": cubic_struct, "ase": atoms})
-    assert len(df_mixed) == 2
     assert df_mixed.index.tolist() == ["pmg", "ase"]
-    assert all(isinstance(x, int) for x in df_mixed[Key.spg_num])
-    assert all(isinstance(x, int) for x in df_mixed[Key.n_sym_ops])
+    assert df_mixed[Key.spg_num].tolist() == [229, 225]
 
     # should give same results for Structure and equivalent Atoms
-    cubic_atoms = cubic_struct.to_ase_atoms()
-
     df_struct = symmetry.get_sym_info_from_structs({"struct": cubic_struct})
-    df_atoms = symmetry.get_sym_info_from_structs({"atoms": cubic_atoms})
-
-    # Reset index to avoid index name mismatch in frame comparison
+    df_atoms = symmetry.get_sym_info_from_structs(
+        {"atoms": cubic_struct.to_ase_atoms()}
+    )
     df_struct.index = df_atoms.index
-
     pd.testing.assert_frame_equal(df_struct, df_atoms)

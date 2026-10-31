@@ -1,10 +1,18 @@
 import { gzipSync } from 'node:zlib'
 import { clear_asset_cache } from '#lib/asset-loader.js'
+import type { Reproducibility } from '#lib/schema/model.js'
 import type { ModelData } from '#lib/types.js'
 import type { AfterNavigate } from '$app/navigation'
 import NodeUtility from 'happy-dom/lib/nodes/node/NodeUtility.js'
 import { mount as svelte_mount, tick, unmount } from 'svelte'
-import { afterEach, beforeAll, beforeEach, expect, vi } from 'vite-plus/test'
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  expect,
+  onTestFinished,
+  vi,
+} from 'vite-plus/test'
 
 type AfterNavigateCallback = (navigation: unknown) => void
 
@@ -63,6 +71,37 @@ if (!(`showPopover` in HTMLElement.prototype)) {
       )
     },
   })
+}
+
+// happy-dom can't match `:checked` on <option>, which Svelte's <select bind:value> queries
+// on change, so resolve it from the select's own selection state
+// oxlint-disable-next-line typescript/no-deprecated -- flags the deprecated-tag overloads, not the methods
+const { querySelector, querySelectorAll } = Element.prototype
+Object.assign(HTMLSelectElement.prototype, {
+  querySelector(this: HTMLSelectElement, selectors: string) {
+    if (selectors === `:checked`) return this.selectedOptions[0] ?? null
+    return querySelector.call(this, selectors)
+  },
+  querySelectorAll(this: HTMLSelectElement, selectors: string) {
+    if (selectors === `:checked`) return [...this.selectedOptions]
+    return querySelectorAll.call(this, selectors)
+  },
+})
+
+// happy-dom's IntersectionObserver never reports: treat every observed target as on
+// screen so viewport-gated content (e.g. per-element diatomic plots) renders
+globalThis.IntersectionObserver = class IntersectionObserver {
+  readonly root = null
+  readonly rootMargin = `0px`
+  readonly thresholds = [0]
+  readonly scrollMargin = `0px`
+  constructor(private readonly callback: IntersectionObserverCallback) {}
+  observe(target: Element): void {
+    this.callback([{ isIntersecting: true, target } as IntersectionObserverEntry], this)
+  }
+  unobserve(): void {}
+  disconnect(): void {}
+  takeRecords = (): IntersectionObserverEntry[] => []
 }
 
 // happy-dom stubs `nodeName` as '' on Node.prototype and overrides it per subclass
@@ -257,14 +296,14 @@ export async function open_filter_menu(menu_name: string): Promise<HTMLElement> 
   return panel
 }
 
-// open matterviz ToggleMenu's column popover (rendered only while open), return the panel
+// open ColumnPicker's column popover (rendered only while open), return the panel
 export async function open_column_menu(): Promise<HTMLElement> {
-  const trigger = doc_query<HTMLButtonElement>(`.column-toggles > button`)
+  const trigger = doc_query<HTMLButtonElement>(`.column-picker > button`)
   if (trigger.getAttribute(`aria-expanded`) !== `true`) {
     trigger.click()
     await tick()
   }
-  return doc_query(`.column-toggles :is(.column-menu, .sections-container)`)
+  return doc_query(`.column-picker .column-menu`)
 }
 export const heatmap_toggle = async (): Promise<HTMLInputElement> =>
   doc_query(`input[aria-label="Toggle heatmap colors"]`, await open_column_menu())
@@ -314,6 +353,82 @@ export function checkbox_for(label_text: string): HTMLInputElement {
   if (!input) throw new Error(`No checkbox found for label ${label_text}`)
   return input
 }
+
+// Clear the site-wide comparison selection (module state shared by every test in a file)
+// and close its dialog. Lazy import: a static one would load #lib before test files
+// register their vi.mock()s.
+export async function reset_comparison(): Promise<void> {
+  const { comparison } = await import(`#lib/model-comparison.svelte.js`)
+  comparison.keys.clear()
+  comparison.open = false
+}
+
+// Shared task-page skeleton: section headings in order, an always-expanded (never
+// collapsible) methodology last and, for pages with a combined score, its weights
+export function expect_task_page_layout(headings: string[], n_score_weights = 0): void {
+  expect(heading_texts()).toEqual(headings)
+  expect(document.querySelector(`#methodology ~ details`)).toBeNull()
+  expect(document.querySelectorAll(`.score-weights input[type="number"]`)).toHaveLength(
+    n_score_weights,
+  )
+  expect(document.querySelector(`details .score-weights`)).toBeNull()
+}
+
+// Override fields of a shared module-level model (e.g. an entry of MODELS) for the
+// current test only; fields the patch added are deleted again afterwards.
+export function patch_model<Model extends object>(
+  model: Model,
+  patch: Partial<Model>,
+): Model {
+  const original = { ...model }
+  Object.assign(model, patch)
+  onTestFinished(() => {
+    for (const key of Object.keys(patch))
+      if (!(key in original)) Reflect.deleteProperty(model, key)
+    Object.assign(model, original)
+  })
+  return model
+}
+
+// Synthetic metrics.<task>.reproducibility blocks, one per status
+const repro = (patch: Partial<Reproducibility>): Reproducibility => ({
+  checked: `2026-10-20`,
+  status: `reproduced`,
+  tolerance: 0.001,
+  runs: [{ label: `H200 rerun`, file: { name: `rerun-preds.csv.gz` } }],
+  rel_changes: { force_rmse: 0.0002 },
+  ...patch,
+})
+export const REPRO_CASES = {
+  reproduced: repro({}),
+  drifted: repro({ status: `drifted`, cause: `environment_change`, note: `torch 2.9` }),
+  inconclusive: repro({ status: `inconclusive` }),
+}
+
+// Add a synthetic model to a shared roster (e.g. ACTIVE_MODELS) for the current test only
+export function push_model(roster: ModelData[], model: ModelData): ModelData {
+  roster.push(model)
+  onTestFinished(() => {
+    roster.splice(roster.indexOf(model), 1)
+  })
+  return model
+}
+
+// trimmed labels of the MultiSelect chips (selected options) inside `scope`
+export const selected_chips = (scope: ParentNode | string = document): string[] =>
+  [
+    ...(typeof scope === `string` ? doc_query(scope) : scope).querySelectorAll(
+      `ul[aria-label="selected options"] > li`,
+    ),
+  ].map((chip) => chip.textContent?.trim() ?? ``)
+
+// leaderboard toggle named only by its visible label (`Show all` / `Show only N selected`)
+export const selected_only_toggle = (): HTMLInputElement | null =>
+  [...document.querySelectorAll(`label`)]
+    .find((label) =>
+      /^Show (?:all|only \d+ selected)$/.test(label.textContent?.trim() ?? ``),
+    )
+    ?.querySelector<HTMLInputElement>(`input[type="checkbox"]`) ?? null
 
 afterEach(async () => {
   const instances = mounted_components.splice(0)

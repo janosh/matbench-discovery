@@ -96,14 +96,11 @@ notes:
 metrics:
   diatomics:
     pred_file:
-      name: models/tace/tece-oam-rra-1.0/2026-07-25-diatomics.json.gz
-      url: https://figshare.com/files/66987017
-      size: 282601
-      md5: 1e7d9eee1ba37829c2c6c72da250a02f
-    hardware: NVIDIA H200
-    run_time_sec: 987.06
-    max_rss_gb: 2.547
-    max_gpu_mem_gb: 0.117
+      name: models/tace/tece-oam-rra-1.0/2026-10-19-diatomics.json.gz
+      url: https://figshare.com/files/70349796
+      size: 282754
+      md5: 12e35e2da2944272ecfadbd7da81ed91
+    cost: {source: runner, hardware: NVIDIA H200, device: cuda, acceleration: [openequivariance, torch_aot_inductor], n_shards: 1, n_processes: 1, run_time_sec: 211.27, load_time_sec: 792.85, max_rss_gb: 2.799, max_gpu_mem_gb: 0.117}
     excluded_formula_reasons: {}
     pbe_wall_dist_mae: 0.3074
     pbe_energy_mae: 3.918
@@ -127,6 +124,18 @@ metrics:
       - Pa
       - Rb
       missing_elements: []
+    reproducibility:
+      checked: '2026-10-20'
+      status: reproduced
+      tolerance: 0.001
+      runs:
+      - label: published run (2026-07-25, H200)
+        file:
+          name: models/tace/tece-oam-rra-1.0/2026-07-25-diatomics.json.gz
+          url: https://figshare.com/files/66987017
+          size: 282601
+          md5: 1e7d9eee1ba37829c2c6c72da250a02f
+      rel_changes: {}
   discovery:
     pred_file:
       name: models/tace/tece-oam-rra-1.0/2026-07-05-discovery.csv.gz
@@ -168,39 +177,36 @@ metrics:
       size: 107698558
       md5: 35c7b9cf6e7125a0522df128d399dcbd
     symprec=1e-2:
-      rmsd: 0.0575
-      n_sym_ops_mae: 1.6991
-      symmetry_decrease: 0.0498
-      symmetry_match: 0.8183
-      symmetry_increase: 0.1245
-      n_structures: 256963
+      rmsd: 0.0575 # unitless
+      n_sym_ops_mae: 1.699 # unitless
+      symmetry_decrease: 0.0498 # fraction
+      symmetry_match: 0.8183 # fraction
+      symmetry_increase: 0.1245 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/tace/tece-oam-rra-1.0/2026-07-05-geo-opt-symprec=1e-2-moyo=0.14.0.csv.gz
-        url: https://figshare.com/files/66313874
-        size: 8181358
-        md5: 5317026469b7112b399b2a769eecfe7e
+        name: models/tace/tece-oam-rra-1.0/2026-07-05-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333962
+        size: 7547731
+        md5: a8439e0c7c787d9901695795800a560f
     symprec=1e-5:
-      rmsd: 0.0575
-      n_sym_ops_mae: 2.7951
-      symmetry_decrease: 0.1846
-      symmetry_match: 0.5907
-      symmetry_increase: 0.2102
-      n_structures: 256963
+      rmsd: 0.0575 # unitless
+      n_sym_ops_mae: 2.7951 # unitless
+      symmetry_decrease: 0.1846 # fraction
+      symmetry_match: 0.5907 # fraction
+      symmetry_increase: 0.2102 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/tace/tece-oam-rra-1.0/2026-07-05-geo-opt-symprec=1e-5-moyo=0.14.0.csv.gz
-        url: https://figshare.com/files/66313868
-        size: 8151778
-        md5: 1e2da838262b15a68fddbb3fd27247ba
+        name: models/tace/tece-oam-rra-1.0/2026-07-05-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333965
+        size: 7601017
+        md5: e2920d55eb551c363dd746df098a27be
   md:
     pred_file:
       name: models/tace/tece-oam-rra-1.0/2026-07-26-md-metrics.csv.gz
       url: https://figshare.com/files/66987023
       size: 1867
       md5: 3d44e2492f29ced1e3c6e5f4a45e9f81
-    hardware: NVIDIA H200
-    run_time_sec: 187996.78 # s
-    max_rss_gb: 3.3 # GB
-    max_gpu_mem_gb: 19.209 # GB
+    cost: {source: runner, hardware: NVIDIA H200, run_time_sec: 187996.78, max_rss_gb: 3.3, max_gpu_mem_gb: 19.209}
     energy_rmse: 0.4353 # meV/atom
     force_rmse: 42.387 # meV/Å
     rdf_error: 3.1921 # %
@@ -223,15 +229,20 @@ metrics:
       κ_failure_rate: 0.0
       imaginary_mode_rate: 0.0
       spectrum_w1: 0.049
-      phonon_file:
-        name: models/tace/tece-oam-rra-1.0/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1284930029
-        md5: 71afa685782d4ae6d24e124c2cc84672
-      force_file:
-        name: models/tace/tece-oam-rra-1.0/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 8665059
-        md5: 36a3d603abbacb3d6b137f80810e247a
-      run_info_file:
-        name: models/tace/tece-oam-rra-1.0/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 8554
-        md5: dd630d85b5a44d2ba582611ae8d9ff76
+      harmonic:
+        phonon_file:
+          name: models/tace/tece-oam-rra-1.0/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334721
+          size: 23545057
+          md5: 95d7384588ecfa588b49807b653cdace
+        force_file:
+          name: models/tace/tece-oam-rra-1.0/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334724
+          size: 8665059
+          md5: 36a3d603abbacb3d6b137f80810e247a
+        run_info_file:
+          name: models/tace/tece-oam-rra-1.0/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334727
+          size: 8554
+          md5: dd630d85b5a44d2ba582611ae8d9ff76
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 515.33, max_rss_gb: 2.998, max_gpu_mem_gb: 55.628}

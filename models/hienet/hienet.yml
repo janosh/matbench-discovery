@@ -33,8 +33,8 @@ license:
 environment:
   dependencies:
   - hienet @ git+https://github.com/divelab/AIRS.git#subdirectory=OpenMat/HIENet
-  - torch==2.1.2
-  - torch-geometric==2.6.1
+  - torch==2.10.0
+  - torch-geometric==2.7.0
   - torch-scatter==2.1.2
   - e3nn==0.5.6
   - braceexpand
@@ -47,8 +47,8 @@ environment:
   - pymatgen==2025.6.14
   - wandb==0.20.1
   - torch-ema==0.3.0
-  python_version: '3.11'
-  find_links: ['https://data.pyg.org/whl/torch-2.1.2+cu121.html']
+  python_version: '3.14'
+  find_links: ['https://data.pyg.org/whl/torch-2.10.0+cu128.html']
 openness: OSOD
 architecture_types: [gnn]
 train_task: S2EFS
@@ -106,12 +106,12 @@ notes:
 metrics:
   diatomics:
     pred_file:
-      name: models/hienet/hienet/2026-06-28-diatomics.json.gz
-      url: https://figshare.com/files/66104606
-      size: 204062
-      md5: 50c28c8fd59781cc8ed6e0eda809e451
-    hardware: NVIDIA H100 80GB HBM3
-    run_time_sec: 265.43
+      name: models/hienet/hienet/2026-10-19-diatomics.json.gz
+      url: https://figshare.com/files/70349763
+      size: 208698
+      md5: abf14847aa73520dce6ffebc2df3768b
+    cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 265.06, load_time_sec: 5.36, max_rss_gb: 2.052, max_gpu_mem_gb: 0.103}
+    excluded_formula_reasons: {}
     pbe_wall_dist_mae: 0.245
     pbe_energy_mae: 1.252
     pbe_bond_length_error: 0.522
@@ -129,6 +129,18 @@ metrics:
       n_eligible: 73
       failed_elements: []
       missing_elements: []
+    reproducibility:
+      checked: '2026-10-20'
+      status: reproduced
+      tolerance: 0.001
+      runs:
+      - label: published run (2026-06-28, H100)
+        file:
+          name: models/hienet/hienet/2026-06-28-diatomics.json.gz
+          url: https://figshare.com/files/66104606
+          size: 204062
+          md5: 50c28c8fd59781cc8ed6e0eda809e451
+      rel_changes: {}
   discovery:
     pred_file:
       name: models/hienet/hienet/2025-07-01-discovery.csv.gz
@@ -170,37 +182,36 @@ metrics:
       size: 142688075
       md5: e85f99ac89f805843e52697c345b9204
     symprec=1e-2:
-      rmsd: 0.0795
-      n_sym_ops_mae: 1.8758
-      symmetry_decrease: 0.0755
-      symmetry_match: 0.8002
-      symmetry_increase: 0.1163
-      n_structures: 256963
+      rmsd: 0.0796 # unitless
+      n_sym_ops_mae: 1.8758 # unitless
+      symmetry_decrease: 0.0755 # fraction
+      symmetry_match: 0.8002 # fraction
+      symmetry_increase: 0.1163 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/hienet/hienet/2025-07-01-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/55909445
-        size: 7303338
-        md5: 2eb207d266814937e4b31519ed8b3335
+        name: models/hienet/hienet/2025-07-01-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333749
+        size: 6823514
+        md5: f1ba446c5d553895b61424e5af046677
     symprec=1e-5:
-      rmsd: 0.0795
-      n_sym_ops_mae: 2.6208
-      symmetry_decrease: 0.3493
-      symmetry_match: 0.4521
-      symmetry_increase: 0.1532
-      n_structures: 256963
+      rmsd: 0.0796 # unitless
+      n_sym_ops_mae: 2.6208 # unitless
+      symmetry_decrease: 0.3493 # fraction
+      symmetry_match: 0.4521 # fraction
+      symmetry_increase: 0.1532 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/hienet/hienet/2025-07-01-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/55909448
-        size: 7157751
-        md5: f7bbbc6312aa731bec1a948078b91850
+        name: models/hienet/hienet/2025-07-01-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333752
+        size: 6750262
+        md5: 428e67078395aead22aae7c0461ca461
   md:
     pred_file:
       name: models/hienet/hienet/2026-06-28-md-metrics.csv.gz
-      url: https://figshare.com/files/66048890
-      size: 1568
-      md5: 94eb737a2b7ddb00364ef2c158a97eb3
-    hardware: NVIDIA H200
-    run_time_sec: 82631.1
+      url: https://figshare.com/files/66574910
+      size: 1733
+      md5: df8b2f31a076b6f01a9f018dbf42d10d
+    cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 82631.1}
     energy_rmse: 1.1753
     force_rmse: 118.8973
     rdf_error: 4.9918
@@ -212,18 +223,6 @@ metrics:
     n_systems: 17
   phonons:
     kappa_103:
-      phonon_file:
-        name: models/hienet/hienet/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1303866766
-        md5: a6b9d1ab5600bbd6868e321b1beffde3
-      force_file:
-        name: models/hienet/hienet/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 8869053
-        md5: e4d201c48d0fc7ba6be15eba2337aaf6
-      run_info_file:
-        name: models/hienet/hienet/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 8054
-        md5: 92e79f3556c943ae33df49c57f8bfb75
       κ_SRME: 0.6423
       pred_file:
         name: models/hienet/hienet/2025-07-01-phonons-kappa-103.json.gz
@@ -235,3 +234,20 @@ metrics:
       κ_failure_rate: 0.0291
       imaginary_mode_rate: 0.0291
       spectrum_w1: 0.3707
+      harmonic:
+        phonon_file:
+          name: models/hienet/hienet/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334493
+          size: 23010472
+          md5: 231e72d66f5dce3a90bb250f1e4932ce
+        force_file:
+          name: models/hienet/hienet/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334496
+          size: 8869053
+          md5: e4d201c48d0fc7ba6be15eba2337aaf6
+        run_info_file:
+          name: models/hienet/hienet/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334499
+          size: 8054
+          md5: 92e79f3556c943ae33df49c57f8bfb75
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 513.54, max_rss_gb: 2.122, max_gpu_mem_gb: 13.818}

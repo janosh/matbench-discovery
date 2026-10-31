@@ -66,8 +66,7 @@ metrics:
       url: https://figshare.com/files/66104609
       size: 260607
       md5: 0bbbb4a6abbc2cb4fa5a387d0c746480
-    hardware: NVIDIA H200
-    run_time_sec: 92.04
+    cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 92.04}
     pbe_wall_dist_mae: 1.185
     pbe_energy_mae: 3.596
     pbe_bond_length_error: 0.4107
@@ -133,37 +132,36 @@ metrics:
       size: 95462499
       md5: e32e1b8aa461c82cbdf38b6a70834769
     symprec=1e-5:
-      rmsd: 0.0897
-      n_sym_ops_mae: 1.8838
-      symmetry_decrease: 0.0349
-      symmetry_match: 0.7315
-      symmetry_increase: 0.2292
-      n_structures: 256862
+      rmsd: 0.0897 # unitless
+      n_sym_ops_mae: 1.8838 # unitless
+      symmetry_decrease: 0.0349 # fraction
+      symmetry_match: 0.7315 # fraction
+      symmetry_increase: 0.2292 # fraction
+      n_structures: 256862 # count
       analysis_file:
-        name: models/grace/grace-2l-mptrj/2024-11-11-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/53504567
-        size: 7163526
-        md5: 8307144fba99015cbb7fed3a63b097d2
+        name: models/grace/grace-2l-mptrj/2024-11-11-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333719
+        size: 6717913
+        md5: 1520c9c3b6456f650e9e7d93edad2132
     symprec=1e-2:
-      rmsd: 0.0897
-      n_sym_ops_mae: 1.8495
-      symmetry_decrease: 0.0596
-      symmetry_match: 0.8107
-      symmetry_increase: 0.1228
-      n_structures: 256862
+      rmsd: 0.0897 # unitless
+      n_sym_ops_mae: 1.8495 # unitless
+      symmetry_decrease: 0.0596 # fraction
+      symmetry_match: 0.8107 # fraction
+      symmetry_increase: 0.1228 # fraction
+      n_structures: 256862 # count
       analysis_file:
-        name: models/grace/grace-2l-mptrj/2024-11-11-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/53504573
-        size: 7204698
-        md5: a51d2f017d5ebdc9f223ef41fdb3e3f2
+        name: models/grace/grace-2l-mptrj/2024-11-11-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333722
+        size: 6735675
+        md5: b1266b0a328c574f37cd1ad9cfa3bf63
   md:
     pred_file:
       name: models/grace/grace-2l-mptrj/2026-06-28-md-metrics.csv.gz
-      url: https://figshare.com/files/66048881
-      size: 1572
-      md5: edfdc50923b19f8b0df73d12a59909a9
-    hardware: NVIDIA H200
-    run_time_sec: 14812.51
+      url: https://figshare.com/files/66574865
+      size: 1732
+      md5: 19c576bec4deee3c3d3349a74591085d
+    cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 14812.51}
     energy_rmse: 1.3718
     force_rmse: 147.9677
     rdf_error: 5.5893
@@ -186,15 +184,20 @@ metrics:
       κ_failure_rate: 0.0291
       imaginary_mode_rate: 0.0291
       spectrum_w1: 0.4219
-      phonon_file:
-        name: models/grace/grace-2l-mptrj/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1408842613
-        md5: fe2cb816b6967744625e386cf37b7066
-      force_file:
-        name: models/grace/grace-2l-mptrj/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 7958713
-        md5: 51b780e6e26971717d2e9fe9a6bc11c1
-      run_info_file:
-        name: models/grace/grace-2l-mptrj/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 7806
-        md5: dcd8d71a6aa8747b9d7afaf83b399898
+      harmonic:
+        phonon_file:
+          name: models/grace/grace-2l-mptrj/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334457
+          size: 23530340
+          md5: 972c98857b06179632d0b8344a68505e
+        force_file:
+          name: models/grace/grace-2l-mptrj/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334460
+          size: 7958713
+          md5: 51b780e6e26971717d2e9fe9a6bc11c1
+        run_info_file:
+          name: models/grace/grace-2l-mptrj/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334463
+          size: 7806
+          md5: dcd8d71a6aa8747b9d7afaf83b399898
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 497.95, max_rss_gb: 6.708}

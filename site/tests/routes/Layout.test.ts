@@ -6,20 +6,29 @@ import {
   CDS_CONFIG,
   CMDS_CONFIG,
   CPS_CONFIG,
+  DEFAULT_CPS_CONFIG,
 } from '#lib/combined-scores.svelte.js'
 import { comparison } from '#lib/model-comparison.svelte.js'
 import Layout from '#routes/+layout.svelte'
 import pkg from '#site/package.json'
 import { createRawSnippet, tick } from 'svelte'
-import { expect, it, vi } from 'vite-plus/test'
-import { doc_query, mount_with_url, navigate, query_param } from '../index.js'
+import { theme_init_script } from 'svelte-widgets/theme'
+import { expect, it, onTestFinished, vi } from 'vite-plus/test'
+import {
+  doc_query,
+  mount_with_url,
+  navigate,
+  query_param,
+  reset_comparison,
+} from '../index.js'
 
 it(`restores and shares every score's weights on model, task and comparison routes`, async () => {
+  onTestFinished(reset_comparison)
   const model = MODELS.find(
     ({ metrics }) =>
       metrics?.discovery?.unique_prototypes?.F1 != null &&
       metrics.md?.vdos_error != null &&
-      metrics.diatomics?.run_time_sec != null,
+      metrics.diatomics?.cost?.run_time_sec != null,
   )
   if (!model?.metrics?.md || !model.metrics.diatomics)
     throw new Error(`No model covers the combined scores`)
@@ -45,8 +54,12 @@ it(`restores and shares every score's weights on model, task and comparison rout
     expect(model.metrics.md.combined_score).toBe(
       Math.max(0, 1 - (model.metrics.md.vdos_error ?? NaN) / 100),
     )
-    expect(model.metrics.diatomics.combined_score).toBe(
-      calculate_cds(model.metrics.diatomics, CDS_CONFIG),
+    const { diatomics } = model.metrics
+    expect(diatomics.combined_score).toBe(
+      calculate_cds(
+        { ...diatomics, run_time_sec: diatomics.cost?.run_time_sec },
+        CDS_CONFIG,
+      ),
     )
     expect(query_param(`cps_weights`)).toBe(`1,0,0`)
     expect(query_param(`cmds_weights`)).toBe(`1,0,0,0`)
@@ -62,21 +75,27 @@ it(`restores and shares every score's weights on model, task and comparison rout
   copied_weights.CMDS.vdos_error = 0
   expect(CMDS_CONFIG.vdos_error.weight).toBe(1)
 
-  // Missing or malformed params reset their own score, rather than retaining
-  // another task's in-memory weights or interpreting an unrelated score's vector.
+  const DEFAULT_CPS = Object.fromEntries(
+    Object.entries(DEFAULT_CPS_CONFIG).map(([key, { weight }]) => [key, weight]),
+  )
+  // A malformed param resets only its own score rather than interpreting it.
   await navigate(`/benchmarks/diatomics?cps_weights=invalid&cmds_weights=1,0,0,0`)
   expect(query_param(`cps_weights`)).toBeNull()
-  expect(query_param(`cds_weights`)).toBeNull()
   expect(query_param(`cmds_weights`)).toBe(`1,0,0,0`)
-  await navigate(`/`)
+  // In-app links omitting the params (nav bar: /models -> Home) keep the custom weights,
+  // like `compare` (Kit's fresh page.state then re-runs the URL write-back).
+  for (const route of [`/models`, `/`]) {
+    await navigate(route)
+    expect(score_weight_records()).toEqual({ ...expected_weights, CPS: DEFAULT_CPS })
+  }
+  // Back/forward (or entering) to a URL without params restores the defaults.
+  await navigate(`/`, `popstate`)
   expect(location.search).toBe(``)
-  comparison.open = false
-  comparison.keys.clear()
 })
 
 it(`loads comparison on demand and retains its controls between openings`, async () => {
-  comparison.keys.clear()
-  comparison.open = false
+  await reset_comparison()
+  onTestFinished(reset_comparison)
   // Warm the lazily imported module: its cold transform alone can exceed the 5s waitFor
   // below under full-suite load. The layout still imports it only once opened.
   await import(`#lib/model/ModelComparison.svelte`)
@@ -84,6 +103,8 @@ it(`loads comparison on demand and retains its controls between openings`, async
   expect(
     doc_query(`footer a[href="${pkg.repository}/blob/main/license"]`).textContent,
   ).toBe(`2022`)
+  // the desktop ToC's hide_on_intersect targets this id so it never overlaps the footer
+  expect(doc_query(`#site-footer`).tagName).toBe(`FOOTER`)
   expect(document.querySelector(`dialog[aria-label="Model comparison"]`)).toBeNull()
   comparison.open_with(MODELS[0].model_key)
   const dialog = await vi.waitFor(
@@ -100,8 +121,6 @@ it(`loads comparison on demand and retains its controls between openings`, async
   expect(
     doc_query<HTMLSelectElement>(`dialog[aria-label="Model comparison"] select`).value,
   ).toBe(`added`)
-  comparison.open = false
-  comparison.keys.clear()
 })
 
 it.each([`/api`, `/data`, `/benchmarks/diatomics`])(
@@ -118,6 +137,8 @@ it.each([`/api`, `/data`, `/benchmarks/diatomics`])(
     await vi.waitFor(() => {
       expect(document.querySelector(`.toc button`) !== null).toBe(route !== `/data`)
     })
+    // the layout ships the pre-paint theme script (SSR places it in <head>)
+    expect(document.head.innerHTML).toContain(theme_init_script)
     if (route === `/data`) return
 
     expect(doc_query(`.toc`).style.zIndex).toBe(`1`)
@@ -196,8 +217,8 @@ it.each([
     const option = [...menu.querySelectorAll(`li[role="option"]`)].find(
       (element) => element.textContent?.trim() === label,
     )
-    expect(option).toBeDefined()
-    option?.dispatchEvent(new MouseEvent(`click`, { bubbles: true }))
+    if (!option) throw new Error(`No command menu option ${label} for ${query}`)
+    option.dispatchEvent(new MouseEvent(`click`, { bubbles: true }))
     await tick()
     expect(goto).toHaveBeenLastCalledWith(route)
   },

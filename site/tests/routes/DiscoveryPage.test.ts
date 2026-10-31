@@ -8,12 +8,15 @@ import {
   button_for,
   doc_query,
   expect_table_url_state,
+  expect_task_page_layout,
   filter_summary_badge,
   get_scatter_plot_props,
   header_name,
   heading_texts,
   mount,
   mount_with_url,
+  push_model,
+  query_param,
   sorted_header,
 } from '../index.js'
 
@@ -60,7 +63,7 @@ describe(`Discovery Task Page`, () => {
     expect(sorted_header()?.textContent).toContain(`F1`)
     expect(sorted_header()?.getAttribute(`aria-sort`)).toBe(`descending`)
 
-    expect(heading_texts()).toEqual([
+    expect_task_page_layout([
       `Leaderboard`,
       `F1 vs Params`,
       `Diagnostics`,
@@ -97,41 +100,37 @@ describe(`Discovery Task Page`, () => {
         discovery: { ...discovery, full_test_set: undefined },
       },
     }
-    ACTIVE_MODELS.push(partial_model)
-    try {
-      mount(DiscoveryPage, { target: document.body })
-      await tick()
+    push_model(ACTIVE_MODELS, partial_model)
+    mount(DiscoveryPage, { target: document.body })
+    await tick()
 
-      // exact match so a resurrected discovery set can't slip in unnoticed
-      expect(toggle_labels()).toEqual([`Full Test Set`, `Unique Prototypes`])
-      expect(active_toggle()).toBe(`Unique Prototypes`)
-      // the pill's info icon shows the same tooltip as the option button beside it
-      doc_query(`a[aria-label="About Unique Prototypes"]`).dispatchEvent(
-        new PointerEvent(`pointerover`, { bubbles: true }),
-      )
-      const unique_tooltip = discovery_set_toggle_options.find(
-        ({ value }) => value === `unique_prototypes`,
-      )?.tooltip
-      await vi.waitFor(() =>
-        expect(doc_query(`.custom-tooltip .tooltip-content`).textContent).toBe(
-          unique_tooltip,
-        ),
-      )
-      expect(scatter_y_for(model_key)).toBe(discovery.unique_prototypes?.F1)
+    // exact match so a resurrected discovery set can't slip in unnoticed
+    expect(toggle_labels()).toEqual([`Full Test Set`, `Unique Prototypes`])
+    expect(active_toggle()).toBe(`Unique Prototypes`)
+    // the pill's info icon shows the same tooltip as the option button beside it
+    doc_query(`a[aria-label="About Unique Prototypes"]`).dispatchEvent(
+      new PointerEvent(`pointerover`, { bubbles: true }),
+    )
+    const unique_tooltip = discovery_set_toggle_options.find(
+      ({ value }) => value === `unique_prototypes`,
+    )?.tooltip
+    await vi.waitFor(() =>
+      expect(doc_query(`.custom-tooltip .tooltip-content`).textContent).toBe(
+        unique_tooltip,
+      ),
+    )
+    expect(scatter_y_for(model_key)).toBe(discovery.unique_prototypes?.F1)
 
-      const table_text = () =>
-        document.querySelector(`section.full-bleed tbody`)?.textContent
-      expect(table_text()).toContain(partial_model.model_name)
+    const table_text = () =>
+      document.querySelector(`section.full-bleed tbody`)?.textContent
+    expect(table_text()).toContain(partial_model.model_name)
 
-      button_for(`Full Test Set`).click()
-      await tick()
+    button_for(`Full Test Set`).click()
+    await tick()
 
-      expect(active_toggle()).toBe(`Full Test Set`)
-      expect(table_text()).not.toContain(partial_model.model_name)
-      expect(scatter_y_for(model_key)).toBe(discovery.full_test_set?.F1)
-    } finally {
-      ACTIVE_MODELS.pop()
-    }
+    expect(active_toggle()).toBe(`Full Test Set`)
+    expect(table_text()).not.toContain(partial_model.model_name)
+    expect(scatter_y_for(model_key)).toBe(discovery.full_test_set?.F1)
   })
 
   it(`restores and syncs URL state`, async () => {
@@ -147,10 +146,10 @@ describe(`Discovery Task Page`, () => {
     // the default set is dropped from the URL, any other set is written back
     button_for(`Unique Prototypes`).click()
     await tick()
-    expect(new URL(location.href).searchParams.get(`set`)).toBeNull()
+    expect(query_param(`set`)).toBeNull()
 
     button_for(`Full Test Set`).click()
     await tick()
-    expect(new URL(location.href).searchParams.get(`set`)).toBe(`full_test_set`)
+    expect(query_param(`set`)).toBe(`full_test_set`)
   })
 })

@@ -1,6 +1,5 @@
 """Tests for scripts/md_convert_references_to_hdf5.py."""
 
-import sys
 from pathlib import Path
 
 import ase.io
@@ -56,10 +55,11 @@ def test_md_convert_load_settings(tmp_path: Path) -> None:
     assert settings["anthracene_293K"] == (0.5, 293.0)  # dt = 0.5 fs
 
 
-def test_md_convert_packs_reference(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """The packer turns raw per-system extxyz + settings CSV into reference HDF5."""
+SYSTEM = "bulkCu_300K-Artrith_VASP"
+
+
+def write_raw_reference(tmp_path: Path, dt_fs: float = 0.25) -> list[ase.Atoms]:
+    """Write one short EMT Cu NVT trajectory + settings CSV under tmp_path."""
     frames = run_nvt_md(
         bulk("Cu", cubic=True) * (2, 2, 2),
         EMT(),
@@ -67,22 +67,30 @@ def test_md_convert_packs_reference(
         n_steps=8,
         record_interval=1,
     )
-    system = "bulkCu_300K-Artrith_VASP"
-    sys_dir = tmp_path / "raw" / system
+    sys_dir = tmp_path / "raw" / SYSTEM
     sys_dir.mkdir(parents=True)
     ase.io.write(sys_dir / "traj.extxyz", frames)
     settings_csv = tmp_path / "settings.csv"
-    settings_csv.write_text("System,temperature,stride,dt\nbulkCu,300,4,0.25\n")
-    out_h5 = str(tmp_path / "ref.h5")
+    settings_csv.write_text(f"System,temperature,stride,dt\nbulkCu,300,4,{dt_fs}\n")
+    return frames
 
-    argv = [
-        "pack",
+
+def packer_argv(tmp_path: Path, *extra: str) -> list[str]:
+    """CLI args packing tmp_path/raw with tmp_path/settings.csv into ref.h5."""
+    return [
         *("--ref-dir", str(tmp_path / "raw")),
-        *("--settings-csv", str(settings_csv)),
-        *("--out", out_h5),
+        *("--settings-csv", str(tmp_path / "settings.csv")),
+        *("--out", str(tmp_path / "ref.h5")),
+        *extra,
     ]
-    monkeypatch.setattr(sys, "argv", argv)
-    assert PACKER.main() == 0
+
+
+def test_md_convert_packs_reference(tmp_path: Path) -> None:
+    """The packer turns raw per-system extxyz + settings CSV into reference HDF5."""
+    frames = write_raw_reference(tmp_path)
+    system = SYSTEM
+    out_h5 = str(tmp_path / "ref.h5")
+    assert PACKER.main(packer_argv(tmp_path)) == 0
 
     assert list_reference_systems(out_h5) == [system]
     traj, dt_fs, temperature = read_reference_trajectory(out_h5, system)
@@ -93,3 +101,26 @@ def test_md_convert_packs_reference(
     np.testing.assert_allclose(
         traj.positions[0], frames[0].positions, rtol=0, atol=1e-6
     )
+
+
+@pytest.mark.parametrize(
+    ("dt_fs", "extra_args", "error", "match"),
+    [
+        # a typo'd --systems name must not silently pack fewer systems
+        (0.25, ("--systems", SYSTEM, "bulkCu_typo"), SystemExit, "2"),
+        # 10x too large dt_fs underestimates equipartition T by 100x
+        (2.5, (), ValueError, "dt_fs=2.5 fs .* is likely wrong"),
+    ],
+)
+def test_md_convert_rejects_bad_inputs(
+    tmp_path: Path,
+    dt_fs: float,
+    extra_args: tuple[str, ...],
+    error: type[Exception],
+    match: str,
+) -> None:
+    """Unknown --systems and wrong dt_fs fail instead of writing the HDF5."""
+    write_raw_reference(tmp_path, dt_fs=dt_fs)
+    with pytest.raises(error, match=match):
+        PACKER.main(packer_argv(tmp_path, *extra_args))
+    assert not (tmp_path / "ref.h5").exists()

@@ -18,7 +18,7 @@
   } from '#lib/url-state.svelte.js'
   import { Icon, Popover, Sheet } from 'svelte-widgets'
   import { Cross, Filter, Scale } from 'svelte-widgets/icons'
-  import { ToggleMenu } from 'matterviz/table'
+  import { ColumnPicker } from 'svelte-widgets/table'
   import type { Snippet } from 'svelte'
   import { tooltip } from 'svelte-widgets/attachments'
   import type { HTMLAttributes } from 'svelte/elements'
@@ -322,11 +322,7 @@
   </button>
   {#if selected_count > 0 || filters.show_selected_only}
     <label>
-      <input
-        type="checkbox"
-        bind:checked={filters.show_selected_only}
-        aria-label="Toggle between showing only selected models and all models"
-      />
+      <input type="checkbox" bind:checked={filters.show_selected_only} />
       {filters.show_selected_only ? `Show all` : `Show only ${selected_count} selected`}
     </label>
   {/if}
@@ -372,7 +368,7 @@
   {/if}
 
   {#if columns.length}
-    <ToggleMenu bind:columns>
+    <ColumnPicker bind:columns>
       {#snippet header()}
         <label class="heatmap-toggle">
           <input
@@ -383,7 +379,7 @@
           Show heatmap
         </label>
       {/snippet}
-    </ToggleMenu>
+    </ColumnPicker>
   {/if}
 </div>
 {@render trailing?.()}

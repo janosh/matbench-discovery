@@ -65,7 +65,11 @@ interface EnergyParityStructureBundle {
   shards: Record<string, Record<string, AnyStructure | string> | undefined>
 }
 
-export const { asset_url: energy_parity_asset_url, model_asset } = parity_asset_resolver(
+export const {
+  asset_url: energy_parity_asset_url,
+  model_asset,
+  has_model: has_energy_parity_model,
+} = parity_asset_resolver(
   `energy`,
   energy_parity_manifest,
   import.meta.env.VITE_ENERGY_PARITY_ASSET_BASE_URL,

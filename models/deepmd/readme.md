@@ -1,6 +1,6 @@
 # DeePMD
 
-DPA3 is an advanced interatomic potential leveraging the message-passing architecture, implemented within the DeePMD-kit framework, available on [GitHub](https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha).
+DPA3, DPA4 and DPA4C are interatomic potentials implemented in [DeePMD-kit](https://github.com/deepmodeling/deepmd-kit).
 
 ## DeePMD-DPA3
 
@@ -56,23 +56,27 @@ wget https://figshare.com/files/55141127
 
 ## DeePMD-DPA4
 
-DPA4 is an SE(3)-equivariant interatomic-potential architecture built on an EMFA
-(Edge-conditioned, Multi-Focus, Attention) SO(2)-equivariant convolution. It
-combines a low-rank edge–node SO(2)-equivariant product, a multi-focus design
-for message nonlinearity, and envelope-gated attention for message aggregation.
-A Lebedev-grid projection preserves SO(3)-equivariance in the nonlinearity to
-machine precision, and a compiler-friendly conservative energy-gradient training
-path gives up to ~3× wall-clock speedup under `torch.compile`. See the
-[DPA4 paper](https://arxiv.org/abs/2606.02419).
+DPA4 is an SE(3)-equivariant interatomic-potential architecture that learns atomic energies from chemical identities and three-dimensional atomic environments. Its SO(2) convolutions couple edge and atom features across angular degrees, combining a multi-focus representation with attention-weighted neighbor aggregation. Wigner bilinear nonlinearities capture directional correlations while preserving rotational symmetry. Forces and stresses are derived from the predicted energy, giving a conservative potential for structure relaxation and molecular dynamics. See the [DPA4 paper](https://arxiv.org/abs/2606.02419).
+
+DPA4C is a compact, O(3)-equivariant architecture designed for efficient molecular dynamics. A single local aggregation builds directional atomic features, which are converted into invariant descriptors and mapped to atomic energies. Separating radial functions from chemical-type dependence allows tabulated compression for fast evaluation. Its strictly local representation avoids exchanging learned atomic features between simulation domains, supporting large-scale parallel simulations. Forces and stresses are derived from the same energy. See the [DPA4C paper](https://arxiv.org/abs/2608.19041).
 
 ### DPA-4.0.1-Pro-MPtrj
 
-DPA-4.0.1-Pro-MPtrj is the DPA4-Pro model trained only on MPtrj for this
-submission; it supersedes DPA-4.0-Pro-MPtrj. Following the DPA4-Pro column of
-Table S-17 in the paper, the model parameters are: feature dim 64, 6 interaction
-layers, 2 focuses, 4 SO(2) layers, a rank-2 per-channel edge–node product, a
-Bessel radial basis with 16 bases, lmax=5, mmax=1, Lebedev quadrature, SiLU+GLU
-activations, a 6.0 Å cutoff, and up to 384 selected neighbors (~22.8M
-parameters). It was trained for 2×10⁶ steps with the HybridMuon optimizer, a WSD
-learning-rate schedule, MAE energy/force/virial loss weights 20/20/5, bf16 AMP,
-TF32 matmul, and `torch.compile` enabled.
+DPA-4.0.1-Pro-MPtrj is a 22.8-million-parameter DPA4 model trained on MPtrj. It supersedes DPA-4.0-Pro-MPtrj.
+
+### DPA-4.1-OAM
+
+The Max and Air models use DPA4; C-Air uses DPA4C. All four models are trained on MPtrj, OMat24 and sAlex. DPA-4.1-Max-OAM-PFT adds phonon fine-tuning on Hessian labels from MDR-MP PBE ω_q, with MPtrj co-training. All four checkpoints are released under CC-BY-4.0. Model architectures use the `v20260911` presets specified in the model cards.
+
+| Model | Parameters | Checkpoint and predictions |
+| --- | ---: | --- |
+| [DPA-4.1-Max-OAM](dpa-4.1-max-oam.yml) | 99,009,258 | [Figshare](https://figshare.com/articles/dataset/DPA-4_1-Max-OAM_model_checkpoint_and_Matbench_Discovery_predictions/34755060) |
+| [DPA-4.1-Air-OAM](dpa-4.1-air-oam.yml) | 5,147,909 | [Figshare](https://figshare.com/articles/dataset/DPA-4_1-Air-OAM_model_checkpoint_and_Matbench_Discovery_predictions/34755042) |
+| [DPA-4.1C-Air-OAM](dpa-4.1c-air-oam.yml) | 433,673 | [Figshare](https://figshare.com/articles/dataset/DPA-4_1C-Air-OAM_model_checkpoint_and_Matbench_Discovery_predictions/34755132) |
+| [DPA-4.1-Max-OAM-PFT](dpa-4.1-max-oam-pft.yml) | 99,005,146 | [Figshare](https://figshare.com/articles/dataset/DPA-4_1-Max-OAM-PFT_model_checkpoint_and_Matbench_Discovery_predictions/34846080) |
+
+Training costs in the model cards include all training stages, including base-model training for PFT. The cards also report evaluation settings and limitations. All evaluations used NVIDIA RTX PRO 6000 Blackwell Server Edition GPUs.
+
+#### Inference
+
+For ASE, load a checkpoint with `DP(model="<checkpoint>.pt", freeze=True)` to export and compile it for fast inference. For DPA4C this also compresses the model (tabulated), whereas the benchmark results use the uncompressed `dp --pt-expt freeze` export. For LAMMPS, see the [DPA4](https://github.com/deepmodeling/deepmd-kit/blob/master/doc/model/dpa4.md#export-and-running-in-lammps) and [DPA4C](https://github.com/deepmodeling/deepmd-kit/blob/master/doc/model/dpa4c.md#model-compression) docs. The benchmark runners use the environment in `models/deepmd/dpa41-env` (Linux x86-64, CUDA toolkit with `nvcc`), e.g. `uv run models/run_discovery.py --model dpa-4.1-max-oam`.

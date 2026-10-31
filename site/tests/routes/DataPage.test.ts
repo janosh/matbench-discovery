@@ -8,7 +8,13 @@ import { goto } from '$app/navigation'
 import { element_data } from 'matterviz/element'
 import { tick } from 'svelte'
 import { describe, expect, it, vi } from 'vite-plus/test'
-import { doc_query, mock_element_size, mount, mount_with_url } from '../index.js'
+import {
+  doc_query,
+  mock_element_size,
+  mount,
+  mount_with_url,
+  query_param,
+} from '../index.js'
 
 it.each([
   [``, `/benchmarks`],
@@ -163,9 +169,7 @@ describe(`WBM details URL state`, () => {
     expect(document.querySelectorAll(`.sunburst`)).toHaveLength(2)
     expect(count_mode_text()).toContain(expected_mode)
     expect(document.querySelector(`.periodic-table .colorbar`)).not.toBeNull()
-    expect(new URL(location.href).searchParams.get(`color_scale`)).toBe(
-      new URLSearchParams(query).get(`color_scale`),
-    )
+    expect(query_param(`color_scale`)).toBe(new URLSearchParams(query).get(`color_scale`))
     const scale_picker = doc_query(`.multiselect:has(input[aria-label="Color scale"])`)
     const expected_scale = (
       new URLSearchParams(query).get(`color_scale`) ?? `interpolateViridis`
@@ -182,9 +186,7 @@ describe(`WBM details URL state`, () => {
     expect(cividis_option.querySelector(`.colorbar`)).not.toBeNull()
     cividis_option.click()
     await tick()
-    expect(new URL(location.href).searchParams.get(`color_scale`)).toBe(
-      `interpolateCividis`,
-    )
+    expect(query_param(`color_scale`)).toBe(`interpolateCividis`)
 
     const picker = doc_query(`.multiselect:has(#count-mode)`)
     expect(picker.querySelector(`button[title^="Remove"]`)).toBeNull()
@@ -198,7 +200,7 @@ describe(`WBM details URL state`, () => {
     await tick()
     expect(count_mode_text()).toContain(`composition`)
     expect(count_mode_text()).not.toContain(`occurrence`)
-    expect(new URL(location.href).searchParams.get(`count_mode`)).toBe(`composition`)
+    expect(query_param(`count_mode`)).toBe(`composition`)
     expect(picker.querySelectorAll(`ul.selected > li`)).toHaveLength(1)
   })
 
@@ -218,7 +220,7 @@ describe(`WBM details URL state`, () => {
       checkboxes[1].click()
       await tick()
       expect(checkboxes.map((box) => box.checked)).toEqual([true, true, true])
-      expect(new URL(location.href).searchParams.get(`log`)).toBe(`1`)
+      expect(query_param(`log`)).toBe(`1`)
     },
   )
 })

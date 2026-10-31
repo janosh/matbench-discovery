@@ -7,29 +7,22 @@
 
   let {
     github_data = [],
-    show_model_labels = true,
     color_scale = { type: `log` },
     ...rest
   }: {
     github_data?: GitHubActivityData[]
-    show_model_labels?: boolean
   } & ComponentProps<typeof ScatterPlot> = $props()
 
   const fmt = `,.0f`
   const github_metrics = {
-    stars: { key: `stars`, label: `GitHub Stars`, better: `higher`, format: fmt },
-    forks: { key: `forks`, label: `GitHub Forks`, better: `higher`, format: fmt },
+    stars: { key: `stars`, label: `GitHub Stars`, format: fmt },
+    forks: { key: `forks`, label: `GitHub Forks`, format: fmt },
     commits_last_year: {
       key: `commits_last_year`,
       label: `Commits Last Year`,
       format: fmt,
     },
-    contributors: {
-      key: `contributors`,
-      label: `Contributors`,
-      better: `higher`,
-      format: fmt,
-    },
+    contributors: { key: `contributors`, label: `Contributors`, format: fmt },
   } as const satisfies Record<string, Partial<Label>>
 
   type GitHubMetric = (typeof github_metrics)[keyof typeof github_metrics]
@@ -69,7 +62,7 @@
     metadata: plot_data.map((point) => point.metadata),
     color_values: plot_data.map((point) => Math.max(1, point.color_value)),
     size_values: plot_data.map((point) => point.size_value),
-    point_label: (show_model_labels ? plot_data : []).map((point) => ({
+    point_label: plot_data.map((point) => ({
       text: point.metadata.name,
       font_size: `11px`,
       auto_placement: true,
@@ -96,7 +89,7 @@
     label_placement_config={{ max_neighbors: { count: 3, radius: 40 } }}
     point_events={{
       onclick: ({ point }) => {
-        const slug = point.metadata?.model_key ?? point.metadata?.name
+        const slug = point.metadata?.model_key
         if (typeof slug === `string`) goto(`/models/${encodeURIComponent(slug)}`)
       },
     }}

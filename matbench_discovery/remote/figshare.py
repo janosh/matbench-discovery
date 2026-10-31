@@ -12,6 +12,7 @@ import requests
 from tqdm import tqdm
 
 from matbench_discovery import ROOT, file_digest, repo_relative_path
+from matbench_discovery.remote import fetch
 
 ENV_PATH: Final[str] = f"{ROOT}/site/.env"
 BASE_URL: Final[str] = "https://api.figshare.com/v2"
@@ -38,11 +39,21 @@ CATEGORIES: Final[dict[int, str]] = {
 }
 
 
-FIGSHARE_TOKEN = os.getenv("FIGSHARE_TOKEN")
-if not FIGSHARE_TOKEN and os.path.isfile(ENV_PATH):
-    with open(ENV_PATH) as file:
-        # TOKEN: length 128, alphanumeric (e.g. 271431c6a94ff7...)
-        FIGSHARE_TOKEN = file.read().split("figshare_token=")[1].split("\n")[0]
+def load_figshare_token() -> str:
+    """Return the Figshare API token from $FIGSHARE_TOKEN or a figshare_token= line
+    in site/.env, read per request so importing this module never needs one.
+    """
+    token = os.getenv("FIGSHARE_TOKEN", "")
+    if not token and os.path.isfile(ENV_PATH):
+        with open(ENV_PATH, encoding="utf-8") as file:
+            match = re.search(r"^figshare_token=(.*)$", file.read(), flags=re.MULTILINE)
+        token = match[1] if match else ""
+    if token := token.strip():
+        return token
+    raise ValueError(
+        "No Figshare API token: set FIGSHARE_TOKEN or add a figshare_token=<token> "
+        f"line to {ENV_PATH}"
+    )
 
 
 def make_request(
@@ -52,6 +63,7 @@ def make_request(
     data: Mapping[str, object] | bytes | None = None,
     binary: bool = False,
     timeout: float = CLI_TIMEOUT,
+    retry: bool = False,
 ) -> Any:  # noqa: ANN401
     """Make a token-authorized HTTP request to the Figshare API.
 
@@ -62,6 +74,8 @@ def make_request(
             the request. Defaults to None.
         binary (bool, optional): Whether the data is binary. Defaults to False.
         timeout (float, optional): Timeout in seconds. Defaults to CLI_TIMEOUT = 30.
+        retry (bool, optional): Retry transient errors of a POST too (GET, PUT and
+            DELETE always retry). Only for POSTs safe to repeat. Defaults to False.
 
     Returns:
         Any: Parsed JSON response (dict or list), or raw bytes if not valid JSON.
@@ -69,20 +83,25 @@ def make_request(
     Raises:
         HTTPError: If the request fails. Error will contain the response body.
     """
-    headers = {"Authorization": f"token {FIGSHARE_TOKEN}"}
+    headers = {"Authorization": f"token {load_figshare_token()}"}
     payload = data if binary or data is None else json.dumps(data)
-    response = requests.request(
-        method,
-        url,
-        headers=headers,
-        data=payload,
-        timeout=timeout,
-    )
-    try:
-        response.raise_for_status()
-    except requests.HTTPError as exc:
-        exc.add_note(f"body={response.content.decode()}")
-        raise
+    # Figshare intermittently 5xxs. Idempotent methods are safe to repeat, POSTs only
+    # on opt-in: one creating an article/file may already have succeeded server-side
+    retry = retry or method in ("GET", "PUT", "DELETE")
+    for delay in (*fetch.HTTP_RETRY_DELAYS, None):
+        try:
+            response = requests.request(
+                method, url, headers=headers, data=payload, timeout=timeout
+            )
+            response.raise_for_status()
+            break
+        except requests.RequestException as exc:
+            if isinstance(exc, requests.HTTPError) and exc.response is not None:
+                exc.add_note(f"body={exc.response.content.decode()}")
+            if delay is None or not retry or not fetch.is_transient(exc):
+                exc.add_note(f"{method} {url}")
+                raise
+            time.sleep(delay)
     try:
         return json.loads(response.content)
     except ValueError:
@@ -163,19 +182,21 @@ def upload_file(article_id: int, file_path: str, file_name: str = "") -> int:
             pbar.update(len(chunk))
 
     # Complete upload
-    make_request("POST", f"{endpoint}/{file_info['id']}")
+    # retried: a 502 here would otherwise leave a half-registered file behind
+    make_request("POST", f"{endpoint}/{file_info['id']}", retry=True)
     verify_upload(article_id, file_info["id"], md5)
     return file_info["id"]
 
 
 def verify_upload(
-    article_id: int, file_id: int, expected_md5: str, *, attempts: int = 5
+    article_id: int, file_id: int, expected_md5: str, *, attempts: int = 45
 ) -> None:
-    """Raise unless Figshare's own checksum matches the local file.
+    """Raise unless Figshare's own checksum matches the local file (completing a
+    multipart upload does not confirm what landed).
 
-    Completing a multipart upload does not confirm what landed, so without this a
-    corrupted part would silently publish a model card pointing at a broken download.
-    Figshare hashes asynchronously, hence the short backoff before giving up.
+    Figshare hashes asynchronously (once 14 min for a 264 kB file), so poll with
+    backoff capped at 30 s (~21 min over 45 attempts): giving up early makes a rerun
+    upload a duplicate, since the unhashed copy cannot be matched by checksum.
     """
     endpoint = f"{BASE_URL}/account/articles/{article_id}/files/{file_id}"
     for attempt in range(attempts):
@@ -187,8 +208,11 @@ def verify_upload(
                 )
             return
         if attempt < attempts - 1:  # no pointless wait after the final check
-            time.sleep(2**attempt)
-    raise ValueError(f"Figshare reported no checksum for {file_id=} after {attempts=}")
+            time.sleep(min(2**attempt, 30))
+    raise ValueError(
+        f"Figshare reported no checksum for {file_id=} after {attempts=}: wait for "
+        "it to finish hashing instead of rerunning (which uploads a duplicate)"
+    )
 
 
 def article_exists(article_id: int | str) -> bool:
@@ -354,24 +378,10 @@ def _extract_task_type(filename: str) -> str:
     )
 
 
-def delete_file(article_id: int, file_id: int) -> bool:
-    """Delete a file from a Figshare article.
-
-    Args:
-        article_id (int): ID of the article containing the file.
-        file_id (int): ID of the file to delete.
-
-    Returns:
-        bool: True if the file was successfully deleted, False otherwise.
-    """
-    url = f"{BASE_URL}/account/articles/{article_id}/files/{file_id}"
-    try:
-        make_request("DELETE", url)  # should return None
-    except requests.RequestException as exc:
-        print(f"Failed to delete file with ID {file_id}: {exc}")
-        return False
+def delete_file(article_id: int, file_id: int) -> None:
+    """Delete a file from a Figshare article, raising on API errors."""
+    make_request("DELETE", f"{BASE_URL}/account/articles/{article_id}/files/{file_id}")
     print(f"Successfully deleted file with ID {file_id} from article {article_id}")
-    return True
 
 
 def upload_file_if_needed(
@@ -413,9 +423,7 @@ def upload_file_if_needed(
             print(f"File {file_name} already exists with same hash, skipping upload")
             return file_id, False
         print(f"{file_name=} exists but force_reupload=True, deleting and reuploading")
-        if not delete_file(article_id, file_id):
-            print(f"Failed to delete existing file {file_name}, skipping upload")
-            return file_id, False
+        delete_file(article_id, file_id)  # raises rather than keeping a stale file
 
     file_id = upload_file(article_id, file_path, file_name)
     if existing_files is not None:
@@ -423,24 +431,7 @@ def upload_file_if_needed(
     return file_id, True
 
 
-def publish_article(article_id: int, *, verbose: bool = True) -> bool:
-    """Publish a Figshare article, making it publicly available.
-
-    Args:
-        article_id (int): ID of the article to publish.
-        verbose (bool, optional): Whether to print status messages. Defaults to True.
-
-    Returns:
-        bool: True if the article was successfully published.
-    """
-    post_url = f"{BASE_URL}/account/articles/{article_id}/publish"
-    try:
-        make_request("POST", post_url)
-        if verbose:
-            article_url = f"{ARTICLE_URL_PREFIX}/{article_id}"
-            print(f"Successfully published article {article_id} at {article_url}")
-    except requests.RequestException as exc:
-        if verbose:
-            print(f"Failed to publish article {article_id}: {exc}")
-        return False
-    return True
+def publish_article(article_id: int) -> None:
+    """Publish a Figshare article, raising on API errors."""
+    make_request("POST", f"{BASE_URL}/account/articles/{article_id}/publish")
+    print(f"Published article {article_id} at {ARTICLE_URL_PREFIX}/{article_id}")

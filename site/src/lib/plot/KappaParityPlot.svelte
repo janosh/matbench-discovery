@@ -46,7 +46,10 @@
   let srme_by_id = $state<Map<string, number | null>>()
   let srme_error = $state(``)
   let spectral_failed = $state(false)
+  // the viewer's pick; models without per-material SRME show SRE without overwriting it,
+  // so switching back to a model with SRME data restores the pick
   let color_metric = $state<`srme` | `sre`>(`srme`)
+  let shown_metric = $derived(srme_by_id ? color_metric : `sre`)
 
   // precomputed phonon metrics: κ_SRME (mode-resolved symmetric relative mean error)
   // and κ_SRE (symmetric relative error of the scalar lattice thermal conductivity)
@@ -70,7 +73,7 @@
   const color_metric_labels = { srme: `κ<sub>SRME</sub>`, sre: `κ<sub>SRE</sub>` }
   let color_values = $derived(
     (parity?.points ?? []).map((point) =>
-      color_metric === `srme` ? (srme_by_id?.get(point.material_id) ?? null) : point.sre,
+      shown_metric === `srme` ? (srme_by_id?.get(point.material_id) ?? null) : point.sre,
     ),
   )
   let color_range = $derived.by((): [number, number] => {
@@ -156,7 +159,6 @@
       parity_model = model_asset
       srme_by_id = srme_map
       srme_error = analysis_error
-      if (!srme_map) color_metric = `sre` // no per-material SRME -> only SRE offered
     })
   }
 
@@ -221,7 +223,7 @@
       size_scale={{ type: `linear`, radius_range: [4, 7] }}
       color_scale={{ value_range: color_range }}
       color_bar={{
-        title: `${color_metric_labels[color_metric]} (${format_num(
+        title: `${color_metric_labels[shown_metric]} (${format_num(
           parity?.points.length ?? 0,
           `,`,
         )} points)`,
@@ -458,7 +460,7 @@
     grid-column: 1 / -1;
   }
   .detail-panel .caption .unstable {
-    color: var(--warning-text-color, orange);
+    color: var(--warning);
   }
   .detail-panel .caption {
     margin: 0.6em 0 0;

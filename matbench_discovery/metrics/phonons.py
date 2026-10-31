@@ -27,7 +27,7 @@ from scipy.stats import wasserstein_distance
 
 from matbench_discovery.data import file_ref_name, make_file_ref, merge_file_ref
 from matbench_discovery.enums import DataFiles, MbdKey, Model
-from matbench_discovery.hpc import COST_PROVENANCE_KEYS
+from matbench_discovery.hpc import with_cost_block
 
 KAPPA_ERROR_MAX = 2.0
 SRME_CENSORED = "srme_censored"
@@ -135,12 +135,8 @@ def evaluate_kappa_predictions(df_predictions: pd.DataFrame) -> dict[str, float 
     df_metrics = calc_kappa_metrics_from_dfs(
         df_predictions.loc[df_reference.index], df_reference
     )
-    imag_flags = df_metrics.get(Key.has_imag_ph_modes)
-    imaginary_mode_rate = (
-        float(imag_flags.eq(other=True).fillna(value=False).mean())
-        if imag_flags is not None
-        else 0.0
-    )
+    # a missing column raises; missing flags (failed before harmonics) count as False
+    imaginary_mode_rate = float(df_metrics[Key.has_imag_ph_modes].eq(other=True).mean())
     spectrum_w1_values = [
         round(distance, 4)
         for material_id in df_reference.index
@@ -478,21 +474,26 @@ def write_metrics_to_yaml(
     phonon_file_path: str | None = None,
     run_info_path: str | None = None,
     replace_pred_file: bool = False,
+    replace_author_reported: bool = False,
 ) -> None:
-    """Write kappa metrics to a model YAML file's phonons section.
+    """Write kappa metrics to a model YAML file's phonons section. The conductivity
+    run's cost block (hpc.with_cost_block on run_metadata) is left untouched by a
+    metric recompute without run_metadata.
 
     Args:
         model: Model to write metrics for.
         metrics: Kappa metrics for this model.
         pred_file_path: Path to prediction file.
-        run_metadata: Optional complete-run provenance, including pred_file_url.
+        run_metadata: Optional complete-run provenance, incl. cost and pred_file_url.
         force_file_path: Optional separate force-set artifact path.
         phonon_file_path: Optional harmonic phonon sidecar (band path, eigenvectors,
-            DOS, thermal properties) artifact path.
+            DOS, thermal properties) artifact path. With replace_pred_file, it
+            supersedes a ``harmonic`` subsection.
         run_info_path: Optional small manifest/provenance sidecar path.
         replace_pred_file: If True, replace pred_file and clear stale force/run_info
-            URLs plus unset run_metadata fields. A pred_file_url supplied in
-            run_metadata is retained. Default preserves existing metadata.
+            URLs plus the old cost block. A pred_file_url supplied in run_metadata is
+            retained. Default preserves existing metadata.
+        replace_author_reported: Allow replacing an author_reported cost block.
     """
     from matbench_discovery import repo_relative_path
     from matbench_discovery.data import update_yaml_file
@@ -537,16 +538,70 @@ def write_metrics_to_yaml(
                     kappa_103[artifact_key] = make_file_ref(relative_path)
             elif replace_pred_file:
                 kappa_103.pop(artifact_key, None)
-        for key in COST_PROVENANCE_KEYS:
-            if run_metadata is not None and key in run_metadata:
-                kappa_103[key] = run_metadata[key]
-            elif replace_pred_file:
-                kappa_103.pop(key, None)
+        if replace_pred_file and phonon_file_path is not None:
+            kappa_103.pop("harmonic", None)
+        if run_metadata is None and not replace_pred_file:
+            return kappa_103  # metric recompute: the cost block stays as it is
+        return with_cost_block(
+            kappa_103,
+            run_metadata,
+            after="run_info_file" if "run_info_file" in kappa_103 else "pred_file",
+            same_artifact=not replace_pred_file,
+            context=f"{model.name} metrics.phonons.kappa_103",
+            replace_author_reported=replace_author_reported,
+        )
+
+    update_yaml_file(model.yaml_path, "metrics.phonons.kappa_103", update_kappa_103)
+
+
+def write_harmonic_to_yaml(
+    model: Model,
+    *,
+    run_metadata: Mapping[str, object],
+    phonon_file_path: str,
+    run_info_path: str,
+    force_file_path: str | None = None,
+) -> dict[str, Any]:
+    """Register a ``run_kappa.py --harmonic-only`` rerun's artifacts and cost under
+    ``metrics.phonons.kappa_103.harmonic`` and return that subsection. The
+    conductivity run is untouched except for its top-level phonon_file/force_file,
+    which the schema forbids next to a harmonic subsection.
+    """
+    from matbench_discovery import repo_relative_path
+    from matbench_discovery.data import update_yaml_file
+
+    # every rerun is new content even at the same filenames: no old url/md5/cost
+    harmonic = {
+        key: make_file_ref(repo_relative_path(path))
+        for key, path in (
+            ("phonon_file", phonon_file_path),
+            ("force_file", force_file_path),
+            ("run_info_file", run_info_path),
+        )
+        if path is not None
+    }
+
+    def update_kappa_103(kappa_103: dict[str, Any]) -> dict[str, Any]:
+        """Replace the harmonic subsection under update_yaml_file's lock."""
+        if file_ref_name(kappa_103.get("pred_file")) is None:
+            raise ValueError(f"{model.name} has no kappa_103.pred_file to supplement")
+        kappa_103["harmonic"] = with_cost_block(
+            harmonic,
+            run_metadata,
+            after="run_info_file",
+            existing=kappa_103.get("harmonic") or {},
+            same_artifact=False,
+            context=f"{model.name} metrics.phonons.kappa_103.harmonic",
+        )
+        if "cost" not in kappa_103["harmonic"]:
+            raise ValueError(
+                f"{model.name} harmonic run records no cost: {run_metadata}"
+            )
+        kappa_103.pop("phonon_file", None)
+        kappa_103.pop("force_file", None)
         return kappa_103
 
-    update_yaml_file(
-        model.yaml_path,
-        "metrics.phonons.kappa_103",
-        update_kappa_103,
-        preserve_existing=False,
+    written = update_yaml_file(
+        model.yaml_path, "metrics.phonons.kappa_103", update_kappa_103
     )
+    return dict(written["metrics"]["phonons"]["kappa_103"]["harmonic"])

@@ -7,38 +7,38 @@ dates:
 lifecycle: superseded
 superseded_by: alphanet-v1-oam
 authors:
-  - name: Bangchen Yin
-    affiliation: Tsinghua University
-    email: yinbc24@mails.tsinghua.edu.cn
-  - name: Jiaao Wang
-    email: wangjiaao0720@utexas.edu
-    affiliation: University of Texas at Austin
-    corresponding: true
-  - name: Weitao Du
-    affiliation: DAMO Academy, Alibaba Inc
-    email: duweitao.dwt@alibaba-inc.com
-  - name: Yuanqi Du
-    affiliation: Cornell University
-    email: yd392@cornell.edu
-    corresponding: true
-  - name: Chenru Duan
-    affiliation: Deep Principle
-    email: duanchenru@deepprinciple.com
-    corresponding: true
-  - name: Carla P. Gomes
-    affiliation: Cornell University
-    email: gomes@cs.cornell.edu
-  - name: Graeme Henkelman
-    affiliation: The University of Texas at Austin
-    email: henkelman@utexas.edu
-  - name: Hai Xiao
-    affiliation: Tsinghua University
-    email: haixiao@tsinghua.edu.cn
-    corresponding: true
+- name: Bangchen Yin
+  affiliation: Tsinghua University
+  email: yinbc24@mails.tsinghua.edu.cn
+- name: Jiaao Wang
+  email: wangjiaao0720@utexas.edu
+  affiliation: University of Texas at Austin
+  corresponding: true
+- name: Weitao Du
+  affiliation: DAMO Academy, Alibaba Inc
+  email: duweitao.dwt@alibaba-inc.com
+- name: Yuanqi Du
+  affiliation: Cornell University
+  email: yd392@cornell.edu
+  corresponding: true
+- name: Chenru Duan
+  affiliation: Deep Principle
+  email: duanchenru@deepprinciple.com
+  corresponding: true
+- name: Carla P. Gomes
+  affiliation: Cornell University
+  email: gomes@cs.cornell.edu
+- name: Graeme Henkelman
+  affiliation: The University of Texas at Austin
+  email: henkelman@utexas.edu
+- name: Hai Xiao
+  affiliation: Tsinghua University
+  email: haixiao@tsinghua.edu.cn
+  corresponding: true
 trained_by:
-  - name: Bangchen Yin
-    affiliation: Tsinghua University
-    email: yinbc24@mails.tsinghua.edu.cn
+- name: Bangchen Yin
+  affiliation: Tsinghua University
+  email: yinbc24@mails.tsinghua.edu.cn
 
 repo: https://github.com/zmyybc/AlphaNet
 doi: https://doi.org/10.48550/arXiv.2501.07155
@@ -54,15 +54,15 @@ license:
 
 environment:
   dependencies:
-    - alphanet @ git+https://github.com/zmyybc/AlphaNet
-    - torch==2.5.1
-    - torch-geometric==2.6.1
-    - torch-scatter
-    - numpy<2
-    - ase==3.24.0
-    - pymatgen==2024.6.10
-  python_version: '3.12'
-  find_links: ['https://data.pyg.org/whl/torch-2.5.1+cu121.html']
+  - alphanet @ git+https://github.com/zmyybc/AlphaNet
+  - torch==2.10.0
+  - torch-geometric==2.7.0
+  - torch-scatter
+  - numpy<2
+  - ase==3.24.0
+  - pymatgen==2024.6.10
+  python_version: '3.14'
+  find_links: ['https://data.pyg.org/whl/torch-2.10.0+cu128.html']
 openness: OSOD
 architecture_types: [gnn]
 train_task: S2EFS
@@ -104,11 +104,10 @@ metrics:
   diatomics:
     pred_file:
       name: models/alphanet/alphanet-v1-mptrj/2025-03-08-diatomics.json.gz
-      url: https://figshare.com/files/52868972
+      url: https://figshare.com/files/70349721
       size: 250321
       md5: 42d9c254b72e99802d3a34acdc66eb61
-    hardware: NVIDIA H200
-    run_time_sec: 196.1
+    cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 196.1}
     pbe_wall_dist_mae: 0.2832
     pbe_energy_mae: 8.571
     pbe_bond_length_error: 0.5899
@@ -171,29 +170,29 @@ metrics:
       size: 156034776
       md5: a5c28803cae991c3db09187d697ff385
     symprec=1e-5:
-      rmsd: 0.1067
-      n_sym_ops_mae: 10.1098
-      symmetry_decrease: 0.8597
-      symmetry_match: 0.1376
-      symmetry_increase: 0.0024
-      n_structures: 256963
+      rmsd: 0.1067 # unitless
+      n_sym_ops_mae: 10.1098 # unitless
+      symmetry_decrease: 0.8597 # fraction
+      symmetry_match: 0.1376 # fraction
+      symmetry_increase: 0.0024 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/alphanet/alphanet-v1-mptrj/2025-03-04-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/53504501
-        size: 6197042
-        md5: 72ff76d1745d8288fc6872427c5fe5be
+        name: models/alphanet/alphanet-v1-mptrj/2025-03-04-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333983
+        size: 6042801
+        md5: bd4f08a495f8fe924a7a6a4d9fe1f604
     symprec=1e-2:
-      rmsd: 0.1067
-      n_sym_ops_mae: 8.1732
-      symmetry_decrease: 0.5768
-      symmetry_match: 0.3712
-      symmetry_increase: 0.0419
-      n_structures: 256963
+      rmsd: 0.1067 # unitless
+      n_sym_ops_mae: 8.1732 # unitless
+      symmetry_decrease: 0.5768 # fraction
+      symmetry_match: 0.3712 # fraction
+      symmetry_increase: 0.0419 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/alphanet/alphanet-v1-mptrj/2025-03-04-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/53504504
-        size: 7355028
-        md5: 80e0e4298a9343e7c8525d433afec80f
+        name: models/alphanet/alphanet-v1-mptrj/2025-03-04-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333986
+        size: 6831150
+        md5: f713bb517da436e28e0ed257b657acee
   phonons:
     kappa_103:
       κ_SRME: 1.3046

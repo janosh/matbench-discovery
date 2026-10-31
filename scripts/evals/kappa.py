@@ -2,8 +2,6 @@
 non-analytical correction term (NAC).
 """
 
-import os
-
 from matbench_discovery.cli import cli_args
 from matbench_discovery.enums import Model
 from matbench_discovery.metrics import phonons
@@ -13,8 +11,8 @@ from scripts.evals import evaluate_models
 
 def evaluate_one(model: Model) -> str | None:
     """Recompute one model's kappa metrics and update its YAML."""
-    kappa_103_path = model.kappa_103_path
-    if not kappa_103_path or not os.path.isfile(kappa_103_path):
+    # resolves (downloading if needed) and md5-verifies the file, raising if missing
+    if not (kappa_103_path := model.kappa_103_path):
         return "no kappa_103_path found"
 
     print(f"\nProcessing {model.label}...")

@@ -1,6 +1,7 @@
 """Unit tests for Figshare API helper functions."""
 
 import hashlib
+from contextlib import nullcontext
 from functools import partial
 from pathlib import Path
 from types import ModuleType
@@ -15,9 +16,40 @@ import scripts.upload_data_files_to_figshare as upload_data
 import scripts.upload_model_preds_to_figshare as upload_models
 from matbench_discovery.enums import Model
 from matbench_discovery.remote import figshare
+from tests.utils import make_mock_response
 
 ARTICLE_URL = f"{figshare.ARTICLE_URL_PREFIX}/12345"
 KAPPA_FILE = "models/model1/ver1/file-kappa-103.json.gz"
+
+
+@pytest.fixture(autouse=True)
+def figshare_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Give make_request a dummy token so no test depends on a local site/.env."""
+    monkeypatch.setenv("FIGSHARE_TOKEN", "test-token")
+
+
+@pytest.mark.parametrize(
+    ("env_token", "env_file", "expected"),
+    [
+        ("from-env", "figshare_token=from-file\n", "from-env"),
+        ("", "OTHER=1\r\nfigshare_token=crlf-token\r\nNEXT=2\r\n", "crlf-token"),
+        ("", "figshare_token=\n", None),
+        ("", "", None),
+    ],
+)
+def test_load_figshare_token(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    env_token: str,
+    env_file: str,
+    expected: str | None,
+) -> None:
+    """Token comes from the env var, else a figshare_token= line; missing raises."""
+    monkeypatch.setenv("FIGSHARE_TOKEN", env_token)
+    (env_path := tmp_path / ".env").write_bytes(env_file.encode())
+    monkeypatch.setattr(figshare, "ENV_PATH", str(env_path))
+    with nullcontext() if expected else pytest.raises(ValueError, match="<token>"):
+        assert figshare.load_figshare_token() == expected
 
 
 @pytest.mark.parametrize(
@@ -89,6 +121,36 @@ def test_make_request_errors(error_content: bytes, status_code: int) -> None:
         pytest.raises(requests.HTTPError, match=err_msg),
     ):
         figshare.make_request("GET", "test_url")
+
+
+@pytest.mark.parametrize(
+    ("method", "kwargs", "statuses", "n_calls", "error_match"),
+    [
+        ("GET", {}, (502, 200), 2, None),  # transient 5xx recovers
+        ("PUT", {}, (503,) * 5, 5, "503 Server Error"),  # fails after all retries
+        ("DELETE", {}, (401,), 1, "401 Client Error"),  # 4xx fails at once
+        # a creating POST may have succeeded server-side: never repeat it unasked
+        ("POST", {}, (502, 200), 1, "502 Server Error"),
+        ("POST", {"retry": True}, (502, 200), 2, None),  # e.g. completing an upload
+    ],
+)
+def test_make_request_retries_transient_errors(
+    method: str,
+    kwargs: dict[str, Any],
+    statuses: tuple[int, ...],
+    n_calls: int,
+    error_match: str | None,
+) -> None:
+    """Transient 5xx responses of idempotent or opted-in requests are retried."""
+    responses = [make_mock_response(b'{"id": 1}', status) for status in statuses]
+    with (
+        patch("requests.request", side_effect=responses) as mock_request,
+        pytest.raises(requests.HTTPError, match=error_match)
+        if error_match
+        else nullcontext(),
+    ):
+        assert figshare.make_request(method, "url", **kwargs) == {"id": 1}
+    assert mock_request.call_count == n_calls
 
 
 @pytest.mark.parametrize(
@@ -234,6 +296,10 @@ def test_verify_upload(
             figshare.verify_upload(1, 2, "abc123", attempts=len(remote_responses))
     # backoff only between polls, never after the final one
     assert sleep.call_count == sum(not response for response in remote_responses[:-1])
+    # exponential backoff, capped so slow Figshare hashing gets minutes, not seconds
+    assert [call.args[0] for call in sleep.call_args_list] == [
+        min(2**attempt, 30) for attempt in range(sleep.call_count)
+    ]
 
 
 DUMMY_FILES = [
@@ -331,34 +397,17 @@ def test_file_exists_with_same_hash_reuses_inventory() -> None:
 
 
 @pytest.mark.parametrize(
-    "side_effect,expected",
-    [(None, True), (requests.RequestException("API Error"), False)],
-)
-def test_delete_file(side_effect: Exception | None, expected: bool) -> None:
-    """Deletion hits the file endpoint and reports API errors as failure."""
-    with patch(
-        "matbench_discovery.remote.figshare.make_request", side_effect=side_effect
-    ) as mock_request:
-        assert figshare.delete_file(12345, 67890) is expected
-    mock_request.assert_called_once_with(
-        "DELETE", f"{figshare.BASE_URL}/account/articles/12345/files/67890"
-    )
-
-
-@pytest.mark.parametrize(
-    "force_reupload,file_exists,delete_success,expected_upload,expected_delete",
+    "force_reupload,file_exists,expected_upload,expected_delete",
     [
-        (False, False, True, True, False),
-        (False, True, True, False, False),
-        (True, False, True, True, False),
-        (True, True, True, True, True),
-        (True, True, False, False, True),
+        (False, False, True, False),
+        (False, True, False, False),
+        (True, False, True, False),
+        (True, True, True, True),
     ],
 )
 def test_upload_file_if_needed(
     force_reupload: bool,
     file_exists: bool,
-    delete_success: bool,
     expected_upload: bool,
     expected_delete: bool,
     tmp_path: Path,
@@ -368,7 +417,7 @@ def test_upload_file_if_needed(
     test_file.write_text("test content")
     file_id = 67890 if file_exists else None
 
-    mock_delete = MagicMock(return_value=delete_success)
+    mock_delete = MagicMock()
     mock_upload = MagicMock(return_value=12345)
     existing_files: dict[str, dict[str, Any]] = {}
 
@@ -397,30 +446,6 @@ def test_upload_file_if_needed(
             else {}
         )
         assert existing_files == expected_files
-
-
-@pytest.mark.parametrize(
-    "success,verbose,expected_stdout",
-    [
-        (True, True, f"Successfully published article 12345 at {ARTICLE_URL}"),
-        (False, True, "Failed to publish article 12345: Test error"),
-        (True, False, ""),  # verbose=False stays silent either way
-        (False, False, ""),
-    ],
-)
-def test_publish_article(
-    success: bool, verbose: bool, expected_stdout: str, capsys: pytest.CaptureFixture
-) -> None:
-    """Publishing returns its outcome and reports it only when verbose."""
-    with patch(
-        "matbench_discovery.remote.figshare.make_request",
-        side_effect=None if success else requests.RequestException("Test error"),
-    ):
-        assert figshare.publish_article(12345, verbose=verbose) is success
-
-    stdout, _ = capsys.readouterr()
-    assert expected_stdout in stdout
-    assert verbose or stdout == ""
 
 
 @pytest.mark.parametrize(

@@ -27,7 +27,7 @@ trained_by:
   orcid: https://orcid.org/0009-0003-4044-2372
 
 repo: https://github.com/yzchen08/eqnorm
-paper: null
+paper:
 doi:
 docs: https://github.com/yzchen08/eqnorm/tree/main/eqnorm
 pr_url: https://github.com/janosh/matbench-discovery/pull/258
@@ -41,8 +41,8 @@ license:
 environment:
   dependencies:
   - eqnorm @ git+https://github.com/yzchen08/eqnorm
-  - torch==2.2.2
-  - torch-geometric==2.6.1
+  - torch==2.10.0
+  - torch-geometric==2.7.0
   - torch-scatter
   - vesin==0.3.2
   - numpy<2
@@ -50,8 +50,8 @@ environment:
   - e3nn==0.5.6
   - pymatgen==2025.3.10
   - wget==3.2
-  python_version: '3.12'
-  find_links: ['https://data.pyg.org/whl/torch-2.2.2+cu121.html']
+  python_version: '3.14'
+  find_links: ['https://data.pyg.org/whl/torch-2.10.0+cu128.html']
 openness: OSOD
 architecture_types: [gnn]
 train_task: S2EFS
@@ -114,12 +114,12 @@ notes:
 metrics:
   diatomics:
     pred_file:
-      name: models/eqnorm/eqnorm-mptrj/2026-06-29-diatomics.json.gz
-      url: https://figshare.com/files/66104603
-      size: 227913
-      md5: 65da27a8244db36fb739836da8b2976c
-    hardware: NVIDIA H200
-    run_time_sec: 442.84
+      name: models/eqnorm/eqnorm-mptrj/2026-10-19-diatomics.json.gz
+      url: https://figshare.com/files/70349736
+      size: 233572
+      md5: 4b0ece9800c58e5e76ece9093c592b26
+    cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 480.83, load_time_sec: 5.49, max_rss_gb: 2.053, max_gpu_mem_gb: 0.075}
+    excluded_formula_reasons: {}
     pbe_wall_dist_mae: 0.2101
     pbe_energy_mae: 1.019
     pbe_bond_length_error: 0.2186
@@ -137,6 +137,18 @@ metrics:
       n_eligible: 73
       failed_elements: []
       missing_elements: []
+    reproducibility:
+      checked: '2026-10-20'
+      status: reproduced
+      tolerance: 0.001
+      runs:
+      - label: published run (2026-06-29, H200)
+        file:
+          name: models/eqnorm/eqnorm-mptrj/2026-06-29-diatomics.json.gz
+          url: https://figshare.com/files/66104603
+          size: 227913
+          md5: 65da27a8244db36fb739836da8b2976c
+      rel_changes: {}
   discovery:
     pred_file:
       name: models/eqnorm/eqnorm-mptrj/2025-06-16-discovery.csv.gz
@@ -178,37 +190,36 @@ metrics:
       size: 149098841
       md5: 18d29fd8efb0504459ad3a4be445912e
     symprec=1e-2:
-      rmsd: 0.0837
-      n_sym_ops_mae: 1.7966
-      symmetry_decrease: 0.0589
-      symmetry_match: 0.8113
-      symmetry_increase: 0.1224
-      n_structures: 256963
+      rmsd: 0.0837 # unitless
+      n_sym_ops_mae: 1.7966 # unitless
+      symmetry_decrease: 0.0589 # fraction
+      symmetry_match: 0.8113 # fraction
+      symmetry_increase: 0.1224 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/eqnorm/eqnorm-mptrj/2025-06-16-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/55550975
-        size: 8425599
-        md5: 2f9db908d227c92bb34f9bc263c14d0f
+        name: models/eqnorm/eqnorm-mptrj/2025-06-16-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333656
+        size: 7575321
+        md5: 2aabbcbeb58336c5c8cb7db25b84059a
     symprec=1e-5:
-      rmsd: 0.0837
-      n_sym_ops_mae: 2.0441
-      symmetry_decrease: 0.0639
-      symmetry_match: 0.6983
-      symmetry_increase: 0.2316
-      n_structures: 256963
+      rmsd: 0.0837 # unitless
+      n_sym_ops_mae: 2.0441 # unitless
+      symmetry_decrease: 0.0639 # fraction
+      symmetry_match: 0.6983 # fraction
+      symmetry_increase: 0.2316 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/eqnorm/eqnorm-mptrj/2025-06-16-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/55550978
-        size: 8329854
-        md5: 04ffc776f91fac381862aadc01255a32
+        name: models/eqnorm/eqnorm-mptrj/2025-06-16-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333659
+        size: 7544751
+        md5: 9142bdd5bbe3e6ac45438e9c62c79538
   md:
     pred_file:
       name: models/eqnorm/eqnorm-mptrj/2026-06-28-md-metrics.csv.gz
-      url: https://figshare.com/files/66048863
-      size: 1566
-      md5: 27a1c89826289cd75986be4934555af9
-    hardware: NVIDIA H200
-    run_time_sec: 61241.15
+      url: https://figshare.com/files/66574796
+      size: 1717
+      md5: 0a7eb6a309f1d1ee644190e4b3b69cd7
+    cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 61241.15}
     energy_rmse: 1.2943
     force_rmse: 124.9878
     rdf_error: 5.819
@@ -220,18 +231,6 @@ metrics:
     n_systems: 17
   phonons:
     kappa_103:
-      run_info_file:
-        name: models/eqnorm/eqnorm-mptrj/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 7662
-        md5: 6a605c6ae1662045c208ce5ed51c9e84
-      phonon_file:
-        name: models/eqnorm/eqnorm-mptrj/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1326042491
-        md5: 6e269fa4a3ce63197f6137621e53bc42
-      force_file:
-        name: models/eqnorm/eqnorm-mptrj/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 8785393
-        md5: 01fee46ba7178cc47fafb394716efb01
       κ_SRME: 0.4079
       pred_file:
         name: models/eqnorm/eqnorm-mptrj/2025-06-16-phonons-kappa-103.json.gz
@@ -243,3 +242,20 @@ metrics:
       κ_failure_rate: 0.0097
       imaginary_mode_rate: 0.0097
       spectrum_w1: 0.4166
+      harmonic:
+        phonon_file:
+          name: models/eqnorm/eqnorm-mptrj/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334280
+          size: 23223104
+          md5: f32409f5867594cf8a4516c6c2111422
+        force_file:
+          name: models/eqnorm/eqnorm-mptrj/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334349
+          size: 8785393
+          md5: 01fee46ba7178cc47fafb394716efb01
+        run_info_file:
+          name: models/eqnorm/eqnorm-mptrj/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334277
+          size: 7662
+          md5: 6a605c6ae1662045c208ce5ed51c9e84
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 553.18, max_rss_gb: 2.133, max_gpu_mem_gb: 10.808}

@@ -1,0 +1,32 @@
+# fairchem-core v1 (eqV2/eSEN) on the Python 3.14 runner stack: fairchem-core 1.10 pins
+# torch~=2.4 and numpy<2, which have no cp314 wheels, so overrides lift them (same
+# pattern as models/equflash/kappa-env)
+[project]
+name = "matbench-discovery-fairchem-v1"
+version = "0"
+requires-python = ">=3.14"
+dependencies = [
+  "matbench-discovery",
+  "fairchem-core[torch-extras]==1.10.0",
+  "torch==2.10.0+cu126",
+  "torch-geometric==2.7.0",
+  "torch-scatter==2.1.2+pt210cu126",
+  "torch-sparse==0.6.18+pt210cu126",
+  "torch-cluster==1.6.3+pt210cu126",
+]
+
+[tool.uv]
+package = false
+# PyG local-version wheels are linux x86_64 only
+environments = ["sys_platform == 'linux' and platform_machine == 'x86_64'"]
+find-links = ["https://data.pyg.org/whl/torch-2.10.0+cu126.html"]
+override-dependencies = ["numpy>=2,<2.5", "scipy==1.16.1", "torch==2.10.0+cu126"]
+
+[tool.uv.sources]
+matbench-discovery = { path = "../../..", editable = true }
+torch = { index = "pytorch-cu126" }
+
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true

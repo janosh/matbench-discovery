@@ -14,6 +14,7 @@
     GitHubCorner,
     Icon,
     Nav,
+    ThemeScript,
     ThemeToggle,
     Toc,
   } from 'svelte-widgets'
@@ -173,6 +174,8 @@
 />
 <CopyButton global />
 
+<ThemeScript />
+
 <svelte:head>
   <title>{title}Matbench Discovery</title>
   <meta name="description" content={description} />
@@ -184,7 +187,7 @@
     dynamic
     breakpoint={1350}
     min_items={3}
-    hide_on_intersect="section.full-bleed .table-container, .bleed-1400"
+    hide_on_intersect="section.full-bleed .table-container, .bleed-1400, #site-footer"
     bind:desktop={toc_desktop}
     aside_props={{
       style: toc_desktop
@@ -201,6 +204,7 @@
     --toc-li-color="var(--text-color)"
     --toc-active-color="var(--link-color)"
     --toc-padding="1em 1em 0 1.5em"
+    --toc-max-height="calc(100vh - 10rem)"
     --toc-mobile-width="min(80vw, 30em)"
     --toc-mobile-border="1px solid var(--border)"
     --toc-mobile-shadow="0 0 20px var(--shadow)"
@@ -271,7 +275,7 @@
   {/if}
 {/await}
 
-<Footer links={footer_links} style="--footer-bg: var(--nav-bg)">
+<Footer links={footer_links} id="site-footer" style="--footer-bg: var(--nav-bg)">
   <img src="/favicon.svg" alt="Logo" width="30px" style="vertical-align: middle" />
   &ensp;{pkg.title} &ensp; | &ensp; ©
   <a href={pkg[`author-url`]}>{pkg.author.split(`<`)[0]}</a>
@@ -309,8 +313,5 @@
   :global(::highlight(find-match)) {
     color: light-dark(#161000, #fff7c2);
     background: light-dark(#ffe066, #8a6500);
-  }
-  :root[data-theme='light'] img {
-    filter: brightness(0.2);
   }
 </style>

@@ -145,43 +145,31 @@ metrics:
       size: 119486303
       md5: ac7822121712299c884911a937f53082
     symprec=1e-5:
-      rmsd: 0.0801
-      n_sym_ops_mae: 1.9808
-      symmetry_decrease: 0.0584
-      symmetry_match: 0.728
-      symmetry_increase: 0.2085
-      n_structures: 256963
+      rmsd: 0.0801 # unitless
+      n_sym_ops_mae: 1.9808 # unitless
+      symmetry_decrease: 0.0584 # fraction
+      symmetry_match: 0.728 # fraction
+      symmetry_increase: 0.2085 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/deepmd/dpa-3.1-mptrj/2025-06-05-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/55410191
-        size: 7217937
-        md5: 31533253bffcae2f951a2c07ca30efe4
+        name: models/deepmd/dpa-3.1-mptrj/2025-06-05-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70334019
+        size: 6772458
+        md5: 3e2ec5879089ebd6b5306f2ef8778e28
     symprec=1e-2:
-      rmsd: 0.0801
-      n_sym_ops_mae: 1.9002
-      symmetry_decrease: 0.0549
-      symmetry_match: 0.809
-      symmetry_increase: 0.1287
-      n_structures: 256963
+      rmsd: 0.0801 # unitless
+      n_sym_ops_mae: 1.9002 # unitless
+      symmetry_decrease: 0.0549 # fraction
+      symmetry_match: 0.809 # fraction
+      symmetry_increase: 0.1287 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/deepmd/dpa-3.1-mptrj/2025-06-05-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/55410194
-        size: 7249111
-        md5: 0772794c88145c13c34e923779dc9d5a
+        name: models/deepmd/dpa-3.1-mptrj/2025-06-05-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70334022
+        size: 6780101
+        md5: b57e2f35e1fc7c124c9db3eb1a724aa0
   phonons:
     kappa_103:
-      phonon_file:
-        name: models/deepmd/dpa-3.1-mptrj/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1314564836
-        md5: 81c4c892fe97a5135af5d33d0f552c44
-      force_file:
-        name: models/deepmd/dpa-3.1-mptrj/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 8813973
-        md5: 3bcedb3a3ed0c5c9e9637b7092509562
-      run_info_file:
-        name: models/deepmd/dpa-3.1-mptrj/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 8231
-        md5: 5b4508f78bb0c7ad529368fc98ba6e08
       κ_SRME: 0.6503
       pred_file:
         name: models/deepmd/dpa-3.1-mptrj/2025-06-05-phonons-kappa-103.json.gz
@@ -193,3 +181,20 @@ metrics:
       κ_failure_rate: 0.0388
       imaginary_mode_rate: 0.0291
       spectrum_w1: 0.5432
+      harmonic:
+        phonon_file:
+          name: models/deepmd/dpa-3.1-mptrj/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334247
+          size: 23603083
+          md5: 83fdd5d3c4f7b29197482f3ee83f8457
+        force_file:
+          name: models/deepmd/dpa-3.1-mptrj/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334250
+          size: 8813973
+          md5: 3bcedb3a3ed0c5c9e9637b7092509562
+        run_info_file:
+          name: models/deepmd/dpa-3.1-mptrj/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334253
+          size: 8231
+          md5: 5b4508f78bb0c7ad529368fc98ba6e08
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 1172.82, max_rss_gb: 4.861, max_gpu_mem_gb: 113.745}

@@ -8,6 +8,7 @@ import {
 } from '#lib/combined-scores.svelte.js'
 import { parse_dependency_spec } from '#lib/environment.js'
 import { get_org_logo } from '#lib/labels.js'
+import { comparison } from '#lib/model-comparison.svelte.js'
 import { model_metric_ranks, RANKED_METRICS } from '#lib/rankings.js'
 import {
   discovery_task_tooltips,
@@ -22,7 +23,14 @@ import { load } from '#routes/models/[slug]/+page.server.js'
 import { format_num } from 'matterviz/labels'
 import { type ComponentProps, tick } from 'svelte'
 import { describe, expect, it, onTestFinished, vi } from 'vite-plus/test'
-import { doc_query, header_name, mount, mount_with_url } from '../index.js'
+import {
+  doc_query,
+  header_name,
+  mount,
+  mount_with_url,
+  patch_model,
+  query_param,
+} from '../index.js'
 
 const test_model = MODELS.find((model) =>
   model.authors.some((author) => author.affiliation === `Mirror Physics`),
@@ -35,13 +43,7 @@ const fixture_data = (
 ): PageData => {
   const canonical = MODELS.find((entry) => entry.model_key === model.model_key)
   if (!canonical) throw new Error(`Missing fixture model ${model.model_key}`)
-  const original = { ...canonical }
-  Object.assign(canonical, model)
-  onTestFinished(() => {
-    for (const key of Object.keys(canonical))
-      if (!(key in original)) Reflect.deleteProperty(canonical, key)
-    Object.assign(canonical, original)
-  })
+  patch_model(canonical, model)
   return { model_key: model.model_key, md_per_system }
 }
 const mount_page = (model = test_model) =>
@@ -99,7 +101,7 @@ describe(`Model Detail Page`, () => {
     expect(doc_query(`.overview a[href="/"]`).textContent).toBe(
       `CPS ${format_num(cps.value, `.3`)}`,
     )
-    for (const [idx, task] of [`md`, `diatomics`].entries()) {
+    for (const [idx, task] of ([`md`, `diatomics`] as const).entries()) {
       const rank = ranks.find(({ metric }) => metric.rank_href === `/benchmarks/${task}`)
       if (!rank) throw new Error(`Missing weighted ${task} rank`)
       expect(rank.value).not.toBe(initial_values[idx + 1])
@@ -112,6 +114,14 @@ describe(`Model Detail Page`, () => {
       expect(card?.querySelector(`small`)?.textContent).toBe(
         `#${rank.rank}/${rank.n_models}`,
       )
+      // CDS is Speed-only here (GPU in its popover); CMDS has zero Speed weight
+      card?.dispatchEvent(new MouseEvent(`mouseenter`))
+      await vi.waitFor(() =>
+        expect(doc_query(`.popover`).textContent?.includes(`Speed subscore timed`)).toBe(
+          task === `diatomics`,
+        ),
+      )
+      card?.dispatchEvent(new MouseEvent(`mouseleave`))
       card?.dispatchEvent(new MouseEvent(`click`, { bubbles: true, cancelable: true }))
       await tick()
       // diatomics' `models` param replaces its curve selection, so keep the DFT refs
@@ -129,7 +139,7 @@ describe(`Model Detail Page`, () => {
     }
     const notes = {
       html: {
-        description: `<h3>Model notes</h3><p>Model description</p><ul><li>Run notes</li></ul>`,
+        data_leakage: `<h3>Model notes</h3><p>Model description</p><ul><li>Run notes</li></ul>`,
       },
     }
     mount_page({ ...test_model, hyperparams, pypi, notes })
@@ -148,6 +158,9 @@ describe(`Model Detail Page`, () => {
     expect(document.querySelector(`.notes p p, .notes p ul`)).toBeNull()
     const note_heading = doc_query(`.notes h3`)
     expect(note_heading.textContent).toBe(`Model notes`)
+    // note keys render as sentence-case headings but keep the YAML key as anchor id
+    const key_heading = doc_query(`.notes h2#data_leakage`)
+    expect(key_heading.textContent?.trim()).toBe(`Data leakage`)
     expect(getComputedStyle(note_heading).textAlign).not.toBe(`center`)
     expect(getComputedStyle(doc_query(`.discovery-detail h3`)).textAlign).toBe(`center`)
     if (test_model.dates.paper_published)
@@ -204,9 +217,11 @@ describe(`Model Detail Page`, () => {
       expect(Boolean(author_elem.querySelector(`[href="${yaml_author.github}"]`))).toBe(
         Boolean(yaml_author.github),
       )
-      expect(Boolean(author_elem.querySelector(`[href="${yaml_author.orcid}"]`))).toBe(
-        Boolean(yaml_author.orcid),
-      )
+      expect(
+        author_elem
+          .querySelector(`[href="${yaml_author.orcid}"]`)
+          ?.getAttribute(`aria-label`),
+      ).toBe(yaml_author.orcid ? `ORCID` : undefined)
       expect(author_elem.querySelector(`img.org-logo`)?.getAttribute(`src`)).toBe(
         yaml_author.affiliation ? get_org_logo(yaml_author.affiliation)?.src : undefined,
       )
@@ -407,7 +422,7 @@ describe(`Model Detail Page`, () => {
       new MouseEvent(`click`, { bubbles: true, cancelable: true }),
     )
     await tick()
-    expect(new URL(location.href).searchParams.get(`diagnostic`)).toBe(`discovery`)
+    expect(query_param(`diagnostic`)).toBe(`discovery`)
     expect(document.querySelector(`.discovery-detail`)).not.toBeNull()
     expect(rank_links[0].getAttribute(`aria-current`)).toBe(`true`)
     // discovery's leaderboard ignores `models`, so highlight the row via `compare`
@@ -416,7 +431,7 @@ describe(`Model Detail Page`, () => {
     )
     rank_links[1].dispatchEvent(new MouseEvent(`click`, { bubbles: true }))
     await tick()
-    expect(new URL(location.href).searchParams.get(`diagnostic`)).toBe(`geo-opt`)
+    expect(query_param(`diagnostic`)).toBe(`geo-opt`)
     expect(document.querySelector(`.discovery-detail`)).toBeNull()
     expect(doc_query(`.diagnostic-context a`).getAttribute(`href`)).toBe(
       `/benchmarks/geo-opt?models=${test_model.model_key}`,
@@ -428,6 +443,18 @@ describe(`Model Detail Page`, () => {
     )
   })
 
+  it(`appends the model to the current comparison in its leaderboard link`, async () => {
+    const other = MODELS.find(({ model_key }) => model_key !== test_model.model_key)
+    if (!other) throw new Error(`Missing second model`)
+    comparison.set([other.model_key, test_model.model_key])
+    onTestFinished(() => comparison.keys.clear())
+    const url = `http://localhost/models/${test_model.model_key}?diagnostic=discovery`
+    await mount_with_url(ModelPage, url, { props: { data: fixture_data(test_model) } })
+    expect(doc_query(`.diagnostic-context a`).getAttribute(`href`)).toBe(
+      `/benchmarks/discovery?compare=${other.model_key},${test_model.model_key}`,
+    )
+  })
+
   it(`renders per-system MD breakdown from page data`, async () => {
     const md_per_system = [
       {
@@ -435,12 +462,14 @@ describe(`Model Detail Page`, () => {
         temperature_kelvin: 1000,
         vdos_error: 12.3,
         n_atoms: 108,
+        run_time_sec: 1200,
       },
       {
         system: `anthracene_293K`,
         temperature_kelvin: 293,
         vdos_error: 45.6,
         n_atoms: 72,
+        run_time_sec: 800,
       },
     ]
     await mount_with_url(
@@ -475,6 +504,7 @@ describe(`Model Detail Page`, () => {
     expect(headers).toContain(`System`)
     expect(headers).toContain(`ΔvDOS (%)`)
     expect(headers).not.toContain(`ΔP (%)`)
+    expect(headers).toContain(`twall (s)`)
   })
 
   it(`lazy-mounts energy parity plots and observes their size`, async () => {
@@ -528,6 +558,6 @@ describe(`Model Detail Page`, () => {
     // clicking back to the default tab drops the param from the URL
     tab_buttons[0].click()
     await tick()
-    expect(new URL(location.href).searchParams.get(`energy_tab`)).toBeNull()
+    expect(query_param(`energy_tab`)).toBeNull()
   })
 })

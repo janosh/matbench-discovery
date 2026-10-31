@@ -19,10 +19,8 @@ from typing import Any
 import pandas as pd
 import pytest
 
-from matbench_discovery import ROOT, SITE_DIR, SITE_FIG_DATA, STABILITY_THRESHOLD, figs
-from matbench_discovery.data import load_df_wbm_with_preds
-from matbench_discovery.enums import MbdKey, Model, TestSubset
-from matbench_discovery.metrics.discovery import stable_metrics
+from matbench_discovery import ROOT, SITE_DIR, SITE_FIG_DATA, figs
+from matbench_discovery.enums import Model, TestSubset
 from scripts.model_figs.kappa_103_analysis import row_flag
 
 
@@ -164,43 +162,12 @@ def check_hist_clf() -> None:
             assert_num_list(model[clf], length=n_bins)
 
 
-@pytest.mark.network  # downloads the prediction file of the first mismatched model
-def test_hist_clf_f1_matches_recomputed_predictions() -> None:
-    """A payload F1 that differs from the YAML registry matches recomputed preds."""
-    payload = load_payload("hist-clf-pred-hull-dist")
-    record = next(
-        (
-            model
-            for model in payload["models"]
-            if model["f1"]
-            != Model.from_ref(model["model_key"]).metrics["discovery"][
-                TestSubset.uniq_protos.value
-            ]["F1"]
-        ),
-        None,
-    )
-    # payload F1 values all match the registry fixtures: the shape checks above already
-    # passed, so there is no mismatched record left to recompute against predictions
-    if record is None:
-        return
-    test_model = Model.from_ref(record["model_key"])
-    df_preds = load_df_wbm_with_preds(
-        models=[test_model], subset=TestSubset.uniq_protos
-    )
-    each_pred = (
-        df_preds[MbdKey.each_true]
-        + df_preds[test_model.key]
-        - df_preds[MbdKey.e_form_dft]
-    )
-    expected_f1 = round(
-        stable_metrics(
-            df_preds[MbdKey.each_true],
-            each_pred,
-            stability_threshold=STABILITY_THRESHOLD,
-        )["F1"],
-        4,
-    )
-    assert record["f1"] == expected_f1
+def test_hist_clf_f1_matches_registry() -> None:
+    """hist-clf payload F1s match their YAML F1 within rounding (3 vs 4 decimals)."""
+    for record in load_payload("hist-clf-pred-hull-dist")["models"]:
+        yaml_metrics = Model.from_ref(record["model_key"]).metrics["discovery"]
+        yaml_f1 = yaml_metrics[TestSubset.uniq_protos.value]["F1"]
+        assert record["f1"] == pytest.approx(yaml_f1, abs=5.5e-4), record
 
 
 def check_element_prevalence() -> None:
@@ -383,12 +350,9 @@ GEO_OPT_PAYLOADS = ("spg-sankeys", "struct-rmsd-cdf", "sym-ops-diff-bar")
 ELEMENT_PAYLOADS = {"element-prevalence-vs-error", "per-element-each-errors"}
 PREDICTION_ROLES = {"generator", "payload_numerics"}
 ERROR_ROLES = PREDICTION_ROLES | {"prediction_error_loader"}
-RECIPE_ROLES = {
-    "box-hull-dist-errors": PREDICTION_ROLES,
-    "cumulative-precision-recall": PREDICTION_ROLES | {"stability_metrics"},
-    "hist-clf-pred-hull-dist": PREDICTION_ROLES | {"stability_metrics"},
-    "roc-models": PREDICTION_ROLES,
-    "rolling-mae-vs-hull-dist": PREDICTION_ROLES,
+# predicted hull distances come from metrics.discovery.pred_hull_dist
+HULL_DIST_ROLES = PREDICTION_ROLES | {"stability_metrics"}
+RECIPE_ROLES = dict.fromkeys(DISCOVERY_PAYLOADS, HULL_DIST_ROLES) | {
     "spg-sankeys": {"generator", "payload_numerics"},
     "struct-rmsd-cdf": {"generator", "payload_numerics"},
     "sym-ops-diff-bar": {"generator"},

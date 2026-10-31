@@ -1,7 +1,12 @@
 import DiatomicsTmiPage from '#routes/benchmarks/diatomics/tmi/+page.svelte'
 import { tick } from 'svelte'
 import { expect, it, vi } from 'vite-plus/test'
-import { button_for, get_scatter_plot_props, mount_with_url } from '../index.js'
+import {
+  button_for,
+  get_scatter_plot_props,
+  mount_with_url,
+  query_param,
+} from '../index.js'
 
 const plot_mocks = vi.hoisted(() => ({
   ScatterPlot: vi.fn(),
@@ -15,7 +20,6 @@ const plotted_series = (): PlotSeries[] =>
   (get_scatter_plot_props(plot_mocks.ScatterPlot) as { series: PlotSeries[] }).series
 
 it(`filters TMI elements and functionals while preserving curve gaps`, async () => {
-  vi.stubGlobal(`IntersectionObserver`, undefined)
   const magmom_curve = {
     distances: [1, 2],
     magmoms: [[1, -1] as [number, number], null],
@@ -53,5 +57,5 @@ it(`filters TMI elements and functionals while preserving curve gaps`, async () 
 
   button_for(`Lanthanides`).click()
   await tick()
-  expect(new URL(location.href).searchParams.get(`elements`)).toBe(`lanthanide`)
+  expect(query_param(`elements`)).toBe(`lanthanide`)
 })

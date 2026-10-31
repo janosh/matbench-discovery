@@ -69,17 +69,17 @@ hyperparams:
 metrics:
   diatomics:
     pred_file:
-      name: models/pet/pet-oam-xl-1.0.0/2026-06-28-diatomics.json.gz
-      url: https://figshare.com/files/66104657
-      size: 497832
-      md5: 893d47e9aedc5dcdffb7daaf824bc7f7
-    hardware: NVIDIA H200
-    run_time_sec: 328.51
+      name: models/pet/pet-oam-xl-1.0.0/2026-10-19-diatomics.json.gz
+      url: https://figshare.com/files/70349784
+      size: 501017
+      md5: e897bc57908f779e771f446b84007b97
+    cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 255.09, load_time_sec: 8.09, max_rss_gb: 3.972, max_gpu_mem_gb: 2.994}
+    excluded_formula_reasons: {}
     pbe_wall_dist_mae: 0.3494
     pbe_energy_mae: 3.772
     pbe_bond_length_error: 1.189
     pbe_well_depth_error: 2.904
-    pbe_vib_freq_error: 97.29
+    pbe_vib_freq_error: 97.28
     tortuosity: 1.028
     energy_diff_flips: 1.724
     energy_jump: 0.1678
@@ -115,6 +115,19 @@ metrics:
       - Y
       - Zr
       missing_elements: []
+    reproducibility:
+      checked: '2026-10-20'
+      status: reproduced
+      tolerance: 0.001
+      runs:
+      - label: published run (2026-06-28, H200)
+        file:
+          name: models/pet/pet-oam-xl-1.0.0/2026-06-28-diatomics.json.gz
+          url: https://figshare.com/files/66104657
+          size: 497832
+          md5: 893d47e9aedc5dcdffb7daaf824bc7f7
+      rel_changes:
+        pbe_vib_freq_error: 0.000103
   discovery:
     pred_file:
       name: models/pet/pet-oam-xl-1.0.0/2026-01-10-discovery.csv.gz
@@ -156,37 +169,36 @@ metrics:
       size: 109142457
       md5: 0493739bfd5f7446cb88b5f1225b6453
     symprec=1e-2:
-      rmsd: 0.0596
-      n_sym_ops_mae: 1.8238
-      symmetry_decrease: 0.0667
-      symmetry_match: 0.807
-      symmetry_increase: 0.1185
-      n_structures: 256963
+      rmsd: 0.0595 # unitless
+      n_sym_ops_mae: 1.8237 # unitless
+      symmetry_decrease: 0.0667 # fraction
+      symmetry_match: 0.807 # fraction
+      symmetry_increase: 0.1185 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/pet/pet-oam-xl-1.0.0/2026-01-10-geo-opt-symprec=1e-2-moyo=0.4.4.csv.gz
-        url: https://figshare.com/files/60934825
-        size: 7527250
-        md5: 33912091772d2fd40e82c278a960a4e7
+        name: models/pet/pet-oam-xl-1.0.0/2026-01-10-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333932
+        size: 6884413
+        md5: add1d35e7aaf326c4dd21f0c70f9ed2e
     symprec=1e-5:
-      rmsd: 0.0596
-      n_sym_ops_mae: 10.1237
-      symmetry_decrease: 0.8668
-      symmetry_match: 0.1308
-      symmetry_increase: 0.0009
-      n_structures: 256963
+      rmsd: 0.0595 # unitless
+      n_sym_ops_mae: 10.1236 # unitless
+      symmetry_decrease: 0.8668 # fraction
+      symmetry_match: 0.1308 # fraction
+      symmetry_increase: 0.0009 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/pet/pet-oam-xl-1.0.0/2026-01-10-geo-opt-symprec=1e-5-moyo=0.4.4.csv.gz
-        url: https://figshare.com/files/60934822
-        size: 6627769
-        md5: 67a827f160bc6aafdf3afe72ee173564
+        name: models/pet/pet-oam-xl-1.0.0/2026-01-10-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333935
+        size: 6339580
+        md5: 3e9e0440a3f97bfd716dbae59d8296b8
   md:
     pred_file:
       name: models/pet/pet-oam-xl-1.0.0/2026-06-28-md-metrics.csv.gz
-      url: https://figshare.com/files/66048947
-      size: 1584
-      md5: 5bd0617d08e934138082e7a4ee633ca3
-    hardware: NVIDIA H200
-    run_time_sec: 148665.97
+      url: https://figshare.com/files/70333572
+      size: 1745
+      md5: 655fd6c8bbe736fc47065e4183b3d477
+    cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 148665.98}
     energy_rmse: 0.488
     force_rmse: 43.2602
     rdf_error: 3.0857
@@ -209,15 +221,20 @@ metrics:
       κ_failure_rate: 0.0
       imaginary_mode_rate: 0.0
       spectrum_w1: 0.0911
-      phonon_file:
-        name: models/pet/pet-oam-xl-1.0.0/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1299952409
-        md5: f1ee0097e621fe29da9f1033e492cac4
-      force_file:
-        name: models/pet/pet-oam-xl-1.0.0/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 14460648
-        md5: fc27b4cd86dab4dabb23f7b97b481bc9
-      run_info_file:
-        name: models/pet/pet-oam-xl-1.0.0/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 8313
-        md5: d43da7df2a511b77e1f341bce53ca694
+      harmonic:
+        phonon_file:
+          name: models/pet/pet-oam-xl-1.0.0/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334649
+          size: 23558158
+          md5: efc31640be92772ff6e19e0c22388c5d
+        force_file:
+          name: models/pet/pet-oam-xl-1.0.0/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334652
+          size: 14460648
+          md5: fc27b4cd86dab4dabb23f7b97b481bc9
+        run_info_file:
+          name: models/pet/pet-oam-xl-1.0.0/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334655
+          size: 8313
+          md5: d43da7df2a511b77e1f341bce53ca694
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 10304.23, max_rss_gb: 4.206, max_gpu_mem_gb: 40.149}

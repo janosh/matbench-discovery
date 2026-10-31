@@ -615,18 +615,17 @@ assert df_summary[MbdKey.protostructure_spglib].isna().sum() == 0
 
 # %%
 fingerprints_path = f"{WBM_DIR}/site-stats.json.gz"
-suggest = (
-    "not found; regenerate with scripts/attic/compute_struct_fingerprints.py from "
-    "git history (deleted in 17401a78)"
-)
+if not os.path.isfile(fingerprints_path):
+    raise FileNotFoundError(
+        f"{fingerprints_path=} not found; regenerate with "
+        "scripts/attic/compute_struct_fingerprints.py from git history (deleted in "
+        "17401a78)"
+    )
 fp_diff_col = "site_stats_fingerprint_init_final_norm_diff"
-try:
-    df_fp = pd.read_json(fingerprints_path).set_index(Key.mat_id)
-    df_summary[fp_diff_col] = df_fp[fp_diff_col]
-except FileNotFoundError:
-    print(f"{fingerprints_path=} {suggest}")
-except KeyError:
-    print(f"{fingerprints_path=} does not contain {fp_diff_col=}")
+df_fp = pd.read_json(fingerprints_path).set_index(Key.mat_id)
+if fp_diff_col not in df_fp:
+    raise KeyError(f"{fingerprints_path=} does not contain {fp_diff_col=}")
+df_summary[fp_diff_col] = df_fp[fp_diff_col]
 
 
 # %% mark WBM materials with matching prototype in MP or duplicate prototypes

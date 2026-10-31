@@ -86,29 +86,42 @@ notes:
 metrics:
   diatomics:
     pred_file:
-      name: models/orb/orb-v2-mptrj/2026-06-28-diatomics.json.gz
-      url: https://figshare.com/files/66104651
-      size: 321503
-      md5: dc8dc3989209beff50285831d9432928
-    hardware: NVIDIA H100 80GB HBM3
-    run_time_sec: 105.81
-    pbe_wall_dist_mae: 0.7349
-    pbe_energy_mae: 1.94
-    pbe_bond_length_error: 0.1648
+      name: models/orb/orb-v2-mptrj/2026-10-19-diatomics.json.gz
+      url: https://figshare.com/files/70368309
+      size: 561929
+      md5: 8aa0e9c4ade23a094d369adde865c7e4
+    cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 97.46, load_time_sec: 6.38, max_rss_gb: 2.287, max_gpu_mem_gb: 0.199}
+    excluded_formula_reasons: {}
+    pbe_wall_dist_mae: 0.7336
+    pbe_energy_mae: 1.941
+    pbe_bond_length_error: 0.1653
     pbe_well_depth_error: 0.4008
-    pbe_vib_freq_error: 90.2
-    tortuosity: 1.022
-    energy_diff_flips: 2.391
-    energy_jump: 0.2223
+    pbe_vib_freq_error: 347.8
+    tortuosity: 1.158
+    energy_diff_flips: 2.943
+    energy_jump: 2.211
     force_flips: 1.0
-    force_total_variation: 109.0
-    force_jump: 0.23
-    pbe_force_mae: 1.43
+    force_total_variation: 142.2
+    force_jump: 50.14
+    pbe_force_mae: 1.566
     pbe_vib_freq_coverage:
       n_valid: 73
       n_eligible: 73
       failed_elements: []
       missing_elements: []
+    reproducibility:
+      checked: '2026-10-20'
+      status: reproduced
+      tolerance: 0.001
+      runs:
+      - label: identical H200 repeat
+        file:
+          name: models/orb/orb-v2-mptrj/repeat/2026-10-20-diatomics.json.gz
+          url: https://figshare.com/files/70368312
+          size: 561928
+          md5: 03bd2d38967d13a69bc584ef50c1b456
+      rel_changes: {}
+      repeat_rel_change: 0.0
   discovery:
     pred_file:
       name: models/orb/orb-v2-mptrj/2024-10-14-discovery.csv.gz
@@ -150,37 +163,36 @@ metrics:
       size: 136527936
       md5: 5547198f16832896d271166d716d10fe
     symprec=1e-5:
-      rmsd: 0.1007
-      n_sym_ops_mae: 10.0889
-      symmetry_decrease: 0.8655
-      symmetry_match: 0.1335
-      symmetry_increase: 0.0009
-      n_structures: 256963
+      rmsd: 0.1007 # unitless
+      n_sym_ops_mae: 10.0888 # unitless
+      symmetry_decrease: 0.8655 # fraction
+      symmetry_match: 0.1335 # fraction
+      symmetry_increase: 0.0009 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/orb/orb-v2-mptrj/2024-10-14-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/53504690
-        size: 6282067
-        md5: 839607180cd7a26550413b62e6d20fc2
+        name: models/orb/orb-v2-mptrj/2024-10-14-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333920
+        size: 6131208
+        md5: e2cca0d7b4b1cd0af319e4a5f2069c14
     symprec=1e-2:
-      rmsd: 0.1007
-      n_sym_ops_mae: 5.6352
-      symmetry_decrease: 0.5213
-      symmetry_match: 0.4332
-      symmetry_increase: 0.0387
-      n_structures: 256963
+      rmsd: 0.1007 # unitless
+      n_sym_ops_mae: 5.6352 # unitless
+      symmetry_decrease: 0.5213 # fraction
+      symmetry_match: 0.4332 # fraction
+      symmetry_increase: 0.0387 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/orb/orb-v2-mptrj/2024-10-14-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/53504696
-        size: 7312486
-        md5: 8fcfc447a77c864494b5586d150e9715
+        name: models/orb/orb-v2-mptrj/2024-10-14-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333923
+        size: 6828299
+        md5: 46d5efe1299ae503d3bd29671a4ad350
   md:
     pred_file:
       name: models/orb/orb-v2-mptrj/2026-06-28-md-metrics.csv.gz
-      url: https://figshare.com/files/66048926
-      size: 1579
-      md5: bdceccf69bb210c954d170921134729b
-    hardware: NVIDIA H200
-    run_time_sec: 9442.93
+      url: https://figshare.com/files/66575015
+      size: 1738
+      md5: e0bb3f859837c20c74e7a73c7475f2df
+    cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 9442.94}
     energy_rmse: 1.8851
     force_rmse: 115.5047
     rdf_error: 4.9339
@@ -203,15 +215,20 @@ metrics:
       κ_failure_rate: 0.0291
       imaginary_mode_rate: 0.0291
       spectrum_w1: 1.649
-      phonon_file:
-        name: models/orb/orb-v2-mptrj/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1353348562
-        md5: 6e97cdbe2e7bd8808043b56aa6d467ae
-      force_file:
-        name: models/orb/orb-v2-mptrj/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 14368360
-        md5: 103d2dfaeac8b4240e3e3d0bf175bff3
-      run_info_file:
-        name: models/orb/orb-v2-mptrj/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 8303
-        md5: b4d51f599b6a8831d1acfff27e041912
+      harmonic:
+        phonon_file:
+          name: models/orb/orb-v2-mptrj/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334628
+          size: 23672373
+          md5: 0ec88ad933488a4fbfca1d04a65e9b13
+        force_file:
+          name: models/orb/orb-v2-mptrj/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334631
+          size: 14368360
+          md5: 103d2dfaeac8b4240e3e3d0bf175bff3
+        run_info_file:
+          name: models/orb/orb-v2-mptrj/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334637
+          size: 8303
+          md5: b4d51f599b6a8831d1acfff27e041912
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 781.76, max_rss_gb: 2.591, max_gpu_mem_gb: 0.202}

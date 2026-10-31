@@ -71,8 +71,7 @@ metrics:
       url: https://figshare.com/files/66104618
       size: 258812
       md5: 98bb9b7bbdd8b6ba62e82ab0a605708a
-    hardware: NVIDIA H200
-    run_time_sec: 101.66
+    cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 101.66}
     pbe_wall_dist_mae: 0.1412
     pbe_energy_mae: 1.931
     pbe_bond_length_error: 0.2006
@@ -131,37 +130,36 @@ metrics:
       size: 144488639
       md5: 11d4cc27c60c3bfe390c221f64600542
     symprec=1e-2:
-      rmsd: 0.0639
-      n_sym_ops_mae: 1.7371
-      symmetry_decrease: 0.0537
-      symmetry_match: 0.8166
-      symmetry_increase: 0.1226
-      n_structures: 256958
+      rmsd: 0.0639 # unitless
+      n_sym_ops_mae: 1.7371 # unitless
+      symmetry_decrease: 0.0537 # fraction
+      symmetry_match: 0.8166 # fraction
+      symmetry_increase: 0.1226 # fraction
+      n_structures: 256958 # count
       analysis_file:
-        name: models/grace/grace-2l-oam-l/2025-09-09-geo-opt-symprec=1e-2-moyo=0.4.4.csv.gz
-        url: https://figshare.com/files/59046989
-        size: 8321925
-        md5: 845b833163a05689186241c2c00b0eae
+        name: models/grace/grace-2l-oam-l/2025-09-09-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333731
+        size: 7647450
+        md5: 62ff5464d656ab7752393d599d674dd7
     symprec=1e-5:
-      rmsd: 0.0639
-      n_sym_ops_mae: 1.8197
-      symmetry_decrease: 0.0539
-      symmetry_match: 0.7343
-      symmetry_increase: 0.2067
-      n_structures: 256958
+      rmsd: 0.0639 # unitless
+      n_sym_ops_mae: 1.8196 # unitless
+      symmetry_decrease: 0.0539 # fraction
+      symmetry_match: 0.7343 # fraction
+      symmetry_increase: 0.2067 # fraction
+      n_structures: 256958 # count
       analysis_file:
-        name: models/grace/grace-2l-oam-l/2025-09-09-geo-opt-symprec=1e-5-moyo=0.4.4.csv.gz
-        url: https://figshare.com/files/59046995
-        size: 8217126
-        md5: 7253222ca84c68fd5ab1c8b46c070387
+        name: models/grace/grace-2l-oam-l/2025-09-09-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333734
+        size: 7617925
+        md5: 3fbe78b664016aa5015c749a0b47b948
   md:
     pred_file:
       name: models/grace/grace-2l-oam-l/2026-06-28-md-metrics.csv.gz
-      url: https://figshare.com/files/66048887
-      size: 1581
-      md5: a12e69e03f6167091cd095ed7442c1bc
-    hardware: NVIDIA H200
-    run_time_sec: 18446.45
+      url: https://figshare.com/files/66574889
+      size: 1748
+      md5: 4f07bdf1b0b462a8eb1df0a4da704f9f
+    cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 18446.45}
     energy_rmse: 0.6928
     force_rmse: 75.8788
     rdf_error: 3.5582
@@ -173,18 +171,6 @@ metrics:
     n_systems: 17
   phonons:
     kappa_103:
-      phonon_file:
-        name: models/grace/grace-2l-oam-l/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1340314358
-        md5: 231955ca9c8ddfabfd7827f181646b39
-      force_file:
-        name: models/grace/grace-2l-oam-l/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 8775580
-        md5: 645ee872c2f21316512cecec520f75d6
-      run_info_file:
-        name: models/grace/grace-2l-oam-l/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 8072
-        md5: 96c5d2ea9509e654e828fedb2cd00f56
       κ_SRME: 0.1688
       pred_file:
         name: models/grace/grace-2l-oam-l/2025-09-09-phonons-kappa-103.json.gz
@@ -196,3 +182,20 @@ metrics:
       κ_failure_rate: 0.0
       imaginary_mode_rate: 0.0
       spectrum_w1: 0.0954
+      harmonic:
+        phonon_file:
+          name: models/grace/grace-2l-oam-l/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334475
+          size: 23752227
+          md5: d76a4a0a31f9728c4d051d188e54d40f
+        force_file:
+          name: models/grace/grace-2l-oam-l/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334478
+          size: 8775580
+          md5: 645ee872c2f21316512cecec520f75d6
+        run_info_file:
+          name: models/grace/grace-2l-oam-l/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334481
+          size: 8072
+          md5: 96c5d2ea9509e654e828fedb2cd00f56
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 760.29, max_rss_gb: 8.23}

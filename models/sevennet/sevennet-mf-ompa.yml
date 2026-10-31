@@ -146,43 +146,31 @@ metrics:
       size: 93310742
       md5: 3789201a6fecebd62d2c683043d834b4
     symprec=1e-2:
-      rmsd: 0.0639
-      n_sym_ops_mae: 1.7053
-      symmetry_decrease: 0.0467
-      symmetry_match: 0.8181
-      symmetry_increase: 0.128
-      n_structures: 256963
+      rmsd: 0.0639 # unitless
+      n_sym_ops_mae: 1.7053 # unitless
+      symmetry_decrease: 0.0467 # fraction
+      symmetry_match: 0.8181 # fraction
+      symmetry_increase: 0.128 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/sevennet/sevennet-mf-ompa/2025-03-11-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/53504708
-        size: 7368652
-        md5: 75a93d24cab69097b817b71c12620539
+        name: models/sevennet/sevennet-mf-ompa/2025-03-11-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70334055
+        size: 6894333
+        md5: bfa6f46c859633a1f0f46f0035ea6e3e
     symprec=1e-5:
-      rmsd: 0.0639
-      n_sym_ops_mae: 2.0326
-      symmetry_decrease: 0.0439
-      symmetry_match: 0.7057
-      symmetry_increase: 0.2453
-      n_structures: 256963
+      rmsd: 0.0639 # unitless
+      n_sym_ops_mae: 2.0326 # unitless
+      symmetry_decrease: 0.0439 # fraction
+      symmetry_match: 0.7057 # fraction
+      symmetry_increase: 0.2453 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/sevennet/sevennet-mf-ompa/2025-03-11-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/53504717
-        size: 7362709
-        md5: 6984ea64817389432c97c45318eb12d3
+        name: models/sevennet/sevennet-mf-ompa/2025-03-11-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70334064
+        size: 6908027
+        md5: 8a83d6150c8b313991d6bbea5af0ac5f
   phonons:
     kappa_103:
-      run_info_file:
-        name: models/sevennet/sevennet-mf-ompa/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 8026
-        md5: a6a8adb5761b4c2508d7ffcb7d583170
-      phonon_file:
-        name: models/sevennet/sevennet-mf-ompa/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1290131016
-        md5: ce7e553f352a8e4d08895c242ba8e1b6
-      force_file:
-        name: models/sevennet/sevennet-mf-ompa/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 8667538
-        md5: 719888d988ec273bb06472074d8068ef
       κ_SRME: 0.3171
       pred_file:
         name: models/sevennet/sevennet-mf-ompa/2025-03-11-phonons-kappa-103.json.gz
@@ -194,3 +182,20 @@ metrics:
       κ_failure_rate: 0.0194
       imaginary_mode_rate: 0.0194
       spectrum_w1: 0.1564
+      harmonic:
+        phonon_file:
+          name: models/sevennet/sevennet-mf-ompa/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334679
+          size: 23573998
+          md5: dd70042e2257b0d0d4b8d463492da14f
+        force_file:
+          name: models/sevennet/sevennet-mf-ompa/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334682
+          size: 8667538
+          md5: 719888d988ec273bb06472074d8068ef
+        run_info_file:
+          name: models/sevennet/sevennet-mf-ompa/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334676
+          size: 8026
+          md5: a6a8adb5761b4c2508d7ffcb7d583170
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 571.28, max_rss_gb: 2.408, max_gpu_mem_gb: 33.549}

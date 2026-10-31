@@ -102,3 +102,13 @@ def test_get_protostructure_label(
     assert isinstance(struct_in, Atoms if as_atoms else Structure)
     moyopy_label = prototype.get_protostructure_label(struct_in)
     assert moyopy_label == label, f"{moyopy_label=} != {label}"
+
+
+def test_get_protostructure_label_raises_on_inconsistent_multiplicities(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Wyckoff multiplicities that miss the composition raise, never label junk."""
+    multiplicities = prototype.wyckoff_multiplicity_dict
+    monkeypatch.setitem(multiplicities, 225, multiplicities[225] | {"a": 8})
+    with pytest.raises(ValueError, match="Invalid WP multiplicities"):
+        prototype.get_protostructure_label(NaCl)

@@ -47,11 +47,11 @@ environment:
   dependencies:
   - chgnet
   - anywidget
-  - torch==1.11.0
+  - torch==2.10.0
   - ase==3.22.0
   - pymatgen==2022.10.22
   - numpy==1.24.0
-  python_version: '3.10'
+  python_version: '3.14'
 openness: OSOD
 architecture_types: [gnn]
 train_task: S2EFSM
@@ -81,12 +81,12 @@ notes:
 metrics:
   diatomics:
     pred_file:
-      name: models/chgnet/chgnet-0.3.0/2026-06-29-diatomics.json.gz
-      url: https://figshare.com/files/66104585
-      size: 254264
-      md5: 14a7646bee8a8bbc30da4d7518e15494
-    hardware: NVIDIA H200
-    run_time_sec: 99.4
+      name: models/chgnet/chgnet-0.3.0/2026-10-19-diatomics.json.gz
+      url: https://figshare.com/files/70349733
+      size: 259918
+      md5: ba35984b21731139899e8881f9a16ee0
+    cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 95.82, load_time_sec: 0.78, max_rss_gb: 1.801, max_gpu_mem_gb: 0.07}
+    excluded_formula_reasons: {}
     pbe_wall_dist_mae: 0.403
     pbe_energy_mae: 3.205
     pbe_bond_length_error: 0.2676
@@ -104,6 +104,18 @@ metrics:
       n_eligible: 73
       failed_elements: []
       missing_elements: []
+    reproducibility:
+      checked: '2026-10-20'
+      status: reproduced
+      tolerance: 0.001
+      runs:
+      - label: published run (2026-06-29, H200)
+        file:
+          name: models/chgnet/chgnet-0.3.0/2026-06-29-diatomics.json.gz
+          url: https://figshare.com/files/66104585
+          size: 254264
+          md5: 14a7646bee8a8bbc30da4d7518e15494
+      rel_changes: {}
   discovery:
     pred_file:
       name: models/chgnet/chgnet-0.3.0/2023-12-21-discovery.csv.gz
@@ -145,37 +157,36 @@ metrics:
       size: 118451301
       md5: 22896c9b7d99999ca80cd906626f6587
     symprec=1e-5:
-      rmsd: 0.0949
-      n_sym_ops_mae: 3.0863
-      symmetry_decrease: 0.2241
-      symmetry_match: 0.6062
-      symmetry_increase: 0.1601
-      n_structures: 256963
+      rmsd: 0.095 # unitless
+      n_sym_ops_mae: 3.0863 # unitless
+      symmetry_decrease: 0.2241 # fraction
+      symmetry_match: 0.6062 # fraction
+      symmetry_increase: 0.1601 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/chgnet/chgnet-0.3.0/2023-12-21-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/53504513
-        size: 7259410
-        md5: 8bd70c16b54a8a4385f16a31a6a680e5
+        name: models/chgnet/chgnet-0.3.0/2023-12-21-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333632
+        size: 6810713
+        md5: 1f56c50abf193aebe9a183bd2b7cee60
     symprec=1e-2:
-      rmsd: 0.0949
-      n_sym_ops_mae: 2.0181
-      symmetry_decrease: 0.0922
-      symmetry_match: 0.7921
-      symmetry_increase: 0.1076
-      n_structures: 256963
+      rmsd: 0.095 # unitless
+      n_sym_ops_mae: 2.0181 # unitless
+      symmetry_decrease: 0.0922 # fraction
+      symmetry_match: 0.7921 # fraction
+      symmetry_increase: 0.1076 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/chgnet/chgnet-0.3.0/2023-12-21-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/53504516
-        size: 7255635
-        md5: 2f99c1f21b41c6303c260753d8a22f59
+        name: models/chgnet/chgnet-0.3.0/2023-12-21-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333641
+        size: 6775732
+        md5: c4a42e3268ed4031a82fb5048aef7f87
   md:
     pred_file:
       name: models/chgnet/chgnet-0.3.0/2026-06-28-md-metrics.csv.gz
-      url: https://figshare.com/files/66048854
-      size: 1561
-      md5: 2a5b828e05301564e98b735e005a40de
-    hardware: NVIDIA H200
-    run_time_sec: 87023.78
+      url: https://figshare.com/files/70333554
+      size: 1730
+      md5: e0884d4574d2c39a64117fb91059d00b
+    cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 87023.79}
     energy_rmse: 2.3775
     force_rmse: 202.2351
     rdf_error: 9.6568
@@ -187,18 +198,6 @@ metrics:
     n_systems: 17
   phonons:
     kappa_103:
-      run_info_file:
-        name: models/chgnet/chgnet-0.3.0/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 7671
-        md5: 65dd78504d61d2bf041423540bdb3c1d
-      phonon_file:
-        name: models/chgnet/chgnet-0.3.0/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1313317397
-        md5: 0478b28d32c94f028e6a15b436d09a0f
-      force_file:
-        name: models/chgnet/chgnet-0.3.0/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 8761955
-        md5: ed12d5a247980291fb5bade08a268269
       κ_SRME: 1.7167
       pred_file:
         name: models/chgnet/chgnet-0.3.0/2024-11-09-phonons-kappa-103.json.gz
@@ -210,3 +209,20 @@ metrics:
       κ_failure_rate: 0.1553
       imaginary_mode_rate: 0.1553
       spectrum_w1: 1.8616
+      harmonic:
+        phonon_file:
+          name: models/chgnet/chgnet-0.3.0/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334181
+          size: 23516550
+          md5: 216d33d39482212a2e1cb4fc18ec5cf4
+        force_file:
+          name: models/chgnet/chgnet-0.3.0/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334187
+          size: 8761955
+          md5: ed12d5a247980291fb5bade08a268269
+        run_info_file:
+          name: models/chgnet/chgnet-0.3.0/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334178
+          size: 7671
+          md5: 65dd78504d61d2bf041423540bdb3c1d
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 446.41, max_rss_gb: 2.244, max_gpu_mem_gb: 17.137}

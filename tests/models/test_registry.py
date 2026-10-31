@@ -15,11 +15,12 @@ import pytest
 import yaml
 from jsonschema import Draft7Validator
 
-from matbench_discovery import DATA_DIR, PKG_DIR, ROOT
+from matbench_discovery import DATA_DIR, PKG_DIR, ROOT, file_digest
 from matbench_discovery.calculators import CALCULATORS
 from matbench_discovery.data import DATASETS, iter_file_refs, validate_artifact_path
 from matbench_discovery.discovery import ARCHIVED_DISCOVERY_MODELS
 from matbench_discovery.enums import ArchitectureType, Model, Open, Targets, Task
+from matbench_discovery.hpc import cost_provenance_problems
 from tests.utils import import_repo_script
 
 with open(f"{ROOT}/tests/model-schema.yml", encoding="utf-8") as file:
@@ -189,8 +190,8 @@ def test_model_registry_identity() -> None:
         metadata = model.metadata
         model_key = metadata["model_key"]
         family_dir = os.path.basename(os.path.dirname(model.yaml_path))
-        assert model.name == model_key.replace("-", "_").replace(".", "_")
-        assert model.key == model_key
+        # canonical keys resolve back to their own member (CLI and site lookups)
+        assert Model.from_ref(model_key) is model
         assert "family" not in metadata
         assert model.family == family_dir
         # yaml_path is base_dir + rel_path, so rel_path pins the full path
@@ -263,8 +264,9 @@ def test_shared_runner_is_only_executable(task: str) -> None:
             assert "test_<arch_name>_discovery.py" not in file.read()
 
 
-def test_runnable_kappa_models_have_complete_shared_contract() -> None:
-    """Every calculator-backed phonon model has settings and backend dispatch."""
+def test_runnable_models_have_complete_shared_settings() -> None:
+    """Every calculator-backed model has parseable relaxation and kappa settings."""
+    from matbench_discovery.discovery import RelaxationSettings
     from matbench_discovery.phonons.pipeline import KappaSettings
 
     configured_models = {
@@ -273,6 +275,8 @@ def test_runnable_kappa_models_have_complete_shared_contract() -> None:
         if model.metadata.get("hyperparams", {}).get("evaluation", {}).get("kappa")
     }
     assert configured_models == set(CALCULATORS) - {"emt"}
+    for model_key in CALCULATORS:
+        assert isinstance(RelaxationSettings.from_model(model_key), RelaxationSettings)
     for model_key in configured_models:
         assert isinstance(KappaSettings.from_model(model_key), KappaSettings)
 
@@ -338,3 +342,81 @@ def test_environments_drive_calculator_dependencies() -> None:
             environment.get("extra_index_urls", [])
         )
         assert calc_spec.project == environment.get("project")
+
+
+@pytest.mark.parametrize("model", list(Model), ids=lambda model: model.name)
+def test_yaml_cost_matches_local_artifact(model: Model) -> None:
+    """YAML cost blocks equal their local artifact's recorded cost (no downloads)."""
+    problems = cost_provenance_problems(model.metrics, ROOT)
+    assert not problems, f"{model.name} YAML cost vs artifact:\n" + "\n".join(problems)
+
+
+def definition_errors(definition: str, instance: dict[str, Any]) -> list[str]:
+    """Error messages of ``instance`` against one model-schema definition."""
+    schema = MODEL_SCHEMA["definitions"][definition] | {
+        "definitions": MODEL_SCHEMA["definitions"]
+    }
+    return [err.message for err in Draft7Validator(schema).iter_errors(instance)]
+
+
+RUNNER_COST = (
+    {"source": "runner", "hardware": "NVIDIA H200", "device": "cuda"}
+    | {"dtype": "float64", "acceleration": ["cuequivariance"], "n_processes": 17}
+    | {"run_time_sec": 1.5, "load_time_sec": 0.0}
+    | {"max_rss_gb": 2.0, "max_gpu_mem_gb": 1.0}
+)
+
+
+@pytest.mark.parametrize(
+    ("cost", "valid"),
+    [
+        (RUNNER_COST, True),
+        ({"source": "author_reported", "hardware": "NVIDIA A100"}, True),
+        ({"source": "estimated", "hardware": "NVIDIA H200"}, False),
+        # measured cost needs its tag and hardware
+        ({"hardware": "NVIDIA H200", "run_time_sec": 1.0}, False),
+        ({"source": "runner", "run_time_sec": 1.0}, False),
+        ({**RUNNER_COST, "run_time_sec": 0}, False),
+        ({**RUNNER_COST, "acceleration": ["warp_drive"]}, False),
+    ],
+)
+@pytest.mark.parametrize(
+    "definition", ["MdMetrics", "DiatomicsMetrics", "DiscoveryMetrics", "HarmonicRun"]
+)
+def test_cost_block_schema(
+    cost: dict[str, object], valid: bool, definition: str
+) -> None:
+    """Cost mappings need a known source, hardware and positive run times."""
+    instance = {"cost": cost}
+    if definition == "HarmonicRun":
+        instance |= {"phonon_file": {"name": "a"}, "run_info_file": {"name": "b"}}
+    errors = definition_errors(definition, instance)
+    assert (not errors) is valid, errors
+
+
+def test_kappa_schema_rejects_duplicate_harmonic_refs() -> None:
+    """Harmonic artifacts sit beside pred_file or in kappa_103.harmonic, never both."""
+    metrics = dict.fromkeys(
+        ("κ_SRME", "κ_SRE", "κ_SRD", "κ_failure_rate", "imaginary_mode_rate"), 0.1
+    ) | {"spectrum_w1": 0.2}
+    harmonic = {
+        "phonon_file": {"name": "a"},
+        "run_info_file": {"name": "b"},
+        "cost": {"source": "runner", "hardware": "NVIDIA H200"},
+    }
+    assert not definition_errors("KappaMetrics", metrics | {"harmonic": harmonic})
+    assert definition_errors(
+        "KappaMetrics", metrics | {"harmonic": harmonic, "phonon_file": {"name": "c"}}
+    )
+
+
+@pytest.mark.parametrize("model", Model, ids=str)
+def test_reproducibility_run_files_match_md5(model: Model) -> None:
+    """Repro runs never reuse pred_file and local run files match size/md5."""
+    for section in (model.metrics.get(task) or {} for task in ("diatomics", "md")):
+        for run in (section.get("reproducibility") or {}).get("runs", []):
+            ref = run["file"]
+            assert ref["name"] != section["pred_file"]["name"]
+            if os.path.isfile(abs_path := f"{ROOT}/{ref['name']}"):
+                actual = (os.path.getsize(abs_path), file_digest(abs_path, "md5"))
+                assert actual == (ref["size"], ref["md5"]), abs_path

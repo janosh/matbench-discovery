@@ -37,6 +37,7 @@ import os
 import shlex
 import time
 from collections.abc import Mapping, Sequence
+from datetime import UTC, datetime
 from glob import glob
 
 import numpy as np
@@ -46,7 +47,7 @@ from ase.data import chemical_symbols
 from matbench_discovery import today
 from matbench_discovery.calculators import (
     CALCULATORS,
-    load_calculator,
+    load_calculator_with_runtime,
     resolve_cli_calculator,
 )
 from matbench_discovery.data import artifact_date_from_prefix, artifact_filename
@@ -57,10 +58,10 @@ from matbench_discovery.diatomics import (
     homo_nuc,
 )
 from matbench_discovery.hpc import (
-    detect_hardware,
+    LOAD_CHARGED,
     effective_shard_args,
+    memory_peaks,
     merge_audit_metadata,
-    peak_memory_gb,
     slurm_shard_selection,
 )
 from matbench_discovery.metrics.diatomics import DIATOMIC_WALL_R_MIN_FACTOR, eval_window
@@ -185,6 +186,11 @@ def main() -> int:
     parser.add_argument(
         "--n-points", type=int, default=119, help="Number of log-spaced distances"
     )
+    parser.add_argument(
+        "--checkpoint",
+        help="Override the model checkpoint/artifact for supported calculators "
+        "(required by calculators without a managed checkpoint, e.g. equiformer_v3)",
+    )
     args = parser.parse_args()
 
     model_key = resolve_cli_calculator(parser, args.model, list_models=args.list_models)
@@ -217,8 +223,9 @@ def main() -> int:
                 "shard-dir": args.shard_dir,
                 "n-shards": args.n_shards,
                 "shard-index": args.shard_index,
+                "checkpoint": args.checkpoint,
             },
-            ("dry-run", "merge-shards", "write-yaml"),
+            ("dry-run", "merge-shards", "write-yaml", "replace-author-reported"),
         )
         print(
             shlex.join(
@@ -319,18 +326,20 @@ def main() -> int:
         exclusion_reasons = get_excluded_formula_reasons(args.model)
         if unexpected_missing := missing_formulas - set(exclusion_reasons):
             parser.error(f"Missing curves in shards: {sorted(unexpected_missing)}")
+        if not curves:
+            parser.error(f"{args.model}: shards in {shard_dir} hold 0 diatomic curves")
         # all-or-nothing cost provenance: mixed GPUs or any shard missing a field
         # drops it rather than reporting a partial sum or one shard's label
-        run_metadata = merge_audit_metadata(shard_metadatas)
+        run_metadata = merge_audit_metadata(shard_metadatas, strict=True)
         run_metadata["excluded_formula_reasons"] = exclusion_reasons
         results = write_results(json_path, curves, distances, run_metadata)
         print(f"Merged {len(curves)}/{max_z} diatomic curves into {json_path}")
     else:
         z_values = all_z_values[shard_index::n_shards]
-        load_start = time.perf_counter()
-        calculator = load_calculator(args.model, device=args.device, dtype=args.dtype)
-        load_time_sec = time.perf_counter() - load_start
-        hardware = detect_hardware()  # after load: the backend's GPU is now initialized
+        calculator, runtime = load_calculator_with_runtime(
+            args.model, device=args.device, dtype=args.dtype, checkpoint=args.checkpoint
+        )
+        hardware = runtime["hardware"]
         print(
             f"\nPredicting {len(z_values)} diatomic curves for {args.model} on "
             f"{hardware} (shard {shard_index + 1}/{n_shards})"
@@ -338,32 +347,47 @@ def main() -> int:
         # sharded runs write one resumable file per element (what --merge-shards
         # expects); an unsharded run predicts every element into the final artifact
         z_groups = [[z_value] for z_value in z_values] if n_shards > 1 else [z_values]
+        n_curves_written = 0
         for z_group in z_groups:
             start_time = time.perf_counter()
             curves, invalid_formulas = predict_curves(
                 calculator, args.model, z_group, distances
             )
-            # charge calculator loading to the first file so merged sums cover it
-            run_time_sec = round(time.perf_counter() - start_time + load_time_sec, 2)
-            load_time_sec = 0.0
+            if n_shards == 1 and not curves:  # never write an empty final artifact
+                break
+            n_curves_written += len(curves)
+            # steady-state compute: the first file carries the model load
+            run_time_sec = round(time.perf_counter() - start_time, 2)
             run_metadata = {
-                "hardware": hardware,
+                **runtime,
                 "run_time_sec": run_time_sec,
+                "n_shards": n_shards,
                 # peak memory covers calculator load + sweep so far (one process)
-                **peak_memory_gb(),
+                **memory_peaks(runtime, succeeded=bool(curves)),
+                "completed_at": datetime.now(UTC).isoformat(),
                 "excluded_formula_reasons": get_excluded_formula_reasons(
                     args.model, invalid_formulas
                 ),
             }
-            out_path = (
-                f"{shard_dir}/Z{z_group[0]:03d}-diatomics.json.gz"
-                if n_shards > 1
-                else json_path
-            )
+            runtime = {**runtime, **LOAD_CHARGED}
+            if n_shards > 1:
+                out_path = f"{shard_dir}/Z{z_group[0]:03d}-diatomics.json.gz"
+            else:  # final artifact: same merged run_metadata form as --merge-shards
+                out_path = json_path
+                exclusions = run_metadata["excluded_formula_reasons"]
+                run_metadata = merge_audit_metadata([run_metadata], strict=True)
+                run_metadata["excluded_formula_reasons"] = exclusions
             results = write_results(out_path, curves, distances, run_metadata)
             print(
                 f"Wrote {len(curves)}/{len(z_group)} diatomic curves to {out_path} "
                 f"on {hardware} in {run_time_sec:.1f} s"
+            )
+        # one element file may legitimately be empty (unsupported element), a whole
+        # task without any curve (e.g. an env/package incompatibility) failed
+        if n_curves_written == 0:
+            raise RuntimeError(
+                f"{args.model} wrote 0 diatomic curves for Z={z_values} "
+                f"(shard {shard_index + 1}/{n_shards}): every pair failed"
             )
 
     if args.write_yaml:
@@ -385,6 +409,7 @@ def main() -> int:
             metrics,
             pred_file_path=json_path,
             run_metadata=run_metadata,
+            replace_author_reported=args.replace_author_reported,
             vib_freq_coverage=diatomics.calc_vib_freq_coverage(
                 ref_curves, pred_curves, metrics
             ),

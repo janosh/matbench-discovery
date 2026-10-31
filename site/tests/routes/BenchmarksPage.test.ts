@@ -47,12 +47,8 @@ describe(`Benchmarks Page`, () => {
         `article:nth-child(${idx + 1})`,
         doc_query(`.benchmark-grid`),
       )
-      // tile styling and color bars are covered by the TestSet tests in DataPage.test.ts
-      const table = doc_query(`h2 + figure .periodic-table`, card)
-      const tiles = [...table.querySelectorAll<HTMLElement>(`[data-element-symbol]`)]
-      expect(tiles.filter((tile) => tile.style.opacity !== `0.15`)).toHaveLength(
-        [85, 85, 34, 22, 92][idx],
-      )
+      // tile counts, styling and color bars are covered by the TestSet tests in DataPage
+      expect(card.querySelector(`h2 + figure .periodic-table`)).not.toBeNull()
       expect(card.textContent).toContain(MODELING_TASKS[key].description)
       expect(cards[idx].querySelector(`svg`)).not.toBeNull()
       expect(

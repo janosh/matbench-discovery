@@ -41,11 +41,11 @@ license:
 environment:
   # Display/provenance pins; install is owned by project (override-dependencies).
   dependencies:
-  - torch==2.9.1+cu126
+  - torch==2.10.0+cu126
   - fairchem-core==1.10.0
-  - cuequivariance==0.6.0
+  - cuequivariance==0.9.0
   - GGNN @ git+https://github.com/SamsungDS/GGNN@16b5cae47437
-  python_version: '3.12'
+  python_version: '3.14'
   project: models/equflash/kappa-env
 openness: CSOD
 architecture_types: [gnn]
@@ -117,29 +117,29 @@ metrics:
       size: 138972553
       md5: 80d4b7bf3d20c67039d805f8d0e67ffc
     symprec=1e-5:
-      rmsd: 0.0602
-      n_sym_ops_mae: 2.0595
-      symmetry_decrease: 0.0489
-      symmetry_match: 0.7019
-      symmetry_increase: 0.244
-      n_structures: 256963
+      rmsd: 0.0602 # unitless
+      n_sym_ops_mae: 2.0595 # unitless
+      symmetry_decrease: 0.0489 # fraction
+      symmetry_match: 0.7019 # fraction
+      symmetry_increase: 0.244 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/equflash/equflash-29m-oam/2025-06-23-geo-opt-symprec=1e-5-moyo=0.4.4.csv.gz
-        url: https://figshare.com/files/57277376
-        size: 7415159
-        md5: e0b1ea4f816de7534a89199e7845c0da
+        name: models/equflash/equflash-29m-oam/2025-06-23-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333662
+        size: 6939724
+        md5: 340a83545488cf14f0ed54158b9ffd48
     symprec=1e-2:
-      rmsd: 0.0602
-      n_sym_ops_mae: 1.6926
-      symmetry_decrease: 0.0468
-      symmetry_match: 0.8198
-      symmetry_increase: 0.1264
-      n_structures: 256963
+      rmsd: 0.0602 # unitless
+      n_sym_ops_mae: 1.6926 # unitless
+      symmetry_decrease: 0.0468 # fraction
+      symmetry_match: 0.8198 # fraction
+      symmetry_increase: 0.1264 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/equflash/equflash-29m-oam/2025-06-23-geo-opt-symprec=1e-2-moyo=0.4.4.csv.gz
-        url: https://figshare.com/files/57277379
-        size: 7405030
-        md5: 85a12c707c7f0ae14a131266fca3933f
+        name: models/equflash/equflash-29m-oam/2025-06-23-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333665
+        size: 6913742
+        md5: 993cc297152537ea6d03d0dc487187f3
   phonons:
     kappa_103:
       pred_file:
@@ -153,28 +153,30 @@ metrics:
       κ_failure_rate: 0.0
       imaginary_mode_rate: 0.0
       spectrum_w1: 0.0952
-      phonon_file:
-        name: models/equflash/equflash-29m-oam/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1291996821
-        md5: b03139e0cc99e91d7362cedaafbfc244
-      force_file:
-        name: models/equflash/equflash-29m-oam/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 8710855
-        md5: 2499d510c261149fde1bf3c1dba877e6
-      run_info_file:
-        name: models/equflash/equflash-29m-oam/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 9444
-        md5: f80659743ed8fb8319c36d767bbb207c
+      harmonic:
+        phonon_file:
+          name: models/equflash/equflash-29m-oam/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334379
+          size: 23564124
+          md5: 2db1e00418d30a02a471f4da346cf605
+        force_file:
+          name: models/equflash/equflash-29m-oam/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334382
+          size: 8710855
+          md5: 2499d510c261149fde1bf3c1dba877e6
+        run_info_file:
+          name: models/equflash/equflash-29m-oam/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334385
+          size: 9444
+          md5: f80659743ed8fb8319c36d767bbb207c
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 764.01, max_rss_gb: 3.637, max_gpu_mem_gb: 19.232}
   diatomics:
     pred_file:
-      name: models/equflash/equflash-29m-oam/2026-09-12-diatomics.json.gz
-      size: 207190
-      md5: c6fb37bb961f52c21642a0c9a34e854b
-      url: https://figshare.com/files/68484265
-    hardware: NVIDIA H200
-    run_time_sec: 602.24
-    max_rss_gb: 3.243
-    max_gpu_mem_gb: 0.201
+      name: models/equflash/equflash-29m-oam/2026-10-19-diatomics.json.gz
+      url: https://figshare.com/files/70349739
+      size: 206170
+      md5: 1a645149eb39ca859b71ed59c0a09e19
+    cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 525.19, load_time_sec: 34.82, max_rss_gb: 4.744, max_gpu_mem_gb: 0.201}
     excluded_formula_reasons:
       Ac-Ac: invalid or unsupported curve
       Pa-Pa: invalid or unsupported curve
@@ -204,22 +206,51 @@ metrics:
       - Pa
       - Th
       - U
+    reproducibility:
+      checked: '2026-10-20'
+      status: reproduced
+      tolerance: 0.001
+      runs:
+      - label: published run (2026-09-12, H200)
+        file:
+          name: models/equflash/equflash-29m-oam/2026-09-12-diatomics.json.gz
+          url: https://figshare.com/files/68484265
+          size: 207190
+          md5: c6fb37bb961f52c21642a0c9a34e854b
+      rel_changes: {}
   md:
     pred_file:
-      name: models/equflash/equflash-29m-oam/2026-09-12-md-metrics.csv.gz
-      size: 3921
-      md5: 994b2c206ec0df043cb893033d3eb21f
-      url: https://figshare.com/files/68484307
-    max_rss_gb: 3.882 # GB
+      name: models/equflash/equflash-29m-oam/2026-10-19-md-metrics.csv.gz
+      url: https://figshare.com/files/70352181
+      size: 2030
+      md5: 120e6ff6223678dea88646efdce19409
+    cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float32, acceleration: [], n_processes: 17, run_time_sec: 71655.67, load_time_sec: 620.89, max_rss_gb: 5.055, max_gpu_mem_gb: 5.999}
     energy_rmse: 0.6359 # meV/atom
     force_rmse: 70.1899 # meV/Å
-    rdf_error: 3.305 # %
-    adf_error: 1.3382 # %
-    vdos_error: 22.1819 # %
-    pressure_mae: 0.8176 # GPa
-    pressure_wasserstein: 0.8264 # GPa
-    pressure_error: 46.5533 # %
+    rdf_error: 3.4486 # %
+    adf_error: 1.3675 # %
+    vdos_error: 22.2003 # %
+    pressure_mae: 0.8053 # GPa
+    pressure_wasserstein: 0.8127 # GPa
+    pressure_error: 45.0921 # %
     n_systems: 17 # count
-    hardware: NVIDIA H100 (H100/H200 equal-speed assumption)
-    run_time_sec: 65783.76 # s
-    max_gpu_mem_gb: 6.219 # GB
+    reproducibility:
+      checked: '2026-10-20'
+      status: reproduced
+      tolerance: 0.001
+      runs:
+      - label: published run (2026-09-12, H100)
+        file:
+          name: models/equflash/equflash-29m-oam/2026-09-12-md-metrics.csv.gz
+          url: https://figshare.com/files/68484307
+          size: 3921
+          md5: 994b2c206ec0df043cb893033d3eb21f
+      rel_changes:
+        energy_rmse: 2.14e-07
+        force_rmse: 5.37e-07
+        rdf_error: 0.0417
+        adf_error: 0.0214
+        vdos_error: 0.00083
+        pressure_mae: 0.0153
+        pressure_wasserstein: 0.0169
+        pressure_error: 0.0324

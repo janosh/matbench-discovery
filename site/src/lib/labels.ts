@@ -1,9 +1,9 @@
-import type { DiscoverySet, Label, OrgLogo } from '#lib/types.js'
-import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
+import type { DiscoverySet, Label, OrgLogo, TimedTask } from '#lib/types.js'
+import MODELING_TASKS from '$pkg/modeling-tasks.yml'
 import { Meta, Microsoft } from 'svelte-widgets/icons'
 import { format_num } from 'matterviz/labels'
 import { format_datetime } from 'matterviz/table'
-import { strip_html } from 'matterviz/utils'
+import { strip_html } from 'svelte-widgets/utils'
 
 import type {
   DiscoveryMetricsLabels,
@@ -111,7 +111,7 @@ export const DISCOVERY_METRICS: DiscoveryMetricsLabels = metric_group(
     MAE: {
       label: `MAE`,
       description: `Mean Absolute Error of predicted vs. DFT convex hull distance`,
-      unit: `eV / atom`,
+      unit: `eV/atom`,
       better: `lower`,
     },
     R2: {
@@ -122,7 +122,7 @@ export const DISCOVERY_METRICS: DiscoveryMetricsLabels = metric_group(
     RMSE: {
       label: `RMSE`,
       description: `Root Mean Squared Error`,
-      unit: `eV / atom`,
+      unit: `eV/atom`,
       better: `lower`,
     },
   },
@@ -319,7 +319,7 @@ export const MD_METRICS: MdMetricsLabels = metric_group(
       label: `ΔE<sub>RMSE</sub>`,
       description: `Private-label diagnostic: root mean squared error of model vs ab-initio energy fluctuations on reference MD frames (each trajectory's mean energy is subtracted from both). Excluded from CMDS because public DynaMat reference files do not include energies`,
       unit: `meV/atom`,
-      style: `border-left: 1px solid black;`,
+      style: `border-left: 1px solid var(--border);`,
     },
     md_force_rmse: {
       key: `force_rmse`,
@@ -373,28 +373,30 @@ export const MD_METRICS: MdMetricsLabels = metric_group(
     md_combined_score: {
       key: `combined_score`,
       label: `CMDS`,
-      description: `Combined MD score in [0,1] (higher is better): weighted mean of the ΔvDOS (${pct(vdos_error)}), ΔADF (${pct(adf_error)}), ΔP (${pct(pressure_error)}) subscores (1 − error/100) and Speed (summed rollout wall time, log-scaled, ${pct(run_time_sec)}), reweightable on the MD task page. Computed on the fly like CPS/CDS, never stored with submissions. ΔRDF is excluded because it overlaps with ΔvDOS/ΔADF; models without recorded timings get no CMDS unless the Speed weight is zeroed. Higher = closer to ab-initio dynamics.`,
+      description: `Combined MD score in [0,1] (higher is better): weighted mean of the ΔvDOS (${pct(vdos_error)}), ΔADF (${pct(adf_error)}), ΔP (${pct(pressure_error)}) subscores (1 − error/100) and Speed (summed rollout wall time, log-scaled, ${pct(run_time_sec)}; measured on each model's own GPU, shown on hover, and not normalized across hardware), reweightable on the MD task page. Computed on the fly like CPS/CDS, never stored with submissions. ΔRDF is excluded because it overlaps with ΔvDOS/ΔADF; models without recorded timings get no CMDS unless the Speed weight is zeroed. Higher = closer to ab-initio dynamics.`,
       range: [0, 1],
       better: `higher`,
       format: `.3f`,
     },
     md_run_time_sec: {
+      path: `metrics.md.cost`,
       property: `run_time_sec`,
       label: `t<sub>wall</sub>`,
-      description: `MD wall time in seconds to roll out all 17 DynaMat v1.0 NVT trajectories (20 ps each), summed over systems, excluding metric evaluation. Hardware is recorded per model in its YAML; blank for submissions without recorded timings`,
+      description: `MD wall time in seconds to roll out all 17 DynaMat v1.0 NVT trajectories (20 ps each), summed over systems: steady-state compute excluding model load/compile and metric evaluation. Measured on each model's own GPU, shown on hover, and not normalized across hardware; blank for submissions without recorded timings`,
       unit: `s`,
       format: `.3~s`,
     },
     md_time_multiplier: {
       path: undefined,
       label: `t/t<sub>min</sub>`,
-      description: `MD wall time as a multiple of the fastest finite MD wall time among models matching the active task, energy-only, training-data and openness filters (1× = fastest model in view)`,
+      description: `Slowdown relative to the fastest model in this table: this model's MD wall time divided by the fastest MD wall time among the models shown under the current filters. Each time is measured on that model's own GPU (shown on hover), so ratios mix hardware`,
       unit: `×`,
       format: `.2~f`,
     },
     // memory columns are hidden by default until enough models have re-run with memory
     // tracking (published all-or-nothing over the 17 systems); toggle via column controls
     md_max_gpu_mem_gb: {
+      path: `metrics.md.cost`,
       property: `max_gpu_mem_gb`,
       label: `VRAM`,
       description: `Peak GPU memory (torch CUDA allocator high-water mark) over all 17 DynaMat v1.0 NVT rollouts, set by the largest system (~500 atoms). Answers "what GPU does this model need for MD?"`,
@@ -403,6 +405,7 @@ export const MD_METRICS: MdMetricsLabels = metric_group(
       visible: false,
     },
     md_max_rss_gb: {
+      path: `metrics.md.cost`,
       property: `max_rss_gb`,
       label: `RAM`,
       description: `Peak host memory (resident set size high-water mark) over all 17 DynaMat v1.0 NVT rollouts`,
@@ -422,7 +425,7 @@ export const DIATOMICS_METRICS = metric_group(
     tortuosity: {
       label: `τ`,
       description: `Mean tortuosity over ${scored_diatomic_range}, measuring extra energy variation beyond a single-well or monotonic curve`,
-      style: `border-left: 1px solid black;`,
+      style: `border-left: 1px solid var(--border);`,
     },
     energy_diff_flips: {
       label: `E<sub>flips</sub>`,
@@ -480,27 +483,29 @@ export const DIATOMICS_METRICS = metric_group(
     diatomics_combined_score: {
       property: `combined_score`,
       label: `CDS`,
-      description: `Combined Diatomics Score in [0,1] (higher is better): weighted mean of 4 pillar subscores - Accuracy (PBE energy/force MAE, ${pct(accuracy)}), Geometry (repulsive wall, bond length, well depth vs PBE, ${pct(geometry)}), Physicality (reference-free smoothness: energy jumps, force flips, tortuosity, ${pct(physicality)}) and Speed (sweep wall time, log-scaled, ${pct(speed)}; hardware varies by submission) - multiplied by the fraction of ${N_SCORED_DIATOMIC_ELEMENTS} benchmark elements completed and reweightable on the diatomics page. Components use fixed normalization baselines so scores remain stable as models are added. Computed on the fly like CPS/CMDS, never stored with submissions`,
+      description: `Combined Diatomics Score in [0,1] (higher is better): weighted mean of 4 pillar subscores - Accuracy (PBE energy/force MAE, ${pct(accuracy)}), Geometry (repulsive wall, bond length, well depth vs PBE, ${pct(geometry)}), Physicality (reference-free smoothness: energy jumps, force flips, tortuosity, ${pct(physicality)}) and Speed (sweep wall time, log-scaled, ${pct(speed)}; measured on each model's own GPU, shown on hover, and not normalized across hardware) - multiplied by the fraction of ${N_SCORED_DIATOMIC_ELEMENTS} benchmark elements completed and reweightable on the diatomics page. Components use fixed normalization baselines so scores remain stable as models are added. Computed on the fly like CPS/CMDS, never stored with submissions`,
       range: [0, 1],
       better: `higher`,
       format: `.3f`,
     },
     diatomics_run_time_sec: {
+      path: `metrics.diatomics.cost`,
       property: `run_time_sec`,
       label: `t<sub>wall</sub>`,
-      description: `Wall time in seconds for the full homonuclear diatomic curve sweep (H-U, 119 separations each), including calculator setup; summed over shards for parallel runs. Hardware varies by submission (recorded in the model YAML's hardware field); blank for submissions without recorded timings`,
+      description: `Wall time in seconds for the full homonuclear diatomic curve sweep (H-U, 119 separations each): steady-state compute excluding model load/compile, summed over shards for parallel runs. Measured on each model's own GPU, shown on hover, and not normalized across hardware; blank for submissions without recorded timings`,
       unit: `s`,
       format: `.3~s`,
     },
     diatomics_time_multiplier: {
       path: undefined,
       label: `t/t<sub>min</sub>`,
-      description: `Diatomics wall time as a multiple of the fastest finite wall time among models matching the active task, energy-only, training-data and openness filters (1× = fastest model in view)`,
+      description: `Slowdown relative to the fastest model in this table: this model's diatomics wall time divided by the fastest diatomics wall time among the models shown under the current filters. Each time is measured on that model's own GPU (shown on hover), so ratios mix hardware`,
       unit: `×`,
       format: `.2~f`,
     },
     // memory columns hidden by default until submissions record them (see MD equivalents)
     diatomics_max_gpu_mem_gb: {
+      path: `metrics.diatomics.cost`,
       property: `max_gpu_mem_gb`,
       label: `VRAM`,
       description: `Peak GPU memory (torch CUDA allocator high-water mark) over the full homonuclear diatomic sweep; max over shards for parallel runs`,
@@ -509,6 +514,7 @@ export const DIATOMICS_METRICS = metric_group(
       visible: false,
     },
     diatomics_max_rss_gb: {
+      path: `metrics.diatomics.cost`,
       property: `max_rss_gb`,
       label: `RAM`,
       description: `Peak host memory (resident set size high-water mark) over the full homonuclear diatomic sweep; max over shards for parallel runs`,
@@ -587,7 +593,7 @@ export const ALL_METRICS: AllMetrics = {
     range: [0, RMSD_BASELINE],
     better: `lower`,
     description: `Normalized, unitless StructureMatcher RMSD between ML- and DFT-relaxed structures after matching; unmatched structures are assigned 1.0`,
-    style: `border-left: 1px solid black;`,
+    style: `border-left: 1px solid var(--border);`,
   },
   ...GEO_OPT_SYMMETRY_METRICS,
   ...MD_METRICS,
@@ -625,6 +631,15 @@ export const DISCOVERY_SET_LABELS: Record<
     link: `https://github.com/janosh/matbench-discovery/blob/37baf7986f848/data/wbm/compile_wbm_test_set.py#L640-L654`,
   },
 } as const
+
+// Reproducible column, added only on its task's page (MetricsTable repro_task)
+const repro_col = (task: TimedTask): Label => ({
+  key: `${task}_reproducible`,
+  label: `Reproducible`,
+  description: `Whether a rerun reproduced this model's registered results within 0.1%${task === `md` ? ` (judged on frame-wise energy/force errors; chaotic trajectory metrics are excluded)` : ``}. Hover a cell for details`,
+  color_scale: null, // statuses, not magnitudes: the sort rank must not tint cells
+})
+export const REPRO_COLS = { diatomics: repro_col(`diatomics`), md: repro_col(`md`) }
 
 export const discovery_set_toggle_options = Object.entries(DISCOVERY_SET_LABELS).map(
   ([value, { label, description: tooltip }]) => ({
@@ -692,7 +707,7 @@ export function format_property_path(path: string): string {
 }
 
 const CATEGORY_LABELS = Object.fromEntries(
-  Object.entries({ ...MODELINGS_TASKS, ...DISCOVERY_SET_LABELS, ...HYPERPARAMS }).map(
+  Object.entries({ ...MODELING_TASKS, ...DISCOVERY_SET_LABELS, ...HYPERPARAMS }).map(
     ([key, task]) => [key, task.label],
   ),
 )

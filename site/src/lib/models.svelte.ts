@@ -1,6 +1,6 @@
 import { default as DATASETS } from '$data/datasets.yml'
 import type { ModelData, OrgLogo } from '#lib/types.js'
-import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
+import MODELING_TASKS from '$pkg/modeling-tasks.yml'
 import type { CpsConfig } from '#lib/combined-scores.svelte.js'
 import {
   calculate_cps,
@@ -151,16 +151,15 @@ export const score_weight_records = (): Record<string, Record<string, number>> =
   )
 
 // Mounted once in the root layout so model pages and comparisons restore scores
-// without depending on a task's weight-adjustment chart being present.
+// without depending on a task's weight-adjustment chart being present. In-app links
+// without a weights param keep the current weights; entry and back/forward reset them.
 export function bind_score_weights(): void {
   bind_url_params(
-    (params) => {
+    (params, { type }) => {
+      const reset_missing = type === `enter` || type === `popstate`
       for (const [score, { config, defaults }] of Object.entries(score_configs)) {
-        apply_weights_param(
-          params.get(`${score.toLowerCase()}_weights`),
-          config,
-          defaults,
-        )
+        const param = params.get(`${score.toLowerCase()}_weights`)
+        if (param !== null || reset_missing) apply_weights_param(param, config, defaults)
       }
     },
     () =>
@@ -211,12 +210,12 @@ export const has_diatomics_curves = (model: ModelData): boolean =>
 
 export function get_pred_file_urls(model: ModelData) {
   const pred_files = [
-    [MODELINGS_TASKS.discovery.label, model.metrics?.discovery?.pred_file],
-    [MODELINGS_TASKS.geo_opt.label, model.metrics?.geo_opt?.pred_file],
-    [MODELINGS_TASKS.diatomics.label, model.metrics?.diatomics?.pred_file],
-    [MODELINGS_TASKS.md.label, model.metrics?.md?.pred_file],
+    [MODELING_TASKS.discovery.label, model.metrics?.discovery?.pred_file],
+    [MODELING_TASKS.geo_opt.label, model.metrics?.geo_opt?.pred_file],
+    [MODELING_TASKS.diatomics.label, model.metrics?.diatomics?.pred_file],
+    [MODELING_TASKS.md.label, model.metrics?.md?.pred_file],
     [
-      MODELINGS_TASKS.phonons.subtasks?.kappa_103.label ?? MODELINGS_TASKS.phonons.label,
+      MODELING_TASKS.phonons.subtasks?.kappa_103.label ?? MODELING_TASKS.phonons.label,
       model.metrics?.phonons?.kappa_103?.pred_file,
     ],
   ] as const

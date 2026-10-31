@@ -46,8 +46,9 @@ def write_payload(
         )
 
 
+@pytest.mark.parametrize("run_dir", [".", "site/src"])
 def test_summarize_diffs_working_tree_against_head(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_dir: str
 ) -> None:
     """The report identifies shared, added, removed, and updated records."""
     monkeypatch.chdir(tmp_path)
@@ -76,6 +77,7 @@ def test_summarize_diffs_working_tree_against_head(
     write_payload(route_path, {"model-a": 2})
     os.remove(deleted_path)
 
+    monkeypatch.chdir(run_dir)
     report = summarize()
     assert report == (
         "### Payload changes\n\n"

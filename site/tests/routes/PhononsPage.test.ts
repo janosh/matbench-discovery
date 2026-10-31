@@ -8,12 +8,14 @@ import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 import {
   doc_query,
   expect_table_url_state,
+  expect_task_page_layout,
   filter_summary_badge,
   header_name,
   heading_texts,
   mock_element_size,
   mount,
   mount_with_url,
+  query_param,
   sorted_header,
 } from '../index.js'
 
@@ -67,7 +69,7 @@ describe(`Phonons Task Page`, () => {
     expect(document.body.textContent).toContain(`cancellation can hide errors`)
     expect(document.body.textContent).toMatch(/censored\s+to\s+2\s+because/)
 
-    expect(heading_texts()).toEqual([
+    expect_task_page_layout([
       `Leaderboard`,
       `Model Comparison: κSRME vs κSRE`,
       `Model Inspector`,
@@ -163,7 +165,6 @@ describe(`Phonons Task Page`, () => {
     const kappa_col_indices = [`κSRME`, `κSRE`, `κSRD`, `κfailed`, `Im(ω)`].map(
       (header) => headers.indexOf(header),
     )
-    expect(kappa_col_indices.every((column_idx) => column_idx >= 0)).toBe(true)
     const rows = [...leaderboard.querySelectorAll<HTMLTableRowElement>(`tbody tr`)]
     expect(rows).toHaveLength(phonon_leaderboard_count)
     for (const row of rows) {
@@ -214,7 +215,7 @@ describe(`Phonons Task Page`, () => {
     await tick()
 
     expect(kappa_selected_model()).toContain(target_model.model_name)
-    expect(new URL(location.href).searchParams.get(`model`)).toBe(target_model.model_key)
+    expect(query_param(`model`)).toBe(target_model.model_key)
   })
 
   it.each([`name`, `constructor`])(

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import os
 from functools import partial
 from types import SimpleNamespace
@@ -21,8 +22,8 @@ from pymatviz.enums import Key
 
 import matbench_discovery.discovery as discovery_core
 import models.run_discovery as discovery_runner
-from matbench_discovery import ROOT
-from matbench_discovery.calculators import CALCULATORS
+from matbench_discovery import ROOT, hpc
+from matbench_discovery.calculators import CALCULATORS, load_calculator_with_runtime
 from matbench_discovery.data import file_ref_name, file_ref_url, make_file_ref
 from matbench_discovery.discovery import (
     DISCOVERY_PRED_COL,
@@ -43,11 +44,16 @@ from matbench_discovery.hpc import (
     partition_material_ids,
     slurm_shard_selection,
 )
+from tests.utils import patch_model_metadata
 
 if TYPE_CHECKING:
     from pathlib import Path
 
     from ase import Atoms
+
+
+# per-process run provenance of an EMT "model" that took 1.5 s to load
+EMT_RUNTIME = load_calculator_with_runtime("emt")[1] | {"load_time_sec": 1.5}
 
 
 def bulk_atoms(material_id: str, element: str = "Cu", repeat: int = 1) -> Atoms:
@@ -71,6 +77,7 @@ def run_single_point_shard(
         "n_shards": 1,
         "settings": RelaxationSettings(max_steps=0, cell_filter="none"),
         "dataset_material_ids": list(atoms_by_id),
+        "runtime": EMT_RUNTIME,
     }
     kwargs |= overrides
     return run_discovery_shard(**kwargs)
@@ -110,7 +117,7 @@ def test_artifacts_match_legacy_mp2020_join_semantics(
             ),
             RelaxationRecord(material_id=failed_id, error="RuntimeError: failed"),
         ),
-        run_metadata={},
+        run_metadata={"cost_source": "runner", "hardware": "CPU (test)"},
         n_shards=1,
     )
     df_summary = pd.DataFrame(
@@ -184,6 +191,10 @@ def test_artifacts_match_legacy_mp2020_join_semantics(
     assert geo["energy"] == pytest.approx(raw_energy)
     assert bool(geo["converged"])
     assert int(geo["n_steps"]) == 4
+    # merged cost provenance persists next to the predictions (YAML cost source)
+    assert os.path.samefile(artifacts.run_info_path, f"{tmp_path}/preds-run-info.json")
+    with open(artifacts.run_info_path, encoding="utf-8") as file:
+        assert json.load(file) == {"run_metadata": merged_run.run_metadata}
 
 
 def test_runner_normalizes_artifact_paths(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -218,6 +229,7 @@ def test_write_yaml_results_masks_outliers_and_updates_yaml(
     artifacts = DiscoveryArtifacts(
         pred_file_path=f"{tmp_path}/preds.csv.gz",
         geo_opt_file_path=f"{tmp_path}/geo.jsonl.gz",
+        run_info_path=f"{tmp_path}/preds-run-info.json",
         # wbm-3 is a 7.8 eV/atom outlier, wbm-4 failed to relax
         predictions=pd.DataFrame(
             {pred_col: [-1.05, -0.45, 7.0, None]}, index=material_ids
@@ -231,8 +243,7 @@ def test_write_yaml_results_masks_outliers_and_updates_yaml(
             "models/mace/mace-mp-0/2026-07-01-discovery.csv.gz",
             url="https://example.com/old",
         ),
-        "hardware": "NVIDIA A100",
-        "max_gpu_mem_gb": 40.0,
+        "cost": {"source": "runner", "hardware": "NVIDIA A100", "max_gpu_mem_gb": 4},
     }
     yaml_path.write_text(
         yaml.safe_dump(
@@ -245,10 +256,15 @@ def test_write_yaml_results_masks_outliers_and_updates_yaml(
         ),
         encoding="utf-8",
     )
-    mock_model = cast("Model", SimpleNamespace(yaml_path=str(yaml_path)))
+    mock_model = cast(
+        "Model", SimpleNamespace(yaml_path=str(yaml_path), name="mock_model")
+    )
     run_metadata = {
+        "cost_source": "runner",
         "hardware": "NVIDIA H200",
         "run_time_sec": 123.45,
+        "load_time_sec": 6.0,
+        "n_processes": 2,
         "max_rss_gb": 4.2,
         "hostnames": ["node-1"],  # audit-only fields must not leak into the YAML
     }
@@ -263,13 +279,13 @@ def test_write_yaml_results_masks_outliers_and_updates_yaml(
     assert file_ref_url(discovery_yaml["pred_file"]) is None, (
         "stale URL must be invalidated"
     )
-    assert discovery_yaml["hardware"] == "NVIDIA H200"
-    assert discovery_yaml["run_time_sec"] == pytest.approx(123.45)
-    assert discovery_yaml["max_rss_gb"] == pytest.approx(4.2)
-    assert "hostnames" not in discovery_yaml
-    assert "max_gpu_mem_gb" not in discovery_yaml, "absent cost fields stay absent"
-    geo_opt_yaml = written["metrics"]["geo_opt"]
-    assert "hardware" not in geo_opt_yaml, "cost provenance lives under discovery"
+    run_info_name = file_ref_name(discovery_yaml["run_info_file"])
+    assert run_info_name is not None
+    assert os.path.normpath(run_info_name) == os.path.normpath(artifacts.run_info_path)
+    # the cost is the run's own (no stale or audit-only keys), after its artifacts
+    assert list(discovery_yaml)[:3] == ["pred_file", "run_info_file", "cost"]
+    assert discovery_yaml["cost"] == hpc.cost_block(run_metadata)
+    assert "cost" not in written["metrics"]["geo_opt"]
     assert set(discovery_yaml) >= {str(subset) for subset in TestSubset}
     full_metrics = discovery_yaml[str(TestSubset.full_test_set)]
     assert full_metrics[str(MbdKey.missing_preds)] == 2
@@ -294,25 +310,40 @@ def test_cli_rejects_unsafe_flag_combinations(cli_args: list[str]) -> None:
         discovery_runner.main(["--model", "emt", *cli_args])
 
 
+SUCCESS_RECORD = RelaxationRecord(material_id="wbm-1-1", structure={}, energy=-1.0)
+FAILED_RECORD = RelaxationRecord(material_id="wbm-1-2", error="RuntimeError('boom')")
+
+
 @pytest.mark.parametrize(
-    ("shard_settings", "error_match"),
+    ("shard_settings", "records", "error_match"),
     [
-        (RelaxationSettings.from_model("mace_mp_0", max_steps=7), "CLI-overridden"),
-        (RelaxationSettings.from_model("mace_mp_0"), None),
+        (
+            RelaxationSettings.from_model("mace_mp_0", max_steps=7),
+            (SUCCESS_RECORD,),
+            "CLI-overridden",
+        ),
+        (RelaxationSettings.from_model("mace_mp_0"), (SUCCESS_RECORD,), None),
+        # every relaxation failed: refuse the merge instead of reporting success
+        (
+            RelaxationSettings.from_model("mace_mp_0"),
+            (FAILED_RECORD,),
+            "mace_mp_0: merged shards hold 0 successful relaxations",
+        ),
     ],
 )
 def test_merge_write_yaml_requires_verified_settings(
     shard_settings: RelaxationSettings,
+    records: tuple[RelaxationRecord, ...],
     error_match: str | None,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """--merge-shards --write-yaml refuses shards run with overridden settings."""
+    """--merge-shards --write-yaml refuses overridden settings or 0 successes."""
     merged_run = MergedDiscoveryRun(
         model_key="mace_mp_0",
         settings=shard_settings,
-        records=(),
+        records=records,
         run_metadata={},
         n_shards=1,
     )
@@ -456,32 +487,36 @@ def test_cli_returns_failure_when_any_relaxation_fails(
     )
 
 
-def test_relaxation_settings_load_yaml_and_overrides() -> None:
-    """Model YAML hyperparameters load exactly and explicit flags take precedence."""
-    settings = RelaxationSettings.from_model("mace_mp_0")
-    assert settings == RelaxationSettings(
-        max_force=0.05,
-        max_steps=500,
-        ase_optimizer="FIRE",
-        cell_filter="FrechetCellFilter",
+def test_relaxation_settings_load_yaml_and_overrides(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """YAML hyperparameters load, flags take precedence, unknown models raise."""
+    evaluation = {"max_force": 0.02, "max_steps": 300, "cell_filter": None}
+    model = Model.mace_mp_0
+    patch_model_metadata(
+        monkeypatch,
+        model,
+        {**model.metadata, "hyperparams": {"evaluation": evaluation}},
+    )
+    # YAML null cell_filter overrides the field default, ase_optimizer falls back
+    assert RelaxationSettings.from_model("mace_mp_0") == RelaxationSettings(
+        max_force=0.02, max_steps=300, ase_optimizer="FIRE", cell_filter=None
     )
     overridden = RelaxationSettings.from_model(
         "mace_mp_0",
         max_force=0.01,
         max_steps=7,
         ase_optimizer="GOQN",
-        cell_filter="none",
+        cell_filter="FrechetCellFilter",
     )
-    assert overridden == RelaxationSettings(0.01, 7, "GOQN", None)
+    assert overridden == RelaxationSettings(0.01, 7, "GOQN", "FrechetCellFilter")
     assert RelaxationSettings(cell_filter="NONE") == RelaxationSettings(
         cell_filter=None
     )
-
-
-@pytest.mark.parametrize("model_key", CALCULATORS)
-def test_all_calculators_have_valid_relaxation_settings(model_key: str) -> None:
-    """Every shared-runner model has parseable relaxation hyperparameters."""
-    assert isinstance(RelaxationSettings.from_model(model_key), RelaxationSettings)
+    # only the EMT debug calculator may lack a model YAML
+    assert RelaxationSettings.from_model("emt") == RelaxationSettings()
+    with pytest.raises(ValueError, match="'not-a-model' not found in Model enum"):
+        RelaxationSettings.from_model("not-a-model")
 
 
 @pytest.mark.parametrize(
@@ -638,11 +673,12 @@ def test_shard_resume_handles_incomplete_events_and_header_change(
     shard_path = tmp_path / "shard-000-of-001.jsonl"
     run_single_point_shard({material_id: bulk_atoms(material_id)}, str(shard_path))
     shard_path.write_bytes(shard_path.read_bytes().rstrip(b"\n"))
+    # a segment killed right after starting leaves an open segment without records
     discovery_core._append_shard_event(  # noqa: SLF001
-        str(shard_path),
-        {"type": "run_metadata", "run_metadata": {"run_time_sec": 1}},
+        str(shard_path), {"type": "segment_start", "runtime": EMT_RUNTIME}
     )
-    assert len(read_discovery_shard(str(shard_path)).run_metadata_segments) == 2
+    segments = read_discovery_shard(str(shard_path)).segments
+    assert [len(segment.material_ids) for segment in segments] == [1, 0]
 
     with shard_path.open(mode="a", encoding="utf-8") as file:
         file.write('{"type": "record", "material_id":')
@@ -660,6 +696,16 @@ def test_shard_resume_handles_incomplete_events_and_header_change(
         file.write("{malformed}\n")
     with pytest.raises(ValueError, match="Malformed JSON event"):
         read_discovery_shard(str(shard_path))
+
+    # a kill after the first of two records cannot resume on other hardware
+    two_atoms = {"wbm-1": bulk_atoms("wbm-1"), "wbm-2": bulk_atoms("wbm-2", repeat=2)}
+    resume_path = tmp_path / "resume" / "shard-000-of-001.jsonl"
+    run_single_point_shard(two_atoms, str(resume_path))
+    lines = resume_path.read_text().splitlines(keepends=True)
+    resume_path.write_text("".join(lines[:3]))  # header, segment_start, 1st record
+    other_gpu = EMT_RUNTIME | {"hardware": "other"}
+    with pytest.raises(ValueError, match="cannot resume"):
+        run_single_point_shard(two_atoms, str(resume_path), runtime=other_gpu)
 
 
 def test_shard_survives_unserializable_calculator_info(tmp_path: Path) -> None:
@@ -693,45 +739,14 @@ def test_shard_self_heals_interrupted_header(
     assert [record.material_id for record in shard.records] == ["wbm-1"]
 
 
-def test_merge_drops_cost_fields_unless_every_shard_reported_them(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Cost provenance is all-or-nothing across shards, mirroring the MD eval."""
-
-    def fake_run_metadata(_run_time_sec: float) -> dict[str, float | str]:
-        """Return deterministic cost metadata on every platform."""
-        return {
-            "hardware": "test hardware",
-            "run_time_sec": 1.0,
-            "max_rss_gb": 2.0,
-            "max_gpu_mem_gb": 3.0,
-        }
-
-    monkeypatch.setattr(discovery_core, "_run_segment_metadata", fake_run_metadata)
-    shard_0, shard_1 = _run_two_test_shards(tmp_path)
-    complete_run = _merge_test_shards([shard_0, shard_1])
-    assert set(discovery_core.COST_PROVENANCE_KEYS) <= set(complete_run.run_metadata)
-
-    # strip shard 1's run_metadata events to simulate a crash before provenance write
-    with open(shard_1, encoding="utf-8") as file:
-        shard_1_lines = [
-            line for line in file.read().splitlines() if '"run_metadata"' not in line
-        ]
-    with open(shard_1, mode="w", encoding="utf-8") as file:
-        file.write("\n".join(shard_1_lines) + "\n")
-    partial_run = _merge_test_shards([shard_0, shard_1])
-    for cost_key in discovery_core.COST_PROVENANCE_KEYS:
-        assert cost_key not in partial_run.run_metadata, cost_key
-    assert partial_run.run_metadata["n_shards"] == 2  # audit fields remain
-
-
 def test_merge_rejects_incomplete_duplicate_and_wrong_coverage(tmp_path: Path) -> None:
     """Strict merge rejects missing shards, duplicate shard IDs, and foreign IDs."""
     shard_0, shard_1 = _run_two_test_shards(tmp_path)
     merged_run = _merge_test_shards([shard_0, shard_1])
     assert [record.material_id for record in merged_run.records] == ["wbm-1", "wbm-2"]
     assert merged_run.n_shards == 2
+    cost = hpc.cost_block(merged_run.run_metadata)  # one unit per shard process
+    assert [cost[key] for key in ("n_processes", "load_time_sec")] == [2, 3.0]
 
     incomplete_path = tmp_path / "incomplete" / "shard-000-of-001.jsonl"
     incomplete_atoms = {
