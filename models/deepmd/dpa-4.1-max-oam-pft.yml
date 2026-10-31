@@ -50,7 +50,7 @@ license:
 
 environment:
   dependencies:
-  - deepmd-kit @ git+https://github.com/deepmodeling/deepmd-kit@master
+  - deepmd-kit @ git+https://github.com/deepmodeling/deepmd-kit@1ded5d2429467fb16cb1d6c3d3059fac881f82a7
   - torch==2.13.0+cu132
   - e3nn==0.6.0
   python_version: '3.14'

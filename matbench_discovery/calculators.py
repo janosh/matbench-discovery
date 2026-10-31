@@ -594,83 +594,54 @@ def _deepmd_freeze(device: str, checkpoint: str) -> Calculator:  # noqa: ARG001
     return DP(frozen)
 
 
-def _deepmd_graph(backend: str) -> Callable[..., Calculator]:
-    """Export DPA4/DPA4C and select the matching native neighbor builder."""
-    if backend not in ("--pt", "--pt-expt"):
-        raise ValueError(f"Unsupported DeePMD export backend: {backend}")
+def _deepmd_graph(backend: str, **neighbor_options: str) -> Callable[..., Calculator]:
+    """Export a DPA4/DPA4C checkpoint once per GPU model and kernel policy.
+
+    neighbor_options pick the DP neighbor builder matching the exported interface.
+    """
 
     def make_calc(device: str, checkpoint: str) -> Calculator:
         import torch
         from deepmd.calculator import DP
-        from deepmd.infer import DeepPot
         from deepmd.pt_expt.utils.env import DEVICE
 
         target = torch.device(device)
-        # This pinned DeePMD version selects its device at import time. Reject
-        # inconsistent requests instead of silently evaluating on another device.
-        if target.type != DEVICE.type or (target.index or 0) != (DEVICE.index or 0):
+        # DeePMD picks its device at import, so a mismatch would silently run elsewhere
+        if (target.type, target.index or 0) != (DEVICE.type, DEVICE.index or 0):
             raise ValueError(
-                f"DeePMD initialized on {DEVICE}, but {device} was requested. "
-                "Set DEVICE=cpu for CPU inference, or select one GPU with "
-                "CUDA_VISIBLE_DEVICES and request cuda before starting the runner."
+                f"DeePMD initialized on {DEVICE}, but {device} was requested. Set "
+                "DEVICE=cpu or CUDA_VISIBLE_DEVICES before starting the runner."
             )
-        frozen = checkpoint
-        if not checkpoint.endswith(".pt2"):
-            digest, _state = _stable_file_sha256(checkpoint)
-            arch = (
-                "sm" + "".join(map(str, torch.cuda.get_device_capability(target)))
-                if target.type == "cuda"
-                else "cpu"
-            )
-            if target.type == "cuda":
-                gpu_name = torch.cuda.get_device_name(target)
-                arch += "-" + hashlib.sha256(gpu_name.encode()).hexdigest()[:8]
-            kernel_env = {
-                "DP_TRITON_INFER": os.environ.get("DP_TRITON_INFER", "2"),
-                "DP_CUDA_INFER": os.environ.get("DP_CUDA_INFER", "1"),
-            }
-            if target.type == "cpu":
-                kernel_env = dict.fromkeys(kernel_env, "0")
-            if any(value not in ("0", "1", "2") for value in kernel_env.values()):
-                raise ValueError("DeePMD inference kernel settings must be 0, 1 or 2")
-            policy = "-".join(kernel_env.values())
-            frozen = (
-                f"{CHECKPOINT_DIR}/dpa41-{digest[:16]}-"
-                f"{backend.removeprefix('--')}-{arch}-{policy}.pt2"
-            )
-            _run_to_atomic_output(
-                ["dp", backend, "freeze", "-c", checkpoint, "-o", "{output}"],
-                frozen,
-                source_paths=(checkpoint,),
-                tool_packages=("deepmd-kit", "torch", "triton"),
-                env_overrides=kernel_env,
-                # Large DPA4 channels require lengthy first-use kernel tuning.
-                timeout_sec=3 * 60 * 60,
-            )
-
-        class GraphDP(DP):
-            """Use DP.calculate unchanged with the artifact's neighbor interface."""
-
-            def __init__(self) -> None:
-                Calculator.__init__(self, label="DP")
-                # The pinned pt exporter emits edge_vec/nlist artifacts, while
-                # pt-expt emits graph artifacts. DeepPot rejects crossed options.
-                # DP.__init__ does not forward these documented builder options.
-                neighbor_options = (
-                    {"nlist_backend": "native"}
-                    if backend == "--pt"
-                    else {"neighbor_graph_method": "cell"}
-                )
-                self.dp = DeepPot(frozen, **neighbor_options)
-                self.type_dict = dict(
-                    zip(
-                        self.dp.get_type_map(), range(self.dp.get_ntypes()), strict=True
-                    )
-                )
-
-        return GraphDP()
+        if checkpoint.endswith(".pt2"):
+            return DP(checkpoint, **neighbor_options)
+        # exported kernels are tuned for one GPU model and kernel policy
+        on_gpu = target.type == "cuda"
+        kernel_env = {
+            key: os.environ.get(key, default) if on_gpu else "0"
+            for key, default in (("DP_TRITON_INFER", "2"), ("DP_CUDA_INFER", "1"))
+        }
+        gpu = "-".join(torch.cuda.get_device_name(target).split()) if on_gpu else "cpu"
+        digest, _state = _stable_file_sha256(checkpoint)
+        frozen = (
+            f"{CHECKPOINT_DIR}/dpa4-{digest[:16]}-{backend[2:]}-{gpu}-"
+            f"{'-'.join(kernel_env.values())}.pt2"
+        )
+        _run_to_atomic_output(
+            ["dp", backend, "freeze", "-c", checkpoint, "-o", "{output}"],
+            frozen,
+            source_paths=(checkpoint,),
+            tool_packages=("deepmd-kit", "torch", "triton"),
+            env_overrides=kernel_env,
+            timeout_sec=3 * 60 * 60,  # first-use kernel tuning of large DPA4 models
+        )
+        return DP(frozen, **neighbor_options)
 
     return make_calc
+
+
+# pt exports edge_vec/nlist artifacts, pt-expt graph ones; DeepPot rejects crossings
+_DPA4_GRAPH = _deepmd_graph("--pt", nlist_backend="native")
+_DPA4C_GRAPH = _deepmd_graph("--pt-expt", neighbor_graph_method="cell")
 
 
 def _tace(model_key: str, *, accelerate: bool = True) -> Callable[..., Calculator]:
@@ -1039,18 +1010,12 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
         "dpa_4_0_1_pro_mptrj": _deepmd_spec(
             "dpa_4_0_1_pro_mptrj", _deepmd_freeze, ext=".pt"
         ),
-        "dpa_4_1_air_oam": _deepmd_spec(
-            "dpa_4_1_air_oam", _deepmd_graph("--pt"), ext=".pt"
-        ),
-        "dpa_4_1_max_oam": _deepmd_spec(
-            "dpa_4_1_max_oam", _deepmd_graph("--pt"), ext=".pt"
-        ),
+        "dpa_4_1_air_oam": _deepmd_spec("dpa_4_1_air_oam", _DPA4_GRAPH, ext=".pt"),
+        "dpa_4_1_max_oam": _deepmd_spec("dpa_4_1_max_oam", _DPA4_GRAPH, ext=".pt"),
         "dpa_4_1_max_oam_pft": _deepmd_spec(
-            "dpa_4_1_max_oam_pft", _deepmd_graph("--pt"), ext=".pt"
+            "dpa_4_1_max_oam_pft", _DPA4_GRAPH, ext=".pt"
         ),
-        "dpa_4_1c_air_oam": _deepmd_spec(
-            "dpa_4_1c_air_oam", _deepmd_graph("--pt-expt"), ext=".pt"
-        ),
+        "dpa_4_1c_air_oam": _deepmd_spec("dpa_4_1c_air_oam", _DPA4C_GRAPH, ext=".pt"),
         "equflash_29m_oam": _checkpoint_spec("equflash_29m_oam", _equflash, ext=".pt"),
         "equflashv2_45m_oam": _checkpoint_spec(
             "equflashv2_45m_oam", _equflash, ext=".pt"

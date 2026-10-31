@@ -101,37 +101,4 @@ All evaluations used NVIDIA RTX PRO 6000 Blackwell Server Edition GPUs.
 
 #### Inference
 
-For ASE, load a downloaded checkpoint with `freeze=True` to enable optimized
-inference. Initialization includes model export and compilation.
-
-```python
-from ase.io import read
-from deepmd.calculator import DP
-
-atoms = read("structure.extxyz")
-atoms.calc = DP(model="dpa-4.1-max-oam-inference.pt", freeze=True)
-print(atoms.get_potential_energy())
-```
-
-Use the corresponding checkpoint filename for the other variants.
-
-For LAMMPS, export the checkpoint to `.pt2` following the
-[DPA4](https://github.com/deepmodeling/deepmd-kit/blob/master/doc/model/dpa4.md#export-and-running-in-lammps)
-or [DPA4C](https://github.com/deepmodeling/deepmd-kit/blob/master/doc/model/dpa4c.md#model-compression)
-instructions. For DPA4C GPU simulations, use a compressed model with a
-Kokkos-enabled LAMMPS build and the `deepmd/kk` pair style. Enable Kokkos with:
-
-```sh
-lmp -k on g 1 -sf kk -in in.lammps
-```
-
-For Matbench Discovery evaluation, use the shared runners from the repository root:
-
-```sh
-uv run models/run_discovery.py --model dpa-4.1-max-oam
-```
-
-The runner environment is defined in `models/deepmd/dpa41-env` and requires
-Linux x86-64, a CUDA toolkit with `nvcc` and a C++ compiler. Set
-`CUDA_VISIBLE_DEVICES` to select a GPU. See the
-[contributing guide](../../contributing.md) for the other evaluation tasks.
+For ASE, load a checkpoint with `DP(model="<checkpoint>.pt", freeze=True)` to export and compile it for fast inference. For LAMMPS, see the [DPA4](https://github.com/deepmodeling/deepmd-kit/blob/master/doc/model/dpa4.md#export-and-running-in-lammps) and [DPA4C](https://github.com/deepmodeling/deepmd-kit/blob/master/doc/model/dpa4c.md#model-compression) docs. The benchmark runners use the environment in `models/deepmd/dpa41-env` (Linux x86-64, CUDA toolkit with `nvcc`), e.g. `uv run models/run_discovery.py --model dpa-4.1-max-oam`.
