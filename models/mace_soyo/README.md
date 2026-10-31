@@ -31,7 +31,7 @@ Run the installation, training, and export commands below from
 the MACE-SOYO repository root, not the Matbench Discovery repository.
 
 ```bash
-git clone --depth 1 https://github.com/PrincessHakuryu/MACE-SOYO.git
+git clone --branch v0.1 --depth 1 https://github.com/PrincessHakuryu/MACE-SOYO.git
 cd MACE-SOYO
 python -m pip install -r requirements.txt
 ```
