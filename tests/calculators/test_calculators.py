@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tomllib
 import zipfile
+from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from unittest.mock import Mock
@@ -406,32 +407,38 @@ def test_named_sevennet_models_keep_package_managed_checkpoints(model_key: str) 
     assert not CALCULATORS[model_key].auto_checkpoint
 
 
-def test_deepmd_archive_extraction_replaces_invalid_cache(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    ("find_models", "model_file"),
+    [
+        (calculators._deepmd_model_paths, "nested/model.pth"),  # noqa: SLF001
+        (calculators._alignn_model_dirs, "nested/best_model.pt"),  # noqa: SLF001
+    ],
+)
+def test_archive_extraction_replaces_invalid_cache(
+    tmp_path: Path, find_models: Callable[[str], list[str]], model_file: str
+) -> None:
     """Archive extraction atomically replaces stale multi-model directories."""
     archive_path = tmp_path / "model.zip"
-    with zipfile.ZipFile(archive_path, mode="w") as archive:
-        archive.writestr("nested/model.pth", b"frozen model")
+
+    def write_archive(weights: bytes) -> None:
+        with zipfile.ZipFile(archive_path, mode="w") as archive:
+            archive.writestr(model_file, weights)
+            archive.writestr("nested/config.json", b"{}")
+
+    write_archive(b"weights")
     extract_dir = tmp_path / "model-extracted"
-    extract_dir.mkdir()
-    (extract_dir / "stale.pb").write_bytes(b"stale")
-    (extract_dir / "orphan.pt2").write_bytes(b"orphan")
+    (extract_dir / "stale").mkdir(parents=True)
+    for name in ("stale.pb", "stale/config.json", "stale/best_model.pt"):
+        (extract_dir / name).write_bytes(b"stale")
 
-    model_path = calculators._extract_single_deepmd_model(  # noqa: SLF001
-        str(archive_path)
-    )
+    extract = calculators._extract_single_model  # noqa: SLF001
+    model_path = extract(str(archive_path), find_models)
 
-    assert Path(model_path).read_bytes() == b"frozen model"
-    assert [
-        path.name
-        for path in extract_dir.rglob("*")
-        if path.suffix in {".pb", ".pth", ".pt2"}
-    ] == ["model.pth"]
-    with zipfile.ZipFile(archive_path, mode="w") as archive:
-        archive.writestr("nested/model.pth", b"updated frozen model")
-    updated_path = calculators._extract_single_deepmd_model(  # noqa: SLF001
-        str(archive_path)
-    )
-    assert Path(updated_path).read_bytes() == b"updated frozen model"
+    assert find_models(str(extract_dir)) == [model_path]
+    assert (extract_dir / model_file).read_bytes() == b"weights"
+    write_archive(b"updated weights")
+    assert extract(str(archive_path), find_models) == model_path
+    assert (extract_dir / model_file).read_bytes() == b"updated weights"
 
 
 @pytest.mark.parametrize(

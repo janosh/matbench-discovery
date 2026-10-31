@@ -582,14 +582,27 @@ def _deepmd_model_paths(extract_dir: str) -> list[str]:
     ]
 
 
-def _extract_single_deepmd_model(archive_path: str) -> str:
-    """Safely and atomically extract one frozen model from a DeePMD ZIP."""
+def _alignn_model_dirs(extract_dir: str) -> list[str]:
+    """Return directories holding an ALIGNN config.json and best_model.pt."""
+    return [
+        root_dir
+        for root_dir, _dir_names, file_names in os.walk(extract_dir)
+        if {"config.json", "best_model.pt"} <= set(file_names)
+    ]
+
+
+def _extract_single_model(
+    archive_path: str, find_models: Callable[[str], list[str]]
+) -> str:
+    """Safely and atomically extract a ZIP holding exactly one model, as located by
+    find_models (a file or a directory), and return its extracted path.
+    """
     extract_dir = f"{os.path.splitext(archive_path)[0]}-extracted"
     tmp_extract_dir = f"{extract_dir}.tmp"
     archive_identity = ":".join(map(str, _file_state(archive_path)))
     identity_path = f"{extract_dir}/.archive-stat"
     with FileLock(f"{extract_dir}.lock"):
-        existing_paths = _deepmd_model_paths(extract_dir)
+        existing_paths = find_models(extract_dir)
         if len(existing_paths) == 1 and os.path.isfile(identity_path):
             with open(identity_path, encoding="utf-8") as file:
                 if file.read() == archive_identity:
@@ -611,11 +624,10 @@ def _extract_single_deepmd_model(archive_path: str) -> str:
                         )
                 archive.extractall(tmp_extract_dir)
 
-            model_paths = _deepmd_model_paths(tmp_extract_dir)
+            model_paths = find_models(tmp_extract_dir)
             if len(model_paths) != 1:
                 raise ValueError(
-                    f"Expected one frozen DeePMD model in {archive_path}, "
-                    f"got {model_paths}"
+                    f"Expected one model in {archive_path}, got {model_paths}"
                 )
             relative_model_path = os.path.relpath(model_paths[0], tmp_extract_dir)
             with open(
@@ -634,7 +646,7 @@ def _deepmd_archive(device: str, checkpoint: str) -> Calculator:  # noqa: ARG001
     from deepmd.calculator import DP
 
     if zipfile.is_zipfile(checkpoint):
-        checkpoint = _extract_single_deepmd_model(checkpoint)
+        checkpoint = _extract_single_model(checkpoint, _deepmd_model_paths)
     return DP(checkpoint)
 
 
@@ -655,123 +667,12 @@ def _deepmd_freeze(device: str, checkpoint: str) -> Calculator:  # noqa: ARG001
     return DP(frozen)
 
 
-def _alignn_model_dirs(root_dir: str) -> list[str]:
-    """Return directories under root_dir holding non-empty ALIGNN model files."""
-    model_files = ("config.json", "best_model.pt")
-    return [
-        dir_path
-        for dir_path, _dir_names, file_names in os.walk(root_dir)
-        if set(model_files) <= set(file_names)
-        and all(_is_non_empty_file(f"{dir_path}/{name}") for name in model_files)
-    ]
-
-
-# an ALIGNN checkpoint ZIP holds a few files (about 44 MB uncompressed), so anything
-# far larger is rejected before extraction instead of filling the cache disk
-_ALIGNN_ZIP_MAX_MEMBERS = 100
-_ALIGNN_ZIP_MAX_BYTES = 2 * 1024**3
-
-
-def _alignn_extract_dir(archive_path: str) -> str:
-    """Return the directory an ALIGNN checkpoint ZIP is extracted into."""
-    return f"{os.path.splitext(archive_path)[0]}-extracted"
-
-
-def _extract_alignn_model(archive_path: str) -> str:
-    """Safely and atomically extract an ALIGNN checkpoint ZIP holding one directory
-    (at any depth, e.g. a zipped run folder) with config.json and best_model.pt.
-
-    Callers hold ``f"{_alignn_extract_dir(archive_path)}.lock"``.
-    """
-    extract_dir = _alignn_extract_dir(archive_path)
-    tmp_extract_dir = f"{extract_dir}.tmp"
-    archive_identity = ":".join(map(str, _file_state(archive_path)))
-    identity_path = f"{extract_dir}/.archive-stat"
-    tmp_identity_path = f"{tmp_extract_dir}/.archive-stat"
-    existing_dirs = _alignn_model_dirs(extract_dir)
-    if len(existing_dirs) == 1 and os.path.isfile(identity_path):
-        with open(identity_path, encoding="utf-8") as file:
-            if file.read() == archive_identity:
-                return existing_dirs[0]
-
-    # a run stopped between creating the temporary directory and marking it leaves
-    # it empty, and an empty directory holds nothing to protect
-    if (
-        os.path.isdir(tmp_extract_dir)
-        and not os.path.islink(tmp_extract_dir)
-        and not os.listdir(tmp_extract_dir)
-    ):
-        os.rmdir(tmp_extract_dir)
-
-    # only replace directories this loader made, which always hold .archive-stat
-    for dir_path, marker_path in (
-        (extract_dir, identity_path),
-        (tmp_extract_dir, tmp_identity_path),
-    ):
-        if os.path.lexists(dir_path) and not os.path.isfile(marker_path):
-            raise ValueError(
-                f"Refusing to replace {dir_path}, which this loader did not create"
-            )
-
-    shutil.rmtree(tmp_extract_dir, ignore_errors=True)
-    os.makedirs(tmp_extract_dir)
-    try:
-        # mark the temporary directory as this loader's before filling it
-        with open(tmp_identity_path, mode="w", encoding="utf-8") as file:
-            file.write(archive_identity)
-        with zipfile.ZipFile(archive_path) as archive:
-            members = archive.infolist()
-            total_size = sum(member.file_size for member in members)
-            if (
-                len(members) > _ALIGNN_ZIP_MAX_MEMBERS
-                or total_size > _ALIGNN_ZIP_MAX_BYTES
-            ):
-                raise ValueError(
-                    f"{archive_path} holds {len(members)} files and {total_size} "
-                    f"bytes uncompressed, above the {_ALIGNN_ZIP_MAX_MEMBERS} file "
-                    f"and {_ALIGNN_ZIP_MAX_BYTES} byte limits"
-                )
-            real_extract_dir = os.path.realpath(tmp_extract_dir)
-            for member in members:
-                target_path = os.path.realpath(f"{tmp_extract_dir}/{member.filename}")
-                common_path = os.path.commonpath((real_extract_dir, target_path))
-                if common_path != real_extract_dir:
-                    raise ValueError(
-                        f"Unsafe path {member.filename!r} in {archive_path}"
-                    )
-            archive.extractall(tmp_extract_dir)
-
-        model_dirs = _alignn_model_dirs(tmp_extract_dir)
-        if len(model_dirs) != 1:
-            raise ValueError(
-                "Expected one directory with config.json and best_model.pt in "
-                f"{archive_path}, got {model_dirs}"
-            )
-        relative_model_dir = os.path.relpath(model_dirs[0], tmp_extract_dir)
-        # rewrite the marker in case the archive itself held an .archive-stat
-        with open(tmp_identity_path, mode="w", encoding="utf-8") as file:
-            file.write(archive_identity)
-        shutil.rmtree(extract_dir, ignore_errors=True)
-        os.replace(tmp_extract_dir, extract_dir)
-        return os.path.normpath(f"{extract_dir}/{relative_model_dir}")
-    finally:
-        shutil.rmtree(tmp_extract_dir, ignore_errors=True)
-
-
-def _alignn(device: str, checkpoint: str, dtype: str = "float64") -> Calculator:
+def _alignn(device: str, checkpoint: str) -> Calculator:
     """Load an ALIGNN-FF checkpoint ZIP (config.json + best_model.pt)."""
-    import torch
     from alignn.ff.calculators import AlignnAtomwiseCalculator
 
-    # ALIGNN builds its tensors from torch's default dtype, so honoring the runner's
-    # --dtype is a global switch made before the weights load
-    torch.set_default_dtype({"float32": torch.float32, "float64": torch.float64}[dtype])
-    # hold the lock until the weights are in memory, so a worker re-extracting a
-    # changed archive cannot delete files this one is still reading
-    with FileLock(f"{_alignn_extract_dir(checkpoint)}.lock"):
-        model_dir = _extract_alignn_model(checkpoint)
-        # forces and stress come from one backward pass through the predicted energy
-        return AlignnAtomwiseCalculator(path=model_dir, device=device)
+    model_dir = _extract_single_model(checkpoint, _alignn_model_dirs)
+    return AlignnAtomwiseCalculator(path=model_dir, device=device)
 
 
 def _deepmd_graph(backend: str, **neighbor_options: str) -> Callable[..., Calculator]:

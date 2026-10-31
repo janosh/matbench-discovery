@@ -35,16 +35,9 @@ license:
   checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
 
 environment:
-  # torch 2.14 ships cp314 wheels and the whole ALIGNN stack resolves on
-  # 3.14, so this matches the runner rather than pinning an older Python
   python_version: '3.14'
   dependencies:
   - alignn==2026.10.11
-  - torch>=2.6
-  - ase>=3.28
-  - jarvis-tools>=2024.10.30
-  - numpy
-  - scipy
 
 openness: OSOD
 architecture_types: [gnn]
@@ -55,6 +48,7 @@ targets: EFS_G
 # trainable parameters of the built model (buffers not counted)
 model_params: 4057473
 fine_tune: false
+test_set_informed: [discovery, phonons]
 training_sets: [MPtrj]
 training_cost:
   entries:
@@ -97,44 +91,11 @@ hyperparams:
       stress: 0.1
 
 notes:
-  description: |
-    ALIGNN 2.0 universal force field: a pure-PyTorch reimplementation of the
-    atomistic line graph neural network that removes the DGL dependency. The
-    model passes messages alternately over an atom graph and a line graph whose
-    nodes are bonds and whose edges carry bond angles. Energy is the only
-    directly predicted quantity. Forces and stress follow from one backward pass
-    through the interatomic displacement vectors, so the forces are conservative.
-    Each atom starts from its embedded CGCNN features plus a learned
-    per-element vector, which lets the model tell apart elements whose CGCNN
-    features are identical (Gd and Sm, Th and Np, La and Ce, Ho and Er). Bond
-    features are scaled by a smooth polynomial envelope that reaches zero at 4 A.
-  training: |
-    Trained from scratch on MPtrj with energy per atom, forces and stress all in
-    the loss (L1, weights 1, 1 and 0.1). Energies are the uncorrected MPtrj
-    values. 1,422,355 frames were used for training and 79,019 each for
-    validation and testing. Training ran for 30 epochs (OneCycle schedule, peak
-    learning rate 3e-4, AdamW, effective batch size 16 on 8 GPUs), and the
-    submitted checkpoint is the one with the lowest validation loss, which was
-    the final epoch.
-  known_limitations: |
-    MPtrj is PBE without a dispersion correction, and the model inherits that,
-    so layered van der Waals systems and other dispersion-bound structures are
-    not well described.
-  data_leakage: |
-    The model was trained only on MPtrj. No WBM structures, convex-hull data or
-    other Matbench Discovery test data were used for training, normalization,
-    hyperparameter choice or checkpoint selection, and the checkpoint was picked
-    by the MPtrj validation loss. Results of earlier ALIGNN-FF checkpoints on
-    this benchmark did shape two design choices. Large errors on WBM structures
-    containing Gd and Np showed that the CGCNN features cannot separate some
-    element pairs, which led to the per-element embedding (the problem was then
-    confirmed on the MPtrj and MatPES test splits). Phonon checks on earlier
-    checkpoints, including the near-total failure of one without the envelope,
-    led to switching the envelope on, with the envelope and neighbor settings
-    copied from the published ALIGNN MatPES models rather than tuned here. An
-    earlier fine-tuned checkpoint with the embedding was also evaluated on this
-    benchmark. This from-scratch model was chosen for submission before its own
-    results were available.
+  description: ALIGNN 2.0 universal force field, a pure-PyTorch reimplementation of the atomistic line graph neural network without DGL. Messages pass alternately over an atom graph and a line graph whose nodes are bonds and whose edges carry bond angles. Energy is the only predicted quantity; forces and stress come from one backward pass through the bond vectors. Each atom starts from its CGCNN features plus a learned per-element vector, since the CGCNN features alone are identical for Gd/Sm, Th/Np, La/Ce and Ho/Er.
+  training: Trained from scratch on uncorrected MPtrj energies per atom, forces and stress (L1 loss, weights 1, 1 and 0.1) with a random frame-level split of 1,422,355 training and 79,019 each validation and test frames. 30 epochs, OneCycle with peak learning rate 3e-4, AdamW. The submitted checkpoint has the lowest validation loss (the final epoch).
+  known_limitations: The energy is discontinuous where neighbors cross the 5 Å graph cutoff (the energy of a Si dimer jumps by 2.2 eV between 4.9999 and 5.0001 Å) and the 3.5 Å three-body cutoff (0.15 eV for the same dimer), because the polynomial envelope only scales bond features up to 4 Å while messages still pass along every edge out to 5 Å. Bonds shorter than 1 Å get a fixed repulsive penalty in the energy that the forces see but not in the energy the calculator returns, so forces and energies are inconsistent there. MPtrj is PBE without dispersion, so van der Waals-bound structures are poorly described.
+  disclosure: WBM errors of earlier ALIGNN-FF checkpoints on Gd- and Np-containing structures prompted the per-element embedding, and κ-103 phonon failures of an earlier checkpoint prompted switching on the bond envelope (per the PR 409 submission), so the discovery and phonon test sets informed the architecture.
+
 metrics:
   phonons:
     kappa_103:
@@ -143,10 +104,7 @@ metrics:
         url: https://figshare.com/files/70919004
         size: 16708471
         md5: 25e459f5be2d1a2a45b1086fb4d44b03
-      hardware: NVIDIA GB10
-      run_time_sec: 8911.31
-      max_rss_gb: 2.672
-      max_gpu_mem_gb: 63.673
+      cost: {source: author_reported, hardware: NVIDIA GB10, run_time_sec: 8911.31, max_rss_gb: 2.672, max_gpu_mem_gb: 63.673}
       κ_SRME: 1.4515
       κ_SRE: 1.3799
       κ_SRD: -1.3672
@@ -157,10 +115,7 @@ metrics:
     pred_file:
       name: models/alignn_ff/alignn-ff-mptrj/2026-10-24-discovery.csv.gz
       url: https://figshare.com/files/70840677
-    hardware: NVIDIA GB10
-    run_time_sec: 3066916.97
-    max_rss_gb: 2.268
-    max_gpu_mem_gb: 2.329
+    cost: {source: author_reported, hardware: NVIDIA GB10, run_time_sec: 3066916.97, max_rss_gb: 2.268, max_gpu_mem_gb: 2.329}
     full_test_set:
       F1: 0.694 # fraction
       DAF: 3.685 # dimensionless
