@@ -4,7 +4,7 @@ import { format_train_set, model_role_from_targets } from '#lib/metrics.js'
 import type { ModelData } from '#lib/types.js'
 import pkg from '#site/package.json'
 import { format_num } from 'matterviz/labels'
-import { escape_html, strip_html } from 'matterviz/utils'
+import { escape_html, strip_html } from 'svelte-widgets/utils'
 
 export const prerender = true
 

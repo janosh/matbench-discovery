@@ -19,7 +19,7 @@ import {
 import type { ModelMetadata, TargetType } from '#lib/schema/model.js'
 import type { DiscoverySet, Label, ModelData } from '#lib/types.js'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
-import { escape_html, strip_html } from 'matterviz/utils'
+import { escape_html, strip_html } from 'svelte-widgets/utils'
 import { format_num } from 'matterviz/labels'
 import { is_invalid, sort_table_rows, type CellVal } from 'matterviz/table'
 import { resolve_path } from 'svelte-widgets/json-tree/path'

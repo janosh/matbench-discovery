@@ -3,7 +3,7 @@
   import { ALL_METRICS } from '#lib/labels.js'
   import type { Label } from '#lib/types.js'
   import { format_num } from 'matterviz/labels'
-  import { strip_html } from 'matterviz/utils'
+  import { strip_html } from 'svelte-widgets/utils'
   import { tooltip } from 'svelte-widgets/attachments'
 
   type WeightsConfig = Record<string, Label & { weight: number }>
