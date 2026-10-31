@@ -54,29 +54,9 @@ trained_by:
 environment:
   python_version: '3.14'
   dependencies:
+  # mace-soyo declares the rest (cuequivariance, warp, torch-geometric, ...); the +cu126 pin picks the CUDA 12.6 torch build
   - mace-soyo @ git+https://github.com/PrincessHakuryu/MACE-SOYO.git@387b5114c974fb04b8aceffac82d1d8f10ea4ac0
   - torch==2.12.0+cu126
-  - cuequivariance==0.12.0
-  - cuequivariance-torch==0.12.0
-  - cuequivariance-ops-cu12==0.12.0
-  - cuequivariance-ops-torch-cu12==0.12.0
-  - torch-sim-atomistic==0.6.1
-  - nvalchemi-toolkit-ops[torch]==0.4.1
-  - warp-lang==1.13.0
-  - torch-ema==0.3
-  - torch-geometric==2.7.0
-  - ase==3.29.0
-  - ase-db-backends==0.11.0
-  - lmdb==2.3.0
-  - h5py==3.16.0
-  - tables==3.11.1
-  - numpy>=2.4.6
-  - scipy==1.18.1
-  - pyyaml==6.0.3
-  - tqdm==4.70.1
-  - numexpr==2.14.2
-  - opt_einsum_fx==0.1.4
-  - cffi==2.1.1
   find_links:
   - https://download.pytorch.org/whl/cu126/torch/
 
