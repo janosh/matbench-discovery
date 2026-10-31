@@ -21,7 +21,7 @@ training_cost:
   entries:
   - hardware: NVIDIA A100
     count: 4
-    hours_per_device: 350.0
+    hours_per_device: 87.5
 
 license:
   code: MIT
