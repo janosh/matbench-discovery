@@ -557,6 +557,15 @@ def test_atomic_command_output_recovers_after_timeout(
         )
         assert n_calls == 4 + len(seen_tool_versions)
 
+    # uv gives each run a fresh interpreter path, which must not bust the cache
+    n_before = n_calls
+    for python in ("/uv/run-a/bin/python", "/uv/run-b/bin/python"):
+        monkeypatch.setattr(calculators.sys, "executable", python)
+        calculators._run_to_atomic_output(  # noqa: SLF001
+            [python, "-m", "exporter", "{output}"], str(destination)
+        )
+    assert n_calls == n_before + 1
+
     # env_overrides reach only the child process, merged over the inherited env
     assert all(env is None for env in seen_envs)
     source.write_bytes(b"version 3")
@@ -618,3 +627,52 @@ def test_download_checkpoint_replaces_zero_byte_cache(
     actual_path = os.path.normpath(calculators.download_checkpoint("fake", ext=".ckpt"))
     assert actual_path == os.path.normpath(f"{dest}")
     assert dest.read_bytes() == b"checkpoint"
+
+
+@pytest.mark.parametrize(
+    ("model_key", "head", "checkpoint"),
+    [
+        ("mace_soyo_mptrj", "mptraj", "model.pth"),
+        ("mace_soyo_oam", "salexmp", "model.pth"),
+        ("mace_soyo_oam", "salexmp", "exported.pt2"),
+    ],
+)
+def test_mace_soyo_exports_per_gpu_arch(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    model_key: str,
+    head: str,
+    checkpoint: str,
+) -> None:
+    """A .pth checkpoint exports to a per-arch AOTI package; a .pt2 loads as is."""
+    calc_cls, exporter = Mock(return_value=SimpleNamespace()), Mock()
+    cuda = SimpleNamespace(get_device_capability=lambda _device: (9, 0))
+    torch = SimpleNamespace(
+        device=lambda name: SimpleNamespace(type=name.split(":")[0]), cuda=cuda
+    )
+    monkeypatch.setitem(sys.modules, "torch", torch)
+    monkeypatch.setitem(
+        sys.modules, "mace_soyo", SimpleNamespace(MACESoyoCalculator=calc_cls)
+    )
+    monkeypatch.setattr(calculators, "CHECKPOINT_DIR", f"{tmp_path}/fresh-cache")
+    monkeypatch.setattr(calculators, "_run_to_atomic_output", exporter)
+    path = f"{tmp_path}/{checkpoint}"
+    with open(path, mode="wb") as file:
+        file.write(b"weights")
+    make_calc = CALCULATORS[model_key].make_calc
+
+    make_calc("cuda", path)
+    kwargs = calc_cls.call_args.kwargs
+    assert (kwargs["head"], kwargs["device"], kwargs["use_d3"]) == (head, "cuda", False)
+    if checkpoint.endswith(".pt2"):
+        exporter.assert_not_called()
+        assert kwargs["package_path"] == path
+    else:
+        command, package = exporter.call_args.args
+        assert package == kwargs["package_path"]
+        digest = hashlib.sha256(b"weights").hexdigest()[:16]
+        assert package.endswith(f"-{digest}-sm90-fp32.pt2")
+        assert command[command.index("--ckpt-path") + 1] == path
+        assert os.path.isfile(command[command.index("--structure-file") + 1])
+    with pytest.raises(ValueError, match="requires CUDA"):
+        make_calc("cpu", path)

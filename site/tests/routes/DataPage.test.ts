@@ -95,7 +95,8 @@ it.each([
       (label) => label.textContent,
     )
     expect(ticks[0]).toBe(`1`)
-    if (dataset.id === `wbm`) expect(ticks).toEqual([`1`, `10`, `100`, `1k`, `10k`])
+    // 3 requested ticks over 5 decades: every other power of ten, keeping 1
+    if (dataset.id === `wbm`) expect(ticks).toEqual([`1`, `100`, `10k`])
     else
       expect(
         ticks.map(Number).every((value) => Number.isInteger(value) && value <= count),

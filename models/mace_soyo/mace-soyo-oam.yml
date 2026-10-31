@@ -41,7 +41,7 @@ authors:
   email: jjdu24@m.fudan.edu.cn
   corresponding: false
 - name: Zhi-Pan Liu
-  affiliation: Fudan University,Shanghai Institute of Organic Chemistry
+  affiliation: Fudan University, Shanghai Institute of Organic Chemistry
   email: zpliu@fudan.edu.cn
   corresponding: true
 trained_by:
@@ -54,7 +54,7 @@ trained_by:
 environment:
   python_version: '3.14'
   dependencies:
-  - MACE-SOYO @ git+https://github.com/PrincessHakuryu/MACE-SOYO.git@v0.1
+  - MACE-SOYO @ git+https://github.com/PrincessHakuryu/MACE-SOYO.git@387b5114c974fb04b8aceffac82d1d8f10ea4ac0
   - torch==2.12.0+cu126
   - cuequivariance==0.12.0
   - cuequivariance-torch==0.12.0
@@ -130,7 +130,7 @@ hyperparams:
 
 notes:
   description: MACE-SOYO is based on the MACE-MH-1 architecture, with modifications to edge weights, equivariant RMSNorm, and the readout. Compared with the original MACE-MH-1 implementation, inference and training are accelerated using AOTI and torch.compile, respectively. It also adopts the warmup–stable–decay (WSD) learning-rate schedule used in DPA4.
-  checkpoint: Download the .pth checkpoint from Github and follow the README to export it as an AOTI .pt2 package on the target GPU. Pass the exported .pt2 file explicitly via --checkpoint. The salexmp head is used for benchmark.
+  checkpoint: The benchmark runners download the .pth checkpoint and export it once per GPU architecture to an AOTI .pt2 package (CUDA only). The kappa and diatomics runners also accept an already exported .pt2 via --checkpoint. Benchmarks use the salexmp head.
 
 
 metrics:
@@ -162,20 +162,14 @@ metrics:
         url: https://ndownloader.figshare.com/files/70537095
         size: 5520
         md5: 459446a497f8cc0e022a0d970e5ce81b
-      hardware: NVIDIA GeForce RTX 4090
-      run_time_sec: 2166.57
-      max_rss_gb: 4.607
-      max_gpu_mem_gb: 2.236
+      cost: {source: runner, hardware: NVIDIA GeForce RTX 4090, n_shards: 1, run_time_sec: 2166.57, max_rss_gb: 4.607, max_gpu_mem_gb: 2.236}
   md:
     pred_file:
       name: models/mace_soyo/mace-soyo-oam/2026-10-22-md-metrics.csv.gz
       url: https://ndownloader.figshare.com/files/70537092
       size: 1488
       md5: df63d5dfa837514df3e621ded90a75d5
-    hardware: NVIDIA H200 NVL
-    run_time_sec: 10720.95 # s
-    max_rss_gb: 5.691 # GB
-    max_gpu_mem_gb: 0.763 # GB
+    cost: {source: runner, hardware: NVIDIA H200 NVL, run_time_sec: 10720.95, max_rss_gb: 5.691, max_gpu_mem_gb: 0.763}
     rdf_error: 3.5658 # %
     adf_error: 1.541 # %
     vdos_error: 22.5822 # %
@@ -189,10 +183,7 @@ metrics:
       url: https://ndownloader.figshare.com/files/70537080
       size: 238066
       md5: d22aec572cc2977c6c78fc979e040234
-    hardware: NVIDIA H200 NVL
-    run_time_sec: 108.15
-    max_rss_gb: 3.699
-    max_gpu_mem_gb: 0.083
+    cost: {source: runner, hardware: NVIDIA H200 NVL, run_time_sec: 108.15, max_rss_gb: 3.699, max_gpu_mem_gb: 0.083}
     excluded_formula_reasons: {}
     pbe_wall_dist_mae: 0.06762
     pbe_energy_mae: 0.6026
@@ -217,10 +208,7 @@ metrics:
       url: https://ndownloader.figshare.com/files/70537083
       size: 1315353
       md5: f59c1e871c168031c5c303b412b2280b
-    hardware: NVIDIA GeForce RTX 4090
-    run_time_sec: 132009.47
-    max_rss_gb: 5.398
-    max_gpu_mem_gb: 0.263
+    cost: {source: author_reported, hardware: NVIDIA GeForce RTX 4090, run_time_sec: 132009.47, max_rss_gb: 5.398, max_gpu_mem_gb: 0.263}
     full_test_set:
       F1: 0.883 # fraction
       DAF: 5.175 # dimensionless

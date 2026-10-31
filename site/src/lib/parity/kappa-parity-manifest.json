@@ -262,6 +262,26 @@
         "sha256": "140d0ccce74063942c33fdac9c7a2662d45c9df6d8634aac6b8d70b1c5d65c9d"
       }
     },
+    "mace-soyo-mptrj": {
+      "modes": {
+        "asset": "kappa-parity-phonondb-v1-modes-mace-soyo-mptrj-c49df9dee39bb44f.json.gz",
+        "sha256": "ce9e90faf1d82ab9c2d3795f72add6692d8702c19acb73d64c4dd50e5316d059"
+      },
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-mace-soyo-mptrj-7febcbfcfd209f37.json.gz",
+        "sha256": "95bc4c5835fe392cd60901721a40cf0acd3ce6dfab90021e822652c6bdec9f8d"
+      }
+    },
+    "mace-soyo-oam": {
+      "modes": {
+        "asset": "kappa-parity-phonondb-v1-modes-mace-soyo-oam-debff922804586d3.json.gz",
+        "sha256": "bec6c832b96129fb7fb56eedd4de43d0aeaa9819eadb8a674c381af112c43e20"
+      },
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-mace-soyo-oam-41b4eac8bc86dbc7.json.gz",
+        "sha256": "6c4c5c00dad90722ae19ac7f8391f64848e8cd2aa205477be86d8c52a58a8673"
+      }
+    },
     "matris-10m-mp": {
       "modes": {
         "asset": "kappa-parity-phonondb-v1-modes-matris-10m-mp-59d65b2916bdd99d.json.gz",

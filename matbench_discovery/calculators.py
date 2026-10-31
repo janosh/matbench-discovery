@@ -174,13 +174,15 @@ def _run_to_atomic_output(
         except PackageNotFoundError:
             tool_versions.append((package, "unknown"))
     recipe = (
-        tuple(command),
+        # the interpreter path varies per uv run; tool_packages pin the environment
+        tuple("python" if arg == sys.executable else arg for arg in command),
         tuple(digest for _path, digest, _state in source_identities),
         tuple(tool_versions),
     )
     recipe_hash = hashlib.sha256(repr(recipe).encode()).hexdigest()
-    cached_dest = _cached_file_sha256(dest)
     with FileLock(f"{dest}.lock"):
+        # read inside the lock so a waiter reuses what the lock holder just wrote
+        cached_dest = _cached_file_sha256(dest)
         if any(
             _file_state(path) != state for path, _digest, state in source_identities
         ):
@@ -454,89 +456,48 @@ def _mace(checkpoint: str, head: str | None = None) -> Callable[[str, str], Calc
 
 
 def _mace_soyo(head: str) -> Callable[..., Calculator]:
-    """Download and export a fixed benchmark checkpoint for the target GPU."""
-    if head == "mptraj":
-        model_key = "mace_soyo_mptrj"
-    elif head == "salexmp":
-        model_key = "mace_soyo_oam"
-    else:
-        raise ValueError(f"Unsupported Matbench MACE-SOYO head: {head!r}")
+    """Export a MACE-SOYO checkpoint to an AOTI package once per GPU arch."""
 
-    def make_calc(device: str) -> Calculator:
-        from pathlib import Path
-
+    def make_calc(device: str, checkpoint: str) -> Calculator:
+        import mace_soyo
         import torch
         from ase.build import bulk
         from ase.io import write
 
-        if torch.device(device).type != "cuda" or not torch.cuda.is_available():
-            raise ValueError("MACE-SOYO requires CUDA; run this model on a GPU node.")
-
-        import mace_soyo
-
-        checkpoint = download_checkpoint(model_key, ext=".pth")
-        arch = "".join(map(str, torch.cuda.get_device_capability(device)))
-        os.makedirs(CHECKPOINT_DIR, exist_ok=True)
-        example = f"{CHECKPOINT_DIR}/mace-soyo-export-si-v1.extxyz"
-        with FileLock(f"{example}.lock"):
+        if torch.device(device).type != "cuda":
+            raise ValueError(f"MACE-SOYO requires CUDA, got {device=}")
+        package = checkpoint
+        if not checkpoint.endswith(".pt2"):
+            # the exporter traces the model on an example structure (versioned by name)
+            os.makedirs(CHECKPOINT_DIR, exist_ok=True)
+            example = f"{CHECKPOINT_DIR}/mace-soyo-export-si-v1.extxyz"
             if not _is_non_empty_file(example):
-                tmp_example = f"{example}.tmp"
-                write(
-                    tmp_example,
-                    bulk("Si", "diamond", a=5.43, cubic=True),
-                    format="extxyz",
-                )
+                tmp_example = f"{example}.{os.getpid()}.tmp"
+                silicon = bulk("Si", "diamond", a=5.43, cubic=True)
+                write(tmp_example, silicon, format="extxyz")
                 os.replace(tmp_example, example)
-        python_path = Path(sys.executable)
-        python_executable = str(python_path.parent.resolve() / python_path.name)
-        package_path = f"{CHECKPOINT_DIR}/{model_key}-cuda-sm{arch}-fp32-aoti.pt2"
-        with FileLock(f"{package_path}.prepare.lock"):
+            arch = "".join(map(str, torch.cuda.get_device_capability(device)))
+            digest, _state = _stable_file_sha256(checkpoint)
+            package = f"{CHECKPOINT_DIR}/mace-soyo-{digest[:16]}-sm{arch}-fp32.pt2"
             _run_to_atomic_output(
                 [
-                    python_executable,
-                    "-m",
-                    "mace_soyo.export.AOTI_export",
-                    "--ckpt-path",
-                    checkpoint,
-                    "--structure-file",
-                    example,
-                    "--output-path",
-                    "{output}",
-                    "--device",
-                    device,
-                    "--dtype",
-                    "float32",
-                    "--max-graphs",
-                    "20000",
+                    *(sys.executable, "-m", "mace_soyo.export.AOTI_export"),
+                    *("--ckpt-path", checkpoint, "--structure-file", example),
+                    *("--output-path", "{output}", "--device", device),
+                    *("--dtype", "float32"),
                 ],
-                package_path,
-                source_paths=(
-                    checkpoint,
-                    example,
-                    *sorted(
-                        str(path)
-                        for path in Path(mace_soyo.__file__).parent.rglob("*.py")
-                    ),
-                ),
+                package,
+                source_paths=(checkpoint,),
                 tool_packages=(
-                    "MACE-SOYO",
-                    "torch",
-                    "cuequivariance",
-                    "cuequivariance-torch",
-                    "cuequivariance-ops-cu12",
-                    "cuequivariance-ops-torch-cu12",
-                    "nvalchemi-toolkit-ops",
+                    *("MACE-SOYO", "torch", "cuequivariance", "cuequivariance-torch"),
+                    *("cuequivariance-ops-torch-cu12", "nvalchemi-toolkit-ops"),
                     "warp-lang",
-                    "ase",
                 ),
             )
-
-        return mace_soyo.MACESoyoCalculator(
-            package_path=package_path,
-            head=head,
-            device=device,
-            use_d3=False,
+        calc = mace_soyo.MACESoyoCalculator(
+            package_path=package, head=head, device=device, use_d3=False
         )
+        return _with_acceleration(calc, "cuequivariance", "torch_aot_inductor")
 
     return make_calc
 
@@ -1047,13 +1008,11 @@ def _deepmd_spec(
 
 CALCULATORS: _CalcRegistry = _CalcRegistry(
     {
-        "mace_soyo_mptrj": _runtime_calc_spec(
-            "mace_soyo_mptrj",
-            _mace_soyo(head="mptraj"),
+        "mace_soyo_mptrj": _checkpoint_spec(
+            "mace_soyo_mptrj", _mace_soyo("mptraj"), ext=".pth"
         ),
-        "mace_soyo_oam": _runtime_calc_spec(
-            "mace_soyo_oam",
-            _mace_soyo(head="salexmp"),
+        "mace_soyo_oam": _checkpoint_spec(
+            "mace_soyo_oam", _mace_soyo("salexmp"), ext=".pth"
         ),
         "mace_mp_0": _runtime_calc_spec("mace_mp_0", _mace("medium")),
         "mace_mpa_0": _runtime_calc_spec("mace_mpa_0", _mace("medium-mpa-0")),
