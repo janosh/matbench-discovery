@@ -387,7 +387,7 @@ def test_generated_models_use_stable_registry_provenance(
         with open(checkpoint_path, mode="wb") as file:
             file.write(b"checkpoint")
     assert run_kappa.resolved_artifact_identifier(model, checkpoint_path) == (
-        checkpoint_path or registry_id
+        os.path.abspath(checkpoint_path) if checkpoint_path else registry_id
     )
 
 

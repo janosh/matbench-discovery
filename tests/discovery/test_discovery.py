@@ -192,7 +192,7 @@ def test_artifacts_match_legacy_mp2020_join_semantics(
     assert bool(geo["converged"])
     assert int(geo["n_steps"]) == 4
     # merged cost provenance persists next to the predictions (YAML cost source)
-    assert artifacts.run_info_path == f"{tmp_path}/preds-run-info.json"
+    assert os.path.samefile(artifacts.run_info_path, f"{tmp_path}/preds-run-info.json")
     with open(artifacts.run_info_path, encoding="utf-8") as file:
         assert json.load(file) == {"run_metadata": merged_run.run_metadata}
 

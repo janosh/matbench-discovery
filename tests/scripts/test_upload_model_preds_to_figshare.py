@@ -1,6 +1,5 @@
 """Tests for archiving model prediction files to Figshare without network access."""
 
-import os
 from contextlib import nullcontext
 from pathlib import Path
 from typing import Literal
@@ -9,6 +8,7 @@ from unittest.mock import PropertyMock
 import pytest
 
 import scripts.upload_model_preds_to_figshare as upload
+from matbench_discovery import repo_relative_path
 from matbench_discovery.data import round_trip_yaml
 from matbench_discovery.enums import Model
 
@@ -65,7 +65,9 @@ def test_upload_writes_file_refs_back_to_yaml(
         upload, "resolve_artifact_path", lambda _yaml, rel: f"{tmp_path}/{rel}"
     )
     monkeypatch.setattr(
-        upload, "repo_relative_path", lambda path: os.path.relpath(path, tmp_path)
+        upload,
+        "repo_relative_path",
+        lambda path: repo_relative_path(path, str(tmp_path)),
     )
     figshare = upload.figshare
     monkeypatch.setattr(figshare, "article_exists", lambda _id: True)
