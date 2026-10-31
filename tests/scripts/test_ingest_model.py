@@ -128,10 +128,14 @@ def test_shared_runner_problems_fail_checklist(
 ) -> None:
     """Missing shared runners and runner process errors become checklist failures."""
     if missing_runner:
+        real_isfile = ingest.os.path.isfile
+        # hide only the runner; other lookups (e.g. local cost artifacts) stay real
         monkeypatch.setattr(
             ingest.os.path,
             "isfile",
-            lambda path: not path.endswith(f"run_{missing_runner}.py"),
+            lambda path: (
+                not path.endswith(f"run_{missing_runner}.py") and real_isfile(path)
+            ),
         )
     if process_error:
 
