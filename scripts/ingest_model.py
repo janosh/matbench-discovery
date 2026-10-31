@@ -22,8 +22,6 @@ from collections import Counter
 from collections.abc import Sequence
 from functools import partialmethod
 
-import yaml
-
 from matbench_discovery import ROOT
 from matbench_discovery.calculators import CALCULATORS
 from matbench_discovery.data import (
@@ -401,30 +399,6 @@ def run_payload_refresh(
         checks.fail("Payload shape tests failed after regeneration")
 
 
-def read_head_yaml(path: str) -> dict[str, object] | None:
-    """Read one model YAML from HEAD, returning None when it is newly added."""
-    command = ["git", "show", f"HEAD:{path}"]
-    result = subprocess.run(
-        command,
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if result.returncode != 0:
-        stderr = result.stderr.strip()
-        missing_path = f"path '{path}'"
-        if missing_path in stderr and stderr.endswith(
-            ("does not exist in 'HEAD'", "not in 'HEAD'")
-        ):
-            return None
-        result.check_returncode()
-    metadata = yaml.safe_load(result.stdout)
-    if not isinstance(metadata, dict):
-        raise TypeError(f"HEAD:{path} does not contain model metadata")
-    return metadata
-
-
 def activate_pending(model: Model) -> None:
     """Set a pending submission's lifecycle to active, since ingestion is what adds
     its site payloads; other lifecycles are left alone.
@@ -437,53 +411,6 @@ def activate_pending(model: Model) -> None:
     with open(model.yaml_path, mode="w", encoding="utf-8") as file:
         round_trip_yaml.dump(metadata, file)
     vars(model).pop("metadata", None)  # drop the cached pending metadata
-
-
-def classify_yaml_changes(
-    changed_paths: Sequence[str], removed_paths: Sequence[str]
-) -> dict[str, object]:
-    """Classify model-YAML changes into targeted, full-roster, or no refresh."""
-    new_by_key: dict[str, dict[str, object]] = {}
-    old_by_key: dict[str, dict[str, object]] = {}
-    for path in changed_paths:
-        with open(f"{ROOT}/{path}", encoding="utf-8") as file:
-            metadata = yaml.safe_load(file)
-        if not isinstance(metadata, dict) or not isinstance(
-            model_key := metadata.get("model_key"), str
-        ):
-            raise TypeError(f"{path} does not contain a string model_key")
-        new_by_key[model_key] = metadata
-        if (old_metadata := read_head_yaml(path)) is not None:
-            old_key = old_metadata.get("model_key")
-            if old_key != model_key:
-                raise ValueError(
-                    f"Automated ingestion cannot change model_key in {path}: "
-                    f"{old_key!r} -> {model_key!r}; model keys are immutable"
-                )
-            old_by_key[model_key] = old_metadata
-    for path in removed_paths:
-        if (old_metadata := read_head_yaml(path)) is None:
-            raise ValueError(f"Removed model YAML not found in HEAD: {path}")
-        old_key = old_metadata.get("model_key")
-        if not isinstance(old_key, str):
-            raise TypeError(f"HEAD:{path} does not contain a string model_key")
-        old_by_key[old_key] = old_metadata
-
-    old_keys = set(old_by_key)
-    removed_keys = old_keys - new_by_key.keys()
-    lifecycle_changed = any(
-        old_by_key[key].get("lifecycle") != new_by_key[key].get("lifecycle")
-        for key in old_keys & new_by_key.keys()
-    )
-    return {
-        "full_roster": bool(removed_keys or lifecycle_changed),
-        "targeted_models": [
-            Model.from_ref(key).name
-            for key, metadata in sorted(new_by_key.items())
-            if old_by_key.get(key) != metadata
-            and metadata.get("lifecycle") in ("pending", "active")
-        ],
-    }
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -501,18 +428,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     for mode in (
         "archive",
         "archive-only",
-        "validate-only",
         "payloads-only",
         "publish-parity",
     ):
         mode_group.add_argument(f"--{mode}", action="store_true")
-    mode_group.add_argument(
-        "--classify-yaml-changes",
-        nargs="*",
-        metavar="PATH",
-        help="Print JSON payload-refresh classification for overlaid model YAMLs.",
-    )
-    parser.add_argument("--removed-yaml-paths", nargs="*", default=[])
     parser.add_argument("--full-roster", action="store_true")
     args = parser.parse_args(argv)
 
@@ -520,17 +439,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser.error("--full-roster requires --payloads-only without models")
     if args.publish_parity and args.models:
         parser.error("--publish-parity does not accept models")
-
-    if args.classify_yaml_changes is not None:
-        print(
-            json.dumps(
-                classify_yaml_changes(
-                    args.classify_yaml_changes, args.removed_yaml_paths
-                ),
-                sort_keys=True,
-            )
-        )
-        return 0
 
     checks = Checklist()
     models: list[Model] = args.models
@@ -554,11 +462,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         run_archive(model, checks)
     else:
         banner(f"Ingesting model submission: {model.name}")
-        energy_only = check_submission(
-            model,
-            checks,
-            validate_runner=not args.validate_only,
-        )
+        energy_only = check_submission(model, checks)
         if not checks.n_failed:  # evals and payloads only cover active models
             activate_pending(model)
         overwrite = ("--overwrite",) if args.overwrite else ()
@@ -575,7 +479,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             publish_parity_assets(checks)
         elif args.archive:
             checks.skip("Archival skipped because validation failed")
-        if not args.validate_only and not checks.n_failed:
+        if not checks.n_failed:
             run_payload_refresh(checks, (model,))
 
     banner("SUMMARY")

@@ -374,52 +374,6 @@ def test_uv_run_args_rejects_empty_extra(args: str) -> None:
         ingest.uv_run_args(args)
 
 
-def test_classify_yaml_changes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Classification targets metadata changes and rejects roster/key changes."""
-    model_key = Model["mace_mpa_0"].key
-    active: dict[str, object] = {"model_key": model_key, "lifecycle": "active"}
-    monkeypatch.setattr(ingest, "ROOT", str(tmp_path))
-
-    def classify(
-        new_files: dict[str, dict[str, object]],
-        old_files: dict[str, dict[str, object]],
-        removed: list[str] | None = None,
-    ) -> dict[str, object]:
-        """Write current files and classify them against supplied HEAD metadata."""
-        for relative_path, metadata in new_files.items():
-            yaml_path = tmp_path / relative_path
-            yaml_path.parent.mkdir(parents=True, exist_ok=True)
-            yaml_path.write_text(json.dumps(metadata))
-        monkeypatch.setattr(ingest, "read_head_yaml", old_files.get)
-        return ingest.classify_yaml_changes(list(new_files), removed or [])
-
-    path = "models/edit/model.yml"
-    old_geo_opt = {"metrics": {"geo_opt": {"pred_file": "old.json.gz"}}}
-    assert classify({path: active}, {path: active | old_geo_opt}) == {
-        "full_roster": False,
-        "targeted_models": [Model["mace_mpa_0"].name],
-    }
-    old_path, new_path = "models/old/model.yml", "models/new/model.yml"
-    assert classify({new_path: active}, {old_path: active}, [old_path]) == {
-        "full_roster": False,
-        "targeted_models": [],
-    }
-    assert classify({}, {old_path: active}, [old_path])["full_roster"] is True
-    assert (
-        classify({path: active | {"lifecycle": "aborted"}}, {path: active})[
-            "full_roster"
-        ]
-        is True
-    )
-    with pytest.raises(ValueError, match="cannot change model_key"):
-        classify({path: active}, {path: active | {"model_key": "old-key"}})
-    pending = active | {"lifecycle": "pending"}  # new submission awaiting ingestion
-    assert classify({new_path: pending}, {}) == {
-        "full_roster": False,
-        "targeted_models": [Model["mace_mpa_0"].name],
-    }
-
-
 @pytest.mark.parametrize(
     ("lifecycle", "expected"),
     [("pending  # copied from the template", "active"), ("superseded", "superseded")],
@@ -455,32 +409,8 @@ def test_main_activates_pending_models_only_after_validation(
     monkeypatch.setattr(ingest, "activate_pending", record("activate"))
     monkeypatch.setattr(ingest, "run_model_steps", record("steps"))
     monkeypatch.setattr(ingest, "run_payload_refresh", record("payloads"))
-    assert ingest.main(["mace-mpa-0", "--validate-only"]) == 0
-    assert calls == ["check", "activate", "steps", "steps"]
-
-
-@pytest.mark.parametrize(
-    ("stderr", "raises"),
-    [
-        ("fatal: path 'new.yml' does not exist in 'HEAD'", False),
-        ("fatal: path 'new.yml' exists on disk, but not in 'HEAD'", False),
-        ("fatal: bad object HEAD", True),
-    ],
-)
-def test_read_head_yaml_only_ignores_missing_paths(
-    monkeypatch: pytest.MonkeyPatch, stderr: str, raises: bool
-) -> None:
-    """Only an absent path is treated as a newly added YAML file."""
-    monkeypatch.setattr(
-        ingest.subprocess,
-        "run",
-        lambda *_args, **_kwargs: subprocess.CompletedProcess([], 128, stderr=stderr),
-    )
-    if raises:
-        with pytest.raises(subprocess.CalledProcessError):
-            ingest.read_head_yaml("new.yml")
-    else:
-        assert ingest.read_head_yaml("new.yml") is None
+    assert ingest.main(["mace-mpa-0"]) == 0
+    assert calls == ["check", "activate", "steps", "steps", "payloads"]
 
 
 @pytest.mark.parametrize("force_reupload", [False, True])

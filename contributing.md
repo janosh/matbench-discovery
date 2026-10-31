@@ -83,7 +83,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
 
 2. Reproducible inference code. If your model exposes an ASE calculator, register its constructor in [`matbench_discovery/calculators.py`](https://github.com/janosh/matbench-discovery/blob/main/matbench_discovery/calculators.py) and declare its isolated `uv` dependencies in YAML `environment`. The shared runners run on Python 3.14 with `matbench-discovery`'s own `ase`, `numpy`, `pymatgen`, `phonopy`, etc., so they install only your model-specific packages from `environment.dependencies` (e.g. your package, `torch`, PyG wheels) and treat `python_version` and pins of packages `matbench-discovery` already depends on as submission provenance. Your calculator stack must therefore resolve on Python 3.14 alongside those versions; check with `--print-cmd ... --dry-run`. The shared runners [`models/run_discovery.py`](https://github.com/janosh/matbench-discovery/blob/main/models/run_discovery.py), [`models/run_kappa.py`](https://github.com/janosh/matbench-discovery/blob/main/models/run_kappa.py), [`models/run_md.py`](https://github.com/janosh/matbench-discovery/blob/main/models/run_md.py), and [`models/run_diatomics.py`](https://github.com/janosh/matbench-discovery/blob/main/models/run_diatomics.py) are the only entry points for calculator-backed models; do not add per-model forks or join scripts.
 
-   Calculator integration belongs in the same model PR. Normal secretless PR CI validates that code, while automated ingestion evaluates the submitted artifacts using trusted base-branch code and never executes PR code with credentials.
+   Calculator integration belongs in the same model PR, where CI tests it.
 
    Models without an ASE calculator may need a task-specific `test_<model_key>_<task>.py` or an archived direct-prediction submission — discuss this before opening the PR. If the model was trained specifically for this benchmark, include `train_<model_key>.py` or a family-level `train_<family>.py`.
 
@@ -347,10 +347,10 @@ gh pr create --repo janosh/matbench-discovery --base main \
   --template .github/PULL_REQUEST_TEMPLATE/new_model.md
 ```
 
-And you're done! Once tests pass, a maintainer triggers automated ingestion on your PR (see below) and after merge your model appears on the leaderboard and in all site figures! 🎉
+And you're done! Once tests pass, a maintainer reviews and ingests your model (see below), and after merge it appears on the leaderboard and in all site figures! 🎉
 
 > [!IMPORTANT]
-> Keep the **"Allow edits by maintainers"** checkbox on your PR enabled (it's on by default). The ingestion bot pushes evaluation results and updated site assets as a commit onto your PR branch — without that permission, ingestion has to be run manually by a maintainer.
+> Keep the **"Allow edits by maintainers"** checkbox on your PR enabled (it's on by default). The maintainer pushes evaluation results and updated site assets as a commit onto your PR branch.
 
 ### Step 5: Validate your submission
 
@@ -373,25 +373,18 @@ This command will:
 
 [Weights and Biases](https://wandb.ai) ([GitHub](https://github.com/wandb/wandb)) logs training and test runs of ML models, auto-collecting metadata like what hardware the model ran on and for how long, CPU/GPU/network utilization over that period, the exact code in the launching script, and the dependency versions installed in the environment. This helps others reproduce your results or compare computational cost, so we strongly recommend tracking all runs that went into a model submission with WandB so they can be copied over to our project at <https://wandb.ai/janosh/matbench-discovery> for everyone to inspect.
 
-## 🤖 &thinsp; Automated ingestion (what happens after your PR is opened)
+## 🤖 &thinsp; Ingestion (what happens after your PR is opened)
 
-Once your submission PR looks ready, a maintainer applies the `ingest-model` label. CI ([`update-site-figs.yml`](https://github.com/janosh/matbench-discovery/blob/-/.github/workflows/update-site-figs.yml)) then runs the full pipeline — no manual work needed from you:
+After review, a maintainer runs `uv run --with-editable . scripts/ingest_model.py <model_key> --archive` and pushes the result onto your PR as one commit. The script validates the submission, runs all evals, archives your prediction files to the project's Figshare articles (rewriting your YAML's URLs to the archived copies), publishes the energy/kappa parity assets to the GitHub release, regenerates every site figure payload and sets `lifecycle: active`. Merging the PR lands your model fully integrated.
 
-1. **Safe checkout** — CI checks out trusted `main` code, applies *only canonical `models/<family>/<model_key>.yml` additions, updates, renames, and removals*, and generates the `Model` enum with trusted code. Submission code is never executed in CI, which makes it safe to run this workflow on unreviewed PRs with credentials present.
-2. **Evals + checklist** — trusted code validates submission metadata, downloads predictions from the YAML URLs, runs all evals (discovery, kappa, geo-opt, diatomics), and writes metrics without importing PR calculator code.
-3. **Figshare archival** — only after every model passes validation, prediction + analysis files are re-uploaded to the project's own Figshare articles (one per prediction task) for longevity, and your YAML's `*_url` keys are rewritten to the archived copies.
-4. **Per-model site assets** — energy/kappa parity assets (published to the GitHub release the site build downloads from), parity manifests and per-element error data are generated.
-5. **Multi-model figures** — all site figure payloads (`site/src/figs/*.jsonl`) are regenerated so every page (`/benchmarks/discovery/tmi`, `/benchmarks/geo-opt`, data pages) includes your model, validated by payload shape tests before committing.
-6. **One commit onto your PR** — the updated YAML, payloads and manifests are pushed to your PR branch (this is why "Allow edits by maintainers" must stay enabled), retriggering CI on the result. Merging the PR lands your model fully integrated.
-
-Calculator changes may ship with their model YAML. Changes to payload-generating or other privileged ingestion code still require a reviewed prerequisite PR or local maintainer ingestion. For ordinary non-ingestion PRs that change the payload *format*, regenerate payloads locally and commit them in the same PR:
+For PRs that change the payload *format* or the model roster, regenerate payloads locally and commit them in the same PR:
 
 - Roster drift fails `tests/site/test_fig_payloads.py`'s coverage tests. After adding or updating an active model, run `uv run --with-editable . scripts/ingest_model.py <model_key> --payloads-only` to splice its freshly computed entries into the committed payloads. After removing, aborting, deprecating, or superseding a model, omit the model key and run `uv run --with-editable . scripts/ingest_model.py --payloads-only --full-roster` to rebuild payloads from the full active roster.
 - The `model-pr-guard` check fails any PR that changes payload-generating code without also updating its committed outputs (`site/src/figs`, route-local JSON, or parity manifests): regenerate multi-model JSONL locally with `uv run --with-editable . scripts/ingest_model.py --payloads-only --full-roster`, or add the `payloads-unchanged` label for output-neutral refactors.
 - Parity generators are separate because their large assets live on the GitHub release. Run `uv run --with-editable . site/scripts/generate-energy-parity-assets.py` and `uv run --with-editable ".[phonons]" site/scripts/generate-kappa-parity-assets.py`, publish the generated files with `uv run --with-editable . scripts/ingest_model.py --publish-parity`, then commit both manifests.
 - Model-independent data-page payloads and route-local element counts are owned by `scripts/export_data_fig_payloads.py`. Run it after changing that script or `matbench_discovery/data_figs.py`; it requires the local `data/mp/2022-09-16-mp-trj-summary.json.bz2` cache. If absent, regenerate that cache from the extXYZ source with `uv run data/mp/eda_mp_trj.py`.
 
-Maintainer notes: ingestion requires the repo secrets `SITE_FIGS_PAT` (classic PAT with `public_repo` scope, used to push to fork branches) and `FIGSHARE_TOKEN` (archival uploads). Re-trigger by re-applying the label, or run `uv run --with-editable . scripts/ingest_model.py <model_key> --archive` locally.
+Maintainer note: `--archive` needs a Figshare API token in `$FIGSHARE_TOKEN` or as a `figshare_token=` line in `site/.env`, and `--publish-parity` needs `gh` with write access to this repo's releases.
 
 ## 😵‍💫 &thinsp; Troubleshooting
 
