@@ -4,7 +4,8 @@ model_version: 2023.01.10
 dates:
   benchmark_added: '2023-06-02'
   paper_published: '2021-02-22'
-lifecycle: active
+lifecycle: superseded
+superseded_by: alignn-ff-mptrj
 authors:
 - name: Kamal Choudhary
   affiliation: National Institute of Standards and Technology

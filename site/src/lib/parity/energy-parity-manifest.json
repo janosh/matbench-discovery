@@ -13,12 +13,6 @@
         "sha256": "f7551556ff967bdf80a184bbc7165d4f94af52747b750f0c03bcc3d8d6498578"
       }
     },
-    "alignn": {
-      "parity": {
-        "asset": "energy-parity-wbm-v1-model-alignn-5f459e9ddd3fd6c9.json.gz",
-        "sha256": "1d046f9c93b741b8caac6cdc5dc911619bd2dac03f5b04ba9ea913c98bc3bd17"
-      }
-    },
     "alignn-ff-mptrj": {
       "parity": {
         "asset": "energy-parity-wbm-v1-model-alignn-ff-mptrj-96082edf64862786.json.gz",
