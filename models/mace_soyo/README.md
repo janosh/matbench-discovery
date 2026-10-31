@@ -477,7 +477,7 @@ Keep formalizing the code, and add long-range interactions with multipole_partic
 ## License
 
 MACE-SOYO's original code is licensed under the [MIT License](LICENSE).
-The v0.1 MPtraj model checkpoint is also released under the MIT License.
+The v0.1 MPtraj and OAM model checkpoint is also released under the MIT License.
 
 Identified third-party code adaptations and their original MIT notices are listed
 in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). These notices are included in
