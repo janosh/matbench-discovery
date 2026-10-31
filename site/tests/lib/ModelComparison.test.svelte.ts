@@ -2,6 +2,7 @@ import { afterNavigate, onNavigate, type AfterNavigate } from '$app/navigation'
 import { page } from '$app/state'
 import DATASETS from '$data/datasets.yml'
 import { ALL_METRICS } from '#lib/labels.js'
+import { format_duration } from '#lib/metrics.js'
 import {
   ACTIVE_MODELS,
   bind_score_weights,
@@ -13,7 +14,6 @@ import {
   COMPARE_GROUPS,
   compare_cells,
   comparison,
-  format_duration,
   mark_compared_rows,
   type CompareRow,
 } from '#lib/model-comparison.svelte.js'

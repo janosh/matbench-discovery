@@ -4,6 +4,7 @@ import {
   cost_annotation,
   cost_tag,
   discovery_task_tooltips,
+  format_metric,
   is_finite_num,
   metric_value,
   missing_metric_reason,
@@ -364,35 +365,11 @@ type CompareCell = {
   best?: boolean // best among the compared models (ties share it)
 }
 
-// Seconds as up to three consecutive units from the largest nonzero one: 2d 13h 16m, 4m 18s
-export function format_duration(seconds: number): string {
-  const units = [
-    [`d`, 86_400],
-    [`h`, 3_600],
-    [`m`, 60],
-    [`s`, 1],
-  ] as const
-  let rest = Math.round(seconds)
-  const counts = units.map(([unit, size]) => {
-    const count = Math.floor(rest / size)
-    rest -= count * size
-    return [count, unit] as const
-  })
-  const first = counts.findIndex(([count]) => count > 0)
-  if (first === -1) return `0s`
-  return counts
-    .slice(first, first + 3)
-    .map(([count, unit]) => `${count}${unit}`)
-    .join(` `)
-}
-
-// A numeric cell's value with its unit: durations for seconds, plain decimals otherwise
-// (SI prefixes would turn 0.76 GB into 760m)
+// A numeric cell's value with its unit (durations already read as time)
 const value_text = (row: CompareRow, value: number): string => {
-  if (row.unit === `s`) return format_duration(value)
-  if (!row.unit) return format_num(value, row.format ?? `.3~g`)
-  const sep = [`%`, `×`].includes(row.unit) ? `` : ` `
-  return `${format_num(value, `.3~g`)}${sep}${row.unit}`
+  const text = format_metric(value, { unit: row.unit, format: row.format ?? `.3~g` })
+  if (!row.unit || row.unit === `s`) return text
+  return `${text}${[`%`, `×`].includes(row.unit) ? `` : ` `}${row.unit}`
 }
 
 // One cell per compared model: formatted value plus leaderboard rank in the active cohort

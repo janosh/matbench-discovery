@@ -8,7 +8,11 @@
   import { CPS_CONFIG } from '#lib/combined-scores.svelte.js'
   import OrgLogos from '#lib/model/OrgLogos.svelte'
   import TableControls from '#lib/table/TableControls.svelte'
-  import { append_better_hint, missing_metric_reason } from '#lib/metrics.js'
+  import {
+    append_better_hint,
+    format_metric,
+    missing_metric_reason,
+  } from '#lib/metrics.js'
   import {
     comparison,
     mark_compared_rows,
@@ -455,7 +459,10 @@
   {:else if typeof val === `number`}
     <!-- times, slowdowns and speed-weighted scores name their GPU in the tooltip -->
     <span data-title={cost_annotation((row as MetricsRow).model, col as Label)}
-      >{format_num(val, col.format ?? `.3f`)}</span
+      >{format_metric(val, {
+        unit: (col as Label).unit,
+        format: col.format ?? `.3f`,
+      })}</span
     >
   {:else}
     {val}

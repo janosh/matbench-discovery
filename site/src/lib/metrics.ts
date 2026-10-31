@@ -221,6 +221,34 @@ export function cost_tag(model: object, task: TimedTask): string | undefined {
   return `${hardware} (${COST_SOURCES[source]})`
 }
 
+// Seconds as up to three consecutive units from the largest nonzero one: 2d 13h 16m, 4m 18s
+const DURATION_UNITS = [
+  [`d`, 86_400],
+  [`h`, 3600],
+  [`m`, 60],
+  [`s`, 1],
+] as const
+export function format_duration(seconds: number): string {
+  let rest = Math.round(seconds)
+  const counts = DURATION_UNITS.map(([unit, size]) => {
+    const count = Math.floor(rest / size)
+    rest %= size
+    return { count, unit }
+  })
+  const first = counts.findIndex(({ count }) => count > 0)
+  if (first === -1) return `0s`
+  return counts
+    .slice(first, first + 3)
+    .map(({ count, unit }) => `${count}${unit}`)
+    .join(` `)
+}
+
+// A metric value as shown in cards and tables: durations for seconds, else the label's format
+export const format_metric = (
+  value: number,
+  { unit, format }: Pick<Label, `unit` | `format`>,
+): string => (unit === `s` ? format_duration(value) : format_num(value, format))
+
 // Tooltip naming the timing GPU of a model's time/memory value or speed-weighted score
 // (only while Speed has weight), undefined for metrics independent of inference speed
 export function cost_annotation(

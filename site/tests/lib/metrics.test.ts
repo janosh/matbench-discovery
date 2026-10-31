@@ -10,6 +10,7 @@ import { CMDS_CONFIG } from '#lib/combined-scores.svelte.js'
 import {
   assemble_row_data,
   cost_annotation,
+  format_metric,
   format_train_set,
   get_nested_value,
   label_data_path,
@@ -430,5 +431,18 @@ describe(`cost and reproducibility`, () => {
       rank,
       title,
     ])
+  })
+})
+
+describe(`format_metric`, () => {
+  it.each([
+    [MD_METRICS.md_run_time_sec, 10_720.95, `2h 58m 41s`],
+    [DIATOMICS_METRICS.diatomics_run_time_sec, 108.15, `1m 48s`],
+    // GB values stay plain decimals: SI prefixes would print 0.763 GB as 763m
+    [MD_METRICS.md_max_gpu_mem_gb, 0.763, `0.763`],
+    [MD_METRICS.md_max_rss_gb, 22.27, `22.3`],
+    [DIATOMICS_METRICS.diatomics_max_gpu_mem_gb, 0.083, `0.083`],
+  ])(`formats %s.key %s as %s`, (label, value, expected) => {
+    expect(format_metric(value, label)).toBe(expected)
   })
 })
