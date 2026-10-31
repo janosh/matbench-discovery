@@ -417,7 +417,9 @@ def test_named_sevennet_models_keep_package_managed_checkpoints(model_key: str) 
 def test_archive_extraction_replaces_invalid_cache(
     tmp_path: Path, find_models: Callable[[str], list[str]], model_file: str
 ) -> None:
-    """Archive extraction atomically replaces stale multi-model directories."""
+    """Extraction replaces unmarked caches, reuses a matching one, re-extracts a
+    changed archive and rejects members escaping the extraction directory.
+    """
     archive_path = tmp_path / "model.zip"
 
     def write_archive(weights: bytes) -> None:
@@ -436,9 +438,20 @@ def test_archive_extraction_replaces_invalid_cache(
 
     assert find_models(str(extract_dir)) == [model_path]
     assert (extract_dir / model_file).read_bytes() == b"weights"
+    sentinel = extract_dir / "sentinel"
+    sentinel.touch()
+    assert extract(str(archive_path), find_models) == model_path
+    assert sentinel.is_file()  # unchanged archive: cache hit, no re-extraction
     write_archive(b"updated weights")
     assert extract(str(archive_path), find_models) == model_path
     assert (extract_dir / model_file).read_bytes() == b"updated weights"
+    assert not sentinel.exists()
+
+    with zipfile.ZipFile(archive_path, mode="w") as archive:
+        archive.writestr("../evil", b"escape")
+    with pytest.raises(ValueError, match=r"Unsafe path '\.\./evil'"):
+        extract(str(archive_path), find_models)
+    assert not (tmp_path.parent / "evil").exists()
 
 
 @pytest.mark.parametrize(

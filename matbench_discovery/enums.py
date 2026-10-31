@@ -275,6 +275,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # BEGIN GENERATED MODEL MEMBERS
     alchembert = auto(), "alchembert/alchembert.yml"
     alignn = auto(), "alignn/alignn.yml"
+    alignn_ff_mptrj = auto(), "alignn_ff/alignn-ff-mptrj.yml"
     allegro_mp_l_0_1 = auto(), "allegro/allegro-mp-l-0.1.yml"
     allegro_oam_l_0_1 = auto(), "allegro/allegro-oam-l-0.1.yml"
     alphanet_v1_mptrj = auto(), "alphanet/alphanet-v1-mptrj.yml"

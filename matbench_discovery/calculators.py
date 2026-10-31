@@ -636,7 +636,7 @@ def _extract_single_model(
                 file.write(archive_identity)
             shutil.rmtree(extract_dir, ignore_errors=True)
             os.replace(tmp_extract_dir, extract_dir)
-            return f"{extract_dir}/{relative_model_path}"
+            return os.path.normpath(f"{extract_dir}/{relative_model_path}")
         finally:
             shutil.rmtree(tmp_extract_dir, ignore_errors=True)
 

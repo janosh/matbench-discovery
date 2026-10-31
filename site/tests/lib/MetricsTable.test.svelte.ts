@@ -1026,7 +1026,8 @@ describe(`MetricsTable`, () => {
         const metrics = model.metrics?.discovery?.[discovery_set]
         const excluded =
           Object.keys(model.metrics?.diatomics?.excluded_formula_reasons ?? {}).length > 0
-        return `${model.model_name}${excluded ? `*` : ``},${metrics?.DAF},${metrics?.F1}`
+        const informed = model.test_set_informed ? `†` : ``
+        return `${model.model_name}${excluded ? `*` : ``}${informed},${metrics?.DAF},${metrics?.F1}`
       }),
     ])
     await choose_export(`Copy table`)
