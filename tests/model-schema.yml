@@ -781,6 +781,13 @@ properties:
   fine_tune:
     type: boolean
     description: Whether this checkpoint is a fine-tune of another training run.
+  test_set_informed:
+    type: array
+    items:
+      enum: [discovery, geo_opt, phonons, diatomics, md]
+    minItems: 1
+    uniqueItems: true
+    description: Benchmark tasks whose test set (its results or its materials) informed training, tuning or checkpoint selection, explained in notes.disclosure. Flagged on leaderboards.
   hyperparams:
     $ref: '#/definitions/Hyperparams'
   notes:

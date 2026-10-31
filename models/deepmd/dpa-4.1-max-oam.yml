@@ -58,6 +58,7 @@ test_task: IS2RE-SR
 targets: EFS_G
 training_sets: [MPtrj, OMat24, sAlex]
 model_params: 99009258
+test_set_informed: [discovery]
 training_cost:
   reason: Includes pre-training and fine-tuning.
   entries:
@@ -103,6 +104,8 @@ notes:
   diatomics: >-
     Some homonuclear pairs, especially Ne, exhibit large errors and numerical
     sensitivity at short separations. No elements were excluded from the metrics.
+  disclosure: >-
+    The DPA4 paper ([arXiv:2606.02419](https://arxiv.org/abs/2606.02419), Methods 4.1 and Supp. S-3) chose architecture and training-schedule defaults with ablations evaluated on a fixed subsample of the WBM test set, so WBM informed model development.
 
 metrics:
   discovery:

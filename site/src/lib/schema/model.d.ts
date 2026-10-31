@@ -82,6 +82,15 @@ export type ModelMetadata = {
    * Whether this checkpoint is a fine-tune of another training run.
    */
   fine_tune?: boolean
+  /**
+   * Benchmark tasks whose test set (its results or its materials) informed training, tuning or checkpoint selection, explained in notes.disclosure. Flagged on leaderboards.
+   *
+   * @minItems 1
+   */
+  test_set_informed?: [
+    'discovery' | 'geo_opt' | 'phonons' | 'diatomics' | 'md',
+    ...('discovery' | 'geo_opt' | 'phonons' | 'diatomics' | 'md')[],
+  ]
   hyperparams?: Hyperparams
   notes?: {
     description?: string

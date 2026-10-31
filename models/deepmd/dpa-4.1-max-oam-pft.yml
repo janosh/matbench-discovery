@@ -62,6 +62,7 @@ test_task: IS2RE-SR
 targets: EFSH_G
 training_sets: [MPtrj, OMat24, sAlex, MDR-MP PBE ω_q]
 fine_tune: true
+test_set_informed: [discovery, phonons]
 model_params: 99005146
 training_cost:
   reason: Includes DPA-4.1-Max-OAM training and additional phonon fine-tuning.
@@ -101,6 +102,7 @@ notes:
     model development. Chemical formulas present in κ-103 were excluded from the PFT
     data and anchor selection. The submitted checkpoint is the final training
     endpoint.
+    The DPA4 paper ([arXiv:2606.02419](https://arxiv.org/abs/2606.02419), Methods 4.1 and Supp. S-3) chose architecture and training-schedule defaults with ablations evaluated on a fixed subsample of the WBM test set, so WBM informed model development.
   evaluation: >-
     MD energy and force RMSEs are not reported because the labeled reference data are
     not publicly available.

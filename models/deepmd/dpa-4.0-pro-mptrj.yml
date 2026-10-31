@@ -54,6 +54,7 @@ test_task: IS2RE-SR
 targets: EFS_G
 training_sets: [MPtrj]
 model_params: 32724908
+test_set_informed: [discovery]
 training_cost:
   entries:
   - hardware: NVIDIA H20
@@ -126,6 +127,8 @@ notes:
     The model was trained for 3,000,000 steps using the Muon optimizer, WSD
     learning-rate schedule, MAE energy/force/virial loss weights 20/20/5,
     with AMP, TF32, and compile enabled.
+  disclosure: >-
+    The DPA4 paper ([arXiv:2606.02419](https://arxiv.org/abs/2606.02419), Methods 4.1 and Supp. S-3) chose architecture and training-schedule defaults with ablations evaluated on a fixed subsample of the WBM test set, so WBM informed model development.
 
 metrics:
   discovery:

@@ -330,8 +330,18 @@ describe(`assemble_row_data`, () => {
         `Diatomics metrics exclude H-H due to unsupported &quot;quoted&quot; reason; ` +
         `He-He, Li-Li due to exploding errors`,
     },
+    {
+      model_key: `nequix-mp-1-pft`,
+      diatomics: undefined,
+      expected_title: `Phonons test set informed this model's development (see model notes)`,
+    },
+    {
+      model_key: `dpa-4.1-max-oam-pft`,
+      diatomics: undefined,
+      expected_title: `Discovery and Phonons test sets informed this model's development (see model notes)`,
+    },
   ])(
-    `renders reason-aware diatomics exclusion tooltip for $model_key`,
+    `renders name-marker tooltip for $model_key`,
     ({ model_key, diatomics, expected_title }) => {
       const test_models = [
         ...MODELS,

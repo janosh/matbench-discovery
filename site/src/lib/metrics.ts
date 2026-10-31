@@ -388,7 +388,7 @@ export function assemble_row_data(
     const excluded_formula_reasons = diatomics_metrics?.excluded_formula_reasons ?? {}
     // group excluded formulas by reason for a compact tooltip like
     // "Diatomics metrics exclude A-A, B-B due to <reason>; C-C due to <other>"
-    let model_exclusion_marker = ``
+    let name_markers = ``
     if (Object.keys(excluded_formula_reasons).length > 0) {
       const formulas_by_reason = Map.groupBy(
         Object.entries(excluded_formula_reasons),
@@ -402,16 +402,21 @@ export function assemble_row_data(
           )
           .join(`; `)}`,
       )
-      model_exclusion_marker =
+      name_markers =
         `<span title="${exclusion_note}" aria-label="${exclusion_note}">` +
         `<span aria-hidden="true">*</span></span>`
+    }
+    if (model.test_set_informed) {
+      const tasks = model.test_set_informed.map((task) => MODELING_TASKS[task].label)
+      const note = `${tasks.join(` and `)} test set${tasks.length > 1 ? `s` : ``} informed this model's development (see model notes)`
+      name_markers += `<span title="${note}" aria-label="${note}">†</span>`
     }
 
     const row: MetricsRowData = {
       model_key: model.model_key,
       model_name: model.model_name,
       model,
-      Model: `<a title="Version: ${model.model_version ?? `unknown`}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>${model_exclusion_marker}`,
+      Model: `<a title="Version: ${model.model_version ?? `unknown`}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>${name_markers}`,
       ...Object.fromEntries(
         Object.values(ALL_METRICS).map((label) => [
           label.key,

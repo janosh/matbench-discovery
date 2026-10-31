@@ -73,6 +73,7 @@ targets: EFSH_G
 training_sets: [MPtrj, MDR-MP PBE ω_q]
 fine_tune: true
 model_params: 707658
+test_set_informed: [phonons]
 training_cost:
   entries:
   - hardware: NVIDIA A100
@@ -129,6 +130,8 @@ notes:
     uv sync --extra pft
     bash data/download_pbe_mdr_preprocessed.sh
     uv run nequix/pft/train.py configs/nequix-mp-1-pft.yml
+  disclosure: >-
+    Fine-tuned on MDR-MP PBE ω_q Hessian labels whose training split contains 70 of the 103 κ-103 materials (2 more in validation, 6 in test; `data/pbe_mdr_split.json` in [atomicarchitects/nequix](https://github.com/atomicarchitects/nequix)), so κ-103 materials informed training.
 
 metrics:
   diatomics:
