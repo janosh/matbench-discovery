@@ -606,7 +606,7 @@ def _extract_single_model(
         if len(existing_paths) == 1 and os.path.isfile(identity_path):
             with open(identity_path, encoding="utf-8") as file:
                 if file.read() == archive_identity:
-                    return existing_paths[0]
+                    return os.path.normpath(existing_paths[0])
 
         shutil.rmtree(tmp_extract_dir, ignore_errors=True)
         os.makedirs(tmp_extract_dir)
