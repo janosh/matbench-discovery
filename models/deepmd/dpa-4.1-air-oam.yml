@@ -2,8 +2,8 @@ model_name: DPA-4.1-Air-OAM
 model_key: dpa-4.1-air-oam
 model_version: null
 dates:
-  benchmark_added: null
-  paper_published: null
+  benchmark_added: '2026-10-31'
+  paper_published: '2026-06-01'
 lifecycle: active
 authors:
 - name: Tiancheng Li

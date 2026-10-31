@@ -40,4 +40,4 @@ DP_VARIANT = "cuda"
 CMAKE_BUILD_PARALLEL_LEVEL = "8"
 
 [tool.uv.config-settings-package.deepmd-kit]
-"cmake.define.CMAKE_CUDA_ARCHITECTURES" = "native"
+"cmake.define.CMAKE_CUDA_ARCHITECTURES" = "80;90;100;120"

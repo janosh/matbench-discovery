@@ -13,6 +13,7 @@ import functools
 import hashlib
 import inspect
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -609,18 +610,20 @@ def _deepmd_graph(backend: str, **neighbor_options: str) -> Callable[..., Calcul
         # DeePMD picks its device at import, so a mismatch would silently run elsewhere
         if (target.type, target.index or 0) != (DEVICE.type, DEVICE.index or 0):
             raise ValueError(
-                f"DeePMD initialized on {DEVICE}, but {device} was requested. Set "
-                "DEVICE=cpu or CUDA_VISIBLE_DEVICES before starting the runner."
+                f"DeePMD initialized on {DEVICE}, but {device} was requested. Request "
+                "cpu with DEVICE=cpu, or pick one GPU with CUDA_VISIBLE_DEVICES and "
+                "request cuda."
             )
         if checkpoint.endswith(".pt2"):
             return DP(checkpoint, **neighbor_options)
-        # exported kernels are tuned for one GPU model and kernel policy
+        # exports bake in GPU-tuned kernels and inference precision, so key by both
         on_gpu = target.type == "cuda"
         kernel_env = {
             key: os.environ.get(key, default) if on_gpu else "0"
             for key, default in (("DP_TRITON_INFER", "2"), ("DP_CUDA_INFER", "1"))
-        }
-        gpu = "-".join(torch.cuda.get_device_name(target).split()) if on_gpu else "cpu"
+        } | {"DP_AMP_INFER": os.environ.get("DP_AMP_INFER", "0")}
+        gpu = torch.cuda.get_device_name(target) if on_gpu else "cpu"
+        gpu = re.sub(r"[^\w.-]+", "-", gpu).strip("-")
         digest, _state = _stable_file_sha256(checkpoint)
         frozen = (
             f"{CHECKPOINT_DIR}/dpa4-{digest[:16]}-{backend[2:]}-{gpu}-"
