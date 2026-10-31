@@ -329,6 +329,19 @@ def test_runnable_models_have_reproducible_runners(model: Model) -> None:
     )
 
 
+def test_environment_package_names_are_lowercase() -> None:
+    """Dependency names use PEP 503's lowercase spelling (pip ignores case)."""
+    from packaging.requirements import Requirement
+
+    uppercase = {
+        model.name: name
+        for model in Model
+        for dep in (model.metadata.get("environment") or {}).get("dependencies", [])
+        if (name := Requirement(dep).name) != name.lower()
+    }
+    assert not uppercase, f"lowercase these package names: {uppercase}"
+
+
 def test_environments_drive_calculator_dependencies() -> None:
     """Registered calculators expose exactly their YAML environment blocks."""
     for calculator_key, calc_spec in CALCULATORS.items():

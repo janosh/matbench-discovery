@@ -489,7 +489,7 @@ def _mace_soyo(head: str) -> Callable[..., Calculator]:
                 package,
                 source_paths=(checkpoint,),
                 tool_packages=(
-                    *("MACE-SOYO", "torch", "cuequivariance", "cuequivariance-torch"),
+                    *("mace-soyo", "torch", "cuequivariance", "cuequivariance-torch"),
                     *("cuequivariance-ops-torch-cu12", "nvalchemi-toolkit-ops"),
                     "warp-lang",
                 ),
