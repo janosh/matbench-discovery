@@ -133,7 +133,7 @@ metrics:
       size: 1322814
       md5: 5e231a2b3a029714b984890a6fbe5002
     full_test_set:
-      F1: 0.668  # fraction
+      F1: 0.668 # fraction
       DAF: 3.4 # dimensionless
       Precision: 0.583 # fraction
       Recall: 0.781 # fraction
@@ -147,7 +147,7 @@ metrics:
       R2: 0.698 # dimensionless
       missing_preds: 38 # count
     unique_prototypes:
-      F1: 0.669  # fraction
+      F1: 0.669 # fraction
       DAF: 3.777 # dimensionless
       Precision: 0.577 # fraction
       Recall: 0.796 # fraction

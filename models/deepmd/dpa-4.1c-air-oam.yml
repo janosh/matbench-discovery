@@ -1,6 +1,6 @@
 model_name: DPA-4.1C-Air-OAM
 model_key: dpa-4.1c-air-oam
-model_version: null
+model_version:
 dates:
   benchmark_added: '2026-10-31'
   paper_published: '2026-08-19'
@@ -109,33 +109,33 @@ metrics:
       md5: c1f8f7ed35dde8e6812a2e8048a5cd05
       url: https://ndownloader.figshare.com/files/70537575
     full_test_set:
-      F1: 0.7833981263854388
-      DAF: 4.48614662695746
-      Precision: 0.7697729909590421
-      Recall: 0.7975142883062687
-      Accuracy: 0.924327626934617
-      TP: 35164
-      FP: 10517
-      TN: 202354
-      FN: 8928
-      MAE: 0.033558590603243295
-      RMSE: 0.07545339635136702
-      R2: 0.8242214288365581
-      missing_preds: 2
+      F1: 0.783 # fraction
+      DAF: 4.486 # dimensionless
+      Precision: 0.77 # fraction
+      Recall: 0.798 # fraction
+      Accuracy: 0.924 # fraction
+      TP: 35164 # count
+      FP: 10517 # count
+      TN: 202354 # count
+      FN: 8928 # count
+      MAE: 0.034 # eV/atom
+      RMSE: 0.075 # eV/atom
+      R2: 0.824 # dimensionless
+      missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.7985909291061206
-      DAF: 5.120072435523673
-      Precision: 0.7827137760386695
-      Recall: 0.8151255468328639
-      Accuracy: 0.9363212800712801
-      TP: 27204
-      FP: 7552
-      TN: 174562
-      FN: 6170
-      MAE: 0.03446718610781111
-      RMSE: 0.0761017618492258
-      R2: 0.8292107565241316
-      missing_preds: 0
+      F1: 0.799 # fraction
+      DAF: 5.12 # dimensionless
+      Precision: 0.783 # fraction
+      Recall: 0.815 # fraction
+      Accuracy: 0.936 # fraction
+      TP: 27204 # count
+      FP: 7552 # count
+      TN: 174562 # count
+      FN: 6170 # count
+      MAE: 0.034 # eV/atom
+      RMSE: 0.076 # eV/atom
+      R2: 0.829 # dimensionless
+      missing_preds: 0 # count
   geo_opt:
     pred_file:
       name: models/deepmd/dpa-4.1c-air-oam/2026-10-06-geo-opt.jsonl.gz

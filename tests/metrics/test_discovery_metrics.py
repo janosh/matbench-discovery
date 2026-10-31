@@ -273,6 +273,9 @@ def test_discovery_metrics_match_manual_calculation_and_round_trip(
     assert "TPR:" not in yaml_text
     assert "Recall:" in yaml_text
     assert "full_test_set:" in yaml_text
+    # counts are written as integers, never floats like "TP: 12.0"
+    assert all(type(written[subset]["TP"]) is int for subset in written)
+    assert ".0 # count" not in yaml_text
 
 
 def test_df_discovery_metrics() -> None:

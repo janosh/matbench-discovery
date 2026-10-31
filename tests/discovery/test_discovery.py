@@ -289,8 +289,8 @@ def test_write_yaml_results_masks_outliers_and_updates_yaml(
     assert set(discovery_yaml) >= {str(subset) for subset in TestSubset}
     full_metrics = discovery_yaml[str(TestSubset.full_test_set)]
     assert full_metrics[str(MbdKey.missing_preds)] == 2
-    assert full_metrics["TP"] == 1.0
-    assert isinstance(full_metrics["TP"], float), "counts are written as floats"
+    assert full_metrics["TP"] == 1
+    assert type(full_metrics["TP"]) is int, "counts are written as integers"
     # DAF denominator is the uniq-proto stable prevalence 2/3, Precision is 1
     uniq_metrics = discovery_yaml[str(TestSubset.uniq_protos)]
     assert uniq_metrics["DAF"] == pytest.approx(1.5)

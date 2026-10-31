@@ -187,10 +187,10 @@ metrics:
       Precision: 0.699 # fraction
       Recall: 0.81 # fraction
       Accuracy: 0.908 # fraction
-      TP: 35734.0 # count
-      FP: 15408.0 # count
-      TN: 197463.0 # count
-      FN: 8358.0 # count
+      TP: 35734 # count
+      FP: 15408 # count
+      TN: 197463 # count
+      FN: 8358 # count
       MAE: 0.041 # eV/atom
       RMSE: 0.082 # eV/atom
       R2: 0.794 # dimensionless
@@ -201,10 +201,10 @@ metrics:
       Precision: 0.705 # fraction
       Recall: 0.826 # fraction
       Accuracy: 0.92 # fraction
-      TP: 27570.0 # count
-      FP: 11518.0 # count
-      TN: 170596.0 # count
-      FN: 5804.0 # count
+      TP: 27570 # count
+      FP: 11518 # count
+      TN: 170596 # count
+      FN: 5804 # count
       MAE: 0.043 # eV/atom
       RMSE: 0.083 # eV/atom
       R2: 0.797 # dimensionless

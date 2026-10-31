@@ -292,7 +292,10 @@ def write_all_metrics_to_yaml(
     }
     written: dict[TestSubset, dict[str, str | float]] = {}
     for test_subset, metrics in metrics_by_subset.items():
-        rounded = {key: round(float(value), 3) for key, value in metrics.items()}
+        rounded = {
+            key: int(value) if units[key] == "count" else round(float(value), 3)
+            for key, value in metrics.items()
+        }
         rounded[str(MbdKey.missing_preds)] = n_missing[test_subset]
         written[test_subset] = commented_map_with_units(rounded, units)
 

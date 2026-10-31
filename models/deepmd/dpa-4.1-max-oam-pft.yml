@@ -1,6 +1,6 @@
 model_name: DPA-4.1-Max-OAM-PFT
 model_key: dpa-4.1-max-oam-pft
-model_version: null
+model_version:
 dates:
   benchmark_added: '2026-10-31'
   paper_published: '2026-06-01'
@@ -120,10 +120,10 @@ metrics:
       Precision: 0.909 # fraction
       Recall: 0.919 # fraction
       Accuracy: 0.97 # fraction
-      TP: 40534.0 # count
-      FP: 4065.0 # count
-      TN: 208806.0 # count
-      FN: 3558.0 # count
+      TP: 40534 # count
+      FP: 4065 # count
+      TN: 208806 # count
+      FN: 3558 # count
       MAE: 0.017 # eV/atom
       RMSE: 0.066 # eV/atom
       R2: 0.865 # dimensionless
@@ -134,10 +134,10 @@ metrics:
       Precision: 0.931 # fraction
       Recall: 0.939 # fraction
       Accuracy: 0.98 # fraction
-      TP: 31337.0 # count
-      FP: 2328.0 # count
-      TN: 179786.0 # count
-      FN: 2037.0 # count
+      TP: 31337 # count
+      FP: 2328 # count
+      TN: 179786 # count
+      FN: 2037 # count
       MAE: 0.017 # eV/atom
       RMSE: 0.066 # eV/atom
       R2: 0.872 # dimensionless

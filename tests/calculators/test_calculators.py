@@ -436,7 +436,10 @@ def test_archive_extraction_replaces_invalid_cache(
     extract = calculators._extract_single_model  # noqa: SLF001
     model_path = extract(str(archive_path), find_models)
 
-    assert find_models(str(extract_dir)) == [model_path]
+    # finders join with "/" but the extractor returns OS-normalized paths
+    assert [os.path.normpath(path) for path in find_models(str(extract_dir))] == [
+        model_path
+    ]
     assert (extract_dir / model_file).read_bytes() == b"weights"
     sentinel = extract_dir / "sentinel"
     sentinel.touch()
