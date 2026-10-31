@@ -1,4 +1,3 @@
-import { OPENNESS_OPTIONS } from '#lib/url-state.svelte.js'
 import { comparison } from '#lib/model-comparison.svelte.js'
 import Page from '#routes/+page.svelte'
 import { flushSync, tick } from 'svelte'
@@ -16,6 +15,7 @@ import {
   POPOVER_OPEN_ATTR,
   query_param,
   sorted_header,
+  selected_only_toggle,
 } from '../index.js'
 
 const header_text = () =>
@@ -64,6 +64,8 @@ describe(`Landing Page`, () => {
   }
 
   it(`keeps the table, plots, score weights and About visible with hover help beside RSS`, async () => {
+    // URL params are the only restored state (a Kit snapshot would override them)
+    expect(page_component).not.toHaveProperty(`snapshot`)
     const preset_labels = toggle_buttons(`Discovery`).map((button) =>
       button.textContent?.trim(),
     )
@@ -266,28 +268,6 @@ describe(`Landing Page`, () => {
     expect(test_set_shown()).toBe(false)
   })
 
-  it(`ignores snapshot values that no longer exist`, async () => {
-    const model_count = document.querySelectorAll(`tbody tr`).length
-
-    // a snapshot captured before a deploy that renamed/removed these
-    page_component.snapshot.restore({
-      discovery_set: `most_stable_10k`,
-      col_preset: `Removed Preset`,
-      // openness left unrestricted so the row count only reflects the unknown dataset
-      filters: {
-        training: { RenamedDataset: `require` },
-        openness: [...OPENNESS_OPTIONS],
-      },
-    })
-    await tick()
-
-    // the stale set and preset fall back to the defaults the page mounted with
-    expect(pressed_toggle(`Full Test Set`)).toBe(`Unique Prototypes`)
-    expect(pressed_toggle(`Discovery`)).toBe(`Discovery`)
-    // the unknown dataset is ignored, leaving the row count unchanged
-    expect(document.querySelectorAll(`tbody tr`)).toHaveLength(model_count)
-  })
-
   it.each([`click`, `Enter`, ` `])(
     `auto-sorts presets until manual sorting with %j`,
     async (event_type) => {
@@ -386,9 +366,8 @@ describe(`Landing Page`, () => {
 
     doc_query(`tbody tr`).dispatchEvent(new MouseEvent(`dblclick`, { bubbles: true }))
     await tick()
-    const selected_only = doc_query<HTMLInputElement>(
-      `input[aria-label="Toggle between showing only selected models and all models"]`,
-    )
+    const selected_only = selected_only_toggle()
+    if (!selected_only) throw new Error(`No show-selected-only toggle`)
     selected_only.click()
     await tick()
     expect(document.querySelectorAll(`tbody tr`)).toHaveLength(1)

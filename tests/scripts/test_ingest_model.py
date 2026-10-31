@@ -22,9 +22,10 @@ def shared_runner_calls(monkeypatch: pytest.MonkeyPatch) -> list[list[str]]:
     """Capture shared-runner subprocesses without executing model environments."""
     calls: list[list[str]] = []
 
-    def fake_run(command: list[str], *, check: bool) -> None:
-        """Record a successful checked subprocess call."""
+    def fake_run(command: list[str], *, check: bool, cwd: str) -> None:
+        """Record a successful checked subprocess call run from the repo root."""
         assert check is True
+        assert cwd == ingest.ROOT
         calls.append(command)
 
     monkeypatch.setattr(ingest.subprocess, "run", fake_run)
@@ -211,6 +212,7 @@ def test_cli_rejects_invalid_args(
 ) -> None:
     """Unknown, missing, or unauthenticated CLI arguments fail validation."""
     monkeypatch.delenv("FIGSHARE_TOKEN", raising=False)
+    monkeypatch.setattr(ingest.figshare, "ENV_PATH", "/nonexistent/.env")
     with pytest.raises(SystemExit, match="2"):
         ingest.main(argv)
 
@@ -295,7 +297,8 @@ def test_publish_parity_assets_once(
             asset_path.parent.mkdir(parents=True, exist_ok=True)
             asset_path.write_bytes(asset_bytes)
             asset_paths.append(asset_path)
-    monkeypatch.chdir(tmp_path)
+    # manifests and assets resolve against ROOT, never the caller's cwd
+    monkeypatch.setattr(ingest, "ROOT", str(tmp_path))
     monkeypatch.setattr(ingest, "release_asset_digests", dict)
     assert ingest.main(["--publish-parity"]) == 0
     assert len(run_cmd_calls) == 2
@@ -494,3 +497,16 @@ def test_archive_rejects_artifact_escaping_model_dir(
         upload.resolve_artifact_path(
             str(family_dir / yaml_name), artifact_rel_path, str(tmp_path)
         )
+
+
+def test_untraceable_cost_fails_checklist(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A runner-tagged cost block without the artifact it claims fails ingestion."""
+    model = Model.mace_mpa_0
+    discovery = model.metadata["metrics"]["discovery"]
+    monkeypatch.setitem(discovery, "cost", {"source": "runner", "hardware": "H200"})
+    checks = ingest.Checklist()
+    ingest.check_submission(model, checks, validate_runner=False)
+    assert any(
+        "Cost provenance: metrics.discovery" in message and "run_info_file" in message
+        for message in msgs(checks, ingest.FAIL)
+    )

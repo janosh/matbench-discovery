@@ -150,19 +150,12 @@ def test_atoms_zip_round_trip(dummy_atoms_zip: Path) -> None:
                 assert value == read_val, f"Mismatch in {key}"
 
 
-def test_ase_atoms_from_zip_read_options(dummy_atoms_zip: Path) -> None:
-    """file_filter and filename_to_info options select / annotate zip members."""
-    filtered = ase_atoms_from_zip(
-        dummy_atoms_zip, file_filter=lambda name, _idx: "1" in name
-    )
-    assert len(filtered) == 1
-    assert filtered[0].get_chemical_formula() == "H2O"
-
-    with_names = ase_atoms_from_zip(dummy_atoms_zip, filename_to_info=True)
-    assert [atoms.info["filename"] for atoms in with_names] == [
-        "structure1.extxyz",
-        "structure2.extxyz",
-    ]
+def test_ase_atoms_from_zip_skips_non_extxyz_members(dummy_atoms_zip: Path) -> None:
+    """Archive members without an .extxyz suffix are ignored."""
+    with zipfile.ZipFile(dummy_atoms_zip, mode="a") as zip_file:
+        zip_file.writestr("readme.txt", "not a structure")
+    read_atoms = ase_atoms_from_zip(dummy_atoms_zip)
+    assert [atoms.get_chemical_formula() for atoms in read_atoms] == ["H2O", "CO2"]
 
 
 def test_ase_atoms_from_zip_bad_inputs(tmp_path: Path) -> None:
@@ -181,25 +174,11 @@ def test_ase_atoms_from_zip_bad_inputs(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     ("limit", "expected_formulas"),
     [
-        (1, ["H2O"]),
-        (2, ["H2O", "CO2"]),
-        (None, ["H2O", "CO2"]),
-        (10, ["H2O", "CO2"]),
-    ],
-)
-def test_ase_atoms_from_zip_with_limit(
-    dummy_atoms_zip: Path, limit: int | None, expected_formulas: list[str]
-) -> None:
-    """Integer/None limits truncate or return the full zip contents."""
-    read_atoms = ase_atoms_from_zip(dummy_atoms_zip, limit=limit)
-    assert [atoms.get_chemical_formula() for atoms in read_atoms] == expected_formulas
-
-
-@pytest.mark.parametrize(
-    ("slice_limit", "expected_formulas"),
-    [
+        (1, ["H2"]),
+        (2, ["H2", "N2"]),
+        (None, ["H2", "N2", "O2", "F2", "Cl2"]),
+        (10, ["H2", "N2", "O2", "F2", "Cl2"]),
         (slice(1, 3), ["N2", "O2"]),
-        (slice(None, 2), ["H2", "N2"]),
         (slice(3, None), ["F2", "Cl2"]),
         (slice(0, None, 2), ["H2", "O2", "Cl2"]),
         (slice(None, None, -1), ["Cl2", "F2", "O2", "N2", "H2"]),
@@ -207,23 +186,20 @@ def test_ase_atoms_from_zip_with_limit(
         (slice(10, 20), []),
     ],
 )
-def test_ase_atoms_from_zip_with_slice_limit(
-    tmp_path: Path, slice_limit: slice, expected_formulas: list[str]
+def test_ase_atoms_from_zip_with_limit(
+    tmp_path: Path, limit: int | slice | None, expected_formulas: list[str]
 ) -> None:
-    """Slice limits select zip members by archive order."""
-    more_atoms = [
-        Atoms("H2", positions=[[0, 0, 0], [0, 0, 1]], cell=[4, 4, 4]),
-        Atoms("N2", positions=[[0, 0, 0], [0, 0, 1.1]], cell=[4, 4, 4]),
-        Atoms("O2", positions=[[0, 0, 0], [0, 0, 1.2]], cell=[4, 4, 4]),
-        Atoms("F2", positions=[[0, 0, 0], [0, 0, 1.4]], cell=[4, 4, 4]),
-        Atoms("Cl2", positions=[[0, 0, 0], [0, 0, 2.0]], cell=[5, 5, 5]),
-    ]
-    for idx, atoms in enumerate(more_atoms):
-        atoms.info[Key.mat_id] = f"slice_test_{idx}"
+    """Integer and slice limits select zip members by archive order."""
+    bond_lengths = {"H2": 1.0, "N2": 1.1, "O2": 1.2, "F2": 1.4, "Cl2": 2.0}
+    more_atoms = []
+    for idx, (formula, bond_length) in enumerate(bond_lengths.items()):
+        atoms = Atoms(formula, positions=[[0, 0, 0], [0, 0, bond_length]], cell=[5] * 3)
+        atoms.info[Key.mat_id] = f"limit_test_{idx}"
+        more_atoms.append(atoms)
 
-    zip_path = tmp_path / "slice_test_structures.zip"
+    zip_path = tmp_path / "limit_test_structures.zip"
     write_atoms_zip(more_atoms, zip_path)
-    read_atoms = ase_atoms_from_zip(zip_path, limit=slice_limit)
+    read_atoms = ase_atoms_from_zip(zip_path, limit=limit)
     assert [atoms.get_chemical_formula() for atoms in read_atoms] == expected_formulas
 
 
@@ -695,8 +671,16 @@ def test_file_ref_accessors() -> None:
     assert list(iter_file_refs({"metrics": {"pred_file": nested}})) == [
         (("metrics", "pred_file"), nested["name"])
     ]
-    with pytest.raises(ValueError, match=r"Invalid FileRef at metrics\.pred_file"):
-        list(iter_file_refs({"metrics": {"pred_file": "legacy/path.csv.gz"}}))
+    # reproducibility run files sit in a list: key paths carry the list index
+    runs: list[dict[str, Any]] = [{"label": "a", "file": nested}, {"file": "b.gz"}]
+    md_block = {"md": {"pred_file": None, "reproducibility": {"runs": runs}}}
+    with pytest.raises(ValueError, match=r"at md\.reproducibility\.runs\.1\.file"):
+        list(iter_file_refs(md_block))  # bare string instead of a FileRef
+    runs[1]["file"] = {"name": "b.gz"}
+    assert list(iter_file_refs(md_block)) == [
+        (("md", "reproducibility", "runs", 0, "file"), nested["name"]),
+        (("md", "reproducibility", "runs", 1, "file"), "b.gz"),
+    ]
 
 
 @pytest.mark.parametrize(

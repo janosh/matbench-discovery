@@ -29,22 +29,25 @@ def test_run_md_cli_write_yaml_skips_non_submission_model(
     # avoid the real calculator + rollout pipeline; return metrics calc_md_metrics reads
     captured_kwargs: dict[str, object] = {}
 
-    def fake_load_calculator(*_args: object, **_kwargs: object) -> EMT:
-        """Return a lightweight calculator for the CLI test."""
-        return EMT()
+    def fake_load_calculator(
+        *_args: object, **_kwargs: object
+    ) -> tuple[EMT, dict[str, object]]:
+        """Return a lightweight calculator and its runtime for the CLI test."""
+        return EMT(), {"hardware": "CPU (test)"}
 
     def fake_run_md_benchmark(**kwargs: object) -> pd.DataFrame:
         """Capture runner kwargs while returning minimal aggregateable metrics."""
         captured_kwargs.update(kwargs)
         return pd.DataFrame({"rdf_error": [1.0], "vdos_error": [2.0]})
 
-    monkeypatch.setattr(RUN_MD, "load_calculator", fake_load_calculator)
+    monkeypatch.setattr(RUN_MD, "load_calculator_with_runtime", fake_load_calculator)
     monkeypatch.setattr(RUN_MD, "run_md_benchmark", fake_run_md_benchmark)
     monkeypatch.setenv("MBD_MD_PRIVATE_REF_FILE", "/private/ref.h5")
     monkeypatch.setattr(sys, "argv", ["run_md", "--model", "emt", "--write-yaml"])
 
     assert RUN_MD.main() == 0  # would raise ValueError without the non-enum guard
     assert captured_kwargs["private_ref_file"] == "/private/ref.h5"
+    assert captured_kwargs["runtime"] == {"hardware": "CPU (test)"}
 
 
 @pytest.mark.parametrize(

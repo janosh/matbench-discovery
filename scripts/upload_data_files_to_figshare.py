@@ -20,7 +20,7 @@ def main(
     pyproject: dict[str, Any],
     max_file_size: int = 500 * 1024**2,  # in bytes, files larger than this should
     # be uploaded manually to avoid timeouts
-    files: Sequence[DataFiles] = tuple(DataFiles),
+    files: Sequence[DataFiles] | None = None,
     *,
     dry_run: bool = False,
 ) -> int:
@@ -32,11 +32,34 @@ def main(
             article will be created.
         pyproject (dict[str, Any]): Dictionary containing the project metadata.
         max_file_size (int): Maximum file size in bytes to be uploaded automatically.
-        files (list[DataFiles] | None): Which attributes of DataFiles to upload.
-            Defaults to all.
+        files (list[DataFiles] | None): Which DataFiles to upload (must exist
+            locally). Defaults to all local ones.
         dry_run (bool): Only print planned creates, uploads, publishes and YAML
             writes. Reads the remote file listing but changes nothing.
     """
+    existing_yaml: dict[str, dict[str, str]] = {}
+    if os.path.isfile(yaml_path):
+        with open(yaml_path, encoding="utf-8") as file:
+            existing_yaml = round_trip_yaml.load(file)
+
+    # validate every file before touching Figshare so a bad request changes nothing
+    def is_local(data_file: DataFiles) -> bool:
+        """Whether the data file exists locally."""
+        return os.path.isfile(f"{DATA_DIR}/{data_file.rel_path}")
+
+    if files is None:
+        files = [data_file for data_file in DataFiles if is_local(data_file)]
+    elif missing := [data_file.name for data_file in files if not is_local(data_file)]:
+        raise FileNotFoundError(f"Requested --files missing locally: {missing}")
+    if undescribed := [
+        data_file.name
+        for data_file in files
+        if not (existing_yaml.get(data_file.name) or {}).get("description")
+    ]:
+        raise ValueError(
+            f"Add a description for {undescribed} in {yaml_path} before uploading"
+        )
+
     article_is_new = False
     if article_id is not None:
         if figshare.article_exists(article_id):
@@ -82,11 +105,6 @@ def main(
     article_url = f"{figshare.ARTICLE_URL_PREFIX}/{article_id}"
 
     try:
-        existing_yaml: dict[str, dict[str, str]] = {}
-        if os.path.isfile(yaml_path):
-            with open(yaml_path, encoding="utf-8") as file:
-                existing_yaml = round_trip_yaml.load(file)
-
         # remote listing lets us skip re-uploading unchanged files
         existing_files = (
             [] if article_id is None else figshare.list_article_files(article_id)
@@ -97,20 +115,15 @@ def main(
         # copy so entries for files not touched by this run survive
         files_in_article: dict[str, dict[str, str]] = existing_yaml.copy()
         updated_files: dict[str, str] = {}  # re-uploaded
-        new_files: dict[str, str] = {}  # didn't exist before
+        new_files: dict[str, str] = {}  # first upload of a registry entry
 
         for data_file in (pbar := tqdm(files)):
             pbar.set_description(f"Processing {data_file.name}")
             file_path = f"{DATA_DIR}/{data_file.rel_path}"
 
-            if not os.path.isfile(file_path):
-                print(f"Warning: {file_path} does not exist, skipping...")
-                continue
-
             # copy so we don't mutate existing_yaml
-            file_data = existing_yaml.get(data_file.name, {}).copy()
+            file_data = existing_yaml[data_file.name].copy()
             file_data.setdefault("path", data_file.rel_path)
-            file_data.setdefault("description", "Description needed")
 
             # Always record the freshly computed hash: reusing a stored md5 here once
             # let re-uploads leave stale registry checksums (#357).
@@ -136,13 +149,12 @@ def main(
                     "Please upload manually at "
                     f"https://figshare.com/account/articles/{article_id}"
                 )
-                if data_file.name in existing_yaml:
-                    files_in_article[data_file.name] = existing_yaml[data_file.name]
-                else:
-                    del files_in_article[data_file.name]
+                files_in_article[data_file.name] = existing_yaml[data_file.name]
                 continue
             else:  # upload new or modified file, tracked for the summary print below
-                dest = updated_files if data_file.name in existing_yaml else new_files
+                # registry entries without a URL were never uploaded before
+                is_update = "url" in existing_yaml[data_file.name]
+                dest = updated_files if is_update else new_files
                 if dry_run or article_id is None:
                     print(f"\n[dry-run] Would upload {file_path} as {file_name!r}")
                     dest[data_file.name] = "(not uploaded: dry run)"
@@ -203,14 +215,14 @@ def build_parser() -> argparse.ArgumentParser:
     """Build the CLI parser (strict, so typos like --dryrun fail instead of
     silently uploading and publishing).
     """
-    parser = argparse.ArgumentParser(description="Upload data files to Figshare")
+    parser = argparse.ArgumentParser(
+        description="Upload data files to Figshare", allow_abbrev=False
+    )
     parser.add_argument(
         "--files",
-        type=DataFiles._value2member_map_.__getitem__,
+        type=DataFiles,
         nargs="+",
-        choices=DataFiles,
-        default=tuple(DataFiles),
-        help="DataFiles to upload. If not specified, all files will be uploaded.",
+        help="DataFiles to upload (must exist locally). Defaults to all local files.",
     )
     parser.add_argument(
         "-n",

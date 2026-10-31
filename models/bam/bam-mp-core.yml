@@ -105,8 +105,7 @@ metrics:
       url: https://figshare.com/files/67080089
       size: 1343396
       md5: 667f4600dd149a8199e187ae391a092e
-    hardware: NVIDIA H100
-    run_time_sec: 484948
+    cost: {source: author_reported, hardware: NVIDIA H100, run_time_sec: 484948}
     full_test_set:
       F1: 0.618
       DAF: 3.268
@@ -142,66 +141,67 @@ metrics:
       size: 104612192
       md5: 1cae3b39310d1a7835cee16961db9a5a
     symprec=1e-5:
-      rmsd: 0.0863
-      n_sym_ops_mae: 1.8906
-      symmetry_decrease: 0.0469
-      symmetry_match: 0.7256
-      symmetry_increase: 0.2223
-      n_structures: 256963
+      rmsd: 0.0863 # unitless
+      n_sym_ops_mae: 1.8906 # unitless
+      symmetry_decrease: 0.0469 # fraction
+      symmetry_match: 0.7256 # fraction
+      symmetry_increase: 0.2223 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/bam/bam-mp-core/2026-05-09-geo-opt-symprec=1e-5-moyo=0.12.0.csv.gz
-        url: https://figshare.com/files/67080095
-        size: 7204479
-        md5: 03b61dcdc05459c04eafbef3609aefe6
+        name: models/bam/bam-mp-core/2026-05-09-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333989
+        size: 6761280
+        md5: ce723c533f4f0cca940f5f10018acec8
     symprec=1e-2:
-      rmsd: 0.0863
-      n_sym_ops_mae: 1.8469
-      symmetry_decrease: 0.061
-      symmetry_match: 0.8121
-      symmetry_increase: 0.1202
-      n_structures: 256963
+      rmsd: 0.0863 # unitless
+      n_sym_ops_mae: 1.8469 # unitless
+      symmetry_decrease: 0.061 # fraction
+      symmetry_match: 0.8121 # fraction
+      symmetry_increase: 0.1202 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/bam/bam-mp-core/2026-05-09-geo-opt-symprec=1e-2-moyo=0.12.0.csv.gz
-        url: https://figshare.com/files/67080098
-        size: 7230718
-        md5: 3fff37eaa297fa215212377d9b2b8d75
+        name: models/bam/bam-mp-core/2026-05-09-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333992
+        size: 6763300
+        md5: 9d2a8dfe86470310bf5793482dba6aa0
   phonons:
     kappa_103:
-      run_info_file:
-        name: models/bam/bam-mp-core/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 8200
-        md5: 2d795670c29de575f3b84f05e129b0d6
-      phonon_file:
-        name: models/bam/bam-mp-core/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1385530273
-        md5: 9c507d24acae60c8f5c5db722c11b28c
-      force_file:
-        name: models/bam/bam-mp-core/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 8835923
-        md5: c19f5965744f5585754407d84115f493
       pred_file:
         name: models/bam/bam-mp-core/2026-05-09-phonons-kappa-103.json.gz
         url: https://figshare.com/files/68221279
         size: 7770580
         md5: 54d8a5286b3192ce3d3af3c667f635e3
-      hardware: NVIDIA A100
-      run_time_sec: 28459
+      cost: {source: author_reported, hardware: NVIDIA A100, run_time_sec: 28459}
       κ_SRME: 0.8475
       κ_SRE: 0.7192
       κ_SRD: -0.6633
       κ_failure_rate: 0.1262
       imaginary_mode_rate: 0.068
       spectrum_w1: 0.8002
+      harmonic:
+        phonon_file:
+          name: models/bam/bam-mp-core/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334160
+          size: 23926506
+          md5: 612e1f6b449247a17d3a486901949cea
+        force_file:
+          name: models/bam/bam-mp-core/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334163
+          size: 8835923
+          md5: c19f5965744f5585754407d84115f493
+        run_info_file:
+          name: models/bam/bam-mp-core/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334157
+          size: 8200
+          md5: 2d795670c29de575f3b84f05e129b0d6
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 576.55, max_rss_gb: 3.027, max_gpu_mem_gb: 45.719}
   diatomics:
     pred_file:
-      name: models/bam/bam-mp-core/2026-09-12-diatomics.json.gz
-      size: 223016
-      md5: f9ee5c59c856144326829a36ead5f0c5
-      url: https://figshare.com/files/68484274
-    hardware: NVIDIA H200
-    run_time_sec: 499.2
-    max_rss_gb: 2.491
-    max_gpu_mem_gb: 0.483
+      name: models/bam/bam-mp-core/2026-10-19-diatomics.json.gz
+      url: https://figshare.com/files/70349727
+      size: 222026
+      md5: 7360e5eb4698bcdcb2f5947af9875ae6
+    cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 490.34, load_time_sec: 6.48, max_rss_gb: 2.602, max_gpu_mem_gb: 0.483}
     excluded_formula_reasons: {}
     pbe_wall_dist_mae: 0.2373
     pbe_energy_mae: 1.325
@@ -220,16 +220,25 @@ metrics:
       n_eligible: 73
       failed_elements: []
       missing_elements: []
+    reproducibility:
+      checked: '2026-10-20'
+      status: reproduced
+      tolerance: 0.001
+      runs:
+      - label: published run (2026-09-12, H200)
+        file:
+          name: models/bam/bam-mp-core/2026-09-12-diatomics.json.gz
+          url: https://figshare.com/files/68484274
+          size: 223016
+          md5: f9ee5c59c856144326829a36ead5f0c5
+      rel_changes: {}
   md:
     pred_file:
       name: models/bam/bam-mp-core/2026-09-12-md-metrics.csv.gz
       size: 3630
       md5: aeba40f14eaa8e254ed18aff55374cee
       url: https://figshare.com/files/68484313
-    hardware: NVIDIA H200
-    run_time_sec: 80156.25 # s
-    max_rss_gb: 3.212 # GB
-    max_gpu_mem_gb: 13.974 # GB
+    cost: {source: runner, hardware: NVIDIA H200, run_time_sec: 80156.25, max_rss_gb: 3.212, max_gpu_mem_gb: 13.974}
     energy_rmse: 1.302 # meV/atom
     force_rmse: 124.0329 # meV/Å
     rdf_error: 4.5838 # %

@@ -13,7 +13,8 @@ const base_url = pkg.homepage.endsWith(`/`) ? pkg.homepage : `${pkg.homepage}/`
 
 function format_model_for_rss(model: ModelData): string {
   const discovery = model.metrics?.discovery
-  const discovery_metrics = discovery?.full_test_set ?? discovery?.unique_prototypes
+  // same headline set as the leaderboard and CPS
+  const discovery_metrics = discovery?.unique_prototypes ?? discovery?.full_test_set
 
   const training_set = format_train_set(model.training_sets, model)
   const clean_training_set = strip_html(training_set)

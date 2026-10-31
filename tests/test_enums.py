@@ -12,7 +12,6 @@ import requests
 
 import scripts.generate_model_enum as model_enum_generator
 from matbench_discovery import DATA_DIR, ROOT, file_digest
-from matbench_discovery.data import file_ref_name
 from matbench_discovery.enums import (
     ArchitectureType,
     DataFiles,
@@ -26,7 +25,7 @@ from matbench_discovery.enums import (
     resolve_verified_file,
 )
 from matbench_discovery.remote import figshare
-from tests.utils import make_mock_response
+from tests.utils import make_mock_response, patch_model_metadata
 
 
 @pytest.mark.parametrize("enum_cls", [ArchitectureType, MbdKey, Open, Task, TestSubset])
@@ -123,25 +122,13 @@ def test_files_members_are_distinct(enum_cls: type[Files]) -> None:
     # each member equals (and hashes like) its own value string
     assert first == first.value
     assert hash(first) == hash(first.value)
+    assert repr(first) == f"{enum_cls.__name__}.{first.name}"
+    assert str(first) == first.name == first.value
 
 
-def test_data_files_enum() -> None:
-    """Test DataFiles enum functionality."""
-    assert repr(DataFiles.mp_energies) == "DataFiles.mp_energies"
-    assert str(DataFiles.mp_energies) == "mp_energies"
-
-    assert DataFiles.mp_energies.rel_path == "mp/2025-02-01-mp-energies.csv.gz"
-    assert DataFiles.mp_patched_phase_diagram.rel_path == "mp/2023-02-07-ppd-mp.pkl.gz"
-    assert DataFiles.mp_energies.name == "mp_energies"
-    assert DataFiles.mp_energies.url.startswith("https://figshare.com/files/")
-
-    assert DataFiles.wbm_summary.rel_path == "wbm/2023-12-13-wbm-summary.csv.gz"
-    assert DataFiles.wbm_summary.path == f"{DATA_DIR}/wbm/2023-12-13-wbm-summary.csv.gz"
-    assert DataFiles.wbm_summary.url.startswith("https://figshare.com/files/")
-
+def test_diatomics_reference_md5_matches_bundled_copy() -> None:
+    """The registered diatomics reference md5 matches the site's bundled copy."""
     diatomics = DataFiles.diatomics_dft_reference
-    assert diatomics.rel_path == "diatomics/diatomics-dft.json.gz"
-    assert diatomics.url.startswith("https://figshare.com/files/")
     assert diatomics.yaml[diatomics.name]["md5"] == file_digest(
         f"{ROOT}/site/src/lib/diatomics-dft.json.gz", "md5"
     )
@@ -163,7 +150,6 @@ def test_data_files_path_raises_when_md5_download_fails(
     data_file = DataFiles.mp_energies
     expected_md5 = "0" * 32
     monkeypatch.setattr(DataFiles, "_base_dir", str(tmp_path))
-    monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", "true")
     monkeypatch.setitem(
         data_file.__dict__,
         "yaml",
@@ -224,15 +210,6 @@ def test_resolve_verified_file_rechecks_stale_cache(
             resolve()
 
 
-def test_model_md_path_returns_none_when_absent(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """md_path returns None when metrics.md is absent."""
-    model = Model.mace_mp_0
-    monkeypatch.setattr(type(model), "metrics", property(lambda _self: {}))
-    assert model.md_path is None
-
-
 @pytest.mark.parametrize("subdirectory", ["", "nested/", "../", "../mace-mp-0-extra/"])
 def test_model_md_path_returns_path_for_dict_md(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, subdirectory: str
@@ -242,10 +219,14 @@ def test_model_md_path_returns_path_for_dict_md(
 
     model = Model.mace_mp_0
     rel_path = f"models/mace/mace-mp-0/{subdirectory}2026-09-06-md-metrics.csv.gz"
-    monkeypatch.setattr(
-        type(model),
-        "metrics",
-        property(lambda _self: {"md": {"pred_file": {"name": rel_path}}}),
+    patch_model_metadata(
+        monkeypatch,
+        model,
+        {
+            "model_name": "MACE",
+            "model_key": "mace-mp-0",
+            "metrics": {"md": {"pred_file": {"name": rel_path}}},
+        },
     )
     download_calls: list[tuple[object, ...]] = []
     monkeypatch.setattr(
@@ -263,6 +244,27 @@ def test_model_md_path_returns_path_for_dict_md(
     else:
         assert model.md_path == expected_path
     assert download_calls == []
+
+
+@pytest.mark.parametrize("harmonic_rerun", [True, False])
+def test_kappa_103_phonon_path_layouts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, harmonic_rerun: bool
+) -> None:
+    """The phonon sidecar resolves from kappa_103.harmonic for harmonic-only reruns,
+    else from kappa_103 when the conductivity run itself produced it.
+    """
+    model = Model.mace_mp_0
+    sub_dir = "harmonic/" if harmonic_rerun else ""
+    rel_path = f"models/mace/mace-mp-0/{sub_dir}2026-09-05-phonons-kappa-103.json.gz"
+    phonon_ref = {"phonon_file": {"name": rel_path}}
+    kappa_103 = {"harmonic": phonon_ref} if harmonic_rerun else phonon_ref
+    metrics = {"phonons": {"kappa_103": kappa_103}}
+    metadata = {"model_name": "MACE", "model_key": "mace-mp-0", "metrics": metrics}
+    patch_model_metadata(monkeypatch, model, metadata)
+    monkeypatch.setattr("matbench_discovery.enums.ROOT", str(tmp_path))
+    Path(f"{tmp_path}/{rel_path}").parent.mkdir(parents=True)
+    Path(f"{tmp_path}/{rel_path}").write_bytes(b"phonons")
+    assert model.kappa_103_phonon_path == f"{tmp_path}/{rel_path}"
 
 
 @pytest.mark.parametrize("data_file", DataFiles)
@@ -312,55 +314,21 @@ def test_data_files_md5_matches_figshare(
     )
 
 
-def test_model_enum() -> None:
-    """Test Model enum functionality."""
-    assert Model.alignn.name == "alignn"
-    assert Model.alignn.rel_path == "alignn/alignn.yml"
-    assert Model.alignn.pr_url == "https://github.com/janosh/matbench-discovery/pull/85"
-    assert Model.alignn.label == "ALIGNN"
-
-    assert repr(Model.alignn) == "Model.alignn"
-    assert str(Model.alignn) == "alignn"
-
-    assert isinstance(Model.alignn.metadata, dict)
-
-    assert Model.alignn.yaml_path.endswith("alignn/alignn.yml")
-    grace_kappa_ref = Model.grace_2l_mptrj.metrics["phonons"]["kappa_103"]["pred_file"]
-    grace_kappa_name = file_ref_name(grace_kappa_ref)
-    assert grace_kappa_name is not None
-    assert grace_kappa_name.endswith("2024-11-20-phonons-kappa-103.json.gz")
-
-    metrics = Model.alignn.metrics
-    assert isinstance(metrics, dict)
-    assert metrics.keys() == {"discovery"}
-
-    # Test registry-wide model properties and backing files
-    for model in Model:
-        assert os.path.isfile(model.yaml_path)
-    for model in Model.active():
-        discovery = model.metrics.get("discovery") or {}
-        if pred_name := file_ref_name(discovery.get("pred_file")):
-            assert "/models/" in f"/{pred_name}"
-
-    assert Model.mace_mp_0.label == "MACE-MP-0"
-    assert Model.mace_mp_0.name == Model.mace_mp_0.value == "mace_mp_0"
-    assert not Model.alphanet_v1_mptrj.is_active
-    assert not Model.dpa_3_1_mptrj.is_active
-
-
-def test_model_metrics_null_section(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Bare `metrics:` (None) reads as no metrics instead of crashing callers."""
-    from matbench_discovery import cli
-
-    model = Model.chgnet_0_3_0
-    monkeypatch.setitem(vars(model), "metadata", {**model.metadata, "metrics": None})
-    assert model.metrics == {}
-    assert model.md_path is None
-    monkeypatch.setitem(
-        vars(model), "metadata", {**model.metadata, "metrics": {"discovery": None}}
-    )
-    monkeypatch.setattr(cli.cli_args, "models", [model])
-    assert cli.complete_models() == []
+@pytest.mark.parametrize(
+    ("metrics", "expected"),
+    [(None, {}), ({"md": {}}, {"md": {}})],
+)
+def test_model_metadata_accessors(
+    monkeypatch: pytest.MonkeyPatch,
+    metrics: dict[str, Any] | None,
+    expected: dict[str, Any],
+) -> None:
+    """label/key/metrics read YAML metadata; bare `metrics:` reads as no metrics."""
+    model = Model.alignn
+    metadata = {"model_name": "Fake Net", "model_key": "fake-net", "metrics": metrics}
+    patch_model_metadata(monkeypatch, model, metadata)
+    assert (model.label, model.key, model.metrics) == ("Fake Net", "fake-net", expected)
+    assert model.md_path is None  # no md pred_file means no MD predictions
 
 
 def test_generated_model_enum_is_current() -> None:
@@ -428,11 +396,10 @@ def test_model_md_path_passes_huggingface_token(
     rel_path = "models/alignn/alignn/nested/2026-09-06-md-metrics.csv.gz"
     abs_path = f"{tmp_path}/{rel_path}"
     monkeypatch.setenv("HF_TOKEN", "hf_secret")
-    monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", "true")
     monkeypatch.setattr("matbench_discovery.enums.ROOT", str(tmp_path))
-    monkeypatch.setitem(
-        Model.alignn.__dict__,
-        "metadata",
+    patch_model_metadata(
+        monkeypatch,
+        Model.alignn,
         {
             "model_name": "Gated MD",
             "model_key": "alignn",
@@ -470,7 +437,7 @@ def test_model_prediction_urls(url_session: requests.Session) -> None:
     for model in Model.active():
         if model.name == Model.mace_mpa_0.name:
             continue
-        tasks[model.pr_url] = model.name
+        tasks[model.metadata["pr_url"]] = model.name
         metrics = model.metrics
         if not metrics:
             continue

@@ -39,7 +39,7 @@ if TYPE_CHECKING:
     from phono3py.api_phono3py import Phono3py
     from phonopy import Phonopy
 
-HARMONIC_SCHEMA_VERSION = 2
+HARMONIC_SCHEMA_VERSION = 3  # v3: compact FC2 (primitive-atom rows), v2: full FC2
 # seekpath's default q-point spacing along the path in 1/A (2 pi convention): the FCC Cu
 # GAMMA-X segment gets 69 points, in the range of phonopy's 51-point band.conf default
 BAND_PATH_REFERENCE_DISTANCE = 0.025
@@ -211,7 +211,8 @@ def harmonic_thermal_data(phonon: Phonopy) -> dict[str, Any]:
 def phonopy_from_harmonic_data(data: Mapping[str, Any]) -> Phonopy:
     """Restore benchmark FC2 for new metrics without a calculator or force calls.
 
-    The artifact stores unrounded force constants in eV/Å² and explicit cell bases,
+    The artifact stores unrounded compact force constants in eV/Å² (primitive-atom
+    rows, from which phonopy builds dynamical matrices) and explicit cell bases,
     masses, symmetry tolerance, frequency conversion, and optional NAC parameters.
     No force-constant fitting or symmetrization is performed during reconstruction.
     """
@@ -244,6 +245,10 @@ def harmonic_phonon_data(phonon: Phonopy, *, mesh: Sequence[int]) -> dict[str, A
     if phonon.force_constants is None or not np.isfinite(phonon.force_constants).all():
         raise ValueError("Harmonic data requires finite force constants")
     primitive, unitcell = phonon.primitive, phonon.unitcell
+    force_constants = phonon.force_constants
+    # full FC2 repeats the primitive rows under lattice translations (~1.4 GB/model)
+    if force_constants.shape[0] == force_constants.shape[1]:
+        force_constants = force_constants[primitive.p2s_map]
     data: dict[str, Any] = {
         "schema_version": HARMONIC_SCHEMA_VERSION,
         "frequency_unit": FREQUENCY_UNIT,
@@ -259,7 +264,7 @@ def harmonic_phonon_data(phonon: Phonopy, *, mesh: Sequence[int]) -> dict[str, A
             "primitive_matrix": phonon.primitive_matrix,
             "symprec": phonon.symmetry.tolerance,
             "frequency_factor": phonon.unit_conversion_factor,
-            "force_constants": phonon.force_constants,
+            "force_constants": force_constants,
             "nac_params": phonon.nac_params,
         },
         "primitive": {

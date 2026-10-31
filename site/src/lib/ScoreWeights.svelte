@@ -78,8 +78,9 @@
 
 <style>
   .score-weights {
-    max-width: 38rem;
-    margin: 1.2em auto;
+    width: fit-content;
+    max-width: 100%;
+    margin: 1em auto;
     font-size: 0.9rem;
   }
   .heading {
@@ -98,18 +99,19 @@
     }
   }
   .inputs {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
-    gap: 0.5em;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4em;
   }
   label {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.4em;
+    gap: 0.6em;
     border: 1px solid var(--border);
     border-radius: 5px;
-    padding: 0.35em 0.55em;
+    padding: 0.1em 0.45em;
+    line-height: 1.3;
     &:focus-within {
       outline: 2px solid var(--link-color);
       outline-offset: 1px;
@@ -121,8 +123,8 @@
     color: var(--text-muted);
   }
   input {
-    width: 5ch;
-    min-width: 0;
+    field-sizing: content;
+    min-width: 2ch;
     padding: 0;
     border: 0;
     outline: none;

@@ -50,7 +50,6 @@ density = {
 provenance = figs.build_discovery_payload_provenance(
     generator=__file__,
     test_subset=test_subset.value,
-    source_files={"payload_numerics": payload_numerics.__file__},
     parameters={
         "coordinate_decimals": payload_numerics.COORD_DECIMALS,
         "density_bins": 200,

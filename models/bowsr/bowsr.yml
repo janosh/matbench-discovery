@@ -100,26 +100,26 @@ metrics:
       size: 79130464
       md5: f346a6232770ddcb0de0ef1ea0a96443
     symprec=1e-5:
-      rmsd: 0.195
-      n_sym_ops_mae: 29.4219
-      symmetry_decrease: 0.0038
-      symmetry_match: 0.5299
-      symmetry_increase: 0.4642
-      n_structures: 250779
+      rmsd: 0.195 # unitless
+      n_sym_ops_mae: 29.4219 # unitless
+      symmetry_decrease: 0.0038 # fraction
+      symmetry_match: 0.5299 # fraction
+      symmetry_increase: 0.4642 # fraction
+      n_structures: 250779 # count
       analysis_file:
-        name: models/bowsr/bowsr/2023-01-23-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/53504507
-        size: 7097318
-        md5: 7432876053a070a939f919abc3b53b4d
+        name: models/bowsr/bowsr/2023-01-23-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333614
+        size: 6437667
+        md5: 015c59e8571ca9f9515205a0287ac468
     symprec=1e-2:
-      rmsd: 0.195
-      n_sym_ops_mae: 25.4696
-      symmetry_decrease: 0.0694
-      symmetry_match: 0.7978
-      symmetry_increase: 0.1198
-      n_structures: 250779
+      rmsd: 0.195 # unitless
+      n_sym_ops_mae: 25.4696 # unitless
+      symmetry_decrease: 0.0694 # fraction
+      symmetry_match: 0.7978 # fraction
+      symmetry_increase: 0.1198 # fraction
+      n_structures: 250779 # count
       analysis_file:
-        name: models/bowsr/bowsr/2023-01-23-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/53504510
-        size: 7051969
-        md5: 9a36c5e5a42a227cf498c82b310695ff
+        name: models/bowsr/bowsr/2023-01-23-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333617
+        size: 6401562
+        md5: a33912fb22de2ab5dbd670e934a1acf7

@@ -31,7 +31,13 @@ import {
   test,
   vi,
 } from 'vite-plus/test'
-import { doc_query, get_scatter_plot_props, mount, query_param } from '../index.js'
+import {
+  doc_query,
+  get_scatter_plot_props,
+  mount,
+  query_param,
+  reset_comparison,
+} from '../index.js'
 
 // happy-dom never measures the plot, so capture ScatterPlot's props instead of its SVG
 const plot_mocks = vi.hoisted(() => ({ ScatterPlot: vi.fn() }))
@@ -100,10 +106,7 @@ function with_reactive_page_url(): void {
   })
 }
 
-beforeEach(() => {
-  comparison.keys.clear()
-  comparison.open = false
-})
+beforeEach(reset_comparison)
 
 describe(`compare_cells`, () => {
   const field = as_models([0.5, 1, 2, 3, 7, null])
@@ -186,6 +189,37 @@ describe(`compare_cells`, () => {
         },
       ])[0].title,
     ).toContain(`Missing &lt;reference&gt; &amp; metadata.`)
+  })
+
+  it(`names the GPU and source of speed rows on hover`, () => {
+    const with_md = (model_key: string, md: object) =>
+      ({ ...MODELS[0], model_key, metrics: { md } }) as ModelData
+    const models = [
+      with_md(`authors`, {
+        cost: { run_time_sec: 3e4, hardware: `A100 <80GB>`, source: `author_reported` },
+        combined_score: 0.7,
+      }),
+      with_md(`untimed`, { cost: { hardware: `H200` } }),
+    ]
+    const cell = (key: string) => {
+      const cmp_row = COMPARE_GROUPS.flatMap(({ rows }) => rows).find(
+        (candidate) => candidate.key === key,
+      )
+      if (!cmp_row) throw new Error(`No ${key} row`)
+      return compare_cells(cmp_row, models, models)
+    }
+    // numeric-cell titles render as HTML, so YAML hardware strings arrive escaped
+    expect(cell(`md_run_time_sec`)[0].title).toBe(
+      `Timed on A100 &lt;80GB&gt; (author-reported), not normalized across hardware`,
+    )
+    expect(cell(`combined_score`)[0]).toMatchObject({
+      text: `0.700`,
+      title: expect.stringMatching(/^Speed subscore timed on A100 &lt;80GB&gt;/),
+    })
+    expect(cell(`md_hardware`).map(({ text }) => text)).toEqual([
+      `A100 <80GB> (author-reported)`,
+      `–`,
+    ])
   })
 
   it(`links training sets, papers, repos and authors of real models`, () => {
@@ -615,7 +649,7 @@ describe(`ModelComparison dialog`, () => {
       ])
       expect(query_param(`cps_weights`)).toBe(`0,1,0`)
     } finally {
-      await navigate(`/`)
+      await navigate(`/`, `popstate`)
       cleanup()
     }
   })

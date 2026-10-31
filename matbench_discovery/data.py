@@ -3,9 +3,6 @@
 https://figshare.com/articles/dataset/22715158
 
 Environment Variables:
-    MBD_AUTO_DOWNLOAD_FILES: Controls whether to auto-download missing data files.
-        Defaults to "true". Set to "false" to be prompted before downloading.
-        This affects both model prediction files and dataset files.
     MBD_CACHE_DIR: Directory to cache downloaded data files.
         Defaults to DATA_DIR if the full repo was cloned, otherwise
         ~/.cache/matbench-discovery.
@@ -22,7 +19,6 @@ import zipfile
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from datetime import date
 from decimal import Decimal, InvalidOperation
-from functools import cache
 from glob import glob
 from pathlib import Path
 from typing import Any, Final, NotRequired, TypedDict
@@ -60,6 +56,7 @@ _GEO_OPT_ANALYSIS_SUFFIX: Final = re.compile(
 # role -> suffix after ``YYYY-MM-DD-``
 ARTIFACT_SUFFIXES: Final[dict[str, str]] = {
     "discovery": "discovery.csv.gz",
+    "discovery_run_info": "discovery-run-info.json",
     "geo_opt": "geo-opt.jsonl.gz",
     "phonons_kappa_103": "phonons-kappa-103.json.gz",
     "phonons_kappa_103_forces": "phonons-kappa-103-forces.json.gz",
@@ -69,8 +66,9 @@ ARTIFACT_SUFFIXES: Final[dict[str, str]] = {
     "diatomics": "diatomics.json.gz",
 }
 
+# ``file`` is a reproducibility run's artifact (metrics.<task>.reproducibility.runs)
 _FILE_REF_KEYS: Final = frozenset(
-    {"pred_file", "analysis_file", "force_file", "phonon_file", "run_info_file"}
+    {"pred_file", "analysis_file", "force_file", "phonon_file", "run_info_file", "file"}
 )
 # Tasks that require forces (not applicable when targets == "E")
 FORCE_TASKS: Final = frozenset({"geo_opt", "phonons", "md", "diatomics"})
@@ -180,9 +178,13 @@ def file_ref_url(ref: object) -> str | None:
 
 
 def iter_file_refs(
-    value: object, prefix: tuple[str, ...] = ()
-) -> Iterator[tuple[tuple[str, ...], str]]:
-    """Yield dotted key paths and local names for nested model artifact refs."""
+    value: object, prefix: tuple[str | int, ...] = ()
+) -> Iterator[tuple[tuple[str | int, ...], str]]:
+    """Yield key paths (dict keys, list indices) and names of nested artifact refs."""
+    if isinstance(value, list):
+        for idx, item in enumerate(value):
+            yield from iter_file_refs(item, (*prefix, idx))
+        return
     if not isinstance(value, dict):
         return
     for key, nested in value.items():
@@ -193,9 +195,9 @@ def iter_file_refs(
             if nested is None:
                 continue
             if (name := file_ref_name(nested)) is None:
-                raise ValueError(f"Invalid FileRef at {'.'.join(key_path)}")
+                raise ValueError(f"Invalid FileRef at {'.'.join(map(str, key_path))}")
             yield key_path, name
-        elif isinstance(nested, dict):
+        elif isinstance(nested, dict | list):
             yield from iter_file_refs(nested, key_path)
 
 
@@ -343,23 +345,14 @@ def glob_to_df(
 
 
 def ase_atoms_from_zip(
-    zip_filename: str | Path,
-    *,
-    file_filter: Callable[[str, int], bool] = lambda filename, _idx: filename.endswith(
-        ".extxyz"
-    ),
-    filename_to_info: bool = False,
-    limit: int | slice | None = None,
+    zip_filename: str | Path, *, limit: int | slice | None = None
 ) -> list[Atoms]:
-    """Read ASE Atoms objects from a ZIP file containing extXYZ files.
+    """Read ASE Atoms objects from the .extxyz members of a ZIP file.
 
     Args:
         zip_filename (str): Path to the ZIP file.
-        file_filter (Callable[[str, int], bool], optional): Function to check if a file
-            should be read. Defaults to lambda fname: fname.endswith(".extxyz").
-        filename_to_info (bool, optional): If True, assign filename to Atoms.info.
-            Defaults to False.
-        limit (int, optional): Maximum number of files to read. Defaults to None.
+        limit (int | slice, optional): Maximum number of archive members to read, or
+            a slice selecting them by archive order. Defaults to None (all members).
             Use a small number to speed up debugging runs.
 
     Returns:
@@ -373,8 +366,8 @@ def ase_atoms_from_zip(
             slice_lim = slice(limit) if isinstance(limit, int) else limit
             filenames = filenames[slice_lim]
 
-        for idx, filename in tqdm(enumerate(filenames), desc=desc, mininterval=5):
-            if not file_filter(filename, idx):
+        for filename in tqdm(filenames, desc=desc, mininterval=5):
+            if not filename.endswith(".extxyz"):
                 continue
             with zip_file.open(filename) as file:
                 content = io.TextIOWrapper(file, encoding="utf-8").read()
@@ -383,9 +376,6 @@ def ase_atoms_from_zip(
                 )  # reads multiple Atoms objects as frames if file contains trajectory
                 if isinstance(atoms, Atoms):
                     atoms = [atoms]
-                if filename_to_info:
-                    for atom in atoms:
-                        atom.info["filename"] = filename
                 atoms_list.extend(atoms)
     return atoms_list
 
@@ -487,7 +477,6 @@ def load_df_wbm_with_preds(
     return df_out
 
 
-@cache
 def load_discovery_predictions() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Load WBM model predictions and derive hull-distance predictions and errors."""
     from matbench_discovery.cli import complete_models
@@ -496,11 +485,11 @@ def load_discovery_predictions() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFra
     models_to_load = complete_models()
     df_preds, df_each_err = load_prediction_errors(models_to_load)
 
+    from matbench_discovery.metrics.discovery import pred_hull_dist
+
     model_keys = [model.key for model in models_to_load]
-    each_shift = df_preds[MbdKey.each_true] - df_preds[MbdKey.e_form_dft]
-    df_each_pred = df_preds[model_keys].add(each_shift, axis=0)
-    df_each_err[MbdKey.each_err_models] = df_preds[MbdKey.each_err_models] = (
-        df_each_err.abs().mean(axis=1)
+    df_each_pred = pred_hull_dist(
+        df_preds[model_keys], df_preds[MbdKey.each_true], df_preds[MbdKey.e_form_dft]
     )
     return df_preds, df_each_pred, df_each_err
 

@@ -37,7 +37,8 @@ export const attach_style = <
   P extends { models: T[] },
 >(
   payload: P,
-) => ({
+  // explicit: spreading the generic P would intersect models with the unstyled T[]
+): Omit<P, 'models'> & { models: (T & { color: string | undefined })[] } => ({
   ...payload,
   models: order_models(
     payload.models.map((model) => ({ ...model, color: meta(model)?.color })),

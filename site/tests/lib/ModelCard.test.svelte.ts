@@ -1,9 +1,11 @@
 import DATASETS from '$data/datasets.yml'
 import ModelCard from '#lib/model/ModelCard.svelte'
 import { ACTIVE_MODELS, MODELS } from '#lib/models.svelte.js'
-import { ALL_METRICS } from '#lib/labels.js'
+import { ALL_METRICS, MD_METRICS } from '#lib/labels.js'
+import { get_nested_number, label_data_path } from '#lib/metrics.js'
 import { model_metric_ranks, RANKED_METRICS } from '#lib/rankings.js'
 import { format_num } from 'matterviz/labels'
+import { strip_html } from 'svelte-widgets/utils'
 import type { ComponentProps } from 'svelte'
 import { describe, expect, it, vi } from 'vite-plus/test'
 import { doc_query, mount } from '../index.js'
@@ -99,22 +101,26 @@ describe(`ModelCard`, () => {
         ),
       )
 
+      // values use each metric's own format (and unit); rank links are named by the
+      // metric's plain-text label, not its internal key
+      for (const [idx, metric] of RANKED_METRICS.entries()) {
+        const value = get_nested_number(model, label_data_path(metric))
+        expect(metrics_lis[idx].querySelector(`strong`)?.textContent?.trim()).toBe(
+          `${format_num(value ?? NaN, metric.format)} ${metric.unit ?? ``}`.trim(),
+        )
+      }
+      expect(
+        [...document.querySelectorAll(`.metric-rank`)].map((link) =>
+          link.getAttribute(`aria-label`),
+        ),
+      ).toEqual(
+        model_metric_ranks(model.model_key, ACTIVE_MODELS, RANKED_METRICS).map(
+          ({ metric, rank, n_models }) =>
+            `${strip_html(metric.label)}: rank ${rank} of ${n_models}`,
+        ),
+      )
       const f1_metric = [...metrics_lis].find((item) => item.textContent?.includes(`F1`))
-      const f1_value = model.metrics?.discovery?.unique_prototypes?.F1
-      expect(f1_metric?.querySelector(`strong`)?.textContent?.trim()).toBe(
-        f1_value?.toString(),
-      )
       expect(f1_metric?.classList.contains(`active`)).toBe(true)
-
-      const kappa_metric = [...metrics_lis].find((item) =>
-        item.textContent?.includes(`κ`),
-      )
-      const kappa_value = Number(model.metrics?.phonons?.kappa_103?.κ_SRME) || 0
-      const displayed_kappa = kappa_metric?.querySelector(`strong`)?.textContent?.trim()
-      // must not render blank (Number(``) would coerce to 0 and mask that case)
-      expect(displayed_kappa).toMatch(/\d/)
-      // The displayed value may be rounded differently
-      expect(Number(displayed_kappa)).toBeCloseTo(kappa_value, 2)
     })
 
     it.each([undefined, NaN, Infinity])(
@@ -146,5 +152,21 @@ describe(`ModelCard`, () => {
         })
       },
     )
+
+    it(`names the Speed subscore GPU in the CMDS popover`, async () => {
+      const cost = { source: `runner`, hardware: `H200`, run_time_sec: 2e4 } as const
+      const md = { cost, combined_score: 0.6 }
+      mount_card({
+        model: { ...model, metrics: { md } },
+        metrics: [MD_METRICS.md_combined_score],
+      })
+      expect(doc_query(`.metrics li strong`).textContent?.trim()).toBe(`0.600`)
+      doc_query(`.metrics [role="button"]`).focus()
+      await vi.waitFor(() =>
+        expect(doc_query(`.popover`).textContent).toContain(
+          `Speed subscore timed on H200 (benchmark runner)`,
+        ),
+      )
+    })
   })
 })

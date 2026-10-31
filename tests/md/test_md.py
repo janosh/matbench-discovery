@@ -2,12 +2,14 @@
 
 import dataclasses
 import functools
+import itertools
 import json
 import os
 import platform
 import sys
 from collections.abc import Callable
 from pathlib import Path
+from types import SimpleNamespace
 
 import ase.io
 import h5py
@@ -19,7 +21,10 @@ from ase.build import bulk
 from ase.calculators.emt import EMT
 
 from matbench_discovery import today
+from matbench_discovery.calculators import load_calculator_with_runtime
 from matbench_discovery.md import (
+    CHECKPOINT_SCHEMA,
+    THERMOSTAT_TIME_SCALE_FS,
     NpzValue,
     NvtParams,
     list_reference_systems,
@@ -35,21 +40,34 @@ from matbench_discovery.md import (
 from matbench_discovery.metrics import md as md_metrics
 from matbench_discovery.trajectory import Trajectory
 
+# per-process run provenance of an EMT "model" that took 1.5 s to load
+EMT_RUNTIME = load_calculator_with_runtime("emt")[1] | {"load_time_sec": 1.5}
+
+
+def _run_cu_reference_rollout(atoms: Atoms) -> list[Atoms]:
+    """80-step 300 K EMT rollout saving every 0.25 fs step (81 frames)."""
+    return run_nvt_md(
+        atoms, EMT(), temperature_kelvin=300, n_steps=80, record_interval=1, seed=0
+    )
+
+
+@pytest.fixture(scope="module")
+def cu_emt_frames() -> list[Atoms]:
+    """Shared 32-atom Cu EMT rollout (81 frames, dt=0.25 fs); tests must not mutate."""
+    return _run_cu_reference_rollout(bulk("Cu", cubic=True) * (2, 2, 2))
+
 
 def _make_reference_h5(
     tmp_path: Path,
+    frames: list[Atoms],
     *,
     system: str = "bulkCu_300K_test",
-    atoms: Atoms | None = None,
     labeled: bool = False,
 ) -> str:
-    """Create a tiny single-system reference HDF5 with dt=0.25 fs and T=300 K,
-    optionally retaining energy/force labels like the private reference.
+    """Write ``frames`` as a single-system reference HDF5 with dt=0.25 fs and
+    T=300 K, optionally retaining energy/force labels like the private reference.
     """
-    atoms = bulk("Cu", cubic=True) * (2, 2, 2) if atoms is None else atoms
-    reference = Trajectory.from_ase(
-        run_nvt_md(atoms, EMT(), temperature_kelvin=300, n_steps=80, record_interval=1)
-    )
+    reference = Trajectory.from_ase(frames)
     ref_file = str(tmp_path / ("private-ref.h5" if labeled else "ref.h5"))
     # dt = saved-frame cadence = time_step_fs * record_interval = 0.25 * 1
     if labeled:  # write_reference_h5 strips labels, so write the group directly
@@ -82,6 +100,7 @@ def _run_tiny_benchmark(
         time_step_fs=1,
         record_interval=1,
         dry_run=dry_run,
+        runtime=EMT_RUNTIME,
     )
 
 
@@ -215,50 +234,69 @@ def test_run_nvt_md_seed_reproducibility() -> None:
     assert np.abs(frames_a[-1].positions - frames_c[-1].positions).max() > 1e-6
 
 
-def test_md_pipeline_end_to_end(tmp_path: Path) -> None:
-    """Rollout, extxyz round-trip, and per-system evaluation compose."""
-    atoms = bulk("Cu", cubic=True) * (2, 2, 2)
-    ref_traj = run_nvt_md(
-        atoms, EMT(), temperature_kelvin=300, n_steps=100, record_interval=5, seed=0
-    )
-    pred_traj = run_nvt_md(
-        atoms, EMT(), temperature_kelvin=300, n_steps=200, record_interval=10, seed=1
-    )
+def test_evaluate_md_system(tmp_path: Path, cu_emt_frames: list[Atoms]) -> None:
+    """Self and 2x-strided (dt doubled) copies score ~0; stress-less pred gives NaN."""
+    # pred = leading half of the rollout re-saved at 2x stride (41 -> 21 frames, 0.5 fs
+    # apart), round-tripped through extxyz so energies/forces/stress survive file IO
+    pred_path = tmp_path / "pred.extxyz"
+    ase.io.write(pred_path, cu_emt_frames[:41:2])
+    strided_pred = read_trajectory(str(pred_path))
+    ref_dt = 0.25  # 1 saved frame per 0.25 fs MD step
 
-    # round-trip through extxyz to verify energies/forces/stress survive file IO
-    traj_path = tmp_path / "pred.extxyz"
-    ase.io.write(traj_path, pred_traj)
-    pred_traj_io = read_trajectory(str(traj_path))
+    def evaluate(pred: list[Atoms], pred_dt: float) -> dict[str, float]:
+        """Score pred against the full 81-frame reference rollout."""
+        return md_metrics.evaluate_md_system(
+            cu_emt_frames,
+            pred,
+            ref_time_step_fs=ref_dt,
+            pred_time_step_fs=pred_dt,
+            n_rdf_bins=100,
+        )
 
-    system_metrics = md_metrics.evaluate_md_system(
-        ref_traj,
-        pred_traj_io,
-        ref_time_step_fs=5 * 0.25,
-        pred_time_step_fs=10 * 0.25,
-        n_rdf_bins=100,
-    )
+    self_metrics = evaluate(cu_emt_frames, ref_dt)
+    # energy/force RMSEs need private labels, so they come from run_md_benchmark only
+    assert set(self_metrics) == set(md_metrics.PER_SYSTEM_METRIC_COLS) - {
+        "energy_rmse",
+        "force_rmse",
+    }
+    # identical inputs go through identical arithmetic -> exactly zero
+    assert self_metrics == dict.fromkeys(self_metrics, 0.0)
 
-    # same model run at the same temperature: structure and dynamics should be
-    # similar but not identical (different seeds), pressures close
-    assert 0 < system_metrics["rdf_error"] < 50
-    assert 0 < system_metrics["adf_error"] < 100
-    assert 0 < system_metrics["vdos_error"] < 100
-    assert 0 <= system_metrics["pressure_mae"] < 5
-    assert 0 <= system_metrics["pressure_wasserstein"] < 5
+    # the strided copy samples a subset of the same time window, so errors are only
+    # sampling noise: measured rdf 0.085%, adf 0.030%, vdos 1.6%, pressure_mae 7e-4
+    # GPa. A wrong pred dt (rdf 10%) or untruncated ref (rdf 15%) far exceed the
+    # bounds. pressure_error (histogram overlap of 21 vs 41 values) is too noisy here.
+    strided_metrics = evaluate(strided_pred, 2 * ref_dt)
+    for key, max_err in {
+        "rdf_error": 0.5,
+        "adf_error": 0.2,
+        "vdos_error": 3,
+        "pressure_mae": 0.01,
+        "pressure_wasserstein": 0.01,
+    }.items():
+        assert 0 < strided_metrics[key] < max_err, f"{key}={strided_metrics[key]}"
 
-    df_md = pd.DataFrame([system_metrics])
-    model_metrics = md_metrics.calc_md_metrics(df_md)
+    # pred frames without stress yield NaN pressure metrics, not errors
+    no_stress_pred = [
+        Atoms(frame.numbers, positions=frame.positions, cell=frame.cell, pbc=True)
+        for frame in strided_pred
+    ]
+    no_stress = evaluate(no_stress_pred, 2 * ref_dt)
+    assert no_stress["rdf_error"] == strided_metrics["rdf_error"]
+    for key in ("pressure_mae", "pressure_wasserstein", "pressure_error"):
+        assert np.isnan(no_stress[key]), key
+
+    model_metrics = md_metrics.calc_md_metrics(pd.DataFrame([strided_metrics]))
     assert model_metrics["n_systems"] == 1
     assert "combined_score" not in model_metrics  # CMDS is site-computed, not stored
 
 
-def test_validate_pred_trajectory(tmp_path: Path) -> None:
+def test_validate_pred_trajectory(tmp_path: Path, cu_emt_frames: list[Atoms]) -> None:
     """Complete rollouts validate while malformed variants return None."""
-    atoms = bulk("Cu", cubic=True) * (2, 2, 2)
-    frames = run_nvt_md(
-        atoms, EMT(), temperature_kelvin=300, n_steps=40, record_interval=10
-    )
-    assert len(frames) == 5  # 40 // 10 + 1
+    atoms = cu_emt_frames[0]
+    # first 40 MD steps recorded every 10 steps: md_step 0, 10, ..., 40
+    frames = cu_emt_frames[:41:10]
+    assert len(frames) == 5
     good = tmp_path / "pred.extxyz"
     ase.io.write(good, frames)
     params = NvtParams(
@@ -330,7 +368,9 @@ def test_nvt_checkpoint_state_attrs() -> None:
     assert all(isinstance(array, np.ndarray) for array in state)
 
 
-def _run_short_resumable(atoms: Atoms, out_path: str) -> list[Atoms]:
+def _run_short_resumable(
+    atoms: Atoms, out_path: str, runtime: dict[str, object] = EMT_RUNTIME
+) -> list[Atoms]:
     """Run the short deterministic resumable rollout used by resume tests."""
     return run_nvt_md_resumable(
         atoms,
@@ -341,15 +381,24 @@ def _run_short_resumable(atoms: Atoms, out_path: str) -> list[Atoms]:
         record_interval=10,
         checkpoint_every_n_frames=2,
         progress_interval=0,
+        runtime=runtime,
     )
 
 
 def test_run_nvt_md_resume_reproduces(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Repeated resume reproduces an uninterrupted run frame-for-frame."""
+    """Repeated resume reproduces an uninterrupted run frame-for-frame and
+    accumulates its cost across sessions.
+    """
+    import matbench_discovery.md as md_mod
+
+    # every perf_counter call advances 1 s, so steady-state run time is deterministic
+    clock = SimpleNamespace(perf_counter=itertools.count().__next__)
+    monkeypatch.setattr(md_mod, "time", clock)
     atoms = bulk("Cu", cubic=True) * (2, 2, 2)
-    reference = _run_short_resumable(atoms, str(tmp_path / "ref.extxyz"))
+    ref_path = str(tmp_path / "ref.extxyz")
+    reference = _run_short_resumable(atoms, ref_path)
     assert len(reference) == 7
 
     # simulate timeouts: raise after each of the first 3 checkpoint writes, then let
@@ -372,6 +421,17 @@ def test_run_nvt_md_resume_reproduces(
     # staged artifacts cleaned up on completion
     assert not os.path.isfile(f"{tmp_path}/out.part.extxyz")
     assert not os.path.isfile(f"{out_path}.ckpt.npz")
+    # every session's model load and process count accumulate across resumes
+    run_info = json.loads(Path(run_info_path(out_path)).read_text())
+    n_sessions = 4  # 3 simulated timeouts + the completing session
+    assert run_info["n_processes"] == n_sessions
+    assert run_info["load_time_sec"] == pytest.approx(1.5 * n_sessions)
+    assert run_info["cost_source"] == "runner"
+    assert run_info["hardware"] == EMT_RUNTIME["hardware"]
+    # run time sums over all 4 sessions: equal to the uninterrupted run's, while
+    # the last session alone took only 1 tick
+    ref_info = json.loads(Path(run_info_path(ref_path)).read_text())
+    assert run_info["run_time_sec"] == ref_info["run_time_sec"] == 4
 
 
 def test_run_nvt_md_resumable_ignores_corrupt_checkpoint(tmp_path: Path) -> None:
@@ -389,15 +449,75 @@ def test_run_nvt_md_resumable_ignores_corrupt_checkpoint(tmp_path: Path) -> None
         n_steps=30,
         record_interval=10,
         progress_interval=0,
+        runtime=EMT_RUNTIME,
     )
     assert len(frames) == 4  # 30 // 10 + 1, recomputed cleanly
     assert os.path.isfile(out_path)
 
 
+@pytest.mark.parametrize(
+    "changed",
+    [
+        None,
+        {"seed": 1},
+        {"temperature_kelvin": 301.0},
+        {"time_step_fs": 0.5},
+        {"schema": CHECKPOINT_SCHEMA + 1},
+    ],
+    ids=["unchanged", "seed", "temperature", "time_step", "schema"],
+)
+def test_load_checkpoint_rejects_changed_run_parameters(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, changed: dict[str, float] | None
+) -> None:
+    """A checkpoint resumes only under the same seed, T, dt, schema version and run
+    labels (hardware).
+    """
+    import matbench_discovery.md as md_mod
+
+    atoms = bulk("Cu", cubic=True) * (2, 2, 2)
+    out_path = str(tmp_path / "out.extxyz")
+    # interrupt right after the first checkpoint write to leave a resumable state
+    _fail_save_checkpoint_after(monkeypatch, kills=1)
+    with pytest.raises(RuntimeError, match="simulated timeout"):
+        _run_short_resumable(atoms, out_path)
+    ckpt_path = f"{out_path}.ckpt.npz"
+    assert os.path.isfile(ckpt_path)
+
+    changed = dict(changed or {})
+    if "schema" in changed:  # a newer code version bumped the checkpoint layout
+        new_schema = changed.pop("schema")
+        monkeypatch.setattr(md_mod, "CHECKPOINT_SCHEMA", new_schema)
+    # params of _run_short_resumable (run_nvt_md_resumable defaults otherwise)
+    params = NvtParams(
+        temperature_kelvin=300,
+        time_step_fs=0.25,
+        record_interval=10,
+        thermostat_time_scale_fs=THERMOSTAT_TIME_SCALE_FS,
+        seed=0,
+    )
+    params = dataclasses.replace(params, **changed)
+    loaded = md_mod._load_checkpoint(  # noqa: SLF001
+        ckpt_path, atoms=atoms, params=params, n_steps=60
+    )
+    if changed or md_mod.CHECKPOINT_SCHEMA != CHECKPOINT_SCHEMA:
+        assert loaded is None, f"stale checkpoint resumed after {changed=}"
+    else:  # control: the untouched checkpoint must resume, else the cases are vacuous
+        assert loaded is not None
+        # first checkpoint holds frames at steps 0 and 10 (checkpoint every 2 frames)
+        assert int(loaded[0]["nsteps"]) == 10
+        # ... but not on other hardware, leaving it for a matching resume
+        other_gpu = EMT_RUNTIME | {"hardware": "NVIDIA H200"}
+        with pytest.raises(ValueError, match="cannot resume under different run"):
+            _run_short_resumable(atoms, out_path, runtime=other_gpu)
+        assert os.path.isfile(ckpt_path)
+
+
 @pytest.mark.parametrize("dry_run", [True, False])
-def test_run_md_benchmark(tmp_path: Path, *, dry_run: bool) -> None:
+def test_run_md_benchmark(
+    tmp_path: Path, cu_emt_frames: list[Atoms], *, dry_run: bool
+) -> None:
     """Dry and full runs return metrics while only full runs persist outputs."""
-    ref_file = _make_reference_h5(tmp_path)
+    ref_file = _make_reference_h5(tmp_path, cu_emt_frames)
     out_dir = tmp_path / "out"
 
     def run(*, dry: bool = False, systems: list[str] | None = None) -> pd.DataFrame:
@@ -433,6 +553,10 @@ def test_run_md_benchmark(tmp_path: Path, *, dry_run: bool) -> None:
     assert run_info["versions"]["python"] == platform.python_version()
     assert df_md.loc["bulkCu_300K_test", "run_time_sec"] > 0
     assert isinstance(df_md.loc["bulkCu_300K_test", "hardware"], str)
+    row = df_md.loc["bulkCu_300K_test"]
+    # acceleration "none": CSV encoding of an empty flag list
+    cost = (row["cost_source"], row["load_time_sec"], row["acceleration"])
+    assert cost == ("runner", 1.5, "none")
     assert df_md.loc["bulkCu_300K_test", "n_atoms"] == 32  # 2x2x2 cubic Cu cell
     if sys.platform != "win32":  # Windows lacks the resource module
         assert df_md.loc["bulkCu_300K_test", "max_rss_gb"] > 0
@@ -460,15 +584,21 @@ def test_run_md_benchmark(tmp_path: Path, *, dry_run: bool) -> None:
 )
 def test_run_md_benchmark_private_ref(
     tmp_path: Path,
+    cu_emt_frames: list[Atoms],
     private_system: str,
     private_atoms: Atoms | None,
     error_class: type[Exception] | None,
     match: str | None,
 ) -> None:
     """Matching private labels add energy/force RMSEs; stale or incomplete fail."""
-    ref_file = _make_reference_h5(tmp_path)
+    ref_file = _make_reference_h5(tmp_path, cu_emt_frames)
+    private_frames = (
+        cu_emt_frames
+        if private_atoms is None
+        else _run_cu_reference_rollout(private_atoms)
+    )
     private_ref_file = _make_reference_h5(
-        tmp_path, system=private_system, atoms=private_atoms, labeled=True
+        tmp_path, private_frames, system=private_system, labeled=True
     )
     run = functools.partial(
         _run_tiny_benchmark,
@@ -483,17 +613,18 @@ def test_run_md_benchmark_private_ref(
         return
 
     df_private_md = run()
+    # EMT scored against its own EMT labels: identical single points -> zero RMSE
     for col in ("energy_rmse", "force_rmse"):
-        assert np.isfinite(df_private_md.loc["bulkCu_300K_test", col])
+        assert df_private_md.loc["bulkCu_300K_test", col] == pytest.approx(0, abs=1e-9)
 
 
 def test_run_md_benchmark_resume_matches_single_run(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cu_emt_frames: list[Atoms]
 ) -> None:
     """Repeated benchmark resume matches one uninterrupted benchmark run."""
     import matbench_discovery.md as md_mod
 
-    ref_file = _make_reference_h5(tmp_path)
+    ref_file = _make_reference_h5(tmp_path, cu_emt_frames)
 
     def run(out_dir: Path) -> pd.DataFrame:
         """Run the tiny benchmark with explicit args to keep ty types narrow."""
@@ -517,8 +648,9 @@ def test_run_md_benchmark_resume_matches_single_run(
 
     # wall time and memory high-water marks are process state, not trajectory
     # observables - deterministic reproduction doesn't apply to them
+    process_cost_cols = ["run_time_sec", "load_time_sec", "n_processes"]
     numeric_columns = single.select_dtypes("number").columns.drop(
-        ["run_time_sec", "max_rss_gb", "max_gpu_mem_gb"], errors="ignore"
+        [*process_cost_cols, "max_rss_gb", "max_gpu_mem_gb"], errors="ignore"
     )
     for column in numeric_columns:
         np.testing.assert_allclose(
@@ -552,10 +684,10 @@ def test_run_md_benchmark_resume_matches_single_run(
     ],
 )
 def test_run_md_benchmark_rejects_empty_or_unknown_systems(
-    tmp_path: Path, systems: list[str], match: str
+    tmp_path: Path, cu_emt_frames: list[Atoms], systems: list[str], match: str
 ) -> None:
     """Empty selections and any unknown system names fail clearly."""
-    ref_file = _make_reference_h5(tmp_path)
+    ref_file = _make_reference_h5(tmp_path, cu_emt_frames)
 
     with pytest.raises(ValueError, match=match):
         _run_tiny_benchmark(ref_file, tmp_path / "out", systems=systems)
@@ -563,10 +695,10 @@ def test_run_md_benchmark_rejects_empty_or_unknown_systems(
 
 @pytest.mark.parametrize("dt_factor", [5.0, 0.2])
 def test_run_md_benchmark_rejects_mislabeled_reference_dt(
-    tmp_path: Path, dt_factor: float
+    tmp_path: Path, cu_emt_frames: list[Atoms], dt_factor: float
 ) -> None:
     """Bad reference dt_fs attributes fail before rollout."""
-    ref_file = _make_reference_h5(tmp_path)
+    ref_file = _make_reference_h5(tmp_path, cu_emt_frames)
     with h5py.File(ref_file, "r+") as file:
         file["bulkCu_300K_test"].attrs["dt_fs"] *= dt_factor
 

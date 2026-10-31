@@ -45,8 +45,8 @@ license:
   checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
 
 environment:
-  dependencies: ['deepmd-kit[torch]==3.2.0b0', 'torch==2.11.0+cu128', 'ase==3.28.0']
-  python_version: '3.12'
+  dependencies: ['deepmd-kit[torch]==3.2.0b0', 'torch==2.11.0', 'ase==3.28.0']
+  python_version: '3.14'
 openness: OSOD
 architecture_types: [gnn]
 train_task: S2EFS
@@ -179,37 +179,36 @@ metrics:
       size: 102808527
       md5: 9a6489770e53cd4c3fd268e8dc33091a
     symprec=1e-2:
-      rmsd: 0.0687
-      n_sym_ops_mae: 2.2966
-      symmetry_decrease: 0.208
-      symmetry_match: 0.6631
-      symmetry_increase: 0.1037
-      n_structures: 256963
+      rmsd: 0.0687 # unitless
+      n_sym_ops_mae: 2.2966 # unitless
+      symmetry_decrease: 0.208 # fraction
+      symmetry_match: 0.6631 # fraction
+      symmetry_increase: 0.1037 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-05-geo-opt-symprec=1e-2-moyo=0.7.9.csv.gz
-        url: https://figshare.com/files/65469888
-        size: 2914627
-        md5: 2d0fdaac9cbdade2fee6229f587ebb1f
+        name: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-05-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333650
+        size: 6909311
+        md5: 0112a7c30b1b0193941889463420054b
     symprec=1e-5:
-      rmsd: 0.0687
-      n_sym_ops_mae: 3.522
-      symmetry_decrease: 0.41
-      symmetry_match: 0.3899
-      symmetry_increase: 0.1422
-      n_structures: 256963
+      rmsd: 0.0687 # unitless
+      n_sym_ops_mae: 3.522 # unitless
+      symmetry_decrease: 0.41 # fraction
+      symmetry_match: 0.3899 # fraction
+      symmetry_increase: 0.1422 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-05-geo-opt-symprec=1e-5-moyo=0.7.9.csv.gz
-        url: https://figshare.com/files/65469885
-        size: 2768975
-        md5: 86cd11c8b0b60bf68c9bc880a6e21055
+        name: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-05-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333653
+        size: 6818818
+        md5: 17e0039256e04d9fa4c5cfcafa153760
   md:
     pred_file:
       name: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-28-md-metrics.csv.gz
-      url: https://figshare.com/files/66048860
-      size: 1577
-      md5: 78b1e09e0bc5234d0a107ddcf744c50f
-    hardware: NVIDIA H200
-    run_time_sec: 263604.28
+      url: https://figshare.com/files/70333560
+      size: 1746
+      md5: 1bf5ccd575e7298fd2ddfac090bf7cdb
+    cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 263604.31}
     energy_rmse: 0.5973
     force_rmse: 59.3963
     rdf_error: 3.6197
@@ -232,28 +231,30 @@ metrics:
         url: https://figshare.com/files/68221303
         size: 10138308
         md5: 644ff7c87bea3eac4a215e3a59368df4
-      phonon_file:
-        name: models/deepmd/dpa-4.0.1-pro-mptrj/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1312716277
-        md5: f49bb12dcaf6f54d2db5e1a8f6d2ce76
-      force_file:
-        name: models/deepmd/dpa-4.0.1-pro-mptrj/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 8810972
-        md5: 8b262342ef301318306ae69474012a51
-      run_info_file:
-        name: models/deepmd/dpa-4.0.1-pro-mptrj/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 8337
-        md5: df88402daf437ac7cb9b2de948f651b0
+      harmonic:
+        phonon_file:
+          name: models/deepmd/dpa-4.0.1-pro-mptrj/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334256
+          size: 23627902
+          md5: 43df28809e65359e6c666f5b3fca1187
+        force_file:
+          name: models/deepmd/dpa-4.0.1-pro-mptrj/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334259
+          size: 8810972
+          md5: 8b262342ef301318306ae69474012a51
+        run_info_file:
+          name: models/deepmd/dpa-4.0.1-pro-mptrj/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334262
+          size: 8337
+          md5: df88402daf437ac7cb9b2de948f651b0
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 555.75, max_rss_gb: 2.318, max_gpu_mem_gb: 103.779}
   diatomics:
     pred_file:
       name: models/deepmd/dpa-4.0.1-pro-mptrj/2026-09-12-diatomics.json.gz
       size: 511608
       md5: 99665766d47eacc961bf7d1faea5eecd
       url: https://figshare.com/files/68484280
-    hardware: NVIDIA H200
-    run_time_sec: 701.62
-    max_rss_gb: 2.346
-    max_gpu_mem_gb: 0.461
+    cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 701.62, max_rss_gb: 2.346, max_gpu_mem_gb: 0.461}
     excluded_formula_reasons: {}
     pbe_wall_dist_mae: 0.5381
     pbe_energy_mae: 3.479
@@ -276,3 +277,47 @@ metrics:
       - H
       - Si
       missing_elements: []
+    reproducibility:
+      checked: '2026-10-20'
+      status: drifted
+      cause: nondeterministic
+      note: Short-range forces reach 1e13 eV/Å, so identical runs on different GPUs differ by up to 7.1× in force metrics and 7.3% in energy metrics.
+      tolerance: 0.001
+      runs:
+      - label: H200 rerun, PyPI torch 2.11.0 (deepmd-kit 3.2.0b0)
+        file:
+          name: models/deepmd/dpa-4.0.1-pro-mptrj/2026-10-19-diatomics.json.gz
+          url: https://figshare.com/files/70368339
+          size: 510805
+          md5: 8ed6a9de54e92f4a66fdcde9e57f06de
+      - label: H200 rerun, torch 2.11.0+cu128 build
+        file:
+          name: models/deepmd/dpa-4.0.1-pro-mptrj/cu128/2026-10-19-diatomics.json.gz
+          url: https://figshare.com/files/70368342
+          size: 511038
+          md5: 297a45dfda27df0ad17614bad8d95139
+      - label: identical PyPI repeat (different node)
+        file:
+          name: models/deepmd/dpa-4.0.1-pro-mptrj/repeat/2026-10-20-diatomics.json.gz
+          url: https://figshare.com/files/70368345
+          size: 510812
+          md5: 80356920553edef767eeb37ea3f5f1d6
+      - label: identical PyPI repeat (same node, different GPU)
+        file:
+          name: models/deepmd/dpa-4.0.1-pro-mptrj/repeat-same-node/2026-10-20-diatomics.json.gz
+          url: https://figshare.com/files/70368348
+          size: 511114
+          md5: a240be6f0021d43a00804b1ba153b0d3
+      rel_changes:
+        pbe_wall_dist_mae: 0.00242
+        pbe_energy_mae: 0.0155
+        pbe_well_depth_error: 0.0219
+        pbe_vib_freq_error: 0.00368
+        tortuosity: 0.0102
+        energy_diff_flips: 0.00541
+        energy_jump: 0.157
+        force_flips: 0.0273
+        force_total_variation: 7.28
+        force_jump: 10.1
+        pbe_force_mae: 3.83
+      repeat_rel_change: 6.14

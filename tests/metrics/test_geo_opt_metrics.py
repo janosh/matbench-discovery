@@ -10,6 +10,7 @@ from pymatviz.enums import Key
 from matbench_discovery.data import make_file_ref, round_trip_yaml
 from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.metrics import geo_opt
+from tests.utils import patch_model_metadata
 
 _GEO = "models/alignn/alignn/2026-07-01-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz"
 _GEO_NAN = "models/alignn/alignn/2026-07-02-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz"
@@ -22,22 +23,32 @@ _GEO_NAN = "models/alignn/alignn/2026-07-02-geo-opt-symprec=1e-2-moyo=0.4.2.csv.
         "expected_decrease",
         "expected_match",
         "expected_increase",
+        "expected_mae",
     ),
     [
         # All matches
-        ([0, 0, 0], [0, 0, 0], 0.0, 1.0, 0.0),
+        ([0, 0, 0], [0, 0, 0], 0.0, 1.0, 0.0, 0.0),
         # All decreases
-        ([-1, -2, -1], [-2, -4, -2], 1.0, 0.0, 0.0),
+        ([-1, -2, -1], [-2, -4, -2], 1.0, 0.0, 0.0, 8 / 3),
         # All increases
-        ([1, 2, 1], [2, 4, 2], 0.0, 0.0, 1.0),
+        ([1, 2, 1], [2, 4, 2], 0.0, 0.0, 1.0, 8 / 3),
         # Mixed cases
-        ([0, -1, 1], [0, -2, 2], 1 / 3, 1 / 3, 1 / 3),
+        ([0, -1, 1], [0, -2, 2], 1 / 3, 1 / 3, 1 / 3, 4 / 3),
         # Edge case with zeros in n_sym_ops but non-zero spg
-        ([1, -1, 0], [0, 0, 0], 0, 1 / 3, 0),
+        ([1, -1, 0], [0, 0, 0], 0, 1 / 3, 0, 0.0),
         # Include some NaN values
-        ([0, np.nan, 1], [0, np.nan, 2], 0.0, 0.5, 0.5),
+        ([0, np.nan, 1], [0, np.nan, 2], 0.0, 0.5, 0.5, 1.0),
         # NaN in the middle: 5 valid rows with 1 match, 1 decrease, 3 increases
-        ([0, 1, np.nan, -1, 2, 3], [0, 2, np.nan, -2, 4, 6], 1 / 5, 1 / 5, 3 / 5),
+        (
+            [0, 1, np.nan, -1, 2, 3],
+            [0, 2, np.nan, -2, 4, 6],
+            1 / 5,
+            1 / 5,
+            3 / 5,
+            14 / 5,
+        ),
+        # no valid symmetry rows: every symmetry metric is NaN, not a 0/0 crash
+        ([np.nan] * 2, [np.nan] * 2, np.nan, np.nan, np.nan, np.nan),
     ],
 )
 def test_calc_geo_opt_metrics_parametrized(
@@ -46,6 +57,7 @@ def test_calc_geo_opt_metrics_parametrized(
     expected_decrease: float,
     expected_match: float,
     expected_increase: float,
+    expected_mae: float,
 ) -> None:
     """Test calc_geo_opt_metrics with various symmetry difference patterns."""
     # RMSD NaN pattern deliberately differs from the spg NaN pattern: n_structures
@@ -62,9 +74,13 @@ def test_calc_geo_opt_metrics_parametrized(
 
     results = geo_opt.calc_geo_opt_metrics(df_geo_opt)
 
-    assert results[str(Key.symmetry_decrease)] == pytest.approx(expected_decrease)
-    assert results[str(Key.symmetry_match)] == pytest.approx(expected_match)
-    assert results[str(Key.symmetry_increase)] == pytest.approx(expected_increase)
+    for key, expected in (
+        (Key.symmetry_decrease, expected_decrease),
+        (Key.symmetry_match, expected_match),
+        (Key.symmetry_increase, expected_increase),
+        (Key.n_sym_ops_mae, expected_mae),
+    ):
+        assert results[str(key)] == pytest.approx(expected, nan_ok=True), key
     # n_structures should be the number of non-NaN spg_diff values
     assert results[str(Key.n_structures)] == np.count_nonzero(pd.notna(spg_diffs))
     expected_rmsd = (0.1 * (len(spg_diffs) - 1) + 1.0) / len(spg_diffs)
@@ -151,7 +167,7 @@ def test_write_geo_opt_metrics_to_yaml(
     prior_block = {"analysis_file": existing_ref} if existing_ref else {}
     with yaml_path.open("w", encoding="utf-8") as file:
         round_trip_yaml.dump({"metrics": {"geo_opt": {symprec_key: prior_block}}}, file)
-    monkeypatch.setattr(Model, "yaml_path", property(lambda _model: str(yaml_path)))
+    patch_model_metadata(monkeypatch, Model.alignn, yaml_path=str(yaml_path))
 
     geo_opt.write_metrics_to_yaml(
         pd.DataFrame([metrics_data]), Model.alignn, symprec, analysis_file_path

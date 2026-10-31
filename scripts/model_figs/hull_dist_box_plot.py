@@ -29,7 +29,6 @@ box_models: list[dict[str, object]] = [
 provenance = figs.build_discovery_payload_provenance(
     generator=__file__,
     test_subset=test_subset.value,
-    source_files={"payload_numerics": payload_numerics.__file__},
     parameters={
         "coordinate_decimals": payload_numerics.COORD_DECIMALS,
         "quantiles": [0.05, 0.25, 0.5, 0.75, 0.95],

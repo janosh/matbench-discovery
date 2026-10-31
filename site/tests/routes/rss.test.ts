@@ -2,6 +2,7 @@ import { by_benchmark_added_desc } from '#lib'
 import { MODELS } from '#lib/models.svelte.js'
 import { GET } from '#routes/rss.xml/+server.js'
 import pkg from '#site/package.json'
+import { format_num } from 'matterviz/labels'
 import { escape_html } from 'svelte-widgets/utils'
 import { describe, expect, it, onTestFinished } from 'vite-plus/test'
 
@@ -72,6 +73,10 @@ describe(`RSS feed endpoint`, () => {
     // models, e.g. EMA-GNN, have paper: null); all hrefs are absolute
     expect(sorted_models.some((model_data) => model_data.paper)).toBe(true)
     for (const [idx, model_data] of sorted_models.entries()) {
+      // metrics quote the leaderboard's (CPS) discovery set, not the full test set
+      const { unique_prototypes, full_test_set } = model_data.metrics?.discovery ?? {}
+      const f1 = (unique_prototypes ?? full_test_set)?.F1
+      if (f1 != null) expect(descriptions[idx]).toContain(`F1: ${format_num(f1)},`)
       const links = [...descriptions[idx].matchAll(/<a href="[^"]+">[^<]+<\/a>/g)].map(
         (match) => match[0],
       )

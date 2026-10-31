@@ -322,11 +322,7 @@
   </button>
   {#if selected_count > 0 || filters.show_selected_only}
     <label>
-      <input
-        type="checkbox"
-        bind:checked={filters.show_selected_only}
-        aria-label="Toggle between showing only selected models and all models"
-      />
+      <input type="checkbox" bind:checked={filters.show_selected_only} />
       {filters.show_selected_only ? `Show all` : `Show only ${selected_count} selected`}
     </label>
   {/if}

@@ -1,5 +1,6 @@
 import type { FileRef } from '#lib/schema/model.js'
 import type { DiatomicsCurves, ModelData } from '#lib/types.js'
+import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { isAbsolute, resolve } from 'node:path'
 import { setTimeout as sleep } from 'node:timers/promises'
@@ -91,21 +92,48 @@ const fetch_prediction_bytes = async (
   }
 }
 
+// size/md5 mismatch of bytes vs their registered FileRef, undefined when they match
+const registered_mismatch = (bytes: Uint8Array, file: FileRef): string | undefined => {
+  if (file.size != null && bytes.length !== file.size)
+    return `size ${bytes.length} != registered ${file.size}`
+  const md5 = file.md5 && createHash(`md5`).update(bytes).digest(`hex`)
+  return md5 && md5 !== file.md5 ? `md5 ${md5} != registered ${file.md5}` : undefined
+}
+
+// Bytes of a registered prediction file: the local copy if it matches the FileRef, else
+// the verified download (a stale local file must never stand in for the registered
+// artifact). undefined when there is neither a local copy nor a URL.
+const read_registered_prediction = async (
+  file: FileRef,
+  { fetch_fn = fetch, root_dir = repo_root, max_attempts = 3 }: FetchOptions,
+): Promise<{ bytes: Uint8Array; source: string } | undefined> => {
+  const path = prediction_path(file.name, root_dir)
+  const local = await read_local_prediction(path)
+  const mismatch = local && registered_mismatch(local, file)
+  if (local && !mismatch) return { bytes: local, source: path }
+  if (!file.url) {
+    if (mismatch)
+      throw new Error(
+        `Local ${path} differs from its registered artifact (${mismatch}) and no url is registered`,
+      )
+    return undefined
+  }
+  const bytes = await fetch_prediction_bytes(file.url, fetch_fn, max_attempts)
+  const remote_mismatch = registered_mismatch(bytes, file)
+  if (remote_mismatch)
+    throw new Error(
+      `${file.url} differs from its registered artifact (${remote_mismatch})`,
+    )
+  return { bytes, source: file.url }
+}
+
 export async function fetch_diatomics_data(
   { pred_file }: DiatomicsSource,
-  { fetch_fn = fetch, root_dir = repo_root, max_attempts = 3 }: FetchOptions = {},
+  options: FetchOptions = {},
 ): Promise<DiatomicsCurves> {
-  if (pred_file?.name) {
-    const path = prediction_path(pred_file.name, root_dir)
-    const bytes = await read_local_prediction(path)
-    if (bytes) return parse_gzipped_json(bytes, path)
-  }
-
-  const pred_file_url = pred_file?.url
-  if (!pred_file_url) throw new Error(`No local diatomics file or remote URL`)
-
-  const bytes = await fetch_prediction_bytes(pred_file_url, fetch_fn, max_attempts)
-  return parse_gzipped_json(bytes, pred_file_url)
+  const prediction = pred_file && (await read_registered_prediction(pred_file, options))
+  if (!prediction) throw new Error(`No local diatomics file or remote URL`)
+  return parse_gzipped_json(prediction.bytes, prediction.source)
 }
 
 type MdPerSystemRow = Record<string, number | string>
@@ -114,20 +142,16 @@ type MdPerSystemRow = Record<string, number | string>
 // MD table units
 const mev_cols = new Set([`energy_rmse`, `force_rmse`])
 
-// Read local predictions or their published URL. Unpublished, unavailable files
-// return null; malformed files and failed downloads must surface during the build.
+// Read the registered local prediction or its published URL. Unpublished, unavailable
+// files return null; malformed files and failed downloads must surface during the build.
 export async function read_md_per_system(
   model: Pick<ModelData, `metrics`>,
-  { fetch_fn = fetch, root_dir = repo_root, max_attempts = 3 }: FetchOptions = {},
+  options: FetchOptions = {},
 ): Promise<MdPerSystemRow[] | null> {
   const prediction = model.metrics?.md?.pred_file
   if (!prediction) return null
-
-  let bytes = await read_local_prediction(prediction_path(prediction.name, root_dir))
-  if (!bytes) {
-    if (!prediction.url) return null
-    bytes = await fetch_prediction_bytes(prediction.url, fetch_fn, max_attempts)
-  }
+  const { bytes } = (await read_registered_prediction(prediction, options)) ?? {}
+  if (!bytes) return null
 
   const csv = new TextDecoder()
     .decode(bytes[0] === 0x1f && bytes[1] === 0x8b ? gunzipSync(bytes) : bytes)

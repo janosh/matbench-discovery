@@ -193,20 +193,14 @@ metrics:
         url: https://ndownloader.figshare.com/files/70836381
         size: 4991
         md5: e18401cf7413c3e9a04259f463761652
-      hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition
-      run_time_sec: 15413.45
-      max_rss_gb: 3.2
-      max_gpu_mem_gb: 62.901
+      cost: {source: runner, hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition, n_shards: 1, run_time_sec: 15413.45, max_rss_gb: 3.2, max_gpu_mem_gb: 62.901}
   md:
     pred_file:
       name: models/deepmd/dpa-4.1-max-oam-pft/2026-10-29-md-metrics.csv.gz
       url: https://ndownloader.figshare.com/files/70836369
       size: 1584
       md5: 71afcf8e8f47c7c94b32580c9dd53d0e
-    hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition
-    run_time_sec: 220585.84 # s
-    max_rss_gb: 3.176 # GB
-    max_gpu_mem_gb: 22.277 # GB
+    cost: {source: runner, hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition, run_time_sec: 220585.84, max_rss_gb: 3.176, max_gpu_mem_gb: 22.277}
     rdf_error: 3.1153083079884705 # %
     adf_error: 1.2417662497983921 # %
     vdos_error: 20.947793631084863 # %
@@ -220,10 +214,7 @@ metrics:
       url: https://ndownloader.figshare.com/files/70836366
       size: 503988
       md5: a9091d8913ef8de525bc5982980e9296
-    hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition
-    run_time_sec: 258.12
-    max_rss_gb: 3.192
-    max_gpu_mem_gb: 0.765
+    cost: {source: runner, hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition, run_time_sec: 258.12, max_rss_gb: 3.192, max_gpu_mem_gb: 0.765}
     excluded_formula_reasons: {}
     pbe_wall_dist_mae: 0.6033028272652039
     pbe_energy_mae: 9.220643949905325

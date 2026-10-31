@@ -1,14 +1,9 @@
-import dft_references from '#lib/diatomics-dft.json.gz'
+import DFT_REFERENCES from '#lib/diatomics-dft.json.gz'
 import type { PageServerLoad } from './$types'
 
-// functional -> formula -> per-point magmom data (subset of the bundled DFT reference)
-type DftMagmomCurve = {
-  distances: number[]
-  magmoms: ([number, number] | null)[]
-  spin_candidates: (string | null)[]
-}
-
-const DFT_REFERENCES = dft_references as Record<string, Record<string, DftMagmomCurve>>
+type DftCurve = (typeof DFT_REFERENCES)[string][string]
+// formula -> functional -> per-point magmom data (subset of the bundled DFT reference)
+type DftMagmomCurve = Pick<DftCurve, 'distances' | 'magmoms' | 'spin_candidates'>
 
 export const load: PageServerLoad = () => {
   // per-atom site-projected moments vs separation for every element/functional. This

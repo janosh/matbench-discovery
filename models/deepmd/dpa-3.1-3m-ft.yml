@@ -44,12 +44,12 @@ license:
 environment:
   dependencies:
   - 'deepmd-kit[torch]'
-  - torch==2.3.1
-  - torch-geometric==2.5.2
+  - torch==2.10.0
+  - torch-geometric==2.7.0
   - ase==3.23.0
   - pymatgen==2024.6.10
   - numpy==1.26.4
-  python_version: '3.12'
+  python_version: '3.14'
 openness: OSCD
 architecture_types: [gnn]
 train_task: S2EFS
@@ -114,8 +114,7 @@ metrics:
       url: https://figshare.com/files/66104588
       size: 258540
       md5: a734c48d725aa8e43c54f4989bfc9ad1
-    hardware: NVIDIA H100 80GB HBM3
-    run_time_sec: 671.31
+    cost: {source: salvaged, hardware: NVIDIA H100 80GB HBM3, run_time_sec: 671.31}
     pbe_wall_dist_mae: 0.2616
     pbe_energy_mae: 1.123
     pbe_bond_length_error: 0.1828
@@ -133,6 +132,31 @@ metrics:
       n_eligible: 73
       failed_elements: []
       missing_elements: []
+    reproducibility:
+      checked: '2026-10-20'
+      status: drifted
+      cause: environment_change
+      note: Rerun with deepmd-kit 3.1.3 shifts force metrics by up to 0.4% and tortuosity by 0.06% (other energy metrics unchanged); identical reruns agree exactly.
+      tolerance: 0.001
+      runs:
+      - label: H200 rerun (deepmd-kit 3.1.3, torch 2.10.0)
+        file:
+          name: models/deepmd/dpa-3.1-3m-ft/2026-10-19-diatomics.json.gz
+          url: https://figshare.com/files/70368327
+          size: 264355
+          md5: f1402ff0c0790661589795a4b3eb7bfb
+      - label: identical H200 repeat
+        file:
+          name: models/deepmd/dpa-3.1-3m-ft/repeat/2026-10-20-diatomics.json.gz
+          url: https://figshare.com/files/70368330
+          size: 264355
+          md5: d46bb50af1234f90d35d3cf8f3155517
+      rel_changes:
+        tortuosity: 0.000565
+        force_total_variation: 0.00424
+        force_jump: 0.00185
+        pbe_force_mae: 0.000844
+      repeat_rel_change: 0.0
   discovery:
     pred_file:
       name: models/deepmd/dpa-3.1-3m-ft/2025-06-05-discovery.csv.gz
@@ -174,37 +198,36 @@ metrics:
       size: 119699831
       md5: f1faf08c388652d8a006e48ef9262f50
     symprec=1e-5:
-      rmsd: 0.0693
-      n_sym_ops_mae: 2.0174
-      symmetry_decrease: 0.0539
-      symmetry_match: 0.7274
-      symmetry_increase: 0.2138
-      n_structures: 256963
+      rmsd: 0.0693 # unitless
+      n_sym_ops_mae: 2.0174 # unitless
+      symmetry_decrease: 0.0539 # fraction
+      symmetry_match: 0.7274 # fraction
+      symmetry_increase: 0.2138 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/deepmd/dpa-3.1-3m-ft/2025-06-05-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/55410182
-        size: 7254906
-        md5: 864563ab8108d7c70dc31dce6a69e870
+        name: models/deepmd/dpa-3.1-3m-ft/2025-06-05-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333644
+        size: 6808157
+        md5: 93248cbbf593627aeaabf8d26c7a2c3c
     symprec=1e-2:
-      rmsd: 0.0693
-      n_sym_ops_mae: 1.881
-      symmetry_decrease: 0.0502
-      symmetry_match: 0.8109
-      symmetry_increase: 0.1317
-      n_structures: 256963
+      rmsd: 0.0693 # unitless
+      n_sym_ops_mae: 1.881 # unitless
+      symmetry_decrease: 0.0502 # fraction
+      symmetry_match: 0.8109 # fraction
+      symmetry_increase: 0.1317 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/deepmd/dpa-3.1-3m-ft/2025-06-05-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
-        url: https://figshare.com/files/55410185
-        size: 7281544
-        md5: 99575d4829f08ab4a7375a593ddd2232
+        name: models/deepmd/dpa-3.1-3m-ft/2025-06-05-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333647
+        size: 6811656
+        md5: 51ad375aed87d7e5194864ee714baaff
   md:
     pred_file:
       name: models/deepmd/dpa-3.1-3m-ft/2026-06-28-md-metrics.csv.gz
-      url: https://figshare.com/files/66048857
-      size: 1566
-      md5: 9bf72dc03ff17686311e38a3d37f9619
-    hardware: NVIDIA H200
-    run_time_sec: 93116.24
+      url: https://figshare.com/files/70333557
+      size: 1710
+      md5: b55ec8eb901ac72040ce2816cdc73a3d
+    cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 93116.27}
     energy_rmse: 0.7376
     force_rmse: 68.9079
     rdf_error: 3.5632
@@ -227,15 +250,20 @@ metrics:
       κ_failure_rate: 0.0097
       imaginary_mode_rate: 0.0097
       spectrum_w1: 0.3164
-      phonon_file:
-        name: models/deepmd/dpa-3.1-3m-ft/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1274719659
-        md5: ff12f7baa864c5d28f50b0251533ffd4
-      force_file:
-        name: models/deepmd/dpa-3.1-3m-ft/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 8788269
-        md5: 2fee317bf1d21baa1d2497eb8dd9ce2a
-      run_info_file:
-        name: models/deepmd/dpa-3.1-3m-ft/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 8186
-        md5: 4853a06f001415edc887697004ed5cad
+      harmonic:
+        phonon_file:
+          name: models/deepmd/dpa-3.1-3m-ft/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334232
+          size: 23444888
+          md5: 52c3d18a01d6983ffda6f8e43db50bfa
+        force_file:
+          name: models/deepmd/dpa-3.1-3m-ft/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334241
+          size: 8788269
+          md5: 2fee317bf1d21baa1d2497eb8dd9ce2a
+        run_info_file:
+          name: models/deepmd/dpa-3.1-3m-ft/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334244
+          size: 8186
+          md5: 4853a06f001415edc887697004ed5cad
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 1020.31, max_rss_gb: 4.671, max_gpu_mem_gb: 39.263}

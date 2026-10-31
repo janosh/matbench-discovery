@@ -47,8 +47,8 @@ license:
   checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
 
 environment:
-  dependencies: ['nequip>=0.14', 'torch<2.10']
-  python_version: '3.12'
+  dependencies: ['nequip>=0.14', 'torch==2.11.0']
+  python_version: '3.14'
 openness: OSOD
 architecture_types: [gnn]
 train_task: S2EFS
@@ -104,12 +104,12 @@ notes:
 metrics:
   diatomics:
     pred_file:
-      name: models/nequip/nequip-mp-l-0.1/2026-06-28-diatomics.json.gz
-      url: https://figshare.com/files/66104645
-      size: 261091
-      md5: 615f98991277055a2e55987200d13883
-    hardware: NVIDIA H200
-    run_time_sec: 462.93
+      name: models/nequip/nequip-mp-l-0.1/2026-10-19-diatomics.json.gz
+      url: https://figshare.com/files/70350117
+      size: 263506
+      md5: 9f9ffc68ca0071cb8b02ed3d54424308
+    cost: {source: runner, hardware: NVIDIA H200, device: cuda, acceleration: [torch_aot_inductor], n_shards: 1, n_processes: 1, run_time_sec: 55.15, load_time_sec: 37.04, max_rss_gb: 1.507, max_gpu_mem_gb: 0.066}
+    excluded_formula_reasons: {}
     pbe_wall_dist_mae: 0.1963
     pbe_energy_mae: 2.008
     pbe_bond_length_error: 0.2961
@@ -128,6 +128,18 @@ metrics:
       failed_elements:
       - Ac
       missing_elements: []
+    reproducibility:
+      checked: '2026-10-20'
+      status: reproduced
+      tolerance: 0.001
+      runs:
+      - label: published run (2026-06-28, H200)
+        file:
+          name: models/nequip/nequip-mp-l-0.1/2026-06-28-diatomics.json.gz
+          url: https://figshare.com/files/66104645
+          size: 261091
+          md5: 615f98991277055a2e55987200d13883
+      rel_changes: {}
   discovery:
     pred_file:
       name: models/nequip/nequip-mp-l-0.1/2025-08-27-discovery.csv.gz
@@ -169,37 +181,36 @@ metrics:
       size: 105912445
       md5: 177d4fd5c6093641220dab930196e446
     symprec=1e-2:
-      rmsd: 0.0856
-      n_sym_ops_mae: 1.8175
-      symmetry_decrease: 0.0592
-      symmetry_match: 0.8109
-      symmetry_increase: 0.1227
-      n_structures: 256963
+      rmsd: 0.0856 # unitless
+      n_sym_ops_mae: 1.8175 # unitless
+      symmetry_decrease: 0.0592 # fraction
+      symmetry_match: 0.8109 # fraction
+      symmetry_increase: 0.1227 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/nequip/nequip-mp-l-0.1/2025-08-27-geo-opt-symprec=1e-2-moyo=0.4.4.csv.gz
-        url: https://figshare.com/files/57731038
-        size: 8324325
-        md5: 34795679d0ded51160b56bb1e8c5f3e7
+        name: models/nequip/nequip-mp-l-0.1/2025-08-27-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333878
+        size: 7625127
+        md5: d304d5f97f31dc81d5d90fb06eac43ca
     symprec=1e-5:
-      rmsd: 0.0856
-      n_sym_ops_mae: 1.9003
-      symmetry_decrease: 0.0788
-      symmetry_match: 0.7163
-      symmetry_increase: 0.1982
-      n_structures: 256963
+      rmsd: 0.0856 # unitless
+      n_sym_ops_mae: 1.9003 # unitless
+      symmetry_decrease: 0.0788 # fraction
+      symmetry_match: 0.7163 # fraction
+      symmetry_increase: 0.1982 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/nequip/nequip-mp-l-0.1/2025-08-27-geo-opt-symprec=1e-5-moyo=0.4.4.csv.gz
-        url: https://figshare.com/files/57731041
-        size: 8202051
-        md5: bffb73ba87a9df983a2cb4389d924cab
+        name: models/nequip/nequip-mp-l-0.1/2025-08-27-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333881
+        size: 7591510
+        md5: d07c76c296ec0f13c57b196c88b0672d
   md:
     pred_file:
       name: models/nequip/nequip-mp-l-0.1/2026-06-28-md-metrics.csv.gz
-      url: https://figshare.com/files/66048908
-      size: 1562
-      md5: d5357a3cb4dbcc1f6615ac21318b0a84
-    hardware: NVIDIA H200
-    run_time_sec: 65205.38
+      url: https://figshare.com/files/70333563
+      size: 1718
+      md5: e5b48d415f428e318f42455d2397991b
+    cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 65205.36}
     energy_rmse: 1.2407
     force_rmse: 116.8054
     rdf_error: 5.0273
@@ -213,7 +224,7 @@ metrics:
     kappa_103:
       pred_file:
         name: models/nequip/nequip-mp-l-0.1/2025-08-27-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/57576187
+        url: https://figshare.com/files/70334556
         size: 10581455
         md5: 0e51cc0eeffd602a9100ada7990d18aa
       κ_SRME: 0.4659
@@ -222,15 +233,20 @@ metrics:
       κ_failure_rate: 0.0777
       imaginary_mode_rate: 0.0194
       spectrum_w1: 0.2202
-      phonon_file:
-        name: models/nequip/nequip-mp-l-0.1/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1336307924
-        md5: 95edbff62bd90b44e0982e24db96a5ff
-      force_file:
-        name: models/nequip/nequip-mp-l-0.1/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 8785800
-        md5: eed5859915dcbe89d4a6df25e6d4e0e5
-      run_info_file:
-        name: models/nequip/nequip-mp-l-0.1/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 8065
-        md5: 72b4fd0e992e5ee28cd32b2b1a7c15dc
+      harmonic:
+        phonon_file:
+          name: models/nequip/nequip-mp-l-0.1/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334559
+          size: 23748059
+          md5: 6f58f8fce203bf6d72a311163023c6c2
+        force_file:
+          name: models/nequip/nequip-mp-l-0.1/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334562
+          size: 8785800
+          md5: eed5859915dcbe89d4a6df25e6d4e0e5
+        run_info_file:
+          name: models/nequip/nequip-mp-l-0.1/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334565
+          size: 8065
+          md5: 72b4fd0e992e5ee28cd32b2b1a7c15dc
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 540.06, max_rss_gb: 2.564, max_gpu_mem_gb: 11.491}

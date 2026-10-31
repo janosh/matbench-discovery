@@ -56,7 +56,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v9.0.0
+        uses: astral-sh/setup-uv@v10.2.0
         with:
           python-version: "3.14"
 
@@ -147,7 +147,7 @@ jobs:
           uv run --with-editable . scripts/apply_pr_models_overlay.py \
             "$PR_MODELS" "${CHANGED_YML[@]}" --remove "${REMOVED_YML[@]}"
           if (( ${#CHANGED_YML[@]} )); then
-            uv tool run --from 'check-jsonschema==0.37.4' check-jsonschema \
+            uv tool run --from 'check-jsonschema==0.38.2' check-jsonschema \
               --schemafile tests/model-schema.yml "${CHANGED_YML[@]}"
           fi
           uv run --with-editable . scripts/generate_model_enum.py
@@ -198,10 +198,8 @@ jobs:
             --payloads-only
           # roster changes (removals, lifecycle) rebuild parity manifests for all
           # active models, not just the ones --validate-only covered
-          MBD_AUTO_DOWNLOAD_FILES=true uv run --with-editable . \
-            site/scripts/generate-energy-parity-assets.py
-          MBD_AUTO_DOWNLOAD_FILES=true uv run --with-editable ".[phonons]" \
-            site/scripts/generate-kappa-parity-assets.py
+          uv run --with-editable . site/scripts/generate-energy-parity-assets.py
+          uv run --with-editable ".[phonons]" site/scripts/generate-kappa-parity-assets.py
 
       - name: Recheck submission head before archival
         env:

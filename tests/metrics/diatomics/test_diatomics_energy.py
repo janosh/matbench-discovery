@@ -172,8 +172,11 @@ def test_validation_errors(xs: np.ndarray, ys: np.ndarray, match: str) -> None:
         calc_energy_jump(xs, ys)
 
 
-def test_unsorted_input_accepted() -> None:
-    """Unsorted x values should work since sorting is handled internally."""
-    xs = np.array([1, 3, 2, 5, 4])
-    ys = np.array([1, 3, 2, 5, 4])
-    assert np.isfinite(calc_pbe_energy_mae(np.arange(1, 6), np.arange(1, 6), xs, ys))
+@pytest.mark.parametrize("interpolate", [False, 200])
+def test_unsorted_input_accepted(interpolate: bool | int) -> None:
+    """An unsorted copy of a curve matches the sorted original exactly (0 MAE)."""
+    xs = np.arange(1.0, 6.0)
+    ys = (xs - 2.5) ** 2  # nonlinear so a mispaired x/y sort would show up
+    perm = [0, 2, 1, 4, 3]
+    mae = calc_pbe_energy_mae(xs, ys, xs[perm], ys[perm], interpolate=interpolate)
+    assert mae == 0.0  # bit-identical: sorting restores the exact same arrays

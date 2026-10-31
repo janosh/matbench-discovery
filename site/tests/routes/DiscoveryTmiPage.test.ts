@@ -3,7 +3,7 @@ import hist_clf from '#figs/hist-clf-pred-hull-dist.jsonl'
 import DiscoveryTmiPage from '#routes/benchmarks/discovery/tmi/+page.svelte'
 import { tick } from 'svelte'
 import { describe, expect, it } from 'vite-plus/test'
-import { doc_query, mount_with_url } from '../index.js'
+import { doc_query, mount_with_url, query_param } from '../index.js'
 
 const ranked_histograms = hist_clf.models.toSorted((left, right) => right.f1 - left.f1)
 const histogram_titles = () =>
@@ -62,17 +62,15 @@ describe(`Discovery TMI Page`, () => {
         expect(elem_prev_text).not.toContain(model.label)
       }
     }
-    expect(new URL(location.href).searchParams.get(`models`)).toBe(elem_model.model_key)
+    expect(query_param(`models`)).toBe(elem_model.model_key)
     expect(histogram_titles()).toEqual(ranked_histograms.slice(-2).map(histogram_title))
     doc_query<HTMLButtonElement>(`.histogram-selector ul.selected button.remove`).click()
     await tick()
     expect(histogram_titles()).toEqual([
       histogram_title(ranked_histograms[ranked_histograms.length - 1]),
     ])
-    expect(new URL(location.href).searchParams.get(`hist_models`)).toBe(
-      ranked_histograms.at(-1)?.model_key,
-    )
-    expect(new URL(location.href).searchParams.get(`models`)).toBe(elem_model.model_key)
+    expect(query_param(`hist_models`)).toBe(ranked_histograms.at(-1)?.model_key)
+    expect(query_param(`models`)).toBe(elem_model.model_key)
   })
 
   it(`restores more than four histograms, ordered by F1`, async () => {

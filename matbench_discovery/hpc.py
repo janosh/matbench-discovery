@@ -1,6 +1,7 @@
-"""Slurm job submission helper function."""
+"""HPC helpers: Slurm submission, sharding and run-cost provenance."""
 
 import importlib.metadata
+import json
 import math
 import os
 import platform
@@ -8,71 +9,169 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import types
+import warnings
 from collections.abc import Iterable, Mapping, Sequence, Sized
-from typing import TYPE_CHECKING, Final, TypeIs
+from typing import Any, Final, TypeIs
 
-import numpy as np
+# === Run-cost provenance ===
+# Where a cost block came from: measured by our current runners and recorded in the
+# artifact (runner), our earlier runs predating that provenance, e.g. Slurm-log
+# salvage or load-inclusive times (salvaged), or the model authors
+COST_SOURCES: Final = ("runner", "salvaged", "author_reported")
+# tags valid without artifact-recorded cost (YAML-only numbers)
+YAML_ONLY_COST_SOURCES: Final = ("salvaged", "author_reported")
+# where the timed work ran: merged units must agree on each, and resumed work must
+# match the sessions before it (plus their package versions)
+RUN_LABEL_KEYS: Final = ("hardware", "device", "dtype", "acceleration", "backend")
+# the YAML `cost: {...}` mapping next to a task artifact, in canonical order. Flat
+# artifact run metadata spells its source key cost_source
+COST_KEYS: Final = (
+    *("source", "hardware", "device", "dtype", "acceleration", "n_shards"),
+    *("n_processes", "run_time_sec", "load_time_sec", "max_rss_gb", "max_gpu_mem_gb"),
+)
+# trustworthy keys of artifacts predating cost_source: older runners recorded the
+# requested (not the actual) dtype/device
+LEGACY_ARTIFACT_COST_KEYS: Final = (
+    *("hardware", "n_shards", "run_time_sec", "max_rss_gb", "max_gpu_mem_gb"),
+)
+# only published when hardware is uniform + complete
+GPU_DEPENDENT_COST_KEYS: Final = ("run_time_sec", "load_time_sec", "max_gpu_mem_gb")
+# runtime overrides once a process's model load is charged to one of its units
+# (rollout, element file, material): merges sum load time and process counts
+LOAD_CHARGED: Final = {"load_time_sec": 0.0, "n_processes": 0}
 
-if TYPE_CHECKING:
-    import pandas as pd
 
+def detect_hardware(device: str) -> str:
+    """Name of the torch-style ``device`` (e.g. ``cuda:1``) as
+    torch.cuda.get_device_name spells it, ``CPU (<arch>)`` for CPUs.
 
-def detect_hardware() -> str:
-    """Human-readable name for the accelerator the run executed on.
-
-    Tries torch, then JAX, then TensorFlow (MLIP backends expose the GPU differently),
-    falling back to the CPU model when no GPU is visible or accelerator probes fail.
+    Raises:
+        ValueError: If a CUDA device is requested but torch sees no GPU.
     """
-    try:
-        import torch
+    if not device.startswith("cuda"):
+        return f"CPU ({platform.processor() or platform.machine()})"
+    import torch
 
-        if torch.cuda.is_available():
-            return torch.cuda.get_device_name(0)
-    except Exception:  # noqa: BLE001, S110
-        pass
-    try:
+    if not torch.cuda.is_available():
+        raise ValueError(f"{device=} requested but torch.cuda.is_available() is False")
+    return torch.cuda.get_device_name(torch.device(device))
+
+
+def _torch_runtime(obj: object, *, max_depth: int = 4) -> dict[str, str] | None:
+    """Device, dtype and hardware of the first floating-point torch parameter or
+    buffer reachable from ``obj`` (breadth-first over attributes and container
+    items), None when no torch module is reachable.
+    """
+    if "torch" not in sys.modules:  # never import torch for JAX/TensorFlow models
+        return None
+    import torch
+
+    skip_types = (str, bytes, int, float, type, types.ModuleType, types.FunctionType)
+    seen: set[int] = set()
+    frontier: list[object] = [obj]
+    for _ in range(max_depth + 1):
+        next_frontier: list[object] = []
+        for item in frontier:
+            if id(item) in seen or isinstance(item, skip_types) or len(seen) > 20_000:
+                continue
+            seen.add(id(item))
+            if isinstance(item, torch.nn.Module):
+                for tensor in (*item.parameters(), *item.buffers()):
+                    if tensor.is_floating_point():
+                        return {
+                            "backend": "torch",
+                            "device": tensor.device.type,
+                            "torch_device": str(tensor.device),
+                            "dtype": str(tensor.dtype).removeprefix("torch."),
+                            "hardware": detect_hardware(str(tensor.device)),
+                        }
+            elif isinstance(item, dict):
+                next_frontier.extend(item.values())
+            elif isinstance(item, list | tuple):
+                next_frontier.extend(item)
+            elif hasattr(item, "__dict__") and not isinstance(item, torch.Tensor):
+                next_frontier.extend(vars(item).values())
+        frontier = next_frontier
+    return None
+
+
+def detect_runtime(calculator: object, *, requested_device: str) -> dict[str, str]:
+    """Backend, device, hardware and (when known) dtype and ``torch_device`` a
+    calculator actually runs on.
+
+    Torch models are located through their parameters (so a factory ignoring the
+    requested device is labeled truthfully), JAX/TensorFlow models through their
+    framework's first visible GPU. Unreachable torch modules fall back to backend
+    ``torch_probe`` labeled by the requested device (memory_peaks later requires
+    measured VRAM to back a GPU label).
+    """
+    if (torch_runtime := _torch_runtime(calculator)) is not None:
+        return torch_runtime
+    backend = next((name for name in ("jax", "tensorflow") if name in sys.modules), "")
+    if backend == "jax":
         import jax
 
         if gpus := [dev for dev in jax.devices() if dev.platform == "gpu"]:
-            return gpus[0].device_kind
-    except Exception:  # noqa: BLE001, S110
-        pass
-    try:
+            return {
+                "backend": backend,
+                "device": "gpu",
+                "hardware": gpus[0].device_kind,
+            }
+    elif backend == "tensorflow":
         import tensorflow as tf
 
         if gpus := tf.config.list_physical_devices("GPU"):
             details = tf.config.experimental.get_device_details(gpus[0])
-            return details.get("device_name", "GPU")
-    except Exception:  # noqa: BLE001, S110
-        pass
-    return f"CPU ({platform.processor() or platform.machine()})"
+            if not (name := details.get("device_name")):
+                raise ValueError(f"TensorFlow GPU {gpus[0]} reports no device_name")
+            return {"backend": backend, "device": "gpu", "hardware": name}
+    elif requested_device.startswith("cuda"):
+        return {
+            "backend": "torch_probe",
+            "device": "cuda",
+            "torch_device": requested_device,
+            "hardware": detect_hardware(requested_device),
+        }
+    return {
+        "backend": backend or "none",
+        "device": "cpu",
+        "hardware": detect_hardware("cpu"),
+    }
 
 
-def reset_gpu_peak_memory() -> None:
-    """Reset torch's peak-VRAM counter so the next peak_memory_gb() call attributes
-    GPU memory to work done after this point (e.g. one system's rollout in a
-    multi-system process). No-op without torch/CUDA; host RSS has no reset (it is a
-    process-lifetime high-water mark).
+def _is_torch_cuda_run(runtime: Mapping[str, Any]) -> bool:
+    """Whether torch's CUDA caching-allocator counters measure this run's VRAM."""
+    return runtime.get("backend") in ("torch", "torch_probe") and str(
+        runtime.get("device", "")
+    ).startswith("cuda")
+
+
+def reset_gpu_peak_memory(runtime: Mapping[str, Any]) -> None:
+    """Reset a torch CUDA run's peak-VRAM counter so memory_peaks() measures only
+    work after this point (e.g. one rollout of a multi-system process).
     """
+    if not _is_torch_cuda_run(runtime):
+        return
     # broad except: a broken CUDA runtime (e.g. driver mismatch mid-job) raises
     # RuntimeError, which must not crash the rollout this instruments
     try:
         import torch
 
-        if torch.cuda.is_available():
-            torch.cuda.reset_peak_memory_stats()
+        torch.cuda.reset_peak_memory_stats(runtime.get("torch_device"))
     except Exception:  # noqa: BLE001, S110
         pass
 
 
-def peak_memory_gb() -> dict[str, float]:
-    """Peak memory footprint of this process in GB (1e9 bytes), rounded to 3 decimals.
+def memory_peaks(runtime: Mapping[str, Any], *, succeeded: bool) -> dict[str, float]:
+    """Peak memory in GB (1e9 bytes, 3 decimals): ``max_rss_gb``, the host RSS
+    high-water mark since process start (not on Windows), and for torch CUDA runs
+    ``max_gpu_mem_gb``, the peak allocated VRAM on ``torch_device`` since the last
+    reset_gpu_peak_memory() (torch's counter reads 0 for JAX/TensorFlow).
 
-    Returns up to two entries: ``max_rss_gb``, the host resident-set-size high-water
-    mark since process start (via getrusage; omitted on platforms without the
-    ``resource`` module, i.e. Windows), and ``max_gpu_mem_gb``, torch's peak allocated
-    CUDA memory since the last reset_gpu_peak_memory() call (omitted without
-    torch/CUDA).
+    Raises:
+        ValueError: If ``succeeded`` (a failed unit may never touch the GPU) but a
+            torch CUDA run allocated no VRAM: the model is not on its labeled GPU.
     """
     mem: dict[str, float] = {}
     try:
@@ -84,16 +183,52 @@ def peak_memory_gb() -> dict[str, float]:
         mem["max_rss_gb"] = round(max_rss / 1e9, 3)
     except ImportError:
         pass
+    if not _is_torch_cuda_run(runtime):
+        return mem
     # broad except like reset_gpu_peak_memory: memory introspection failing (broken
-    # CUDA runtime) must not crash collect_run_info after a multi-hour rollout
+    # CUDA runtime) must not crash a run after a multi-hour rollout
     try:
         import torch
 
         if torch.cuda.is_available():
-            mem["max_gpu_mem_gb"] = round(torch.cuda.max_memory_allocated() / 1e9, 3)
+            device = runtime.get("torch_device")
+            mem["max_gpu_mem_gb"] = round(
+                torch.cuda.max_memory_allocated(device) / 1e9, 3
+            )
     except Exception:  # noqa: BLE001, S110
         pass
+    if succeeded and not mem.get("max_gpu_mem_gb", 0) > 0:
+        raise ValueError(
+            f"Run labeled {runtime.get('hardware')!r} on device "
+            f"{runtime.get('device')!r} ({runtime.get('backend')} backend) allocated "
+            f"no CUDA memory ({mem}) despite successful work: the model is not "
+            "running on that GPU"
+        )
     return mem
+
+
+def check_resume_labels(
+    previous: Mapping[str, Any], runtime: Mapping[str, Any], context: str
+) -> None:
+    """Require work resumed by ``runtime`` to share the run labels and package
+    versions of the session that wrote ``previous``: a summed cost over two GPUs,
+    precisions or environments describes neither.
+
+    Raises:
+        ValueError: Naming the differing labels (before, now).
+    """
+    keys = (*RUN_LABEL_KEYS, "versions")
+    labels = [{key: meta.get(key) for key in keys} for meta in (previous, runtime)]
+    # JSON-normalized: stored labels round-tripped through JSON (tuples -> lists)
+    before, now = json.loads(json.dumps(labels, default=str))
+    if diff := {
+        key: (before[key], now[key]) for key in keys if before[key] != now[key]
+    }:
+        raise ValueError(
+            f"{context}: cannot resume under different run labels (before, now): "
+            f"{diff}; resume on the original hardware/environment or delete the "
+            "partial outputs to restart"
+        )
 
 
 def package_versions(package_names: Iterable[str]) -> dict[str, str]:
@@ -123,7 +258,6 @@ SLURM_KEYS: Final[tuple[str, ...]] = (
     "job_qos",
 )
 SLURM_SUBMIT_KEY: Final[str] = "slurm-submit"
-COST_PROVENANCE_KEYS = ("hardware", "run_time_sec", "max_rss_gb", "max_gpu_mem_gb")
 
 
 def slurm_shard_selection(
@@ -327,7 +461,7 @@ def slurm_submit(
 
 def _is_finite_number(value: object) -> TypeIs[int | float]:
     """Whether value is a usable numeric cost field (NaN would make sums NaN and
-    max() depend on segment order).
+    max() depend on unit order).
     """
     return (
         isinstance(value, int | float)
@@ -336,100 +470,282 @@ def _is_finite_number(value: object) -> TypeIs[int | float]:
     )
 
 
-def merge_audit_metadata(
-    metadata_segments: Sequence[Mapping[str, object]], *, strict: bool = False
-) -> dict[str, object]:
-    """Merge cost and audit provenance, optionally rejecting incomplete segments."""
-    segments = [dict(segment) for segment in metadata_segments]
-    n_segments = len(segments)
-    versions = [
-        value
-        for segment in segments
-        if isinstance(value := segment.get("versions"), dict)
-    ]
-    hardware_values = [
-        value
-        for segment in segments
-        if isinstance(value := segment.get("hardware"), str) and value
-    ]
-    hardware_labels = set(hardware_values)
-    numeric_values: dict[str, list[float]] = {
-        key: [
-            float(value)
-            for segment in segments
-            if _is_finite_number(value := segment.get(key))
-        ]
-        for key in COST_PROVENANCE_KEYS[1:]
-    }
-    n_present = {
-        "hardware": len(hardware_values),
-        **{key: len(values) for key, values in numeric_values.items()},
-    }
-    versions_complete_and_equal = len(versions) == n_segments and all(
-        value == versions[0] for value in versions[1:]
-    )
-    if strict:
-        if not versions_complete_and_equal:
-            raise ValueError("Run segments contain mixed or missing package versions")
-        if n_present["hardware"] != n_segments or len(hardware_labels) != 1:
-            raise ValueError(
-                "Run segments contain mixed or missing hardware provenance"
-            )
-        if n_present["run_time_sec"] != n_segments:
-            raise ValueError("Run segments contain missing runtime provenance")
-        for memory_key in COST_PROVENANCE_KEYS[2:]:
-            if n_present[memory_key] not in {0, n_segments}:
-                raise ValueError(
-                    f"Run segments contain partial {memory_key} provenance"
-                )
+def _uniform_label(values: Sequence[object]) -> object | None:
+    """The one value every unit shares (compared as sorted JSON), else None.
 
-    # All-or-nothing cost provenance: segments run in parallel, so summed run_time_sec
-    # ~ one serial sweep and memory peaks are maxed (each segment is its own process).
-    # A field missing from any segment (or mixed hardware) is dropped rather than
-    # reported as a partial sum or one segment's label.
+    Missing (None/empty-string) entries count as disagreement: a label known for
+    only some units cannot describe the merged run.
+    """
+    if not values or any(value is None or value == "" for value in values):
+        return None
+    normalized = {json.dumps(value, sort_keys=True, default=str) for value in values}
+    return values[0] if len(normalized) == 1 else None
+
+
+def merge_audit_metadata(
+    units: Sequence[Mapping[str, object]], *, strict: bool = False
+) -> dict[str, object]:
+    """Merge per-unit cost and audit provenance into one run's metadata.
+
+    Units (shards, rollout sessions, element files, materials) ran in parallel or in
+    sequence, so run/load times and process counts are summed (~ one serial sweep;
+    a process charges its load to one unit, see LOAD_CHARGED), memory peaks maxed.
+    Cost is all-or-nothing and never blocks merging predictions: a numeric field
+    missing from any unit is dropped, a mixed or partial run label drops the whole
+    cost block (with a warning), and GPU-dependent costs need a hardware label.
+
+    Raises:
+        ValueError: If strict and the units' package ``versions`` differ or are
+            missing (not one reproducible prediction set).
+    """
     merged: dict[str, object] = {}
-    complete = {key for key, count in n_present.items() if n_segments == count > 0}
-    if "hardware" in complete and len(hardware_labels) == 1:
-        merged["hardware"] = hardware_values[0]
-    if "run_time_sec" in complete:
-        merged["run_time_sec"] = round(sum(numeric_values["run_time_sec"]), 2)
-    for memory_key in COST_PROVENANCE_KEYS[2:]:
-        if memory_key in complete:
-            merged[memory_key] = max(numeric_values[memory_key])
-    if versions and versions_complete_and_equal:
-        merged["versions"] = versions[0]
+    versions = [unit.get("versions") for unit in units]
+    if all(isinstance(value, dict) for value in versions) and (
+        uniform_versions := _uniform_label(versions)
+    ):
+        merged["versions"] = uniform_versions
+    elif strict:
+        raise ValueError("Run units contain mixed or missing package versions")
+
+    dropped: list[str] = []
+    for label_key in ("cost_source", *RUN_LABEL_KEYS, "n_shards"):
+        values = [unit.get(label_key) for unit in units]
+        if (label := _uniform_label(values)) is not None:
+            merged[label_key] = label
+        elif any(value is not None for value in values):
+            distinct = sorted({json.dumps(value, default=str) for value in values})
+            dropped.append(f"mixed or partial {label_key} {distinct}")
+    if labels_mixed := bool(dropped):
+        merged = {key: merged[key] for key in ("versions",) if key in merged}
+    numeric_keys = ("run_time_sec", "load_time_sec", "n_processes")
+    for key in () if labels_mixed else (*numeric_keys, "max_rss_gb", "max_gpu_mem_gb"):
+        values = [value for unit in units if _is_finite_number(value := unit.get(key))]
+        if len(values) not in (0, len(units)):
+            dropped.append(f"partial {key} ({len(values)}/{len(units)} units)")
+        elif values and "hardware" not in merged and key in GPU_DEPENDENT_COST_KEYS:
+            dropped.append(f"{key} without a hardware label")
+        elif values:
+            merged[key] = round(sum(values), 2) if key in numeric_keys else max(values)
+    if dropped:
+        scope = "the whole cost block" if labels_mixed else "affected cost fields"
+        warnings.warn(
+            f"Dropping {scope} of {len(units)} merged units: {'; '.join(dropped)}",
+            stacklevel=2,
+        )
+
     if completed_at := [
-        str(segment["completed_at"])
-        for segment in segments
-        if segment.get("completed_at")
+        str(unit["completed_at"]) for unit in units if unit.get("completed_at")
     ]:
         merged["completed_at"] = max(completed_at)
-    for source_key, merged_key in (
-        ("hostname", "hostnames"),
-        ("slurm_job_id", "slurm_job_ids"),
-        ("slurm_array_task_id", "slurm_array_task_ids"),
-    ):
-        values = sorted(
-            {
-                str(segment[source_key])
-                for segment in segments
-                if segment.get(source_key)
-            }
-        )
-        if values:
-            merged[merged_key] = values
+    for source_key in ("hostname", "slurm_job_id", "slurm_array_task_id"):
+        if values := sorted(
+            {str(unit[source_key]) for unit in units if unit.get(source_key)}
+        ):
+            merged[f"{source_key}s"] = values
     return merged
 
 
-def df_slurm_chunk(df_in: pd.DataFrame, n_chunks: int, task_id: int) -> pd.DataFrame:
-    """Get the chunk a 1-based slurm array task should process, i.e. the
-    (task_id - 1)-th of n_chunks roughly equal row-wise splits of df_in.
-
-    np.array_split(df_in, ...) no longer works since pandas 3 removed
-    DataFrame.swapaxes which numpy relied on to preserve the DataFrame type, so
-    split row indices instead and select with iloc.
+def cost_block(metadata: Mapping[str, object]) -> dict[str, object]:
+    """The YAML cost mapping (COST_KEYS, canonical order, None values omitted) of
+    flat run metadata, whose ``cost_source`` becomes ``source``.
     """
-    if n_chunks < 1 or not 1 <= task_id <= n_chunks:
-        raise ValueError(f"expected {n_chunks=} >= 1 and 1 <= {task_id=} <= n_chunks")
-    row_indices = np.array_split(np.arange(len(df_in)), n_chunks)[task_id - 1]
-    return df_in.iloc[row_indices]
+    flat = {**metadata, "source": metadata.get("cost_source")}
+    return {key: flat[key] for key in COST_KEYS if flat.get(key) is not None}
+
+
+# a cost names hardware and run time (merges dropping either leave labels/RSS only)
+PUBLISHABLE_COST_KEYS: Final = {"hardware", "run_time_sec"}
+
+
+def with_cost_block(
+    section: Mapping[str, Any],
+    artifact_cost: Mapping[str, object] | None,
+    *,
+    after: str,
+    same_artifact: bool,
+    context: str,
+    existing: Mapping[str, Any] | None = None,
+    replace_author_reported: bool = False,
+) -> dict[str, Any]:
+    """Return ``section`` with its ``cost`` replaced, as one flow-style YAML line
+    right after key ``after`` (first when absent), keeping every other key's order.
+
+    Cost is never mixed from two sources: it is derived wholly from the artifact's
+    flat run metadata ``artifact_cost``, or the YAML-only cost of ``existing`` (the
+    section before this write, default ``section``) is kept, or there is none.
+
+    1. The artifact records publishable cost: it wins. Recomputing the same artifact
+       (``same_artifact``) keeps the YAML's curated ``source`` (an author-run
+       artifact stays author_reported); registering a new artifact over an
+       author_reported cost needs ``replace_author_reported``.
+    2. Otherwise a YAML-only cost (author_reported/salvaged) is kept when
+       recomputing the same artifact and dropped (with a warning) for a new one; a
+       runner cost is dropped for a new artifact but an error on recompute.
+
+    Raises:
+        ValueError: On an undeterminable or invalid source, YAML cost the artifact
+            does not back, or an unconfirmed author_reported replacement (messages
+            start with ``context``, e.g. ``"mace_mp_0 metrics.md"``).
+    """
+    cost = _resolve_cost(
+        section if existing is None else existing,
+        artifact_cost,
+        same_artifact=same_artifact,
+        context=context,
+        replace_author_reported=replace_author_reported,
+    )
+    out: dict[str, Any] = {} if after in section else dict(cost)
+    for key, value in section.items():
+        if key != "cost":
+            out[key] = value
+        if key == after:
+            out |= cost
+    return out
+
+
+def _resolve_cost(
+    existing: Mapping[str, Any],
+    artifact_cost: Mapping[str, object] | None,
+    *,
+    same_artifact: bool,
+    context: str,
+    replace_author_reported: bool,
+) -> dict[str, object]:
+    """with_cost_block's ``{"cost": <flow mapping>}`` entry, or ``{}`` for none."""
+    from ruamel.yaml.comments import CommentedMap
+
+    existing_block = dict(existing.get("cost") or {})
+    existing_source = existing_block.get("source")
+    new_block = cost_block(artifact_cost or {})
+    if "source" not in new_block:  # legacy artifact: trustworthy keys only
+        new_block = {
+            key: new_block[key] for key in LEGACY_ARTIFACT_COST_KEYS if key in new_block
+        }
+    if existing_block and existing_source not in COST_SOURCES:
+        raise ValueError(
+            f"{context}: existing cost {existing_block} has no valid source "
+            f"(expected one of {COST_SOURCES})"
+        )
+    if existing_source == "author_reported" and not (
+        same_artifact or replace_author_reported
+    ):
+        raise ValueError(
+            f"{context}: refusing to replace author_reported cost {existing_block} "
+            f"with artifact cost {new_block}; pass replace_author_reported=True to "
+            "confirm"
+        )
+    if not new_block.keys() >= PUBLISHABLE_COST_KEYS:
+        if existing_source in YAML_ONLY_COST_SOURCES and same_artifact:
+            return {"cost": existing.get("cost")}
+        if existing_block and same_artifact:
+            raise ValueError(
+                f"{context}: YAML cost {existing_block} is tagged {existing_source!r} "
+                "but the registered artifact records no cost"
+            )
+        if existing_source in YAML_ONLY_COST_SOURCES:
+            warnings.warn(
+                f"{context}: dropping {existing_source} cost {existing_block}: it "
+                "describes the replaced artifact, and the new one records no "
+                "publishable cost",
+                stacklevel=2,
+            )
+        return {}
+    if same_artifact and existing_source == "author_reported":  # author-run artifact
+        new_block["source"] = existing_source
+    elif "source" not in new_block and existing_source not in ("runner", "salvaged"):
+        raise ValueError(
+            f"{context}: artifact cost {new_block} records no cost_source and the "
+            f"YAML has no artifact-backed tag ({existing_source=})"
+        )
+    new_block.setdefault("source", existing_source)
+    if new_block["source"] not in COST_SOURCES:
+        raise ValueError(
+            f"{context}: artifact cost_source {new_block['source']!r} must be one of "
+            f"{COST_SOURCES}"
+        )
+    cost = CommentedMap({key: new_block[key] for key in COST_KEYS if key in new_block})
+    cost.fa.set_flow_style()  # one YAML line, units implied by the key suffixes
+    return {"cost": cost}
+
+
+# YAML task sections (dotted under metrics) holding a cost mapping, and the file ref
+# whose artifact records that cost
+COST_SECTIONS: Final = {
+    "discovery": "run_info_file",
+    "diatomics": "pred_file",
+    "md": "pred_file",
+    "phonons.kappa_103": "run_info_file",
+    "phonons.kappa_103.harmonic": "run_info_file",
+}
+
+
+def cost_provenance_problems(
+    metrics: Mapping[str, object], artifact_root: str
+) -> list[str]:
+    """Cross-check every COST_SECTIONS ``cost`` in a model's ``metrics`` against its
+    artifact's recorded cost (aggregated MD CSV, else ``run_metadata``) when that
+    exists under ``artifact_root`` (never downloaded). Publishable artifact cost
+    must match key for key (numbers to 1e-6; an author_reported source is curated),
+    legacy artifacts (no cost_source) on LEGACY_ARTIFACT_COST_KEYS only. Otherwise
+    only YAML-only sources are valid, and tagged cost the YAML omits is flagged.
+    """
+    import gzip
+
+    from matbench_discovery.data import file_ref_name
+
+    problems: list[str] = []
+    for section_path, ref_key in COST_SECTIONS.items():
+        section: Any = metrics
+        for key in section_path.split("."):
+            section = section.get(key) if isinstance(section, Mapping) else None
+        if not isinstance(section, Mapping):
+            continue
+        yaml_cost = dict(section.get("cost") or {})
+        yaml_only = yaml_cost.get("source") in YAML_ONLY_COST_SOURCES
+        ref_name = file_ref_name(section.get(ref_key))
+        artifact_path = f"{artifact_root}/{ref_name}"
+        if ref_name is None or not os.path.isfile(artifact_path):
+            if ref_name is None and yaml_cost and not yaml_only:
+                problems.append(f"{section_path}: {yaml_cost} without a {ref_key}")
+            continue
+        if section_path == "md":
+            import pandas as pd
+
+            from matbench_discovery.metrics.md import aggregate_md_cost
+
+            df_md = pd.read_csv(artifact_path, index_col="system")
+            artifact_cost = cost_block(aggregate_md_cost(df_md))
+        else:
+            open_fn = gzip.open if artifact_path.endswith(".gz") else open
+            with open_fn(artifact_path, mode="rt", encoding="utf-8") as file:
+                data = json.load(file)
+            # diatomics files predating run_metadata record no cost; run-info
+            # sidecars exist only to hold it
+            default = {} if section_path == "diatomics" else None
+            if not isinstance(run_metadata := data.get("run_metadata", default), dict):
+                raise TypeError(f"{artifact_path} has no run_metadata mapping")
+            artifact_cost = cost_block(run_metadata)
+        if not artifact_cost.keys() >= PUBLISHABLE_COST_KEYS:
+            if yaml_cost and not yaml_only:
+                problems.append(
+                    f"{section_path}: cost {yaml_cost} but the artifact records none"
+                )
+            continue
+        if not yaml_cost:
+            if "source" in artifact_cost:
+                problems.append(f"{section_path}: unregistered cost {artifact_cost}")
+            continue
+        legacy = "source" not in artifact_cost
+        for key in LEGACY_ARTIFACT_COST_KEYS if legacy else COST_KEYS:
+            if key == "source" and yaml_cost["source"] == "author_reported":
+                continue  # author-run artifact: the YAML tag is curated
+            yaml_val, artifact_val = yaml_cost.get(key), artifact_cost.get(key)
+            if _is_finite_number(yaml_val) and _is_finite_number(artifact_val):
+                if math.isclose(yaml_val, artifact_val, rel_tol=0, abs_tol=1e-6):
+                    continue
+            elif yaml_val == artifact_val:
+                continue
+            problems.append(
+                f"{section_path}: {key}: YAML {yaml_val!r} != artifact {artifact_val!r}"
+            )
+    return problems

@@ -90,10 +90,6 @@ it(`loads spectral plots only after selecting a material and renders both DOS so
   expect(color_values()).toEqual([0.4])
   const color_select = doc_query<HTMLSelectElement>(`select[aria-label="Color metric"]`)
   color_select.value = `sre`
-  // happy-dom lacks option:checked, which Svelte reads once in the change handler.
-  vi.spyOn(color_select, `querySelector`).mockReturnValueOnce(
-    color_select.selectedOptions[0],
-  )
   color_select.dispatchEvent(new Event(`change`, { bubbles: true }))
   await tick()
   expect(color_values()).toEqual([(2 * Math.abs(8 - 10)) / (8 + 10)])
@@ -127,6 +123,32 @@ it(`loads spectral plots only after selecting a material and renders both DOS so
   doc_query<HTMLButtonElement>(`button[aria-label="Close"]`).click()
   await tick()
   expect(document.querySelector(`.detail-panel`)).toBeNull()
+})
+
+it(`shows SRE for models without per-material SRME, then restores the SRME pick`, async () => {
+  vi.spyOn(kappa_parity, `load_kappa_parity_base`).mockResolvedValue(base)
+  vi.spyOn(kappa_parity, `load_kappa_parity_model`).mockResolvedValue(model)
+  vi.spyOn(kappa_parity, `load_kappa_srme_map`)
+    .mockResolvedValueOnce(undefined) // first model: no analysis entry
+    .mockResolvedValue(new Map([[`mp-1`, 0.4]]))
+  const [first_key, second_key] = Object.keys(kappa_parity_manifest.model_assets)
+  if (!second_key) throw new Error(`kappa parity manifest needs two model assets`)
+  const props = $state({ model: { ...MODELS[0], model_key: first_key } })
+  mount(KappaParityPlot, { target: document.body, props })
+  const scatter = () =>
+    get_scatter_plot_props(plot_mocks.ScatterPlot) as {
+      series: { color_values: (number | null)[] }[]
+      color_bar: { title: string }
+    }
+  await vi.waitFor(() => expect(scatter().color_bar.title).toContain(`κ<sub>SRE</sub>`))
+  expect(document.querySelector(`select[aria-label="Color metric"]`)).toBeNull()
+
+  props.model = { ...MODELS[0], model_key: second_key }
+  await vi.waitFor(() => expect(scatter().series[0].color_values).toEqual([0.4]))
+  expect(scatter().color_bar.title).toContain(`κ<sub>SRME</sub>`)
+  expect(doc_query<HTMLSelectElement>(`select[aria-label="Color metric"]`).value).toBe(
+    `srme`,
+  )
 })
 
 it.each([`analysis`, `spectral`])(
@@ -207,33 +229,22 @@ describe(`kappa parity data helpers`, () => {
     expect(series.points[0]).toMatchObject({ n_sites: 8, spacegroup: 225 })
   })
 
+  // symmetric relative error, or null for non-positive conductivities (log-scale safe)
   it.each([
-    [10, 8, 0, 0.2222],
-    [4, 6, 0, 0.4],
-  ])(
-    `computes symmetric relative error for kappa %s vs %s`,
-    (dft, ml, row_idx, expected_sre) => {
-      const single = get_kappa_parity_point(
-        { ...base, kappa_dft: [dft] },
-        { ...model, kappa_ml: [ml] },
-        row_idx,
-      )
-      expect(single?.sre).toBeCloseTo(expected_sre, 3)
-    },
-  )
-
-  it.each([
-    { label: `dft zero`, dft: 0, ml: 8 },
-    { label: `dft negative`, dft: -1, ml: 8 },
-    { label: `ml zero`, dft: 10, ml: 0 },
-    { label: `ml negative`, dft: 10, ml: -1 },
-  ])(`drops non-positive conductivities ($label), log-scale safe`, ({ dft, ml }) => {
+    [10, 8, 0.2222],
+    [4, 6, 0.4],
+    [0, 8, null],
+    [-1, 8, null],
+    [10, 0, null],
+    [10, -1, null],
+  ])(`kappa DFT %s vs ML %s gives SRE %s`, (dft, ml, expected_sre) => {
     const point = get_kappa_parity_point(
       { ...base, kappa_dft: [dft] },
       { ...model, kappa_ml: [ml] },
       0,
     )
-    expect(point).toBeNull()
+    if (expected_sre === null) expect(point).toBeNull()
+    else expect(point?.sre).toBeCloseTo(expected_sre, 3)
   })
 
   it(`only reports models present in the manifest`, () => {

@@ -10,7 +10,22 @@ import numpy as np
 import pytest
 from ase.data import atomic_numbers, covalent_radii
 
-from tests.utils import import_repo_script
+from matbench_discovery.enums import Model
+from tests.utils import import_repo_script, patch_model_metadata
+
+# synthetic curated exclusions, decoupled from any real model YAML's live pins
+CURATED_MODEL = Model.mace_mp_0
+CURATED_REASONS = {"He-He": "synthetic curated reason"}
+
+
+@pytest.fixture
+def curated_model(monkeypatch: pytest.MonkeyPatch) -> str:
+    """Key of a model whose diatomics metrics carry only CURATED_REASONS."""
+    diatomics_metrics = {"excluded_formula_reasons": CURATED_REASONS}
+    # keep the real identity fields (model_key etc.) that Model.from_ref scans
+    metadata = {**CURATED_MODEL.metadata, "metrics": {"diatomics": diatomics_metrics}}
+    patch_model_metadata(monkeypatch, CURATED_MODEL, metadata)
+    return CURATED_MODEL.name
 
 
 @pytest.fixture(scope="module", name="run_diatomics")
@@ -35,6 +50,7 @@ def run_diatomics_fixture() -> ModuleType:
         # --print-cmd must forward computation params, not just --model (else a copied
         # command silently runs with defaults)
         ("--model mace-mp-0 --min-dist 0.2", "--min-dist 0.2"),
+        ("--model emt --checkpoint /ckpt/model.pt", "--checkpoint /ckpt/model.pt"),
     ],
 )
 def test_run_diatomics_cli_validation(
@@ -93,23 +109,21 @@ def test_trim_curve_to_finite(run_diatomics: ModuleType) -> None:
     assert run_diatomics.trim_curve_to_finite("Cu-Cu", empty_curve) is None
 
 
-def test_run_diatomics_exclusion_reasons(run_diatomics: ModuleType) -> None:
+def test_run_diatomics_exclusion_reasons(
+    run_diatomics: ModuleType, curated_model: str
+) -> None:
     """Curated + run-discovered exclusion reasons and their use in metric drops."""
-    curated_reasons = {"He-He": "exploding errors"}
-
-    assert (
-        run_diatomics.get_excluded_formula_reasons("alphanet_v1_oam") == curated_reasons
-    )
+    assert run_diatomics.get_excluded_formula_reasons(curated_model) == CURATED_REASONS
     # curated reasons win over run-discovered invalid curves (He-He), unknown
     # formulas fall back to the generic invalid-curve reason (X-X), and non-MP
     # formulas (At-At) are never recorded since metrics skip them benchmark-wide
     assert run_diatomics.get_excluded_formula_reasons(
-        "alphanet_v1_oam", ["He-He", "At-At", "X-X"]
-    ) == curated_reasons | {"X-X": "invalid or unsupported curve"}
+        curated_model, ["He-He", "At-At", "X-X"]
+    ) == CURATED_REASONS | {"X-X": "invalid or unsupported curve"}
 
     # drop_metric_exclusions removes excluded formula and element-keyed metrics
     metrics = {"He": {"energy_jump": 1.0}, "Cu": {"energy_jump": 2.0}}
-    assert run_diatomics.drop_metric_exclusions("alphanet_v1_oam", metrics) == {
+    assert run_diatomics.drop_metric_exclusions(curated_model, metrics) == {
         "Cu": {"energy_jump": 2.0}
     }
 
@@ -119,7 +133,7 @@ def test_run_diatomics_exclusion_reasons(run_diatomics: ModuleType) -> None:
         "X-X": "invalid or unsupported curve"
     }
     with pytest.raises(ValueError, match="not found in Model enum"):
-        run_diatomics.get_excluded_formula_reasons("alphanet_v1_oamm")
+        run_diatomics.get_excluded_formula_reasons(f"{curated_model}m")
 
 
 def write_diatomics_shard(
@@ -128,7 +142,9 @@ def write_diatomics_shard(
     curves: dict[str, dict[str, list[float] | list[list[list[float]]]]],
     run_metadata: dict[str, object] | None = None,
 ) -> None:
-    """Write a minimal run_diatomics shard file for merge-shards tests."""
+    """Write a minimal run_diatomics shard file for merge-shards tests (all from one
+    package environment unless ``run_metadata`` overrides ``versions``).
+    """
     shard_dir.mkdir(parents=True, exist_ok=True)
     shard_path = shard_dir / f"Z{z_value:03d}-diatomics.json.gz"
     shard_data = {
@@ -136,8 +152,8 @@ def write_diatomics_shard(
         "hetero-nuclear": {},
         "distances": [1.0, 2.0],
     }
-    if run_metadata is not None:
-        shard_data["run_metadata"] = run_metadata
+    metadata = {"versions": {"ase": "3.29.0"}, "n_processes": 1}  # one per file
+    shard_data["run_metadata"] = metadata | (run_metadata or {})
     with gzip.open(shard_path, mode="wt") as file:
         json.dump(shard_data, file)
 
@@ -146,7 +162,7 @@ def write_diatomics_shard(
     ("model_key", "second_shard_metadata", "should_raise", "shard_date", "dry_run"),
     [
         (
-            "alphanet_v1_oam",
+            CURATED_MODEL.name,
             {"excluded_formula_reasons": {"H-H": "must not leak"}},
             False,
             None,
@@ -155,7 +171,7 @@ def write_diatomics_shard(
         # shards written on an earlier date are picked up via resolve_sharded_prefix
         # and the merged artifact inherits their date
         (
-            "alphanet_v1_oam",
+            CURATED_MODEL.name,
             {"excluded_formula_reasons": {"H-H": "must not leak"}},
             False,
             "2020-01-02",
@@ -164,7 +180,7 @@ def write_diatomics_shard(
         # dry runs merge only *-dry-run-shards and write into dry-run/, so a smoke test
         # can neither read nor clobber a real run's shards or artifact
         (
-            "alphanet_v1_oam",
+            CURATED_MODEL.name,
             {"excluded_formula_reasons": {"H-H": "must not leak"}},
             False,
             None,
@@ -180,6 +196,7 @@ def write_diatomics_shard(
     ],
     ids=["curated", "prior-date-shards", "dry-run-isolated", "uncurated-raises"],
 )
+@pytest.mark.usefixtures("curated_model")
 def test_run_diatomics_merge_shards_exclusion_gate(
     model_key: str,
     second_shard_metadata: dict[str, object],
@@ -226,6 +243,31 @@ def test_run_diatomics_merge_shards_exclusion_gate(
             assert not (tmp_path / merged_name).is_file()
         with gzip.open(merged_path, mode="rt") as file:
             merged_data = json.load(file)
-        assert merged_data["run_metadata"]["excluded_formula_reasons"] == {
-            "He-He": "exploding errors"
-        }
+        merged_metadata = merged_data["run_metadata"]
+        assert merged_metadata["excluded_formula_reasons"] == CURATED_REASONS
+        assert merged_metadata["n_processes"] == (3 if dry_run else 2)
+
+
+@pytest.mark.parametrize("shard_args", [(), ("--n-shards", "2", "--shard-index", "0")])
+def test_run_diatomics_fails_without_curves(
+    shard_args: tuple[str, ...],
+    run_diatomics: ModuleType,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A run where every pair failed exits non-zero naming the model, and an
+    unsharded run writes no (empty) final artifact.
+    """
+
+    def all_pairs_fail(
+        _calculator: object, _model_key: str, z_group: list[int], _distances: object
+    ) -> tuple[dict[str, object], list[str]]:
+        """Stand-in for predict_curves where every pair raised."""
+        return {}, [f"Z{z_value}" for z_value in z_group]
+
+    monkeypatch.setattr(run_diatomics, "predict_curves", all_pairs_fail)
+    argv = ["run_diatomics", "--model", "emt", "--dry-run", "--out-dir", str(tmp_path)]
+    monkeypatch.setattr(sys, "argv", [*argv, *shard_args])
+    with pytest.raises(RuntimeError, match="emt wrote 0"):
+        run_diatomics.main()
+    assert not list((tmp_path / "dry-run").glob("*-diatomics.json.gz"))

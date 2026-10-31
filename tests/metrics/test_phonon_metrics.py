@@ -1,5 +1,6 @@
 """Tests for thermal conductivity metrics."""
 
+from collections.abc import Mapping
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
@@ -12,7 +13,7 @@ from numpy.typing import NDArray
 from pymatviz.enums import Key
 
 from matbench_discovery import data as mbd_data
-from matbench_discovery.data import file_ref_url, make_file_ref
+from matbench_discovery.data import make_file_ref
 from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.metrics import phonons as phonon_metrics
 
@@ -204,70 +205,45 @@ def test_mode_weights_for_freqs(
 
 
 @pytest.mark.parametrize(
-    "ml_data,expected_srme",
+    ("overrides", "series_srme", "censored"),
     [
-        ({MbdKey.kappa_tot_avg: np.array([np.nan])}, [2]),
+        # imaginary modes and broken symmetry are censored at the DataFrame level,
+        # so the per-material series SRME of the otherwise exact prediction is 0
+        ({Key.has_imag_ph_modes: True}, 0, True),
+        ({Key.final_spg_num: 2}, 0, True),
+        ({MbdKey.kappa_tot_avg: np.nan}, 2, True),
+        ({MbdKey.kappa_tot_avg: np.inf}, 2, True),
+        ({MbdKey.kappa_tot_avg: -1}, 2, True),
+        # zero predicted kappa is a valid exact-2 score, not a censored failure
         (
-            {
-                MbdKey.kappa_tot_avg: np.array([0]),
-                MbdKey.mode_kappa_tot_rta: np.zeros((1, 3, 3)),
-            },
-            [2],
+            {MbdKey.kappa_tot_avg: 0, MbdKey.mode_kappa_tot_rta: np.zeros((3, 3))},
+            2,
+            False,
         ),
-    ],
-)
-def test_calc_kappa_srme_error_cases(
-    ml_data: dict[str, list[float]], expected_srme: float
-) -> None:
-    """Test SRME calculation with various error conditions."""
-    pred_data = pd.Series(
-        {
-            MbdKey.kappa_tot_avg: np.array([1]),
-            MbdKey.kappa_tot_rta: np.ones((3, 3)),
-            MbdKey.mode_kappa_tot_rta: np.ones((1, 3, 3)),
-            Key.mode_weights: np.array([1]),
-            Key.has_imag_ph_modes: False,
-            Key.final_spg_num: 1,
-            Key.init_spg_num: 1,
-        }
-    )
-    true_data = pd.Series(
-        {
-            MbdKey.kappa_tot_avg: np.array([1]),
-            MbdKey.kappa_tot_rta: np.ones((3, 3)),
-            MbdKey.mode_kappa_tot_rta: np.ones((1, 3, 3)),
-            Key.mode_weights: np.array([1]),
-        }
-    )
-
-    for key, val in ml_data.items():
-        pred_data[key] = val
-
-    kappa_srmes = phonon_metrics.calc_kappa_srme(pred_data, true_data)
-    assert kappa_srmes == pytest.approx(expected_srme)
-
-
-@pytest.mark.parametrize(
-    ("column", "value"),
-    [
-        (Key.has_imag_ph_modes, True),
-        (Key.final_spg_num, 2),
-        (MbdKey.kappa_tot_avg, np.nan),
-        (MbdKey.kappa_tot_avg, np.inf),
-        (MbdKey.kappa_tot_avg, -1),
     ],
 )
 def test_calc_kappa_srme_invalid_predictions_score_two(
     df_pred: pd.DataFrame,
     df_true: pd.DataFrame,
-    column: str,
-    value: object,
+    overrides: dict[str, object],
+    series_srme: float,
+    censored: bool,
 ) -> None:
-    """Imaginary modes, broken symmetry, and missing data receive maximum SRME."""
+    """Imaginary modes, broken symmetry, invalid and zero kappa get maximum SRME."""
     modified = df_pred.copy()
-    modified[column] = modified[column].astype(object)
-    modified.loc[0, column] = value
-    assert phonon_metrics.calc_kappa_srme_dataframes(modified, df_true)[0][0] == 2
+    for column, value in overrides.items():
+        modified[column] = modified[column].astype(object)
+        modified.at[0, column] = value  # noqa: PD008 (.loc broadcasts arrays)
+    # match the reference total to its mode-kappa average (diag 0.5, 1, 1.5) so an
+    # all-zero prediction scores exactly 2; SRME numerators only use mode kappas
+    reference = df_true.copy()
+    reference.loc[0, MbdKey.kappa_tot_avg] = 1
+    srme_values, censored_flags = phonon_metrics.calc_kappa_srme_dataframes(
+        modified, reference
+    )
+    assert (srme_values[0], censored_flags[0]) == (2, censored)
+    series_srmes = phonon_metrics.calc_kappa_srme(modified.loc[0], reference.loc[0])
+    assert list(series_srmes) == [series_srme]
 
 
 def test_calc_kappa_srme_single_material() -> None:
@@ -489,12 +465,11 @@ def test_evaluate_kappa_predictions_returns_all_aggregate_metrics(
             "spectrum_w1": 0.5,
         }
     )
-    # an absent imaginary-mode column scores zero imaginary modes, not a failure
-    no_imag_flag = phonon_metrics.evaluate_kappa_predictions(
-        predictions.drop(columns=[Key.has_imag_ph_modes])
-    )
-    assert no_imag_flag["imaginary_mode_rate"] == 0
-    assert no_imag_flag["failure_rate"] == pytest.approx(1 / 3)  # failed mp-3 tensor
+    # an absent imaginary-mode column must fail loud, not score a 0% rate
+    with pytest.raises(KeyError, match="has_imag_ph_modes"):
+        phonon_metrics.evaluate_kappa_predictions(
+            predictions.drop(columns=[Key.has_imag_ph_modes])
+        )
     predictions[Key.ph_freqs] = [None] * len(predictions)
     no_spectrum_metrics = phonon_metrics.evaluate_kappa_predictions(predictions)
     assert no_spectrum_metrics["spectrum_w1"] is None
@@ -587,176 +562,171 @@ def test_evaluate_kappa_predictions_rejects_duplicate_ids(
         phonon_metrics.evaluate_kappa_predictions(pd.DataFrame(index=["mp-1", "mp-1"]))
 
 
-def update_temp_kappa_yaml(
-    tmp_path: Path,
-    initial_metrics: dict[str, object] | None = None,
-    *,
-    metrics: dict[str, float | None] | None = None,
-    pred_file_path: str = KAPPA_PRED,
-    run_metadata: dict[str, object] | None = None,
-    force_file_path: str | None = None,
-    run_info_path: str | None = None,
-    replace_pred_file: bool = False,
-) -> dict[str, Any]:
-    """Update a temporary model YAML and return its kappa metrics mapping."""
+def kappa_yaml_model(tmp_path: Path, kappa_103: Mapping[str, object]) -> Model:
+    """Model stub whose temp YAML holds the given metrics.phonons.kappa_103."""
     yaml_path = f"{tmp_path}/model.yml"
     with open(yaml_path, mode="w", encoding="utf-8") as file:
-        mbd_data.round_trip_yaml.dump(
-            {"metrics": {"phonons": {"kappa_103": initial_metrics}}}
-            if initial_metrics is not None
-            else {"metrics": {}},
-            file,
-        )
-    model = cast("Model", SimpleNamespace(yaml_path=yaml_path))
-    phonon_metrics.write_metrics_to_yaml(
-        model,
-        KAPPA_METRICS if metrics is None else metrics,
-        pred_file_path,
-        run_metadata=run_metadata,
-        force_file_path=force_file_path,
-        run_info_path=run_info_path,
-        replace_pred_file=replace_pred_file,
-    )
-    with open(yaml_path, encoding="utf-8") as file:
-        metadata = mbd_data.round_trip_yaml.load(file)
-    return cast("dict[str, Any]", metadata["metrics"]["phonons"]["kappa_103"])
+        doc = {"metrics": {"phonons": {"kappa_103": kappa_103}}}
+        mbd_data.round_trip_yaml.dump(doc, file)
+    return cast("Model", SimpleNamespace(yaml_path=yaml_path, name="test_model"))
 
 
-def test_write_metrics_to_yaml_preserves_existing_artifacts(tmp_path: Path) -> None:
-    """Metric recomputation preserves established artifact metadata."""
-    kappa_metrics = update_temp_kappa_yaml(
-        tmp_path,
-        {
-            "pred_file": {
-                "name": KAPPA_PRED_EXISTING,
-                "url": "https://figshare.com/files/existing",
-            },
-            "analysis_file": {"name": _GEO_OPT_FILE},
-        },
-        metrics={
-            **KAPPA_METRICS,
-            "srme": 0.1234,
-            "sre": 0.5678,
-            "spectrum_w1": None,
-        },
-        pred_file_path=KAPPA_PRED,
-    )
-    assert kappa_metrics == {
-        "pred_file": make_file_ref(
-            KAPPA_PRED_EXISTING, url="https://figshare.com/files/existing"
-        ),
-        "analysis_file": make_file_ref(_GEO_OPT_FILE),
-        "κ_SRME": 0.1234,
-        "κ_SRE": 0.5678,
-        "κ_SRD": -0.05,
-        "κ_failure_rate": 0.1,
-        "imaginary_mode_rate": 0.05,
-        "spectrum_w1": None,
-    }
+def read_kappa_103(model: Model) -> dict[str, Any]:
+    """Read back a model YAML's metrics.phonons.kappa_103."""
+    with open(model.yaml_path, encoding="utf-8") as file:
+        return mbd_data.round_trip_yaml.load(file)["metrics"]["phonons"]["kappa_103"]
+
+
+KAPPA_YAML_METRICS = {
+    "κ_SRME": 0.25,
+    "κ_SRE": 0.125,
+    "κ_SRD": -0.05,
+    "κ_failure_rate": 0.1,
+    "imaginary_mode_rate": 0.05,
+    "spectrum_w1": 0.2,
+}
+AUTHOR_COST = {
+    "cost": {"source": "author_reported", "hardware": "A100", "run_time_sec": 28459}
+}
+OLD_SIDECARS = {
+    "force_file": {"name": KAPPA_FORCE, "url": "https://example.com/old-forces.gz"},
+    "run_info_file": {"name": KAPPA_RUN_INFO, "url": "https://example.com/old.json"},
+}
+NEW_PRED_URL = "https://figshare.com/files/new-prediction"
+# flat artifact run metadata and the YAML cost mapping it yields
+RUN_METADATA = {"cost_source": "runner", "hardware": "H200", "run_time_sec": 12.5}
+RUN_COST = {"cost": {"source": "runner", "hardware": "H200", "run_time_sec": 12.5}}
 
 
 @pytest.mark.parametrize(
-    "pred_file_url",
-    [None, "https://figshare.com/files/new-prediction"],
-    ids=["without-url", "with-run-url"],
-)
-def test_kappa_metric_yaml_creates_prediction_file(
-    tmp_path: Path, pred_file_url: str | None
-) -> None:
-    """Completed runs create phonon metadata with optional authoritative URLs."""
-    kappa_metrics = update_temp_kappa_yaml(
-        tmp_path,
-        run_metadata=(
-            {"pred_file_url": pred_file_url} if pred_file_url is not None else None
+    ("initial_metrics", "update_kwargs", "expected"),
+    [
+        pytest.param(
+            {
+                "pred_file": {
+                    "name": KAPPA_PRED_EXISTING,
+                    "url": "https://figshare.com/files/existing",
+                },
+                "analysis_file": {"name": _GEO_OPT_FILE},
+                "force_file": OLD_SIDECARS["force_file"],
+            },
+            {
+                "metrics": KAPPA_METRICS | {"srme": 0.1234, "spectrum_w1": None},
+                "force_file_path": KAPPA_FORCE_NEW,
+            },
+            {
+                **KAPPA_YAML_METRICS,
+                "κ_SRME": 0.1234,
+                "spectrum_w1": None,
+                "pred_file": make_file_ref(
+                    KAPPA_PRED_EXISTING, url="https://figshare.com/files/existing"
+                ),
+                "analysis_file": make_file_ref(_GEO_OPT_FILE),
+                # a changed sidecar path invalidates its old URL
+                "force_file": make_file_ref(KAPPA_FORCE_NEW),
+            },
+            id="recompute-keeps-artifacts-and-clears-changed-sidecar-url",
         ),
-        replace_pred_file=True,
-    )
-    assert kappa_metrics["κ_SRME"] == 0.25
-    assert kappa_metrics["pred_file"] == make_file_ref(KAPPA_PRED, url=pred_file_url)
-
-
-def test_kappa_metric_yaml_round_trip_updates_provenance(tmp_path: Path) -> None:
-    """Complete-run metadata and sidecars round-trip through model YAML."""
-    kappa_metrics = update_temp_kappa_yaml(
-        tmp_path,
-        {
-            "κ_SRME": 1.0,
-            "pred_file": {"name": KAPPA_PRED, "url": "https://example.com/old.json.gz"},
-            "force_file": {
-                "name": KAPPA_FORCE,
-                "url": "https://example.com/old-forces.json.gz",
+        pytest.param(
+            {
+                "κ_SRME": 1.0,
+                "pred_file": {"name": KAPPA_PRED, "url": "https://example.com/old.gz"},
+                **OLD_SIDECARS,
             },
-            "run_info_file": {
-                "name": KAPPA_RUN_INFO,
-                "url": "https://example.com/old-run-info.json",
+            {
+                "run_metadata": RUN_METADATA | {"pred_file_url": NEW_PRED_URL},
+                "force_file_path": KAPPA_FORCE,
+                "run_info_path": KAPPA_RUN_INFO,
+                "replace_pred_file": True,
             },
-        },
-        run_metadata={
-            "hardware": "NVIDIA H200",
-            "run_time_sec": 12.5,
-            "max_rss_gb": 3.5,
-            "max_gpu_mem_gb": 4.5,
-        },
-        force_file_path=KAPPA_FORCE,
-        run_info_path=KAPPA_RUN_INFO,
-        replace_pred_file=True,
-    )
-    assert kappa_metrics["κ_SRME"] == 0.25
-    assert kappa_metrics["κ_SRE"] == 0.125
-    assert kappa_metrics["pred_file"] == make_file_ref(KAPPA_PRED)
-    assert kappa_metrics["force_file"] == make_file_ref(KAPPA_FORCE)
-    assert kappa_metrics["run_info_file"] == make_file_ref(KAPPA_RUN_INFO)
-    assert kappa_metrics["hardware"] == "NVIDIA H200"
-    assert kappa_metrics["run_time_sec"] == 12.5
-    assert kappa_metrics["max_rss_gb"] == 3.5
-    assert kappa_metrics["max_gpu_mem_gb"] == 4.5
-
-
-def test_kappa_metric_yaml_clears_url_when_sidecar_path_changes(
+            {
+                **KAPPA_YAML_METRICS,
+                **RUN_COST,
+                # replaced runs take the run's URL and drop old sidecar URLs even
+                # when their paths are unchanged
+                "pred_file": make_file_ref(KAPPA_PRED, url=NEW_PRED_URL),
+                "force_file": make_file_ref(KAPPA_FORCE),
+                "run_info_file": make_file_ref(KAPPA_RUN_INFO),
+            },
+            id="replace-round-trips-provenance",
+        ),
+        pytest.param(
+            {"κ_SRME": 1.0, **OLD_SIDECARS, **RUN_COST},
+            {"replace_pred_file": True},
+            {**KAPPA_YAML_METRICS, "pred_file": make_file_ref(KAPPA_PRED)},
+            id="replace-clears-stale-sidecars-and-cost",
+        ),
+        pytest.param(
+            # BAM-style author-reported kappa cost survives metric recomputes and
+            # new runs whose run_metadata records no cost
+            {"κ_SRME": 1.0, "pred_file": {"name": KAPPA_PRED}, **AUTHOR_COST},
+            {"run_metadata": {}},
+            {**KAPPA_YAML_METRICS, **AUTHOR_COST, "pred_file": {"name": KAPPA_PRED}},
+            id="author-reported-cost-kept",
+        ),
+    ],
+)
+def test_write_metrics_to_yaml(
     tmp_path: Path,
+    initial_metrics: dict[str, object],
+    update_kwargs: dict[str, Any],
+    expected: dict[str, object],
 ) -> None:
-    """Changing a sidecar path invalidates its existing remote URL."""
-    kappa_metrics = update_temp_kappa_yaml(
-        tmp_path,
-        {
-            "κ_SRME": 1.0,
-            "pred_file": {
-                "name": KAPPA_PRED,
-                "url": "https://example.com/pred.json.gz",
-            },
-            "force_file": {
-                "name": KAPPA_FORCE,
-                "url": "https://example.com/old-forces.json.gz",
-            },
-        },
-        pred_file_path=KAPPA_PRED,
-        force_file_path=KAPPA_FORCE_NEW,
-    )
-    assert (
-        file_ref_url(kappa_metrics["pred_file"]) == "https://example.com/pred.json.gz"
-    )
-    assert kappa_metrics["force_file"] == make_file_ref(KAPPA_FORCE_NEW)
+    """Kappa YAML writes preserve, replace and invalidate artifact metadata."""
+    model = kappa_yaml_model(tmp_path, initial_metrics)
+    kwargs = dict(update_kwargs)
+    metrics = kwargs.pop("metrics", KAPPA_METRICS)
+    phonon_metrics.write_metrics_to_yaml(model, metrics, KAPPA_PRED, **kwargs)
+    assert read_kappa_103(model) == expected
 
 
-def test_kappa_metric_yaml_replacement_clears_stale_sidecars(
-    tmp_path: Path,
-) -> None:
-    """Replacing predictions removes provenance absent from the new run."""
-    kappa_metrics = update_temp_kappa_yaml(
-        tmp_path,
-        {
-            "κ_SRME": 1.0,
-            "force_file": {
-                "name": KAPPA_FORCE,
-                "url": "https://example.com/old-forces.json.gz",
-            },
-            "run_info_file": {
-                "name": KAPPA_RUN_INFO,
-                "url": "https://example.com/old-run-info.json",
-            },
-            "max_gpu_mem_gb": 9.0,
-        },
-        replace_pred_file=True,
+def test_write_harmonic_to_yaml(tmp_path: Path) -> None:
+    """A harmonic-only rerun lands in kappa_103.harmonic with its own cost and fresh
+    file refs, moving out top-level harmonic refs but keeping the conductivity run.
+    """
+    phonon_path, run_info_path, force_path = (
+        f"{_KAPPA_MODEL_DIR}/harmonic/2026-09-05-phonons-kappa-103-{name}"
+        for name in ("phonons.json.gz", "run-info.json", "forces.json.gz")
     )
-    for stale_key in ("force_file", "run_info_file", "max_gpu_mem_gb"):
-        assert stale_key not in kappa_metrics
+    conductivity_run = {
+        "pred_file": {"name": KAPPA_PRED, "url": "https://example.com/pred.gz"},
+        **AUTHOR_COST,  # the conductivity run's own cost
+        **KAPPA_YAML_METRICS,
+    }
+    initial = conductivity_run | {
+        "phonon_file": {"name": phonon_path},
+        "force_file": OLD_SIDECARS["force_file"],
+    }
+    model = kappa_yaml_model(tmp_path, initial)
+
+    def write(
+        run_metadata: Mapping[str, object], force_file: str | None = None
+    ) -> dict:
+        """Register the harmonic rerun artifacts with the given run metadata."""
+        return phonon_metrics.write_harmonic_to_yaml(
+            model,
+            run_metadata=run_metadata,
+            phonon_file_path=phonon_path,
+            run_info_path=run_info_path,
+            force_file_path=force_file,
+        )
+
+    refs = {
+        "phonon_file": {"name": phonon_path},
+        "run_info_file": {"name": run_info_path},
+    }
+    harmonic = write({**RUN_METADATA, "n_structures": 103}, force_path)
+    assert harmonic == refs | {"force_file": {"name": force_path}, **RUN_COST}
+    assert read_kappa_103(model) == conductivity_run | {"harmonic": harmonic}
+
+    # a same-name rerun is new content: old url/md5 and cost (tag) never carry over
+    uploaded = {"name": phonon_path, "url": "https://example.com/old", "md5": "0" * 32}
+    mbd_data.update_yaml_file(
+        model.yaml_path,
+        "metrics.phonons.kappa_103.harmonic",
+        {"phonon_file": uploaded, "cost": {"source": "salvaged"}},
+    )
+    rerun = RUN_METADATA | {"run_time_sec": 99.0}
+    assert write(rerun) == refs | {"cost": {**RUN_COST["cost"], "run_time_sec": 99.0}}
+    with pytest.raises(ValueError, match="records no cost"):
+        write({"n_structures": 103})

@@ -139,7 +139,7 @@ it.each([
       [vdos_error, `ΔvDOS (%)`],
       [adf_error, `ΔADF (%)`],
       [pressure_error, `ΔP (%)`],
-      [run_time_sec, `log-scaled, %)`],
+      [run_time_sec, `log-scaled, %;`],
     ],
   ],
   [
@@ -167,7 +167,11 @@ it.each(Object.values(MD_METRICS))(
   `$key label points at metrics.md and has correct direction`,
   (label) => {
     // t/t_min is computed per table view in assemble_row_data, not read from models
-    const expected_path = label.key === `md_time_multiplier` ? undefined : `metrics.md`
+    const cost_keys = [`md_run_time_sec`, `md_max_gpu_mem_gb`, `md_max_rss_gb`]
+    const expected_path =
+      label.key === `md_time_multiplier`
+        ? undefined
+        : `metrics.md${cost_keys.includes(label.key) ? `.cost` : ``}`
     expect(label.path).toBe(expected_path)
     // combined_score (CMDS) is a score (higher=better); the rest are errors (lower)
     expect(label.better).toBe(label.key === `combined_score` ? `higher` : `lower`)

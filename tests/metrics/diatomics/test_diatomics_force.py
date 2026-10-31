@@ -62,7 +62,9 @@ def test_force_mae(
     x_pred, f_pred = pred_curve.distances, pred_curve.forces
 
     mae = diatomics.calc_force_mae(x_ref, f_ref, x_pred, f_pred)
-    assert mae == pytest.approx(np.mean(np.abs(f_ref - f_pred)), rel=1e-12)
+    # same 240 |diffs| summed in reverse (sorted) order: measured rel error 1.9e-16,
+    # pairwise-summation bound ~log2(240) ~ 8 f64 eps
+    assert mae == pytest.approx(np.mean(np.abs(f_ref - f_pred)), rel=1.8e-15, abs=0)
 
     x_pred_modified = x_pred * 1.05  # 5% different spacing
     with pytest.raises(

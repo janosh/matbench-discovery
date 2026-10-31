@@ -198,10 +198,7 @@ metrics:
       size: 1583
       md5: 593b27e2b490c8db12fd32aa1ec010ee
       url: https://ndownloader.figshare.com/files/70537494
-    hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition
-    run_time_sec: 298490.32
-    max_rss_gb: 3.193
-    max_gpu_mem_gb: 22.588
+    cost: {source: runner, hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition, run_time_sec: 298490.32, max_rss_gb: 3.193, max_gpu_mem_gb: 22.588}
     rdf_error: 3.0848200036026032
     adf_error: 1.2417557174391243
     vdos_error: 21.356008008288754
@@ -227,10 +224,7 @@ metrics:
     force_flips: 3.367816091954023
     force_total_variation: 74450.59293998298
     force_jump: 109890.25392851884
-    run_time_sec: 262.76
-    hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition
-    max_rss_gb: 2.619
-    max_gpu_mem_gb: 0.765
+    cost: {source: runner, hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition, run_time_sec: 262.76, max_rss_gb: 2.619, max_gpu_mem_gb: 0.765}
     excluded_formula_reasons: {}
     pbe_vib_freq_coverage:
       n_valid: 67

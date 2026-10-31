@@ -3,7 +3,8 @@
 Examples:
     uv run models/run_kappa.py --list-models
     uv run models/run_kappa.py --print-cmd --model mace_mp_0 --dry-run
-    uv run models/run_kappa.py --model mace_mp_0 --n-shards 8 --shard-index 0
+    uv run --with mace-torch models/run_kappa.py --model mace_mp_0 --n-shards 8 \
+        --shard-index 0
     uv run models/run_kappa.py --model mace_mp_0 --merge-shards --write-yaml
 """
 
@@ -28,7 +29,7 @@ from typing import TYPE_CHECKING
 from matbench_discovery import file_digest, today
 from matbench_discovery.calculators import (
     CALCULATORS,
-    load_calculator,
+    load_calculator_with_runtime,
     resolve_calculator_key,
     resolve_checkpoint,
     resolve_device,
@@ -161,7 +162,10 @@ def print_cmd_args(args: argparse.Namespace, model_key: str) -> list[str]:
             "n-shards": args.n_shards,
             "shard-index": args.shard_index,
         },
-        ("dry-run", "merge-shards", "write-yaml", "retry-failures", "harmonic-only"),
+        (
+            *("dry-run", "merge-shards", "write-yaml", "retry-failures"),
+            *("harmonic-only", "replace-author-reported"),
+        ),
     )
 
 
@@ -169,11 +173,24 @@ def write_yaml_results(
     model: Model,
     artifacts: KappaArtifacts,
     merged_run: MergedKappaRun,
+    *,
+    replace_author_reported: bool = False,
 ) -> None:
-    """Evaluate complete predictions and update model YAML metrics/provenance."""
+    """Evaluate complete predictions and update model YAML metrics/provenance (a
+    harmonic-only run, with no conductivity to score, under ``kappa_103.harmonic``).
+    """
     from matbench_discovery.metrics import phonons as phonon_metrics
 
     validate_yaml_write_provenance(model, merged_run)
+    if merged_run.manifest.settings.harmonic_only:
+        phonon_metrics.write_harmonic_to_yaml(
+            model,
+            run_metadata=merged_run.run_metadata,
+            phonon_file_path=artifacts.phonon_file_path,
+            run_info_path=artifacts.run_info_path,
+            force_file_path=artifacts.force_file_path,
+        )
+        return
     metrics = phonon_metrics.evaluate_kappa_predictions(artifacts.predictions)
     phonon_metrics.write_metrics_to_yaml(
         model,
@@ -184,6 +201,7 @@ def write_yaml_results(
         phonon_file_path=artifacts.phonon_file_path,
         run_info_path=artifacts.run_info_path,
         replace_pred_file=True,
+        replace_author_reported=replace_author_reported,
     )
 
 
@@ -197,6 +215,10 @@ def validate_yaml_write_provenance(
     if merged_run.run_metadata.get("n_failed") != 0:
         raise ValueError("Cannot write kappa YAML metrics from failed records")
     verified_settings = KappaSettings.from_model(model.name)
+    if merged_run.manifest.settings.harmonic_only:
+        verified_settings = replace(
+            verified_settings, harmonic_only=True, save_forces=True
+        )
     if merged_run.manifest.settings != verified_settings:
         raise ValueError(
             "Cannot write kappa YAML metrics from CLI-overridden protocol settings"
@@ -215,10 +237,6 @@ def validate_cli_args(
 ) -> None:
     """Reject incompatible runner modes before loading model dependencies."""
     validate_sharded_write_args(parser, args)
-    if args.harmonic_only and args.write_yaml:
-        parser.error(
-            "--harmonic-only cannot replace conductivity metrics with --write-yaml"
-        )
     if args.merge_shards and args.retry_failures:
         parser.error("--retry-failures is incompatible with --merge-shards")
     if args.dry_run_size < 1:
@@ -328,7 +346,12 @@ def main(raw_args: Sequence[str] | None = None) -> int:
             print(f"Wrote force sets to {artifacts.force_file_path}")
         print(f"Wrote harmonic phonon data to {artifacts.phonon_file_path}")
         if args.write_yaml:
-            write_yaml_results(model, artifacts, merged_run)
+            write_yaml_results(
+                model,
+                artifacts,
+                merged_run,
+                replace_author_reported=args.replace_author_reported,
+            )
             print(f"Updated kappa metrics and provenance in {model.yaml_path}")
         return int(artifacts.n_failed > 0)
 
@@ -349,7 +372,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
         parser.error(str(exc))
 
     resolved_device = resolve_device(model_key, args.device)
-    calculator = load_calculator(
+    calculator, runtime = load_calculator_with_runtime(
         model_key,
         device=resolved_device,
         dtype=args.dtype,
@@ -366,10 +389,12 @@ def main(raw_args: Sequence[str] | None = None) -> int:
         n_shards=n_shards,
         settings=settings,
         checkpoint=checkpoint,
-        dtype=args.dtype,
-        device=resolved_device,
+        # where the weights actually ran (None: JAX/TF/DeePMD expose no dtype)
+        dtype=runtime.get("dtype"),
+        device=runtime["device"],
         retry_failures=args.retry_failures,
         dry_run=args.dry_run,
+        runtime=runtime,
     )
     n_failures = sum(record.error is not None for record in records)
     print(

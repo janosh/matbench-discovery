@@ -1,16 +1,9 @@
 import { by_benchmark_added_desc } from '#lib'
 import type { DiatomicsCurves } from '#lib/types.js'
 import { ACTIVE_MODELS, has_diatomics_curves } from '#lib/models.svelte.js'
-import dft_references from '#lib/diatomics-dft.json.gz'
+import DFT_REFERENCES from '#lib/diatomics-dft.json.gz'
 import { fetch_diatomics_data } from '#lib/server/predictions.js'
 import type { PageServerLoad } from './$types'
-
-// VASP PBE/r2SCAN homonuclear references, keyed functional -> formula -> curve. Each
-// element has its own distance grid, so curves carry per-formula distances.
-const DFT_REFERENCES = dft_references as Record<
-  string,
-  Record<string, { distances: number[]; energies: number[]; forces?: number[][][] }>
->
 
 type PageDiatomicsCurves = {
   distances: number[]
@@ -53,6 +46,7 @@ export const load: PageServerLoad = async () => {
   )
 
   // Add DFT reference curves (PBE, r2SCAN) as selectable pseudo-models on the plots.
+  // Each element has its own distance grid, so curves carry per-formula distances.
   // Keep only distances/energies; forces are used for metrics but not plotted.
   for (const [ref_name, formulas] of Object.entries(DFT_REFERENCES)) {
     diatomic_curves[ref_name] = {

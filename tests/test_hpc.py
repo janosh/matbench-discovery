@@ -1,37 +1,16 @@
 """Tests for high-performance computing utilities."""
 
+import json
 import os
 import sys
-from collections.abc import Sequence
+from functools import partial
 from pathlib import Path
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
-import pandas as pd
 import pytest
 
 from matbench_discovery import hpc
-
-
-@pytest.mark.parametrize(
-    "n_chunks,task_id,expected_index",
-    [(3, 1, [0, 1, 2, 3]), (3, 2, [4, 5, 6]), (3, 3, [7, 8, 9]), (1, 1, range(10))],
-)
-def test_df_slurm_chunk(
-    n_chunks: int, task_id: int, expected_index: Sequence[int]
-) -> None:
-    """df_slurm_chunk returns the right rows for a 1-based slurm array task."""
-    df_in = pd.DataFrame({"col": range(10)})
-    df_chunk = hpc.df_slurm_chunk(df_in, n_chunks, task_id)
-    assert isinstance(df_chunk, pd.DataFrame)
-    assert list(df_chunk.index) == list(expected_index)
-
-
-@pytest.mark.parametrize("n_chunks,task_id", [(0, 1), (3, 0), (3, -1), (3, 4)])
-def test_df_slurm_chunk_rejects_invalid_task_ids(n_chunks: int, task_id: int) -> None:
-    """df_slurm_chunk rejects invalid chunk counts and task IDs."""
-    df_in = pd.DataFrame({"col": range(10)})
-    with pytest.raises(ValueError, match=rf"{n_chunks=}.*{task_id=}"):
-        hpc.df_slurm_chunk(df_in, n_chunks, task_id)
 
 
 @pytest.mark.parametrize(
@@ -154,7 +133,7 @@ def test_get_calling_file_path() -> None:
 
 
 @pytest.mark.parametrize(
-    ("segments", "expected"),
+    ("units", "expected"),
     [
         (
             [
@@ -170,9 +149,8 @@ def test_get_calling_file_path() -> None:
         ),
         ([], {}),
         ([{}, {}], {}),  # no provenance -> empty (leaves existing YAML untouched)
-        # all-or-nothing: a field missing from any segment is dropped, not summed
-        # over the segments that have it
-        ([{"run_time_sec": 12.0}, {}], {}),
+        # all-or-nothing: a field missing from any unit is dropped, not summed
+        # over the units that have it
         (
             [
                 {"hardware": "H200", "run_time_sec": 10.0, "max_rss_gb": 4.0},
@@ -181,25 +159,34 @@ def test_get_calling_file_path() -> None:
             {"hardware": "H200", "run_time_sec": 30.0},
         ),
         (
-            # memory peaks max over segments (each segment is its own process)
+            # times, loads and process counts sum (a process charges its load to
+            # one unit), memory peaks max
+            [
+                {"hardware": "H200", "run_time_sec": 10.0, "load_time_sec": 3.0}
+                | {"n_processes": 1, "max_rss_gb": 4.2, "max_gpu_mem_gb": 9.0},
+                {"hardware": "H200", "run_time_sec": 20.0, "load_time_sec": 0.0}
+                | {"n_processes": 0, "max_rss_gb": 6.1, "max_gpu_mem_gb": 11.5},
+            ],
+            {"hardware": "H200", "run_time_sec": 30.0, "load_time_sec": 3.0}
+            | {"n_processes": 1, "max_rss_gb": 6.1, "max_gpu_mem_gb": 11.5},
+        ),
+        (
+            # GPU-dependent costs need a hardware label: unlabeled units keep only
+            # host RSS and process counts
             [
                 {"run_time_sec": 10.0, "max_rss_gb": 4.2, "max_gpu_mem_gb": 11.5},
                 {"run_time_sec": 20.0, "max_rss_gb": 6.1, "max_gpu_mem_gb": 9.0},
             ],
-            {"run_time_sec": 30.0, "max_rss_gb": 6.1, "max_gpu_mem_gb": 11.5},
+            {"max_rss_gb": 6.1},
         ),
-        # mixed or missing GPU labels drop hardware instead of keeping the first one
-        ([{"hardware": "H200"}, {"hardware": "H100"}], {}),
-        ([{"hardware": "H200"}, {"hardware": ""}], {}),
-        # NaN counts as missing, so the result can't depend on segment order
+        # NaN counts as missing, so the result can't depend on unit order
         ([{"max_rss_gb": float("nan")}, {"max_rss_gb": 2.0}], {}),
         ([{"max_rss_gb": 2.0}, {"max_rss_gb": float("nan")}], {}),
-        # versions only when every segment agrees
+        # versions and labels only when every unit agrees (lists by value)
         ([{"versions": {"numpy": "1"}}, {}], {}),
-        ([{"versions": {"numpy": "1"}}, {"versions": {"numpy": "2"}}], {}),
         (
-            [{"versions": {"numpy": "1"}}, {"versions": {"numpy": "1"}}],
-            {"versions": {"numpy": "1"}},
+            [{"versions": {"numpy": "1"}, "acceleration": ["cuequivariance"]}] * 2,
+            {"versions": {"numpy": "1"}, "acceleration": ["cuequivariance"]},
         ),
         (
             # latest completion time and sorted, de-duplicated host/job unions
@@ -228,42 +215,221 @@ def test_get_calling_file_path() -> None:
     ],
 )
 def test_merge_audit_metadata(
-    segments: list[dict[str, object]], expected: dict[str, object]
+    units: list[dict[str, object]], expected: dict[str, object]
 ) -> None:
     """Cost fields merge all-or-nothing; audit fields take latest time + unions."""
-    assert hpc.merge_audit_metadata(segments) == expected
-
-
-STRICT_SEGMENT = {"hardware": "H200", "run_time_sec": 1.0, "versions": {"numpy": "1"}}
+    assert hpc.merge_audit_metadata(units) == expected
 
 
 @pytest.mark.parametrize(
-    ("other_segment", "error_match"),
+    "changed",
     [
-        ({**STRICT_SEGMENT, "versions": {"numpy": "2"}}, "mixed or missing package"),
-        ({**STRICT_SEGMENT, "hardware": ""}, "mixed or missing hardware"),
-        ({**STRICT_SEGMENT, "hardware": "H100"}, "mixed or missing hardware"),
-        ({**STRICT_SEGMENT, "run_time_sec": None}, "missing runtime"),
-        ({**STRICT_SEGMENT, "max_rss_gb": 3.0}, "partial max_rss_gb"),
+        {"hardware": ""},
+        {"hardware": "A100"},
+        {"acceleration": []},
+        {"cost_source": None},
+        {"n_shards": 2},
     ],
 )
-def test_merge_audit_metadata_strict_errors(
-    other_segment: dict[str, object], error_match: str
+def test_merge_audit_metadata_mixed_labels_drop_cost(
+    changed: dict[str, object],
 ) -> None:
-    """Strict merging rejects mixed or incomplete provenance."""
-    assert hpc.merge_audit_metadata([STRICT_SEGMENT] * 2, strict=True) == {
-        "hardware": "H200",
-        "run_time_sec": 2.0,
-        "versions": {"numpy": "1"},
+    """A mixed or partial run label drops the whole cost block with a warning, never
+    the merge; only mixed package versions raise when strict.
+    """
+    labels = {"cost_source": "runner", "hardware": "H200", "acceleration": ["cueq"]}
+    unit = labels | {"n_shards": 1, "run_time_sec": 1.0, "versions": {"numpy": "1"}}
+    assert hpc.merge_audit_metadata([unit] * 2, strict=True) == unit | {
+        "run_time_sec": 2.0
     }
-    with pytest.raises(ValueError, match=error_match):
-        hpc.merge_audit_metadata([STRICT_SEGMENT, other_segment], strict=True)
+    with pytest.warns(UserWarning, match="Dropping the whole cost block"):
+        merged = hpc.merge_audit_metadata([unit, unit | changed], strict=True)
+    assert merged == {"versions": {"numpy": "1"}}
+    with pytest.raises(ValueError, match="mixed or missing package versions"):
+        hpc.merge_audit_metadata(
+            [unit, unit | {"versions": {"numpy": "2"}}], strict=True
+        )
 
 
-def test_peak_memory_gb() -> None:
-    """peak_memory_gb reports a positive Unix RSS peak; GPU reset is a safe no-op."""
-    mem = hpc.peak_memory_gb()
+# flat artifact run metadata and the YAML cost mapping it yields
+RUNNER_RUN = {"cost_source": "runner", "hardware": "NVIDIA H200", "run_time_sec": 5.0}
+RUNNER_COST = {"source": "runner", "hardware": "NVIDIA H200", "run_time_sec": 5.0}
+AUTHOR_COST = {"source": "author_reported", "hardware": "NVIDIA A100"}
+
+
+@pytest.mark.parametrize(
+    ("existing", "artifact", "same_artifact", "replace", "expected"),
+    [
+        # artifact cost wins whole: no stale key (max_rss_gb) survives next to it
+        ({**RUNNER_COST, "max_rss_gb": 9.0}, RUNNER_RUN, True, False, RUNNER_COST),
+        # legacy artifact (no cost_source) inherits an artifact-backed YAML tag and
+        # contributes only its trustworthy keys (older runners recorded the
+        # requested, not the actual, dtype)
+        (
+            {"source": "salvaged", "hardware": "NVIDIA H200"},
+            {"hardware": "NVIDIA H200", "run_time_sec": 7.0, "dtype": "float64"},
+            True,
+            False,
+            {"source": "salvaged", "hardware": "NVIDIA H200", "run_time_sec": 7.0},
+        ),
+        # author_reported blocks are kept untouched when recomputing an artifact
+        # without cost (YAML-only author report) ...
+        (AUTHOR_COST, {}, True, False, AUTHOR_COST),
+        # ... re-derived but kept author_reported for an author-run artifact ...
+        (
+            AUTHOR_COST,
+            {"hardware": "NVIDIA A100 80GB PCIe", "run_time_sec": 7.0},
+            True,
+            False,
+            {**AUTHOR_COST, "hardware": "NVIDIA A100 80GB PCIe", "run_time_sec": 7.0},
+        ),
+        # ... replaced by a new run's cost only on explicit request ...
+        (AUTHOR_COST, RUNNER_RUN, False, True, RUNNER_COST),
+        (AUTHOR_COST, RUNNER_RUN, False, False, "refusing to replace author_reported"),
+        # ... and dropped (warning) for a new artifact without cost
+        (AUTHOR_COST, {}, False, False, "refusing to replace author_reported"),
+        (AUTHOR_COST, {}, False, True, "dropping author_reported cost"),
+        # a runner-tagged artifact overrides a salvaged tag on recompute
+        ({"source": "salvaged", "hardware": "x"}, RUNNER_RUN, True, False, RUNNER_COST),
+        # merges that dropped hardware/run time leave nothing publishable
+        (RUNNER_COST, {"cost_source": "runner", "max_rss_gb": 1.0}, False, False, None),
+        # untagged, contradicted or invalid cost raises
+        (RUNNER_COST, {}, True, False, "records no cost"),
+        ({"hardware": "NVIDIA H200"}, RUNNER_RUN, True, False, "no valid source"),
+        ({}, {"hardware": "x", "run_time_sec": 1.0}, False, False, "no cost_source"),
+        ({}, RUNNER_RUN | {"cost_source": "estimated"}, False, False, "must be one"),
+    ],
+)
+def test_with_cost_block(
+    existing: dict[str, object],
+    artifact: dict[str, object],
+    same_artifact: bool,
+    replace: bool,
+    expected: dict[str, object] | str | None,
+) -> None:
+    """Cost comes whole from the artifact or stays YAML-only, never mixed, is never
+    silently replaced when author_reported and lands right after ``after``.
+    """
+    section = {"F1": 0.5, "pred_file": "a"} | ({"cost": existing} if existing else {})
+    write = partial(
+        hpc.with_cost_block,
+        section,
+        artifact,
+        after="pred_file",
+        same_artifact=same_artifact,
+        context="mace metrics.md",
+        replace_author_reported=replace,
+    )
+    if isinstance(expected, str) and expected.startswith("dropping"):
+        with pytest.warns(UserWarning, match=expected):
+            assert "cost" not in write()
+        return
+    if isinstance(expected, str):
+        with pytest.raises(ValueError, match=expected):
+            write()
+        return
+    written = write()
+    assert list(written) == ["F1", "pred_file", *(["cost"] if expected else [])]
+    assert written.get("cost") == expected
+    assert list(written.get("cost") or ()) == list(expected or ())  # canonical order
+
+
+def test_detect_runtime_probe_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Calculators without reachable torch weights are labeled by the requested
+    device (torch-weight detection is covered by test_load_calculator_with_runtime).
+    """
+    for framework in ("jax", "tensorflow"):
+        monkeypatch.delitem(sys.modules, framework, raising=False)
+    monkeypatch.setattr(hpc, "detect_hardware", lambda _device: "NVIDIA H200")
+    assert hpc.detect_runtime(object(), requested_device="cuda") == {
+        "backend": "torch_probe",
+        "device": "cuda",
+        "torch_device": "cuda",
+        "hardware": "NVIDIA H200",
+    }
+
+
+@pytest.mark.parametrize(
+    ("runtime", "expected_gpu_gb", "succeeded_raises"),
+    [
+        # non-torch backends never report torch's (meaningless) CUDA counter
+        ({"backend": "jax", "device": "gpu"}, None, False),
+        ({"backend": "torch", "device": "cpu"}, None, False),
+        ({"backend": "torch", "device": "cuda", "torch_device": "cuda:1"}, 2.5, False),
+        # a failed unit may not have touched the GPU, but a torch GPU label
+        # without VRAM after successful work raises
+        ({"backend": "torch_probe", "device": "cuda"}, 0.0, True),
+        ({"backend": "torch", "device": "cuda"}, 0.0, True),
+    ],
+)
+def test_memory_peaks(
+    runtime: dict[str, str], expected_gpu_gb: float | None, succeeded_raises: bool
+) -> None:
+    """memory_peaks reports host RSS and only measurable VRAM, read on the weights'
+    device, and rejects GPU labels without VRAM after successful work.
+    """
+    allocated = Mock(return_value=(expected_gpu_gb or 0) * 1e9)
+    cuda = SimpleNamespace(is_available=lambda: True, max_memory_allocated=allocated)
+    with patch.dict(sys.modules, torch=SimpleNamespace(cuda=cuda)):
+        mem = hpc.memory_peaks(runtime, succeeded=False)
+        if succeeded_raises:
+            with pytest.raises(ValueError, match="allocated no CUDA memory"):
+                hpc.memory_peaks(runtime, succeeded=True)
+        else:
+            assert hpc.memory_peaks(runtime, succeeded=True) == mem
+    assert mem.get("max_gpu_mem_gb") == expected_gpu_gb
+    if expected_gpu_gb is not None:
+        allocated.assert_called_with(runtime.get("torch_device"))
     if sys.platform != "win32":  # Windows lacks the resource module
         assert mem["max_rss_gb"] > 0
-    assert set(mem) <= {"max_rss_gb", "max_gpu_mem_gb"}
-    hpc.reset_gpu_peak_memory()  # must not raise without torch/CUDA
+
+
+@pytest.mark.parametrize(
+    "changed",
+    [{"hardware": "NVIDIA A100"}, {"versions": {"ase": "2"}}, {"dtype": None}],
+)
+def test_check_resume_labels(changed: dict[str, object]) -> None:
+    """Resumed work must share every run label of the session before it."""
+    runtime = {"hardware": "NVIDIA H200", "dtype": "float32", "versions": {"ase": "1"}}
+    hpc.check_resume_labels(runtime, runtime | {"load_time_sec": 0.0}, "ctx")
+    with pytest.raises(ValueError, match=f"ctx: cannot resume .*{next(iter(changed))}"):
+        hpc.check_resume_labels(runtime, runtime | changed, "ctx")
+
+
+@pytest.mark.parametrize(
+    ("run_metadata", "yaml_cost", "n_problems"),
+    [
+        (RUNNER_RUN, RUNNER_COST, 0),
+        (RUNNER_RUN | {"run_time_sec": 5.04}, RUNNER_COST, 1),
+        (RUNNER_RUN, {}, 1),  # publishable artifact cost the YAML never registered
+        # mixed-hardware merge kept tag/RSS only: nothing publishable, nothing missed
+        ({"cost_source": "runner", "max_rss_gb": 1.0}, {}, 0),
+        ({}, RUNNER_COST, 1),
+        ({}, AUTHOR_COST, 0),  # YAML-only author report
+        # author-run artifacts must match too, but their curated tag is not compared
+        (RUNNER_RUN, RUNNER_COST | {"source": "author_reported"}, 0),
+        (RUNNER_RUN, AUTHOR_COST, 2),  # hardware + run_time_sec differ
+        # legacy artifacts are compared on their trustworthy keys only
+        ({"hardware": "NVIDIA H200"}, RUNNER_COST | {"dtype": "float32"}, 1),
+        (
+            {"hardware": "NVIDIA H200", "run_time_sec": 5.0},
+            RUNNER_COST | {"dtype": "float32"},
+            0,
+        ),
+    ],
+)
+def test_cost_provenance_problems(
+    tmp_path: Path,
+    run_metadata: dict[str, object],
+    yaml_cost: dict[str, object],
+    n_problems: int,
+) -> None:
+    """YAML cost mappings must equal their artifact's recorded cost."""
+    rel_path = "models/x/y/2026-01-01-discovery-run-info.json"
+    (tmp_path / rel_path).parent.mkdir(parents=True)
+    (tmp_path / rel_path).write_text(json.dumps({"run_metadata": run_metadata}))
+    section = {"run_info_file": {"name": rel_path}} | (
+        {"cost": yaml_cost} if yaml_cost else {}
+    )
+    problems = hpc.cost_provenance_problems({"discovery": section}, str(tmp_path))
+    assert len(problems) == n_problems, problems

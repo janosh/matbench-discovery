@@ -6,6 +6,7 @@
   import { model_metric_ranks, rank_color, RANKED_METRICS } from '#lib/rankings.js'
   import PtableInset from '#lib/PtableInset.svelte'
   import {
+    cost_annotation,
     discovery_task_tooltips,
     get_nested_value,
     is_finite_num,
@@ -45,7 +46,7 @@
     Versions,
   } from 'svelte-widgets/icons'
   import { format_relative_time, get_org_logo, MD_METRICS } from '#lib/labels.js'
-  import { format_num } from 'matterviz/labels'
+  import { format_num, humanize } from 'matterviz/labels'
   import { HeatmapTable } from 'matterviz/table'
   import { JsonTree } from 'matterviz/layout'
   import { ColorBar } from 'matterviz/plot'
@@ -145,7 +146,9 @@
     return Boolean(
       results &&
       typeof results === `object` &&
-      Object.keys(results).some((key) => ![`status`, `reason`].includes(key)),
+      Object.keys(results).some(
+        (key) => ![`status`, `reason`, `reproducibility`].includes(key),
+      ),
     )
   }
   let selected_metric = $derived(
@@ -161,7 +164,7 @@
         ? `model=${key}`
         : task === `diatomics`
           ? `models=PBE,r2SCAN,${key}`
-          : `compare=${key}`
+          : `compare=${[...new Set([...comparison.keys, key])].join(`,`)}`
   // Registry tests enforce a shared calculator for every declared phonon protocol.
   let runner_command = $derived(
     model.hyperparams?.evaluation?.kappa
@@ -214,7 +217,7 @@
   {@const org_logo = affiliation ? get_org_logo(affiliation) : undefined}
   {@const author_links = [
     [email ? `mailto:${email}` : undefined, `Email`, Email],
-    [orcid, `Orcid`, ORCID],
+    [orcid, `ORCID`, ORCID],
     [url, `Website`, Globe],
     [github, `GitHub`, GitHub],
   ] as const}
@@ -364,6 +367,7 @@
       {@const available = has_task_results(task)}
       {@const value = metric_value(model, metric)}
       {@const rank_entry = ranks.find((entry) => entry.metric.key === metric.key)}
+      {@const cost = is_finite_num(value) ? cost_annotation(model, metric) : undefined}
       <Popover trigger_mode="hover" trap_focus={false} aria-label="Metric rank">
         {#snippet trigger(trigger_props)}
           <a
@@ -403,6 +407,7 @@
         {/if}
         {#if is_finite_num(value)}
           {@html metric.description ?? ``}
+          {#if cost}<br />{cost}{/if}
         {:else}
           {missing_metric_reason(model, metric)}
         {/if}
@@ -411,7 +416,7 @@
   </section>
 
   <section class="model-info" aria-labelledby="model-info">
-    <h2 id="model-info">Model Info</h2>
+    <h2 id="model-info">Model info</h2>
     <div class="info-grid">
       {#each Object.entries(model_info_groups) as [label, items] (label)}
         <div>
@@ -436,7 +441,7 @@
     </div>
   </section>
 
-  <h2 id="training-set">Training Set</h2>
+  <h2 id="training-set">Training set</h2>
   <section class="training-set">
     {#each model.training_sets as dataset_key (dataset_key)}
       {@const { n_structures, name, slug, n_materials, license } = DATASETS[dataset_key]}
@@ -570,9 +575,7 @@
               bind:active_element
               tile_props={{ float_fmt: `.2f` }}
               show_photo={false}
-              missing={{
-                color: `light-dark(rgba(255,255,255,0.3), rgba(255,255,255,0.5))`,
-              }}
+              missing={{ color: `var(--ptable-missing-bg)` }}
             >
               {#snippet inset()}
                 <TableInset style="align-content: center">
@@ -582,12 +585,12 @@
                         element={active_element}
                         elem_counts={heatmap_values}
                         show_percent={false}
-                        unit="<small style='font-weight: lighter;'>eV / atom</small>"
+                        unit="<small style='font-weight: lighter;'>eV/atom</small>"
                       />
                     {/if}
                   </div>
                   <ColorBar
-                    title="|E<sub>ML,hull</sub> - E<sub>DFT,hull</sub>| (eV / atom)"
+                    title="|E<sub>ML,hull</sub> - E<sub>DFT,hull</sub>| (eV/atom)"
                     title_side="top"
                     color_scale={{
                       scheme: color_scale,
@@ -653,7 +656,7 @@
   </section>
 
   <section class="authors">
-    <h2 id="model-authors">Model Authors</h2>
+    <h2 id="model-authors">Model authors</h2>
     <ol>
       {#each model.authors as author (author.name)}
         <li>
@@ -665,7 +668,7 @@
 
   {#if model.trained_by}
     <section class="trained-by">
-      <h2 id="trained-by">Trained By</h2>
+      <h2 id="trained-by">Trained by</h2>
       <ol>
         {#each model.trained_by as author (author.name)}
           <li>
@@ -679,7 +682,7 @@
   {#if model.notes?.html}
     <section class="notes">
       {#each Object.entries(model.notes.html) as [key, note] (key)}
-        <h2>{key}</h2>
+        <h2 id={key}>{humanize(key)}</h2>
         <div>{@html note}</div>
       {/each}
     </section>
@@ -909,7 +912,7 @@
     max-width: 100%;
     white-space: nowrap;
     font-weight: normal;
-    font-family: var(--font-mono, monospace);
+    font-family: monospace;
     font-size: 0.9em;
     opacity: 0.85;
   }

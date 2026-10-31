@@ -40,19 +40,19 @@ environment:
   dependencies:
   - nequix
   - 'jax[cuda12]'
-  - e3nn-jax==0.20.7
+  - e3nn-jax
   - jraph==0.0.6.dev0
-  - equinox==0.11.11
+  - equinox
   - optax==0.2.5
   - ase==3.24.0
   - tqdm==4.67.1
   - wandb==0.19.11
   - pyyaml==6.0.2
-  - matscipy==1.1.1
+  - matscipy
   - h5py==3.14.0
   - wandb-osh==1.2.2
   - cloudpickle==3.1.1
-  python_version: '3.12'
+  python_version: '3.14'
 openness: OSOD
 architecture_types: [gnn]
 train_task: S2EFS
@@ -110,12 +110,12 @@ notes:
 metrics:
   diatomics:
     pred_file:
-      name: models/nequix/nequix-mp-1/2026-06-28-diatomics.json.gz
-      url: https://figshare.com/files/66104669
-      size: 242473
-      md5: 297aecca67628880c944c0a8d7b0152a
-    hardware: NVIDIA H200
-    run_time_sec: 56.83
+      name: models/nequix/nequix-mp-1/2026-10-19-diatomics.json.gz
+      url: https://figshare.com/files/70350129
+      size: 246826
+      md5: 70ecb6308b7a1943456e89db248258d1
+    cost: {source: runner, hardware: NVIDIA H200, device: gpu, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 61.11, load_time_sec: 9.95, max_rss_gb: 5.737}
+    excluded_formula_reasons: {}
     pbe_wall_dist_mae: 0.6649
     pbe_energy_mae: 1.707
     pbe_bond_length_error: 0.2886
@@ -133,6 +133,18 @@ metrics:
       n_eligible: 73
       failed_elements: []
       missing_elements: []
+    reproducibility:
+      checked: '2026-10-20'
+      status: reproduced
+      tolerance: 0.001
+      runs:
+      - label: published run (2026-06-28, H200)
+        file:
+          name: models/nequix/nequix-mp-1/2026-06-28-diatomics.json.gz
+          url: https://figshare.com/files/66104669
+          size: 242473
+          md5: 297aecca67628880c944c0a8d7b0152a
+      rel_changes: {}
   discovery:
     pred_file:
       name: models/nequix/nequix-mp-1/2025-08-17-discovery.csv.gz
@@ -174,37 +186,36 @@ metrics:
       size: 145172284
       md5: a181716a7f21c1581d4965fd5789c8be
     symprec=1e-5:
-      rmsd: 0.0853
-      n_sym_ops_mae: 2.0462
-      symmetry_decrease: 0.0607
-      symmetry_match: 0.6999
-      symmetry_increase: 0.2335
-      n_structures: 256963
+      rmsd: 0.0853 # unitless
+      n_sym_ops_mae: 2.0462 # unitless
+      symmetry_decrease: 0.0607 # fraction
+      symmetry_match: 0.6999 # fraction
+      symmetry_increase: 0.2335 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/nequix/nequix-mp-1/2025-08-17-geo-opt-symprec=1e-5-moyo=0.4.4.csv.gz
-        url: https://figshare.com/files/57262718
-        size: 7721146
-        md5: 78de4441c4e6b15640024232507987a0
+        name: models/nequix/nequix-mp-1/2025-08-17-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333902
+        size: 7135057
+        md5: dff1d71690367cedde51c41ccc5cad51
     symprec=1e-2:
-      rmsd: 0.0853
-      n_sym_ops_mae: 1.7969
-      symmetry_decrease: 0.0554
-      symmetry_match: 0.8111
-      symmetry_increase: 0.1261
-      n_structures: 256963
+      rmsd: 0.0853 # unitless
+      n_sym_ops_mae: 1.7969 # unitless
+      symmetry_decrease: 0.0554 # fraction
+      symmetry_match: 0.8111 # fraction
+      symmetry_increase: 0.1261 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/nequix/nequix-mp-1/2025-08-17-geo-opt-symprec=1e-2-moyo=0.4.4.csv.gz
-        url: https://figshare.com/files/57262721
-        size: 7750203
-        md5: 891f6a640653e9f2f2bfb666e28ea290
+        name: models/nequix/nequix-mp-1/2025-08-17-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://figshare.com/files/70333905
+        size: 7131424
+        md5: e5fc07f0612d84f538262c9881e8e934
   md:
     pred_file:
       name: models/nequix/nequix-mp-1/2026-06-28-md-metrics.csv.gz
-      url: https://figshare.com/files/66048917
-      size: 1537
-      md5: 6e73570ab21e751d1615eb6c7fff0a9e
-    hardware: NVIDIA H200
-    run_time_sec: 41313.81
+      url: https://figshare.com/files/66574991
+      size: 1708
+      md5: ef007644d18705b1105f25d68dfa6fad
+    cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 41313.8}
     energy_rmse: 1.3652
     force_rmse: 136.1155
     rdf_error: 6.085
@@ -227,15 +238,20 @@ metrics:
       κ_failure_rate: 0.0
       imaginary_mode_rate: 0.0
       spectrum_w1: 0.516
-      phonon_file:
-        name: models/nequix/nequix-mp-1/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
-        size: 1343972937
-        md5: a70e5dc083a53752ecd04dd5c804c086
-      force_file:
-        name: models/nequix/nequix-mp-1/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-        size: 8708557
-        md5: 21c9311b41faf404de5923c76f9445d2
-      run_info_file:
-        name: models/nequix/nequix-mp-1/harmonic/2026-09-05-phonons-kappa-103-run-info.json
-        size: 8401
-        md5: df7443b7628e2ce47ea1f0307742eee3
+      harmonic:
+        phonon_file:
+          name: models/nequix/nequix-mp-1/harmonic/2026-09-05-phonons-kappa-103-phonons.json.gz
+          url: https://figshare.com/files/70334598
+          size: 23776670
+          md5: a6c65a1d92efde821bed5fba6bd188bb
+        force_file:
+          name: models/nequix/nequix-mp-1/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
+          url: https://figshare.com/files/70334601
+          size: 8708557
+          md5: 21c9311b41faf404de5923c76f9445d2
+        run_info_file:
+          name: models/nequix/nequix-mp-1/harmonic/2026-09-05-phonons-kappa-103-run-info.json
+          url: https://figshare.com/files/70334604
+          size: 8401
+          md5: df7443b7628e2ce47ea1f0307742eee3
+        cost: {source: runner, hardware: NVIDIA H200, n_shards: 8, run_time_sec: 3538.23, max_rss_gb: 6.913}

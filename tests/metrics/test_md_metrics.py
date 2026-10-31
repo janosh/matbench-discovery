@@ -12,8 +12,10 @@ from ase.calculators.calculator import Calculator, all_changes
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.data import atomic_masses
 
+from matbench_discovery.data import update_yaml_file
 from matbench_discovery.enums import Model
 from matbench_discovery.metrics import md as md_metrics
+from tests.utils import patch_model_metadata
 
 np_rng = np.random.default_rng(seed=0)
 ANISOTROPIC_STRESS_VOIGT = np.array(
@@ -771,46 +773,6 @@ def test_matched_frame_counts_rejects_zero_time_step(
         )
 
 
-def test_evaluate_md_system() -> None:
-    """Per-system evaluation should produce all metrics on matched trajectories."""
-    ref_traj = make_jiggled_frames(10, pressure_gpa=1.0)
-    pred_traj = make_jiggled_frames(20, pressure_gpa=1.2)
-
-    metrics = md_metrics.evaluate_md_system(
-        ref_traj,
-        pred_traj,
-        ref_time_step_fs=2,
-        pred_time_step_fs=1,
-        n_rdf_bins=50,
-    )
-
-    assert set(metrics) == {
-        "rdf_error",
-        "adf_error",
-        "vdos_error",
-        "pressure_mae",
-        "pressure_wasserstein",
-        "pressure_error",
-    }
-    assert 0 <= metrics["rdf_error"] <= 100
-    assert 0 <= metrics["adf_error"] <= 100
-    assert 0 <= metrics["vdos_error"] <= 100
-    assert metrics["pressure_mae"] == pytest.approx(0.2, abs=1e-10)
-    assert metrics["pressure_wasserstein"] == pytest.approx(0.2, abs=1e-10)
-    assert 0 <= metrics["pressure_error"] <= 100
-
-    # frames without stress data should yield NaN pressure metrics, not errors
-    no_stress = md_metrics.evaluate_md_system(
-        make_jiggled_frames(8),
-        make_jiggled_frames(8),
-        ref_time_step_fs=1,
-        pred_time_step_fs=1,
-    )
-    assert np.isnan(no_stress["pressure_mae"])
-    assert np.isnan(no_stress["pressure_wasserstein"])
-    assert np.isnan(no_stress["pressure_error"])
-
-
 def test_evaluate_md_system_reraises_unexpected_pressure_errors() -> None:
     """Unexpected stress backend failures should not become NaN pressure metrics."""
     ref_traj = make_jiggled_frames(8)
@@ -856,18 +818,27 @@ def test_calc_md_metrics() -> None:
             "pressure_wasserstein": [0.5, np.nan],
             "pressure_error": [40.0, np.nan],
             "run_time_sec": [100.5, 200.25],
+            "load_time_sec": [3.0, 0.0],  # one process ran both systems
+            "n_processes": [1, 0],
             "max_rss_gb": [4.2, 6.1],
             "max_gpu_mem_gb": [11.5, 9.0],
             "hardware": ["NVIDIA H200", "NVIDIA H200"],
+            "cost_source": ["runner"] * 2,
+            # md.run_info_row CSV encoding of the acceleration list
+            "acceleration": ["cuequivariance"] * 2,
         }
     )
     metrics = md_metrics.calc_md_metrics(df_md)
 
-    assert metrics.pop("hardware") == "NVIDIA H200"
+    labels = {key: metrics.pop(key) for key in ("cost_source", "hardware")}
+    assert labels == {"cost_source": "runner", "hardware": "NVIDIA H200"}
+    assert metrics.pop("acceleration") == ["cuequivariance"]
     # exact-key equality also proves combined_score is absent (CMDS is site-computed)
     assert metrics == pytest.approx(
         {
             "run_time_sec": 300.75,  # summed, not averaged
+            "load_time_sec": 3.0,
+            "n_processes": 1,
             "max_rss_gb": 6.1,  # max over systems, not averaged
             "max_gpu_mem_gb": 11.5,
             "energy_rmse": 2,
@@ -887,6 +858,15 @@ def test_calc_md_metrics() -> None:
     assert partial == {"rdf_error": 15, "n_systems": 2}
     with pytest.raises(ValueError, match="No recognized MD metric columns"):
         md_metrics.calc_md_metrics(pd.DataFrame({"unrelated": [1]}))
+    # "none" decodes to no acceleration
+    no_accel = df_md.assign(acceleration="none")
+    assert md_metrics.calc_md_metrics(no_accel)["acceleration"] == []
+    # a partial label (e.g. an untagged cached pre-provenance rollout) drops the
+    # whole cost block, never the metrics
+    with pytest.warns(UserWarning, match="mixed or partial cost_source"):
+        mixed = md_metrics.calc_md_metrics(df_md.assign(cost_source=["runner", None]))
+    assert set(mixed).isdisjoint(md_metrics.MD_COST_COLS)
+    assert mixed["rdf_error"] == pytest.approx(15)
 
 
 @pytest.mark.parametrize(
@@ -895,46 +875,6 @@ def test_calc_md_metrics() -> None:
         (
             {"energy_rmse": [0.001, np.nan], "force_rmse": [0.1, np.nan]},
             ("energy_rmse", "force_rmse"),
-        ),
-        (
-            {"run_time_sec": [100.0, np.nan], "hardware": ["NVIDIA H200"] * 2},
-            ("run_time_sec",),
-        ),
-        (
-            # mixed GPUs also drop the GPU-dependent costs: a wall-time sum or VRAM
-            # max over an H200 and an A100 misrepresents the model's cost with no
-            # hardware label left to qualify it. Host RSS is GPU-independent -> kept
-            {
-                "run_time_sec": [100.0, 200.0],
-                "max_rss_gb": [4.2, 6.1],
-                "max_gpu_mem_gb": [11.5, 9.0],
-                "hardware": ["NVIDIA H200", "NVIDIA A100"],
-            },
-            ("hardware", "run_time_sec", "max_gpu_mem_gb"),
-        ),
-        (
-            {"run_time_sec": [100.0, 200.0], "hardware": ["NVIDIA H200", None]},
-            ("hardware", "run_time_sec"),
-        ),
-        (
-            # no hardware column at all: GPU-dependent costs have no label to qualify
-            # them, GPU-independent host RSS is kept
-            {
-                "run_time_sec": [100.0, 200.0],
-                "max_rss_gb": [4.2, 6.1],
-                "max_gpu_mem_gb": [11.5, 9.0],
-            },
-            ("run_time_sec", "max_gpu_mem_gb"),
-        ),
-        (
-            # partial memory coverage -> dropped (a subset max could hide the true
-            # peak); the complete sibling memory column is kept
-            {
-                "max_rss_gb": [4.2, np.nan],
-                "max_gpu_mem_gb": [11.5, 9.0],
-                "hardware": ["NVIDIA H200"] * 2,
-            },
-            ("max_rss_gb",),
         ),
         (
             # model without stress support: no pressure mean to publish (NaN would
@@ -959,22 +899,17 @@ def test_calc_md_metrics() -> None:
     ],
     ids=[
         "partial_energy_force",
-        "partial_run_time",
-        "mixed_gpus",
-        "missing_gpu",
-        "missing_hardware_column",
-        "partial_memory",
         "all_nan_pressure",
         "mismatched_pressure_nans",
     ],
 )
 def test_calc_md_metrics_all_or_nothing_columns(
-    cols: dict[str, list[float | str | None]], dropped: tuple[str, ...]
+    cols: dict[str, list[float]], dropped: tuple[str, ...]
 ) -> None:
-    """E/F diagnostics and run provenance publish only when every system row agrees:
-    partial coverage or a mixed/missing GPU label is dropped (a subset mean/sum would
-    misrepresent the model while n_systems suggests full coverage), but complete
-    sibling columns are kept.
+    """E/F diagnostics and pressures publish only with consistent per-system
+    coverage (a subset mean would misrepresent the model while n_systems suggests
+    full coverage), but complete sibling columns are kept. Cost columns merge
+    all-or-nothing via hpc.merge_audit_metadata (tested there).
     """
     df_md = pd.DataFrame({"rdf_error": [10.0, 20.0]} | cols)
     metrics = md_metrics.calc_md_metrics(df_md)
@@ -985,15 +920,23 @@ def test_calc_md_metrics_all_or_nothing_columns(
 
 
 def test_write_metrics_to_yaml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Metrics should be written under metrics.md with units and rounding."""
+    """Metrics should be written under metrics.md with units and rounding, and the
+    cost atomically from the artifact as one flow-style line after pred_file.
+    """
     yaml_path = tmp_path / "model.yml"
     yaml_path.write_text("model_name: test\nmetrics: {}\n", encoding="utf-8")
     model = Model.mace_mp_0
-    monkeypatch.setattr(Model, "yaml_path", yaml_path)
+    patch_model_metadata(monkeypatch, model, yaml_path=str(yaml_path))
 
-    metrics: dict[str, float | str] = {
+    cost = {
+        "cost_source": "runner",
         "hardware": "NVIDIA H200",
+        "acceleration": ["cuequivariance"],
         "run_time_sec": 4521.484,
+        "load_time_sec": 12.5,
+    }
+    metrics: dict[str, object] = {
+        **cost,
         "energy_rmse": 1.23456,
         "force_rmse": 98.7654,
         "rdf_error": 12.34567,
@@ -1006,12 +949,10 @@ def test_write_metrics_to_yaml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     )
 
     text = yaml_path.read_text(encoding="utf-8")
-    written = yaml.safe_load(text)
-    md = written["metrics"]["md"]
+    md = yaml.safe_load(text)["metrics"]["md"]
+    assert list(md)[:2] == ["pred_file", "cost"]
     assert md["pred_file"] == {"name": path, "url": url}
-    assert "pred_file_url" not in md
-    assert "hardware: NVIDIA H200" in text
-    assert "run_time_sec: 4521.484 # s" in text
+    assert "  cost: {source: runner, hardware: NVIDIA H200, acceleration: " in text
     assert "energy_rmse: 1.2346 # meV/atom" in text
     assert "force_rmse: 98.7654 # meV/Å" in text
     assert "rdf_error: 12.3457 # %" in text
@@ -1019,26 +960,17 @@ def test_write_metrics_to_yaml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     # CMDS is site-computed, never persisted
     assert "combined_score" not in text
 
-    # a later recompute from per-system CSVs lacking timing columns (e.g. legacy runs)
-    # must preserve the recorded run provenance, not silently drop it
+    # recomputing the registered CSV re-derives the whole cost block from it: a
+    # recompute whose CSV has no cost contradicts the runner tag and raises
     recomputed = md_metrics.write_metrics_to_yaml(
-        model, {"rdf_error": 11.0, "n_systems": 17}
+        model, {**cost, "run_time_sec": 10.0, "rdf_error": 11.0, "n_systems": 17}
     )
-    text = yaml_path.read_text(encoding="utf-8")
-    assert (
-        yaml.safe_load(text)["metrics"]["md"]
-        == recomputed
-        == {
-            "pred_file": {"name": path, "url": url},
-            "hardware": "NVIDIA H200",
-            "run_time_sec": 4521.484,
-            "rdf_error": 11.0,
-            "n_systems": 17,
-        }
-    )
-    assert "rdf_error: 11.0 # %" in text
+    assert recomputed["cost"]["run_time_sec"] == 10.0
+    assert recomputed["pred_file"] == {"name": path, "url": url}
+    with pytest.raises(ValueError, match="records no cost"):
+        md_metrics.write_metrics_to_yaml(model, {"rdf_error": 11.0, "n_systems": 17})
 
-    # A new source cannot inherit the old source's timings or private diagnostics.
+    # a new source without cost columns cannot inherit the old run's cost
     md_metrics.write_metrics_to_yaml(
         model, {"rdf_error": 3.0, "n_systems": 17}, pred_file_path=path
     )
@@ -1047,3 +979,11 @@ def test_write_metrics_to_yaml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
         "rdf_error": 3.0,
         "n_systems": 17,
     }
+
+    # a recompute keeps the reproducibility verdict, registering a new CSV drops it
+    repro = {"status": "reproduced", "rel_changes": {"rdf_error": 0.0}}
+    update_yaml_file(str(yaml_path), "metrics.md", {"reproducibility": repro})
+    scores = {"rdf_error": 3.0, "n_systems": 17}
+    assert md_metrics.write_metrics_to_yaml(model, scores)["reproducibility"] == repro
+    written = md_metrics.write_metrics_to_yaml(model, scores, pred_file_path=path)
+    assert "reproducibility" not in written

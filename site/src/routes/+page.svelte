@@ -23,8 +23,6 @@
   import type { DiscoverySet, Label, ModelData } from '#lib/types.js'
   import { ButtonGroup } from 'svelte-widgets'
   import { slide } from 'svelte/transition'
-  import type { UrlTableFilters } from '#lib/url-state.svelte.js'
-  import type { Snapshot } from './$types'
 
   // landing hid TPR; keep its Recall replacement supplementary too
   const supplementary_hidden = new Set(
@@ -120,43 +118,6 @@
       [`set`, discovery_set, `unique_prototypes`],
     ],
   )
-
-  // Partial and plain strings: snapshots stored by older deploys may lack fields added
-  // since or name discovery sets/presets that were removed
-  type PageSnapshot = Partial<{
-    discovery_set: string
-    col_preset: string
-    sort: TableSort
-    auto_sort_enabled: boolean
-    filters: UrlTableFilters[`config`]
-    show_heatmap: boolean
-  }>
-  export const snapshot: Snapshot<PageSnapshot> = {
-    capture: () => ({
-      discovery_set,
-      col_preset,
-      sort,
-      auto_sort_enabled,
-      filters: filters.config,
-      show_heatmap: filters.show_heatmap,
-    }),
-    // Snapshots outlive deploys, so a stored discovery set, column preset or dataset
-    // key may since have been renamed or removed. Restoring one would filter every
-    // model away or leave a toggle with nothing selected, and the user has no way to
-    // see why. So each value is only restored if it still names something real,
-    // otherwise the freshly-mounted default stands as if no snapshot existed.
-    restore: (values) => {
-      auto_sort_enabled = values.auto_sort_enabled ?? auto_sort_enabled
-      sort = values.sort ?? sort
-      discovery_set =
-        DISCOVERY_SETS.find((set) => set === values.discovery_set) ?? discovery_set
-      col_preset =
-        col_preset_names.find((preset) => preset === values.col_preset) ?? col_preset
-      // apply() drops unknown dataset keys, targets and openness values itself
-      if (values.filters) filters.apply(values.filters)
-      filters.show_heatmap = values.show_heatmap ?? filters.show_heatmap
-    },
-  }
 </script>
 
 <h1 id="matbench-discovery">
@@ -280,9 +241,6 @@
   }
   h1 img {
     filter: brightness(0.8);
-  }
-  :root[data-theme='light'] h1 img {
-    filter: brightness(0.2);
   }
   figure {
     margin: 0;

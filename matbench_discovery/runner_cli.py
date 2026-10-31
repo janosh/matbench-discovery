@@ -35,6 +35,12 @@ def add_common_runner_args(
         help="Calculator float precision; non-default values need a calculator "
         "with a dtype option (MACE, AlphaNet, PET). default float64",
     )
+    parser.add_argument(
+        "--replace-author-reported",
+        action="store_true",
+        help="With --write-yaml: allow this run's measured cost to replace an "
+        "author_reported cost block (refused by default)",
+    )
     return parser
 
 

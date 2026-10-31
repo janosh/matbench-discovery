@@ -4,11 +4,11 @@ The checklist reads the model YAML through the Model enum's metadata API instead
 grep/sed, making it testable (tests/scripts/test_ingest_model.py) and robust to YAML
 formatting.
 
-Usage:
-    uv run scripts/ingest_model.py <model>            # check+evals+figs+payloads
-    uv run scripts/ingest_model.py <model> --archive  # + figshare/release upload
-    uv run scripts/ingest_model.py --payloads-only --full-roster
-    uv run scripts/ingest_model.py <models...> --payloads-only  # merge models
+Usage (works from any directory; subprocesses run from the repo root):
+    uv run --with-editable . scripts/ingest_model.py <model>  # checks+evals+payloads
+    uv run --with-editable . scripts/ingest_model.py <model> --archive  # + uploads
+    uv run --with-editable . scripts/ingest_model.py --payloads-only --full-roster
+    uv run --with-editable . scripts/ingest_model.py <models...> --payloads-only
 """
 
 import argparse
@@ -34,7 +34,9 @@ from matbench_discovery.data import (
 )
 from matbench_discovery.discovery import ARCHIVED_DISCOVERY_MODELS, RelaxationSettings
 from matbench_discovery.enums import Model
+from matbench_discovery.hpc import cost_provenance_problems
 from matbench_discovery.phonons.pipeline import KappaSettings
+from matbench_discovery.remote import figshare
 
 PASS, FAIL, SKIP = "✓", "✗", "○"
 # task_coverage statuses that mean the task has results worth checking artifacts for
@@ -111,9 +113,11 @@ def banner(text: str) -> None:
 
 
 def run_cmd(*cmd: str) -> bool:
-    """Run a command, streaming output; return True on zero exit."""
+    """Run a command from ROOT (so relative paths in it resolve from any cwd),
+    streaming output; return True on zero exit.
+    """
     print(f">> {' '.join(cmd)}")
-    return subprocess.run(cmd, check=False).returncode == 0
+    return subprocess.run(cmd, check=False, cwd=ROOT).returncode == 0
 
 
 def uv_run_args(args: str) -> tuple[str, ...]:
@@ -160,7 +164,13 @@ def check_submission(
         try:
             validate_artifact_path(artifact_path, expected_artifact_dir)
         except ValueError as exc:
-            checks.fail(f"Invalid {'.'.join(key_path)}: {exc}")
+            checks.fail(f"Invalid {'.'.join(map(str, key_path))}: {exc}")
+    # inference cost must be tagged and match the artifact it claims to come from
+    if cost_problems := cost_provenance_problems(metrics_by_task, ROOT):
+        for problem in cost_problems:
+            checks.fail(f"Cost provenance: metrics.{problem}")
+    else:
+        checks.ok("Cost blocks match their local artifacts (or are author_reported)")
 
     # E = energy only (no forces -> no relaxation, phonons or diatomics)
     energy_only = metadata.get("targets") == "E"
@@ -236,7 +246,7 @@ def check_submission(
                 command = calc_spec.uv_run_cmd(
                     runner, "--model", model.name, "--dry-run"
                 )
-                subprocess.run(command, check=True)
+                subprocess.run(command, check=True, cwd=ROOT)
             if task == "discovery":
                 RelaxationSettings.from_model(model.name)
             elif task == "kappa":
@@ -318,7 +328,7 @@ def publish_parity_assets(checks: Checklist) -> None:
         return
     for parity_type in ("energy", "kappa"):
         assets_dir = f"site/static/{parity_type}-parity/assets"
-        manifest_path = f"site/src/lib/parity/{parity_type}-parity-manifest.json"
+        manifest_path = f"{ROOT}/site/src/lib/parity/{parity_type}-parity-manifest.json"
         with open(manifest_path, encoding="utf-8") as file:
             manifest = json.load(file)
         entries = [
@@ -335,11 +345,12 @@ def publish_parity_assets(checks: Checklist) -> None:
         conflicts: list[str] = []
         for entry in entries:
             name = entry["asset"]
+            # relative: run_cmd uploads from ROOT, and gh names assets by basename
             asset_path = f"{assets_dir}/{name}"
             expected_digest = f"sha256:{entry['sha256']}"
             actual_digest = published.get(name)
-            if name not in published and os.path.isfile(asset_path):
-                with open(asset_path, "rb") as file:
+            if name not in published and os.path.isfile(f"{ROOT}/{asset_path}"):
+                with open(f"{ROOT}/{asset_path}", "rb") as file:
                     actual_digest = (
                         f"sha256:{hashlib.file_digest(file, 'sha256').hexdigest()}"
                     )
@@ -379,7 +390,7 @@ def run_payload_refresh(
         else ("--full-roster",)
     )
     for script in PAYLOAD_SCRIPTS:
-        if not run_cmd(*uv_run_args(script), "--auto-download", *payload_args):
+        if not run_cmd(*uv_run_args(script), *payload_args):
             checks.fail(f"{script} failed")
             return
     if not run_cmd(*uv_run_args("scripts/summarize_payload_changes.py")):
@@ -512,6 +523,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     if len(models) > 1 and not args.payloads_only:
         parser.error("multiple models are supported only with --payloads-only")
     model = models[0] if models else None
+    if model and (args.archive or args.archive_only):
+        try:  # fail before hours of evals, not at upload time
+            figshare.load_figshare_token()
+        except ValueError as exc:
+            parser.error(str(exc))
     if args.payloads_only:
         if not models and not args.full_roster:
             parser.error("full payload refresh requires --full-roster")
@@ -520,8 +536,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         publish_parity_assets(checks)
     elif model is None:
         parser.error("model is required unless --payloads-only")
-    elif (args.archive or args.archive_only) and not os.getenv("FIGSHARE_TOKEN"):
-        parser.error("FIGSHARE_TOKEN must be set for archival")
     elif args.archive_only:
         run_archive(model, checks)
     else:
@@ -534,7 +548,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         overwrite = ("--overwrite",) if args.overwrite else ()
         run_model_steps(
             "STEP 2: Running evaluation scripts", EVAL_STEPS, model, checks,
-            energy_only=energy_only, extra_args=("--auto-download", *overwrite),
+            energy_only=energy_only, extra_args=overwrite,
         )  # fmt: skip
         run_model_steps(
             "STEP 3: Generating per-model figures", FIG_STEPS, model, checks,

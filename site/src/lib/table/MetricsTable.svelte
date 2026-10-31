@@ -21,7 +21,7 @@
     MODELS,
     score_weight_records,
   } from '#lib/models.svelte.js'
-  import type { DiscoverySet, Label, ModelData } from '#lib/types.js'
+  import type { DiscoverySet, Label, ModelData, TimedTask } from '#lib/types.js'
   import type {
     CellSnippet,
     CellSnippetArgs,
@@ -55,9 +55,10 @@
     DISCOVERY_SET_LABELS,
     HYPERPARAMS,
     METADATA_COLS,
+    REPRO_COLS,
     plain_label,
   } from '../labels.js'
-  import { assemble_row_data, metric_value } from '../metrics.js'
+  import { assemble_row_data, cost_annotation, metric_value } from '../metrics.js'
 
   type MetricsRow = ReturnType<typeof assemble_row_data>[number]
   type LinkData = MetricsRow[`Links`]
@@ -113,6 +114,7 @@
     default_sort = { column: `CPS`, dir: `desc` }, // omitted from shared URLs
     sort = $bindable({ ...default_sort }),
     column_preset = `default`,
+    repro_task,
     ...rest
   }: HTMLAttributes<HTMLDivElement> & {
     discovery_set?: DiscoverySet
@@ -125,6 +127,8 @@
     default_sort?: TableSort
     sort?: TableSort
     column_preset?: string
+    // task page whose rerun checks get a Reproducible column
+    repro_task?: TimedTask
   } = $props()
   // rows left after search/filters in the table's displayed order (all pages), bound
   // from HeatmapTable so export and comparison seeding follow what the table shows
@@ -147,8 +151,12 @@
     void column_preset
     return []
   })
+  // task pages get their Reproducible column last
+  const table_labels = $derived(
+    repro_task ? [...column_labels, REPRO_COLS[repro_task]] : column_labels,
+  )
   const column_defaults = $derived(
-    column_labels.map((col): Column => ({
+    table_labels.map((col): Column => ({
       ...col,
       id: col.group ? `${col.key} (${col.group})` : col.key,
       cell: cells[col.key],
@@ -452,7 +460,10 @@
       >n/a</span
     >
   {:else if typeof val === `number`}
-    {format_num(val, col.format ?? `.3f`)}
+    <!-- times, slowdowns and speed-weighted scores name their GPU in the tooltip -->
+    <span data-title={cost_annotation((row as MetricsRow).model, col as Label)}
+      >{format_num(val, col.format ?? `.3f`)}</span
+    >
   {:else}
     {val}
   {/if}
@@ -467,7 +478,7 @@
         <Icon {icon} />
       </a>
     {:else}
-      <span title="{key} not available">
+      <span title="{title} (not available)">
         <Icon icon={Unavailable} />
       </span>
     {/if}

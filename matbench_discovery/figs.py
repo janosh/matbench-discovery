@@ -132,20 +132,27 @@ def build_discovery_payload_provenance(
     benchmark_inputs: Mapping[str, str] | None = None,
     source_files: Mapping[str, str] | None = None,
     packages: Sequence[str] = (),
-    prediction_round_decimals: int | None = 3,
+    hull_dist: bool = True,
 ) -> dict[str, Any]:
-    """Build discovery identity from benchmark, generator, and caller recipe sources."""
+    """Build discovery identity from benchmark, generator, and caller recipe sources.
+    hull_dist payloads also hash payload_numerics and metrics.discovery.pred_hull_dist.
+    """
+    from matbench_discovery import PKG_DIR, payload_numerics
     from matbench_discovery.data import MAX_E_FORM_ERROR_THRESHOLD
     from matbench_discovery.enums import DataFiles
 
+    sources: dict[str, str] = {}
+    if hull_dist:
+        sources["payload_numerics"] = payload_numerics.__file__
+        sources["stability_metrics"] = f"{PKG_DIR}/metrics/discovery.py"
     return build_payload_provenance(
         generator=generator,
         benchmark_inputs={"wbm_summary": DataFiles.wbm_summary.path}
         | dict(benchmark_inputs or {}),
-        source_files=source_files or {},
+        source_files=sources | dict(source_files or {}),
         parameters={
             "max_formation_energy_error": MAX_E_FORM_ERROR_THRESHOLD,
-            "prediction_round_decimals": prediction_round_decimals,
+            "prediction_round_decimals": 3,
             "test_subset": test_subset,
             **parameters,
         },
@@ -310,10 +317,9 @@ def write_jsonl_payload(
     if "provenance" in payload:
         raise ValueError("Payload provenance must be split into identity and audit")
 
-    fresh_models = [
-        {key: value for key, value in model.items() if key not in ("color", "visible")}
-        for model in payload["models"]
-    ]
+    fresh_models = list(payload["models"])  # sorted below, never the caller's list
+    if styled := [mod for mod in fresh_models if {"color", "visible"} & set(mod)]:
+        raise ValueError(f"site styling keys color/visible in {styled}")
     fresh_base = {
         "schema_version": PAYLOAD_SCHEMA_VERSION,
         "identity": payload["identity"],
