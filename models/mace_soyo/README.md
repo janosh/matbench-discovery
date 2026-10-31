@@ -5,7 +5,7 @@ ASE/TorchSim, and a LAMMPS ML-IAP interface(in test). The current branch predict
 forces, and stress; molecular charge/spin conditioning is optional.
 This project aims to unlock the full potential of MACE-mh-1. (https://github.com/ACEsuit/mace)
 
-The main artitecture and idea is the same as MACE-mh-1, while simple attention for edge_weight, Equivariant RMSnorm, code modification for speed,
+The main architecture and idea is the same as MACE-mh-1, while simple attention for edge_weight, Equivariant RMSnorm, code modification for speed,
 Spin&Charge embedding, heavier readout, Muon(optimizer) and WSD(schedule from DPA4) are added.
 Broadly speaking, MACE-SOYO offers an accuracy–speed trade-off between DPA4-Neo and DPA4-Mini.
 Training, AOTI export and inference require an NVIDIA CUDA GPU. CPU and other
