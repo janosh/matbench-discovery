@@ -331,7 +331,7 @@ describe(`Landing Page`, () => {
 
     expect(header_text()).not.toContain(`F1`)
 
-    doc_query(`.column-toggles > button`).click()
+    doc_query(`.column-picker > button`).click()
     await tick()
     expect(document.querySelector(`.column-menu`)).toBeNull()
   })

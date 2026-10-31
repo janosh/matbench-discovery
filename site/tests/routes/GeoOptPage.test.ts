@@ -218,7 +218,7 @@ describe(`Geo Opt Task Page`, () => {
     await mount_with_url(GeoOptPage, `http://localhost/benchmarks/geo-opt?models=`)
 
     const column_menu = await open_column_menu()
-    expect(column_menu.className).toContain(`sections-container`)
+    expect(column_menu.className).toContain(`grouped`)
     expect(
       [...column_menu.querySelectorAll(`.section-header`)].map((button) =>
         button.textContent?.trim().replace(/^[▶▼]\s*/, ``),

@@ -296,14 +296,14 @@ export async function open_filter_menu(menu_name: string): Promise<HTMLElement> 
   return panel
 }
 
-// open matterviz ToggleMenu's column popover (rendered only while open), return the panel
+// open ColumnPicker's column popover (rendered only while open), return the panel
 export async function open_column_menu(): Promise<HTMLElement> {
-  const trigger = doc_query<HTMLButtonElement>(`.column-toggles > button`)
+  const trigger = doc_query<HTMLButtonElement>(`.column-picker > button`)
   if (trigger.getAttribute(`aria-expanded`) !== `true`) {
     trigger.click()
     await tick()
   }
-  return doc_query(`.column-toggles :is(.column-menu, .sections-container)`)
+  return doc_query(`.column-picker .column-menu`)
 }
 export const heatmap_toggle = async (): Promise<HTMLInputElement> =>
   doc_query(`input[aria-label="Toggle heatmap colors"]`, await open_column_menu())

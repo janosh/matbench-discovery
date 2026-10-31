@@ -63,10 +63,10 @@
     color-mix(in srgb, currentcolor 12%, transparent)
   );
 
-  /* matterviz ToggleMenu (column-select) pane: its currentColor-based defaults are
+  /* ColumnPicker (column-select) pane: its currentColor-based defaults are
   near-invisible in light mode; use the theme border + shadow instead */
-  --tgl-dropdown-border: var(--border);
-  --tgl-dropdown-shadow: 0 4px 12px var(--shadow);
+  --column-picker-menu-border: var(--border);
+  --column-picker-menu-shadow: 0 4px 12px var(--shadow);
 
   /* ButtonGroup site theme */
   --btn-group-display: flex;

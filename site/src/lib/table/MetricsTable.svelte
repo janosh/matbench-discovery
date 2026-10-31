@@ -29,12 +29,8 @@
     RowData,
     TableSort,
   } from 'matterviz/table'
-  import {
-    cell_text,
-    HeatmapTable,
-    is_invalid,
-    table_to_delimited,
-  } from 'matterviz/table'
+  import { cell_text, HeatmapTable, is_invalid } from 'matterviz/table'
+  import { table_to_text } from 'svelte-widgets/table'
   import { escape_html, strip_html } from 'svelte-widgets/utils'
   import { download } from 'svelte-widgets/download'
   import { format_num } from 'matterviz/labels'
@@ -292,7 +288,7 @@
         ),
         numeric: [],
       }
-      const text = table_to_delimited(matrix, export_format === `csv` ? `,` : `\t`)
+      const text = table_to_text(matrix, export_format === `csv` ? `csv` : `tsv`)
       if (export_format === `copy_html`) {
         const html_row = (values: string[], tag: `th` | `td`) =>
           `<tr>${values.map((value) => `<${tag} style="border: 1px solid #ccc; padding: 4px 8px; text-align: left">${escape_html(value)}</${tag}>`).join(``)}</tr>`
