@@ -16,6 +16,7 @@
     openness_tooltips,
     targets_tooltips,
   } from '#lib/metrics.js'
+  import { has_energy_parity_model } from '#lib/parity/energy-parity.js'
   import { has_kappa_parity_model } from '#lib/parity/kappa-parity.js'
   import EnergyParityPlot from '#lib/plot/EnergyParityPlot.svelte'
   import KappaParityPlot from '#lib/plot/KappaParityPlot.svelte'
@@ -518,19 +519,21 @@
           <!-- segmented tab bar controls the parity plot; the active button shows a
           spinner while its plot's data is still loading -->
           <div class="energy-parity-controls">
-            <ButtonGroup
-              class="energy-parity-tabs"
-              bind:value={energy_parity_tab}
-              label="Energy parity diagnostics"
-              options={energy_parity_options.map((option) => ({
-                ...option,
-                loading:
-                  (energy_parity_tab === option.value &&
-                    energy_parity_statuses[option.value] !== `ready` &&
-                    energy_parity_statuses[option.value] !== `error`) ||
-                  undefined,
-              }))}
-            />
+            {#if has_energy_parity_model(model.model_key)}
+              <ButtonGroup
+                class="energy-parity-tabs"
+                bind:value={energy_parity_tab}
+                label="Energy parity diagnostics"
+                options={energy_parity_options.map((option) => ({
+                  ...option,
+                  loading:
+                    (energy_parity_tab === option.value &&
+                      energy_parity_statuses[option.value] !== `ready` &&
+                      energy_parity_statuses[option.value] !== `error`) ||
+                    undefined,
+                }))}
+              />
+            {/if}
             {#if missing_preds != undefined && DATASETS.WBM.n_structures !== null}
               <span
                 class="missing-preds"
@@ -548,16 +551,18 @@
               </span>
             {/if}
           </div>
-          {#each energy_parity_options as { value: energy_kind } (energy_kind)}
-            {#if mounted_energy_tabs.has(energy_kind)}
-              <EnergyParityPlot
-                hidden={energy_parity_tab !== energy_kind}
-                {model}
-                {energy_kind}
-                onstatus={(status) => (energy_parity_statuses[energy_kind] = status)}
-              />
-            {/if}
-          {/each}
+          {#if has_energy_parity_model(model.model_key)}
+            {#each energy_parity_options as { value: energy_kind } (energy_kind)}
+              {#if mounted_energy_tabs.has(energy_kind)}
+                <EnergyParityPlot
+                  hidden={energy_parity_tab !== energy_kind}
+                  {model}
+                  {energy_kind}
+                  onstatus={(status) => (energy_parity_statuses[energy_kind] = status)}
+                />
+              {/if}
+            {/each}
+          {/if}
 
           {#if model.model_key && model.model_key in per_elem_each_errors}
             {@const raw_heatmap = per_elem_each_errors[model.model_key]}
