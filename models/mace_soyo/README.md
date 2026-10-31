@@ -22,13 +22,17 @@ like Nequip, Nequix, DPA4 and EquflashV2. I give my special thank to those MLIAP
 ## Installation
 
 Python >=3.12,<3.15 is required by the pinned dependencies.
-From the repository root:
 I recommend installing PyTorch(torch 2.12) separately first, choosing a CUDA build compatible with your NVIDIA driver.
 
 nvcc is NEEDED for AOTI export. Make sure you have it in environment.
 Type nvcc to check whether there is an output.
 
+Run the installation, training, and export commands below from
+the MACE-SOYO repository root, not the Matbench Discovery repository.
+
 ```bash
+git clone --depth 1 https://github.com/PrincessHakuryu/MACE-SOYO.git
+cd MACE-SOYO
 python -m pip install -r requirements.txt
 ```
 
