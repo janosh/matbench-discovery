@@ -648,7 +648,8 @@ def _extract_single_model(
         ):
             if os.path.lexists(dir_path) and not os.path.isfile(marker_path):
                 raise ValueError(
-                    f"Refusing to replace {dir_path}, which this loader did not create"
+                    f"Refusing to replace {dir_path}: it lacks the .archive-stat marker "
+                    "of folders this loader creates. Delete it if it is a stale cache."
                 )
 
         shutil.rmtree(tmp_extract_dir, ignore_errors=True)
@@ -677,9 +678,8 @@ def _extract_single_model(
                     f"Expected one model in {archive_path}, got {model_paths}"
                 )
             relative_model_path = os.path.relpath(model_paths[0], tmp_extract_dir)
-            with open(
-                f"{tmp_extract_dir}/.archive-stat", mode="w", encoding="utf-8"
-            ) as file:
+            # rewrite the marker in case the archive shipped its own .archive-stat
+            with open(tmp_identity_path, mode="w", encoding="utf-8") as file:
                 file.write(archive_identity)
             shutil.rmtree(extract_dir, ignore_errors=True)
             os.replace(tmp_extract_dir, extract_dir)
