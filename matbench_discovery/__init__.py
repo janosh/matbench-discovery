@@ -44,14 +44,11 @@ def file_digest(path: str, algorithm: str = "sha256") -> str:
 
 @contextmanager
 def atomic_output_path(path: str) -> Generator[str]:
-    """Yield a temporary sibling of path, promote it to path on success and remove it
-    on failure, so readers never see a partially written file.
-    """
-    parent = os.path.dirname(path)
-    if parent:
-        os.makedirs(parent, exist_ok=True)
+    """Yield a temp sibling of path, renamed over path on success, removed on error."""
+    parent = os.path.dirname(path) or "."
+    os.makedirs(parent, exist_ok=True)
     file_descriptor, temporary_path = tempfile.mkstemp(
-        prefix=f".{os.path.basename(path)}.", suffix=".tmp", dir=parent or "."
+        prefix=f".{os.path.basename(path)}.", suffix=".tmp", dir=parent
     )
     os.close(file_descriptor)
     try:

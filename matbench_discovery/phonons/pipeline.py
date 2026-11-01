@@ -380,11 +380,8 @@ class KappaArtifacts:
 
 
 def checkpoint_digest(checkpoint: str | None) -> str | None:
-    """Hash checkpoint bytes when local, otherwise hash its supplied identifier.
-
-    POSIX caches the digest in a stat-keyed sidecar so multi-GB checkpoints are hashed
-    once. Windows hashes every time: its ctime is the creation time, so an in-place
-    rewrite that restores mtime would hit a stale cache.
+    """Hash checkpoint bytes when local, otherwise hash its supplied identifier. POSIX
+    caches the digest by file stat; Windows rehashes since its ctime is creation time.
     """
     if checkpoint is None:
         return None

@@ -66,20 +66,19 @@ def write_reference_h5(
     trajectory at a time and writes it straight to disk, bounding peak memory to the
     single largest system.
     """
-    with atomic_output_path(path) as tmp_path:
-        n_written = 0
-        with h5py.File(tmp_path, "w") as file:
-            for system_name, trajectory, dt_fs, temperature_kelvin in entries:
-                group = file.create_group(system_name)
-                # strip supervised labels so the public artifact can't double as a
-                # validation set; dataclasses.replace keeps any future fields intact
-                public_trajectory = dataclasses.replace(
-                    trajectory, energy=None, forces=None
-                )
-                public_trajectory.write_to_h5_group(group)
-                group.attrs["dt_fs"] = float(dt_fs)
-                group.attrs["temperature_kelvin"] = float(temperature_kelvin)
-                n_written += 1
+    n_written = 0
+    with atomic_output_path(path) as tmp_path, h5py.File(tmp_path, "w") as file:
+        for system_name, trajectory, dt_fs, temperature_kelvin in entries:
+            group = file.create_group(system_name)
+            # strip supervised labels so the public artifact can't double as a
+            # validation set; dataclasses.replace keeps any future fields intact
+            public_trajectory = dataclasses.replace(
+                trajectory, energy=None, forces=None
+            )
+            public_trajectory.write_to_h5_group(group)
+            group.attrs["dt_fs"] = float(dt_fs)
+            group.attrs["temperature_kelvin"] = float(temperature_kelvin)
+            n_written += 1
         if n_written == 0:  # nothing yielded: the empty temp file is dropped
             raise ValueError("Cannot write a reference file with no systems")
 

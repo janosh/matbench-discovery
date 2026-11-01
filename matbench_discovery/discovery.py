@@ -661,22 +661,18 @@ def merge_discovery_shards(
 
 
 def write_discovery_metrics(
-    model: Model,
-    df_wbm: pd.DataFrame,
-    preds: pd.Series,
-    *,
-    uniq_proto_prevalence: float,
+    model: Model, df_wbm: pd.DataFrame, preds: pd.Series
 ) -> dict[TestSubset, dict[str, str | float]]:
-    """Score one model's WBM formation-energy predictions and write every test
-    subset's metrics to its YAML (shared by the runner and scripts/evals/discovery.py).
-    """
+    """Score WBM formation-energy predictions and write all subsets to the YAML."""
     from matbench_discovery.metrics import discovery as discovery_metrics
 
     metric_reference, model_preds = discovery_metrics.prepare_model_predictions(
         df_wbm, preds
     )
     metrics_by_subset = discovery_metrics.calc_discovery_metrics(
-        metric_reference, model_preds, uniq_proto_prevalence=uniq_proto_prevalence
+        metric_reference,
+        model_preds,
+        uniq_proto_prevalence=discovery_metrics.wbm_uniq_proto_prevalence(),
     )
     return discovery_metrics.write_all_metrics_to_yaml(
         model, metrics_by_subset, metric_reference, model_preds

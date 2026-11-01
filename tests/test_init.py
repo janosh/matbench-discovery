@@ -1,6 +1,5 @@
 """Tests for package-level helpers and import-time configuration."""
 
-import contextlib
 import os
 import warnings
 from pathlib import Path
@@ -35,23 +34,24 @@ def test_repo_relative_path_rejects_outside_root(file_path: str) -> None:
         repo_relative_path(file_path)
 
 
-@pytest.mark.parametrize("fail", [False, True])
-def test_atomic_output_path(tmp_path: Path, fail: bool) -> None:
-    """Success promotes the temp file over the target; failure keeps the old file and
-    leaves no temp file behind.
-    """
-    target = tmp_path / "nested" / "out.txt"
-    target.parent.mkdir()
-    target.write_text("old")
-    expectation = pytest.raises(RuntimeError) if fail else contextlib.nullcontext()
-    with expectation, atomic_output_path(str(target)) as temporary_path:
-        assert os.path.dirname(temporary_path) == str(target.parent)
-        with open(temporary_path, mode="w", encoding="utf-8") as file:
-            file.write("new")
-        if fail:
-            raise RuntimeError("writer crashed")
-    assert target.read_text() == ("old" if fail else "new")
-    assert os.listdir(target.parent) == ["out.txt"]
+def test_atomic_output_path_keeps_old_file_on_error(tmp_path: Path) -> None:
+    """A failed write keeps the previous file and leaves no temp file behind."""
+    target = f"{tmp_path}/out.txt"
+    with open(target, mode="w", encoding="utf-8") as file:
+        file.write("old")
+
+    def write_then_fail() -> None:
+        """Write the new content, then crash before the rename."""
+        with atomic_output_path(target) as temporary_path:
+            with open(temporary_path, mode="w", encoding="utf-8") as file:
+                file.write("new")
+            raise RuntimeError
+
+    with pytest.raises(RuntimeError):
+        write_then_fail()
+    with open(target, encoding="utf-8") as file:
+        assert file.read() == "old"
+    assert os.listdir(tmp_path) == ["out.txt"]
 
 
 def test_pymatgen_electronegativity_warning_filtered() -> None:

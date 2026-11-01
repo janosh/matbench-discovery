@@ -362,9 +362,7 @@ def material_id_from_atoms(atoms: Atoms) -> str:
     """Extract the material ID from an ASE Atoms info mapping."""
     material_id = atoms.info.get(str(Key.mat_id))
     if not isinstance(material_id, str) or not material_id:
-        raise ValueError(
-            f"Atoms has no valid {str(Key.mat_id)!r} in info keys {sorted(atoms.info)}"
-        )
+        raise ValueError(f"No {Key.mat_id} in Atoms.info keys {sorted(atoms.info)}")
     return material_id
 
 
