@@ -5,6 +5,7 @@ do not track the evolving online leaderboard.
 """
 
 from matbench_discovery.cli import cli_args, complete_models
+from matbench_discovery.discovery import write_discovery_metrics
 from matbench_discovery.enums import Model
 from matbench_discovery.metrics import discovery
 from scripts.evals import evaluate_models
@@ -27,14 +28,11 @@ def main() -> int:
 
     def evaluate_one(model: Model) -> None:
         print(f"\nProcessing {model.label}...")
-        metric_reference, model_preds = discovery.prepare_model_predictions(
-            df_preds, df_preds[model.key]
-        )
-        metrics_by_subset = discovery.calc_discovery_metrics(
-            metric_reference, model_preds, uniq_proto_prevalence=uniq_proto_prevalence
-        )
-        discovery.write_all_metrics_to_yaml(
-            model, metrics_by_subset, metric_reference, model_preds
+        metrics_by_subset = write_discovery_metrics(
+            model,
+            df_preds,
+            df_preds[model.key],
+            uniq_proto_prevalence=uniq_proto_prevalence,
         )
         for test_subset in metrics_by_subset:
             print(f"\tUpdated discovery metrics for {test_subset}")
