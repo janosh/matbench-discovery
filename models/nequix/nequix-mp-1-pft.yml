@@ -141,22 +141,21 @@ metrics:
       size: 246573
       md5: a6e8ed76ccce0a261ad4613bc3a30da6
     cost: {source: runner, hardware: NVIDIA H200, device: gpu, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 62.04, load_time_sec: 10.61, max_rss_gb: 5.784}
-    excluded_formula_reasons: {}
-    pbe_wall_dist_mae: 0.6389
-    pbe_energy_mae: 1.682
-    pbe_bond_length_error: 0.2585
-    pbe_well_depth_error: 0.5714
-    pbe_vib_freq_error: 105.3
+    pbe_wall_dist_mae: 0.6444
+    pbe_energy_mae: 1.576
+    pbe_bond_length_error: 0.3544
+    pbe_well_depth_error: 0.5595
+    pbe_vib_freq_error: 102.9
     tortuosity: 1.292
     energy_diff_flips: 2.241
     energy_jump: 0.5761
     force_flips: 2.207
     force_total_variation: 81.45
     force_jump: 18.66
-    pbe_force_mae: 2.886
+    pbe_force_mae: 2.648
     pbe_vib_freq_coverage:
-      n_valid: 73
-      n_eligible: 73
+      n_valid: 81
+      n_eligible: 81
       failed_elements: []
       missing_elements: []
     reproducibility:
@@ -178,7 +177,7 @@ metrics:
       size: 1511054
       md5: dbcba569bcb0f28b0d69581d79c720b3
     full_test_set:
-      F1: 0.74  # fraction
+      F1: 0.74 # fraction
       DAF: 3.963 # dimensionless
       Precision: 0.68 # fraction
       Recall: 0.811 # fraction
@@ -192,7 +191,7 @@ metrics:
       R2: 0.783 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.748  # fraction
+      F1: 0.748 # fraction
       DAF: 4.479 # dimensionless
       Precision: 0.685 # fraction
       Recall: 0.825 # fraction
@@ -217,6 +216,7 @@ metrics:
       symmetry_decrease: 0.054 # fraction
       symmetry_match: 0.8109 # fraction
       symmetry_increase: 0.1276 # fraction
+      symmetry_lateral: 0.0075 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/nequix/nequix-mp-1-pft/2026-01-12-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
@@ -229,6 +229,7 @@ metrics:
       symmetry_decrease: 0.0602 # fraction
       symmetry_match: 0.6976 # fraction
       symmetry_increase: 0.2362 # fraction
+      symmetry_lateral: 0.006 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/nequix/nequix-mp-1-pft/2026-01-12-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz

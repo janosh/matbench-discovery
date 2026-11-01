@@ -2,7 +2,7 @@ import { DEFAULT_CDS_CONFIG } from '#lib/combined-scores.svelte.js'
 import { ACTIVE_MODELS, has_diatomics_curves } from '#lib/models.svelte.js'
 import DiatomicsPage from '#routes/benchmarks/diatomics/+page.svelte'
 import { tick } from 'svelte'
-import { PLOT_COLORS } from 'matterviz/colors'
+import { MODEL_COLORS } from '#routes/benchmarks/diatomics/diatomics.svelte.js'
 import { describe, expect, it } from 'vite-plus/test'
 import {
   button_for,
@@ -116,8 +116,8 @@ describe(`Diatomics Page URL state`, () => {
     expect(selected_labels()).toEqual([`Model B`])
     expect(query_param(`models`)).toBe(key_b)
     const selected_item = doc_query<HTMLLIElement>(`li`, selected_options())
-    // Model B is the second model, so it takes the second palette entry
-    expect(selected_item.style.background).toContain(PLOT_COLORS[1])
+    // palette slots follow CDS rank: Model B (0.8) is second after Model D (0.9)
+    expect(selected_item.style.background).toBe(MODEL_COLORS[1])
     expect(selected_item.style.color).not.toBe(``)
 
     await select_model_option(`Model A`)

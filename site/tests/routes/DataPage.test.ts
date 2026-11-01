@@ -36,6 +36,10 @@ it.each([
     `${target.pathname}${target.search}${target.hash}`,
     { replace: true },
   )
+  expect(document.head.querySelectorAll(`link[rel="canonical"]`)).toHaveLength(1)
+  expect(doc_query(`link[rel="canonical"]`).getAttribute(`href`)).toBe(
+    `https://matbench-discovery.materialsproject.org/benchmarks`,
+  )
 })
 
 it.each([
@@ -112,6 +116,11 @@ it.each([
       const tile = doc_query(`[data-element-symbol="${element}"]`, table)
       tile.dispatchEvent(new MouseEvent(`mouseenter`))
       await tick()
+      // diatomics disables the hover tooltip (one pair per element adds nothing)
+      if (task === `diatomics`) {
+        expect(table.querySelector(`.plot-tooltip`)).toBeNull()
+        continue
+      }
       const name = element_data.find(
         ({ symbol: elem_symbol }) => elem_symbol === element,
       )?.name

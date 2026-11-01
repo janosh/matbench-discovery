@@ -273,6 +273,9 @@ def test_discovery_metrics_match_manual_calculation_and_round_trip(
     assert "TPR:" not in yaml_text
     assert "Recall:" in yaml_text
     assert "full_test_set:" in yaml_text
+    # counts are written as integers, never floats like "TP: 12.0"
+    assert all(type(written[subset]["TP"]) is int for subset in written)
+    assert ".0 # count" not in yaml_text
 
 
 def test_df_discovery_metrics() -> None:
@@ -291,7 +294,7 @@ def test_discovery_eval_skips_incomplete_cli_model(
     from matbench_discovery import data
 
     eval_discovery = import_repo_script("eval_discovery", "scripts/evals/discovery.py")
-    model = Model.alignn
+    model = Model["alignn"]
     metadata = {"model_name": "Fake Net", "lifecycle": "active", "metrics": {}}
     patch_model_metadata(monkeypatch, model, metadata)
     monkeypatch.setattr(eval_discovery.cli_args, "models", [model])
@@ -321,7 +324,7 @@ def test_discovery_prediction_frames(
         },
         index=material_ids,
     )
-    raw.loc[material_ids[0], Model.mace_mpa_0.key] = np.nan
+    raw.loc[material_ids[0], Model["mace_mpa_0"].key] = np.nan
 
     def load_predictions(*, models: list[Model], subset: object = None) -> pd.DataFrame:
         """Exercise real roster selection without loading gigabytes to check shapes."""
@@ -345,7 +348,7 @@ def test_discovery_prediction_frames(
             rounded[MbdKey.each_true] + rounded[model_key] - rounded[MbdKey.e_form_dft]
         )
         np.testing.assert_array_equal(df_each_pred[model_key], expected_each_pred)
-        missing = model_key == Model.mace_mpa_0.key
+        missing = model_key == Model["mace_mpa_0"].key
         # one f64 subtraction near unity: fewer than five eps
         np.testing.assert_allclose(
             df_each_err[model_key],

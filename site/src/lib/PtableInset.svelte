@@ -12,24 +12,18 @@
     ...rest
   }: {
     element: ChemicalElement
-    elem_counts: number[] | Partial<Record<ElementSymbol, number>>
+    elem_counts: Partial<Record<ElementSymbol, number>>
     show_percent?: boolean
     unit?: string
   } & HTMLAttributes<HTMLElementTagNameMap[`strong`]> = $props()
 
-  let value = $derived(
-    Array.isArray(elem_counts)
-      ? (elem_counts[element?.number - 1] ?? 0)
-      : (elem_counts[element?.symbol] ?? 0),
-  )
-  let total = $derived(
-    sum(Array.isArray(elem_counts) ? elem_counts : Object.values(elem_counts)),
-  )
+  let value = $derived(elem_counts[element.symbol] ?? 0)
+  let total = $derived(sum(Object.values(elem_counts)))
 </script>
 
 <strong {...rest}>
-  {#if element?.name}
-    {element?.name}: {format_num(value)}
+  {#if element.name}
+    {element.name}: {format_num(value)}
     {@html unit}
     {#if show_percent && total > 0}
       ({format_num(value / total, `.3~p`)})

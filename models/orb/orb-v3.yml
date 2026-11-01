@@ -103,7 +103,7 @@ metrics:
       size: 1658080
       md5: 87b2195d204240eea7e1801afd0ea71a
     full_test_set:
-      F1: 0.887  # fraction
+      F1: 0.887 # fraction
       DAF: 5.159 # dimensionless
       Precision: 0.885 # fraction
       Recall: 0.888 # fraction
@@ -117,7 +117,7 @@ metrics:
       R2: 0.82 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.905  # fraction
+      F1: 0.905 # fraction
       DAF: 5.912 # dimensionless
       Precision: 0.904 # fraction
       Recall: 0.907 # fraction
@@ -142,6 +142,7 @@ metrics:
       symmetry_decrease: 0.8694 # fraction
       symmetry_match: 0.1304 # fraction
       symmetry_increase: 0.0001 # fraction
+      symmetry_lateral: 0.0 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/orb/orb-v3/2025-04-04-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
@@ -154,6 +155,7 @@ metrics:
       symmetry_decrease: 0.1592 # fraction
       symmetry_match: 0.7281 # fraction
       symmetry_increase: 0.1012 # fraction
+      symmetry_lateral: 0.0115 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/orb/orb-v3/2025-04-04-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
@@ -197,11 +199,10 @@ metrics:
       size: 502168
       md5: 6216f71392607a1e26816aad31494dd0
     cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 125.81, load_time_sec: 15.53, max_rss_gb: 2.399, max_gpu_mem_gb: 0.233}
-    excluded_formula_reasons: {}
-    pbe_wall_dist_mae: 0.1087
-    pbe_energy_mae: 0.5452
-    pbe_bond_length_error: 0.1517
-    pbe_well_depth_error: 0.3042
+    pbe_wall_dist_mae: 0.1154
+    pbe_energy_mae: 0.5727
+    pbe_bond_length_error: 0.2254
+    pbe_well_depth_error: 0.3979
     pbe_vib_freq_error: 35.36
     tortuosity: 1.001
     energy_diff_flips: 1.333
@@ -209,10 +210,10 @@ metrics:
     force_flips: 1.345
     force_total_variation: 210.1
     force_jump: 25.47
-    pbe_force_mae: 1.347
+    pbe_force_mae: 1.285
     pbe_vib_freq_coverage:
-      n_valid: 73
-      n_eligible: 73
+      n_valid: 81
+      n_eligible: 81
       failed_elements: []
       missing_elements: []
     reproducibility:

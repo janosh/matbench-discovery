@@ -21,12 +21,11 @@ Examples:
 from __future__ import annotations
 
 import argparse
-import os
 import shlex
 from dataclasses import replace
 from typing import TYPE_CHECKING
 
-from matbench_discovery import file_digest, today
+from matbench_discovery import ROOT, file_digest, today
 from matbench_discovery.calculators import (
     CALCULATORS,
     load_calculator_with_runtime,
@@ -286,7 +285,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
         print(shlex.join(command))
         return 0
 
-    out_dir = args.out_dir or os.path.splitext(model.yaml_path)[0]
+    out_dir = args.out_dir or f"{ROOT}/{model.artifact_dir}"
     try:
         shard_dir, pred_file_path = resolve_output_paths(
             out_dir=out_dir,

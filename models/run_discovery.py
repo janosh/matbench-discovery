@@ -33,7 +33,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
-from matbench_discovery import repo_relative_path, today
+from matbench_discovery import ROOT, repo_relative_path, today
 from matbench_discovery.calculators import (
     CALCULATORS,
     load_calculator_with_runtime,
@@ -55,6 +55,7 @@ from matbench_discovery.discovery import (
     merge_discovery_shards,
     run_discovery_shard,
     write_discovery_artifacts,
+    write_discovery_metrics,
 )
 from matbench_discovery.enums import Model
 from matbench_discovery.hpc import (
@@ -70,8 +71,6 @@ from matbench_discovery.runner_cli import (
     resolve_sharded_prefix,
     validate_sharded_write_args,
 )
-
-module_dir = os.path.dirname(__file__)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -176,16 +175,6 @@ def _write_yaml_results(
 ) -> None:
     """Register the new artifacts, their cost block and all discovery subsets."""
     from matbench_discovery.data import df_wbm
-    from matbench_discovery.metrics import discovery as discovery_metrics
-
-    metric_reference, model_preds = discovery_metrics.prepare_model_predictions(
-        df_wbm, artifacts.predictions[DISCOVERY_PRED_COL]
-    )
-    metrics_by_subset = discovery_metrics.calc_discovery_metrics(
-        metric_reference,
-        model_preds,
-        uniq_proto_prevalence=discovery_metrics.wbm_uniq_proto_prevalence(),
-    )
 
     def update_discovery(section: dict[str, Any]) -> dict[str, Any]:
         """Swap in the new pred/run-info refs and the run's own cost block."""
@@ -210,9 +199,7 @@ def _write_yaml_results(
     ):
         update_yaml_file(model.yaml_path, f"metrics.{task}", update)
         print(f"Updated {task} file refs; re-upload if a prior Figshare URL existed")
-    discovery_metrics.write_all_metrics_to_yaml(
-        model, metrics_by_subset, metric_reference, model_preds
-    )
+    write_discovery_metrics(model, df_wbm, artifacts.predictions[DISCOVERY_PRED_COL])
 
 
 def validate_yaml_write_settings(model_key: str, settings: RelaxationSettings) -> None:
@@ -266,8 +253,8 @@ def main(raw_args: Sequence[str] | None = None) -> int:
         model = Model.from_ref(model_key)
     except ValueError:
         model = None
-    model_dir = os.path.splitext(model.rel_path)[0] if model else model_key
-    out_dir = args.out_dir or f"{module_dir}/{model_dir}"
+    model_dir = model.artifact_dir if model else f"models/{model_key}"
+    out_dir = args.out_dir or f"{ROOT}/{model_dir}"
     try:
         shard_dir, pred_file_path, geo_opt_file_path = _resolve_output_paths(
             out_dir=out_dir,

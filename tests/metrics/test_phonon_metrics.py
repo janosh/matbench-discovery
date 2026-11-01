@@ -485,42 +485,41 @@ def test_evaluate_kappa_predictions_returns_all_aggregate_metrics(
 
 
 @pytest.mark.parametrize(
-    "prediction_freqs",
-    [None, [], [np.nan], [[np.nan, 1.0]]],
+    ("prediction", "expected"),
+    [
+        # missing, malformed, or non-finite predicted spectra have no W1 value
+        *(
+            ({Key.ph_freqs: freqs}, None)
+            for freqs in (None, [], [np.nan], [[np.nan, 1.0]])
+        ),
+        # malformed q-point weights fall back to a uniform spectrum comparison
+        *(
+            ({Key.ph_freqs: [[0.0, 1.0]], "weights": q_weights}, 0)
+            for q_weights in (["bad"], [np.nan], [-1.0], [0.0])
+        ),
+    ],
 )
-def test_phonon_spectrum_w1_rejects_unusable_predictions(
-    prediction_freqs: object,
+def test_phonon_spectrum_w1_unusable_inputs(
+    prediction: dict[str, object], expected: float | None
 ) -> None:
-    """Missing, malformed, or non-finite predicted spectra have no W1 value."""
-    prediction = pd.Series({Key.ph_freqs: prediction_freqs})
+    """Unusable spectra give no W1; invalid q-point weights fall back to uniform."""
     reference = pd.Series({Key.ph_freqs: [[0.0, 1.0]]})
-    assert phonon_metrics.phonon_spectrum_w1(prediction, reference) is None
+    assert phonon_metrics.phonon_spectrum_w1(pd.Series(prediction), reference) == (
+        expected
+    )
 
 
-@pytest.mark.parametrize("q_weights", [["bad"], [np.nan], [-1.0], [0.0]])
-def test_phonon_spectrum_w1_falls_back_from_invalid_weights(
-    q_weights: object,
-) -> None:
-    """Malformed q-point weights fall back to a uniform spectrum comparison."""
-    prediction = pd.Series({Key.ph_freqs: [[0.0, 1.0]], "weights": q_weights})
-    reference = pd.Series({Key.ph_freqs: [[0.0, 1.0]]})
-    assert phonon_metrics.phonon_spectrum_w1(prediction, reference) == 0
-
-
-def test_kappa_analysis_uses_canonical_spacegroups() -> None:
-    """Analysis reads normalized initial space-group numbers."""
-    from scripts.model_figs.kappa_103_analysis import canonical_spacegroup_numbers
-
-    df_reference = pd.DataFrame({Key.init_spg_num: [225]}, index=["mp-1"])
-    assert canonical_spacegroup_numbers(df_reference, ["mp-1"]) == [225]
-
-
-@pytest.mark.parametrize("spacegroup_num", [None, np.nan, 0, 231, 1.5, True, "bad"])
-def test_kappa_analysis_rejects_invalid_spacegroups(spacegroup_num: object) -> None:
-    """Analysis rejects space groups that cannot drive crystal-system plots."""
+@pytest.mark.parametrize(
+    "spacegroup_num", [225, None, np.nan, 0, 231, 1.5, True, "bad"]
+)
+def test_kappa_analysis_canonical_spacegroups(spacegroup_num: object) -> None:
+    """Analysis reads valid initial space groups and rejects unplottable ones."""
     from scripts.model_figs.kappa_103_analysis import canonical_spacegroup_numbers
 
     df_reference = pd.DataFrame({Key.init_spg_num: [spacegroup_num]}, index=["mp-1"])
+    if spacegroup_num == 225:
+        assert canonical_spacegroup_numbers(df_reference, ["mp-1"]) == [225]
+        return
     with pytest.raises(ValueError, match=r"Invalid canonical space-group.*mp-1"):
         canonical_spacegroup_numbers(df_reference, ["mp-1"])
 
@@ -536,7 +535,9 @@ def test_kappa_analysis_uses_shared_spectrum_helpers(
     df_true = df_true.set_axis(material_ids)
     df_pred[Key.ph_freqs] = [np.array([[0.0, 1.0, 2.0]]), np.array([[0.5, 1.0, 2.0]])]
     df_true[Key.ph_freqs] = [np.array([[0.0, 1.0, 2.0]])] * len(material_ids)
-    payload = model_payload(Model.mace_mp_0, __file__, df_pred, df_true, material_ids)
+    payload = model_payload(
+        Model["mace_mp_0"], __file__, df_pred, df_true, material_ids
+    )
 
     expected_w1 = [
         phonon_metrics.phonon_spectrum_w1(df_pred.loc[mat_id], df_true.loc[mat_id])

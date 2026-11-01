@@ -17,7 +17,11 @@ from jsonschema import Draft7Validator
 
 from matbench_discovery import DATA_DIR, PKG_DIR, ROOT, file_digest
 from matbench_discovery.calculators import CALCULATORS
-from matbench_discovery.data import DATASETS, iter_file_refs, validate_artifact_path
+from matbench_discovery.data import (
+    iter_file_refs,
+    load_datasets,
+    validate_artifact_path,
+)
 from matbench_discovery.discovery import ARCHIVED_DISCOVERY_MODELS
 from matbench_discovery.enums import ArchitectureType, Model, Open, Targets, Task
 from matbench_discovery.hpc import cost_provenance_problems
@@ -26,6 +30,7 @@ from tests.utils import import_repo_script
 with open(f"{ROOT}/tests/model-schema.yml", encoding="utf-8") as file:
     MODEL_SCHEMA: dict[str, Any] = yaml.safe_load(file)
 
+DATASETS = load_datasets()
 MODEL_YAML_PATHS = sorted(glob(f"{ROOT}/models/[!_]*/[!_]*.yml"))
 OPEN_DATASETS = {
     dataset["name"]
@@ -196,19 +201,26 @@ def test_model_registry_identity() -> None:
         assert model.family == family_dir
         # yaml_path is base_dir + rel_path, so rel_path pins the full path
         assert model.rel_path == f"{family_dir}/{model_key}.yml"
+        # artifact dirs are keyed by model_key, matching the validated artifact paths
+        assert model.artifact_dir == f"models/{family_dir}/{model_key}"
         if metadata["lifecycle"] == "superseded":
             assert metadata["superseded_by"] in {member.key for member in Model}
 
     registry_keys = set(CALCULATORS) | set(ARCHIVED_DISCOVERY_MODELS)
     assert registry_keys - {"emt"} <= Model.__members__.keys()
-    active_families = {model.family for model in Model.active()}
+    # pending submissions own their family directory before ingestion activates them
+    active_families = {
+        model.family
+        for model in Model
+        if model.metadata["lifecycle"] in ("pending", "active")
+    }
     # normpath: Windows globs may end in `\`; basename of a trailing-sep path is "".
     model_dir_families = {
         os.path.basename(os.path.normpath(path))
         for path in glob(f"{ROOT}/models/[!_]*/")
     }
     # Families intentionally without an active Model enum entry.
-    inactive_only_families = {"alignn_ff"}
+    inactive_only_families = {"alignn"}
     assert active_families | inactive_only_families == model_dir_families
     assert active_families.isdisjoint(inactive_only_families)
 

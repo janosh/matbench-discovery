@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { BenchmarkDataset } from './data.js'
   import { format_num } from 'matterviz/labels'
+  import type { ChemicalElement } from 'matterviz/element'
   import { PeriodicTable } from 'matterviz/periodic-table'
 
   let { dataset }: { dataset: BenchmarkDataset } = $props()
@@ -22,8 +23,9 @@
     snap_ticks: false,
   }}
   style="--ptable-min-tile-size: 0; --elem-symbol-font-size: 60cqw; --plot-tooltip-max-width: 100vw"
->
-  {#snippet tooltip({ element, value })}
-    {dataset.count_unit} containing {element.name}: {format_num(Number(value ?? 0), `,`)}
-  {/snippet}
-</PeriodicTable>
+  tooltip={dataset.id === `diatomics` ? false : count_tooltip}
+/>
+
+{#snippet count_tooltip({ element, value }: { element: ChemicalElement; value: unknown })}
+  {dataset.count_unit} containing {element.name}: {format_num(Number(value ?? 0), `,`)}
+{/snippet}

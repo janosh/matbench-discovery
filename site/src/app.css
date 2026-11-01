@@ -9,6 +9,9 @@
   text-align: left;
 }
 :root {
+  /* viewport width without a classic scrollbar, which `100vw` includes (measured in +layout.svelte) */
+  --scrollbar-width: 0px;
+  --page-width: calc(100vw - var(--scrollbar-width));
   /* Site theme */
   --page-bg: light-dark(#fefefe, #061e25);
   --surface-bg: light-dark(#eee, #222);
@@ -84,7 +87,6 @@
 
   --text-muted: var(--text-secondary);
 }
-
 html {
   scroll-behavior: smooth;
   /* Disable scroll anchoring: re-rendering dynamic content (e.g. the metrics
@@ -207,7 +209,6 @@ img {
   max-width: 100%;
   margin-block: 1em;
 }
-
 table {
   display: block;
   width: max-content;
@@ -243,7 +244,6 @@ button are primary navigation, so keep theirs visible */
   flex-shrink: 0;
   white-space: nowrap;
 }
-
 h1 {
   text-align: center;
 }
@@ -256,7 +256,6 @@ blockquote {
 blockquote > :is(:first-child, :last-child) {
   margin: 0 auto;
 }
-
 /* longhands: the text-wrap shorthand would also reset an inherited white-space: nowrap */
 :where(h1, h2, h3, h4, h5, h6, address) {
   text-wrap-style: balance;
@@ -293,7 +292,6 @@ strong a[aria-hidden='true'] {
   position: absolute;
   left: 0;
 }
-
 @keyframes highlight-scroll-target {
   0%,
   90% {
@@ -304,14 +302,12 @@ strong a[aria-hidden='true'] {
 :target {
   animation: highlight-scroll-target 3s;
 }
-
 sub,
 sup {
   font-size: 0.7em;
   /* https://stackoverflow.com/a/6594576 */
   line-height: 0;
 }
-
 input {
   border: none;
   border-radius: 3pt;
@@ -341,24 +337,23 @@ kbd {
   padding: 1pt 3pt;
   border-radius: 2pt;
 }
-
-/* Full-bleed uses negative margin to span full viewport width */
+/* Full-bleed uses negative margin to span the full page width */
 .full-bleed {
   --margin: 50px;
-  width: calc(100vw - 2 * var(--margin));
-  margin-left: calc(-50vw + 50% + var(--margin));
+  width: calc(var(--page-width) - 2 * var(--margin));
+  margin-left: calc(50% - var(--page-width) / 2 + var(--margin));
 }
 /* stretch elements full width but cap content at 1400px and center */
 .bleed-1400 {
   --margin: 50px;
   position: relative;
-  width: 100vw;
+  width: var(--page-width);
   max-inline-size: none;
   left: 50%;
-  margin-left: -50vw;
+  margin-left: calc(var(--page-width) / -2);
   box-sizing: border-box;
   /* Calculate padding: min page margin, grows to center content within max-width */
-  padding-inline: max(var(--margin), calc(50vw - 1400px / 2));
+  padding-inline: max(var(--margin), calc(var(--page-width) / 2 - 1400px / 2));
 }
 @media (max-width: 600px) {
   .full-bleed,
@@ -366,17 +361,16 @@ kbd {
     --margin: 1rem;
   }
 }
-
 /* the light-on-dark logo needs darkening wherever it appears on the light theme */
 :root[data-theme='light'] img[src='/favicon.svg'] {
   filter: brightness(0.2);
 }
-
 /* Shared lazy-rendered grid for the diatomics task and spin-state detail page. */
 .diatomics-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
   gap: 55pt 15pt;
+  margin-top: 2em;
 }
 .diatomic-plot-shell {
   min-height: 300px;
@@ -388,17 +382,49 @@ kbd {
 }
 .diatomic-plot {
   --scatter-font-size: 14px;
+  /* matterviz's 350px default min-height would overflow the 300px plots */
+  --scatter-min-height: 0;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
 }
 .diatomic-plot-title {
   align-self: center;
+  position: relative;
   margin: 0 0 -5pt;
+  padding: 0 4pt;
+  line-height: calc(1.5em - 2px);
+  border-radius: 3pt;
   text-align: center;
   font-size: 0.9em;
+  background: var(--tint);
+  /* hover-only heading link sits outside the pill instead of widening it */
+  a[data-heading-anchor] {
+    position: absolute;
+    left: 100%;
+  }
 }
-
+/* faint matterviz periodic-table category tints from --category-color (dark theme needs
+   more since several category colors are dark). Without it, --tint is invalid, so titles
+   stay transparent and the "All" button keeps ButtonGroup's default colors. */
+.diatomic-plot-title,
+.element-group-filter button {
+  --tint: light-dark(
+    color-mix(in srgb, var(--category-color) 18%, transparent),
+    color-mix(in srgb, var(--category-color) 40%, transparent)
+  );
+  --strong-tint: light-dark(
+    color-mix(in srgb, var(--category-color) 40%, transparent),
+    color-mix(in srgb, var(--category-color) 75%, transparent)
+  );
+}
+.element-group-filter button {
+  --btn-group-btn-padding: 2px 8px;
+  --btn-group-btn-bg: var(--tint);
+  --btn-group-btn-hover-bg: var(--strong-tint);
+  --btn-group-btn-active-bg: var(--strong-tint);
+  --btn-group-btn-active-border-color: var(--category-color);
+}
 /* In-plot metric annotation, bottom-right corner (energy/kappa parity plots) */
 .plot-annotation {
   position: absolute;

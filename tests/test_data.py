@@ -7,7 +7,7 @@ import zipfile
 from collections.abc import Iterator
 from datetime import date
 from pathlib import Path
-from typing import Any, Self, cast
+from typing import Any, Self
 from unittest.mock import Mock, patch
 
 import ase.io
@@ -125,7 +125,7 @@ def mock_wbm_preds() -> Iterator[Mock]:
             side_effect=lambda abs_path, **_kwargs: abs_path,
         ) as resolve_file,
         patch.object(
-            data_module, "glob_to_df", side_effect=lambda *_a, **_kw: df_mock.copy()
+            data_module.pd, "read_csv", side_effect=lambda *_a, **_kw: df_mock.copy()
         ),
     ):
         yield resolve_file
@@ -133,7 +133,7 @@ def mock_wbm_preds() -> Iterator[Mock]:
 
 def test_atoms_zip_round_trip(dummy_atoms_zip: Path) -> None:
     """Zipped extXYZ structures load back without Atoms.info drift."""
-    read_atoms = ase_atoms_from_zip(dummy_atoms_zip)
+    read_atoms = ase_atoms_from_zip(str(dummy_atoms_zip))
     assert len(read_atoms) == len(dummy_atoms)
 
     for original, read in zip(dummy_atoms, read_atoms, strict=True):
@@ -154,7 +154,7 @@ def test_ase_atoms_from_zip_skips_non_extxyz_members(dummy_atoms_zip: Path) -> N
     """Archive members without an .extxyz suffix are ignored."""
     with zipfile.ZipFile(dummy_atoms_zip, mode="a") as zip_file:
         zip_file.writestr("readme.txt", "not a structure")
-    read_atoms = ase_atoms_from_zip(dummy_atoms_zip)
+    read_atoms = ase_atoms_from_zip(str(dummy_atoms_zip))
     assert [atoms.get_chemical_formula() for atoms in read_atoms] == ["H2O", "CO2"]
 
 
@@ -163,12 +163,12 @@ def test_ase_atoms_from_zip_bad_inputs(tmp_path: Path) -> None:
     empty_zip = tmp_path / "empty.zip"
     with zipfile.ZipFile(empty_zip, mode="w"):
         pass
-    assert ase_atoms_from_zip(empty_zip) == []
+    assert ase_atoms_from_zip(str(empty_zip)) == []
 
     invalid_zip = tmp_path / "invalid.zip"
     invalid_zip.write_text("This is not a zip file")
     with pytest.raises(zipfile.BadZipFile):
-        ase_atoms_from_zip(invalid_zip)
+        ase_atoms_from_zip(str(invalid_zip))
 
 
 @pytest.mark.parametrize(
@@ -199,7 +199,7 @@ def test_ase_atoms_from_zip_with_limit(
 
     zip_path = tmp_path / "limit_test_structures.zip"
     write_atoms_zip(more_atoms, zip_path)
-    read_atoms = ase_atoms_from_zip(zip_path, limit=limit)
+    read_atoms = ase_atoms_from_zip(str(zip_path), limit=limit)
     assert [atoms.get_chemical_formula() for atoms in read_atoms] == expected_formulas
 
 
@@ -242,7 +242,7 @@ def test_load_df_wbm_with_preds(
 
 def test_load_df_wbm_with_preds_mock_data_models(mock_wbm_preds: Mock) -> None:
     """Default loading selects active models; inactive ones load by any ref."""
-    inactive_model = Model.alphanet_v1_mptrj
+    inactive_model = Model["alphanet_v1_mptrj"]
     inactive_model_refs = (inactive_model, inactive_model.name, inactive_model.label)
     df_default = load_df_wbm_with_preds(pbar=False)
     inactive_cols = [
@@ -258,13 +258,13 @@ def test_load_df_wbm_with_preds_mock_data_models(mock_wbm_preds: Mock) -> None:
     assert inactive_cols == [[*df_wbm, inactive_model.key]] * len(inactive_model_refs)
     n_loads = len(Model.active()) + len(inactive_model_refs)
     assert mock_wbm_preds.call_count == n_loads
-    assert df_default[Model.mace_mpa_0.key].notna().any()
+    assert df_default[Model["mace_mpa_0"].key].notna().any()
 
 
 @pytest.mark.network
 def test_load_df_wbm_max_error_threshold() -> None:
     """Tighter outlier thresholds monotonically increase missing predictions."""
-    model = Model.mace_mp_0
+    model = Model["mace_mp_0"]
     df_no_threshold = load_df_wbm_with_preds(models=[model], max_error_threshold=None)
     df_high_threshold = load_df_wbm_with_preds(models=[model], max_error_threshold=10)
     df_low_threshold = load_df_wbm_with_preds(models=[model], max_error_threshold=0.1)
@@ -292,7 +292,7 @@ def test_load_df_wbm_with_preds_errors(df_float: pd.DataFrame) -> None:
             "matbench_discovery.enums.resolve_verified_file",
             side_effect=lambda abs_path, **_kwargs: abs_path,
         ),
-        patch.object(data_module, "glob_to_df", return_value=df_float),
+        patch.object(data_module.pd, "read_csv", return_value=df_float),
         pytest.raises(ValueError, match=r"e_form_per_atom column not found in"),
     ):
         load_df_wbm_with_preds(models=["alignn"])
@@ -316,7 +316,7 @@ def test_load_df_wbm_with_preds_subset(
     """Subset selectors return exactly the requested WBM material IDs."""
     # Default model selection is covered above; one prediction column exercises
     # subsetting without loading every model for each selector.
-    model = Model.mace_mpa_0
+    model = Model["mace_mpa_0"]
     df_subset = load_df_wbm_with_preds(models=[model], subset=subset, pbar=False)
     assert mock_wbm_preds.call_count == 1
     if subset is None or (isinstance(subset, str) and subset == "full_test_set"):
@@ -334,7 +334,7 @@ def test_prediction_errors_and_element_enrichment(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Prediction errors stay independent from optional per-element enrichment."""
-    models = [Model.mace_mp_0, Model.mace_mpa_0]
+    models = [Model["mace_mp_0"], Model["mace_mpa_0"]]
     raw = pd.DataFrame(
         {
             Key.formula: ["Fe2O3", "FeO"],
@@ -381,19 +381,21 @@ def test_update_yaml_file(tmp_path: Path) -> None:
     test_file.write_text(initial_yaml, encoding="utf-8")
 
     update_data = {"mae": 0.2, "rmse": 0.3}
-    updated_yaml = update_yaml_file(test_file, "metrics.discovery", update_data)
+    updated_yaml = update_yaml_file(str(test_file), "metrics.discovery", update_data)
     assert updated_yaml["metrics"]["discovery"] == {
         **update_data,
         "pred_file": "old.csv",
     }
     assert update_data == {"mae": 0.2, "rmse": 0.3}
 
-    updated_yaml = update_yaml_file(test_file, "metrics.new.nested.path", {"value": 42})
+    updated_yaml = update_yaml_file(
+        str(test_file), "metrics.new.nested.path", {"value": 42}
+    )
     assert updated_yaml["metrics"]["new"]["nested"]["path"] == {"value": 42}
 
     # null intermediate sections (bare `md:`) are replaced, not indexed into
     test_file.write_text("metrics:\n  md:\n", encoding="utf-8")
-    updated_yaml = update_yaml_file(test_file, "metrics.md.nested", {"value": 1})
+    updated_yaml = update_yaml_file(str(test_file), "metrics.md.nested", {"value": 1})
     assert updated_yaml["metrics"] == {"md": {"nested": {"value": 1}}}
     test_file.write_text(initial_yaml, encoding="utf-8")
 
@@ -410,7 +412,7 @@ metrics:
     test_file.write_text(yaml_with_comments, encoding="utf-8")
 
     updated_yaml = update_yaml_file(
-        test_file, "metrics.discovery", {"mae": 0.3, "rmse": 0.4}
+        str(test_file), "metrics.discovery", {"mae": 0.3, "rmse": 0.4}
     )
     assert updated_yaml["metrics"]["discovery"] == {"mae": 0.3, "rmse": 0.4}
 
@@ -421,7 +423,7 @@ metrics:
 
     commented_data = CommentedMap({"value": 1})
     commented_data.yaml_add_eol_comment("κ (W/mK)", "value")
-    updated_yaml = update_yaml_file(test_file, "metrics.discovery", commented_data)
+    updated_yaml = update_yaml_file(str(test_file), "metrics.discovery", commented_data)
     assert updated_yaml["metrics"]["discovery"]["value"] == 1
     content = test_file.read_text(encoding="utf-8")
     assert "discovery:  # Discovery metrics\n    mae: 0.3" in content, f"{content=}"
@@ -437,27 +439,27 @@ metrics:
         return {"mae": 0.9}
 
     updated = update_yaml_file(
-        test_file, "metrics.discovery", replace_mae_only, preserve_existing=True
+        str(test_file), "metrics.discovery", replace_mae_only, preserve_existing=True
     )
     assert updated["metrics"]["discovery"] == {"mae": 0.9}
 
     # Dict updates honor preserve_existing.
     test_file.write_text(initial_yaml, encoding="utf-8")
     updated = update_yaml_file(
-        test_file, "metrics.discovery", {"mae": 0.5}, preserve_existing=True
+        str(test_file), "metrics.discovery", {"mae": 0.5}, preserve_existing=True
     )
     assert updated["metrics"]["discovery"] == {"mae": 0.5, "pred_file": "old.csv"}
     updated = update_yaml_file(
-        test_file, "metrics.discovery", {"mae": 0.6}, preserve_existing=False
+        str(test_file), "metrics.discovery", {"mae": 0.6}, preserve_existing=False
     )
     assert updated["metrics"]["discovery"] == {"mae": 0.6}
 
     with pytest.raises(FileNotFoundError):
-        update_yaml_file(tmp_path / "non-existent.yml", "path", {"data": 1})
+        update_yaml_file(f"{tmp_path}/non-existent.yml", "path", {"data": 1})
 
     for path in ("metrics..discovery", "metrics..", "metrics.discovery..", "."):
         with pytest.raises(ValueError, match="Invalid dotted_path="):
-            update_yaml_file(test_file, path, {"data": 1})
+            update_yaml_file(str(test_file), path, {"data": 1})
 
 
 def test_update_yaml_file_lock_survives_differing_tmpdir(
@@ -535,11 +537,11 @@ def test_update_yaml_file_preserves_original_on_write_failure(
         else:
             patch_context.setattr(data_module.os, "replace", fail_replace)
         with pytest.raises(OSError, match=f"{failure_stage} failed"):
-            update_yaml_file(path, "metrics.discovery", {"mae": 0.2})
+            update_yaml_file(str(path), "metrics.discovery", {"mae": 0.2})
     assert target.read_text(encoding="utf-8") == original
     assert path.is_symlink() is use_symlink
     assert set(tmp_path.iterdir()) == expected_files
-    update_yaml_file(path, "metrics.discovery", {"mae": 0.3})
+    update_yaml_file(str(path), "metrics.discovery", {"mae": 0.3})
     with target.open(encoding="utf-8") as file:
         assert round_trip_yaml.load(file)["metrics"]["discovery"]["mae"] == 0.3
     assert target.stat().st_mode & 0o777 == original_mode
@@ -575,7 +577,7 @@ def test_canonical_scientific_notation_rejects_invalid(value: object) -> None:
         ValueError,
         match=r"Expected a positive finite number|Invalid numeric",
     ):
-        canonical_scientific_notation(cast("Any", value))
+        canonical_scientific_notation(value)  # ty: ignore[invalid-argument-type]
 
 
 @pytest.mark.parametrize(

@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tomllib
 import zipfile
+from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from unittest.mock import Mock
@@ -158,7 +159,7 @@ def test_uv_command_layers_model_packages_on_runner_env(
         "find_links": ["https://data.pyg.org/whl/torch-2.0.1.html"],
         "extra_index_urls": ["https://example.org/simple"],
     }
-    patch_model_metadata(monkeypatch, Model.mace_mp_0, {"environment": environment})
+    patch_model_metadata(monkeypatch, Model["mace_mp_0"], {"environment": environment})
     calc_spec = calculators._runtime_calc_spec("mace_mp_0", EMT)()  # noqa: SLF001
     assert calc_spec.deps == tuple(environment["dependencies"])
     assert calc_spec.uv_run_cmd("models/run_md.py", "--model", "mace_mp_0") == [
@@ -214,7 +215,7 @@ def test_corrected_model_factory_contracts() -> None:
             field_name
         ]
         assert value == expected or str(value).endswith(expected)
-    assert "orb-v3-conservative-inf-mpa" in Model.orb_v3.metadata["checkpoint_url"]
+    assert "orb-v3-conservative-inf-mpa" in Model["orb_v3"].metadata["checkpoint_url"]
     # TACE's OEQ/AOTI export needs torch>=2.11, so TACE factories may only accelerate
     # when their YAML pins a new enough torch (older pins must stay eager)
     tace_keys = [
@@ -406,32 +407,67 @@ def test_named_sevennet_models_keep_package_managed_checkpoints(model_key: str) 
     assert not CALCULATORS[model_key].auto_checkpoint
 
 
-def test_deepmd_archive_extraction_replaces_invalid_cache(tmp_path: Path) -> None:
-    """Archive extraction atomically replaces stale multi-model directories."""
+@pytest.mark.parametrize(
+    ("find_models", "model_file"),
+    [
+        (calculators._deepmd_model_paths, "nested/model.pth"),  # noqa: SLF001
+        (calculators._alignn_model_dirs, "nested/best_model.pt"),  # noqa: SLF001
+    ],
+)
+def test_archive_extraction_replaces_invalid_cache(
+    tmp_path: Path, find_models: Callable[[str], list[str]], model_file: str
+) -> None:
+    """Extraction refuses folders it did not create, replaces its own stale caches,
+    reuses a matching one, re-extracts a changed archive and rejects members escaping
+    the extraction directory.
+    """
     archive_path = tmp_path / "model.zip"
-    with zipfile.ZipFile(archive_path, mode="w") as archive:
-        archive.writestr("nested/model.pth", b"frozen model")
+
+    def write_archive(weights: bytes) -> None:
+        with zipfile.ZipFile(archive_path, mode="w") as archive:
+            archive.writestr(model_file, weights)
+            archive.writestr("nested/config.json", b"{}")
+
+    write_archive(b"weights")
     extract_dir = tmp_path / "model-extracted"
-    extract_dir.mkdir()
-    (extract_dir / "stale.pb").write_bytes(b"stale")
-    (extract_dir / "orphan.pt2").write_bytes(b"orphan")
+    (extract_dir / "stale").mkdir(parents=True)
+    for name in ("stale.pb", "stale/config.json", "stale/best_model.pt"):
+        (extract_dir / name).write_bytes(b"stale")
 
-    model_path = calculators._extract_single_deepmd_model(  # noqa: SLF001
-        str(archive_path)
-    )
+    extract = calculators._extract_single_model  # noqa: SLF001
+    for unmarked_dir in (extract_dir, tmp_path / "model-extracted.tmp"):
+        (unmarked_dir / "user-file").parent.mkdir(exist_ok=True)
+        (unmarked_dir / "user-file").write_bytes(b"keep")
+        with pytest.raises(ValueError, match="Refusing to replace"):
+            extract(str(archive_path), find_models)
+        assert (unmarked_dir / "user-file").read_bytes() == b"keep"
+        (unmarked_dir / "user-file").unlink()
+        if unmarked_dir != extract_dir:
+            unmarked_dir.rmdir()
+    # an empty leftover temporary folder (run stopped before marking it) is cleared
+    (tmp_path / "model-extracted.tmp").mkdir()
+    (extract_dir / ".archive-stat").write_text("old archive")
+    model_path = extract(str(archive_path), find_models)
 
-    assert Path(model_path).read_bytes() == b"frozen model"
-    assert [
-        path.name
-        for path in extract_dir.rglob("*")
-        if path.suffix in {".pb", ".pth", ".pt2"}
-    ] == ["model.pth"]
+    # finders join with "/" but the extractor returns OS-normalized paths
+    assert [os.path.normpath(path) for path in find_models(str(extract_dir))] == [
+        model_path
+    ]
+    assert (extract_dir / model_file).read_bytes() == b"weights"
+    sentinel = extract_dir / "sentinel"
+    sentinel.touch()
+    assert extract(str(archive_path), find_models) == model_path
+    assert sentinel.is_file()  # unchanged archive: cache hit, no re-extraction
+    write_archive(b"updated weights")
+    assert extract(str(archive_path), find_models) == model_path
+    assert (extract_dir / model_file).read_bytes() == b"updated weights"
+    assert not sentinel.exists()
+
     with zipfile.ZipFile(archive_path, mode="w") as archive:
-        archive.writestr("nested/model.pth", b"updated frozen model")
-    updated_path = calculators._extract_single_deepmd_model(  # noqa: SLF001
-        str(archive_path)
-    )
-    assert Path(updated_path).read_bytes() == b"updated frozen model"
+        archive.writestr("../evil", b"escape")
+    with pytest.raises(ValueError, match=r"Unsafe path '\.\./evil'"):
+        extract(str(archive_path), find_models)
+    assert not (tmp_path.parent / "evil").exists()
 
 
 @pytest.mark.parametrize(
@@ -449,6 +485,11 @@ def test_nequip_factory_load_path(
     )
     monkeypatch.setitem(sys.modules, "nequip", ModuleType("nequip"))
     monkeypatch.setitem(sys.modules, "nequip.ase", nequip_ase)
+    torch = SimpleNamespace(
+        device=lambda name: SimpleNamespace(type=name.split(":")[0]),
+        cuda=SimpleNamespace(get_device_capability=lambda _device: (9, 0)),
+    )
+    monkeypatch.setitem(sys.modules, "torch", torch)
     monkeypatch.setattr(calculators, "_run_to_atomic_output", compile_stub)
 
     calc = CALCULATORS[model_key].make_calc("cuda")
@@ -459,9 +500,11 @@ def test_nequip_factory_load_path(
         assert kwargs == {"device": "cuda", "compile_mode": "eager"}
         assert not hasattr(calc, calculators.ACCELERATION_ATTR)
         return
-    (command, output_path), _ = compile_stub.call_args
+    (command, output_path), compile_kwargs = compile_stub.call_args
     assert command[command.index("--mode") + 1] == "aotinductor"
-    assert output_path.endswith(f"{model_key}-cuda.nequip.pt2")
+    # AOTI kernels are arch- and torch-specific, so both key the cached package
+    assert output_path.endswith(f"{model_key}-cuda-sm90.nequip.pt2")
+    assert compile_kwargs["tool_packages"] == ("nequip", "torch")
     compiled_loader.assert_called_once_with(compile_path=output_path, device="cuda")
     assert getattr(calc, calculators.ACCELERATION_ATTR) == ("torch_aot_inductor",)
 
@@ -474,7 +517,7 @@ def test_dpa_4_0_1_loads_eager_checkpoint(monkeypatch: pytest.MonkeyPatch) -> No
     monkeypatch.setitem(sys.modules, "deepmd.calculator", deepmd_calculator)
 
     spec = CALCULATORS["dpa_4_0_1_pro_mptrj"]
-    assert spec.make_calc is calculators._deepmd_eager  # noqa: SLF001
+    assert spec.make_calc is calculators._deepmd  # noqa: SLF001
     assert isinstance(spec.make_calc("cuda", checkpoint="/ckpt/dpa.pt"), EMT)
     deepmd_calculator.DP.assert_called_once_with("/ckpt/dpa.pt")  # no freeze, no .pt2
 

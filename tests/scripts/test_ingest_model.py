@@ -3,6 +3,7 @@
 import hashlib
 import json
 import subprocess
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -53,7 +54,7 @@ def test_force_model_discovery_pipelines_pass_checklist(
     checks = ingest.Checklist()
     assert (
         ingest.check_submission(
-            Model.mace_mpa_0, checks, validate_runner=validate_runner
+            Model["mace_mpa_0"], checks, validate_runner=validate_runner
         )
         is False
     )
@@ -69,7 +70,7 @@ def test_force_model_discovery_pipelines_pass_checklist(
     )
     assert {command[-4] for command in shared_runner_calls} == expected_runners
     assert all(
-        command[-3:] == ["--model", Model.mace_mpa_0.name, "--dry-run"]
+        command[-3:] == ["--model", Model["mace_mpa_0"].name, "--dry-run"]
         for command in shared_runner_calls
     )
 
@@ -77,7 +78,7 @@ def test_force_model_discovery_pipelines_pass_checklist(
 def test_archived_discovery_models_skip_shared_runner() -> None:
     """Archived models report why shared discovery execution is unavailable."""
     checks = ingest.Checklist()
-    ingest.check_submission(Model.alignn, checks)
+    ingest.check_submission(Model["alignn"], checks)
     assert any("discovery is archived:" in msg for msg in msgs(checks, ingest.SKIP))
     assert not any("discovery model" in msg for msg in msgs(checks, ingest.FAIL))
     assert not any(
@@ -93,10 +94,12 @@ def test_unregistered_discovery_model_validation(
     """Trusted artifact validation does not require PR calculator code."""
     monkeypatch.delitem(
         ingest.CALCULATORS,  # ty: ignore[invalid-argument-type]
-        Model.mace_mpa_0.name,
+        Model["mace_mpa_0"].name,
     )
     checks = ingest.Checklist()
-    ingest.check_submission(Model.mace_mpa_0, checks, validate_runner=validate_runner)
+    ingest.check_submission(
+        Model["mace_mpa_0"], checks, validate_runner=validate_runner
+    )
     failures = "\n".join(msgs(checks, ingest.FAIL))
     assert ("discovery model is not registered" in failures) is validate_runner
     assert ("kappa shared runner unsupported" in failures) is validate_runner
@@ -145,7 +148,7 @@ def test_shared_runner_problems_fail_checklist(
 
         monkeypatch.setattr(ingest.subprocess, "run", raise_process_error)
     checks = ingest.Checklist()
-    ingest.check_submission(Model.mace_mpa_0, checks)
+    ingest.check_submission(Model["mace_mpa_0"], checks)
     failures = "\n".join(msgs(checks, ingest.FAIL))
     for task in failing_tasks:
         expected = RUNNER_ERROR.format(task=task)
@@ -178,52 +181,79 @@ def test_all_active_models_have_required_metadata() -> None:
 
 
 @pytest.mark.parametrize(
-    ("file_ref", "error"),
+    ("key", "value", "errors"),
     [
-        ("legacy/path.csv.gz", "Invalid FileRef at metrics.discovery.pred_file"),
         (
+            "pred_file",
+            "legacy/path.csv.gz",
+            ("Invalid FileRef at metrics.discovery.pred_file",),
+        ),
+        (
+            "pred_file",
             {"name": "models/mace/mace-mpa-0/../2026-09-05-discovery.csv.gz"},
-            "must live under",
+            ("must live under",),
+        ),
+        # a runner-tagged cost block without the artifact it claims
+        (
+            "cost",
+            {"source": "runner", "hardware": "H200"},
+            ("Cost provenance: metrics.discovery", "run_info_file"),
         ),
     ],
 )
-def test_malformed_file_ref_fails_checklist(
-    monkeypatch: pytest.MonkeyPatch, file_ref: str | dict[str, str], error: str
+def test_bad_discovery_metadata_fails_checklist(
+    monkeypatch: pytest.MonkeyPatch,
+    key: str,
+    value: str | dict[str, str],
+    errors: tuple[str, ...],
 ) -> None:
-    """Malformed artifact metadata becomes a checklist failure instead of raising."""
-    model = Model.mace_mpa_0
+    """Malformed artifact or cost metadata becomes a checklist failure, not a raise."""
+    model = Model["mace_mpa_0"]
     discovery = model.metadata["metrics"]["discovery"]
-    monkeypatch.setitem(discovery, "pred_file", file_ref)
+    monkeypatch.setitem(discovery, key, value)
     checks = ingest.Checklist()
     ingest.check_submission(model, checks, validate_runner=False)
-    assert any(error in message for message in msgs(checks, ingest.FAIL))
+    assert any(
+        all(error in message for error in errors)
+        for message in msgs(checks, ingest.FAIL)
+    )
 
 
 @pytest.mark.parametrize(
-    "argv",
+    ("argv", "expected_error"),
     [
-        ["definitely-not-a-model"],
-        [],
-        ["--payloads-only"],
-        ["mace-mpa-0", "--archive"],
-        ["mace-mpa-0", "--archive-only"],
-        ["mace-mpa-0", "--publish-parity"],
-        ["mace-mpa-0", "--full-roster"],
+        (
+            ["definitely-not-a-model"],
+            "invalid from_ref value: 'definitely-not-a-model'",
+        ),
+        ([], "model is required unless --payloads-only"),
+        (["--payloads-only"], "full payload refresh requires --full-roster"),
+        (["mace-mpa-0", "--archive"], "No Figshare API token"),
+        (["mace-mpa-0", "--archive-only"], "No Figshare API token"),
+        (["mace-mpa-0", "--publish-parity"], "--publish-parity does not accept models"),
+        (
+            ["mace-mpa-0", "--full-roster"],
+            "--full-roster requires --payloads-only without models",
+        ),
     ],
 )
 def test_cli_rejects_invalid_args(
-    monkeypatch: pytest.MonkeyPatch, argv: list[str]
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    argv: list[str],
+    expected_error: str,
 ) -> None:
     """Unknown, missing, or unauthenticated CLI arguments fail validation."""
     monkeypatch.delenv("FIGSHARE_TOKEN", raising=False)
     monkeypatch.setattr(ingest.figshare, "ENV_PATH", "/nonexistent/.env")
     with pytest.raises(SystemExit, match="2"):
         ingest.main(argv)
+    assert expected_error in capsys.readouterr().err
 
 
 def test_run_payload_refresh_scopes(run_cmd_calls: list[tuple[str, ...]]) -> None:
     """Targeted and complete refreshes pass explicit scopes and emit reports."""
-    models = (Model.mace_mpa_0, Model.mace_mp_0)
+    models = (Model["mace_mpa_0"], Model["mace_mp_0"])
     assert ingest.main([*(model.name for model in models), "--payloads-only"]) == 0
     *script_calls, report_call, test_call = run_cmd_calls
     assert len(script_calls) == len(ingest.PAYLOAD_SCRIPTS)
@@ -260,7 +290,9 @@ def test_run_model_steps_installs_project_extras(
     checks = ingest.Checklist()
     step_cmd = "--extra phonons scripts/evals/kappa.py"
     steps = [("Kappa metrics", True, True, step_cmd)]
-    ingest.run_model_steps("evals", steps, Model.mace_mpa_0, checks, energy_only=False)
+    ingest.run_model_steps(
+        "evals", steps, Model["mace_mpa_0"], checks, energy_only=False
+    )
 
     expected = uv_cmd(".[phonons]", "scripts/evals/kappa.py", "--models", "mace_mpa_0")
     assert run_cmd_calls == [expected]
@@ -369,69 +401,43 @@ def test_uv_run_args_rejects_empty_extra(args: str) -> None:
         ingest.uv_run_args(args)
 
 
-def test_classify_yaml_changes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Classification targets metadata changes and rejects roster/key changes."""
-    model_key = Model.mace_mpa_0.key
-    active: dict[str, object] = {"model_key": model_key, "lifecycle": "active"}
-    monkeypatch.setattr(ingest, "ROOT", str(tmp_path))
-
-    def classify(
-        new_files: dict[str, dict[str, object]],
-        old_files: dict[str, dict[str, object]],
-        removed: list[str] | None = None,
-    ) -> dict[str, object]:
-        """Write current files and classify them against supplied HEAD metadata."""
-        for relative_path, metadata in new_files.items():
-            yaml_path = tmp_path / relative_path
-            yaml_path.parent.mkdir(parents=True, exist_ok=True)
-            yaml_path.write_text(json.dumps(metadata))
-        monkeypatch.setattr(ingest, "read_head_yaml", old_files.get)
-        return ingest.classify_yaml_changes(list(new_files), removed or [])
-
-    path = "models/edit/model.yml"
-    old_geo_opt = {"metrics": {"geo_opt": {"pred_file": "old.json.gz"}}}
-    assert classify({path: active}, {path: active | old_geo_opt}) == {
-        "full_roster": False,
-        "targeted_models": [Model.mace_mpa_0.name],
-    }
-    old_path, new_path = "models/old/model.yml", "models/new/model.yml"
-    assert classify({new_path: active}, {old_path: active}, [old_path]) == {
-        "full_roster": False,
-        "targeted_models": [],
-    }
-    assert classify({}, {old_path: active}, [old_path])["full_roster"] is True
-    assert (
-        classify({path: active | {"lifecycle": "aborted"}}, {path: active})[
-            "full_roster"
-        ]
-        is True
-    )
-    with pytest.raises(ValueError, match="cannot change model_key"):
-        classify({path: active}, {path: active | {"model_key": "old-key"}})
-
-
 @pytest.mark.parametrize(
-    ("stderr", "raises"),
-    [
-        ("fatal: path 'new.yml' does not exist in 'HEAD'", False),
-        ("fatal: path 'new.yml' exists on disk, but not in 'HEAD'", False),
-        ("fatal: bad object HEAD", True),
-    ],
+    ("lifecycle", "expected"),
+    [("pending  # copied from the template", "active"), ("superseded", "superseded")],
 )
-def test_read_head_yaml_only_ignores_missing_paths(
-    monkeypatch: pytest.MonkeyPatch, stderr: str, raises: bool
+def test_activate_pending_only_flips_pending_lifecycle(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, lifecycle: str, expected: str
 ) -> None:
-    """Only an absent path is treated as a newly added YAML file."""
-    monkeypatch.setattr(
-        ingest.subprocess,
-        "run",
-        lambda *_args, **_kwargs: subprocess.CompletedProcess([], 128, stderr=stderr),
+    """Ingestion activates pending submissions and leaves other lifecycles alone."""
+    model = Model["mace_mpa_0"]
+    yaml_path = tmp_path / "model.yml"
+    yaml_path.write_text(
+        f"model_key: x\nlifecycle: {lifecycle}\nnotes:\n  lifecycle: pending\n"
     )
-    if raises:
-        with pytest.raises(subprocess.CalledProcessError):
-            ingest.read_head_yaml("new.yml")
-    else:
-        assert ingest.read_head_yaml("new.yml") is None
+    monkeypatch.setattr(
+        type(model), "yaml_path", property(lambda _self: str(yaml_path))
+    )
+    monkeypatch.delitem(vars(model), "metadata", raising=False)
+    ingest.activate_pending(model)
+    assert model.metadata["lifecycle"] == expected
+    assert model.metadata["notes"] == {"lifecycle": "pending"}  # nested key untouched
+
+
+def test_main_activates_pending_models_only_after_validation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Full ingestion activates a model between validation and its eval steps."""
+    calls: list[str] = []
+
+    def record(name: str, result: object = None) -> Callable[..., object]:
+        return lambda *_args, **_kwargs: calls.append(name) or result
+
+    monkeypatch.setattr(ingest, "check_submission", record("check", result=False))
+    monkeypatch.setattr(ingest, "activate_pending", record("activate"))
+    monkeypatch.setattr(ingest, "run_model_steps", record("steps"))
+    monkeypatch.setattr(ingest, "run_payload_refresh", record("payloads"))
+    assert ingest.main(["mace-mpa-0"]) == 0
+    assert calls == ["check", "activate", "steps", "steps", "payloads"]
 
 
 @pytest.mark.parametrize("force_reupload", [False, True])
@@ -457,12 +463,12 @@ def test_figshare_dry_run_hashes_only_for_exact_match(
         lambda *_args, **_kwargs: (True, 123),
     )
     monkeypatch.setattr(
-        upload, "resolve_artifact_path", lambda *_args: Model.mace_mp_0.yaml_path
+        upload, "resolve_artifact_path", lambda *_args: Model["mace_mp_0"].yaml_path
     )
 
     upload.update_one_modeling_task_article(
         "discovery",
-        [Model.mace_mp_0],
+        [Model["mace_mp_0"]],
         modeling_tasks={"discovery": {"label": "Discovery"}},
         dry_run=True,
         force_reupload=force_reupload,
@@ -501,16 +507,3 @@ def test_archive_rejects_artifact_escaping_model_dir(
         upload.resolve_artifact_path(
             str(family_dir / yaml_name), artifact_rel_path, str(tmp_path)
         )
-
-
-def test_untraceable_cost_fails_checklist(monkeypatch: pytest.MonkeyPatch) -> None:
-    """A runner-tagged cost block without the artifact it claims fails ingestion."""
-    model = Model.mace_mpa_0
-    discovery = model.metadata["metrics"]["discovery"]
-    monkeypatch.setitem(discovery, "cost", {"source": "runner", "hardware": "H200"})
-    checks = ingest.Checklist()
-    ingest.check_submission(model, checks, validate_runner=False)
-    assert any(
-        "Cost provenance: metrics.discovery" in message and "run_info_file" in message
-        for message in msgs(checks, ingest.FAIL)
-    )

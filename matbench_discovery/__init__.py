@@ -2,7 +2,10 @@
 
 import hashlib
 import os
+import tempfile
 import warnings
+from collections.abc import Generator
+from contextlib import contextmanager
 from datetime import UTC, datetime
 
 __version__ = "1.3.1"
@@ -39,6 +42,23 @@ def file_digest(path: str, algorithm: str = "sha256") -> str:
     return digest.hexdigest()
 
 
+@contextmanager
+def atomic_output_path(path: str) -> Generator[str]:
+    """Yield a temp sibling of path, renamed over path on success, removed on error."""
+    parent = os.path.dirname(path) or "."
+    os.makedirs(parent, exist_ok=True)
+    file_descriptor, temporary_path = tempfile.mkstemp(
+        prefix=f".{os.path.basename(path)}.", suffix=".tmp", dir=parent
+    )
+    os.close(file_descriptor)
+    try:
+        yield temporary_path
+        os.replace(temporary_path, path)
+    finally:
+        if os.path.isfile(temporary_path):
+            os.remove(temporary_path)
+
+
 DATA_DIR = f"{ROOT}/data"  # directory to store raw data
 TEST_FILES = f"{ROOT}/tests/files"  # directory to store test data
 # directory for data-only figure payloads (gzipped JSON written by
@@ -57,12 +77,11 @@ DEFAULT_CACHE_DIR = os.getenv(
     else os.path.expanduser("~/.cache/matbench-discovery"),
 )
 
-for directory in (SITE_FIG_DATA, SITE_DIR, PDF_FIGS):
-    os.makedirs(directory, exist_ok=True)
-
-os.makedirs(MP_DIR := f"{DATA_DIR}/mp", exist_ok=True)
-os.makedirs(WBM_DIR := f"{DATA_DIR}/wbm", exist_ok=True)
-# JSON files with URLS to data files on figshare
+# no import-time makedirs: in a non-editable install ROOT is site-packages, and
+# creating DATA_DIR there would flip the DEFAULT_CACHE_DIR choice above on the next
+# import. Writers create the directories they write to.
+MP_DIR = f"{DATA_DIR}/mp"
+WBM_DIR = f"{DATA_DIR}/wbm"
 
 # threshold on hull distance for a material to be considered stable
 STABILITY_THRESHOLD = 0

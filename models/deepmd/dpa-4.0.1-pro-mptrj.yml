@@ -148,7 +148,7 @@ metrics:
       size: 1316682
       md5: 78fd7c8365a29446e25c317a152626ca
     full_test_set:
-      F1: 0.837  # fraction
+      F1: 0.837 # fraction
       DAF: 4.874 # dimensionless
       Precision: 0.836 # fraction
       Recall: 0.838 # fraction
@@ -162,7 +162,7 @@ metrics:
       R2: 0.833 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.857  # fraction
+      F1: 0.857 # fraction
       DAF: 5.609 # dimensionless
       Precision: 0.857 # fraction
       Recall: 0.856 # fraction
@@ -187,6 +187,7 @@ metrics:
       symmetry_decrease: 0.208 # fraction
       symmetry_match: 0.6631 # fraction
       symmetry_increase: 0.1037 # fraction
+      symmetry_lateral: 0.0251 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-05-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
@@ -199,6 +200,7 @@ metrics:
       symmetry_decrease: 0.41 # fraction
       symmetry_match: 0.3899 # fraction
       symmetry_increase: 0.1422 # fraction
+      symmetry_lateral: 0.0579 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-05-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
@@ -254,26 +256,25 @@ metrics:
   diatomics:
     pred_file:
       name: models/deepmd/dpa-4.0.1-pro-mptrj/2026-09-12-diatomics.json.gz
+      url: https://figshare.com/files/68484280
       size: 511608
       md5: 99665766d47eacc961bf7d1faea5eecd
-      url: https://figshare.com/files/68484280
     cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 701.62, max_rss_gb: 2.346, max_gpu_mem_gb: 0.461}
-    excluded_formula_reasons: {}
-    pbe_wall_dist_mae: 0.5381
-    pbe_energy_mae: 3.479
-    pbe_bond_length_error: 0.3304
-    pbe_well_depth_error: 97.16
-    pbe_vib_freq_error: 5714.0
+    pbe_wall_dist_mae: 0.5072
+    pbe_energy_mae: 3.205
+    pbe_bond_length_error: 0.3966
+    pbe_well_depth_error: 87.63
+    pbe_vib_freq_error: 5126.0
     tortuosity: 2.344
     energy_diff_flips: 4.253
     energy_jump: 1384.0
     force_flips: 4.218
     force_total_variation: 1578000000.0
     force_jump: 1762000000.0
-    pbe_force_mae: 905900.0
+    pbe_force_mae: 822600.0
     pbe_vib_freq_coverage:
-      n_valid: 69
-      n_eligible: 73
+      n_valid: 77
+      n_eligible: 81
       failed_elements:
       - B
       - Be

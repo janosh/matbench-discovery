@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from ase.constraints import FixSymmetry
@@ -33,6 +33,14 @@ class RelaxationResult:
     reached_max_steps: bool
     n_steps: int
     redirected_to_symmetry: bool = False
+
+
+def max_abs_stress(atoms: Atoms) -> np.ndarray:
+    """Largest absolute normal and shear Voigt stress components (eV/Å³).
+
+    Absolute values so a large compressive (negative) stress isn't reported as ~0.
+    """
+    return np.abs(atoms.get_stress()).reshape((2, 3), order="C").max(axis=1)
 
 
 def space_group_number(atoms: Atoms, symprec: float) -> int:
@@ -103,7 +111,7 @@ class StandardKappaAdapter:
         optimizer = optimizer_class(relax_target, logfile=log_file)  # ty: ignore[invalid-argument-type]
         optimizer.run(fmax=settings.force_max, steps=settings.max_steps)
         n_steps = int(optimizer.get_number_of_steps())
-        max_stress = atoms.get_stress().reshape((2, 3), order="C").max(axis=1)
+        max_stress = max_abs_stress(atoms)
 
         atoms.calc = None
         atoms.constraints = None
@@ -141,14 +149,15 @@ class StandardKappaAdapter:
         stage1_target: Atoms | Filter = (
             atoms if filter_class is None else filter_class(atoms, mask=NO_TILT_MASK)
         )
+        # ASE annotates Optimizer(atoms: Atoms) although it accepts any Filter
         stage1_optimizer = optimizer_class(
-            cast("Atoms", stage1_target),
+            stage1_target,  # ty: ignore[invalid-argument-type]
             logfile=f"{log_stem}-stage1{log_suffix}" if log_file else None,
         )
         stage1_optimizer.run(fmax=settings.force_max, steps=settings.max_steps)
         stage1_steps = int(stage1_optimizer.get_number_of_steps())
         stage1_spg_num = space_group_number(atoms, settings.symprec)
-        stage1_stress = atoms.get_stress().reshape((2, 3), order="C").max(axis=1)
+        stage1_stress = max_abs_stress(atoms)
         stage1_atoms = atoms.copy()
 
         atoms.constraints = None
@@ -156,13 +165,13 @@ class StandardKappaAdapter:
             atoms if filter_class is None else filter_class(atoms, mask=NO_TILT_MASK)
         )
         stage2_optimizer = optimizer_class(
-            cast("Atoms", stage2_target),
+            stage2_target,  # ty: ignore[invalid-argument-type]
             logfile=f"{log_stem}-stage2{log_suffix}" if log_file else None,
         )
         stage2_optimizer.run(fmax=settings.force_max, steps=settings.max_steps)
         stage2_steps = int(stage2_optimizer.get_number_of_steps())
         stage2_spg_num = space_group_number(atoms, settings.symprec)
-        stage2_stress = atoms.get_stress().reshape((2, 3), order="C").max(axis=1)
+        stage2_stress = max_abs_stress(atoms)
 
         redirected = settings.enforce_relax_symm and stage1_spg_num != stage2_spg_num
         relaxed_atoms = stage1_atoms if redirected else atoms

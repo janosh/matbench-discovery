@@ -24,6 +24,9 @@ from matbench_discovery.enums import DataFiles, MbdKey
 __author__ = "Janosh Riebesell"
 __date__ = "2023-11-22"
 
+for directory in (MP_DIR, PDF_FIGS):
+    os.makedirs(directory, exist_ok=True)
+
 
 # %% load MP element counts by occurrence to compute ratio with MPtrj
 df_mp = pd.read_csv(DataFiles.mp_energies.path, na_filter=False)

@@ -87,22 +87,21 @@ metrics:
       size: 263733
       md5: c20b7180fde199f3fb48339ce2067e7e
     cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float64, acceleration: [cuequivariance], n_shards: 1, n_processes: 1, run_time_sec: 227.96, load_time_sec: 9.67, max_rss_gb: 4.231, max_gpu_mem_gb: 0.117}
-    excluded_formula_reasons: {}
-    pbe_wall_dist_mae: 0.3994
-    pbe_energy_mae: 1.457
-    pbe_bond_length_error: 0.2947
-    pbe_well_depth_error: 0.8914
-    pbe_vib_freq_error: 76.04
+    pbe_wall_dist_mae: 0.388
+    pbe_energy_mae: 1.374
+    pbe_bond_length_error: 0.3378
+    pbe_well_depth_error: 0.8243
+    pbe_vib_freq_error: 70.69
     tortuosity: 1.279
     energy_diff_flips: 1.368
     energy_jump: 0.2886
     force_flips: 1.368
     force_total_variation: 158.4
     force_jump: 18.93
-    pbe_force_mae: 2.088
+    pbe_force_mae: 1.941
     pbe_vib_freq_coverage:
-      n_valid: 71
-      n_eligible: 73
+      n_valid: 79
+      n_eligible: 81
       failed_elements:
       - Pa
       - Se
@@ -133,7 +132,7 @@ metrics:
       size: 1322814
       md5: 5e231a2b3a029714b984890a6fbe5002
     full_test_set:
-      F1: 0.668  # fraction
+      F1: 0.668 # fraction
       DAF: 3.4 # dimensionless
       Precision: 0.583 # fraction
       Recall: 0.781 # fraction
@@ -147,7 +146,7 @@ metrics:
       R2: 0.698 # dimensionless
       missing_preds: 38 # count
     unique_prototypes:
-      F1: 0.669  # fraction
+      F1: 0.669 # fraction
       DAF: 3.777 # dimensionless
       Precision: 0.577 # fraction
       Recall: 0.796 # fraction
@@ -172,6 +171,7 @@ metrics:
       symmetry_decrease: 0.0335 # fraction
       symmetry_match: 0.7385 # fraction
       symmetry_increase: 0.2239 # fraction
+      symmetry_lateral: 0.0041 # fraction
       n_structures: 249254 # count
       analysis_file:
         name: models/mace/mace-mp-0/2023-12-11-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
@@ -184,6 +184,7 @@ metrics:
       symmetry_decrease: 0.0599 # fraction
       symmetry_match: 0.8112 # fraction
       symmetry_increase: 0.122 # fraction
+      symmetry_lateral: 0.0069 # fraction
       n_structures: 249254 # count
       analysis_file:
         name: models/mace/mace-mp-0/2023-12-11-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz

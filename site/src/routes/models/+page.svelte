@@ -158,7 +158,9 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
 
   <ol class="models full-bleed">
     {#each models.slice(0, model_limit) as model (model.model_key)}
-      {@const metric_val = sort_by.better ? get_nested_value(model, sort_by_path) : 0}
+      {@const metric_val = sort_by.better
+        ? get_nested_value(model, sort_by_path)
+        : Number.NaN}
       {@const bg_clr = bg_color(metric_val as number)}
       {@const text_color = pick_contrast_color({ background: bg_clr, backdrop: `white` })}
       <li

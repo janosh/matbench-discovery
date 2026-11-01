@@ -39,8 +39,8 @@ def write_diatomics_yaml(
 def diatomics_model(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> tuple[Model, Path]:
-    """Model.mace_mp_0 with a fresh temp YAML patched in as its yaml_path."""
-    model = Model.mace_mp_0
+    """Model["mace_mp_0"] with a fresh temp YAML patched in as its yaml_path."""
+    model = Model["mace_mp_0"]
     yaml_path = tmp_path / "model.yml"
     patch_model_metadata(monkeypatch, model, yaml_path=str(yaml_path))
     write_diatomics_yaml(model, yaml_path, {})
@@ -280,12 +280,16 @@ def test_calc_diatomic_metrics_gates_low_quality_refs_and_non_mp_elements() -> N
     assert set(no_ref_out) == {"H", "Ho", "Er", "Na"}
 
 
-def test_find_low_quality_dft_refs_on_bundled_pbe_reference() -> None:
-    """The bundled PBE reference quality gate flags the 8 jumpy lanthanides."""
+def test_bundled_pbe_reference_is_smooth_and_bonded_along_x() -> None:
+    """Bundled PBE curves pass the quality gate; forces lie on x like model dimers."""
     ref_curves = diatomics.load_dft_reference_curves("PBE")
 
-    jumpy_lanthanides = {"Pr", "Pm", "Sm", "Tb", "Dy", "Ho", "Er", "Tm"}
-    assert diatomics.find_low_quality_dft_refs(ref_curves) == jumpy_lanthanides
+    assert diatomics.find_low_quality_dft_refs(ref_curves) == set()
+    # model dimers are built along x (diatomics.generate_diatomics), and pbe_force_mae
+    # compares Cartesian components, so the reference must use the same bond axis
+    for curve in ref_curves.homo_nuclear.values():
+        forces = np.asarray(curve.forces)
+        assert np.abs(forces[..., 1:]).max() < 0.15 * np.abs(forces[..., 0]).max()
 
 
 @pytest.mark.parametrize("predicted_elements", [("H", "Cs"), ("Cs",), ()])
@@ -307,15 +311,13 @@ def test_vib_freq_coverage(predicted_elements: tuple[str, ...]) -> None:
         reference, predictions, metrics={MbdKey.pbe_vib_freq_error: {}}
     )
     coverage = diatomics.calc_vib_freq_coverage(reference, predictions, metrics)
-    assert coverage["n_eligible"] == 73
+    assert coverage["n_eligible"] == 81
     assert coverage["n_valid"] == int("H" in predicted_elements)
     assert coverage["failed_elements"] == (["Cs"] if "Cs" in predicted_elements else [])
-    assert len(coverage["missing_elements"]) == 73 - len(predicted_elements)
+    assert len(coverage["missing_elements"]) == 81 - len(predicted_elements)
     assert not set(predicted_elements) & set(coverage["missing_elements"])
-    # Unbound, low-quality and non-MP references are excluded for every model.
-    assert not {"He", "Ne", "Ar", "Kr", "Xe", "Ho", "Er", "Po"} & set(
-        coverage["missing_elements"]
-    )
+    # Unbound and non-MP references are excluded for every model.
+    assert not {"He", "Ne", "Ar", "Kr", "Xe", "Po"} & set(coverage["missing_elements"])
     assert diatomics.calc_vib_freq_coverage(
         DiatomicCurves(np.array([]), {"H": DiatomicCurve([], [], [])}), predictions, {}
     ) == dict(n_valid=0, n_eligible=0, failed_elements=[], missing_elements=[])
@@ -483,7 +485,7 @@ def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
     # after Model.metadata was cached survive
     assert model.metrics["diatomics"]["cost"]["run_time_sec"] == 120  # caches
     update_yaml_file(
-        yaml_path,
+        str(yaml_path),
         "metrics.diatomics",
         {"cost": {"source": "runner", "hardware": "H100", "run_time_sec": 7.0}}
         | {"excluded_formula_reasons": {"Li-Li": "curated"}},
@@ -497,7 +499,7 @@ def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
 
     # a recompute keeps the reproducibility verdict, a new registration drops it
     repro = {"status": "reproduced", "rel_changes": {"tortuosity": 0.0}}
-    update_yaml_file(yaml_path, "metrics.diatomics", {"reproducibility": repro})
+    update_yaml_file(str(yaml_path), "metrics.diatomics", {"reproducibility": repro})
     kept = diatomics.write_metrics_to_yaml(
         model, metrics_by_element, run_metadata=file_run_metadata
     )

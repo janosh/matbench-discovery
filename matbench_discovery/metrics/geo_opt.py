@@ -47,6 +47,7 @@ def write_metrics_to_yaml(
             (Key.symmetry_decrease, Key.symmetry_decrease),
             (Key.symmetry_match, Key.symmetry_match),
             (Key.symmetry_increase, Key.symmetry_increase),
+            (MbdKey.symmetry_lateral, MbdKey.symmetry_lateral),
         )
     }
     metrics_for_symprec[str(Key.n_structures)] = int(
@@ -58,6 +59,7 @@ def write_metrics_to_yaml(
         Key.symmetry_decrease: "fraction",
         Key.symmetry_match: "fraction",
         Key.symmetry_increase: "fraction",
+        MbdKey.symmetry_lateral: "fraction",
         Key.n_structures: "count",
     }
     metrics_for_symprec = commented_map_with_units(metrics_for_symprec, metric_units)
@@ -93,6 +95,8 @@ def calc_geo_opt_metrics(df_model_analysis: pd.DataFrame) -> dict[str, float]:
             - symmetry_decrease: Fraction of structures with decreased symmetry
             - symmetry_match: Fraction of structures with matching symmetry
             - symmetry_increase: Fraction of structures with increased symmetry
+            - symmetry_lateral: Fraction whose space group changed with the same
+              number of symmetry operations (the 4 fractions sum to 1)
             - n_structures: Number of structures evaluated
 
     Notes:
@@ -117,6 +121,7 @@ def calc_geo_opt_metrics(df_model_analysis: pd.DataFrame) -> dict[str, float]:
     changed_mask = (spg_diff != 0) & valid_sym_mask
     sym_decreased = (n_sym_ops_diff < 0) & changed_mask
     sym_increased = (n_sym_ops_diff > 0) & changed_mask
+    sym_lateral = (n_sym_ops_diff == 0) & changed_mask
     sym_matched = ~changed_mask & valid_sym_mask
 
     return {
@@ -129,6 +134,9 @@ def calc_geo_opt_metrics(df_model_analysis: pd.DataFrame) -> dict[str, float]:
         if n_valid_sym > 0
         else float("nan"),
         str(Key.symmetry_increase): float(sym_increased.sum() / n_valid_sym)
+        if n_valid_sym > 0
+        else float("nan"),
+        str(MbdKey.symmetry_lateral): float(sym_lateral.sum() / n_valid_sym)
         if n_valid_sym > 0
         else float("nan"),
         str(Key.n_structures): n_valid_sym,

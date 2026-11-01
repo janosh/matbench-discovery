@@ -1,6 +1,12 @@
 # ALIGNN-FF
 
-Aborted ALIGNN-FF force-field submission (historical record).
+Atomistic Line Graph Neural Network force fields: the active `alignn-ff-mptrj` and the aborted 2023 `alignn-ff`.
+
+## `alignn-ff-mptrj`
+
+[ALIGNN 2.0](https://arxiv.org/abs/2609.19487) force field, a pure-PyTorch ALIGNN trained from scratch on MPtrj. Architecture, training details and known limitations are in [`alignn-ff-mptrj.yml`](alignn-ff-mptrj.yml). The checkpoint ZIP ([figshare](https://doi.org/10.6084/m9.figshare.34846446), CC BY 4.0) holds `config.json` and `best_model.pt`, loaded by the `alignn_ff_mptrj` calculator in `matbench_discovery/calculators.py`. The submitted discovery, geometry and phonon predictions came from the shared runners at commit `c614eb0` with the contributor's earlier loader, which defaulted to evaluating the float32-trained weights in float64. The registered calculator runs them in float32 (on rattled Si and NaCl, forces differ by at most 4e-5 eV/Å and energies by 4e-7 eV/atom).
+
+## `alignn-ff` (aborted, 2023, historical record)
 
 The [ALIGNN FF model submission](https://github.com/janosh/matbench-discovery/pull/47) intended to get a complete set of formation energy predictions for the WBM test set post-ALIGNN-FF structure relaxation (i.e. the WBM IS2RE task).
 
@@ -12,7 +18,7 @@ This effort was aborted for the following reasons:
 
 The decision to abort testing ALIGNN FF was made after weeks of work due to ongoing technical challenges and resource limitations. See the [PR discussion](https://github.com/janosh/matbench-discovery/pull/47) for further details.
 
-## Fine-tuning
+### Fine-tuning
 
 We attempted fine-tuning the [`alignnff_wt10` checkpoint](https://github.com/usnistgov/alignn/blob/461b35fe/alignn/ff/alignnff_wt10/best_model.pt).
 

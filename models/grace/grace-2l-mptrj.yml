@@ -67,21 +67,21 @@ metrics:
       size: 260607
       md5: 0bbbb4a6abbc2cb4fa5a387d0c746480
     cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 92.04}
-    pbe_wall_dist_mae: 1.185
-    pbe_energy_mae: 3.596
-    pbe_bond_length_error: 0.4107
-    pbe_well_depth_error: 3.547
-    pbe_vib_freq_error: 125.1
+    pbe_wall_dist_mae: 1.213
+    pbe_energy_mae: 3.472
+    pbe_bond_length_error: 0.5005
+    pbe_well_depth_error: 3.573
+    pbe_vib_freq_error: 118.6
     tortuosity: 1.292
     energy_diff_flips: 1.908
     energy_jump: 0.2102
     force_flips: 1.943
     force_total_variation: 295.8
     force_jump: 3.909
-    pbe_force_mae: 4.288
+    pbe_force_mae: 3.964
     pbe_vib_freq_coverage:
-      n_valid: 66
-      n_eligible: 73
+      n_valid: 74
+      n_eligible: 81
       failed_elements:
       - Co
       - Eu
@@ -98,7 +98,7 @@ metrics:
       size: 1321082
       md5: 9facad7ad912e5292ba43b265ecf4969
     full_test_set:
-      F1: 0.687  # fraction
+      F1: 0.687 # fraction
       DAF: 3.714 # dimensionless
       Precision: 0.637 # fraction
       Recall: 0.746 # fraction
@@ -112,7 +112,7 @@ metrics:
       R2: 0.74 # dimensionless
       missing_preds: 128 # count
     unique_prototypes:
-      F1: 0.691  # fraction
+      F1: 0.691 # fraction
       DAF: 4.163 # dimensionless
       Precision: 0.636 # fraction
       Recall: 0.757 # fraction
@@ -137,6 +137,7 @@ metrics:
       symmetry_decrease: 0.0349 # fraction
       symmetry_match: 0.7315 # fraction
       symmetry_increase: 0.2292 # fraction
+      symmetry_lateral: 0.0044 # fraction
       n_structures: 256862 # count
       analysis_file:
         name: models/grace/grace-2l-mptrj/2024-11-11-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
@@ -149,6 +150,7 @@ metrics:
       symmetry_decrease: 0.0596 # fraction
       symmetry_match: 0.8107 # fraction
       symmetry_increase: 0.1228 # fraction
+      symmetry_lateral: 0.0069 # fraction
       n_structures: 256862 # count
       analysis_file:
         name: models/grace/grace-2l-mptrj/2024-11-11-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz

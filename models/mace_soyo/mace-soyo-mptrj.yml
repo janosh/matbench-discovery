@@ -126,10 +126,10 @@ metrics:
       Precision: 0.728 # fraction
       Recall: 0.817 # fraction
       Accuracy: 0.916 # fraction
-      TP: 36017.0 # count
-      FP: 13470.0 # count
-      TN: 199401.0 # count
-      FN: 8075.0 # count
+      TP: 36017 # count
+      FP: 13470 # count
+      TN: 199401 # count
+      FN: 8075 # count
       MAE: 0.04 # eV/atom
       RMSE: 0.081 # eV/atom
       R2: 0.796 # dimensionless
@@ -140,10 +140,10 @@ metrics:
       Precision: 0.733 # fraction
       Recall: 0.826 # fraction
       Accuracy: 0.926 # fraction
-      TP: 27554.0 # count
-      FP: 10040.0 # count
-      TN: 172074.0 # count
-      FN: 5820.0 # count
+      TP: 27554 # count
+      FP: 10040 # count
+      TN: 172074 # count
+      FN: 5820 # count
       MAE: 0.041 # eV/atom
       RMSE: 0.083 # eV/atom
       R2: 0.799 # dimensionless
@@ -160,6 +160,7 @@ metrics:
       symmetry_decrease: 0.063 # fraction
       symmetry_match: 0.6982 # fraction
       symmetry_increase: 0.2327 # fraction
+      symmetry_lateral: 0.0061 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/mace_soyo/mace-soyo-mptrj/2026-10-19-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
@@ -172,6 +173,7 @@ metrics:
       symmetry_decrease: 0.056 # fraction
       symmetry_match: 0.8121 # fraction
       symmetry_increase: 0.1246 # fraction
+      symmetry_lateral: 0.0073 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/mace_soyo/mace-soyo-mptrj/2026-10-19-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
@@ -228,21 +230,20 @@ metrics:
       size: 247959
       md5: 54ff28ac676408088388eb4c08872702
     cost: {source: runner, hardware: NVIDIA H200 NVL, run_time_sec: 98.71, max_rss_gb: 3.688, max_gpu_mem_gb: 0.082}
-    excluded_formula_reasons: {}
-    pbe_wall_dist_mae: 0.1764
-    pbe_energy_mae: 1.043
-    pbe_bond_length_error: 0.2136
-    pbe_well_depth_error: 0.4934
-    pbe_vib_freq_error: 53.83
+    pbe_wall_dist_mae: 0.1765
+    pbe_energy_mae: 1.01
+    pbe_bond_length_error: 0.2808
+    pbe_well_depth_error: 0.5535
+    pbe_vib_freq_error: 52.38
     tortuosity: 1.0
     energy_diff_flips: 1.172
     energy_jump: 0.07779
     force_flips: 1.172
     force_total_variation: 140.0
     force_jump: 6.946
-    pbe_force_mae: 1.433
+    pbe_force_mae: 1.36
     pbe_vib_freq_coverage:
-      n_valid: 73
-      n_eligible: 73
+      n_valid: 81
+      n_eligible: 81
       failed_elements: []
       missing_elements: []

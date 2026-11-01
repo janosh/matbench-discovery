@@ -100,3 +100,6 @@ jobs:
 
       - name: Run discovery eval script
         run: uv run --with-editable . scripts/evals/discovery.py
+
+      - name: Fail if recomputed metrics differ from the committed YAMLs
+        run: git diff --exit-code -- models/

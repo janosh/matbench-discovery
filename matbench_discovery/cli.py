@@ -1,6 +1,5 @@
 """Central argument parser for Matbench Discovery scripts."""
 
-import multiprocessing as mp
 import sys
 from argparse import ArgumentParser, ArgumentTypeError, Namespace
 from collections.abc import Sequence
@@ -19,6 +18,8 @@ def parse_model(value: str) -> Model:
 cli_parser = ArgumentParser(
     description="CLI flags for evaluation, payload and analysis scripts.",
     allow_abbrev=False,
+    # scripts add their own flag groups, possibly again when tests re-import them
+    conflict_handler="resolve",
 )
 
 models_arg = cli_parser.add_argument(
@@ -28,32 +29,6 @@ models_arg = cli_parser.add_argument(
     choices=Model,
     default=list(Model.active()),
     help="Models to analyze. If none specified, analyzes active models.",
-)
-cli_parser.add_argument(
-    "--debug",
-    type=int,
-    default=0,
-    help="If > 0, only analyze this many structures/items.",
-)
-cli_parser.add_argument(
-    "--workers",
-    type=int,
-    default=max(1, mp.cpu_count() - 1),
-    help="Number of processes to use for parallel tasks.",
-)
-cli_parser.add_argument(
-    "--md-run-dir",
-    help="Combine MD metric CSVs from this directory instead of the declared file.",
-)
-cli_parser.add_argument(
-    "--replace-author-reported",
-    action="store_true",
-    help="Let artifact-backed cost replace an author_reported YAML cost block.",
-)
-cli_parser.add_argument(
-    "--overwrite",
-    action="store_true",
-    help="Overwrite existing output files.",
 )
 cli_parser.add_argument(
     "-n",

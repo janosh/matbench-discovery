@@ -1,4 +1,4 @@
-"""Build the bundled DFT diatomic reference from spin-candidate VASP curves."""
+"""Build the bundled DFT diatomic reference from spin-candidate DFT curves."""
 
 from __future__ import annotations
 
@@ -8,16 +8,16 @@ import json
 import math
 import os
 from dataclasses import asdict
-from typing import Any, cast
+from typing import Any
 
 from matbench_discovery import ROOT
 from matbench_discovery.metrics.diatomics.reference import (
     CurvePostprocessEdit,
     count_dissociation_tail_jumps,
     count_magmom_discontinuities,
+    finite_energy_points,
     merge_min_energy_curve,
     merge_postprocessed_min_energy_curve,
-    point_distance,
     point_energy,
 )
 
@@ -52,7 +52,7 @@ def finite_magmoms(magmoms: object) -> list[float] | None:
         )
     ):
         return None
-    return cast("list[float]", magmoms)
+    return [float(moment) for moment in magmoms]
 
 
 def spin_suffix(candidate: int | str) -> str:
@@ -78,18 +78,12 @@ def load_candidate_points(
         points = json.load(file).get("points", [])
 
     finite_points: list[dict[str, Any]] = []
-    for point in points:
-        try:
-            point_energy(point)
-            point_distance(point)
-            if not has_finite_forces(point.get("forces")):
-                continue
-        except KeyError, TypeError, ValueError:
+    for point in finite_energy_points(points):  # copies, so cleaning is safe
+        if not has_finite_forces(point.get("forces")):
             continue
-        clean_point = dict(point)
-        if "magmoms" in clean_point:
-            clean_point["magmoms"] = finite_magmoms(clean_point["magmoms"])
-        finite_points.append(clean_point)
+        if "magmoms" in point:
+            point["magmoms"] = finite_magmoms(point["magmoms"])
+        finite_points.append(point)
     return finite_points
 
 

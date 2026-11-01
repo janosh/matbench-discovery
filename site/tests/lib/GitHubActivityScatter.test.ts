@@ -4,9 +4,19 @@ import GitHubActivityScatter from '#lib/plot/GitHubActivityScatter.svelte'
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { get_scatter_plot_props, mount } from '../index.js'
 
-const plot_mocks = vi.hoisted(() => ({
-  ScatterPlot: vi.fn(),
-}))
+// Svelte components and snippets both render as (anchor, ...prop getters), so the mock
+// can render the tooltip snippet for one hovered point when a test sets tooltip_point.
+const plot_mocks = vi.hoisted(() => {
+  const state: { tooltip_point?: Record<string, unknown> } = {}
+  type MockProps = { tooltip?: (anchor: Node, get_point: () => unknown) => void }
+  return {
+    state,
+    ScatterPlot: vi.fn((anchor: Node, props: MockProps) => {
+      const { tooltip_point } = state
+      if (tooltip_point) props.tooltip?.(anchor, () => tooltip_point)
+    }),
+  }
+})
 
 vi.mock(`matterviz/labels`, () => ({ format_num: vi.fn(String) }))
 vi.mock(`matterviz/plot`, () => ({ ScatterPlot: plot_mocks.ScatterPlot }))
@@ -32,7 +42,10 @@ const create_mock_github_data = (
 })
 
 describe(`GitHubActivityScatter`, () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    plot_mocks.state.tooltip_point = undefined
+  })
 
   it(`filters invalid activity rows and maps metrics to ScatterPlot props`, () => {
     mount(GitHubActivityScatter, {
@@ -81,8 +94,20 @@ describe(`GitHubActivityScatter`, () => {
         markers: `points`,
         point_style: { fill: `#4dabf7` },
         metadata: [
-          { name: `Zero Commits`, repo: `org/zero`, model_key: `zero-model` },
-          { name: `Popular`, repo: `org/popular`, model_key: `test-model` },
+          {
+            name: `Zero Commits`,
+            repo: `org/zero`,
+            model_key: `zero-model`,
+            commits_last_year: 0,
+            contributors: 1,
+          },
+          {
+            name: `Popular`,
+            repo: `org/popular`,
+            model_key: `test-model`,
+            commits_last_year: 10_000,
+            contributors: 1000,
+          },
         ],
         color_values: [1, 10_000],
         size_values: [1, 1000],
@@ -128,5 +153,20 @@ describe(`GitHubActivityScatter`, () => {
     })
     expect(goto).toHaveBeenCalledTimes(1)
     expect(goto).toHaveBeenCalledWith(`/models/slug%20with%20space`)
+  })
+
+  it(`shows commits and contributors from point metadata in the tooltip`, () => {
+    plot_mocks.state.tooltip_point = {
+      x_formatted: `250`,
+      y_formatted: `1,500`,
+      metadata: { name: `Test Model`, commits_last_year: 120, contributors: 15 },
+    }
+    mount(GitHubActivityScatter, {
+      target: document.body,
+      props: { github_data: [create_mock_github_data()] },
+    })
+    expect(document.body.textContent?.replaceAll(/\s+/g, ` `).trim()).toBe(
+      `Test Model GitHub Forks: 250 GitHub Stars: 1,500 Commits Last Year: 120 Contributors: 15`,
+    )
   })
 })

@@ -110,22 +110,21 @@ metrics:
       size: 257707
       md5: 4c7e30137baf50de0a903f01bbc9bf2b
     cost: {source: runner, hardware: NVIDIA H200, device: cuda, acceleration: [torch_aot_inductor], n_shards: 1, n_processes: 1, run_time_sec: 21.6, load_time_sec: 25.43, max_rss_gb: 1.529, max_gpu_mem_gb: 0.116}
-    excluded_formula_reasons: {}
-    pbe_wall_dist_mae: 0.2426
-    pbe_energy_mae: 1.23
-    pbe_bond_length_error: 0.1123
-    pbe_well_depth_error: 0.4692
-    pbe_vib_freq_error: 62.42
+    pbe_wall_dist_mae: 0.2373
+    pbe_energy_mae: 1.198
+    pbe_bond_length_error: 0.1954
+    pbe_well_depth_error: 0.5238
+    pbe_vib_freq_error: 59.23
     tortuosity: 1.036
     energy_diff_flips: 1.46
     energy_jump: 0.06922
     force_flips: 1.483
     force_total_variation: 100.8
     force_jump: 3.301
-    pbe_force_mae: 1.869
+    pbe_force_mae: 1.748
     pbe_vib_freq_coverage:
-      n_valid: 73
-      n_eligible: 73
+      n_valid: 81
+      n_eligible: 81
       failed_elements: []
       missing_elements: []
     reproducibility:
@@ -147,7 +146,7 @@ metrics:
       size: 1661321
       md5: fa28d2d661ff30f993a179466c90bdf1
     full_test_set:
-      F1: 0.742  # fraction
+      F1: 0.742 # fraction
       DAF: 3.998 # dimensionless
       Precision: 0.686 # fraction
       Recall: 0.809 # fraction
@@ -161,7 +160,7 @@ metrics:
       R2: 0.775 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.751  # fraction
+      F1: 0.751 # fraction
       DAF: 4.516 # dimensionless
       Precision: 0.69 # fraction
       Recall: 0.823 # fraction
@@ -186,6 +185,7 @@ metrics:
       symmetry_decrease: 0.0712 # fraction
       symmetry_match: 0.7211 # fraction
       symmetry_increase: 0.2015 # fraction
+      symmetry_lateral: 0.0062 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/allegro/allegro-mp-l-0.1/2025-09-08-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
@@ -198,6 +198,7 @@ metrics:
       symmetry_decrease: 0.0572 # fraction
       symmetry_match: 0.8125 # fraction
       symmetry_increase: 0.123 # fraction
+      symmetry_lateral: 0.0072 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/allegro/allegro-mp-l-0.1/2025-09-08-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz

@@ -191,10 +191,6 @@
   }
 </script>
 
-<svelte:head>
-  <title>Datasets | Matbench Discovery</title>
-</svelte:head>
-
 {#snippet name_cell({ row: dataset }: CellSnippetArgs<DatasetRow>)}
   <a href="/data/{dataset.slug}" title={dataset.name}>{dataset.key}</a>
   <Popover
@@ -296,7 +292,12 @@
 </p>
 
 <section class="full-bleed">
-  <div class="filters" aria-label="Dataset filters" style="margin-bottom: 1.5rem">
+  <div
+    class="filters"
+    role="group"
+    aria-label="Dataset filters"
+    style="margin-bottom: 1.5rem"
+  >
     <input
       type="search"
       aria-label="Search datasets"

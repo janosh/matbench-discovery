@@ -18,7 +18,7 @@ CandidatePoints = dict[int | str, list[CurvePoint]]
 
 
 def make_point(distance: float, energy: float, magmom: float = 0) -> CurvePoint:
-    """Build a minimal finite VASP curve point."""
+    """Build a minimal finite DFT curve point."""
     return {
         "distance": distance,
         "energies": [energy],

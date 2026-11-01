@@ -150,6 +150,7 @@ metrics:
       symmetry_decrease: 0.0584 # fraction
       symmetry_match: 0.728 # fraction
       symmetry_increase: 0.2085 # fraction
+      symmetry_lateral: 0.0051 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/deepmd/dpa-3.1-mptrj/2025-06-05-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
@@ -162,6 +163,7 @@ metrics:
       symmetry_decrease: 0.0549 # fraction
       symmetry_match: 0.809 # fraction
       symmetry_increase: 0.1287 # fraction
+      symmetry_lateral: 0.0074 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/deepmd/dpa-3.1-mptrj/2025-06-05-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz

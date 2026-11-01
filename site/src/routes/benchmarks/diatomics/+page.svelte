@@ -2,7 +2,7 @@
   import TestSet from '#lib/benchmark/TestSet.svelte'
   import TaskNavigation from '#lib/benchmark/TaskNavigation.svelte'
   import MetricsTable from '#lib/table/MetricsTable.svelte'
-  import ModelSelect from '#lib/ModelSelect.svelte'
+  import ModelSelect, { model_chip_style } from '#lib/ModelSelect.svelte'
   import {
     ACTIVE_MODELS,
     has_diatomics_curves,
@@ -22,13 +22,14 @@
   import { UrlModelSelection } from '#lib/model-selection.svelte.js'
   import DiatomicsNote from './diatomics-note.md'
   import { element_data, element_groups } from 'matterviz/element'
-  import { pick_contrast_color, PLOT_COLORS } from 'matterviz/colors'
   import { SvelteSet } from 'svelte/reactivity'
   import type { PageData } from './$types'
   import {
     DFT_REF_COLORS,
     ElementGroupParam,
     make_plot_observer,
+    MODEL_COLORS,
+    tint_element_groups,
   } from './diatomics.svelte.js'
 
   let { data }: { data: PageData } = $props()
@@ -57,40 +58,41 @@
   // cost-vs-fidelity Pareto: sweep wall time (x) vs CDS (y), size = model params,
   // color = training-set size (the two scaling levers)
 
+  // best (highest) combined diatomics score (CDS) first: picks the default models and
+  // their palette slots, so the default selection never repeats a color
+  let models_by_cds = $derived(
+    diatomic_models.toSorted(
+      (left, right) =>
+        (right.metrics?.diatomics?.combined_score ?? -Infinity) -
+        (left.metrics?.diatomics?.combined_score ?? -Infinity),
+    ),
+  )
+  let color_by_key = $derived(
+    Object.fromEntries(
+      models_by_cds.map(({ model_key }, idx) => [
+        model_key,
+        MODEL_COLORS[idx % MODEL_COLORS.length],
+      ]),
+    ),
+  )
   const color_for = (key: string): string =>
-    DFT_REF_COLORS[key] ??
-    PLOT_COLORS[(model_idx_by_key[key] ?? -1) % PLOT_COLORS.length] ??
-    `gray`
+    DFT_REF_COLORS[key] ?? color_by_key[key] ?? `gray`
 
   const element_group = new ElementGroupParam()
 
   let selectable_keys = $derived([...reference_names, ...data.diatomic_model_keys])
   let selectable_options = $derived(
-    selectable_keys.map((model_key) => {
-      const model_color = color_for(model_key)
-      const text_color = pick_contrast_color({ background: model_color })
-      return {
-        label: `${label_for(model_key)}${reference_names.includes(model_key) ? ` (DFT)` : ``}`,
-        value: model_key,
-        style: {
-          selected: `background: ${model_color}; color: ${text_color};`,
-          option: ``,
-        },
-      }
-    }),
+    selectable_keys.map((model_key) => ({
+      label: `${label_for(model_key)}${reference_names.includes(model_key) ? ` (DFT)` : ``}`,
+      value: model_key,
+      style: model_chip_style(color_for(model_key)),
+    })),
   )
 
   // DFT references plus the three highest CDS-ranked models with available curves.
   let default_selected_keys = $derived([
     ...reference_names,
-    ...diatomic_models
-      .toSorted(
-        (left, right) =>
-          (right.metrics?.diatomics?.combined_score ?? -Infinity) -
-          (left.metrics?.diatomics?.combined_score ?? -Infinity),
-      )
-      .slice(0, 3)
-      .map(({ model_key }) => model_key),
+    ...models_by_cds.slice(0, 3).map(({ model_key }) => model_key),
   ])
 
   const model_selection = new UrlModelSelection(() => ({
@@ -131,9 +133,9 @@
         {
           model_key,
           label: label_for(model_key),
+          ...curve,
           // DFT references carry per-formula distances; models share one grid
           distances: curve.distances ?? model_curves.distances,
-          energies: curve.energies,
           color: color_for(model_key),
           line_width: reference_names.includes(model_key) ? 2.5 : undefined,
         },
@@ -217,6 +219,8 @@
 <div class="controls">
   <ButtonGroup
     label="Element group filter"
+    class="element-group-filter"
+    {@attach tint_element_groups}
     options={element_groups}
     bind:value={element_group.key}
   />

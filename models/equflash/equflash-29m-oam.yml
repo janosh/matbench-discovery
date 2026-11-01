@@ -83,7 +83,7 @@ metrics:
       size: 2771470
       md5: 20f3e747f848fc3f74999c5671f66e02
     full_test_set:
-      F1: 0.9  # fraction
+      F1: 0.9 # fraction
       DAF: 5.214 # dimensionless
       Precision: 0.895 # fraction
       Recall: 0.906 # fraction
@@ -97,7 +97,7 @@ metrics:
       R2: 0.864 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.919  # fraction
+      F1: 0.919 # fraction
       DAF: 5.983 # dimensionless
       Precision: 0.915 # fraction
       Recall: 0.922 # fraction
@@ -122,6 +122,7 @@ metrics:
       symmetry_decrease: 0.0489 # fraction
       symmetry_match: 0.7019 # fraction
       symmetry_increase: 0.244 # fraction
+      symmetry_lateral: 0.0052 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/equflash/equflash-29m-oam/2025-06-23-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
@@ -134,6 +135,7 @@ metrics:
       symmetry_decrease: 0.0468 # fraction
       symmetry_match: 0.8198 # fraction
       symmetry_increase: 0.1264 # fraction
+      symmetry_lateral: 0.0071 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/equflash/equflash-29m-oam/2025-06-23-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
@@ -182,21 +184,21 @@ metrics:
       Pa-Pa: invalid or unsupported curve
       Th-Th: invalid or unsupported curve
       U-U: invalid or unsupported curve
-    pbe_wall_dist_mae: 0.132
-    pbe_energy_mae: 1.06e+29
-    pbe_bond_length_error: 0.159
-    pbe_well_depth_error: 0.3361
-    pbe_vib_freq_error: 47.68
+    pbe_wall_dist_mae: 0.1374
+    pbe_energy_mae: 9.583e+28
+    pbe_bond_length_error: 0.2346
+    pbe_well_depth_error: 0.4181
+    pbe_vib_freq_error: 47.43
     tortuosity: 1.021
     energy_diff_flips: 1.422
     energy_jump: 344.9
     force_flips: 1.398
     force_total_variation: 8.136e+32
     force_jump: 16790.0
-    pbe_force_mae: 1.836e+30
+    pbe_force_mae: 1.659e+30
     pbe_vib_freq_coverage:
-      n_valid: 66
-      n_eligible: 73
+      n_valid: 74
+      n_eligible: 81
       failed_elements:
       - Cs
       - K

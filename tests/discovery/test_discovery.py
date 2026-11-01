@@ -41,6 +41,7 @@ from matbench_discovery.energy import calc_energy_from_e_refs
 from matbench_discovery.enums import MbdKey, Model, TestSubset
 from matbench_discovery.hpc import (
     effective_shard_args,
+    material_id_hash,
     partition_material_ids,
     slurm_shard_selection,
 )
@@ -289,25 +290,31 @@ def test_write_yaml_results_masks_outliers_and_updates_yaml(
     assert set(discovery_yaml) >= {str(subset) for subset in TestSubset}
     full_metrics = discovery_yaml[str(TestSubset.full_test_set)]
     assert full_metrics[str(MbdKey.missing_preds)] == 2
-    assert full_metrics["TP"] == 1.0
-    assert isinstance(full_metrics["TP"], float), "counts are written as floats"
+    assert full_metrics["TP"] == 1
+    assert type(full_metrics["TP"]) is int, "counts are written as integers"
     # DAF denominator is the uniq-proto stable prevalence 2/3, Precision is 1
     uniq_metrics = discovery_yaml[str(TestSubset.uniq_protos)]
     assert uniq_metrics["DAF"] == pytest.approx(1.5)
 
 
+# --merge-shards --write-yaml --dry-run is covered for every runner in test_registry
 @pytest.mark.parametrize(
-    "cli_args",
+    ("cli_args", "expected_error"),
     [
-        ["--write-yaml"],
-        ["--merge-shards", "--write-yaml", "--dry-run"],
-        ["--merge-shards", "--shard-index", "0"],
+        (["--write-yaml"], "--write-yaml is only supported with --merge-shards"),
+        (
+            ["--merge-shards", "--shard-index", "0"],
+            "--shard-index is incompatible with --merge-shards",
+        ),
     ],
 )
-def test_cli_rejects_unsafe_flag_combinations(cli_args: list[str]) -> None:
+def test_cli_rejects_unsafe_flag_combinations(
+    cli_args: list[str], expected_error: str, capsys: pytest.CaptureFixture[str]
+) -> None:
     """CLI rejects YAML writes outside complete merges and sharded merge runs."""
     with pytest.raises(SystemExit, match="2"):
         discovery_runner.main(["--model", "emt", *cli_args])
+    assert expected_error in capsys.readouterr().err
 
 
 SUCCESS_RECORD = RelaxationRecord(material_id="wbm-1-1", structure={}, energy=-1.0)
@@ -492,7 +499,7 @@ def test_relaxation_settings_load_yaml_and_overrides(
 ) -> None:
     """YAML hyperparameters load, flags take precedence, unknown models raise."""
     evaluation = {"max_force": 0.02, "max_steps": 300, "cell_filter": None}
-    model = Model.mace_mp_0
+    model = Model["mace_mp_0"]
     patch_model_metadata(
         monkeypatch,
         model,
@@ -586,7 +593,7 @@ def _merge_test_shards(shard_paths: list[str]) -> MergedDiscoveryRun:
 
 
 def test_partition_material_ids_is_deterministic_and_balanced() -> None:
-    """Atom balancing is independent of mapping insertion order and deterministic."""
+    """Atom balancing and the material-ID hash are independent of insertion order."""
     atoms_by_id = {
         "wbm-3": bulk_atoms("wbm-3", repeat=3),
         "wbm-1": bulk_atoms("wbm-1", repeat=1),
@@ -594,6 +601,8 @@ def test_partition_material_ids_is_deterministic_and_balanced() -> None:
         "wbm-2": bulk_atoms("wbm-2", repeat=2),
     }
     reversed_atoms = dict(reversed(atoms_by_id.items()))
+    assert material_id_hash(list(atoms_by_id)) == material_id_hash(list(reversed_atoms))
+    assert material_id_hash(["wbm-1"]) != material_id_hash(["wbm-2"])
     shards = partition_material_ids(atoms_by_id, 2)
     assert shards == partition_material_ids(reversed_atoms, 2)
     shard_sizes = [

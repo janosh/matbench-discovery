@@ -9,7 +9,10 @@ export type ModelMetadata = {
    */
   model_version: string | null
   dates: Dates
-  lifecycle: 'active' | 'superseded' | 'deprecated' | 'aborted'
+  /**
+   * New submissions are pending (validated but kept off the leaderboard) until ingestion adds their site payloads and sets them active.
+   */
+  lifecycle: 'pending' | 'active' | 'superseded' | 'deprecated' | 'aborted'
   /**
    * model_key of the newer model replacing this one
    */
@@ -201,6 +204,7 @@ export type GeoOptMetrics = {
     symmetry_decrease: number
     symmetry_match: number
     symmetry_increase: number
+    symmetry_lateral: number
     n_structures: number
     analysis_file?: NullableFileRef
   }
@@ -210,6 +214,7 @@ export type GeoOptMetrics = {
     symmetry_decrease: number
     symmetry_match: number
     symmetry_increase: number
+    symmetry_lateral: number
     n_structures: number
     analysis_file?: NullableFileRef
   }

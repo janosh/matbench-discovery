@@ -1,5 +1,6 @@
 """HPC helpers: Slurm submission, sharding and run-cost provenance."""
 
+import hashlib
 import importlib.metadata
 import json
 import math
@@ -12,7 +13,12 @@ import tempfile
 import types
 import warnings
 from collections.abc import Iterable, Mapping, Sequence, Sized
-from typing import Any, Final, TypeIs
+from typing import TYPE_CHECKING, Any, Final, TypeIs
+
+from pymatviz.enums import Key
+
+if TYPE_CHECKING:
+    from ase import Atoms
 
 # === Run-cost provenance ===
 # Where a cost block came from: measured by our current runners and recorded in the
@@ -346,6 +352,20 @@ def partition_material_ids(
     return shards
 
 
+def material_id_hash(material_ids: Sequence[str]) -> str:
+    """Return an order-independent digest for a material-ID collection."""
+    joined_ids = "\n".join(sorted(map(str, material_ids)))
+    return hashlib.sha256(joined_ids.encode()).hexdigest()
+
+
+def material_id_from_atoms(atoms: Atoms) -> str:
+    """Extract the material ID from an ASE Atoms info mapping."""
+    material_id = atoms.info.get(str(Key.mat_id))
+    if not isinstance(material_id, str) or not material_id:
+        raise ValueError(f"No {Key.mat_id} in Atoms.info keys {sorted(atoms.info)}")
+    return material_id
+
+
 def _get_calling_file_path(frame: int = 1) -> str:
     """Return the absolute path of the file ``frame`` levels up the call stack."""
     caller_path = sys._getframe(frame).f_code.co_filename  # noqa: SLF001
@@ -418,9 +438,9 @@ def slurm_submit(
         *(slurm_flags.split() if isinstance(slurm_flags, str) else slurm_flags),
         *("--wrap", f"{pre_cmd} python {py_file_path}".strip()),
     ]
-    for flag in (f"{time=!s}", f"{account=!s}", f"{partition=!s}", f"{array=!s}"):
-        key, val = flag.split("=")
-        if val != "None":
+    optional_flags = dict(time=time, account=account, partition=partition, array=array)
+    for key, val in optional_flags.items():
+        if val is not None:
             cmd += (f"--{key}", val)
 
     is_log_file = not sys.stdout.isatty()

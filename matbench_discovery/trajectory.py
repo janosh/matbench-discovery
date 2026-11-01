@@ -261,8 +261,8 @@ class Trajectory:
         def uniform_comment(pattern: str, label: str, default: str) -> str:
             """Frame 0's `pattern` capture, raising if any frame differs."""
             values = [
-                m.group(1) if (m := re.search(pattern, c)) else default
-                for c in comments
+                match.group(1) if (match := re.search(pattern, comment)) else default
+                for comment in comments
             ]
             for idx, value in enumerate(values):
                 if value != values[0]:
@@ -314,7 +314,10 @@ class Trajectory:
             if no frame carries it. Mixed availability raises (matching from_ase).
             """
             rgx = re.compile(pattern)
-            found = [m.group(1) if (m := rgx.search(c)) else None for c in comments]
+            found = [
+                match.group(1) if (match := rgx.search(comment)) else None
+                for comment in comments
+            ]
             n_missing = found.count(None)
             if n_missing == n_frames:
                 return None
@@ -323,7 +326,9 @@ class Trajectory:
                     f"{path!r}: frame {found.index(None)} is missing a comment "
                     "field that other frames provide"
                 )
-            flat = np.fromstring(" ".join(v for v in found if v is not None), sep=" ")
+            flat = np.fromstring(
+                " ".join(value for value in found if value is not None), sep=" "
+            )
             if flat.size != n_frames * width:
                 raise ValueError(
                     f"{path!r}: expected {n_frames * width} values for {pattern!r}, "

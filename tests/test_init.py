@@ -1,11 +1,13 @@
 """Tests for package-level helpers and import-time configuration."""
 
+import os
 import warnings
+from pathlib import Path
 
 import pytest
 from pymatgen.core import Element
 
-from matbench_discovery import ROOT, repo_relative_path
+from matbench_discovery import ROOT, atomic_output_path, repo_relative_path
 
 
 @pytest.mark.parametrize(
@@ -30,6 +32,26 @@ def test_repo_relative_path_rejects_outside_root(file_path: str) -> None:
     """Paths escaping the repo root are rejected, including relative ones."""
     with pytest.raises(ValueError, match="must be inside repo root"):
         repo_relative_path(file_path)
+
+
+def test_atomic_output_path_keeps_old_file_on_error(tmp_path: Path) -> None:
+    """A failed write keeps the previous file and leaves no temp file behind."""
+    target = f"{tmp_path}/out.txt"
+    with open(target, mode="w", encoding="utf-8") as file:
+        file.write("old")
+
+    def write_then_fail() -> None:
+        """Write the new content, then crash before the rename."""
+        with atomic_output_path(target) as temporary_path:
+            with open(temporary_path, mode="w", encoding="utf-8") as file:
+                file.write("new")
+            raise RuntimeError
+
+    with pytest.raises(RuntimeError):
+        write_then_fail()
+    with open(target, encoding="utf-8") as file:
+        assert file.read() == "old"
+    assert os.listdir(tmp_path) == ["out.txt"]
 
 
 def test_pymatgen_electronegativity_warning_filtered() -> None:

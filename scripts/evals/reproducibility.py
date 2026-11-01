@@ -60,7 +60,7 @@ def main() -> int:
     for label, path, *maybe_url in args.run:
         url = maybe_url[0] if maybe_url else None
         rel_path = repo_relative_path(path)
-        validate_artifact_path(rel_path, f"models/{model.family}/{model.key}")
+        validate_artifact_path(rel_path, model.artifact_dir)
         abs_path = resolve_verified_file(
             f"{ROOT}/{rel_path}", url=url, label=label, md5=None
         )

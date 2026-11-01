@@ -9,6 +9,7 @@ import pandas as pd
 import pytest
 import yaml
 
+from matbench_discovery import cli
 from matbench_discovery.data import make_file_ref
 from matbench_discovery.enums import Model
 from tests.utils import import_repo_script, patch_model_metadata
@@ -19,13 +20,12 @@ def patch_eval_md(
     monkeypatch: pytest.MonkeyPatch,
     *,
     systems: list[str],
-    model: Model = Model.mace_mp_0,
 ) -> ModuleType:
     """Import scripts/evals/md.py and patch it to use a tiny test reference set."""
     eval_md = import_repo_script("eval_md", "scripts/evals/md.py")
+    # main() re-parses the shared CLI args: restore them for later tests
+    monkeypatch.setattr(cli, "cli_args", cli.cli_args)
     monkeypatch.setattr(eval_md, "ROOT", str(tmp_path))
-    monkeypatch.setattr(eval_md.cli_args, "models", [model])
-    monkeypatch.setattr(eval_md.cli_args, "md_run_dir", None)
     monkeypatch.setattr(eval_md, "default_md_reference_path", lambda: "ref.h5")
     monkeypatch.setattr(eval_md, "list_reference_systems", lambda _path: systems)
     return eval_md
@@ -52,11 +52,8 @@ def test_md_evals_preserves_precision_and_rejects_incomplete_coverage(
     use_run_dir: bool,
 ) -> None:
     """Explicit source selection preserves precision and rejects incomplete coverage."""
-    model, good_model = Model.mace_mp_0, Model.chgnet_0_3_0
+    model, good_model = Model["mace_mp_0"], Model["chgnet_0_3_0"]
     eval_md = patch_eval_md(tmp_path, monkeypatch, systems=["sysA", "sysB", "sysC"])
-    monkeypatch.setattr(eval_md.cli_args, "models", [model, good_model])
-    # The generic output flag must never change the selected data source.
-    monkeypatch.setattr(eval_md.cli_args, "overwrite", True)
 
     written_models = []
 
@@ -95,12 +92,12 @@ def test_md_evals_preserves_precision_and_rejects_incomplete_coverage(
     )
 
     run_dir = str(md_dir) if use_run_dir else None
-    monkeypatch.setattr(eval_md.cli_args, "md_run_dir", run_dir)
     resolved = eval_md.resolve_metrics(model, run_dir)
     assert resolved is not None
     assert bool(resolved[1]) is use_run_dir
     assert resolved[0].iloc[0][column] == rdf_error
-    assert eval_md.main() == 1
+    run_args = ["--md-run-dir", run_dir] if run_dir else []
+    assert eval_md.main(["--models", str(model), str(good_model), *run_args]) == 1
     assert written_models == [good_model]
     assert problem in capsys.readouterr().out
     if resolved[1]:
@@ -111,7 +108,7 @@ def test_md_recompute_and_import_prediction_file_reference(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Recompute retains source metadata; importing shards writes a fresh artifact."""
-    model = Model.mace_mp_0
+    model = Model["mace_mp_0"]
     eval_md = patch_eval_md(tmp_path, monkeypatch, systems=["sysA"])
     csv_path = tmp_path / "2026-09-12-md-metrics.csv.gz"
     pd.DataFrame({"system": ["sysA"], "rdf_error": [2.5]}).to_csv(csv_path, index=False)
@@ -128,7 +125,7 @@ def test_md_recompute_and_import_prediction_file_reference(
     patch_model_metadata(monkeypatch, model, metadata, yaml_path=str(yaml_path))
     monkeypatch.setattr(type(model), "md_path", property(lambda _self: str(csv_path)))
 
-    assert eval_md.main() == 0
+    assert eval_md.main(["--models", str(model)]) == 0
     result = yaml.safe_load(yaml_path.read_text())["metrics"]["md"]
     assert result == {"pred_file": ref, "rdf_error": 2.5, "n_systems": 1}
     assert csv_path.read_bytes() == original_bytes
@@ -138,8 +135,7 @@ def test_md_recompute_and_import_prediction_file_reference(
     source = pd.DataFrame({"rdf_error": [2.6901295363762974]}, index=["sysA"])
     source.index.name = "system"
     source.to_csv(run_dir / f"{model.name}-md-metrics-sysA.csv.gz")
-    monkeypatch.setattr(eval_md.cli_args, "md_run_dir", str(run_dir))
-    assert eval_md.main() == 0
+    assert eval_md.main(["--models", str(model), "--md-run-dir", str(run_dir)]) == 0
     result = yaml.safe_load(yaml_path.read_text())["metrics"]["md"]
     imported = pd.read_csv(
         tmp_path / result["pred_file"]["name"],
@@ -157,6 +153,6 @@ def test_md_recompute_and_import_prediction_file_reference(
     assert csv_path.read_bytes() == original_bytes
 
     # An empty explicit directory must fail, even with a usable declared artifact.
-    monkeypatch.setattr(eval_md.cli_args, "md_run_dir", str(tmp_path / "empty"))
-    assert eval_md.main() == 1
+    empty_dir = str(tmp_path / "empty")
+    assert eval_md.main(["--models", str(model), "--md-run-dir", empty_dir]) == 1
     assert yaml.safe_load(yaml_path.read_text())["metrics"]["md"] == result

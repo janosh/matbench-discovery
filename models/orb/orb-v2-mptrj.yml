@@ -91,22 +91,21 @@ metrics:
       size: 561929
       md5: 8aa0e9c4ade23a094d369adde865c7e4
     cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 97.46, load_time_sec: 6.38, max_rss_gb: 2.287, max_gpu_mem_gb: 0.199}
-    excluded_formula_reasons: {}
-    pbe_wall_dist_mae: 0.7336
-    pbe_energy_mae: 1.941
-    pbe_bond_length_error: 0.1653
-    pbe_well_depth_error: 0.4008
-    pbe_vib_freq_error: 347.8
+    pbe_wall_dist_mae: 0.7327
+    pbe_energy_mae: 1.833
+    pbe_bond_length_error: 0.2538
+    pbe_well_depth_error: 0.4929
+    pbe_vib_freq_error: 321.0
     tortuosity: 1.158
     energy_diff_flips: 2.943
     energy_jump: 2.211
     force_flips: 1.0
     force_total_variation: 142.2
     force_jump: 50.14
-    pbe_force_mae: 1.566
+    pbe_force_mae: 1.471
     pbe_vib_freq_coverage:
-      n_valid: 73
-      n_eligible: 73
+      n_valid: 81
+      n_eligible: 81
       failed_elements: []
       missing_elements: []
     reproducibility:
@@ -129,7 +128,7 @@ metrics:
       size: 1325089
       md5: 7ad5e62654b2b3511b912a939c085d36
     full_test_set:
-      F1: 0.755  # fraction
+      F1: 0.755 # fraction
       DAF: 4.188 # dimensionless
       Precision: 0.719 # fraction
       Recall: 0.795 # fraction
@@ -143,7 +142,7 @@ metrics:
       R2: 0.752 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.765  # fraction
+      F1: 0.765 # fraction
       DAF: 4.702 # dimensionless
       Precision: 0.719 # fraction
       Recall: 0.817 # fraction
@@ -168,6 +167,7 @@ metrics:
       symmetry_decrease: 0.8655 # fraction
       symmetry_match: 0.1335 # fraction
       symmetry_increase: 0.0009 # fraction
+      symmetry_lateral: 0.0001 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/orb/orb-v2-mptrj/2024-10-14-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
@@ -180,6 +180,7 @@ metrics:
       symmetry_decrease: 0.5213 # fraction
       symmetry_match: 0.4332 # fraction
       symmetry_increase: 0.0387 # fraction
+      symmetry_lateral: 0.0067 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/orb/orb-v2-mptrj/2024-10-14-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz

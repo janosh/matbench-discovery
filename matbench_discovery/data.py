@@ -8,19 +8,18 @@ Environment Variables:
         ~/.cache/matbench-discovery.
 """
 
+import functools
 import hashlib
 import io
 import os
 import posixpath
 import re
 import stat
-import tempfile
 import zipfile
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from glob import glob
-from pathlib import Path
 from typing import Any, Final, NotRequired, TypedDict
 
 import ase.io
@@ -33,7 +32,7 @@ from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 from tqdm import tqdm
 
-from matbench_discovery import DATA_DIR
+from matbench_discovery import DATA_DIR, atomic_output_path
 from matbench_discovery.enums import DataFiles, MbdKey, Model, TestSubset
 
 round_trip_yaml = YAML()  # round-trippable YAML for updating model metadata files
@@ -296,8 +295,14 @@ def parse_artifact_filename(filename: str) -> str:
     raise ValueError(f"Not a canonical model artifact filename: {filename!r}")
 
 
-with open(f"{DATA_DIR}/datasets.yml", encoding="utf-8") as file:
-    DATASETS = yaml.safe_load(stream=file)
+@functools.cache
+def load_datasets() -> dict[str, dict[str, Any]]:
+    """Load training/test dataset metadata from the repo's data/datasets.yml.
+
+    Read on demand (not at import) since installs outside a repo clone lack it.
+    """
+    with open(f"{DATA_DIR}/datasets.yml", encoding="utf-8") as file:
+        return yaml.safe_load(stream=file)
 
 
 def glob_to_df(
@@ -345,7 +350,7 @@ def glob_to_df(
 
 
 def ase_atoms_from_zip(
-    zip_filename: str | Path, *, limit: int | slice | None = None
+    zip_filename: str, *, limit: int | slice | None = None
 ) -> list[Atoms]:
     """Read ASE Atoms objects from the .extxyz members of a ZIP file.
 
@@ -444,7 +449,7 @@ def load_df_wbm_with_preds(
             prog_bar.set_postfix_str(model_name)
 
             pred_path = model.discovery_path
-            df_preds = glob_to_df(pred_path, pbar=False, nrows=nrows)
+            df_preds = pd.read_csv(pred_path, nrows=nrows)
             try:
                 df_out[model_key] = df_preds.set_index(id_col)["e_form_per_atom"]
             except KeyError as exc:
@@ -495,7 +500,7 @@ def load_discovery_predictions() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFra
 
 
 def update_yaml_file(
-    file_path: str | Path,
+    file_path: str,
     dotted_path: str,
     data: dict[str, Any] | Callable[[dict[str, Any]], dict[str, Any]],
     *,
@@ -506,7 +511,7 @@ def update_yaml_file(
     File-locked and atomically replaced so failed writes preserve the original file.
 
     Args:
-        file_path (str | Path): Path to YAML file to update
+        file_path (str): Path to YAML file to update
         dotted_path (str): Dotted path to update (e.g. 'metrics.discovery')
         data (dict | Callable): Data to write, or a locked section transformer
             that receives a copy of the prior section and returns the replacement.
@@ -568,24 +573,13 @@ def update_yaml_file(
             updated_data = data(dict(previous) if isinstance(previous, dict) else {})
         current[last] = updated_data
 
-        temporary_file = tempfile.NamedTemporaryFile(  # noqa: SIM115 - closed before replace
-            mode="w",
-            encoding="utf-8",
-            dir=os.path.dirname(file_path),
-            prefix=f".{os.path.basename(file_path)}.",
-            suffix=".tmp",
-            delete=False,
-        )
-        temporary_path = temporary_file.name
-        try:
-            with temporary_file as file:
-                round_trip_yaml.dump(yaml_data, file)
-                file.flush()
-                os.fsync(file.fileno())
-                os.chmod(temporary_path, stat.S_IMODE(os.stat(file_path).st_mode))
-            os.replace(temporary_path, file_path)
-        finally:
-            if os.path.isfile(temporary_path):
-                os.remove(temporary_path)
+        with (
+            atomic_output_path(file_path) as temporary_path,
+            open(temporary_path, mode="w", encoding="utf-8") as file,
+        ):
+            round_trip_yaml.dump(yaml_data, file)
+            file.flush()
+            os.fsync(file.fileno())
+            os.chmod(temporary_path, stat.S_IMODE(os.stat(file_path).st_mode))
 
         return yaml_data

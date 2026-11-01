@@ -3,15 +3,29 @@ import {
   element_groups,
   type ElementGroupKey,
 } from 'matterviz/element'
+import { DEFAULT_CATEGORY_COLORS } from 'matterviz/colors'
 import type { SvelteSet } from 'svelte/reactivity'
 import { in_view } from 'svelte-widgets/attachments'
 import { valid_query_param, type UrlParamEntry } from 'svelte-widgets/url-params'
 
-// DFT reference colors outside the model palette, legible on light and dark themes
+// Light, saturated-but-not-neon hues that read on both themes and carry black tooltip
+// text. DFT references take cyan/periwinkle, which the model palette leaves out.
 export const DFT_REF_COLORS: Readonly<Record<string, string>> = {
-  PBE: `#17becf`,
-  r2SCAN: `#f032e6`,
+  PBE: `#22d3ee`,
+  r2SCAN: `#818cf8`,
 }
+
+export const MODEL_COLORS = [
+  `#fbbf24`, // amber
+  `#34d399`, // emerald
+  `#60a5fa`, // blue
+  `#fb923c`, // orange
+  `#a3e635`, // lime
+  `#f87171`, // red
+  `#2dd4bf`, // teal
+  `#f9a8d4`, // pink
+  `#d6d3d1`, // stone
+] as const
 
 // `elements` URL param: which matterviz element group's diatomics to show
 export class ElementGroupParam {
@@ -26,6 +40,31 @@ export class ElementGroupParam {
 
   get url_entry(): UrlParamEntry {
     return [`elements`, this.key, `all`]
+  }
+}
+
+// matterviz periodic-table category behind each element-group filter button (`all` has
+// none). Nonmetals span two categories; halogens F-I are all diatomic nonmetals.
+const GROUP_CATEGORIES: Partial<Record<ElementGroupKey, string>> = {
+  alkali: `alkali metal`,
+  alkaline_earth: `alkaline earth metal`,
+  transition: `transition metal`,
+  post_transition: `post-transition metal`,
+  metalloid: `metalloid`,
+  nonmetal: `polyatomic nonmetal`,
+  halogen: `diatomic nonmetal`,
+  noble_gas: `noble gas`,
+  lanthanide: `lanthanide`,
+  actinide: `actinide`,
+}
+
+// Attachment for an element-group ButtonGroup: tints each button with its category color
+export const tint_element_groups = (node: HTMLElement): void => {
+  for (const button of node.querySelectorAll<HTMLElement>(`button[data-value]`)) {
+    const category = GROUP_CATEGORIES[button.dataset.value as ElementGroupKey]
+    if (category) {
+      button.style.setProperty(`--category-color`, DEFAULT_CATEGORY_COLORS[category])
+    }
   }
 }
 

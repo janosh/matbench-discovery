@@ -1,13 +1,8 @@
 <script lang="ts">
-  import type { Component } from 'svelte'
+  import type { PageData } from './$types'
   import Intro from './intro.md'
 
-  const modules = Object.entries(
-    import.meta.glob<Component>(`./modules/*.md`, {
-      eager: true,
-      import: 'default',
-    }),
-  ).toSorted(([path_a], [path_b]) => path_a.localeCompare(path_b))
+  let { data }: { data: PageData } = $props()
 </script>
 
 <div class="api">
@@ -15,8 +10,8 @@
 
   <Intro />
 
-  {#each modules as [path, MdFile] (path)}
-    <MdFile />
+  {#each data.modules as html, idx (idx)}
+    {@html html}
   {/each}
 </div>
 

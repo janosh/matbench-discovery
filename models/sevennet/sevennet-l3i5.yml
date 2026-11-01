@@ -94,24 +94,24 @@ metrics:
       url: https://figshare.com/files/66289007
       size: 228906
       md5: c028b11d9256fa0355eeeccb67ac22de
+    cost: {source: salvaged, hardware: NVIDIA A100-SXM4-80GB, run_time_sec: 2733.1}
     excluded_formula_reasons:
       He-He: exploding errors
-    cost: {source: salvaged, hardware: NVIDIA A100-SXM4-80GB, run_time_sec: 2733.1}
-    pbe_wall_dist_mae: 0.228
-    pbe_energy_mae: 1.149
-    pbe_bond_length_error: 0.1928
-    pbe_well_depth_error: 7.239
-    pbe_vib_freq_error: 148.6
+    pbe_wall_dist_mae: 0.2239
+    pbe_energy_mae: 1.102
+    pbe_bond_length_error: 0.2979
+    pbe_well_depth_error: 6.607
+    pbe_vib_freq_error: 142.3
     tortuosity: 1.073
     energy_diff_flips: 1.953
     energy_jump: 1.428
     force_flips: 2.058
     force_total_variation: 563.6
     force_jump: 192.5
-    pbe_force_mae: 2.65
+    pbe_force_mae: 2.465
     pbe_vib_freq_coverage:
-      n_valid: 72
-      n_eligible: 73
+      n_valid: 80
+      n_eligible: 81
       failed_elements:
       - F
       missing_elements: []
@@ -155,7 +155,7 @@ metrics:
       size: 1657501
       md5: 05b0b77a24264da18c899f5a24d18791
     full_test_set:
-      F1: 0.751  # fraction
+      F1: 0.751 # fraction
       DAF: 4.112 # dimensionless
       Precision: 0.706 # fraction
       Recall: 0.803 # fraction
@@ -169,7 +169,7 @@ metrics:
       R2: 0.773 # dimensionless
       missing_preds: 3 # count
     unique_prototypes:
-      F1: 0.76  # fraction
+      F1: 0.76 # fraction
       DAF: 4.629 # dimensionless
       Precision: 0.708 # fraction
       Recall: 0.821 # fraction
@@ -194,6 +194,7 @@ metrics:
       symmetry_decrease: 0.3667 # fraction
       symmetry_match: 0.4412 # fraction
       symmetry_increase: 0.1451 # fraction
+      symmetry_lateral: 0.047 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/sevennet/sevennet-l3i5/2024-12-10-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
@@ -206,6 +207,7 @@ metrics:
       symmetry_decrease: 0.0895 # fraction
       symmetry_match: 0.788 # fraction
       symmetry_increase: 0.1134 # fraction
+      symmetry_lateral: 0.0091 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/sevennet/sevennet-l3i5/2024-12-10-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz

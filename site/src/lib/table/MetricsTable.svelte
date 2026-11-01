@@ -504,7 +504,7 @@
   </Popover>
 {/snippet}
 
-<div class="ranking-context" aria-label="Ranking context">
+<div class="ranking-context" role="group" aria-label="Ranking context">
   <p>
     <strong>{metrics_data.length} of {cohort_models.length} eligible models</strong>
     · {#if active_sort.length}Sorted by {#each active_sort as criterion, idx}{@const label =

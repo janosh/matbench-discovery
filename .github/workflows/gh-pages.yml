@@ -9,16 +9,13 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  build:
-    if: ${{ !github.event.pull_request.head.repo.fork }}
+  build: # also on fork PRs (needs no secrets), so site breakage fails before merge
     defaults:
       run:
         working-directory: site
@@ -60,6 +57,9 @@ jobs:
 
   deploy:
     if: github.ref == 'refs/heads/main'
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

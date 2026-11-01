@@ -129,10 +129,15 @@ class EquFlashTrainerStub:
         return {"forces": ArrayTensorStub(np.concatenate(graph_batch.graphs, axis=0))}
 
 
-class ZeroStressCalculator(Calculator):
-    """ASE calculator returning zero energy, forces, and stress."""
+class FixedStressCalculator(Calculator):
+    """ASE calculator returning zero energy and forces and a fixed Voigt stress."""
 
     implemented_properties = ["energy", "forces", "stress"]  # noqa: RUF012
+
+    def __init__(self, stress: Sequence[float] = (0,) * 6) -> None:
+        """Store the Voigt stress (default zero) returned by every calculation."""
+        super().__init__()
+        self.stress = np.asarray(stress, dtype=float)
 
     def calculate(
         self,
@@ -147,7 +152,7 @@ class ZeroStressCalculator(Calculator):
         self.results = {
             "energy": 0.0,
             "forces": np.zeros((len(atoms), 3)),
-            "stress": np.zeros(6),
+            "stress": self.stress,
         }
 
 
@@ -299,14 +304,17 @@ def test_standard_relax_only_masks_tilts_with_symmetry_constraint(
     patch_relaxation(monkeypatch, resolve_filter_stub)
     atoms = Atoms("H", cell=np.eye(3), positions=[[0, 0, 0]], pbc=True)
 
-    standard.StandardKappaAdapter().relax(
+    result = standard.StandardKappaAdapter().relax(
         atoms,
-        ZeroStressCalculator(),
+        # compressive stress must report its magnitude, not a signed max of ~0
+        FixedStressCalculator(stress=(-3, -3, -3, 0, 0, 0)),
         KappaSettings(enforce_relax_symm=enforce_relax_symm, max_steps=1),
         log_file=None,
     )
 
     assert filter_calls == [expected_filter_kwargs]
+    assert result.max_stress is not None
+    np.testing.assert_allclose(result.max_stress, [3, 0], rtol=0, atol=1e-12)
 
 
 def test_fairchem_adapter_disables_training_scaler() -> None:
@@ -412,7 +420,7 @@ def test_equflash_two_stage_relax_redirects_symmetry(
     )
     result = EquFlashKappaAdapter().relax(
         atoms,
-        ZeroStressCalculator(),
+        FixedStressCalculator(),
         KappaSettings(relaxation_mode="two-stage"),
         log_file=None,
     )

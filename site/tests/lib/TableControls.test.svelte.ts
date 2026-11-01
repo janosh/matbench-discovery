@@ -190,6 +190,8 @@ describe(`TableControls`, () => {
     }
     expect(await panel_text(`Training data`)).toContain(`MPtrj (2)`)
     expect(await panel_text(`Targets`)).toContain(`forces (F) (3)`)
+    // aria-label needs a role on a plain div
+    expect(doc_query(`.active-filters`).getAttribute(`role`)).toBe(`group`)
     await remove_filter(`require forces`)
     expect(filters.targets).toEqual({})
     expect(document.querySelector(`.active-filters`)).toBeNull()

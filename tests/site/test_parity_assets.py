@@ -2,10 +2,9 @@
 
 Model pages fetch their energy/kappa parity plot data (too large for git) from the
 v1.0.0 GitHub release. Ingesting a model (`uv run --with-editable .
-scripts/ingest_model.py <model> --archive`, or the 'ingest-model' PR label which runs
-it in CI) generates the assets, uploads them to the release, and commits their
-metadata to the parity manifests. These tests fail fast when either step was skipped
-(404s model pages in production).
+scripts/ingest_model.py <model> --archive`) generates the assets, uploads them to the
+release, and commits their metadata to the parity manifests. These tests fail fast
+when either step was skipped (404s model pages in production).
 
 model-pr-guard.yml runs this file as a required PR check (authed, so the release
 test never rate-limit-skips there).
@@ -17,7 +16,6 @@ import gzip
 import hashlib
 import json
 import os
-import shutil
 import subprocess
 import sys
 from collections.abc import Callable
@@ -46,11 +44,7 @@ kappa_assets = import_repo_script(
     "generate_kappa_parity_assets", "site/scripts/generate-kappa-parity-assets.py"
 )
 
-INGEST_HINT = (
-    "apply the 'ingest-model' label to the submission PR (runs the full ingest in "
-    "CI) or run `uv run --with-editable . scripts/ingest_model.py <model> "
-    "--archive` locally"
-)
+INGEST_HINT = "run `uv run --with-editable . scripts/ingest_model.py <model> --archive`"
 
 
 def parity_manifest(kind: str) -> dict[str, Any]:
@@ -243,86 +237,8 @@ def read_workflow(name: str) -> str:
         return file.read()
 
 
-@pytest.mark.parametrize(
-    ("pr_state", "head_sha", "accepted"),
-    [("open", "a" * 40, True), ("open", "b" * 40, False), ("closed", "a" * 40, False)],
-)
-def test_ingest_resolver_accepts_only_reviewed_open_pr(
-    tmp_path: Path, pr_state: str, head_sha: str, accepted: bool
-) -> None:
-    """The ingest resolver accepts only an open PR at the reviewed head SHA."""
-    workflow = read_workflow("update-site-figs.yml")
-    resolver = yaml.safe_load(workflow)["jobs"]["update-site-figs"]["steps"][0]
-    output_file = tmp_path / "outputs"
-    bash_path = shutil.which("bash")
-    assert bash_path, "bash is required to test the workflow resolver"
-    result = subprocess.run(
-        [
-            bash_path,
-            "-e",
-            "-o",
-            "pipefail",
-            "-c",
-            'gh() { printf "%s" "$PR_JSON"; };\n' + resolver["run"],
-        ],
-        env=os.environ
-        | {
-            "GITHUB_REPOSITORY": "owner/repo",
-            "RUNNER_TEMP": str(tmp_path),
-            "GITHUB_OUTPUT": str(output_file),
-            "EXPECTED_SHA": "a" * 40,
-            "PR": "7",
-            "PR_JSON": json.dumps(
-                {
-                    "number": 7,
-                    "state": pr_state,
-                    "changed_files": 1,
-                    "head": {
-                        "sha": head_sha,
-                        "ref": "submission",
-                        "repo": {"full_name": "owner/repo"},
-                    },
-                }
-            ),
-        },
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    assert (result.returncode == 0) is accepted, result.stderr
-    if accepted:
-        assert f"head_sha={head_sha}\n" in output_file.read_text()
-    else:
-        assert not output_file.is_file()
-
-
-def test_workflows_refresh_and_deploy_exact_parity_assets() -> None:
-    """Automation refreshes, deploys, and prunes exact parity assets."""
-    workflow = read_workflow("update-site-figs.yml")
-    refresh = workflow.split("- name: Refresh payloads without secrets", 1)[1].split(
-        "- name: Recheck submission head before archival", 1
-    )[0]
-    # --validate-only already ran ingest's FIG_STEPS (both parity generators) for the
-    # detected models, so the refresh only rebuilds parity for full-roster changes
-    from scripts.ingest_model import FIG_STEPS
-
-    validate_step = workflow.split("- name: Validate submitted models without", 1)[1]
-    assert "--validate-only" in validate_step.split("- name:", 1)[0]
-    full_roster_refresh = refresh.split("--full-roster", 1)[1]
-    for kind in ("energy", "kappa"):
-        script = f"site/scripts/generate-{kind}-parity-assets.py"
-        assert any(step[-1] == script for step in FIG_STEPS)
-        assert refresh.count(script) == full_roster_refresh.count(script) == 1
-    assert "site/src/lib/parity/{energy,kappa}-parity-manifest.json" in workflow
-    assert (
-        "git add matbench_discovery/enums.py models site/src/figs site/src/lib/parity"
-        in workflow
-    )
-    assert workflow.index("generate-kappa-parity-assets.py") < workflow.index(
-        "--publish-parity"
-    )
-    assert '"${MODEL_ARGS[@]}" --payloads-only' in refresh
-    assert "--full-roster \\\n            --payloads-only" in refresh
+def test_deploy_fetches_and_prunes_exact_parity_assets() -> None:
+    """The deploy fetches exactly the manifest's parity assets and prunes the rest."""
     deploy = read_workflow("gh-pages.yml")
     assert (
         ".base.asset, (.model_assets[] | .[].asset), "
@@ -350,8 +266,6 @@ def test_workflows_refresh_and_deploy_exact_parity_assets() -> None:
     assert "now - 3600" in cleanup
     assert 'comm -23 - "$protected"' in cleanup
     assert "gh release delete-asset v1.0.0" in cleanup
-    guard = read_workflow("model-pr-guard.yml")
-    assert "parity/(energy|kappa)-parity-manifest" in guard
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="runs the Ubuntu setup shell")
@@ -476,7 +390,11 @@ def refresh_manifest() -> tuple[dict[str, Any], dict[str, Any]]:
                 }
                 for kind in ("parity", "modes")
             }
-            for model_key in (Model.mace_mp_0.key, Model.chgnet_0_3_0.key, "retired")
+            for model_key in (
+                Model["mace_mp_0"].key,
+                Model["chgnet_0_3_0"].key,
+                "retired",
+            )
         },
     }
     return manifest, base
@@ -487,7 +405,7 @@ def test_targeted_parity_requires_matching_base(
 ) -> None:
     """Targeted refresh rejects missing, stale, or malformed manifest entries."""
     manifest, base = refresh_manifest
-    model_key = Model.mace_mp_0.key
+    model_key = Model["mace_mp_0"].key
     kinds = manifest["model_assets"][model_key]
     with pytest.raises(FileNotFoundError, match="existing manifest"):
         asset_helpers.retained_parity_assets(None, (), base, "parity-v1")
@@ -527,10 +445,10 @@ def test_retained_parity_assets_drops_targeted_and_inactive_models(
 ) -> None:
     """Retain immutable base and active peers, including their complete asset kinds."""
     assert asset_helpers.resolve_models(["mace_mp_0", "mace-mp-0"]) == (
-        Model.mace_mp_0,
+        Model["mace_mp_0"],
     )
     manifest, base = refresh_manifest
-    target_keys = (Model.mace_mp_0.key,) if targeted else ()
+    target_keys = (Model["mace_mp_0"].key,) if targeted else ()
     expected = {
         key: kinds
         for key, kinds in manifest["model_assets"].items()
@@ -549,7 +467,7 @@ def test_prune_unreferenced_assets_keeps_exactly_the_manifest(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, replace_fails: bool
 ) -> None:
     """Pruning after the write deletes only files the new manifest does not name."""
-    model_key = Model.mace_mp_0.key
+    model_key = Model["mace_mp_0"].key
     # a peer whose key extends the target key must survive: name-prefix matching alone
     # would delete `<key>-variant` when refreshing `<key>`
     extended_key = f"{model_key}-variant"
@@ -780,7 +698,7 @@ def test_targeted_energy_requires_matching_structure_bundles(
     monkeypatch.setattr(energy_assets, "read_manifest", lambda _path: {})
 
     with pytest.raises(ValueError, match="structures changed; run a full refresh"):
-        energy_assets.main(["--models", Model.mace_mp_0.name])
+        energy_assets.main(["--models", Model["mace_mp_0"].name])
 
 
 @pytest.mark.parametrize(
@@ -794,24 +712,38 @@ def test_parity_generators_reject_empty_target_lists(
         parse_args(["--models"])
 
 
+NOT_POSITIVE = "expected a positive integer"
+SCRATCH_MANIFEST = "--limit-rows requires a scratch --manifest path"
+
+
 @pytest.mark.parametrize(
-    "argv",
+    ("argv", "expected_error"),
     [
         *(
-            [option, value]
+            ([option, value], NOT_POSITIVE)
             for option in ("--structure-shard-size", "--structure-bundle-size")
             for value in ("0", "-1")
         ),
         # debug row limits must never overwrite the committed manifest
-        ["--limit-rows", "5"],
-        ["--limit-rows", "5", "--manifest", energy_assets.MANIFEST_PATH],
-        ["--limit-rows", "0", "--manifest", "scratch.json"],
+        (["--limit-rows", "5"], SCRATCH_MANIFEST),
+        (
+            ["--limit-rows", "5", "--manifest", energy_assets.MANIFEST_PATH],
+            SCRATCH_MANIFEST,
+        ),
+        (["--limit-rows", "0", "--manifest", "scratch.json"], NOT_POSITIVE),
     ],
 )
-def test_energy_rejects_invalid_args(argv: list[str]) -> None:
+def test_energy_rejects_invalid_args(
+    argv: list[str], expected_error: str, capsys: pytest.CaptureFixture[str]
+) -> None:
     """Sizes and row limits must be positive; row limits need a scratch manifest."""
     with pytest.raises(SystemExit):
         energy_assets.parse_args(argv)
+    assert expected_error in capsys.readouterr().err
+
+
+def test_energy_limit_rows_accepts_scratch_manifest() -> None:
+    """A positive row limit with a scratch manifest parses."""
     scratch_args = energy_assets.parse_args(["--limit-rows", "5", "--manifest", "x"])
     assert scratch_args.limit_rows == 5
 

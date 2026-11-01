@@ -181,6 +181,15 @@ describe(`Geo Opt Task Page`, () => {
     expect(header_texts).toContain(HYPERPARAMS.ase_optimizer.label)
     expect(header_texts).toContain(HYPERPARAMS.max_steps.label)
     expect(header_texts).toContain(HYPERPARAMS.cell_filter.label)
+    // settings columns fade their heatmap to half the opacity of the metric columns
+    for (const { label } of [HYPERPARAMS.max_steps, HYPERPARAMS.max_force]) {
+      const cells = [
+        ...document.querySelectorAll<HTMLElement>(`td[data-col^="${label}"]`),
+      ]
+      expect(cells.length).toBeGreaterThan(0)
+      for (const cell of cells)
+        expect(cell.style.getPropertyValue(`--heatmap-opacity`)).toBe(`50%`)
+    }
 
     // Hidden-by-default columns absent
     expect(header_texts).not.toContain(HYPERPARAMS.n_layers.label)

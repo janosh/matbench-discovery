@@ -127,21 +127,21 @@ metrics:
     cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 1201.45, load_time_sec: 7.47, max_rss_gb: 2.07, max_gpu_mem_gb: 0.481}
     excluded_formula_reasons:
       Bi-Bi: exploding errors
-    pbe_wall_dist_mae: 0.12
-    pbe_energy_mae: 0.5703
-    pbe_bond_length_error: 0.1744
-    pbe_well_depth_error: 0.4002
-    pbe_vib_freq_error: 57.51
+    pbe_wall_dist_mae: 0.1271
+    pbe_energy_mae: 0.6041
+    pbe_bond_length_error: 0.2539
+    pbe_well_depth_error: 0.4809
+    pbe_vib_freq_error: 57.65
     tortuosity: 1.034
     energy_diff_flips: 1.535
     energy_jump: 0.5265
     force_flips: 1.512
     force_total_variation: 630.7
     force_jump: 15.8
-    pbe_force_mae: 1.775
+    pbe_force_mae: 1.684
     pbe_vib_freq_coverage:
-      n_valid: 69
-      n_eligible: 73
+      n_valid: 77
+      n_eligible: 81
       failed_elements:
       - Bi
       - Cs
@@ -168,7 +168,7 @@ metrics:
       size: 1338289
       md5: 8de869237eeb3cff00e30339233170ec
     full_test_set:
-      F1: 0.887  # fraction
+      F1: 0.887 # fraction
       DAF: 5.203 # dimensionless
       Precision: 0.893 # fraction
       Recall: 0.882 # fraction
@@ -182,7 +182,7 @@ metrics:
       R2: 0.862 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.906  # fraction
+      F1: 0.906 # fraction
       DAF: 5.954 # dimensionless
       Precision: 0.91 # fraction
       Recall: 0.901 # fraction
@@ -207,6 +207,7 @@ metrics:
       symmetry_decrease: 0.0469 # fraction
       symmetry_match: 0.8187 # fraction
       symmetry_increase: 0.1272 # fraction
+      symmetry_lateral: 0.0072 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/sevennet/sevennet-omni-i12/2026-01-12-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
@@ -219,6 +220,7 @@ metrics:
       symmetry_decrease: 0.0439 # fraction
       symmetry_match: 0.7056 # fraction
       symmetry_increase: 0.2454 # fraction
+      symmetry_lateral: 0.0051 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/sevennet/sevennet-omni-i12/2026-01-12-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz

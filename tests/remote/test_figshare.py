@@ -78,7 +78,7 @@ def test_upload_preserves_unicode_yaml(
     else:
         monkeypatch.setattr(Model, "yaml_path", property(lambda _model: str(yaml_path)))
         uploader.update_one_modeling_task_article(
-            "phonons", [Model.mace_mp_0], modeling_tasks={"phonons": {}}
+            "phonons", [Model["mace_mp_0"]], modeling_tasks={"phonons": {}}
         )
     assert yaml_path.read_text(encoding="utf-8") == original
 

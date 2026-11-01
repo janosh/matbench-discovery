@@ -17,10 +17,15 @@ from matbench_discovery.enums import Model
 from matbench_discovery.metrics import md as md_metrics
 from tests.utils import patch_model_metadata
 
-np_rng = np.random.default_rng(seed=0)
 ANISOTROPIC_STRESS_VOIGT = np.array(
     [-1.0 * units.GPa, -2.0 * units.GPa, -6.0 * units.GPa, 0, 0, 0]
 )
+
+
+@pytest.fixture
+def np_rng() -> np.random.Generator:
+    """Fresh seeded generator per test so inputs don't depend on test order."""
+    return np.random.default_rng(seed=0)
 
 
 class ConstantCalculator(Calculator):
@@ -64,7 +69,7 @@ class BrokenStressCalculator(Calculator):
 
 
 def make_jiggled_frames(
-    n_frames: int, *, pressure_gpa: float | None = None
+    n_frames: int, np_rng: np.random.Generator, *, pressure_gpa: float | None = None
 ) -> list[Atoms]:
     """Periodic 8-atom cubic-lattice frames with small random displacements. The 2.4 A
     spacing keeps Si-Si pairs within the covalent-radius bond cutoff so calc_adf finds
@@ -86,6 +91,7 @@ def make_jiggled_frames(
 
 def h2_frame(
     energy: float,
+    np_rng: np.random.Generator,
     *,
     positions: np.ndarray | None = None,
     forces: np.ndarray | None = None,
@@ -123,7 +129,7 @@ def test_calc_rdf_ideal_gas_is_flat(box_lens: tuple[float, ...]) -> None:
     )
 
 
-def test_calc_rdf_peak_position() -> None:
+def test_calc_rdf_peak_position(np_rng: np.random.Generator) -> None:
     """g(r) of a near-rigid dimer should peak at the bond length."""
     frames = [
         Atoms(
@@ -592,13 +598,14 @@ def test_calc_vdos_error_grid_sampling_invariant() -> None:
 # === pressure ===
 
 
-def test_get_trajectory_pressures() -> None:
+def test_get_trajectory_pressures(np_rng: np.random.Generator) -> None:
     """Pressures average the full 3D stress trace, not a 2D slab formula, so the
     anisotropic frame gives 3 GPa, not 1.5.
     """
     pressures = [0.5, -1.0, 2.0]
     frames = [
-        make_jiggled_frames(1, pressure_gpa=pressure)[0] for pressure in pressures
+        make_jiggled_frames(1, np_rng, pressure_gpa=pressure)[0]
+        for pressure in pressures
     ]
     aniso = Atoms("Si8", positions=np_rng.normal(scale=0.05, size=(8, 3)), cell=[6] * 3)
     aniso.pbc = True
@@ -637,11 +644,13 @@ def test_calc_pressure_metrics(
 # === private energy/force diagnostics ===
 
 
-def test_calc_energy_force_rmse_uses_private_labels() -> None:
+def test_calc_energy_force_rmse_uses_private_labels(
+    np_rng: np.random.Generator,
+) -> None:
     """Energy fluctuations and force RMSE come from private reference labels."""
     frames = [
-        h2_frame(energy=1.0, forces=np.zeros((2, 3))),
-        h2_frame(energy=3.0, forces=np.ones((2, 3))),
+        h2_frame(1.0, np_rng, forces=np.zeros((2, 3))),
+        h2_frame(3.0, np_rng, forces=np.ones((2, 3))),
     ]
 
     metrics = md_metrics.calc_energy_force_rmse(
@@ -653,7 +662,9 @@ def test_calc_energy_force_rmse_uses_private_labels() -> None:
     assert metrics["force_rmse"] == pytest.approx(np.sqrt(0.5))
 
 
-def test_energy_force_rmse_rejects_missing_private_labels() -> None:
+def test_energy_force_rmse_rejects_missing_private_labels(
+    np_rng: np.random.Generator,
+) -> None:
     """Private diagnostics must fail loudly when the reference lacks labels."""
     atoms = Atoms("H2", positions=np_rng.random((2, 3)) * 2, cell=[5] * 3)
 
@@ -666,7 +677,9 @@ def test_energy_force_rmse_rejects_missing_private_labels() -> None:
     [(0, 0), (1000, 100)],  # identical -> 0% non-overlap; far apart -> ~100%
     ids=["identical", "disjoint"],
 )
-def test_calc_pressure_histogram_error(shift: float, expected: float) -> None:
+def test_calc_pressure_histogram_error(
+    shift: float, expected: float, np_rng: np.random.Generator
+) -> None:
     """E_P (Eq. 9): 0% for identical pressure samples, ~100% for disjoint supports."""
     pressures = np_rng.normal(0, 1, 5000)
     err = md_metrics.calc_pressure_histogram_error(pressures, pressures + shift)
@@ -703,7 +716,9 @@ def test_pressure_metrics_reject_bad_input(
         getattr(md_metrics, func_name)(p_ref, np.arange(4.0), **kwargs)
 
 
-def test_calc_rdf_matches_direct_ase_histogram() -> None:
+def test_calc_rdf_matches_direct_ase_histogram(
+    np_rng: np.random.Generator,
+) -> None:
     """The array-based calc_rdf reproduces a direct Atoms.get_all_distances(mic=True)
     histogram for a triclinic cell (independent cross-check of the new kernel).
     """
@@ -773,10 +788,12 @@ def test_matched_frame_counts_rejects_zero_time_step(
         )
 
 
-def test_evaluate_md_system_reraises_unexpected_pressure_errors() -> None:
+def test_evaluate_md_system_reraises_unexpected_pressure_errors(
+    np_rng: np.random.Generator,
+) -> None:
     """Unexpected stress backend failures should not become NaN pressure metrics."""
-    ref_traj = make_jiggled_frames(8)
-    pred_traj = make_jiggled_frames(8)
+    ref_traj = make_jiggled_frames(8, np_rng)
+    pred_traj = make_jiggled_frames(8, np_rng)
     for atoms in (*ref_traj, *pred_traj):
         atoms.calc = BrokenStressCalculator()
 
@@ -789,12 +806,14 @@ def test_evaluate_md_system_reraises_unexpected_pressure_errors() -> None:
         )
 
 
-def test_evaluate_md_system_rejects_short_trajectories() -> None:
+def test_evaluate_md_system_rejects_short_trajectories(
+    np_rng: np.random.Generator,
+) -> None:
     """Trajectories shorter than two matched frames should raise."""
     with pytest.raises(ValueError, match="too short after time matching"):
         md_metrics.evaluate_md_system(
-            make_jiggled_frames(1),
-            make_jiggled_frames(10),
+            make_jiggled_frames(1, np_rng),
+            make_jiggled_frames(10, np_rng),
             ref_time_step_fs=1,
             pred_time_step_fs=1,
         )
@@ -919,7 +938,7 @@ def test_write_metrics_to_yaml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     """metrics.md gets units, rounding and the artifact's cost after pred_file."""
     yaml_path = tmp_path / "model.yml"
     yaml_path.write_text("model_name: test\nmetrics: {}\n", encoding="utf-8")
-    model = Model.mace_mp_0
+    model = Model["mace_mp_0"]
     patch_model_metadata(monkeypatch, model, yaml_path=str(yaml_path))
 
     cost = {

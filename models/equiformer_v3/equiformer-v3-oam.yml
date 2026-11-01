@@ -107,7 +107,7 @@ metrics:
       size: 1654051
       md5: 3df9f3ce50957dfc349c678fa4926616
     full_test_set:
-      F1: 0.912  # fraction
+      F1: 0.912 # fraction
       DAF: 5.298 # dimensionless
       Precision: 0.909 # fraction
       Recall: 0.916 # fraction
@@ -121,7 +121,7 @@ metrics:
       R2: 0.862 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.931  # fraction
+      F1: 0.931 # fraction
       DAF: 6.074 # dimensionless
       Precision: 0.928 # fraction
       Recall: 0.933 # fraction
@@ -146,6 +146,7 @@ metrics:
       symmetry_decrease: 0.4554 # fraction
       symmetry_match: 0.3711 # fraction
       symmetry_increase: 0.1299 # fraction
+      symmetry_lateral: 0.0436 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/equiformer_v3/equiformer-v3-oam/2026-04-07-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
@@ -158,6 +159,7 @@ metrics:
       symmetry_decrease: 0.129 # fraction
       symmetry_match: 0.7424 # fraction
       symmetry_increase: 0.1137 # fraction
+      symmetry_lateral: 0.015 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/equiformer_v3/equiformer-v3-oam/2026-04-07-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
@@ -184,22 +186,21 @@ metrics:
       size: 539863
       md5: c2a6423bcdacdc9ff60d2b51abbb89db
     cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 612.65, load_time_sec: 22.53, max_rss_gb: 2.436, max_gpu_mem_gb: 0.328}
-    excluded_formula_reasons: {}
-    pbe_wall_dist_mae: 0.5899
-    pbe_energy_mae: 1.838
-    pbe_bond_length_error: 0.6892
-    pbe_well_depth_error: 2.399
-    pbe_vib_freq_error: 229.1
+    pbe_wall_dist_mae: 0.5572
+    pbe_energy_mae: 1.763
+    pbe_bond_length_error: 0.7111
+    pbe_well_depth_error: 2.327
+    pbe_vib_freq_error: 214.4
     tortuosity: 1.296
     energy_diff_flips: 7.103
     energy_jump: 14.25
     force_flips: 7.115
     force_total_variation: 562.4
     force_jump: 641.9
-    pbe_force_mae: 4.191
+    pbe_force_mae: 3.865
     pbe_vib_freq_coverage:
-      n_valid: 68
-      n_eligible: 73
+      n_valid: 76
+      n_eligible: 81
       failed_elements:
       - Cs
       - K

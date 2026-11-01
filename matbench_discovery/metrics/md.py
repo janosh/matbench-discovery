@@ -97,6 +97,7 @@ def min_image_radius(cells: np.ndarray, pbc: np.ndarray) -> float:
     """
 
     def shortest_lattice_vector(cell: np.ndarray) -> float:
+        """Shortest periodic lattice vector length of the Minkowski-reduced cell."""
         reduced, _ = minkowski_reduce(cell, pbc)
         lengths = np.linalg.norm(reduced, axis=1)
         periodic = lengths[pbc]  # only periodic directions are true lattice vectors
@@ -355,6 +356,57 @@ def equipartition_temperature(
     amu_ang2_fs2_in_ev = 1e10 * units.J / units.kg
     kinetic_ev = 0.5 * amu_ang2_fs2_in_ev * np.einsum("a,tad->t", masses, velocities**2)
     return float((2 * kinetic_ev / (3 * traj.n_atoms * units.kB)).mean())
+
+
+def check_reference_dt(
+    trajectory: TrajectoryLike,
+    *,
+    time_step_fs: float,
+    temperature_kelvin: float,
+    label: str,
+) -> float:
+    """Reject a reference whose saved-frame interval contradicts its temperature.
+
+    Finite-difference kinetic temperature scales as 1/dt_fs**2, so a mislabeled or
+    stale dt_fs puts the equipartition temperature far off the thermostat target and
+    would silently corrupt vDOS and every time-matched metric.
+
+    Args:
+        trajectory: Reference frames to estimate the kinetic temperature from.
+        time_step_fs: Claimed time between saved frames in fs.
+        temperature_kelvin: Thermostat target temperature in K.
+        label: Names the system (and dt_fs source) in the error message.
+
+    Returns:
+        float: Equipartition temperature in K.
+
+    Raises:
+        ValueError: If the equipartition temperature is >=3x off temperature_kelvin.
+    """
+    kinetic_temp = equipartition_temperature(trajectory, time_step_fs=time_step_fs)
+    ratio = kinetic_temp / temperature_kelvin
+    if not 1 / 3 < ratio < 3:
+        raise ValueError(
+            f"{label}: equipartition T={kinetic_temp:.0f} K from dt_fs={time_step_fs}"
+            f" fs is >=3x off temperature_kelvin={temperature_kelvin:.0f} K (ratio "
+            f"{ratio:.2f}), so dt_fs is likely wrong (off by ~{ratio**-0.5:.1f}x), "
+            "i.e. mislabeled or stale. Fix the reference before evaluating"
+        )
+    return kinetic_temp
+
+
+def coverage_problems(index: pd.Index, expected: set[str]) -> list[str]:
+    """Return duplicate, missing, and unexpected system coverage problems."""
+    present = set(index)
+    problems = []
+    if index.has_duplicates:
+        duplicates = sorted(index[index.duplicated()].unique())
+        problems.append(f"duplicate systems {duplicates}")
+    if missing := expected - present:
+        problems.append(f"{len(missing)} missing e.g. {sorted(missing)[:3]}")
+    if extra := present - expected:
+        problems.append(f"{len(extra)} unexpected e.g. {sorted(extra)[:3]}")
+    return problems
 
 
 def calc_vdos(

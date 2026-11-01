@@ -39,7 +39,7 @@ for model in complete_models():
 small_noise = np.random.default_rng(seed=0).random(len(df_preds)) * 1e-12
 counts, bins = np.histogram(
     df_preds[MbdKey.each_true] + small_noise,
-    bins=200,  # match the histogram clf plots.
+    bins=200,  # finer than the clf histograms' 64 bins over +/-0.45 eV/atom
     range=(-0.7, 0.7),
 )
 # rolling count of test-set structures per hull-dist bin (drawn on y2)

@@ -5,10 +5,18 @@ import DFT_REFERENCES from '#lib/diatomics-dft.json.gz'
 import { fetch_diatomics_data } from '#lib/server/predictions.js'
 import type { PageServerLoad } from './$types'
 
+// DFT references add per-formula distance grids plus the per-point electronic state
+// shown in plot tooltips; model predictions carry energies only
+type PageDiatomicCurve = {
+  energies: number[]
+  distances?: number[]
+  magmoms?: ([number, number] | null)[] // site-projected moments of the two atoms (μB)
+  spin_candidates?: (string | null)[] // winning NUPDOWN (as string) or `afm`
+  bond_forces?: number[] // force on atom 2 along the bond (eV/Å), > 0 = repulsive
+}
 type PageDiatomicsCurves = {
   distances: number[]
-  // distances is optional per formula (DFT references use per-element grids)
-  'homo-nuclear': Record<string, { energies: number[]; distances?: number[] }>
+  'homo-nuclear': Record<string, PageDiatomicCurve>
 }
 
 const to_page_curves = (curves: DiatomicsCurves): PageDiatomicsCurves => ({
@@ -47,15 +55,23 @@ export const load: PageServerLoad = async () => {
 
   // Add DFT reference curves (PBE, r2SCAN) as selectable pseudo-models on the plots.
   // Each element has its own distance grid, so curves carry per-formula distances.
-  // Keep only distances/energies; forces are used for metrics but not plotted.
+  // Forces shrink to the bond-axis component on atom 2 (dimers lie along x).
   for (const [ref_name, formulas] of Object.entries(DFT_REFERENCES)) {
     diatomic_curves[ref_name] = {
       distances: [],
       'homo-nuclear': Object.fromEntries(
-        Object.entries(formulas).map(([formula, { distances, energies }]) => [
-          formula,
-          { distances, energies },
-        ]),
+        Object.entries(formulas).map(
+          ([formula, { distances, energies, forces, magmoms, spin_candidates }]) => [
+            formula,
+            {
+              distances,
+              energies,
+              magmoms,
+              spin_candidates,
+              bond_forces: forces?.map((point_forces) => point_forces[1][0]),
+            },
+          ],
+        ),
       ),
     }
   }

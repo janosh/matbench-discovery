@@ -6,6 +6,12 @@
   },
   "local_asset_base_url": "/kappa-parity/assets",
   "model_assets": {
+    "alignn-ff-mptrj": {
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-alignn-ff-mptrj-9df653457e4e9bd4.json.gz",
+        "sha256": "4866134f6da52a0cc300418e345d4faa6e8677539f3ad0f1ace7fc02b4f78f1a"
+      }
+    },
     "allegro-mp-l-0.1": {
       "modes": {
         "asset": "kappa-parity-phonondb-v1-modes-allegro-mp-l-0.1-6cfb65da90c08f8c.json.gz",

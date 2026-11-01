@@ -86,22 +86,21 @@ metrics:
       size: 259918
       md5: ba35984b21731139899e8881f9a16ee0
     cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 95.82, load_time_sec: 0.78, max_rss_gb: 1.801, max_gpu_mem_gb: 0.07}
-    excluded_formula_reasons: {}
-    pbe_wall_dist_mae: 0.403
-    pbe_energy_mae: 3.205
-    pbe_bond_length_error: 0.2676
-    pbe_well_depth_error: 16.86
-    pbe_vib_freq_error: 182.8
+    pbe_wall_dist_mae: 0.3866
+    pbe_energy_mae: 3.007
+    pbe_bond_length_error: 0.3716
+    pbe_well_depth_error: 15.38
+    pbe_vib_freq_error: 187.4
     tortuosity: 2.21
     energy_diff_flips: 1.839
     energy_jump: 2.105
     force_flips: 2.011
     force_total_variation: 415.0
     force_jump: 205.5
-    pbe_force_mae: 4.927
+    pbe_force_mae: 4.521
     pbe_vib_freq_coverage:
-      n_valid: 73
-      n_eligible: 73
+      n_valid: 81
+      n_eligible: 81
       failed_elements: []
       missing_elements: []
     reproducibility:
@@ -123,7 +122,7 @@ metrics:
       size: 1320974
       md5: fd7cd3781a24be465aaeadf97663ce58
     full_test_set:
-      F1: 0.612  # fraction
+      F1: 0.612 # fraction
       DAF: 3.038 # dimensionless
       Precision: 0.521 # fraction
       Recall: 0.74 # fraction
@@ -137,7 +136,7 @@ metrics:
       R2: 0.69 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.613  # fraction
+      F1: 0.613 # fraction
       DAF: 3.361 # dimensionless
       Precision: 0.514 # fraction
       Recall: 0.758 # fraction
@@ -162,6 +161,7 @@ metrics:
       symmetry_decrease: 0.2241 # fraction
       symmetry_match: 0.6062 # fraction
       symmetry_increase: 0.1601 # fraction
+      symmetry_lateral: 0.0096 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/chgnet/chgnet-0.3.0/2023-12-21-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
@@ -174,6 +174,7 @@ metrics:
       symmetry_decrease: 0.0922 # fraction
       symmetry_match: 0.7921 # fraction
       symmetry_increase: 0.1076 # fraction
+      symmetry_lateral: 0.0081 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/chgnet/chgnet-0.3.0/2023-12-21-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz

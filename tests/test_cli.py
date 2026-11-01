@@ -19,28 +19,20 @@ from tests.utils import patch_model_metadata
             set(),
         ),
         (
-            ["--models", str(Model.chgnet_0_3_0)],
-            {"models": [Model.chgnet_0_3_0]},
-            set(),
-        ),
-        (
-            ["--models", "alphanet-v1-mptrj", "--md-run-dir", "models/run-2026-09-12"],
-            {
-                "models": [Model.alphanet_v1_mptrj],
-                "md_run_dir": "models/run-2026-09-12",
-            },
+            ["--models", str(Model["chgnet_0_3_0"])],
+            {"models": [Model["chgnet_0_3_0"]]},
             set(),
         ),
         (
             [
                 "--models",
-                str(Model.chgnet_0_3_0),
-                str(Model.m3gnet),
+                str(Model["chgnet_0_3_0"]),
+                str(Model["m3gnet"]),
                 "--test-subset",
                 "full_test_set",
             ],
             {
-                "models": [Model.chgnet_0_3_0, Model.m3gnet],
+                "models": [Model["chgnet_0_3_0"], Model["m3gnet"]],
                 "test_subset": TestSubset.full_test_set,
             },
             set(),
@@ -50,9 +42,9 @@ from tests.utils import patch_model_metadata
                 "--f=/path/to/kernel.json",
                 "--ip=127.0.0.1",
                 "--models",
-                str(Model.chgnet_0_3_0),
+                str(Model["chgnet_0_3_0"]),
             ],
-            {"models": [Model.chgnet_0_3_0]},
+            {"models": [Model["chgnet_0_3_0"]]},
             {"--f=/path/to/kernel.json", "--ip=127.0.0.1"},
         ),
     ],
@@ -77,7 +69,6 @@ def test_cli_parser(
         (["--models"], None),
         (["--models", "invalid_model"], "invalid model: invalid_model"),
         (["--test-subset", "invalid_subset"], None),
-        (["--md-run-dir"], None),
     ],
 )
 def test_cli_parser_invalid_args(
@@ -100,7 +91,7 @@ def test_payload_scope_is_explicit(
     full_roster: bool,
 ) -> None:
     """Payload generation requires exactly one targeted or full-roster scope."""
-    models = [Model.chgnet_0_3_0] if models_explicit else cli.models_arg.default
+    models = [Model["chgnet_0_3_0"]] if models_explicit else cli.models_arg.default
     monkeypatch.setattr(cli.cli_args, "models", models)
     monkeypatch.setattr(cli.cli_args, "full_roster", full_roster)
     if models_explicit == full_roster:
@@ -115,15 +106,15 @@ def test_complete_models(monkeypatch: pytest.MonkeyPatch) -> None:
     pred_metrics = {"discovery": {"pred_file": {"name": "models/fake/preds.csv.gz"}}}
     metadata_by_model: dict[Model, dict[str, object]] = {
         # inactive listed first must not shadow later complete models
-        Model.alignn: {"lifecycle": "superseded", "metrics": pred_metrics},
-        Model.chgnet_0_3_0: {"lifecycle": "active", "metrics": pred_metrics},
-        Model.m3gnet: {"lifecycle": "active", "metrics": None},  # bare `metrics:`
-        Model.mace_mp_0: {"lifecycle": "active", "metrics": {"discovery": None}},
+        Model["alignn"]: {"lifecycle": "superseded", "metrics": pred_metrics},
+        Model["chgnet_0_3_0"]: {"lifecycle": "active", "metrics": pred_metrics},
+        Model["m3gnet"]: {"lifecycle": "active", "metrics": None},  # bare `metrics:`
+        Model["mace_mp_0"]: {"lifecycle": "active", "metrics": {"discovery": None}},
     }
     for model, metadata in metadata_by_model.items():
         patch_model_metadata(monkeypatch, model, metadata)
     monkeypatch.setattr(cli.cli_args, "models", list(metadata_by_model))
-    assert cli.complete_models() == [Model.chgnet_0_3_0]
+    assert cli.complete_models() == [Model["chgnet_0_3_0"]]
 
 
 @pytest.mark.parametrize(

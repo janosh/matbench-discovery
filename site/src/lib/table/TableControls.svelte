@@ -274,7 +274,7 @@
 {/snippet}
 
 {#if n_train || filters.openness.length < OPENNESS_OPTIONS.length || filters.targets_param || filters.show_selected_only}
-  <div class="active-filters" aria-label="Active model filters">
+  <div class="active-filters" role="group" aria-label="Active model filters">
     <span>Filters:</span>
     {#each Object.entries(filters.training) as [dataset, mode] (dataset)}
       {@render filter_chip(`${mode} ${dataset}`, () =>

@@ -62,11 +62,11 @@ export const format_relative_time = (date?: string, now_ms?: number): string => 
 
 // Declare shared task defaults once; an explicit undefined omits an inherited field.
 type MetricDefinition = Omit<Label, `key`> & { key?: string }
-function metric_group<Key extends string>(
+const metric_group = <Key extends string>(
   defaults: Partial<Label>,
   definitions: Record<Key, MetricDefinition>,
-): Record<Key, Label> {
-  return Object.fromEntries(
+): Record<Key, Label> =>
+  Object.fromEntries(
     Object.entries<MetricDefinition>(definitions).map(
       ([key, definition]): [string, Label] => {
         const label = { key, ...defaults, ...definition }
@@ -77,7 +77,6 @@ function metric_group<Key extends string>(
       },
     ),
   ) as Record<Key, Label>
-}
 
 export const DISCOVERY_METRICS: DiscoveryMetricsLabels = metric_group(
   { path: `metrics.discovery.unique_prototypes` },
@@ -210,6 +209,10 @@ export const METADATA_COLS: MetadataLabels = {
   },
 } as const
 
+// Settings columns (relaxation steps, f_max) are context, not scores: fade their
+// heatmap to half opacity and keep the page text color on the lighter fill
+const HALF_HEATMAP = `--heatmap-opacity: 50%; color: var(--text-color);`
+
 export const HYPERPARAMS: HyperparamLabels = {
   model_params: {
     key: `model_params`,
@@ -229,12 +232,16 @@ export const HYPERPARAMS: HyperparamLabels = {
     path: `hyperparams.evaluation`,
     description: `Max remaining force allowed on any atom in the structure for geometry optimization convergence`,
     unit: `eV/Å`,
+
+    cell_style: HALF_HEATMAP,
   },
   max_steps: {
     key: `max_steps`,
     label: `Steps`,
     path: `hyperparams.evaluation`,
     description: `Maximum number of optimization steps allowed`,
+
+    cell_style: HALF_HEATMAP,
   },
   ase_optimizer: {
     key: `Optimizer`,
@@ -302,9 +309,9 @@ export const GEO_OPT_SYMMETRY_METRICS = Object.fromEntries(
         symprec,
         path: `metrics.geo_opt.symprec=${symprec}`,
         label: `Σ<sub>${symbol}</sub> ${format_power_ten(symprec)}`,
-        description: `Fraction of structures where ML ground state has ${desc} DFT ground state at ${format_power_ten(symprec)} symprec`,
+        description: `Fraction of structures where ML ground state has ${desc} DFT ground state at ${format_power_ten(symprec)} symprec. The remaining fraction changed space group with the same number of symmetry operations`,
         better,
-        format: `~%`,
+        format: `.1~%`,
         // visible by default so the landing-page "Geo Opt" column preset can surface
         // them; the discovery/phonons/MD tables hide them via their own col_filter
       },
@@ -735,6 +742,7 @@ const org_logos = {
   'ICAMS, Ruhr University Bochum': `/logos/interdisciplinary-centre-for-advanced-materials-simulation-bochum.svg`,
   'Incheon National University': `/logos/incheon-national-university.svg`,
   'Institute of Computing Technology, Chinese Academy of Science, Beijing': `/logos/institute-of-computing-technology-chinese-academy-of-sciences-beijing.svg`,
+  'Johns Hopkins University': `/logos/johns-hopkins-university.svg`,
   'Kairos Materials': `/logos/kairos-materials.svg`,
   'Massachusetts Institute of Technology': `/logos/massachusetts-institute-of-technology.svg`,
   'Microsoft Research': Microsoft,

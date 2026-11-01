@@ -144,22 +144,21 @@ metrics:
       size: 237705
       md5: cd139874f920f9f25c219be10e512ecc
     cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 352.25, load_time_sec: 33.8, max_rss_gb: 2.648, max_gpu_mem_gb: 0.184}
-    excluded_formula_reasons: {}
-    pbe_wall_dist_mae: 0.2706
-    pbe_energy_mae: 1.187
-    pbe_bond_length_error: 0.2008
-    pbe_well_depth_error: 0.6762
-    pbe_vib_freq_error: 78.22
+    pbe_wall_dist_mae: 0.2613
+    pbe_energy_mae: 1.132
+    pbe_bond_length_error: 0.2657
+    pbe_well_depth_error: 0.6485
+    pbe_vib_freq_error: 73.6
     tortuosity: 1.142
     energy_diff_flips: 1.322
     energy_jump: 0.06566
     force_flips: 1.345
     force_total_variation: 102.8
     force_jump: 3.339
-    pbe_force_mae: 1.604
+    pbe_force_mae: 1.479
     pbe_vib_freq_coverage:
-      n_valid: 73
-      n_eligible: 73
+      n_valid: 81
+      n_eligible: 81
       failed_elements: []
       missing_elements: []
     reproducibility:
@@ -187,10 +186,10 @@ metrics:
       Precision: 0.699 # fraction
       Recall: 0.81 # fraction
       Accuracy: 0.908 # fraction
-      TP: 35734.0 # count
-      FP: 15408.0 # count
-      TN: 197463.0 # count
-      FN: 8358.0 # count
+      TP: 35734 # count
+      FP: 15408 # count
+      TN: 197463 # count
+      FN: 8358 # count
       MAE: 0.041 # eV/atom
       RMSE: 0.082 # eV/atom
       R2: 0.794 # dimensionless
@@ -201,10 +200,10 @@ metrics:
       Precision: 0.705 # fraction
       Recall: 0.826 # fraction
       Accuracy: 0.92 # fraction
-      TP: 27570.0 # count
-      FP: 11518.0 # count
-      TN: 170596.0 # count
-      FN: 5804.0 # count
+      TP: 27570 # count
+      FP: 11518 # count
+      TN: 170596 # count
+      FN: 5804 # count
       MAE: 0.043 # eV/atom
       RMSE: 0.083 # eV/atom
       R2: 0.797 # dimensionless
@@ -221,6 +220,7 @@ metrics:
       symmetry_decrease: 0.063 # fraction
       symmetry_match: 0.7242 # fraction
       symmetry_increase: 0.2076 # fraction
+      symmetry_lateral: 0.0052 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/bam/bam-mp-dens/2026-10-12-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
@@ -233,6 +233,7 @@ metrics:
       symmetry_decrease: 0.0623 # fraction
       symmetry_match: 0.8101 # fraction
       symmetry_increase: 0.1207 # fraction
+      symmetry_lateral: 0.007 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/bam/bam-mp-dens/2026-10-12-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz

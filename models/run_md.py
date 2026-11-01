@@ -32,14 +32,18 @@ import argparse
 import os
 import shlex
 
-from matbench_discovery import today
+from matbench_discovery import ROOT, today
 from matbench_discovery.calculators import (
     CALCULATORS,
     load_calculator_with_runtime,
     resolve_cli_calculator,
 )
 from matbench_discovery.data import artifact_filename
-from matbench_discovery.md import run_md_benchmark
+from matbench_discovery.md import (
+    default_md_reference_path,
+    list_reference_systems,
+    run_md_benchmark,
+)
 from matbench_discovery.runner_cli import add_common_runner_args, dependency_run_args
 
 module_dir = os.path.dirname(__file__)
@@ -157,8 +161,16 @@ def main() -> int:
         if model is None:  # debug models like emt have no YAML to write to
             print(f"Skipping metrics.md write: {args.model!r} is not a Model")
             return 0
+        # same exact-coverage gate as scripts/evals/md.py before publishing metrics
+        ref_systems = list_reference_systems(
+            args.ref_file or default_md_reference_path()
+        )
+        if problems := md_metrics.coverage_problems(df_md.index, set(ref_systems)):
+            raise ValueError(
+                f"Not writing metrics.md for {args.model}: {'; '.join(problems)}"
+            )
         artifact_name = artifact_filename(today, "md_metrics")
-        csv_path = f"{os.path.splitext(model.yaml_path)[0]}/{artifact_name}"
+        csv_path = f"{ROOT}/{model.artifact_dir}/{artifact_name}"
         os.makedirs(os.path.dirname(csv_path), exist_ok=True)
         df_md.to_csv(csv_path)
         md_metrics.write_metrics_to_yaml(

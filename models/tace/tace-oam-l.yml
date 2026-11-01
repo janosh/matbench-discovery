@@ -102,22 +102,21 @@ metrics:
       size: 230770
       md5: 62b5e9f6007315cee024e965e769fc9c
     cost: {source: runner, hardware: NVIDIA H200, device: cuda, acceleration: [openequivariance, torch_aot_inductor], n_shards: 1, n_processes: 1, run_time_sec: 122.78, load_time_sec: 309.68, max_rss_gb: 2.721, max_gpu_mem_gb: 0.048}
-    excluded_formula_reasons: {}
-    pbe_wall_dist_mae: 0.1119
-    pbe_energy_mae: 0.9634
-    pbe_bond_length_error: 0.2021
-    pbe_well_depth_error: 0.6152
-    pbe_vib_freq_error: 42.78
+    pbe_wall_dist_mae: 0.1202
+    pbe_energy_mae: 0.9458
+    pbe_bond_length_error: 0.2739
+    pbe_well_depth_error: 0.6464
+    pbe_vib_freq_error: 44.62
     tortuosity: 1.007
     energy_diff_flips: 1.632
     energy_jump: 0.1254
     force_flips: 1.598
     force_total_variation: 179.1
     force_jump: 4.72
-    pbe_force_mae: 0.9552
+    pbe_force_mae: 0.9397
     pbe_vib_freq_coverage:
-      n_valid: 72
-      n_eligible: 73
+      n_valid: 80
+      n_eligible: 81
       failed_elements:
       - F
       missing_elements: []
@@ -140,7 +139,7 @@ metrics:
       size: 1648063
       md5: deecc3cbb9f2695f5e5ce1763e216ba6
     full_test_set:
-      F1: 0.892  # fraction
+      F1: 0.892 # fraction
       DAF: 5.127 # dimensionless
       Precision: 0.88 # fraction
       Recall: 0.904 # fraction
@@ -154,7 +153,7 @@ metrics:
       R2: 0.862 # dimensionless
       missing_preds: 3 # count
     unique_prototypes:
-      F1: 0.91  # fraction
+      F1: 0.91 # fraction
       DAF: 5.898 # dimensionless
       Precision: 0.902 # fraction
       Recall: 0.919 # fraction
@@ -179,6 +178,7 @@ metrics:
       symmetry_decrease: 0.0479 # fraction
       symmetry_match: 0.8188 # fraction
       symmetry_increase: 0.126 # fraction
+      symmetry_lateral: 0.0073 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/tace/tace-oam-l/2026-04-09-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
@@ -191,6 +191,7 @@ metrics:
       symmetry_decrease: 0.0603 # fraction
       symmetry_match: 0.6922 # fraction
       symmetry_increase: 0.2415 # fraction
+      symmetry_lateral: 0.006 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/tace/tace-oam-l/2026-04-09-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz

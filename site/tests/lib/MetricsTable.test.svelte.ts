@@ -73,8 +73,8 @@ const all_targets_filters = () => {
   return filters
 }
 
-// Row-level logic is exercised on every 5th default-visible model (9 of 43 rows) at
-// ~1/5 the full table's render cost; column-level tests use only the first 3 of those.
+// Row-level logic is exercised on every 5th default-visible model at ~1/5 the full
+// table's render cost; column-level tests use only the first 3 of those.
 const sampled_keys = new Set(
   ACTIVE_MODELS.filter(make_table_filters().matches)
     .filter((_, idx) => idx % 5 === 0)
@@ -134,6 +134,9 @@ describe(`MetricsTable`, () => {
     expect(metric_order).toStrictEqual([...metric_order].toSorted((n1, n2) => n1 - n2))
 
     const initial_rows = [...table.querySelectorAll(`tbody tr`)]
+    const context_group = doc_query(`.ranking-context`)
+    expect(context_group.getAttribute(`role`)).toBe(`group`)
+    expect(context_group.getAttribute(`aria-label`)).toBe(`Ranking context`)
     expect(ranking_context()).toContain(`Sorted by CPS (descending)`)
     expect(ranking_context()).toContain(`MD and diatomics are excluded`)
     expect(ranking_context()).toContain(`CPS uses unique-prototype discovery scores`)
@@ -1026,7 +1029,8 @@ describe(`MetricsTable`, () => {
         const metrics = model.metrics?.discovery?.[discovery_set]
         const excluded =
           Object.keys(model.metrics?.diatomics?.excluded_formula_reasons ?? {}).length > 0
-        return `${model.model_name}${excluded ? `*` : ``},${metrics?.DAF},${metrics?.F1}`
+        const informed = model.test_set_informed ? `†` : ``
+        return `${model.model_name}${excluded ? `*` : ``}${informed},${metrics?.DAF},${metrics?.F1}`
       }),
     ])
     await choose_export(`Copy table`)

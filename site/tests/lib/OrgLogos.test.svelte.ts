@@ -1,4 +1,4 @@
-import type { OrgLogo } from '#lib/types.js'
+import type { Author, OrgLogo } from '#lib/types.js'
 import { Magnetic, Meta } from 'svelte-widgets/icons'
 import OrgLogos from '#lib/model/OrgLogos.svelte'
 import { flushSync, type ComponentProps } from 'svelte'
@@ -24,9 +24,11 @@ describe(`OrgLogos.svelte`, () => {
     return vi.waitFor(() => doc_query(`[role="dialog"]`))
   }
 
+  const authors: [Author] = [{ name: `Ada Lovelace` }]
+
   it(`renders one preview logo per org (src + icon types)`, () => {
     const org_logos: OrgLogo[] = [mit_logo, { name: `FAIR at Meta`, icon: Meta }]
-    mount(OrgLogos, { target: document.body, props: { org_logos } })
+    mount(OrgLogos, { target: document.body, props: { org_logos, authors } })
 
     expect(document.querySelectorAll(`.org-preview .org-logo`)).toHaveLength(2)
     // src logo renders as <img>, icon logo as <span><svg>
@@ -38,7 +40,7 @@ describe(`OrgLogos.svelte`, () => {
   })
 
   it(`renders nothing when there are no org logos`, () => {
-    mount(OrgLogos, { target: document.body, props: { org_logos: [] } })
+    mount(OrgLogos, { target: document.body, props: { org_logos: [], authors } })
 
     expect(document.querySelector(`.org-preview`)).toBeNull()
   })
@@ -70,13 +72,21 @@ describe(`OrgLogos.svelte`, () => {
     expect(innerHTML).toContain(`<svg`)
   })
 
-  it(`preserves stroked icon rendering in popover HTML`, async () => {
-    const content_el = await open_popover({
+  it(`keeps stroked preview icons and lists unknown affiliations without a logo`, async () => {
+    const popover = await open_popover({
       org_logos: [{ name: `Magnetic`, icon: Magnetic }],
+      authors: [
+        { name: `Ada Lovelace`, affiliation: `Unlisted Lab` },
+        { name: `Alan Turing` },
+      ],
     })
-    const svg = doc_query(`svg`, content_el)
-
+    const svg = doc_query(`.org-preview svg`)
     expect(svg.getAttribute(`fill`)).toBe(`none`)
     expect(svg.getAttribute(`stroke`)).toBe(`currentColor`)
+    // only author affiliations populate the popover, never the preview logos
+    expect(popover.querySelector(`svg, img`)).toBeNull()
+    expect(popover.textContent?.replaceAll(/\s+/g, ` `).trim()).toBe(
+      `Unlisted Lab Ada Lovelace Affiliation n/a Alan Turing`,
+    )
   })
 })

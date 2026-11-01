@@ -13,10 +13,10 @@
         "sha256": "f7551556ff967bdf80a184bbc7165d4f94af52747b750f0c03bcc3d8d6498578"
       }
     },
-    "alignn": {
+    "alignn-ff-mptrj": {
       "parity": {
-        "asset": "energy-parity-wbm-v1-model-alignn-5f459e9ddd3fd6c9.json.gz",
-        "sha256": "1d046f9c93b741b8caac6cdc5dc911619bd2dac03f5b04ba9ea913c98bc3bd17"
+        "asset": "energy-parity-wbm-v1-model-alignn-ff-mptrj-96082edf64862786.json.gz",
+        "sha256": "2b38bb55168a9344fd4a21c7a76d4e0bf2260e1ee99f0ae381491dec700345a1"
       }
     },
     "allegro-mp-l-0.1": {

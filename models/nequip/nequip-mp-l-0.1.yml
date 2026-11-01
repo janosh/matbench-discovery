@@ -109,22 +109,21 @@ metrics:
       size: 263506
       md5: 9f9ffc68ca0071cb8b02ed3d54424308
     cost: {source: runner, hardware: NVIDIA H200, device: cuda, acceleration: [torch_aot_inductor], n_shards: 1, n_processes: 1, run_time_sec: 55.15, load_time_sec: 37.04, max_rss_gb: 1.507, max_gpu_mem_gb: 0.066}
-    excluded_formula_reasons: {}
-    pbe_wall_dist_mae: 0.1963
-    pbe_energy_mae: 2.008
-    pbe_bond_length_error: 0.2961
-    pbe_well_depth_error: 1.003
-    pbe_vib_freq_error: 110.1
+    pbe_wall_dist_mae: 0.2108
+    pbe_energy_mae: 1.999
+    pbe_bond_length_error: 0.3674
+    pbe_well_depth_error: 1.118
+    pbe_vib_freq_error: 118.2
     tortuosity: 1.026
     energy_diff_flips: 1.828
     energy_jump: 0.2483
     force_flips: 1.839
     force_total_variation: 372.5
     force_jump: 2.188
-    pbe_force_mae: 3.278
+    pbe_force_mae: 3.157
     pbe_vib_freq_coverage:
-      n_valid: 72
-      n_eligible: 73
+      n_valid: 80
+      n_eligible: 81
       failed_elements:
       - Ac
       missing_elements: []
@@ -147,7 +146,7 @@ metrics:
       size: 1661375
       md5: 2afd042f9c986c60cc329f8ff8b5f3b2
     full_test_set:
-      F1: 0.752  # fraction
+      F1: 0.752 # fraction
       DAF: 4.136 # dimensionless
       Precision: 0.71 # fraction
       Recall: 0.8 # fraction
@@ -161,7 +160,7 @@ metrics:
       R2: 0.787 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.761  # fraction
+      F1: 0.761 # fraction
       DAF: 4.704 # dimensionless
       Precision: 0.719 # fraction
       Recall: 0.809 # fraction
@@ -186,6 +185,7 @@ metrics:
       symmetry_decrease: 0.0592 # fraction
       symmetry_match: 0.8109 # fraction
       symmetry_increase: 0.1227 # fraction
+      symmetry_lateral: 0.0072 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/nequip/nequip-mp-l-0.1/2025-08-27-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
@@ -198,6 +198,7 @@ metrics:
       symmetry_decrease: 0.0788 # fraction
       symmetry_match: 0.7163 # fraction
       symmetry_increase: 0.1982 # fraction
+      symmetry_lateral: 0.0067 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/nequip/nequip-mp-l-0.1/2025-08-27-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz

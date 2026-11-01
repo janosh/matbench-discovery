@@ -352,6 +352,11 @@ def test_checkpoint_digest_hashes_artifact_bytes(
     assert checkpoint_digest("registry:model-v1") != checkpoint_digest(
         "registry:model-v2"
     )
+    if platform != "win32":  # a corrupt cache raises instead of being rehashed
+        with open(cache_path, mode="w", encoding="utf-8") as file:
+            file.write("{not json")
+        with pytest.raises(json.JSONDecodeError):
+            checkpoint_digest(checkpoint_path)
 
 
 @pytest.mark.parametrize("explicit_checkpoint", [False, True])
@@ -362,7 +367,7 @@ def test_generated_models_use_stable_registry_provenance(
     from matbench_discovery.calculators import CALCULATORS
     from models import run_kappa
 
-    model = Model.nequip_mp_l_0_1
+    model = Model["nequip_mp_l_0_1"]
     # pin the runtime-compiled spec shape (no managed or required checkpoint)
     # before patching metadata, since resolving the lazy spec reads the real YAML
     monkeypatch.setitem(
@@ -530,7 +535,7 @@ def test_yaml_write_requires_verified_settings_and_dataset(
     )
     validate = functools.partial(
         run_kappa.validate_yaml_write_provenance,
-        Model.mace_mp_0,
+        Model["mace_mp_0"],
         merged_run,
         canonical_dataset_path=dataset_path,
     )
@@ -842,7 +847,7 @@ def test_get_kappa_adapter_dispatch(
     model_key: str, adapter_type: type[StandardKappaAdapter]
 ) -> None:
     """Backend families dispatch to their typed adapters."""
-    assert isinstance(get_kappa_adapter(model_key), adapter_type)
+    assert type(get_kappa_adapter(model_key)) is adapter_type
 
 
 def test_resumable_shards_strict_merge_and_artifacts(

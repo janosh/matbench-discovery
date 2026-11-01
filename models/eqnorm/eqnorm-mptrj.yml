@@ -119,22 +119,21 @@ metrics:
       size: 233572
       md5: 4b0ece9800c58e5e76ece9093c592b26
     cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 480.83, load_time_sec: 5.49, max_rss_gb: 2.053, max_gpu_mem_gb: 0.075}
-    excluded_formula_reasons: {}
-    pbe_wall_dist_mae: 0.2101
-    pbe_energy_mae: 1.019
-    pbe_bond_length_error: 0.2186
-    pbe_well_depth_error: 0.5529
-    pbe_vib_freq_error: 61.17
+    pbe_wall_dist_mae: 0.2068
+    pbe_energy_mae: 0.963
+    pbe_bond_length_error: 0.302
+    pbe_well_depth_error: 0.5188
+    pbe_vib_freq_error: 59.82
     tortuosity: 1.016
     energy_diff_flips: 1.471
     energy_jump: 0.2663
     force_flips: 1.46
     force_total_variation: 138.1
     force_jump: 12.43
-    pbe_force_mae: 1.912
+    pbe_force_mae: 1.779
     pbe_vib_freq_coverage:
-      n_valid: 73
-      n_eligible: 73
+      n_valid: 81
+      n_eligible: 81
       failed_elements: []
       missing_elements: []
     reproducibility:
@@ -156,7 +155,7 @@ metrics:
       size: 1510639
       md5: da1f1f8ef7f6dd63fd0af185395ace40
     full_test_set:
-      F1: 0.779  # fraction
+      F1: 0.779 # fraction
       DAF: 4.296 # dimensionless
       Precision: 0.737 # fraction
       Recall: 0.825 # fraction
@@ -170,7 +169,7 @@ metrics:
       R2: 0.796 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.786  # fraction
+      F1: 0.786 # fraction
       DAF: 4.844 # dimensionless
       Precision: 0.741 # fraction
       Recall: 0.838 # fraction
@@ -195,6 +194,7 @@ metrics:
       symmetry_decrease: 0.0589 # fraction
       symmetry_match: 0.8113 # fraction
       symmetry_increase: 0.1224 # fraction
+      symmetry_lateral: 0.0073 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/eqnorm/eqnorm-mptrj/2025-06-16-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
@@ -207,6 +207,7 @@ metrics:
       symmetry_decrease: 0.0639 # fraction
       symmetry_match: 0.6983 # fraction
       symmetry_increase: 0.2316 # fraction
+      symmetry_lateral: 0.0062 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/eqnorm/eqnorm-mptrj/2025-06-16-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz

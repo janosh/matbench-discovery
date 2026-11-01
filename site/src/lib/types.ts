@@ -26,7 +26,7 @@ export type ModelData = ModelMetadata & {
   }
   // These fields are populated in MODELS variable in models.svelte.ts
   dirname: string
-  metadata_file: string
+  n_estimators: number
   color?: string
   n_training_materials?: number | null
   n_training_structures?: number | null

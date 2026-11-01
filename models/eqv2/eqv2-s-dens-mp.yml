@@ -108,23 +108,23 @@ metrics:
       size: 709351
       md5: 6b016d5739bb07bb4f2c9c98ecc78ca6
     cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 478.75, load_time_sec: 22.34, max_rss_gb: 2.23, max_gpu_mem_gb: 0.234}
-    excluded_formula_reasons: {}
-    pbe_wall_dist_mae: 1.262
-    pbe_energy_mae: 2.96
-    pbe_bond_length_error: 1.038
-    pbe_well_depth_error: 1.178
-    pbe_vib_freq_error: 294.7
+    pbe_wall_dist_mae: 1.302
+    pbe_energy_mae: 2.761
+    pbe_bond_length_error: 1.042
+    pbe_well_depth_error: 1.072
+    pbe_vib_freq_error: 282.9
     tortuosity: 2.99
     energy_diff_flips: 11.95
     energy_jump: 8.205
     force_flips: 4.54
     force_total_variation: 176.1
     force_jump: 14.08
-    pbe_force_mae: 2.218
+    pbe_force_mae: 2.088
     pbe_vib_freq_coverage:
-      n_valid: 71
-      n_eligible: 73
+      n_valid: 78
+      n_eligible: 81
       failed_elements:
+      - Dy
       - Rb
       - Sr
       missing_elements: []
@@ -147,7 +147,7 @@ metrics:
       size: 1326011
       md5: e8da37c6c7f3fa3f7cec666d2d0d8706
     full_test_set:
-      F1: 0.798  # fraction
+      F1: 0.798 # fraction
       DAF: 4.362 # dimensionless
       Precision: 0.748 # fraction
       Recall: 0.855 # fraction
@@ -161,7 +161,7 @@ metrics:
       R2: 0.785 # dimensionless
       missing_preds: 351 # count
     unique_prototypes:
-      F1: 0.815  # fraction
+      F1: 0.815 # fraction
       DAF: 5.042 # dimensionless
       Precision: 0.771 # fraction
       Recall: 0.864 # fraction
@@ -186,6 +186,7 @@ metrics:
       symmetry_decrease: 0.8671 # fraction
       symmetry_match: 0.1322 # fraction
       symmetry_increase: 0.0006 # fraction
+      symmetry_lateral: 0.0002 # fraction
       n_structures: 256614 # count
       analysis_file:
         name: models/eqv2/eqv2-s-dens-mp/2024-10-18-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
@@ -198,6 +199,7 @@ metrics:
       symmetry_decrease: 0.3724 # fraction
       symmetry_match: 0.5396 # fraction
       symmetry_increase: 0.0653 # fraction
+      symmetry_lateral: 0.0228 # fraction
       n_structures: 256614 # count
       analysis_file:
         name: models/eqv2/eqv2-s-dens-mp/2024-10-18-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz

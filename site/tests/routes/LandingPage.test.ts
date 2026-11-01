@@ -7,6 +7,7 @@ import {
   doc_query,
   header_name,
   heatmap_toggle,
+  mock_element_size,
   mount,
   mount_with_url,
   navigate,
@@ -310,32 +311,6 @@ describe(`Landing Page`, () => {
     },
   )
 
-  it(`updates column visibility when toggling checkboxes`, async () => {
-    expect(document.querySelector(`.column-menu`)).toBeNull()
-    const column_menu = await open_column_menu()
-
-    expect(header_text()).toContain(`F1`)
-
-    const checkboxes = column_menu.querySelectorAll<HTMLInputElement>(
-      `.toggle-label input[type="checkbox"]`,
-    )
-    const f1_checkbox = [...checkboxes].find((checkbox) =>
-      checkbox.parentElement?.textContent?.includes(`F1`),
-    )
-    if (!f1_checkbox) throw new Error(`F1 checkbox not found`)
-    expect(f1_checkbox.checked).toBe(true)
-
-    f1_checkbox.click()
-    await tick()
-    expect(f1_checkbox.checked).toBe(false)
-
-    expect(header_text()).not.toContain(`F1`)
-
-    doc_query(`.column-picker > button`).click()
-    await tick()
-    expect(document.querySelector(`.column-menu`)).toBeNull()
-  })
-
   it(`filters models via the training-data dropdown`, async () => {
     comparison.set([])
     const selected_scatter_label = () =>
@@ -390,6 +365,22 @@ describe(`Landing Page URL state`, () => {
       await open_column_menu(),
     )
   const toggle_column = async () => (await column_checkbox()).click()
+
+  // regression: the CPS history plotted the preset-dependent table cohort, so models
+  // without MD or diatomics results dropped out of the plot (51/49/50 markers)
+  it(`plots the same CPS history cohort for every column preset`, async () => {
+    mock_element_size(800, 500)
+    const cps_markers = () =>
+      document.querySelectorAll(`.plot-section path.marker`).length
+    await mount_with_url(Page, `http://localhost/?preset=Discovery`)
+    const n_markers = cps_markers()
+    expect(n_markers).toBeGreaterThan(0)
+    for (const preset of [`MD`, `Diatomics`]) {
+      await navigate(`/?preset=${preset}`, `popstate`)
+      expect(pressed_toggle(`Discovery`)).toBe(preset)
+      expect(cps_markers()).toBe(n_markers)
+    }
+  })
 
   it.each([
     [`http://localhost/?preset=MD&sort=F1`, `F1`, `descending`],

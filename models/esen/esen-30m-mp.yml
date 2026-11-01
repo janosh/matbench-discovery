@@ -80,22 +80,21 @@ metrics:
       size: 350119
       md5: 49f9e55ab4b56180fc85f800efb0a4ad
     cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 816.09, load_time_sec: 22.61, max_rss_gb: 2.482, max_gpu_mem_gb: 0.216}
-    excluded_formula_reasons: {}
-    pbe_wall_dist_mae: 0.6455
-    pbe_energy_mae: 2.086
-    pbe_bond_length_error: 0.5859
-    pbe_well_depth_error: 0.941
-    pbe_vib_freq_error: 72.41
+    pbe_wall_dist_mae: 0.6504
+    pbe_energy_mae: 1.915
+    pbe_bond_length_error: 0.5924
+    pbe_well_depth_error: 0.8557
+    pbe_vib_freq_error: 68.33
     tortuosity: 1.113
     energy_diff_flips: 3.23
     energy_jump: 0.3988
     force_flips: 3.218
     force_total_variation: 61.98
     force_jump: 20.12
-    pbe_force_mae: 2.895
+    pbe_force_mae: 2.66
     pbe_vib_freq_coverage:
-      n_valid: 73
-      n_eligible: 73
+      n_valid: 81
+      n_eligible: 81
       failed_elements: []
       missing_elements: []
     reproducibility:
@@ -117,7 +116,7 @@ metrics:
       size: 1316973
       md5: 11c30079072c928109cb826be9af3671
     full_test_set:
-      F1: 0.819  # fraction
+      F1: 0.819 # fraction
       DAF: 4.616 # dimensionless
       Precision: 0.792 # fraction
       Recall: 0.849 # fraction
@@ -131,7 +130,7 @@ metrics:
       R2: 0.818 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.831  # fraction
+      F1: 0.831 # fraction
       DAF: 5.26 # dimensionless
       Precision: 0.804 # fraction
       Recall: 0.861 # fraction
@@ -156,6 +155,7 @@ metrics:
       symmetry_decrease: 0.4281 # fraction
       symmetry_match: 0.3859 # fraction
       symmetry_increase: 0.1282 # fraction
+      symmetry_lateral: 0.0578 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/esen/esen-30m-mp/2025-03-17-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
@@ -168,6 +168,7 @@ metrics:
       symmetry_decrease: 0.2604 # fraction
       symmetry_match: 0.6106 # fraction
       symmetry_increase: 0.098 # fraction
+      symmetry_lateral: 0.031 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/esen/esen-30m-mp/2025-03-17-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz

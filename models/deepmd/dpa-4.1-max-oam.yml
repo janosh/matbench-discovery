@@ -1,6 +1,6 @@
 model_name: DPA-4.1-Max-OAM
 model_key: dpa-4.1-max-oam
-model_version: null
+model_version:
 dates:
   benchmark_added: '2026-10-31'
   paper_published: '2026-06-01'
@@ -115,33 +115,33 @@ metrics:
       md5: c44c675c5d14ae3f9b11da3ea1359caa
       url: https://ndownloader.figshare.com/files/70537422
     full_test_set:
-      F1: 0.9125463891386026
-      DAF: 5.406571791049992
-      Precision: 0.9277077377325772
-      Recall: 0.8978726299555475
-      Accuracy: 0.9704704568361983
-      TP: 39589
-      FP: 3085
-      TN: 209786
-      FN: 4503
-      MAE: 0.01678890960106787
-      RMSE: 0.06585670324494183
-      R2: 0.8660914473170616
-      missing_preds: 2
+      F1: 0.913 # fraction
+      DAF: 5.407 # dimensionless
+      Precision: 0.928 # fraction
+      Recall: 0.898 # fraction
+      Accuracy: 0.97 # fraction
+      TP: 39589 # count
+      FP: 3085 # count
+      TN: 209786 # count
+      FN: 4503 # count
+      MAE: 0.017 # eV/atom
+      RMSE: 0.066 # eV/atom
+      R2: 0.866 # dimensionless
+      missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.9331055647099729
-      DAF: 6.159628135917502
-      Precision: 0.9416323417238749
-      Recall: 0.9247318271708516
-      Accuracy: 0.9794652138402138
-      TP: 30862
-      FP: 1913
-      TN: 180201
-      FN: 2512
-      MAE: 0.01689951644639145
-      RMSE: 0.0657832431720416
-      R2: 0.8723850209037483
-      missing_preds: 0
+      F1: 0.933 # fraction
+      DAF: 6.16 # dimensionless
+      Precision: 0.942 # fraction
+      Recall: 0.925 # fraction
+      Accuracy: 0.979 # fraction
+      TP: 30862 # count
+      FP: 1913 # count
+      TN: 180201 # count
+      FN: 2512 # count
+      MAE: 0.017 # eV/atom
+      RMSE: 0.066 # eV/atom
+      R2: 0.872 # dimensionless
+      missing_preds: 0 # count
   geo_opt:
     pred_file:
       name: models/deepmd/dpa-4.1-max-oam/2026-10-21-geo-opt.jsonl.gz
@@ -149,29 +149,31 @@ metrics:
       md5: 6c52292224fb176946e1cb5f9b857f84
       url: https://ndownloader.figshare.com/files/70537431
     symprec=1e-5:
-      rmsd: 0.0573464311982659
-      n_sym_ops_mae: 2.7805403890832534
-      symmetry_decrease: 0.35763514591594897
-      symmetry_match: 0.4281122184905998
-      symmetry_increase: 0.1614201266330172
-      n_structures: 256963
+      rmsd: 0.0573 # unitless
+      n_sym_ops_mae: 2.7805 # unitless
+      symmetry_decrease: 0.3576 # fraction
+      symmetry_match: 0.4281 # fraction
+      symmetry_increase: 0.1614 # fraction
+      symmetry_lateral: 0.0528 # fraction
+      n_structures: 256963 # count
       analysis_file:
         name: models/deepmd/dpa-4.1-max-oam/2026-10-21-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
+        url: https://ndownloader.figshare.com/files/70537443
         size: 1323918
         md5: e8af3f4306a79bce4c6e2a9df05e0bd3
-        url: https://ndownloader.figshare.com/files/70537443
     symprec=1e-2:
-      rmsd: 0.0573464311982659
-      n_sym_ops_mae: 1.9517167841284544
-      symmetry_decrease: 0.12479228527064208
-      symmetry_match: 0.747317707218549
-      symmetry_increase: 0.11330425002821418
-      n_structures: 256963
+      rmsd: 0.0573 # unitless
+      n_sym_ops_mae: 1.9517 # unitless
+      symmetry_decrease: 0.1248 # fraction
+      symmetry_match: 0.7473 # fraction
+      symmetry_increase: 0.1133 # fraction
+      symmetry_lateral: 0.0146 # fraction
+      n_structures: 256963 # count
       analysis_file:
         name: models/deepmd/dpa-4.1-max-oam/2026-10-21-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
+        url: https://ndownloader.figshare.com/files/70537446
         size: 1330345
         md5: e4a5caf517b10ae5f8050a66e2e9ca42
-        url: https://ndownloader.figshare.com/files/70537446
   phonons:
     kappa_103:
       κ_SRME: 0.09032226144779087
@@ -212,26 +214,25 @@ metrics:
   diatomics:
     pred_file:
       name: models/deepmd/dpa-4.1-max-oam/2026-10-22-diatomics.json.gz
+      url: https://ndownloader.figshare.com/files/70537497
       size: 503669
       md5: 0aa569e6373b1d272977524e4357caa0
-      url: https://ndownloader.figshare.com/files/70537497
-    energy_jump: 495.40637647848706
-    pbe_bond_length_error: 0.29157354066831775
-    pbe_wall_dist_mae: 0.5189467673051608
-    energy_diff_flips: 3.264367816091954
-    pbe_vib_freq_error: 460.4865244234089
-    pbe_force_mae: 83.30947559310628
-    tortuosity: 1.525284113350286
-    pbe_well_depth_error: 5.923840265149815
-    pbe_energy_mae: 5.7601857606200255
-    force_flips: 3.367816091954023
-    force_total_variation: 74450.59293998298
-    force_jump: 109890.25392851884
     cost: {source: runner, hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition, run_time_sec: 262.76, max_rss_gb: 2.619, max_gpu_mem_gb: 0.765}
-    excluded_formula_reasons: {}
+    pbe_wall_dist_mae: 0.4888
+    pbe_energy_mae: 5.412
+    pbe_bond_length_error: 0.351
+    pbe_well_depth_error: 5.58
+    pbe_vib_freq_error: 416.8
+    tortuosity: 1.525
+    energy_diff_flips: 3.264
+    energy_jump: 495.4
+    force_flips: 3.368
+    force_total_variation: 74450.0
+    force_jump: 109900.0
+    pbe_force_mae: 75.73
     pbe_vib_freq_coverage:
-      n_valid: 67
-      n_eligible: 73
+      n_valid: 75
+      n_eligible: 81
       failed_elements:
       - Br
       - F

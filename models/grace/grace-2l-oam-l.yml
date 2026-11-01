@@ -72,21 +72,21 @@ metrics:
       size: 258812
       md5: 98bb9b7bbdd8b6ba62e82ab0a605708a
     cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 101.66}
-    pbe_wall_dist_mae: 0.1412
-    pbe_energy_mae: 1.931
-    pbe_bond_length_error: 0.2006
-    pbe_well_depth_error: 1.535
-    pbe_vib_freq_error: 75.22
+    pbe_wall_dist_mae: 0.1463
+    pbe_energy_mae: 1.877
+    pbe_bond_length_error: 0.2685
+    pbe_well_depth_error: 1.579
+    pbe_vib_freq_error: 71.87
     tortuosity: 1.053
     energy_diff_flips: 2.184
     energy_jump: 0.6155
     force_flips: 1.897
     force_total_variation: 118.8
     force_jump: 5.339
-    pbe_force_mae: 1.291
+    pbe_force_mae: 1.243
     pbe_vib_freq_coverage:
-      n_valid: 73
-      n_eligible: 73
+      n_valid: 81
+      n_eligible: 81
       failed_elements: []
       missing_elements: []
   discovery:
@@ -96,7 +96,7 @@ metrics:
       size: 1657157
       md5: e94f216dba2133d3d778703edc0843df
     full_test_set:
-      F1: 0.862  # fraction
+      F1: 0.862 # fraction
       DAF: 5.093 # dimensionless
       Precision: 0.874 # fraction
       Recall: 0.851 # fraction
@@ -110,7 +110,7 @@ metrics:
       R2: 0.856 # dimensionless
       missing_preds: 7 # count
     unique_prototypes:
-      F1: 0.883  # fraction
+      F1: 0.883 # fraction
       DAF: 5.84 # dimensionless
       Precision: 0.893 # fraction
       Recall: 0.874 # fraction
@@ -135,6 +135,7 @@ metrics:
       symmetry_decrease: 0.0537 # fraction
       symmetry_match: 0.8166 # fraction
       symmetry_increase: 0.1226 # fraction
+      symmetry_lateral: 0.0071 # fraction
       n_structures: 256958 # count
       analysis_file:
         name: models/grace/grace-2l-oam-l/2025-09-09-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
@@ -147,6 +148,7 @@ metrics:
       symmetry_decrease: 0.0539 # fraction
       symmetry_match: 0.7343 # fraction
       symmetry_increase: 0.2067 # fraction
+      symmetry_lateral: 0.0052 # fraction
       n_structures: 256958 # count
       analysis_file:
         name: models/grace/grace-2l-oam-l/2025-09-09-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz

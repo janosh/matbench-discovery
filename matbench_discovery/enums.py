@@ -1,18 +1,22 @@
 """Enums used as keys/accessors for dicts and dataframes across Matbench Discovery."""
 
 import functools
+import keyword
 import os
 import re
 from enum import EnumType, StrEnum, _EnumDict, auto, unique
-from typing import Any, Self, cast
+from glob import glob
+from typing import Any, Self
 
-import pymatviz as pmv
 import yaml
 
 from matbench_discovery import DEFAULT_CACHE_DIR, PKG_DIR, ROOT, file_digest
 from matbench_discovery.remote.fetch import maybe_auto_download_file
 
-eV_per_atom = pmv.enums.eV_per_atom  # noqa: N816
+# axis-label unit suffix, same string as pymatviz<=0.18's (since removed) eV_per_atom
+eV_per_atom = (  # noqa: N816
+    "<span style='font-size: 0.8em; font-weight: lighter;'>(eV/atom)</span>"
+)
 
 
 def resolve_verified_file(
@@ -30,8 +34,11 @@ def resolve_verified_file(
         and file_digest(abs_path, "md5") == md5
     ):
         return abs_path
-    if url is not None:
-        maybe_auto_download_file(url, abs_path, label=label, md5=md5)
+    # download_file verifies md5 while streaming, so a fresh download needs no re-hash
+    if url is not None and maybe_auto_download_file(
+        url, abs_path, label=label, md5=md5
+    ):
+        return abs_path
     if not os.path.isfile(abs_path):
         raise FileNotFoundError(
             f"Failed to resolve {label!r} at {abs_path} with {url=}"
@@ -91,6 +98,8 @@ class MbdKey(LabelEnum):
     international_spg_name = "international_spg_name", "International space group name"
     spg_num_diff = "spg_num_diff", "Difference in space group number"
     n_sym_ops_diff = "n_sym_ops_diff", "Difference in number of symmetry operations"
+    # space group changed but the number of symmetry operations did not
+    symmetry_lateral = "symmetry_lateral", "Lateral symmetry change"
     structure_rmsd_vs_dft = "structure_rmsd_vs_dft", "RMSD of structure to DFT"
 
     # keep in sync with model-schema.yml
@@ -264,88 +273,45 @@ class Files(StrEnum, metaclass=MetaFiles):
         return self.__dict__["file_path"]
 
 
+MODEL_KEY_PATTERN = re.compile(r"[a-z0-9]+(?:[.-][a-z0-9]+)*")
+
+
+def _model_members() -> dict[str, tuple[auto, str]]:
+    """Map each non-aborted model YAML's enum name (its model_key with - and . as _)
+    to its path relative to models/, rejecting invalid or colliding keys.
+    """
+    members: dict[str, tuple[auto, str]] = {}
+    key_owners: dict[str, str] = {}
+    for yaml_path in sorted(glob(f"{ROOT}/models/[!_]*/[!_]*.yml")):
+        with open(yaml_path, encoding="utf-8") as file:
+            # libyaml parses all model YAMLs ~8x faster than PyYAML's pure-Python loader
+            metadata = yaml.load(file, Loader=yaml.CSafeLoader)
+        if not isinstance(metadata, dict):
+            raise TypeError(f"{yaml_path} must contain a YAML mapping")
+        model_key = metadata.get("model_key")
+        if not isinstance(model_key, str) or not MODEL_KEY_PATTERN.fullmatch(model_key):
+            raise TypeError(f"{yaml_path} has invalid {model_key=}")
+        if owner := key_owners.get(model_key):
+            raise ValueError(f"{model_key=} collides in {owner} and {yaml_path}")
+        key_owners[model_key] = yaml_path
+        if metadata.get("lifecycle") == "aborted":
+            continue
+        name = model_key.replace("-", "_").replace(".", "_")
+        if not name.isidentifier() or keyword.iskeyword(name) or name in members:
+            raise ValueError(f"{yaml_path} has invalid or duplicate enum name {name!r}")
+        rel_path = os.path.relpath(yaml_path, f"{ROOT}/models").replace("\\", "/")
+        members[name] = auto(), rel_path
+    return dict(sorted(members.items()))  # name order, as the members were written
+
+
 class Model(Files, base_dir=f"{ROOT}/models"):
-    """Generated registry of non-aborted model YAML files.
+    """Registry of non-aborted model YAML files, built from models/ at import.
 
     YAML ``model_key`` values determine member names. YAML metadata also provides
     lifecycle, metrics, hyperparams, package versions, links, and submission details.
-    Regenerate the marked block with ``python scripts/generate_model_enum.py``.
     """
 
-    # BEGIN GENERATED MODEL MEMBERS
-    alchembert = auto(), "alchembert/alchembert.yml"
-    alignn = auto(), "alignn/alignn.yml"
-    allegro_mp_l_0_1 = auto(), "allegro/allegro-mp-l-0.1.yml"
-    allegro_oam_l_0_1 = auto(), "allegro/allegro-oam-l-0.1.yml"
-    alphanet_v1_mptrj = auto(), "alphanet/alphanet-v1-mptrj.yml"
-    alphanet_v1_oam = auto(), "alphanet/alphanet-v1-oam.yml"
-    bam_mp_core = auto(), "bam/bam-mp-core.yml"
-    bam_mp_dens = auto(), "bam/bam-mp-dens.yml"
-    bowsr = auto(), "bowsr/bowsr.yml"
-    cgcnn = auto(), "cgcnn/cgcnn.yml"
-    cgcnn_p = auto(), "cgcnn/cgcnn-p.yml"
-    chgnet_0_3_0 = auto(), "chgnet/chgnet-0.3.0.yml"
-    dpa3_v1_mptrj = auto(), "deepmd/dpa3-v1-mptrj.yml"
-    dpa3_v1_openlam = auto(), "deepmd/dpa3-v1-openlam.yml"
-    dpa3_v2_mptrj = auto(), "deepmd/dpa3-v2-mptrj.yml"
-    dpa3_v2_openlam = auto(), "deepmd/dpa3-v2-openlam.yml"
-    dpa_3_1_3m_ft = auto(), "deepmd/dpa-3.1-3m-ft.yml"
-    dpa_3_1_mptrj = auto(), "deepmd/dpa-3.1-mptrj.yml"
-    dpa_4_0_1_pro_mptrj = auto(), "deepmd/dpa-4.0.1-pro-mptrj.yml"
-    dpa_4_0_pro_mptrj = auto(), "deepmd/dpa-4.0-pro-mptrj.yml"
-    dpa_4_1_air_oam = auto(), "deepmd/dpa-4.1-air-oam.yml"
-    dpa_4_1_max_oam = auto(), "deepmd/dpa-4.1-max-oam.yml"
-    dpa_4_1_max_oam_pft = auto(), "deepmd/dpa-4.1-max-oam-pft.yml"
-    dpa_4_1c_air_oam = auto(), "deepmd/dpa-4.1c-air-oam.yml"
-    ema_gnn = auto(), "ema_gnn/ema-gnn.yml"
-    eqnorm_mptrj = auto(), "eqnorm/eqnorm-mptrj.yml"
-    equflash_29m_oam = auto(), "equflash/equflash-29m-oam.yml"
-    equflashv2_45m_oam = auto(), "equflash/equflashv2-45m-oam.yml"
-    equiformer_v3_mp = auto(), "equiformer_v3/equiformer-v3-mp.yml"
-    equiformer_v3_oam = auto(), "equiformer_v3/equiformer-v3-oam.yml"
-    eqv2_m_omat_salex_mp = auto(), "eqv2/eqv2-m-omat-salex-mp.yml"
-    eqv2_s_dens_mp = auto(), "eqv2/eqv2-s-dens-mp.yml"
-    esen_30m_mp = auto(), "esen/esen-30m-mp.yml"
-    esen_30m_oam = auto(), "esen/esen-30m-oam.yml"
-    esnet = auto(), "esnet/esnet.yml"
-    gnome = auto(), "gnome/gnome.yml"
-    grace_1l_oam = auto(), "grace/grace-1l-oam.yml"
-    grace_2l_mptrj = auto(), "grace/grace-2l-mptrj.yml"
-    grace_2l_oam = auto(), "grace/grace-2l-oam.yml"
-    grace_2l_oam_l = auto(), "grace/grace-2l-oam-l.yml"
-    grace_3l_oam_l = auto(), "grace/grace-3l-oam-l.yml"
-    hienet = auto(), "hienet/hienet.yml"
-    m3gnet = auto(), "m3gnet/m3gnet.yml"
-    mace_mp_0 = auto(), "mace/mace-mp-0.yml"
-    mace_mpa_0 = auto(), "mace/mace-mpa-0.yml"
-    mace_soyo_mptrj = auto(), "mace_soyo/mace-soyo-mptrj.yml"
-    mace_soyo_oam = auto(), "mace_soyo/mace-soyo-oam.yml"
-    matris_10m_mp = auto(), "matris/matris-10m-mp.yml"
-    matris_10m_oam = auto(), "matris/matris-10m-oam.yml"
-    matris_v050_mptrj = auto(), "matris/matris-v050-mptrj.yml"
-    mattersim_v1_5m = auto(), "mattersim/mattersim-v1-5m.yml"
-    megnet = auto(), "megnet/megnet.yml"
-    nequip_mp_l_0_1 = auto(), "nequip/nequip-mp-l-0.1.yml"
-    nequip_oam_l_0_1 = auto(), "nequip/nequip-oam-l-0.1.yml"
-    nequip_oam_xl_0_1 = auto(), "nequip/nequip-oam-xl-0.1.yml"
-    nequix_mp_1 = auto(), "nequix/nequix-mp-1.yml"
-    nequix_mp_1_pft = auto(), "nequix/nequix-mp-1-pft.yml"
-    orb_v2 = auto(), "orb/orb-v2.yml"
-    orb_v2_mptrj = auto(), "orb/orb-v2-mptrj.yml"
-    orb_v3 = auto(), "orb/orb-v3.yml"
-    pet_oam_xl_1_0_0 = auto(), "pet/pet-oam-xl-1.0.0.yml"
-    prophet_oame_mbd = auto(), "prophet/prophet-oame-mbd.yml"
-    sevennet_0 = auto(), "sevennet/sevennet-0.yml"
-    sevennet_l3i5 = auto(), "sevennet/sevennet-l3i5.yml"
-    sevennet_mf_ompa = auto(), "sevennet/sevennet-mf-ompa.yml"
-    sevennet_omni_i12 = auto(), "sevennet/sevennet-omni-i12.yml"
-    tace_oam_l = auto(), "tace/tace-oam-l.yml"
-    tace_oam_rra_preview = auto(), "tace/tace-oam-rra-preview.yml"
-    tace_v1_oam_m = auto(), "tace/tace-v1-oam-m.yml"
-    tece_oam_rra_1_0 = auto(), "tace/tece-oam-rra-1.0.yml"
-    voronoi_rf = auto(), "voronoi_rf/voronoi-rf.yml"
-    wrenformer = auto(), "wrenformer/wrenformer.yml"
-    # END GENERATED MODEL MEMBERS
+    locals().update(_model_members())  # one member per non-aborted model YAML
 
     @functools.cached_property  # cache to avoid re-reading same file multiple times
     def metadata(self) -> dict[str, Any]:
@@ -374,6 +340,15 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         return os.path.basename(os.path.dirname(self.rel_path))
 
     @property
+    def artifact_dir(self) -> str:
+        """Repo-relative per-model artifact directory ``models/<family>/<key>``.
+
+        Derived from the YAML path (whose stem is the model_key, as the registry
+        tests enforce) so it needs no metadata read.
+        """
+        return f"models/{os.path.splitext(self.rel_path)[0]}"
+
+    @property
     def metrics(self) -> dict[str, Any]:
         """Metrics associated with the model."""
         return self.metadata.get("metrics") or {}  # bare `metrics:` loads as None
@@ -388,7 +363,6 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         metrics_key: str,
         *,
         nested_key: str | None = None,
-        required: bool = False,
         file_key: str = "pred_file",
     ) -> str | None:
         """Resolve a metrics file ref to a local path, downloading when a URL is set."""
@@ -403,12 +377,8 @@ class Model(Files, base_dir=f"{ROOT}/models"):
             section = section.get(key) or {}
         pred_file = section.get(file_key) or {}
         if not (rel_path := file_ref_name(pred_file)):
-            if required:
-                raise ValueError(
-                    f"metrics.{metrics_key}.{file_key} not found in {self.rel_path!r}"
-                )
             return None
-        validate_artifact_path(rel_path, f"models/{self.family}/{self.key}")
+        validate_artifact_path(rel_path, self.artifact_dir)
         abs_path = f"{ROOT}/{rel_path}"
         return resolve_verified_file(
             abs_path,
@@ -420,7 +390,11 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     @property
     def discovery_path(self) -> str:
         """Prediction file path associated with the model."""
-        return cast("str", self._metric_pred_path("discovery", required=True))
+        if (pred_path := self._metric_pred_path("discovery")) is None:
+            raise ValueError(
+                f"metrics.discovery.pred_file not found in {self.rel_path!r}"
+            )
+        return pred_path
 
     @property
     def geo_opt_path(self) -> str | None:
