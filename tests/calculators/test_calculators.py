@@ -417,8 +417,9 @@ def test_named_sevennet_models_keep_package_managed_checkpoints(model_key: str) 
 def test_archive_extraction_replaces_invalid_cache(
     tmp_path: Path, find_models: Callable[[str], list[str]], model_file: str
 ) -> None:
-    """Extraction replaces unmarked caches, reuses a matching one, re-extracts a
-    changed archive and rejects members escaping the extraction directory.
+    """Extraction refuses folders it did not create, replaces its own stale caches,
+    reuses a matching one, re-extracts a changed archive and rejects members escaping
+    the extraction directory.
     """
     archive_path = tmp_path / "model.zip"
 
@@ -434,6 +435,18 @@ def test_archive_extraction_replaces_invalid_cache(
         (extract_dir / name).write_bytes(b"stale")
 
     extract = calculators._extract_single_model  # noqa: SLF001
+    for unmarked_dir in (extract_dir, tmp_path / "model-extracted.tmp"):
+        (unmarked_dir / "user-file").parent.mkdir(exist_ok=True)
+        (unmarked_dir / "user-file").write_bytes(b"keep")
+        with pytest.raises(ValueError, match="Refusing to replace"):
+            extract(str(archive_path), find_models)
+        assert (unmarked_dir / "user-file").read_bytes() == b"keep"
+        (unmarked_dir / "user-file").unlink()
+        if unmarked_dir != extract_dir:
+            unmarked_dir.rmdir()
+    # an empty leftover temporary folder (run stopped before marking it) is cleared
+    (tmp_path / "model-extracted.tmp").mkdir()
+    (extract_dir / ".archive-stat").write_text("old archive")
     model_path = extract(str(archive_path), find_models)
 
     # finders join with "/" but the extractor returns OS-normalized paths

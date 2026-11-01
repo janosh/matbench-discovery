@@ -601,6 +601,7 @@ def _extract_single_model(
     tmp_extract_dir = f"{extract_dir}.tmp"
     archive_identity = ":".join(map(str, _file_state(archive_path)))
     identity_path = f"{extract_dir}/.archive-stat"
+    tmp_identity_path = f"{tmp_extract_dir}/.archive-stat"
     with FileLock(f"{extract_dir}.lock"):
         existing_paths = find_models(extract_dir)
         if len(existing_paths) == 1 and os.path.isfile(identity_path):
@@ -608,9 +609,30 @@ def _extract_single_model(
                 if file.read() == archive_identity:
                     return os.path.normpath(existing_paths[0])
 
+        # a run stopped between creating and marking the temp folder leaves it empty
+        if (
+            os.path.isdir(tmp_extract_dir)
+            and not os.path.islink(tmp_extract_dir)
+            and not os.listdir(tmp_extract_dir)
+        ):
+            os.rmdir(tmp_extract_dir)
+        # only replace folders this loader created, which always hold .archive-stat
+        for dir_path, marker_path in (
+            (extract_dir, identity_path),
+            (tmp_extract_dir, tmp_identity_path),
+        ):
+            if os.path.lexists(dir_path) and not os.path.isfile(marker_path):
+                raise ValueError(
+                    f"Refusing to replace {dir_path}, which this loader did not create"
+                )
+
         shutil.rmtree(tmp_extract_dir, ignore_errors=True)
         os.makedirs(tmp_extract_dir)
         try:
+            # mark the temporary folder before filling it, so an interrupted run
+            # leaves a folder the next run may replace
+            with open(tmp_identity_path, mode="w", encoding="utf-8") as file:
+                file.write(archive_identity)
             with zipfile.ZipFile(archive_path) as archive:
                 real_extract_dir = os.path.realpath(tmp_extract_dir)
                 for member in archive.infolist():
