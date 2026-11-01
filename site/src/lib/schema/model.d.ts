@@ -204,6 +204,7 @@ export type GeoOptMetrics = {
     symmetry_decrease: number
     symmetry_match: number
     symmetry_increase: number
+    symmetry_lateral: number
     n_structures: number
     analysis_file?: NullableFileRef
   }
@@ -213,6 +214,7 @@ export type GeoOptMetrics = {
     symmetry_decrease: number
     symmetry_match: number
     symmetry_increase: number
+    symmetry_lateral: number
     n_structures: number
     analysis_file?: NullableFileRef
   }

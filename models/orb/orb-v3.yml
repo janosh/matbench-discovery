@@ -142,6 +142,7 @@ metrics:
       symmetry_decrease: 0.8694 # fraction
       symmetry_match: 0.1304 # fraction
       symmetry_increase: 0.0001 # fraction
+      symmetry_lateral: 0.0 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/orb/orb-v3/2025-04-04-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
@@ -154,6 +155,7 @@ metrics:
       symmetry_decrease: 0.1592 # fraction
       symmetry_match: 0.7281 # fraction
       symmetry_increase: 0.1012 # fraction
+      symmetry_lateral: 0.0115 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/orb/orb-v3/2025-04-04-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz

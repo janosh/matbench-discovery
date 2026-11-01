@@ -23,21 +23,22 @@ _GEO_NAN = "models/alignn/alignn/2026-07-02-geo-opt-symprec=1e-2-moyo=0.4.2.csv.
         "expected_decrease",
         "expected_match",
         "expected_increase",
+        "expected_lateral",
         "expected_mae",
     ),
     [
         # All matches
-        ([0, 0, 0], [0, 0, 0], 0.0, 1.0, 0.0, 0.0),
+        ([0, 0, 0], [0, 0, 0], 0.0, 1.0, 0.0, 0.0, 0.0),
         # All decreases
-        ([-1, -2, -1], [-2, -4, -2], 1.0, 0.0, 0.0, 8 / 3),
+        ([-1, -2, -1], [-2, -4, -2], 1.0, 0.0, 0.0, 0.0, 8 / 3),
         # All increases
-        ([1, 2, 1], [2, 4, 2], 0.0, 0.0, 1.0, 8 / 3),
+        ([1, 2, 1], [2, 4, 2], 0.0, 0.0, 1.0, 0.0, 8 / 3),
         # Mixed cases
-        ([0, -1, 1], [0, -2, 2], 1 / 3, 1 / 3, 1 / 3, 4 / 3),
-        # Edge case with zeros in n_sym_ops but non-zero spg
-        ([1, -1, 0], [0, 0, 0], 0, 1 / 3, 0, 0.0),
+        ([0, -1, 1], [0, -2, 2], 1 / 3, 1 / 3, 1 / 3, 0.0, 4 / 3),
+        # space group changed with the same number of symmetry ops (e.g. Pbca->Pnma)
+        ([1, -1, 0], [0, 0, 0], 0, 1 / 3, 0, 2 / 3, 0.0),
         # Include some NaN values
-        ([0, np.nan, 1], [0, np.nan, 2], 0.0, 0.5, 0.5, 1.0),
+        ([0, np.nan, 1], [0, np.nan, 2], 0.0, 0.5, 0.5, 0.0, 1.0),
         # NaN in the middle: 5 valid rows with 1 match, 1 decrease, 3 increases
         (
             [0, 1, np.nan, -1, 2, 3],
@@ -45,10 +46,11 @@ _GEO_NAN = "models/alignn/alignn/2026-07-02-geo-opt-symprec=1e-2-moyo=0.4.2.csv.
             1 / 5,
             1 / 5,
             3 / 5,
+            0.0,
             14 / 5,
         ),
         # no valid symmetry rows: every symmetry metric is NaN, not a 0/0 crash
-        ([np.nan] * 2, [np.nan] * 2, np.nan, np.nan, np.nan, np.nan),
+        ([np.nan] * 2, [np.nan] * 2, np.nan, np.nan, np.nan, np.nan, np.nan),
     ],
 )
 def test_calc_geo_opt_metrics_parametrized(
@@ -57,6 +59,7 @@ def test_calc_geo_opt_metrics_parametrized(
     expected_decrease: float,
     expected_match: float,
     expected_increase: float,
+    expected_lateral: float,
     expected_mae: float,
 ) -> None:
     """Test calc_geo_opt_metrics with various symmetry difference patterns."""
@@ -78,9 +81,14 @@ def test_calc_geo_opt_metrics_parametrized(
         (Key.symmetry_decrease, expected_decrease),
         (Key.symmetry_match, expected_match),
         (Key.symmetry_increase, expected_increase),
+        (MbdKey.symmetry_lateral, expected_lateral),
         (Key.n_sym_ops_mae, expected_mae),
     ):
         assert results[str(key)] == pytest.approx(expected, nan_ok=True), key
+    buckets = (Key.symmetry_decrease, Key.symmetry_match, Key.symmetry_increase)
+    if results[str(Key.n_structures)]:  # the 4 buckets partition valid structures
+        fractions = [results[str(key)] for key in (*buckets, MbdKey.symmetry_lateral)]
+        assert sum(fractions) == pytest.approx(1)
     # n_structures should be the number of non-NaN spg_diff values
     assert results[str(Key.n_structures)] == np.count_nonzero(pd.notna(spg_diffs))
     expected_rmsd = (0.1 * (len(spg_diffs) - 1) + 1.0) / len(spg_diffs)
@@ -96,6 +104,7 @@ _FULL_METRICS = {
     Key.symmetry_decrease: 0.3,
     Key.symmetry_match: 0.4,
     Key.symmetry_increase: 0.0,
+    MbdKey.symmetry_lateral: 0.0,
     Key.n_structures: 0,
 }
 _FULL_BLOCK = {
@@ -104,6 +113,7 @@ _FULL_BLOCK = {
     Key.symmetry_decrease: 0.3,
     Key.symmetry_match: 0.4,
     Key.symmetry_increase: 0.0,
+    MbdKey.symmetry_lateral: 0.0,
     Key.n_structures: 0,
 }
 
@@ -124,6 +134,7 @@ _FULL_BLOCK = {
                 Key.symmetry_decrease: 0.0,
                 Key.symmetry_match: 0.0,
                 Key.symmetry_increase: 0.0,
+                MbdKey.symmetry_lateral: 0.0,
                 Key.n_structures: 0,
             },
             {
@@ -132,6 +143,7 @@ _FULL_BLOCK = {
                 Key.symmetry_decrease: 0.0,
                 Key.symmetry_match: 0.0,
                 Key.symmetry_increase: 0.0,
+                MbdKey.symmetry_lateral: 0.0,
                 Key.n_structures: 0,
                 # renamed analysis file drops the stale url/size/md5
                 "analysis_file": make_file_ref(_GEO_NAN),

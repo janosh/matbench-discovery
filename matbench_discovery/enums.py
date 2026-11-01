@@ -98,6 +98,8 @@ class MbdKey(LabelEnum):
     international_spg_name = "international_spg_name", "International space group name"
     spg_num_diff = "spg_num_diff", "Difference in space group number"
     n_sym_ops_diff = "n_sym_ops_diff", "Difference in number of symmetry operations"
+    # space group changed but the number of symmetry operations did not
+    symmetry_lateral = "symmetry_lateral", "Lateral symmetry change"
     structure_rmsd_vs_dft = "structure_rmsd_vs_dft", "RMSD of structure to DFT"
 
     # keep in sync with model-schema.yml

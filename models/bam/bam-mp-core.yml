@@ -146,6 +146,7 @@ metrics:
       symmetry_decrease: 0.0469 # fraction
       symmetry_match: 0.7256 # fraction
       symmetry_increase: 0.2223 # fraction
+      symmetry_lateral: 0.0052 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/bam/bam-mp-core/2026-05-09-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
@@ -158,6 +159,7 @@ metrics:
       symmetry_decrease: 0.061 # fraction
       symmetry_match: 0.8121 # fraction
       symmetry_increase: 0.1202 # fraction
+      symmetry_lateral: 0.0068 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/bam/bam-mp-core/2026-05-09-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz

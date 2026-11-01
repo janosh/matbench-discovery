@@ -105,6 +105,7 @@ metrics:
       symmetry_decrease: 0.0038 # fraction
       symmetry_match: 0.5299 # fraction
       symmetry_increase: 0.4642 # fraction
+      symmetry_lateral: 0.0021 # fraction
       n_structures: 250779 # count
       analysis_file:
         name: models/bowsr/bowsr/2023-01-23-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
@@ -117,6 +118,7 @@ metrics:
       symmetry_decrease: 0.0694 # fraction
       symmetry_match: 0.7978 # fraction
       symmetry_increase: 0.1198 # fraction
+      symmetry_lateral: 0.013 # fraction
       n_structures: 250779 # count
       analysis_file:
         name: models/bowsr/bowsr/2023-01-23-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz

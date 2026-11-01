@@ -175,6 +175,7 @@ metrics:
       symmetry_decrease: 0.0547 # fraction
       symmetry_match: 0.8153 # fraction
       symmetry_increase: 0.1227 # fraction
+      symmetry_lateral: 0.0072 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/matris/matris-10m-oam/2025-10-29-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
@@ -187,6 +188,7 @@ metrics:
       symmetry_decrease: 0.195 # fraction
       symmetry_match: 0.5955 # fraction
       symmetry_increase: 0.1996 # fraction
+      symmetry_lateral: 0.0099 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/matris/matris-10m-oam/2025-10-29-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz

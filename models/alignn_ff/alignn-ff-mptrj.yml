@@ -158,6 +158,7 @@ metrics:
       symmetry_decrease: 0.2366 # fraction
       symmetry_match: 0.586 # fraction
       symmetry_increase: 0.1668 # fraction
+      symmetry_lateral: 0.0105 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/alignn_ff/alignn-ff-mptrj/2026-10-24-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
@@ -170,6 +171,7 @@ metrics:
       symmetry_decrease: 0.0892 # fraction
       symmetry_match: 0.7967 # fraction
       symmetry_increase: 0.1072 # fraction
+      symmetry_lateral: 0.0069 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/alignn_ff/alignn-ff-mptrj/2026-10-24-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz

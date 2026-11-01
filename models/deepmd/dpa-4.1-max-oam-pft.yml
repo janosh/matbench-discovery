@@ -149,24 +149,26 @@ metrics:
       size: 104178833
       md5: 163c7c4e45e0b7a3c5ba14963e630c11
     symprec=1e-5:
-      rmsd: 0.0576
-      n_sym_ops_mae: 2.7774
-      symmetry_decrease: 0.3573
-      symmetry_match: 0.4287
-      symmetry_increase: 0.1614
-      n_structures: 256963
+      rmsd: 0.0576 # unitless
+      n_sym_ops_mae: 2.7774 # unitless
+      symmetry_decrease: 0.3573 # fraction
+      symmetry_match: 0.4287 # fraction
+      symmetry_increase: 0.1614 # fraction
+      symmetry_lateral: 0.0526 # fraction
+      n_structures: 256963 # count
       analysis_file:
         name: models/deepmd/dpa-4.1-max-oam-pft/2026-10-27-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
         url: https://ndownloader.figshare.com/files/70836378
         size: 6835142
         md5: 409b56d127d89c371a209dd14e108374
     symprec=1e-2:
-      rmsd: 0.0576
-      n_sym_ops_mae: 1.9422
-      symmetry_decrease: 0.1231
-      symmetry_match: 0.7489
-      symmetry_increase: 0.1135
-      n_structures: 256963
+      rmsd: 0.0576 # unitless
+      n_sym_ops_mae: 1.9422 # unitless
+      symmetry_decrease: 0.1231 # fraction
+      symmetry_match: 0.7489 # fraction
+      symmetry_increase: 0.1135 # fraction
+      symmetry_lateral: 0.0145 # fraction
+      n_structures: 256963 # count
       analysis_file:
         name: models/deepmd/dpa-4.1-max-oam-pft/2026-10-27-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
         url: https://ndownloader.figshare.com/files/70836375

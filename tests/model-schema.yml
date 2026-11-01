@@ -280,6 +280,8 @@ definitions:
             type: number
           symmetry_increase:
             type: number
+          symmetry_lateral:
+            type: number
           n_structures:
             type: integer
           analysis_file:
@@ -290,6 +292,7 @@ definitions:
           - symmetry_decrease
           - symmetry_match
           - symmetry_increase
+          - symmetry_lateral
           - n_structures
       symprec=1e-2: *symprec_metrics
     allOf: *task_status_reason_rule

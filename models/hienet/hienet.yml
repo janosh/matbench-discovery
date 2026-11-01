@@ -186,6 +186,7 @@ metrics:
       symmetry_decrease: 0.0755 # fraction
       symmetry_match: 0.8002 # fraction
       symmetry_increase: 0.1163 # fraction
+      symmetry_lateral: 0.008 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/hienet/hienet/2025-07-01-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
@@ -198,6 +199,7 @@ metrics:
       symmetry_decrease: 0.3493 # fraction
       symmetry_match: 0.4521 # fraction
       symmetry_increase: 0.1532 # fraction
+      symmetry_lateral: 0.0454 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/hienet/hienet/2025-07-01-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz

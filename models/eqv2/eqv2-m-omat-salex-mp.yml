@@ -179,6 +179,7 @@ metrics:
       symmetry_decrease: 0.852 # fraction
       symmetry_match: 0.1422 # fraction
       symmetry_increase: 0.0045 # fraction
+      symmetry_lateral: 0.0013 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/eqv2/eqv2-m-omat-salex-mp/2024-10-18-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
@@ -191,6 +192,7 @@ metrics:
       symmetry_decrease: 0.1118 # fraction
       symmetry_match: 0.7725 # fraction
       symmetry_increase: 0.1052 # fraction
+      symmetry_lateral: 0.0105 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/eqv2/eqv2-m-omat-salex-mp/2024-10-18-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz

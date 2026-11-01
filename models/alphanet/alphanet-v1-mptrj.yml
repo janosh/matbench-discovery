@@ -175,6 +175,7 @@ metrics:
       symmetry_decrease: 0.8597 # fraction
       symmetry_match: 0.1376 # fraction
       symmetry_increase: 0.0024 # fraction
+      symmetry_lateral: 0.0002 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/alphanet/alphanet-v1-mptrj/2025-03-04-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
@@ -187,6 +188,7 @@ metrics:
       symmetry_decrease: 0.5768 # fraction
       symmetry_match: 0.3712 # fraction
       symmetry_increase: 0.0419 # fraction
+      symmetry_lateral: 0.0101 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/alphanet/alphanet-v1-mptrj/2025-03-04-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz

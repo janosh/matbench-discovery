@@ -207,6 +207,7 @@ metrics:
       symmetry_decrease: 0.0469 # fraction
       symmetry_match: 0.8187 # fraction
       symmetry_increase: 0.1272 # fraction
+      symmetry_lateral: 0.0072 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/sevennet/sevennet-omni-i12/2026-01-12-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
@@ -219,6 +220,7 @@ metrics:
       symmetry_decrease: 0.0439 # fraction
       symmetry_match: 0.7056 # fraction
       symmetry_increase: 0.2454 # fraction
+      symmetry_lateral: 0.0051 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/sevennet/sevennet-omni-i12/2026-01-12-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz

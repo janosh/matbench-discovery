@@ -125,6 +125,7 @@ metrics:
       symmetry_decrease: 0.0474 # fraction
       symmetry_match: 0.8202 # fraction
       symmetry_increase: 0.1251 # fraction
+      symmetry_lateral: 0.0074 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/equflash/equflashv2-45m-oam/2026-06-11-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
@@ -137,6 +138,7 @@ metrics:
       symmetry_decrease: 0.0507 # fraction
       symmetry_match: 0.7005 # fraction
       symmetry_increase: 0.2434 # fraction
+      symmetry_lateral: 0.0055 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/equflash/equflashv2-45m-oam/2026-06-11-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz

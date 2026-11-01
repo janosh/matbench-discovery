@@ -186,6 +186,7 @@ metrics:
       symmetry_decrease: 0.0542 # fraction
       symmetry_match: 0.816 # fraction
       symmetry_increase: 0.1226 # fraction
+      symmetry_lateral: 0.0072 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/allegro/allegro-oam-l-0.1/2025-09-08-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
@@ -198,6 +199,7 @@ metrics:
       symmetry_decrease: 0.0753 # fraction
       symmetry_match: 0.7163 # fraction
       symmetry_increase: 0.2023 # fraction
+      symmetry_lateral: 0.0062 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/allegro/allegro-oam-l-0.1/2025-09-08-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz

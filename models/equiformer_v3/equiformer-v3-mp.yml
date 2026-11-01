@@ -145,6 +145,7 @@ metrics:
       symmetry_decrease: 0.4223 # fraction
       symmetry_match: 0.3919 # fraction
       symmetry_increase: 0.1308 # fraction
+      symmetry_lateral: 0.055 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/equiformer_v3/equiformer-v3-mp/2026-04-07-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
@@ -157,6 +158,7 @@ metrics:
       symmetry_decrease: 0.2301 # fraction
       symmetry_match: 0.6413 # fraction
       symmetry_increase: 0.1022 # fraction
+      symmetry_lateral: 0.0263 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/equiformer_v3/equiformer-v3-mp/2026-04-07-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz

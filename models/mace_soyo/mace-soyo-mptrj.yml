@@ -160,6 +160,7 @@ metrics:
       symmetry_decrease: 0.063 # fraction
       symmetry_match: 0.6982 # fraction
       symmetry_increase: 0.2327 # fraction
+      symmetry_lateral: 0.0061 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/mace_soyo/mace-soyo-mptrj/2026-10-19-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
@@ -172,6 +173,7 @@ metrics:
       symmetry_decrease: 0.056 # fraction
       symmetry_match: 0.8121 # fraction
       symmetry_increase: 0.1246 # fraction
+      symmetry_lateral: 0.0073 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/mace_soyo/mace-soyo-mptrj/2026-10-19-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz

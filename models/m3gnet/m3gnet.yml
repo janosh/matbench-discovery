@@ -120,6 +120,7 @@ metrics:
       symmetry_decrease: 0.0671 # fraction
       symmetry_match: 0.7408 # fraction
       symmetry_increase: 0.1869 # fraction
+      symmetry_lateral: 0.0052 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/m3gnet/m3gnet/2023-06-01-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
@@ -132,6 +133,7 @@ metrics:
       symmetry_decrease: 0.0681 # fraction
       symmetry_match: 0.8031 # fraction
       symmetry_increase: 0.1217 # fraction
+      symmetry_lateral: 0.0071 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/m3gnet/m3gnet/2023-06-01-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz

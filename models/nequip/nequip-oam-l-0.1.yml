@@ -191,6 +191,7 @@ metrics:
       symmetry_decrease: 0.0792 # fraction
       symmetry_match: 0.7125 # fraction
       symmetry_increase: 0.2018 # fraction
+      symmetry_lateral: 0.0064 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/nequip/nequip-oam-l-0.1/2025-08-27-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
@@ -203,6 +204,7 @@ metrics:
       symmetry_decrease: 0.0543 # fraction
       symmetry_match: 0.816 # fraction
       symmetry_increase: 0.1226 # fraction
+      symmetry_lateral: 0.0071 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/nequip/nequip-oam-l-0.1/2025-08-27-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz

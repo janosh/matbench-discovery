@@ -181,6 +181,7 @@ metrics:
       symmetry_decrease: 0.0498 # fraction
       symmetry_match: 0.8183 # fraction
       symmetry_increase: 0.1245 # fraction
+      symmetry_lateral: 0.0074 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/tace/tece-oam-rra-1.0/2026-07-05-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
@@ -193,6 +194,7 @@ metrics:
       symmetry_decrease: 0.1846 # fraction
       symmetry_match: 0.5907 # fraction
       symmetry_increase: 0.2102 # fraction
+      symmetry_lateral: 0.0145 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/tace/tece-oam-rra-1.0/2026-07-05-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz

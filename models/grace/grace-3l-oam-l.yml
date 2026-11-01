@@ -137,6 +137,7 @@ metrics:
       symmetry_decrease: 0.0384 # fraction
       symmetry_match: 0.824 # fraction
       symmetry_increase: 0.13 # fraction
+      symmetry_lateral: 0.0076 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/grace/grace-3l-oam-l/2026-07-02-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
@@ -149,6 +150,7 @@ metrics:
       symmetry_decrease: 0.0427 # fraction
       symmetry_match: 0.6929 # fraction
       symmetry_increase: 0.2594 # fraction
+      symmetry_lateral: 0.005 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/grace/grace-3l-oam-l/2026-07-02-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz

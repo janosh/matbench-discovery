@@ -301,7 +301,7 @@ export const GEO_OPT_SYMMETRY_METRICS = Object.fromEntries(
         symprec,
         path: `metrics.geo_opt.symprec=${symprec}`,
         label: `Σ<sub>${symbol}</sub> ${format_power_ten(symprec)}`,
-        description: `Fraction of structures where ML ground state has ${desc} DFT ground state at ${format_power_ten(symprec)} symprec`,
+        description: `Fraction of structures where ML ground state has ${desc} DFT ground state at ${format_power_ten(symprec)} symprec. The remaining fraction changed space group with the same number of symmetry operations`,
         better,
         format: `~%`,
         // visible by default so the landing-page "Geo Opt" column preset can surface

@@ -169,6 +169,7 @@ metrics:
       symmetry_decrease: 0.1784 # fraction
       symmetry_match: 0.6071 # fraction
       symmetry_increase: 0.205 # fraction
+      symmetry_lateral: 0.0095 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/prophet/prophet-oame-mbd/2026-09-03-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
@@ -181,6 +182,7 @@ metrics:
       symmetry_decrease: 0.0559 # fraction
       symmetry_match: 0.8148 # fraction
       symmetry_increase: 0.1222 # fraction
+      symmetry_lateral: 0.0071 # fraction
       n_structures: 256963 # count
       analysis_file:
         name: models/prophet/prophet-oame-mbd/2026-09-03-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
