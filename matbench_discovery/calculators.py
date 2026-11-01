@@ -648,8 +648,9 @@ def _extract_single_model(
         ):
             if os.path.lexists(dir_path) and not os.path.isfile(marker_path):
                 raise ValueError(
-                    f"Refusing to replace {dir_path}: it lacks the .archive-stat marker "
-                    "of folders this loader creates. Delete it if it is a stale cache."
+                    f"Refusing to replace {dir_path}: it lacks the .archive-stat "
+                    "marker of folders this loader creates. Delete it if it is a "
+                    "stale cache."
                 )
 
         shutil.rmtree(tmp_extract_dir, ignore_errors=True)
