@@ -24,14 +24,6 @@ from tests.utils import patch_model_metadata
             set(),
         ),
         (
-            ["--models", "alphanet-v1-mptrj", "--md-run-dir", "models/run-2026-09-12"],
-            {
-                "models": [Model["alphanet_v1_mptrj"]],
-                "md_run_dir": "models/run-2026-09-12",
-            },
-            set(),
-        ),
-        (
             [
                 "--models",
                 str(Model["chgnet_0_3_0"]),
@@ -77,7 +69,6 @@ def test_cli_parser(
         (["--models"], None),
         (["--models", "invalid_model"], "invalid model: invalid_model"),
         (["--test-subset", "invalid_subset"], None),
-        (["--md-run-dir"], None),
     ],
 )
 def test_cli_parser_invalid_args(

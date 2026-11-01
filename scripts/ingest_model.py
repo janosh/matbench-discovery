@@ -270,7 +270,6 @@ def run_model_steps(
     checks: Checklist,
     *,
     energy_only: bool,
-    extra_args: Sequence[str] = (),
 ) -> None:
     """Run model-specific commands, recording each result."""
     banner(title)
@@ -278,7 +277,7 @@ def run_model_steps(
     for label, needs_forces, fatal, args in steps:
         if needs_forces and energy_only:
             checks.skip(f"{label} skipped (targets=E, no forces)")
-        elif run_cmd(*uv_run_args(args), *model_args, *extra_args):
+        elif run_cmd(*uv_run_args(args), *model_args):
             checks.ok(f"{label} completed")
         elif fatal:
             checks.fail(f"{label} failed")
@@ -424,9 +423,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         type=Model.from_ref,
         help="Model enum names (multiple allowed with --payloads-only)",
     )
-    parser.add_argument(
-        "--overwrite", action="store_true", help="Overwrite existing eval outputs"
-    )
     mode_group = parser.add_mutually_exclusive_group()
     for mode in (
         "archive",
@@ -468,10 +464,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         energy_only = check_submission(model, checks)
         if not checks.n_failed:  # evals and payloads only cover active models
             activate_pending(model)
-        overwrite = ("--overwrite",) if args.overwrite else ()
         run_model_steps(
             "STEP 2: Running evaluation scripts", EVAL_STEPS, model, checks,
-            energy_only=energy_only, extra_args=overwrite,
+            energy_only=energy_only,
         )  # fmt: skip
         run_model_steps(
             "STEP 3: Generating per-model figures", FIG_STEPS, model, checks,

@@ -300,7 +300,7 @@ For a full contiguous Slurm discovery or kappa array, the runner can infer shard
 
 The MD runner's `--write-yaml` records model-level metrics under `metrics.md` and writes the per-system predictions to `<yyyy-mm-dd>-md-metrics.csv.gz`. Public runs compute the observable metrics only; energy/force RMSEs are maintainer-computed private-label diagnostics and are not required in external submissions. Upload generated artifacts to Figshare (or similar) and set their download URLs under the corresponding YAML `pred_file.url` fields — see [Step 3](#step-3-upload-results-files-to-figshare-or-similar) for the upload conventions.
 
-For parallel MD runs, aggregate one selected run directory with `uv run scripts/evals/md.py --models <model_key> --md-run-dir <run_directory>`. Missing, duplicate, or unexpected systems abort the update. Without `--md-run-dir`, the evaluator only recomputes the YAML's declared prediction and preserves its download URL and checksums; `--overwrite` does not select another source.
+For parallel MD runs, aggregate one selected run directory with `uv run scripts/evals/md.py --models <model_key> --md-run-dir <run_directory>`. Missing, duplicate, or unexpected systems abort the update. Without `--md-run-dir`, the evaluator only recomputes the YAML's declared prediction and preserves its download URL and checksums.
 
 #### Inference cost provenance
 

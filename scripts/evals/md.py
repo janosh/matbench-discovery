@@ -6,12 +6,23 @@ from glob import escape, glob
 import pandas as pd
 
 from matbench_discovery import ROOT, today
-from matbench_discovery.cli import cli_args
+from matbench_discovery.cli import cli_parser, parse_cli_args
 from matbench_discovery.data import artifact_filename
 from matbench_discovery.enums import Model
 from matbench_discovery.md import default_md_reference_path, list_reference_systems
 from matbench_discovery.metrics import md as md_metrics
 from scripts.evals import evaluate_models
+
+md_group = cli_parser.add_argument_group("md")
+md_group.add_argument(
+    "--md-run-dir",
+    help="Combine MD metric CSVs from this directory instead of the declared file.",
+)
+md_group.add_argument(
+    "--replace-author-reported",
+    action="store_true",
+    help="Let artifact-backed cost replace an author_reported YAML cost block.",
+)
 
 
 def resolve_metrics(
@@ -41,13 +52,14 @@ def resolve_metrics(
     ), pred_file
 
 
-def main() -> int:
+def main(raw_args: list[str] | None = None) -> int:
     """Evaluate MD metrics with the shared sweep's failure and skip handling."""
+    args = parse_cli_args(raw_args)
     expected: set[str] | None = None
 
     def evaluate_one(model: Model) -> str | None:
         nonlocal expected
-        resolved = resolve_metrics(model, cli_args.md_run_dir)
+        resolved = resolve_metrics(model, args.md_run_dir)
         if resolved is None:
             return "no declared MD prediction"
         df_md, new_pred_file = resolved
@@ -73,12 +85,12 @@ def main() -> int:
             model,
             metrics,
             pred_file_path=new_pred_file,
-            replace_author_reported=cli_args.replace_author_reported,
+            replace_author_reported=args.replace_author_reported,
         )
         print(f"\tUpdated {model.yaml_path}")
         return None
 
-    return evaluate_models("MD", cli_args.models, evaluate_one)
+    return evaluate_models("MD", args.models, evaluate_one)
 
 
 if __name__ == "__main__":

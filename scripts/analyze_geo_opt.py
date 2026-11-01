@@ -19,6 +19,7 @@ Example usage (moyopy comes from the symmetry extra):
 # %%
 import importlib.metadata
 import itertools
+import multiprocessing as mp
 import os
 from concurrent.futures import ProcessPoolExecutor
 from typing import TYPE_CHECKING, Any, Final
@@ -234,6 +235,15 @@ def main(raw_args: list[str] | None = None) -> int:
         "--write-dft-reference",
         action="store_true",
         help="Recompute the WBM DFT symmetry reference with the installed moyopy.",
+    )
+    geo_opt_group.add_argument(
+        "--debug", type=int, default=0, help="If > 0, analyze only this many."
+    )
+    geo_opt_group.add_argument(
+        "--workers", type=int, default=max(1, mp.cpu_count() - 1)
+    )
+    geo_opt_group.add_argument(
+        "--overwrite", action="store_true", help="Recompute cached analysis CSVs."
     )
     args = parse_cli_args(raw_args)
 
