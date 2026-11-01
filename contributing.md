@@ -174,6 +174,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    training_sets: [MPtrj] # keys from data/datasets.yml
    # size: 10M  # optional
    # fine_tune: true  # optional
+   # test_set_informed: [discovery]  # optional, see below
    model_params: 5_000_000
    # n_estimators: 10  # optional; omit for single models (default 1)
 
@@ -234,6 +235,8 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    metrics task, e.g. `metrics.md: {status: pending, reason: "…"}`.
 
    The schema rejects unknown keys; put free-form context under `notes`.
+
+   Set `test_set_informed` to every task (`discovery`, `geo_opt`, `phonons`, `diatomics`, `md`) whose test materials or results influenced the submitted model, directly or through earlier checkpoints. That covers test materials in the training or validation data, architecture or hyperparameter choices made from test-set ablations (even on a subsample), design changes prompted by test-set errors, checkpoint selection by benchmark score, and fine-tuning judged on the test task. Explain each case in one sentence under `notes.disclosure`, citing its source. Standard training sets (MPtrj, OMat24, sAlex, ...) and choices validated only on non-test data don't count. Flagged models are marked † on the leaderboards, not excluded.
 
 Please see any of the subdirectories in [`models/`](https://github.com/janosh/matbench-discovery/blob/-/models) for example submissions. More detailed step-by-step instructions below.
 

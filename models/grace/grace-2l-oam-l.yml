@@ -72,21 +72,21 @@ metrics:
       size: 258812
       md5: 98bb9b7bbdd8b6ba62e82ab0a605708a
     cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 101.66}
-    pbe_wall_dist_mae: 0.1412
-    pbe_energy_mae: 1.931
-    pbe_bond_length_error: 0.2006
-    pbe_well_depth_error: 1.535
-    pbe_vib_freq_error: 75.22
+    pbe_wall_dist_mae: 0.1463
+    pbe_energy_mae: 1.877
+    pbe_bond_length_error: 0.2685
+    pbe_well_depth_error: 1.579
+    pbe_vib_freq_error: 71.87
     tortuosity: 1.053
     energy_diff_flips: 2.184
     energy_jump: 0.6155
     force_flips: 1.897
     force_total_variation: 118.8
     force_jump: 5.339
-    pbe_force_mae: 1.291
+    pbe_force_mae: 1.243
     pbe_vib_freq_coverage:
-      n_valid: 73
-      n_eligible: 73
+      n_valid: 81
+      n_eligible: 81
       failed_elements: []
       missing_elements: []
   discovery:

@@ -212,26 +212,25 @@ metrics:
   diatomics:
     pred_file:
       name: models/deepmd/dpa-4.1-max-oam/2026-10-22-diatomics.json.gz
+      url: https://ndownloader.figshare.com/files/70537497
       size: 503669
       md5: 0aa569e6373b1d272977524e4357caa0
-      url: https://ndownloader.figshare.com/files/70537497
-    energy_jump: 495.40637647848706
-    pbe_bond_length_error: 0.29157354066831775
-    pbe_wall_dist_mae: 0.5189467673051608
-    energy_diff_flips: 3.264367816091954
-    pbe_vib_freq_error: 460.4865244234089
-    pbe_force_mae: 83.30947559310628
-    tortuosity: 1.525284113350286
-    pbe_well_depth_error: 5.923840265149815
-    pbe_energy_mae: 5.7601857606200255
-    force_flips: 3.367816091954023
-    force_total_variation: 74450.59293998298
-    force_jump: 109890.25392851884
     cost: {source: runner, hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition, run_time_sec: 262.76, max_rss_gb: 2.619, max_gpu_mem_gb: 0.765}
-    excluded_formula_reasons: {}
+    pbe_wall_dist_mae: 0.4888
+    pbe_energy_mae: 5.412
+    pbe_bond_length_error: 0.351
+    pbe_well_depth_error: 5.58
+    pbe_vib_freq_error: 416.8
+    tortuosity: 1.525
+    energy_diff_flips: 3.264
+    energy_jump: 495.4
+    force_flips: 3.368
+    force_total_variation: 74450.0
+    force_jump: 109900.0
+    pbe_force_mae: 75.73
     pbe_vib_freq_coverage:
-      n_valid: 67
-      n_eligible: 73
+      n_valid: 75
+      n_eligible: 81
       failed_elements:
       - Br
       - F

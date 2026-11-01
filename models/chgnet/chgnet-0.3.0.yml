@@ -86,22 +86,21 @@ metrics:
       size: 259918
       md5: ba35984b21731139899e8881f9a16ee0
     cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 95.82, load_time_sec: 0.78, max_rss_gb: 1.801, max_gpu_mem_gb: 0.07}
-    excluded_formula_reasons: {}
-    pbe_wall_dist_mae: 0.403
-    pbe_energy_mae: 3.205
-    pbe_bond_length_error: 0.2676
-    pbe_well_depth_error: 16.86
-    pbe_vib_freq_error: 182.8
+    pbe_wall_dist_mae: 0.3866
+    pbe_energy_mae: 3.007
+    pbe_bond_length_error: 0.3716
+    pbe_well_depth_error: 15.38
+    pbe_vib_freq_error: 187.4
     tortuosity: 2.21
     energy_diff_flips: 1.839
     energy_jump: 2.105
     force_flips: 2.011
     force_total_variation: 415.0
     force_jump: 205.5
-    pbe_force_mae: 4.927
+    pbe_force_mae: 4.521
     pbe_vib_freq_coverage:
-      n_valid: 73
-      n_eligible: 73
+      n_valid: 81
+      n_eligible: 81
       failed_elements: []
       missing_elements: []
     reproducibility:

@@ -6,7 +6,7 @@
   import sym_ops_diff from '#figs/sym-ops-diff-bar.jsonl'
   import MetricsTable from '#lib/table/MetricsTable.svelte'
   import type { Label, ModelData } from '#lib/types.js'
-  import ModelSelect from '#lib/ModelSelect.svelte'
+  import ModelSelect, { model_chip_style } from '#lib/ModelSelect.svelte'
   import { ACTIVE_MODELS, task_page_filters } from '#lib/models.svelte.js'
   import { by_benchmark_added_desc } from '#lib'
   import { order_models } from '#lib/fig-helpers.js'
@@ -21,7 +21,6 @@
   import DynamicScatter from '#lib/plot/DynamicScatter.svelte'
   import { min } from 'd3-array'
   import { format_num } from 'matterviz/labels'
-  import { pick_contrast_color } from 'matterviz/colors'
   import { BarPlot, Sankey, sankey_from_links, ScatterPlot } from 'matterviz/plot'
   import GeoOptReadme from './geo-opt-readme.md'
 
@@ -80,18 +79,11 @@
     .toSorted(([key_1], [key_2]) =>
       by_benchmark_added_desc(model_or_undated(key_1), model_or_undated(key_2)),
     )
-    .map(([key, label]) => {
-      const model_color = model_by_key.get(key)?.color ?? `gray`
-      const text_color = pick_contrast_color({ background: model_color })
-      return {
-        label,
-        value: key,
-        style: {
-          selected: `background: ${model_color}; color: ${text_color};`,
-          option: ``,
-        },
-      }
-    })
+    .map(([key, label]) => ({
+      label,
+      value: key,
+      style: model_chip_style(model_by_key.get(key)?.color ?? `gray`),
+    }))
 
   const default_selected_keys = selectable_options
     .slice(0, default_n_models)

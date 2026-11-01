@@ -1,4 +1,4 @@
-"""Build the bundled DFT diatomic reference from spin-candidate VASP curves."""
+"""Build the bundled DFT diatomic reference from spin-candidate DFT curves."""
 
 from __future__ import annotations
 

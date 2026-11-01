@@ -104,8 +104,8 @@ dynamat_v1_0_md_trajectories:
 diatomics_dft_reference:
   path: diatomics/diatomics-dft.json.gz
   description: Homonuclear DFT diatomic reference curves for 92 elements (H–U) at PBE and r2SCAN, including distances, energies, forces, site-projected magnetic moments, and winning spin candidates. The diatomics benchmark uses the PBE curves for reference-relative metrics. [Reference provenance](https://github.com/janosh/matbench-discovery/blob/main/site/src/lib/diatomics-dft.readme.md).
-  md5: d090dcf5d208ad94c188e017d0e0b149
-  url: https://figshare.com/files/68541277
+  md5: 381530b0b10ce40a33469b98b957473b
+  url: https://figshare.com/files/70956786
 
 _private_reference_data:
   article_id: 32900105
@@ -123,12 +123,12 @@ _private_reference_data:
       public_counterpart: dynamat_v1_0_md_trajectories
       description: Labeled DynaMat v1.0 trajectories with energies and forces, used for maintainer-only MD energy/force RMSE diagnostics.
     diatomics_dft_reference:
-      file_id: 66464621
-      file_url: https://figshare.com/files/66464621
+      file_id: 70956795
+      file_url: https://figshare.com/files/70956795
       name: diatomics-dft.json.gz
       local_path: site/src/lib/diatomics-dft.json.gz
-      size: 203155
-      md5: 0998ff21658f9c99d270a885d4be1b47
+      size: 244378
+      md5: 381530b0b10ce40a33469b98b957473b
       description: Private mirror of the bundled homonuclear PBE/r2SCAN DFT diatomic reference curves used by the site and diatomics metrics. Includes per-point site-projected magnetic moments and winning spin candidates.
     diatomics_dft_reference_provenance:
       file_id: 66396755

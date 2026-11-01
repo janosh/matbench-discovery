@@ -1,3 +1,14 @@
+<script lang="ts" module>
+  import { pick_contrast_color } from 'svelte-widgets/attachments'
+
+  // Selected-chip style in a model's color. Text turns white once white reaches 3:1, as
+  // WCAG's pure max-ratio pick puts black on mid-tones (e.g. #2ca02c) where white reads better.
+  export const model_chip_style = (color: string) => ({
+    selected: `background: ${color}; color: ${pick_contrast_color({ bg_color: color, min_ratio: 3 })};`,
+    option: ``,
+  })
+</script>
+
 <script lang="ts" generics="T extends Option">
   import { MultiSelect } from 'svelte-widgets'
   import type { MultiSelectProps, Option } from 'svelte-widgets'

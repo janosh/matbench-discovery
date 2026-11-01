@@ -217,22 +217,21 @@ metrics:
       size: 503988
       md5: a9091d8913ef8de525bc5982980e9296
     cost: {source: runner, hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition, run_time_sec: 258.12, max_rss_gb: 3.192, max_gpu_mem_gb: 0.765}
-    excluded_formula_reasons: {}
-    pbe_wall_dist_mae: 0.6033028272652039
-    pbe_energy_mae: 9.220643949905325
-    pbe_bond_length_error: 0.28928598490914725
-    pbe_well_depth_error: 8.189319209662646
-    pbe_vib_freq_error: 694.6825945923609
-    tortuosity: 1.364541468896109
-    energy_diff_flips: 3.3563218390804597
-    energy_jump: 671.9181709197061
-    force_flips: 3.5977011494252875
-    force_total_variation: 49283.45265688416
-    force_jump: 57625.90688349253
-    pbe_force_mae: 53.758172483420005
+    pbe_wall_dist_mae: 0.5654
+    pbe_energy_mae: 8.552
+    pbe_bond_length_error: 0.3493
+    pbe_well_depth_error: 7.621
+    pbe_vib_freq_error: 629.0
+    tortuosity: 1.365
+    energy_diff_flips: 3.356
+    energy_jump: 671.9
+    force_flips: 3.598
+    force_total_variation: 49280.0
+    force_jump: 57630.0
+    pbe_force_mae: 48.89
     pbe_vib_freq_coverage:
-      n_valid: 70
-      n_eligible: 73
+      n_valid: 78
+      n_eligible: 81
       failed_elements:
       - F
       - Te

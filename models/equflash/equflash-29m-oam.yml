@@ -182,21 +182,21 @@ metrics:
       Pa-Pa: invalid or unsupported curve
       Th-Th: invalid or unsupported curve
       U-U: invalid or unsupported curve
-    pbe_wall_dist_mae: 0.132
-    pbe_energy_mae: 1.06e+29
-    pbe_bond_length_error: 0.159
-    pbe_well_depth_error: 0.3361
-    pbe_vib_freq_error: 47.68
+    pbe_wall_dist_mae: 0.1374
+    pbe_energy_mae: 9.583e+28
+    pbe_bond_length_error: 0.2346
+    pbe_well_depth_error: 0.4181
+    pbe_vib_freq_error: 47.43
     tortuosity: 1.021
     energy_diff_flips: 1.422
     energy_jump: 344.9
     force_flips: 1.398
     force_total_variation: 8.136e+32
     force_jump: 16790.0
-    pbe_force_mae: 1.836e+30
+    pbe_force_mae: 1.659e+30
     pbe_vib_freq_coverage:
-      n_valid: 66
-      n_eligible: 73
+      n_valid: 74
+      n_eligible: 81
       failed_elements:
       - Cs
       - K

@@ -164,22 +164,21 @@ metrics:
       size: 238066
       md5: d22aec572cc2977c6c78fc979e040234
     cost: {source: runner, hardware: NVIDIA H200 NVL, run_time_sec: 108.15, max_rss_gb: 3.699, max_gpu_mem_gb: 0.083}
-    excluded_formula_reasons: {}
-    pbe_wall_dist_mae: 0.06762
-    pbe_energy_mae: 0.6026
-    pbe_bond_length_error: 0.1687
-    pbe_well_depth_error: 0.3643
-    pbe_vib_freq_error: 46.59
+    pbe_wall_dist_mae: 0.07845
+    pbe_energy_mae: 0.6431
+    pbe_bond_length_error: 0.2417
+    pbe_well_depth_error: 0.4678
+    pbe_vib_freq_error: 48.0
     tortuosity: 1.009
     energy_diff_flips: 1.609
     energy_jump: 0.1071
     force_flips: 1.598
     force_total_variation: 186.7
     force_jump: 0.9499
-    pbe_force_mae: 0.5593
+    pbe_force_mae: 0.5743
     pbe_vib_freq_coverage:
-      n_valid: 73
-      n_eligible: 73
+      n_valid: 81
+      n_eligible: 81
       failed_elements: []
       missing_elements: []
   discovery:

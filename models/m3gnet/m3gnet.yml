@@ -170,26 +170,25 @@ metrics:
   diatomics:
     pred_file:
       name: models/m3gnet/m3gnet/2026-09-12-diatomics.json.gz
+      url: https://figshare.com/files/68484286
       size: 224598
       md5: 51c67aa4dd56b8477fd9425378037166
-      url: https://figshare.com/files/68484286
     cost: {source: salvaged, hardware: NVIDIA H100 80GB HBM3, run_time_sec: 67.28, max_rss_gb: 1.696}
-    excluded_formula_reasons: {}
-    pbe_wall_dist_mae: 0.1554
-    pbe_energy_mae: 1.077
-    pbe_bond_length_error: 0.3058
-    pbe_well_depth_error: 0.8734
-    pbe_vib_freq_error: 763.4
+    pbe_wall_dist_mae: 0.1654
+    pbe_energy_mae: 1.039
+    pbe_bond_length_error: 0.3581
+    pbe_well_depth_error: 0.8284
+    pbe_vib_freq_error: 694.7
     tortuosity: 1.078
     energy_diff_flips: 2.276
     energy_jump: 0.4592
     force_flips: 2.207
     force_total_variation: 216.0
     force_jump: 90.61
-    pbe_force_mae: 1.2
+    pbe_force_mae: 1.157
     pbe_vib_freq_coverage:
-      n_valid: 73
-      n_eligible: 73
+      n_valid: 81
+      n_eligible: 81
       failed_elements: []
       missing_elements: []
   md:

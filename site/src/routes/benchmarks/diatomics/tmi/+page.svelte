@@ -1,14 +1,18 @@
 <script lang="ts">
   import { ButtonGroup } from 'svelte-widgets'
+  import { tooltip } from 'svelte-widgets/attachments'
+  import { element_tooltip } from '#lib/plot/DiatomicCurve.svelte'
   import { bind_url_params } from '#lib/url-state.svelte.js'
   import { ScatterPlot } from 'matterviz/plot'
   import { element_data, element_groups } from 'matterviz/element'
+  import { DEFAULT_CATEGORY_COLORS } from 'matterviz/colors'
   import { SvelteSet } from 'svelte/reactivity'
   import type { PageData } from './$types'
   import {
     DFT_REF_COLORS,
     ElementGroupParam,
     make_plot_observer,
+    tint_element_groups,
   } from '../diatomics.svelte.js'
 
   let { data }: { data: PageData } = $props()
@@ -52,7 +56,7 @@
           })),
           point_style: {
             fill: DFT_REF_COLORS[functional] ?? `gray`,
-            radius: 1.5,
+            radius: 2.5,
             stroke_width: 0,
             ...(atom_idx === 1 ? { fill_opacity: 0.5 } : {}),
           },
@@ -70,8 +74,8 @@
 </h1>
 
 <p>
-  Site-projected magnetic moment of each atom (VASP <code>LORBIT=11</code>, in μB) versus
-  dimer separation for the
+  Site-projected magnetic moment of each atom (<code>LORBIT=11</code> convention, in μB)
+  versus dimer separation for the
   <a href="/benchmarks/diatomics">bundled PBE/r2SCAN DFT reference curves</a>. Solid lines
   show atom 1, dashed lines atom 2 (they overlap for ferromagnetically coupled branches
   and mirror each other for broken-symmetry AFM ones). The per-distance spin-ladder winner
@@ -103,6 +107,8 @@
 
 <ButtonGroup
   label="Element group filter"
+  class="element-group-filter"
+  {@attach tint_element_groups}
   options={element_groups}
   bind:value={element_group.key}
   style="margin-block: 1em"
@@ -119,7 +125,8 @@
       {#if visible_plots.has(formula)}
         <h2
           class="diatomic-plot-title toc-exclude"
-          title="{element.name} (Z={element.number})"
+          {@attach tooltip({ content: element_tooltip(element), placement: `top` })}
+          style:--category-color={DEFAULT_CATEGORY_COLORS[element.category]}
         >
           {element.number}
           {formula}

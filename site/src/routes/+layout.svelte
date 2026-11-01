@@ -43,6 +43,20 @@
   $effect(() => {
     if (comparison.open) comparison_module ??= import(`#lib/model/ModelComparison.svelte`)
   })
+  // `100vw` includes a classic (non-overlay) scrollbar, so app.css's full-bleed sections, sized to
+  // `--page-width`, would overhang the page by it and scroll horizontally: measure it instead
+  $effect(() => {
+    const root = document.documentElement
+    const measure = () =>
+      root.style.setProperty(
+        `--scrollbar-width`,
+        `${window.innerWidth - root.clientWidth}px`,
+      )
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(root)
+    return () => observer.disconnect()
+  })
 
   const footer_links: FooterLink[] = [
     { href: `${pkg.repository}/issues`, label: `Issues`, icon: GitHub },
