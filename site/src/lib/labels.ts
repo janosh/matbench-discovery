@@ -209,6 +209,10 @@ export const METADATA_COLS: MetadataLabels = {
   },
 } as const
 
+// Settings columns (relaxation steps, f_max) are context, not scores: fade their
+// heatmap to half opacity and keep the page text color on the lighter fill
+const HALF_HEATMAP = `--heatmap-opacity: 50%; color: var(--text-color);`
+
 export const HYPERPARAMS: HyperparamLabels = {
   model_params: {
     key: `model_params`,
@@ -228,12 +232,16 @@ export const HYPERPARAMS: HyperparamLabels = {
     path: `hyperparams.evaluation`,
     description: `Max remaining force allowed on any atom in the structure for geometry optimization convergence`,
     unit: `eV/Å`,
+
+    cell_style: HALF_HEATMAP,
   },
   max_steps: {
     key: `max_steps`,
     label: `Steps`,
     path: `hyperparams.evaluation`,
     description: `Maximum number of optimization steps allowed`,
+
+    cell_style: HALF_HEATMAP,
   },
   ase_optimizer: {
     key: `Optimizer`,
