@@ -352,6 +352,11 @@ def test_checkpoint_digest_hashes_artifact_bytes(
     assert checkpoint_digest("registry:model-v1") != checkpoint_digest(
         "registry:model-v2"
     )
+    if platform != "win32":  # a corrupt cache raises instead of being rehashed
+        with open(cache_path, mode="w", encoding="utf-8") as file:
+            file.write("{not json")
+        with pytest.raises(json.JSONDecodeError):
+            checkpoint_digest(checkpoint_path)
 
 
 @pytest.mark.parametrize("explicit_checkpoint", [False, True])

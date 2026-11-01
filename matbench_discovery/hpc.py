@@ -1,5 +1,6 @@
 """HPC helpers: Slurm submission, sharding and run-cost provenance."""
 
+import hashlib
 import importlib.metadata
 import json
 import math
@@ -12,7 +13,12 @@ import tempfile
 import types
 import warnings
 from collections.abc import Iterable, Mapping, Sequence, Sized
-from typing import Any, Final, TypeIs
+from typing import TYPE_CHECKING, Any, Final, TypeIs
+
+from pymatviz.enums import Key
+
+if TYPE_CHECKING:
+    from ase import Atoms
 
 # === Run-cost provenance ===
 # Where a cost block came from: measured by our current runners and recorded in the
@@ -344,6 +350,22 @@ def partition_material_ids(
         shards[shard_idx].append(item_id)
         shard_sizes[shard_idx] += len(item)
     return shards
+
+
+def material_id_hash(material_ids: Sequence[str]) -> str:
+    """Return an order-independent digest for a material-ID collection."""
+    joined_ids = "\n".join(sorted(map(str, material_ids)))
+    return hashlib.sha256(joined_ids.encode()).hexdigest()
+
+
+def material_id_from_atoms(atoms: Atoms) -> str:
+    """Extract the material ID from an ASE Atoms info mapping."""
+    material_id = atoms.info.get(str(Key.mat_id))
+    if not isinstance(material_id, str) or not material_id:
+        raise ValueError(
+            f"Atoms has no valid {str(Key.mat_id)!r} in info keys {sorted(atoms.info)}"
+        )
+    return material_id
 
 
 def _get_calling_file_path(frame: int = 1) -> str:

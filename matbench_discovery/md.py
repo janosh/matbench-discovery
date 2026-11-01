@@ -11,10 +11,10 @@ import json
 import os
 import time
 import zipfile
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import IO, Any, cast
+from typing import Any, cast
 
 import ase
 import ase.io
@@ -28,7 +28,7 @@ from ase.md.nose_hoover_chain import NoseHooverChainNVT
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
 from tqdm import tqdm
 
-from matbench_discovery import today
+from matbench_discovery import atomic_output_path, today
 from matbench_discovery.hpc import (
     LOAD_CHARGED,
     check_resume_labels,
@@ -66,26 +66,22 @@ def write_reference_h5(
     trajectory at a time and writes it straight to disk, bounding peak memory to the
     single largest system.
     """
-    if dir_name := os.path.dirname(path):
-        os.makedirs(dir_name, exist_ok=True)
-    tmp_path = f"{path}.tmp"
-    n_written = 0
-    with h5py.File(tmp_path, "w") as file:
-        for system_name, trajectory, dt_fs, temperature_kelvin in entries:
-            group = file.create_group(system_name)
-            # strip supervised labels so the public artifact can't double as a
-            # validation set; dataclasses.replace keeps any future fields intact
-            public_trajectory = dataclasses.replace(
-                trajectory, energy=None, forces=None
-            )
-            public_trajectory.write_to_h5_group(group)
-            group.attrs["dt_fs"] = float(dt_fs)
-            group.attrs["temperature_kelvin"] = float(temperature_kelvin)
-            n_written += 1
-    if n_written == 0:  # nothing yielded: drop the empty tmp file and fail loud
-        os.remove(tmp_path)
-        raise ValueError("Cannot write a reference file with no systems")
-    os.replace(tmp_path, path)
+    with atomic_output_path(path) as tmp_path:
+        n_written = 0
+        with h5py.File(tmp_path, "w") as file:
+            for system_name, trajectory, dt_fs, temperature_kelvin in entries:
+                group = file.create_group(system_name)
+                # strip supervised labels so the public artifact can't double as a
+                # validation set; dataclasses.replace keeps any future fields intact
+                public_trajectory = dataclasses.replace(
+                    trajectory, energy=None, forces=None
+                )
+                public_trajectory.write_to_h5_group(group)
+                group.attrs["dt_fs"] = float(dt_fs)
+                group.attrs["temperature_kelvin"] = float(temperature_kelvin)
+                n_written += 1
+        if n_written == 0:  # nothing yielded: the empty temp file is dropped
+            raise ValueError("Cannot write a reference file with no systems")
 
 
 def list_reference_systems(path: str) -> list[str]:
@@ -335,22 +331,10 @@ def run_info_row(run_info: Mapping[str, object]) -> dict[str, float | int | str]
     return row
 
 
-def _atomic_write(path: str, write: Callable[[IO[bytes]], object]) -> None:
-    """Write a binary file through a temp path, then atomically promote it."""
-    tmp_path = f"{path}.{os.getpid()}.tmp"
-    try:
-        with open(tmp_path, "wb") as file:
-            write(file)
-        os.replace(tmp_path, path)
-    except Exception:
-        with contextlib.suppress(OSError):
-            os.remove(tmp_path)
-        raise
-
-
 def _atomic_savez(path: str, **arrays: NpzValue) -> None:
     """Write an NPZ file through a temp path, then atomically promote it."""
-    _atomic_write(path, lambda file: np.savez(file, **cast("dict[str, Any]", arrays)))
+    with atomic_output_path(path) as tmp_path, open(tmp_path, "wb") as file:
+        np.savez(file, **cast("dict[str, Any]", arrays))
 
 
 def _nvt_state_attrs(
@@ -583,10 +567,11 @@ def run_nvt_md_resumable(
         "nvt_params": dataclasses.asdict(params),
         "completed_at": datetime.now(UTC).isoformat(),
     }
-    run_info_json = json.dumps(run_info, indent=2)
-    _atomic_write(
-        run_info_path(out_path), lambda file: file.write(run_info_json.encode())
-    )
+    with (
+        atomic_output_path(run_info_path(out_path)) as tmp_path,
+        open(tmp_path, mode="w", encoding="utf-8") as file,
+    ):
+        json.dump(run_info, file, indent=2)
     os.replace(part_path, out_path)  # atomic promote only once complete
     with contextlib.suppress(FileNotFoundError):
         os.remove(ckpt_path)

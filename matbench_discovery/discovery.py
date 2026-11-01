@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import copy
-import hashlib
 import json
 import os
 import time
@@ -20,6 +19,7 @@ from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
 from tqdm import tqdm
 
+from matbench_discovery import atomic_output_path
 from matbench_discovery.ase_relax import (
     canonical_filter_name,
     canonical_optimizer_name,
@@ -29,6 +29,8 @@ from matbench_discovery.ase_relax import (
 from matbench_discovery.enums import DataFiles, Model
 from matbench_discovery.hpc import (
     check_resume_labels,
+    material_id_from_atoms,
+    material_id_hash,
     memory_peaks,
     merge_audit_metadata,
     reset_gpu_peak_memory,
@@ -271,20 +273,6 @@ class DiscoveryArtifacts:
     n_failed: int
 
 
-def material_id_hash(material_ids: Sequence[str]) -> str:
-    """Return an order-independent digest for a material-ID collection."""
-    joined_ids = "\n".join(sorted(map(str, material_ids)))
-    return hashlib.sha256(joined_ids.encode()).hexdigest()
-
-
-def _material_id_from_atoms(atoms: Atoms) -> str:
-    """Extract the WBM material ID from an ASE Atoms info mapping."""
-    material_id = atoms.info.get(str(Key.mat_id))
-    if not isinstance(material_id, str) or not material_id:
-        raise ValueError(f"Atoms object has no valid {str(Key.mat_id)!r} in info")
-    return material_id
-
-
 def load_wbm_atoms(
     model_key: str,
     *,
@@ -297,7 +285,7 @@ def load_wbm_atoms(
     atoms_list = ase_atoms_from_zip(DataFiles.wbm_initial_atoms.path, limit=read_limit)
     atoms_by_id: dict[str, Atoms] = {}
     for atoms in atoms_list:
-        material_id = _material_id_from_atoms(atoms)
+        material_id = material_id_from_atoms(atoms)
         if material_id in atoms_by_id:
             raise ValueError(f"Duplicate WBM structure {material_id!r}")
         atoms_by_id[material_id] = atoms
@@ -335,7 +323,7 @@ def relax_atoms(
     settings: RelaxationSettings,
 ) -> RelaxationRecord:
     """Relax one structure with ASE and return a serializable success record."""
-    material_id = _material_id_from_atoms(atoms)
+    material_id = material_id_from_atoms(atoms)
     atoms = atoms.copy()
     atoms.calc = calculator
     optimizer_steps = 0
@@ -394,14 +382,15 @@ def _drop_truncated_line(shard_path: str) -> None:
     """Atomically drop a shard's truncated final line (an interrupted append)."""
     with open(shard_path, encoding="utf-8") as file:
         lines = file.readlines()
-    tmp_path = f"{shard_path}.tmp"
-    with open(tmp_path, mode="w", encoding="utf-8") as file:
+    with (
+        atomic_output_path(shard_path) as tmp_path,
+        open(tmp_path, mode="w", encoding="utf-8") as file,
+    ):
         file.writelines(lines[:-1])
         file.flush()
         # fsync before the rename so a power loss cannot replace hours of durably
         # appended records with a partially written file
         os.fsync(file.fileno())
-    os.replace(tmp_path, shard_path)
 
 
 def read_discovery_shard(shard_path: str) -> LoadedShard:

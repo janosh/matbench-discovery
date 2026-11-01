@@ -2,7 +2,10 @@
 
 import hashlib
 import os
+import tempfile
 import warnings
+from collections.abc import Generator
+from contextlib import contextmanager
 from datetime import UTC, datetime
 
 __version__ = "1.3.1"
@@ -37,6 +40,26 @@ def file_digest(path: str, algorithm: str = "sha256") -> str:
             file, lambda: hashlib.new(algorithm, usedforsecurity=False)
         )
     return digest.hexdigest()
+
+
+@contextmanager
+def atomic_output_path(path: str) -> Generator[str]:
+    """Yield a temporary sibling of path, promote it to path on success and remove it
+    on failure, so readers never see a partially written file.
+    """
+    parent = os.path.dirname(path)
+    if parent:
+        os.makedirs(parent, exist_ok=True)
+    file_descriptor, temporary_path = tempfile.mkstemp(
+        prefix=f".{os.path.basename(path)}.", suffix=".tmp", dir=parent or "."
+    )
+    os.close(file_descriptor)
+    try:
+        yield temporary_path
+        os.replace(temporary_path, path)
+    finally:
+        if os.path.isfile(temporary_path):
+            os.remove(temporary_path)
 
 
 DATA_DIR = f"{ROOT}/data"  # directory to store raw data

@@ -15,7 +15,6 @@ import os
 import posixpath
 import re
 import stat
-import tempfile
 import zipfile
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from datetime import date
@@ -33,7 +32,7 @@ from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 from tqdm import tqdm
 
-from matbench_discovery import DATA_DIR
+from matbench_discovery import DATA_DIR, atomic_output_path
 from matbench_discovery.enums import DataFiles, MbdKey, Model, TestSubset
 
 round_trip_yaml = YAML()  # round-trippable YAML for updating model metadata files
@@ -574,24 +573,13 @@ def update_yaml_file(
             updated_data = data(dict(previous) if isinstance(previous, dict) else {})
         current[last] = updated_data
 
-        temporary_file = tempfile.NamedTemporaryFile(  # noqa: SIM115 - closed before replace
-            mode="w",
-            encoding="utf-8",
-            dir=os.path.dirname(file_path),
-            prefix=f".{os.path.basename(file_path)}.",
-            suffix=".tmp",
-            delete=False,
-        )
-        temporary_path = temporary_file.name
-        try:
-            with temporary_file as file:
-                round_trip_yaml.dump(yaml_data, file)
-                file.flush()
-                os.fsync(file.fileno())
-                os.chmod(temporary_path, stat.S_IMODE(os.stat(file_path).st_mode))
-            os.replace(temporary_path, file_path)
-        finally:
-            if os.path.isfile(temporary_path):
-                os.remove(temporary_path)
+        with (
+            atomic_output_path(file_path) as temporary_path,
+            open(temporary_path, mode="w", encoding="utf-8") as file,
+        ):
+            round_trip_yaml.dump(yaml_data, file)
+            file.flush()
+            os.fsync(file.fileno())
+            os.chmod(temporary_path, stat.S_IMODE(os.stat(file_path).st_mode))
 
         return yaml_data

@@ -10,11 +10,9 @@ import json
 import math
 import os
 import sys
-import tempfile
 import time
 import traceback
-from collections.abc import Generator, Iterable, Iterator, Mapping, Sequence
-from contextlib import contextmanager
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import asdict, dataclass, replace
 from datetime import UTC, datetime
 from typing import IO, TYPE_CHECKING, Any, Literal
@@ -26,12 +24,14 @@ from filelock import FileLock
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, file_digest
+from matbench_discovery import ROOT, atomic_output_path, file_digest
 from matbench_discovery.ase_relax import canonical_filter_name, canonical_optimizer_name
 from matbench_discovery.enums import DataFiles, Model
 from matbench_discovery.hpc import (
     LOAD_CHARGED,
     check_resume_labels,
+    material_id_from_atoms,
+    material_id_hash,
     memory_peaks,
     merge_audit_metadata,
     partition_material_ids,
@@ -48,7 +48,8 @@ if TYPE_CHECKING:
 # v3: harmonic analysis failures are separate from conductivity failures
 KAPPA_RECORD_SCHEMA_VERSION = 3
 # v4: removed the per-model ignore_imaginary_freqs leniency from KappaSettings
-KAPPA_MANIFEST_SCHEMA_VERSION = 4
+# v5: material_id_hash is order-independent, shared with the discovery runner
+KAPPA_MANIFEST_SCHEMA_VERSION = 5
 PHONONDB_N_STRUCTURES = 103
 KAPPA_MANIFEST_FILE = "manifest.json"
 KAPPA_RECORD_DIR = "records"
@@ -287,7 +288,7 @@ class KappaRunManifest:
             raise ValueError("Kappa manifest assignments contain duplicate IDs")
         if set(assigned_ids) != set(self.material_ids):
             raise ValueError("Kappa manifest assignments do not cover its material IDs")
-        if self.material_id_hash != material_id_digest(self.material_ids):
+        if self.material_id_hash != material_id_hash(self.material_ids):
             raise ValueError("Kappa manifest material_id_hash is invalid")
         if self.settings_hash != self.settings.digest:
             raise ValueError("Kappa manifest settings_hash is invalid")
@@ -378,50 +379,35 @@ class KappaArtifacts:
     n_failed: int
 
 
-def material_id_digest(material_ids: Sequence[str]) -> str:
-    """Return an order-sensitive digest for the canonical dataset ID sequence."""
-    return hashlib.sha256("\n".join(map(str, material_ids)).encode()).hexdigest()
-
-
 def checkpoint_digest(checkpoint: str | None) -> str | None:
-    """Hash checkpoint bytes when local, otherwise hash its supplied identifier."""
+    """Hash checkpoint bytes when local, otherwise hash its supplied identifier.
+
+    POSIX caches the digest in a stat-keyed sidecar so multi-GB checkpoints are hashed
+    once. Windows hashes every time: its ctime is the creation time, so an in-place
+    rewrite that restores mtime would hit a stale cache.
+    """
     if checkpoint is None:
         return None
-    if os.path.isfile(checkpoint):
-        if sys.platform == "win32":
-            return file_digest(checkpoint)
-        file_stats = os.stat(checkpoint)
-        cache_path = f"{checkpoint}.sha256.json"
-        try:
-            with FileLock(f"{cache_path}.lock"):
-                if os.path.isfile(cache_path):
-                    with open(cache_path, encoding="utf-8") as file:
-                        cache_data = json.load(file)
-                    if isinstance(cache_data, dict):
-                        cached_hash = cache_data.get("sha256")
-                        if (
-                            cache_data.get("size") == file_stats.st_size
-                            and cache_data.get("mtime_ns") == file_stats.st_mtime_ns
-                            and cache_data.get("ctime_ns") == file_stats.st_ctime_ns
-                            and isinstance(cached_hash, str)
-                            and len(cached_hash) == 64
-                            and all(char in "0123456789abcdef" for char in cached_hash)
-                        ):
-                            return cached_hash
-                digest = file_digest(checkpoint)
-                atomic_write_json(
-                    cache_path,
-                    {
-                        "size": file_stats.st_size,
-                        "mtime_ns": file_stats.st_mtime_ns,
-                        "ctime_ns": file_stats.st_ctime_ns,
-                        "sha256": digest,
-                    },
-                )
-                return digest
-        except OSError, TypeError, ValueError:
-            return file_digest(checkpoint)
-    return hashlib.sha256(checkpoint.encode()).hexdigest()
+    if not os.path.isfile(checkpoint):
+        return hashlib.sha256(checkpoint.encode()).hexdigest()
+    if sys.platform == "win32":
+        return file_digest(checkpoint)
+    file_stats = os.stat(checkpoint)
+    stat_key = {
+        "size": file_stats.st_size,
+        "mtime_ns": file_stats.st_mtime_ns,
+        "ctime_ns": file_stats.st_ctime_ns,
+    }
+    cache_path = f"{checkpoint}.sha256.json"
+    with FileLock(f"{cache_path}.lock"):
+        if os.path.isfile(cache_path):
+            with open(cache_path, encoding="utf-8") as file:
+                cache_data = json.load(file)
+            if {key: cache_data[key] for key in stat_key} == stat_key:
+                return cache_data["sha256"]
+        digest = file_digest(checkpoint)
+        atomic_write_json(cache_path, stat_key | {"sha256": digest})
+    return digest
 
 
 def kappa_source_paths(adapter: StandardKappaAdapter, model_key: str) -> set[str]:
@@ -468,16 +454,6 @@ def kappa_source_digest(adapter: StandardKappaAdapter, model_key: str) -> str:
         with open(source_path, mode="rb") as file:
             source_hasher.update(file.read())
     return source_hasher.hexdigest()
-
-
-def material_id_from_atoms(atoms: Atoms) -> str:
-    """Extract a PhononDB material ID from ASE metadata."""
-    material_id = atoms.info.get(str(Key.mat_id))
-    if not isinstance(material_id, str) or not material_id:
-        raise ValueError(
-            f"Structure has no {Key.mat_id} in info keys {sorted(atoms.info)}"
-        )
-    return material_id
 
 
 def load_phonondb_atoms(
@@ -536,7 +512,7 @@ def build_kappa_manifest(
         dataset_path=os.path.abspath(dataset_path),
         dataset_hash=file_digest(dataset_path),
         material_ids=material_ids,
-        material_id_hash=material_id_digest(material_ids),
+        material_id_hash=material_id_hash(material_ids),
         n_shards=n_shards,
         assignments=assignments,
         settings=effective_settings,
@@ -1083,24 +1059,6 @@ def write_kappa_artifacts(
     )
 
 
-@contextmanager
-def _atomic_output_path(path: str) -> Generator[str]:
-    """Yield a temporary sibling path and atomically promote it on success."""
-    parent = os.path.dirname(path)
-    if parent:
-        os.makedirs(parent, exist_ok=True)
-    file_descriptor, temporary_path = tempfile.mkstemp(
-        prefix=f".{os.path.basename(path)}.", dir=parent or "."
-    )
-    os.close(file_descriptor)
-    try:
-        yield temporary_path
-        os.replace(temporary_path, path)
-    finally:
-        if os.path.isfile(temporary_path):
-            os.remove(temporary_path)
-
-
 def write_json_records(
     output_file: IO[str], records: Iterable[Mapping[str, Any]]
 ) -> None:
@@ -1152,7 +1110,7 @@ def stream_sidecar_artifact(
             yield {**sidecar_data, str(Key.mat_id): record.material_id}
 
     with (
-        _atomic_output_path(path) as temporary_path,
+        atomic_output_path(path) as temporary_path,
         gzip.open(
             temporary_path, mode="wt", encoding="utf-8", compresslevel=1
         ) as output_file,
@@ -1190,7 +1148,7 @@ def atomic_write_json(path: str, data: object) -> None:
     """Atomically write strict JSON, gzip-compressed when ``path`` ends in ``.gz``."""
     open_fn = gzip.open if path.endswith(".gz") else open
     with (
-        _atomic_output_path(path) as temporary_path,
+        atomic_output_path(path) as temporary_path,
         open_fn(temporary_path, mode="wt", encoding="utf-8") as file,
     ):
         json.dump(json_ready(data), file, sort_keys=True, allow_nan=False)

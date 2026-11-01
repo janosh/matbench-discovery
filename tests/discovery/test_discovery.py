@@ -41,6 +41,7 @@ from matbench_discovery.energy import calc_energy_from_e_refs
 from matbench_discovery.enums import MbdKey, Model, TestSubset
 from matbench_discovery.hpc import (
     effective_shard_args,
+    material_id_hash,
     partition_material_ids,
     slurm_shard_selection,
 )
@@ -592,7 +593,7 @@ def _merge_test_shards(shard_paths: list[str]) -> MergedDiscoveryRun:
 
 
 def test_partition_material_ids_is_deterministic_and_balanced() -> None:
-    """Atom balancing is independent of mapping insertion order and deterministic."""
+    """Atom balancing and the material-ID hash are independent of insertion order."""
     atoms_by_id = {
         "wbm-3": bulk_atoms("wbm-3", repeat=3),
         "wbm-1": bulk_atoms("wbm-1", repeat=1),
@@ -600,6 +601,8 @@ def test_partition_material_ids_is_deterministic_and_balanced() -> None:
         "wbm-2": bulk_atoms("wbm-2", repeat=2),
     }
     reversed_atoms = dict(reversed(atoms_by_id.items()))
+    assert material_id_hash(list(atoms_by_id)) == material_id_hash(list(reversed_atoms))
+    assert material_id_hash(["wbm-1"]) != material_id_hash(["wbm-2"])
     shards = partition_material_ids(atoms_by_id, 2)
     assert shards == partition_material_ids(reversed_atoms, 2)
     shard_sizes = [
