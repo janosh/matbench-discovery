@@ -11,6 +11,7 @@ import pytest
 from ase.data import atomic_numbers, covalent_radii
 
 from matbench_discovery.enums import Model
+from matbench_discovery.metrics.diatomics.exclusions import drop_metric_exclusions
 from tests.utils import import_repo_script, patch_model_metadata
 
 # synthetic curated exclusions, decoupled from any real model YAML's live pins
@@ -35,27 +36,48 @@ def run_diatomics_fixture() -> ModuleType:
 
 
 @pytest.mark.parametrize(
-    ("argv_tail", "expected_stdout"),
+    ("argv_tail", "is_error", "expected_text"),
     [
-        ("--model emt --min-dist 0", None),
-        ("--model emt --min-dist -0.1", None),
-        ("--model emt --max-dist 0.1", None),
-        ("--model emt --min-dist 2 --max-dist 1", None),
-        ("--model emt --max-z 0", None),
-        ("--model emt --n-points 1", None),
-        ("--model mace-mp-0", "--model mace_mp_0"),
+        (
+            "--model emt --min-dist 0",
+            True,
+            "--min-dist and --max-dist must be positive with max > min",
+        ),
+        (
+            "--model emt --min-dist -0.1",
+            True,
+            "--min-dist and --max-dist must be positive with max > min",
+        ),
+        (
+            "--model emt --max-dist 0.1",
+            True,
+            "--min-dist and --max-dist must be positive with max > min",
+        ),
+        (
+            "--model emt --min-dist 2 --max-dist 1",
+            True,
+            "--min-dist and --max-dist must be positive with max > min",
+        ),
+        ("--model emt --max-z 0", True, "--max-z must be a positive integer"),
+        ("--model emt --n-points 1", True, "--n-points must be >= 2"),
+        ("--model mace-mp-0", False, "--model mace_mp_0"),
         # shared-runner models are resolved by name, no per-model branching
-        ("--model sevennet_0", "--model sevennet_0"),
-        ("--model alphanet_v1_oam", "--model alphanet_v1_oam"),
+        ("--model sevennet_0", False, "--model sevennet_0"),
+        ("--model alphanet_v1_oam", False, "--model alphanet_v1_oam"),
         # --print-cmd must forward computation params, not just --model (else a copied
         # command silently runs with defaults)
-        ("--model mace-mp-0 --min-dist 0.2", "--min-dist 0.2"),
-        ("--model emt --checkpoint /ckpt/model.pt", "--checkpoint /ckpt/model.pt"),
+        ("--model mace-mp-0 --min-dist 0.2", False, "--min-dist 0.2"),
+        (
+            "--model emt --checkpoint /ckpt/model.pt",
+            False,
+            "--checkpoint /ckpt/model.pt",
+        ),
     ],
 )
 def test_run_diatomics_cli_validation(
     argv_tail: str,
-    expected_stdout: str | None,
+    is_error: bool,
+    expected_text: str,
     run_diatomics: ModuleType,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
@@ -65,12 +87,13 @@ def test_run_diatomics_cli_validation(
         sys, "argv", ["run_diatomics", "--print-cmd", *argv_tail.split()]
     )
 
-    if expected_stdout is None:
+    if is_error:
         with pytest.raises(SystemExit):
             run_diatomics.main()
+        assert expected_text in capsys.readouterr().err
         return
     assert run_diatomics.main() == 0
-    assert expected_stdout in capsys.readouterr().out
+    assert expected_text in capsys.readouterr().out
 
 
 def test_trim_curve_to_finite(run_diatomics: ModuleType) -> None:
@@ -123,7 +146,7 @@ def test_run_diatomics_exclusion_reasons(
 
     # drop_metric_exclusions removes excluded formula and element-keyed metrics
     metrics = {"He": {"energy_jump": 1.0}, "Cu": {"energy_jump": 2.0}}
-    assert run_diatomics.drop_metric_exclusions(curated_model, metrics) == {
+    assert drop_metric_exclusions(curated_model, metrics) == {
         "Cu": {"energy_jump": 2.0}
     }
 

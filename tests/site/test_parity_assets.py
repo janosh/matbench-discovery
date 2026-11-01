@@ -712,24 +712,38 @@ def test_parity_generators_reject_empty_target_lists(
         parse_args(["--models"])
 
 
+NOT_POSITIVE = "expected a positive integer"
+SCRATCH_MANIFEST = "--limit-rows requires a scratch --manifest path"
+
+
 @pytest.mark.parametrize(
-    "argv",
+    ("argv", "expected_error"),
     [
         *(
-            [option, value]
+            ([option, value], NOT_POSITIVE)
             for option in ("--structure-shard-size", "--structure-bundle-size")
             for value in ("0", "-1")
         ),
         # debug row limits must never overwrite the committed manifest
-        ["--limit-rows", "5"],
-        ["--limit-rows", "5", "--manifest", energy_assets.MANIFEST_PATH],
-        ["--limit-rows", "0", "--manifest", "scratch.json"],
+        (["--limit-rows", "5"], SCRATCH_MANIFEST),
+        (
+            ["--limit-rows", "5", "--manifest", energy_assets.MANIFEST_PATH],
+            SCRATCH_MANIFEST,
+        ),
+        (["--limit-rows", "0", "--manifest", "scratch.json"], NOT_POSITIVE),
     ],
 )
-def test_energy_rejects_invalid_args(argv: list[str]) -> None:
+def test_energy_rejects_invalid_args(
+    argv: list[str], expected_error: str, capsys: pytest.CaptureFixture[str]
+) -> None:
     """Sizes and row limits must be positive; row limits need a scratch manifest."""
     with pytest.raises(SystemExit):
         energy_assets.parse_args(argv)
+    assert expected_error in capsys.readouterr().err
+
+
+def test_energy_limit_rows_accepts_scratch_manifest() -> None:
+    """A positive row limit with a scratch manifest parses."""
     scratch_args = energy_assets.parse_args(["--limit-rows", "5", "--manifest", "x"])
     assert scratch_args.limit_rows == 5
 

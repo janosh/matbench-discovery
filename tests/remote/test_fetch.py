@@ -298,9 +298,10 @@ def test_maybe_auto_download_file_validates_existing_file(
         Path(abs_path).write_bytes(b"cached")
 
     with patch("requests.get", return_value=make_mock_response(b"fresh")) as mock_get:
-        maybe_auto_download_file(url, abs_path, label="test", md5=md5)
+        downloaded = maybe_auto_download_file(url, abs_path, label="test", md5=md5)
     assert Path(abs_path).read_bytes() == (expected_content or b"fresh")
     assert mock_get.called is should_download
+    assert downloaded is should_download
     assert (f"Downloading 'test' from {url!r}" in capsys.readouterr().out) is (
         should_download
     )

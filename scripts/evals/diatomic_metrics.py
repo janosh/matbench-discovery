@@ -3,16 +3,11 @@
 import gzip
 import json
 import numbers
-import os
 
-from matbench_discovery import ROOT
 from matbench_discovery.cli import cli_args
-from matbench_discovery.data import file_ref_name, file_ref_url
 from matbench_discovery.enums import Model
 from matbench_discovery.metrics import diatomics
 from matbench_discovery.metrics.diatomics import DiatomicCurves
-from matbench_discovery.metrics.diatomics.exclusions import drop_metric_exclusions
-from matbench_discovery.remote.fetch import maybe_auto_download_file
 from scripts.evals import evaluate_models
 
 
@@ -21,45 +16,23 @@ def main() -> int:
     pbe_ref_curves = diatomics.load_dft_reference_curves("PBE")
 
     def evaluate_one(model: Model) -> str | None:
-        if not os.path.isfile(model.yaml_path):
-            return "YAML file not found"
-
-        diatomics_metrics = model.metrics.get("diatomics") or {}
-        if not diatomics_metrics:
-            return "no diatomics metrics config in YAML"
-
-        pred_file = diatomics_metrics.get("pred_file")
-        pred_name = file_ref_name(pred_file)
-        if pred_name is None:
+        """Score one model's diatomic predictions and write its metrics to YAML."""
+        # getter validates the artifact path and downloads/md5-verifies the file
+        if (prediction_path := model.diatomics_path) is None:
             return "no pred_file in diatomics config"
 
-        prediction_path = f"{ROOT}/{pred_name}"
-        pred_file_url = file_ref_url(pred_file)
-
-        if not os.path.isfile(prediction_path) and pred_file_url:
-            maybe_auto_download_file(
-                pred_file_url, prediction_path, label=f"{model.label} diatomics"
-            )
-
-        if not os.path.isfile(prediction_path):
-            return f"prediction file not found at {pred_name}"
-
         with gzip.open(prediction_path, mode="rb") as file:
-            pred_data = json.load(file) or {}
+            pred_data = json.load(file)
 
         pred_curves = DiatomicCurves.from_dict(pred_data)
-        metrics = diatomics.calc_diatomic_metrics(
-            ref_curves=pbe_ref_curves,
-            pred_curves=pred_curves,
-            # default metrics=None scores every key in diatomics.DIATOMIC_METRIC_KEYS
-            interpolate=200,
+        metrics = diatomics.score_diatomic_curves(
+            model.name, pbe_ref_curves, pred_curves
         )
-        metrics = drop_metric_exclusions(model.name, metrics)
         mean_metrics = diatomics.write_metrics_to_yaml(
             model,
             metrics,
             # YAML cost is re-derived from the file's own run_metadata
-            run_metadata=pred_data.get("run_metadata") or {},
+            run_metadata=pred_data.get("run_metadata", {}),
             vib_freq_coverage=diatomics.calc_vib_freq_coverage(
                 pbe_ref_curves, pred_curves, metrics
             ),

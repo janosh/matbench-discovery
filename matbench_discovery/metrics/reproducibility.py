@@ -23,7 +23,6 @@ from matbench_discovery.enums import Model
 from matbench_discovery.metrics import diatomics
 from matbench_discovery.metrics import md as md_metrics
 from matbench_discovery.metrics.diatomics import DiatomicCurves
-from matbench_discovery.metrics.diatomics.exclusions import drop_metric_exclusions
 
 ReproTask = Literal["diatomics", "md"]
 REPRO_CAUSES: Final = (
@@ -52,8 +51,7 @@ def score_files(
         for path in paths:
             with gzip.open(path, mode="rb") as file:
                 pred = DiatomicCurves.from_dict(json.load(file))
-            metrics = diatomics.calc_diatomic_metrics(ref_curves, pred, interpolate=200)
-            metrics = drop_metric_exclusions(model.name, metrics)
+            metrics = diatomics.score_diatomic_curves(model.name, ref_curves, pred)
             scores.append(diatomics.diatomic_metric_means(metrics))
         return scores
     frames = [

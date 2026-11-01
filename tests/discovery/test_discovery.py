@@ -296,18 +296,24 @@ def test_write_yaml_results_masks_outliers_and_updates_yaml(
     assert uniq_metrics["DAF"] == pytest.approx(1.5)
 
 
+# --merge-shards --write-yaml --dry-run is covered for every runner in test_registry
 @pytest.mark.parametrize(
-    "cli_args",
+    ("cli_args", "expected_error"),
     [
-        ["--write-yaml"],
-        ["--merge-shards", "--write-yaml", "--dry-run"],
-        ["--merge-shards", "--shard-index", "0"],
+        (["--write-yaml"], "--write-yaml is only supported with --merge-shards"),
+        (
+            ["--merge-shards", "--shard-index", "0"],
+            "--shard-index is incompatible with --merge-shards",
+        ),
     ],
 )
-def test_cli_rejects_unsafe_flag_combinations(cli_args: list[str]) -> None:
+def test_cli_rejects_unsafe_flag_combinations(
+    cli_args: list[str], expected_error: str, capsys: pytest.CaptureFixture[str]
+) -> None:
     """CLI rejects YAML writes outside complete merges and sharded merge runs."""
     with pytest.raises(SystemExit, match="2"):
         discovery_runner.main(["--model", "emt", *cli_args])
+    assert expected_error in capsys.readouterr().err
 
 
 SUCCESS_RECORD = RelaxationRecord(material_id="wbm-1-1", structure={}, energy=-1.0)

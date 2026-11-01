@@ -80,6 +80,7 @@ class Checklist:
     """Collects pass/fail/skip results and renders a summary."""
 
     def __init__(self) -> None:
+        """Start with no recorded results."""
         self.results: list[tuple[str, str]] = []
 
     def record(self, status: str, msg: str) -> None:
@@ -108,6 +109,7 @@ class Checklist:
 
 
 def banner(text: str) -> None:
+    """Print text between two horizontal rules to delimit a pipeline stage."""
     print(f"\n{'━' * 78}\n{text}\n{'━' * 78}")
 
 
@@ -414,6 +416,7 @@ def activate_pending(model: Model) -> None:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    """Validate, evaluate, archive or refresh payloads for model submissions."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "models",

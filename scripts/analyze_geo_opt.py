@@ -17,19 +17,17 @@ Example usage (moyopy comes from the symmetry extra):
 """
 
 # %%
-import importlib
 import importlib.metadata
 import itertools
 import os
 from concurrent.futures import ProcessPoolExecutor
-from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, Final
 
 import pandas as pd
 from pymatgen.core import Structure
 from pymatviz.enums import Key
 
-from matbench_discovery import ROOT, file_digest
+from matbench_discovery import ROOT, file_digest, today
 from matbench_discovery.cli import cli_parser, parse_cli_args
 from matbench_discovery.data import (
     artifact_filename,
@@ -126,7 +124,7 @@ def analyze_model_symprec(
         # only reuse/download a published analysis file if its path matches exactly
         # `or {}`: a null YAML value (symprec=1e-2: ~) must read as no metrics
         symprec_metrics = geo_opt_metrics.get(symprec_str) or {}
-        analysis_ref = symprec_metrics.get("analysis_file")
+        analysis_ref = symprec_metrics.get("analysis_file") or {}
         analysis_url = file_ref_url(analysis_ref)
         analysis_file = file_ref_name(analysis_ref)
         analysis_file_path = f"{ROOT}/{analysis_file}" if analysis_file else ""
@@ -137,6 +135,7 @@ def analyze_model_symprec(
                     analysis_url,
                     geo_opt_csv_path,
                     label=f"{model.label} {symprec_str}",
+                    md5=analysis_ref.get("md5"),
                 )
         elif analysis_file:
             # Paths differ (moyo version change, etc.) - will recompute
@@ -195,7 +194,7 @@ def write_dft_reference(
     moyopy version (never overwriting one) to upload and register in data-files.yml.
     """
     out_path = (
-        f"{out_dir}/wbm/{datetime.now(tz=UTC).date()}-dft-geo-opt-symprec="
+        f"{out_dir}/wbm/{today}-dft-geo-opt-symprec="
         f"{canonical_scientific_notation(symprec)}-moyo={moyo_version}.csv.gz"
     )
     if os.path.isfile(out_path):
@@ -293,7 +292,7 @@ def main(raw_args: list[str] | None = None) -> int:
         futures = [
             executor.submit(
                 analyze_model_symprec,
-                model=model_name,
+                model=model,
                 symprec=symprec,
                 moyo_version=moyo_version,
                 df_dft_analysis=dft_analysis_dict[symprec],
@@ -302,7 +301,7 @@ def main(raw_args: list[str] | None = None) -> int:
                 pbar_pos=idx,  # assign unique position to each task's progress bar
                 overwrite=args.overwrite,
             )
-            for idx, (model_name, symprec) in enumerate(tasks)
+            for idx, (model, symprec) in enumerate(tasks)
         ]
         for future in futures:
             future.result()  # re-raises any worker exception

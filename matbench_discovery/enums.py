@@ -6,15 +6,17 @@ import os
 import re
 from enum import EnumType, StrEnum, _EnumDict, auto, unique
 from glob import glob
-from typing import Any, Self, cast
+from typing import Any, Self
 
-import pymatviz as pmv
 import yaml
 
 from matbench_discovery import DEFAULT_CACHE_DIR, PKG_DIR, ROOT, file_digest
 from matbench_discovery.remote.fetch import maybe_auto_download_file
 
-eV_per_atom = pmv.enums.eV_per_atom  # noqa: N816
+# axis-label unit suffix, same string as pymatviz<=0.18's (since removed) eV_per_atom
+eV_per_atom = (  # noqa: N816
+    "<span style='font-size: 0.8em; font-weight: lighter;'>(eV/atom)</span>"
+)
 
 
 def resolve_verified_file(
@@ -32,8 +34,11 @@ def resolve_verified_file(
         and file_digest(abs_path, "md5") == md5
     ):
         return abs_path
-    if url is not None:
-        maybe_auto_download_file(url, abs_path, label=label, md5=md5)
+    # download_file verifies md5 while streaming, so a fresh download needs no re-hash
+    if url is not None and maybe_auto_download_file(
+        url, abs_path, label=label, md5=md5
+    ):
+        return abs_path
     if not os.path.isfile(abs_path):
         raise FileNotFoundError(
             f"Failed to resolve {label!r} at {abs_path} with {url=}"
@@ -333,6 +338,15 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         return os.path.basename(os.path.dirname(self.rel_path))
 
     @property
+    def artifact_dir(self) -> str:
+        """Repo-relative per-model artifact directory ``models/<family>/<key>``.
+
+        Derived from the YAML path (whose stem is the model_key, as the registry
+        tests enforce) so it needs no metadata read.
+        """
+        return f"models/{os.path.splitext(self.rel_path)[0]}"
+
+    @property
     def metrics(self) -> dict[str, Any]:
         """Metrics associated with the model."""
         return self.metadata.get("metrics") or {}  # bare `metrics:` loads as None
@@ -347,7 +361,6 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         metrics_key: str,
         *,
         nested_key: str | None = None,
-        required: bool = False,
         file_key: str = "pred_file",
     ) -> str | None:
         """Resolve a metrics file ref to a local path, downloading when a URL is set."""
@@ -362,12 +375,8 @@ class Model(Files, base_dir=f"{ROOT}/models"):
             section = section.get(key) or {}
         pred_file = section.get(file_key) or {}
         if not (rel_path := file_ref_name(pred_file)):
-            if required:
-                raise ValueError(
-                    f"metrics.{metrics_key}.{file_key} not found in {self.rel_path!r}"
-                )
             return None
-        validate_artifact_path(rel_path, f"models/{self.family}/{self.key}")
+        validate_artifact_path(rel_path, self.artifact_dir)
         abs_path = f"{ROOT}/{rel_path}"
         return resolve_verified_file(
             abs_path,
@@ -379,7 +388,11 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     @property
     def discovery_path(self) -> str:
         """Prediction file path associated with the model."""
-        return cast("str", self._metric_pred_path("discovery", required=True))
+        if (pred_path := self._metric_pred_path("discovery")) is None:
+            raise ValueError(
+                f"metrics.discovery.pred_file not found in {self.rel_path!r}"
+            )
+        return pred_path
 
     @property
     def geo_opt_path(self) -> str | None:

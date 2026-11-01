@@ -81,27 +81,19 @@ def test_label_enum_member_spot_checks(
 
 
 def test_files_enum() -> None:
-    """Test error handling in Files enum."""
+    """Files subclasses take base_dir from a class keyword and must define url/label."""
     assert Files.base_dir == DATA_DIR
 
     class SubFiles(Files, base_dir="foo"):
         test_file = auto(), "test/file.txt"
 
-        @property
-        def url(self) -> str:
-            """URL associated with the file."""
-            return "https://example.com/file.txt"
-
-        @property
-        def label(self) -> str:
-            """Label associated with the file."""
-            return "test"
-
     assert SubFiles.base_dir == "foo"
-
-    test_file = SubFiles.test_file
-    assert repr(test_file) == "SubFiles.test_file"
-    assert str(test_file) == "test_file"
+    assert SubFiles.test_file.rel_path == "test/file.txt"
+    for prop in ("url", "label"):
+        with pytest.raises(
+            NotImplementedError, match=f"SubFiles must implement '{prop}'"
+        ):
+            getattr(SubFiles.test_file, prop)
 
 
 @pytest.mark.parametrize("enum_cls", [Model, DataFiles])
@@ -423,8 +415,6 @@ def test_model_prediction_urls(url_session: requests.Session) -> None:
 
     tasks: dict[str, str] = {}
     for model in Model.active():
-        if model.name == Model["mace_mpa_0"].name:
-            continue
         tasks[model.metadata["pr_url"]] = model.name
         metrics = model.metrics
         if not metrics:

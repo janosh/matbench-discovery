@@ -14,11 +14,12 @@ from pymatviz.enums import ElemCountMode, Key
 from pymatviz.utils import si_fmt_int
 
 from matbench_discovery import PDF_FIGS, STABILITY_THRESHOLD
-from matbench_discovery.data import DATASETS, df_wbm
+from matbench_discovery.data import df_wbm, load_datasets
 from matbench_discovery.energy import mp_elem_ref_entries
 from matbench_discovery.enums import DataFiles, MbdKey
 
 module_dir = os.path.dirname(__file__)
+os.makedirs(PDF_FIGS, exist_ok=True)
 
 
 # %% load MP training set
@@ -57,11 +58,11 @@ all_counts = (
 # %% print prevalence of stable structures in full WBM and uniq-prototypes only
 print(f"{STABILITY_THRESHOLD=}")
 for df, label, n_expected in (
-    (df_wbm, "full WBM", DATASETS["WBM"]["n_stable_materials"]),
+    (df_wbm, "full WBM", load_datasets()["WBM"]["n_stable_materials"]),
     (
         df_wbm.query(MbdKey.uniq_proto),
         "WBM unique prototypes",
-        DATASETS["WBM"]["n_uniq_stable_materials"],
+        load_datasets()["WBM"]["n_uniq_stable_materials"],
     ),
 ):
     n_stable = sum(df[MbdKey.each_true] <= STABILITY_THRESHOLD)

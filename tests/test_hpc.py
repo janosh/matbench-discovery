@@ -124,6 +124,7 @@ def test_slurm_submit(
 
 
 def test_get_calling_file_path() -> None:
+    """The frame offset selects which caller's file path is returned."""
     assert hpc._get_calling_file_path(frame=1) == __file__  # noqa: SLF001
 
     def wrapper(frame: int) -> str:

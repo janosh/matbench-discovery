@@ -14,7 +14,6 @@
     METADATA_COLS,
     PHONON_METRICS,
   } from '#lib/labels.js'
-  import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '#lib/combined-scores.svelte.js'
   import { is_finite_num, metric_value } from '#lib/metrics.js'
   import { ACTIVE_MODELS, task_page_filters } from '#lib/models.svelte.js'
   import type { TableSort } from 'matterviz/table'
@@ -110,7 +109,7 @@
   let has_preset_data = $derived((model: ModelData) =>
     is_finite_num(metric_value(model, preset_primary_metrics[col_preset], discovery_set)),
   )
-  const { filters, in_view } = task_page_filters(
+  const { filters } = task_page_filters(
     (model) => has_preset_data(model),
     read_url_params,
     () => [
@@ -121,7 +120,7 @@
 </script>
 
 <h1 id="matbench-discovery">
-  <img src="/favicon.svg" alt="Matbench Discovery Logo" width="60px" />
+  <img src="/favicon.svg" alt="Matbench Discovery Logo" width="60" />
   Matbench Discovery
 </h1>
 
@@ -191,7 +190,7 @@
   <p>Each dot is a model; the dashed line tracks the best score so far.</p>
   <DynamicScatter
     models={ACTIVE_MODELS}
-    model_filter={in_view}
+    model_filter={filters.matches}
     {discovery_set}
     x_key={METADATA_COLS.benchmark_added.key}
     y_key={ALL_METRICS.CPS.key}

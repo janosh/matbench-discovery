@@ -485,7 +485,7 @@ def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
     # after Model.metadata was cached survive
     assert model.metrics["diatomics"]["cost"]["run_time_sec"] == 120  # caches
     update_yaml_file(
-        yaml_path,
+        str(yaml_path),
         "metrics.diatomics",
         {"cost": {"source": "runner", "hardware": "H100", "run_time_sec": 7.0}}
         | {"excluded_formula_reasons": {"Li-Li": "curated"}},
@@ -499,7 +499,7 @@ def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
 
     # a recompute keeps the reproducibility verdict, a new registration drops it
     repro = {"status": "reproduced", "rel_changes": {"tortuosity": 0.0}}
-    update_yaml_file(yaml_path, "metrics.diatomics", {"reproducibility": repro})
+    update_yaml_file(str(yaml_path), "metrics.diatomics", {"reproducibility": repro})
     kept = diatomics.write_metrics_to_yaml(
         model, metrics_by_element, run_metadata=file_run_metadata
     )

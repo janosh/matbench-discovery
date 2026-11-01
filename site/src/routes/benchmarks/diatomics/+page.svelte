@@ -82,13 +82,11 @@
 
   let selectable_keys = $derived([...reference_names, ...data.diatomic_model_keys])
   let selectable_options = $derived(
-    selectable_keys.map((model_key) => {
-      return {
-        label: `${label_for(model_key)}${reference_names.includes(model_key) ? ` (DFT)` : ``}`,
-        value: model_key,
-        style: model_chip_style(color_for(model_key)),
-      }
-    }),
+    selectable_keys.map((model_key) => ({
+      label: `${label_for(model_key)}${reference_names.includes(model_key) ? ` (DFT)` : ``}`,
+      value: model_key,
+      style: model_chip_style(color_for(model_key)),
+    })),
   )
 
   // DFT references plus the three highest CDS-ranked models with available curves.

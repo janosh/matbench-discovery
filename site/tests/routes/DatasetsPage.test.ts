@@ -227,7 +227,9 @@ describe(`Datasets Page`, () => {
     search.value = `MPtrj`
     search.dispatchEvent(new Event(`input`, { bubbles: true }))
     await tick()
-    doc_query<HTMLButtonElement>(`.filters button`).click()
+    doc_query<HTMLButtonElement>(
+      `.filters[role="group"][aria-label="Dataset filters"] button`,
+    ).click()
     await tick()
     expect(names()[0]).toBe(`AFLOW`)
     expect(query_param(`sort`)).toBe(`Name`)

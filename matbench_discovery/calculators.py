@@ -316,6 +316,7 @@ def _runtime_calc_spec(
     """
 
     def build() -> CalcSpec:
+        """Build the CalcSpec from the model YAML's environment block."""
         from matbench_discovery.enums import Model
 
         environment = Model[model_key].metadata["environment"]
@@ -373,24 +374,30 @@ class _CalcRegistry:
     """Resolve lazy CalcSpec builders on first [] / .get / iteration."""
 
     def __init__(self, mapping: dict[str, CalcSpec | Callable[[], CalcSpec]]) -> None:
+        """Store resolved specs or lazy builders keyed by calculator key."""
         self._data = dict(mapping)
 
     def __getitem__(self, key: str) -> CalcSpec:
+        """Return the CalcSpec for key, building and caching a lazy entry once."""
         value = self._data[key]
         if not isinstance(value, CalcSpec):
             self._data[key] = value = value()
         return value
 
     def __setitem__(self, key: str, value: CalcSpec | Callable[[], CalcSpec]) -> None:
+        """Register a resolved spec or lazy builder under key."""
         self._data[key] = value
 
     def __delitem__(self, key: str) -> None:
+        """Remove a registered calculator key."""
         del self._data[key]
 
     def __contains__(self, key: object) -> bool:
+        """Return whether key is registered, without building its spec."""
         return key in self._data
 
     def __iter__(self) -> Iterator[str]:
+        """Iterate over registered keys without building their specs."""
         return iter(self._data)
 
     def get(self, key: str, default: CalcSpec | None = None) -> CalcSpec | None:
@@ -400,6 +407,7 @@ class _CalcRegistry:
         return self[key]
 
     def items(self) -> Iterator[tuple[str, CalcSpec]]:
+        """Yield (key, resolved CalcSpec) pairs, building lazy entries as needed."""
         return ((key, self[key]) for key in self._data)
 
 
@@ -438,7 +446,10 @@ def resolve_device(model_key: str, device: str | None = None) -> str:
 
 
 def _mace(checkpoint: str, head: str | None = None) -> Callable[[str, str], Calculator]:
+    """MACE-MP foundation model by name, with cuEquivariance on CUDA."""
+
     def make_calc(device: str, dtype: str = "float64") -> Calculator:
+        """Load the MACE model on device in the requested dtype."""
         from mace.calculators import mace_mp
 
         kwargs = {"head": head} if head else {}
@@ -459,6 +470,7 @@ def _mace_soyo(head: str) -> Callable[..., Calculator]:
     """Export a MACE-SOYO checkpoint to an AOTI package once per GPU arch."""
 
     def make_calc(device: str, checkpoint: str) -> Calculator:
+        """Export (once per GPU arch) and load the MACE-SOYO AOTI package."""
         import mace_soyo
         import torch
         from ase.build import bulk
@@ -503,7 +515,10 @@ def _mace_soyo(head: str) -> Callable[..., Calculator]:
 
 
 def _orb(variant: str) -> Callable[[str], Calculator]:
+    """ORB pretrained model by registry variant name."""
+
     def make_calc(device: str) -> Calculator:
+        """Load the ORB model and move it to device."""
         from orb_models.forcefield.calculator import ORBCalculator
         from orb_models.forcefield.pretrained import ORB_PRETRAINED_MODELS
 
@@ -515,7 +530,10 @@ def _orb(variant: str) -> Callable[[str], Calculator]:
 
 
 def _mattersim(checkpoint: str) -> Callable[[str], Calculator]:
+    """MatterSim model by checkpoint name (MatterSim downloads it itself)."""
+
     def make_calc(device: str) -> Calculator:
+        """Load the MatterSim calculator on device."""
         from mattersim.forcefield import MatterSimCalculator
 
         return MatterSimCalculator(load_path=checkpoint, device=device)
@@ -524,6 +542,8 @@ def _mattersim(checkpoint: str) -> Callable[[str], Calculator]:
 
 
 def _sevennet(model: str, modal: str | None = None) -> Callable[..., Calculator]:
+    """SevenNet by package model name (or an explicit checkpoint override)."""
+
     def make_calc(device: str, checkpoint: str | None = None) -> Calculator:
         """Construct SevenNet by name, locking the package's own download."""
         from sevenn.calculator import SevenNetCalculator
@@ -539,6 +559,8 @@ def _sevennet(model: str, modal: str | None = None) -> Callable[..., Calculator]
 
 
 def _sevennet_from_url(modal: str | None = None) -> Callable[..., Calculator]:
+    """SevenNet from a required registry checkpoint (no package download to lock)."""
+
     def make_calc(device: str, checkpoint: str) -> Calculator:
         """Construct SevenNet from the registry-downloaded YAML checkpoint_url."""
         from sevenn.calculator import SevenNetCalculator
@@ -550,7 +572,10 @@ def _sevennet_from_url(modal: str | None = None) -> Callable[..., Calculator]:
 
 
 def _grace(model_name: str) -> Callable[[str], Calculator]:
+    """GRACE foundation model by name (TensorFlow picks the device)."""
+
     def make_calc(device: str) -> Calculator:  # noqa: ARG001 - TF picks the device
+        """Load the GRACE calculator."""
         from tensorpotential.calculator import grace_fm
 
         return grace_fm(model_name)
@@ -684,7 +709,7 @@ def _deepmd_freeze(device: str, checkpoint: str) -> Calculator:  # noqa: ARG001
         ["dp", "--pt", "freeze", "-c", checkpoint, "-o", "{output}"],
         frozen,
         source_paths=(checkpoint,),
-        tool_packages=("deepmd-kit",),
+        tool_packages=("deepmd-kit", "torch"),
     )
     return DP(frozen)
 
@@ -704,6 +729,7 @@ def _deepmd_graph(backend: str, **neighbor_options: str) -> Callable[..., Calcul
     """
 
     def make_calc(device: str, checkpoint: str) -> Calculator:
+        """Export (once per GPU and kernel policy) and load a DPA4 checkpoint."""
         import torch
         from deepmd.calculator import DP
         from deepmd.pt_expt.utils.env import DEVICE
@@ -749,17 +775,11 @@ _DPA4_GRAPH = _deepmd_graph("--pt", nlist_backend="native")
 _DPA4C_GRAPH = _deepmd_graph("--pt-expt", neighbor_graph_method="cell")
 
 
-def _deepmd_eager(device: str, checkpoint: str) -> Calculator:  # noqa: ARG001
-    """Evaluate a DeePMD .pt checkpoint eagerly: deepmd 3.2's frozen .pt2 (see
-    _deepmd_freeze) shape-guards nall != nloc, failing on ghost-free isolated dimers.
-    """
-    from deepmd.calculator import DP
-
-    return DP(checkpoint)
-
-
 def _tace(model_key: str, *, accelerate: bool = True) -> Callable[..., Calculator]:
+    """TACE from a checkpoint, AOTI-exported per GPU arch unless accelerate=False."""
+
     def make_calc(device: str, checkpoint: str) -> Calculator:
+        """Load TACE eagerly on CPU, else export (cached) and load its AOTI package."""
         from tace.interface.ase import TACEAseCalc
 
         # OpenEquivariance kernels are CUDA-only, so CPU runs stay on the eager path
@@ -834,6 +854,7 @@ def _nequip(
     """
 
     def make_calc(device: str) -> Calculator:
+        """Load the registry model eagerly or from its cached AOTI compilation."""
         from nequip.ase import NequIPCalculator
 
         from matbench_discovery.enums import Model
@@ -849,8 +870,15 @@ def _nequip(
         # .nequip.pt2 that from_compiled_model loads. aotinductor because torch>=2.10
         # dropped TorchScript compilation and older torch's TorchScript breaks on
         # Python 3.14 annotations (torch<2.10 AOTI lacked the aten._linalg_det c-shim,
-        # miscompiling atomic_energy on the OAM models). Cache + lock: builds once.
-        compiled = f"{CHECKPOINT_DIR}/{model_key}-{device}.nequip.pt2"
+        # miscompiling atomic_energy on the OAM models). Cache + lock: builds once per
+        # GPU arch, since the exported kernels are compute-capability specific.
+        import torch
+
+        device_tag = torch.device(device).type
+        if device_tag == "cuda":
+            arch = "".join(map(str, torch.cuda.get_device_capability(device)))
+            device_tag = f"cuda-sm{arch}"
+        compiled = f"{CHECKPOINT_DIR}/{model_key}-{device_tag}.nequip.pt2"
         _run_to_atomic_output(
             [
                 "nequip-compile",
@@ -864,7 +892,7 @@ def _nequip(
                 "ase",
             ],
             compiled,
-            tool_packages=("nequip",),
+            tool_packages=("nequip", "torch"),
         )
         calc = NequIPCalculator.from_compiled_model(
             compile_path=compiled, device=device
@@ -875,7 +903,10 @@ def _nequip(
 
 
 def _eqnorm(model_variant: str) -> Callable[..., Calculator]:
+    """EqNorm variant loaded from our staged checkpoint."""
+
     def make_calc(device: str, checkpoint: str) -> Calculator:
+        """Stage checkpoint where EqNorm looks for it and load the calculator."""
         from eqnorm.calculator import EqnormCalculator
 
         # EqnormCalculator downloads via the wget package, which figshare's WAF serves
@@ -890,10 +921,13 @@ def _eqnorm(model_variant: str) -> Callable[..., Calculator]:
 
 
 def _nequix(model_key: str) -> Callable[..., Calculator]:
+    """Nequix (JAX backend) loaded from our staged checkpoint."""
+
     def make_calc(
         device: str,  # noqa: ARG001 - jax picks the device
         checkpoint: str,
     ) -> Calculator:
+        """Stage checkpoint and load it with the JAX Nequix calculator."""
         from nequix.calculator import NequixCalculator
 
         # NequixCalculator auto-downloads by name via figshare (WAF can serve 0 bytes);
@@ -907,7 +941,10 @@ def _nequix(model_key: str) -> Callable[..., Calculator]:
 
 
 def _matris(model: str, cache_name: str) -> Callable[..., Calculator]:
+    """MatRIS by registered name, loading our checkpoint staged in its cache."""
+
     def make_calc(device: str, checkpoint: str) -> Calculator:
+        """Stage checkpoint in MatRIS's cache and load the calculator on device."""
         from matris.applications import MatRISCalculator
 
         # MatRIS.load() only takes a registered model name and resolves it to
@@ -922,7 +959,10 @@ def _matris(model: str, cache_name: str) -> Callable[..., Calculator]:
 
 
 def _alphanet(model_key: str, config_url: str) -> Callable[..., Calculator]:
+    """AlphaNet from a checkpoint plus its commit-pinned architecture config."""
+
     def make_calc(device: str, checkpoint: str, dtype: str = "float64") -> Calculator:
+        """Fetch the cached config and load AlphaNet in the requested precision."""
         from alphanet.config import All_Config
         from alphanet.infer.calc import AlphaNetCalculator
 
@@ -973,12 +1013,14 @@ def _pet(device: str, checkpoint: str, dtype: str = "float64") -> Calculator:
 
 
 def _chgnet(device: str) -> Calculator:
+    """Load the CHGNet calculator bundled with the chgnet package."""
     from chgnet.model.dynamics import CHGNetCalculator
 
     return CHGNetCalculator(use_device=device)
 
 
 def _m3gnet(device: str) -> Calculator:
+    """Load M3GNet-MP-2021.2.8-PES via matgl's DGL backend on device."""
     import matgl
     from matgl.ext.ase import PESCalculator
 
@@ -1011,6 +1053,7 @@ def _bam(device: str, checkpoint: str) -> Calculator:
 
 
 def _emt(device: str) -> Calculator:  # noqa: ARG001 - CPU only, debug model
+    """Load ASE's EMT calculator (debug model, CPU only)."""
     from ase.calculators.emt import EMT
 
     return EMT()
@@ -1150,12 +1193,11 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
         "dpa_4_0_pro_mptrj": _deepmd_spec(
             "dpa_4_0_pro_mptrj", _deepmd_freeze, ext=".pt"
         ),
-        # eager for every task: its registered diatomics ran the eager checkpoint and
-        # the frozen .pt2 fails on ghost-free isolated dimers (NB its 2026-09-05
-        # kappa harmonic run used the frozen .pt2 via _deepmd_freeze)
-        "dpa_4_0_1_pro_mptrj": _deepmd_spec(
-            "dpa_4_0_1_pro_mptrj", _deepmd_eager, ext=".pt"
-        ),
+        # eager .pt (plain _deepmd, no freeze) for every task: its registered
+        # diatomics ran the eager checkpoint and deepmd 3.2's frozen .pt2 (see
+        # _deepmd_freeze) shape-guards nall != nloc, failing on ghost-free isolated
+        # dimers (NB its 2026-09-05 kappa harmonic run used the frozen .pt2)
+        "dpa_4_0_1_pro_mptrj": _deepmd_spec("dpa_4_0_1_pro_mptrj", ext=".pt"),
         "dpa_4_1_air_oam": _deepmd_spec("dpa_4_1_air_oam", _DPA4_GRAPH, ext=".pt"),
         "dpa_4_1_max_oam": _deepmd_spec("dpa_4_1_max_oam", _DPA4_GRAPH, ext=".pt"),
         "dpa_4_1_max_oam_pft": _deepmd_spec(

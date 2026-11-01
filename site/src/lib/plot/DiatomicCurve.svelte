@@ -43,7 +43,7 @@
   // Tooltip number without trailing zeros; anything rounding to zero prints a bare 0
   // (not +0.00 or −0). sign=`+` marks positive values, e.g. FM vs AFM site moments.
   const trim_num = (value: number, decimals: number, sign: `` | `+` = ``): string => {
-    const rounded = Number(value.toFixed(decimals)) || 0
+    const rounded = Math.round(value * 10 ** decimals) / 10 ** decimals
     return rounded === 0 ? `0` : format_num(rounded, `${sign}.${decimals}~f`)
   }
 

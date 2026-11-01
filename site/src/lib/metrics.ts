@@ -431,13 +431,13 @@ export function assemble_row_data(
           .join(`; `)}`,
       )
       name_markers =
-        `<span title="${exclusion_note}" aria-label="${exclusion_note}">` +
+        `<span role="img" title="${exclusion_note}" aria-label="${exclusion_note}">` +
         `<span aria-hidden="true">*</span></span>`
     }
     if (model.test_set_informed) {
       const tasks = model.test_set_informed.map((task) => MODELING_TASKS[task].label)
       const note = `${tasks.join(` and `)} test set${tasks.length > 1 ? `s` : ``} informed this model's development (see model notes)`
-      name_markers += `<span title="${note}" aria-label="${note}">†</span>`
+      name_markers += `<span role="img" title="${note}" aria-label="${note}">†</span>`
     }
 
     const row: MetricsRowData = {

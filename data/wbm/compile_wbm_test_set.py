@@ -23,7 +23,7 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import WBM_DIR, today
-from matbench_discovery.data import DATASETS, DataFiles
+from matbench_discovery.data import DataFiles, load_datasets
 from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
 from matbench_discovery.enums import MbdKey
 from matbench_discovery.remote.fetch import download_file
@@ -466,7 +466,7 @@ df_wbm = df_wbm.loc[df_summary.index]
 
 
 # make sure we dropped the expected number 524 of materials
-n_wbm_structs = DATASETS["WBM"]["n_structures"]
+n_wbm_structs = load_datasets()["WBM"]["n_structures"]
 assert len(df_summary) == len(df_wbm) == n_wbm_structs  # 257_487 - 502 - 22
 
 
@@ -644,7 +644,7 @@ assert sum(mask_proto_in_mp) == 11_175, f"{sum(mask_proto_in_mp)=:_}"
 assert sum(mask_dupe_protos) == 32_784, f"{sum(mask_dupe_protos)=:_}"
 
 df_summary[MbdKey.uniq_proto] = ~(mask_proto_in_mp | mask_dupe_protos)
-n_wbm_materials = DATASETS["WBM"]["n_materials"]
+n_wbm_materials = load_datasets()["WBM"]["n_materials"]
 assert dict(df_summary[MbdKey.uniq_proto].value_counts()) == {
     True: n_wbm_materials,  # should be 215_488
     False: n_wbm_structs - n_wbm_materials,  # should be 41,475

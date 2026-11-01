@@ -36,6 +36,10 @@ it.each([
     `${target.pathname}${target.search}${target.hash}`,
     { replace: true },
   )
+  expect(document.head.querySelectorAll(`link[rel="canonical"]`)).toHaveLength(1)
+  expect(doc_query(`link[rel="canonical"]`).getAttribute(`href`)).toBe(
+    `https://matbench-discovery.materialsproject.org/benchmarks`,
+  )
 })
 
 it.each([

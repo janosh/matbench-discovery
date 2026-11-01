@@ -33,7 +33,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
-from matbench_discovery import repo_relative_path, today
+from matbench_discovery import ROOT, repo_relative_path, today
 from matbench_discovery.calculators import (
     CALCULATORS,
     load_calculator_with_runtime,
@@ -70,8 +70,6 @@ from matbench_discovery.runner_cli import (
     resolve_sharded_prefix,
     validate_sharded_write_args,
 )
-
-module_dir = os.path.dirname(__file__)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -266,8 +264,8 @@ def main(raw_args: Sequence[str] | None = None) -> int:
         model = Model.from_ref(model_key)
     except ValueError:
         model = None
-    model_dir = os.path.splitext(model.rel_path)[0] if model else model_key
-    out_dir = args.out_dir or f"{module_dir}/{model_dir}"
+    model_dir = model.artifact_dir if model else f"models/{model_key}"
+    out_dir = args.out_dir or f"{ROOT}/{model_dir}"
     try:
         shard_dir, pred_file_path, geo_opt_file_path = _resolve_output_paths(
             out_dir=out_dir,

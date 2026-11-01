@@ -149,18 +149,17 @@ type ArrayKeys<TModel> = {
 
 // Load a per-model parity asset and validate its model key and the row count of its
 // primary prediction column. `kind` (e.g. `energy`/`kappa`) only affects error messages.
-export function load_parity_model<TModel extends ParityModel>(
+export const load_parity_model = <TModel extends ParityModel>(
   kind: string,
   url: string,
   model_key: string,
   pred_field: ArrayKeys<TModel>,
   row_count: number,
-): Promise<TModel> {
-  return load_model_asset<TModel>(`${kind} parity`, url, model_key, (model) =>
+): Promise<TModel> =>
+  load_model_asset<TModel>(`${kind} parity`, url, model_key, (model) =>
     assert_array_length(
       `${kind} parity ${model_key}.${pred_field}`,
       model[pred_field],
       row_count,
     ),
   )
-}

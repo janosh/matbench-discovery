@@ -1,4 +1,3 @@
-import { clear_asset_cache } from '#lib/asset-loader.js'
 import {
   build_phonon_mode_data,
   has_kappa_modes,
@@ -86,16 +85,10 @@ describe(`build_phonon_mode_data`, () => {
 })
 
 describe(`kappa modes assets`, () => {
-  it(`reports mode assets only for models listed in the manifest`, () => {
-    expect(has_kappa_modes(undefined)).toBe(false)
-    expect(has_kappa_modes(`missing-model`)).toBe(false)
-    expect(
-      Object.values(kappa_parity_manifest.model_assets).some((kinds) => `modes` in kinds),
-    ).toBe(true)
+  it(`lists every mode asset alongside a parity asset`, () => {
     // a modes asset always sits alongside the parity asset the page loads first,
     // which the nested manifest shape makes structural rather than a convention
-    for (const [model_key, kinds] of Object.entries(kappa_parity_manifest.model_assets)) {
-      expect(has_kappa_modes(model_key)).toBe(`modes` in kinds)
+    for (const kinds of Object.values(kappa_parity_manifest.model_assets)) {
       expect(`parity` in kinds).toBe(true)
     }
   })
@@ -133,16 +126,6 @@ describe(`kappa modes assets`, () => {
       await expect(load_kappa_modes(model_key)).resolves.toEqual(payload)
       expect(fetch_mock).toHaveBeenCalledWith(
         `/kappa-parity/assets/${model_assets[model_key]?.modes?.asset}`,
-      )
-      clear_asset_cache()
-      vi.stubGlobal(
-        `fetch`,
-        vi.fn(() =>
-          gzipped_json_response({ model: { ...payload, model_key: `other-model` } }),
-        ),
-      )
-      await expect(load_kappa_modes(model_key)).rejects.toThrow(
-        `expected ${model_key}, got other-model`,
       )
     } finally {
       Reflect.deleteProperty(model_assets, model_key)

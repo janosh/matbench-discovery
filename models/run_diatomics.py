@@ -44,7 +44,7 @@ import numpy as np
 from ase.calculators.calculator import Calculator
 from ase.data import chemical_symbols
 
-from matbench_discovery import today
+from matbench_discovery import ROOT, today
 from matbench_discovery.calculators import (
     CALCULATORS,
     load_calculator_with_runtime,
@@ -66,7 +66,6 @@ from matbench_discovery.hpc import (
 )
 from matbench_discovery.metrics.diatomics import DIATOMIC_WALL_R_MIN_FACTOR, eval_window
 from matbench_discovery.metrics.diatomics.exclusions import (
-    drop_metric_exclusions,
     get_excluded_formula_reasons,
     is_non_mp_formula,
 )
@@ -76,8 +75,6 @@ from matbench_discovery.runner_cli import (
     dependency_run_args,
     resolve_sharded_prefix,
 )
-
-module_dir = os.path.dirname(__file__)
 
 
 def trim_curve_to_finite(formula: str, curve: CurveDict) -> CurveDict | None:
@@ -237,13 +234,13 @@ def main() -> int:
     from matbench_discovery.enums import Model
 
     # resolve the submission Model once (None for debug models like emt without an enum
-    # entry); its YAML path stem gives the per-model dir (mace_mpa_0 -> mace/mace-mpa-0)
+    # entry); its per-model artifact dir is e.g. mace_mpa_0 -> models/mace/mace-mpa-0
     try:
         model = Model.from_ref(args.model)
     except ValueError:
         model = None
-    model_dir = os.path.splitext(model.rel_path)[0] if model else args.model
-    out_dir = args.out_dir or f"{module_dir}/{model_dir}"
+    model_dir = model.artifact_dir if model else f"models/{args.model}"
+    out_dir = args.out_dir or f"{ROOT}/{model_dir}"
 
     max_z = 3 if args.dry_run else args.max_z
     all_z_values = list(range(1, max_z + 1))
@@ -398,12 +395,7 @@ def main() -> int:
 
         ref_curves = diatomics.load_dft_reference_curves("PBE")
         pred_curves = diatomics.DiatomicCurves.from_dict(results)
-        metrics = diatomics.calc_diatomic_metrics(
-            ref_curves=ref_curves,
-            pred_curves=pred_curves,
-            interpolate=200,
-        )
-        metrics = drop_metric_exclusions(args.model, metrics)
+        metrics = diatomics.score_diatomic_curves(args.model, ref_curves, pred_curves)
         mean_metrics = diatomics.write_metrics_to_yaml(
             model,
             metrics,

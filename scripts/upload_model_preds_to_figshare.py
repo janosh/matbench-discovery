@@ -357,7 +357,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
                 force_reupload=args.force_reupload,
                 interactive=not args.no_interactive,
             )
-        except Exception as exc:  # prompt to delete article if something went wrong
+        except Exception as exc:  # name the failing task, then re-raise
             exc.add_note(f"Upload failed for {task=}")
             raise
 

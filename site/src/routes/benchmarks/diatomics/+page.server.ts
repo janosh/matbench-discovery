@@ -7,7 +7,7 @@ import type { PageServerLoad } from './$types'
 
 // DFT references add per-formula distance grids plus the per-point electronic state
 // shown in plot tooltips; model predictions carry energies only
-export type PageDiatomicCurve = {
+type PageDiatomicCurve = {
   energies: number[]
   distances?: number[]
   magmoms?: ([number, number] | null)[] // site-projected moments of the two atoms (μB)

@@ -62,11 +62,11 @@ export const format_relative_time = (date?: string, now_ms?: number): string => 
 
 // Declare shared task defaults once; an explicit undefined omits an inherited field.
 type MetricDefinition = Omit<Label, `key`> & { key?: string }
-function metric_group<Key extends string>(
+const metric_group = <Key extends string>(
   defaults: Partial<Label>,
   definitions: Record<Key, MetricDefinition>,
-): Record<Key, Label> {
-  return Object.fromEntries(
+): Record<Key, Label> =>
+  Object.fromEntries(
     Object.entries<MetricDefinition>(definitions).map(
       ([key, definition]): [string, Label] => {
         const label = { key, ...defaults, ...definition }
@@ -77,7 +77,6 @@ function metric_group<Key extends string>(
       },
     ),
   ) as Record<Key, Label>
-}
 
 export const DISCOVERY_METRICS: DiscoveryMetricsLabels = metric_group(
   { path: `metrics.discovery.unique_prototypes` },

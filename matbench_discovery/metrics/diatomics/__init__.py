@@ -433,6 +433,21 @@ def calc_diatomic_metrics(
     return results
 
 
+def score_diatomic_curves(
+    model_key: str, ref_curves: DiatomicCurves, pred_curves: DiatomicCurves
+) -> dict[str, dict[str, float]]:
+    """Per-element diatomic metrics scored as published.
+
+    Interpolates ref and pred onto 200 shared points and drops the model's curated
+    exclusions. Shared by the runner, the eval script and reproducibility checks.
+    """
+    # deferred: exclusions imports NON_MP_ELEMENTS from this module
+    from matbench_discovery.metrics.diatomics.exclusions import drop_metric_exclusions
+
+    metrics = calc_diatomic_metrics(ref_curves, pred_curves, interpolate=200)
+    return drop_metric_exclusions(model_key, metrics)
+
+
 def calc_vib_freq_coverage(
     ref_curves: DiatomicCurves,
     pred_curves: DiatomicCurves,

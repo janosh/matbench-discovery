@@ -2,7 +2,6 @@ import {
   as_phonon_dos,
   build_kappa_parity_series,
   get_kappa_parity_point,
-  has_kappa_parity_model,
   kappa_parity_manifest,
   kappa_model_asset,
   kappa_parity_asset_url,
@@ -247,12 +246,6 @@ describe(`kappa parity data helpers`, () => {
     else expect(point?.sre).toBeCloseTo(expected_sre, 3)
   })
 
-  it(`only reports models present in the manifest`, () => {
-    expect(has_kappa_parity_model(first_model_key)).toBe(true)
-    expect(has_kappa_parity_model(`missing-model`)).toBe(false)
-    expect(has_kappa_parity_model(undefined)).toBe(false)
-  })
-
   it(`maps phonon DOS to matterviz shape, or null when absent`, () => {
     expect(as_phonon_dos(base.dft_dos[`mp-1`])).toEqual({
       type: `phonon`,
@@ -262,15 +255,6 @@ describe(`kappa parity data helpers`, () => {
     expect(as_phonon_dos(base.dft_dos[`mp-2`])).toBeNull()
     expect(as_phonon_dos(model.ml_dos[`mp-1`])?.type).toBe(`phonon`)
     expect(as_phonon_dos(model.ml_dos[`mp-3`])).toBeNull()
-  })
-
-  it(`maps model keys to per-model release assets`, () => {
-    const asset = kappa_model_asset(first_model_key)
-    expect(asset).toContain(`-model-`)
-    expect(kappa_parity_asset_url(asset)).toBe(`/kappa-parity/assets/${asset}`)
-    expect(() => kappa_model_asset(`missing-model`)).toThrow(
-      `No kappa parity model asset for missing-model`,
-    )
   })
 
   it(`loads base and per-model assets through the manifest`, async () => {

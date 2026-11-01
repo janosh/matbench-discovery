@@ -5,7 +5,6 @@ analysis in https://github.com/stenczelt/MACE-MP-work for the MACE-MP paper
 https://arxiv.org/abs/2401.00096 (see fig. 56).
 """
 
-# %%
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal, get_args

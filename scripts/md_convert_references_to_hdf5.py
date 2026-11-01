@@ -25,7 +25,7 @@ from glob import glob
 import pandas as pd
 
 from matbench_discovery.md import write_reference_h5
-from matbench_discovery.metrics.md import equipartition_temperature
+from matbench_discovery.metrics.md import check_reference_dt
 from matbench_discovery.trajectory import Trajectory
 
 
@@ -118,20 +118,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             src = find_reference_trajectory(args.ref_dir, system_name)
             start = time.perf_counter()
             trajectory = Trajectory.from_extxyz(src)
-            # Wrong dt_fs shifts the equipartition temperature by (dt_error)^2 and
-            # corrupts vDOS. Sample mid-trajectory to avoid cold-start equilibration.
+            # Sample mid-trajectory to avoid cold-start equilibration.
             mid = trajectory.n_frames // 2
-            t_equi = equipartition_temperature(
-                trajectory[mid : mid + 2000], time_step_fs=dt_fs
+            t_equi = check_reference_dt(
+                trajectory[mid : mid + 2000],
+                time_step_fs=dt_fs,
+                temperature_kelvin=temperature_kelvin,
+                label=f"{system_name} (dt_fs from {args.settings_csv})",
             )
-            temperature_ratio = t_equi / temperature_kelvin
-            if not 1 / 3 < temperature_ratio < 3:
-                raise ValueError(
-                    f"{system_name}: equipartition T={t_equi:.0f} K vs target "
-                    f"{temperature_kelvin:.0f} K (ratio {temperature_ratio:.2f}) -- "
-                    f"dt_fs={dt_fs} fs in {args.settings_csv} is likely wrong (off by "
-                    f"~{temperature_ratio**-0.5:.1f}x)"
-                )
             print(
                 f"{system_name}: {trajectory.n_frames} frames, dt={dt_fs} fs, "
                 f"T={temperature_kelvin} K (equipartition {t_equi:.0f} K), parsed "

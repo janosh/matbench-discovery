@@ -418,9 +418,9 @@ def slurm_submit(
         *(slurm_flags.split() if isinstance(slurm_flags, str) else slurm_flags),
         *("--wrap", f"{pre_cmd} python {py_file_path}".strip()),
     ]
-    for flag in (f"{time=!s}", f"{account=!s}", f"{partition=!s}", f"{array=!s}"):
-        key, val = flag.split("=")
-        if val != "None":
+    optional_flags = dict(time=time, account=account, partition=partition, array=array)
+    for key, val in optional_flags.items():
+        if val is not None:
             cmd += (f"--{key}", val)
 
     is_log_file = not sys.stdout.isatty()

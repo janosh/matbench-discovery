@@ -257,6 +257,7 @@ def _run_dynamics_with_progress(
     ) as pbar:
 
         def update_progress() -> None:
+            """Advance the progress bar to the dynamics' current step count."""
             if (step_delta := dynamics.nsteps - pbar.n) > 0:
                 pbar.update(step_delta)
 
@@ -532,6 +533,7 @@ def run_nvt_md_resumable(
                 os.remove(stale)
 
     def record_and_checkpoint() -> None:
+        """Append the current frame and periodically checkpoint the NVT state."""
         nonlocal frames_written
         ase.io.write(part_path, _snapshot_frame(atoms, dynamics.nsteps), append=True)
         frames_written += 1
@@ -726,19 +728,13 @@ def run_md_benchmark(
                 ref_file, system_name, max_frames=64 if dry_run else None
             )
         )
-        # abort before any GPU time is spent if the reference's dt_fs attr is stale:
-        # finite-difference kinetic temperature scales as 1/dt_fs**2, so a wrong
-        # saved-frame interval corrupts vDOS and every time-matched metric
-        kinetic_temp = md_metrics.equipartition_temperature(
-            ref_trajectory[:256], time_step_fs=ref_time_step_fs
+        # abort before any GPU time is spent if the reference's dt_fs attr is stale
+        md_metrics.check_reference_dt(
+            ref_trajectory[:256],
+            time_step_fs=ref_time_step_fs,
+            temperature_kelvin=temperature_kelvin,
+            label=f"reference {system_name!r} in {ref_file!r}",
         )
-        if not temperature_kelvin / 3 <= kinetic_temp <= temperature_kelvin * 3:
-            raise ValueError(
-                f"reference {system_name!r} implies {kinetic_temp:.0f} K from "
-                f"dt_fs={ref_time_step_fs}, >3x off temperature_kelvin="
-                f"{temperature_kelvin}; dt_fs is likely mislabeled or stale, fix the "
-                "reference file before evaluating"
-            )
         initial_atoms = ref_trajectory.frame_as_atoms(0)
 
         pred_traj_path = f"{out_dir}/{system_name}-nvt-{model_key}.extxyz"

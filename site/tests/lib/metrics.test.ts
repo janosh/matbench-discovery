@@ -364,8 +364,10 @@ describe(`assemble_row_data`, () => {
         test_models,
       )
 
-      expect(row?.Model).toContain(`title="${expected_title}"`)
-      expect(row?.Model).toContain(`aria-label="${expected_title}"`)
+      // aria-label on a plain <span> is ignored without a role
+      expect(row?.Model).toContain(
+        `<span role="img" title="${expected_title}" aria-label="${expected_title}">`,
+      )
     },
   )
 })

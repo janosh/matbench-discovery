@@ -170,7 +170,7 @@ describe(`Model Detail Page`, () => {
     expect(meta_info.textContent).toContain(`parameters`)
     expect(
       meta_info.textContent?.includes(`Ensemble ${test_model.n_estimators} models`),
-    ).toBe((test_model.n_estimators ?? 1) > 1)
+    ).toBe(test_model.n_estimators > 1)
     expect(meta_info.textContent).not.toContain(`Missing preds`)
     const discovery_detail = document.querySelector(`section.discovery-detail`)
     expect(

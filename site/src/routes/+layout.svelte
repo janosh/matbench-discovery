@@ -128,7 +128,6 @@
     '/benchmarks/md': `Metrics and analysis of molecular dynamics observables vs ab-initio reference trajectories.`,
   }
   let description = $derived(descriptions[url] ?? base_description)
-  let title = $derived(url === `/` ? `` : `${url} • `)
 
   const page_labels = Object.fromEntries(
     [
@@ -146,6 +145,9 @@
       return `/${parts.slice(1, -1).join(`/`)}`
     })
     .filter((route) => route !== `/data`)
+  // readable label for routes without a hand-picked one, e.g. /data -> Data
+  const route_label = (route: string): string =>
+    page_labels[route] ?? route.split(`/`).filter(Boolean).map(title_case).join(` · `)
   const link_action = (
     href: string,
     label: string,
@@ -159,14 +161,7 @@
     action: () => goto(href),
   })
   const actions: CmdAction[] = [
-    ...page_routes.map((route) =>
-      link_action(
-        route,
-        page_labels[route] ??
-          route.split(`/`).filter(Boolean).map(title_case).join(` · `),
-        `Pages`,
-      ),
-    ),
+    ...page_routes.map((route) => link_action(route, route_label(route), `Pages`)),
     ...MODELS.map(({ model_key, model_name }) =>
       link_action(`/models/${model_key}`, model_name, `Models`),
     ),
@@ -174,6 +169,11 @@
       link_action(`/data/${slug}`, name, `Datasets`, key),
     ),
   ]
+  // command-menu actions are keyed by URL, so they double as readable page titles
+  const page_titles = new Map(actions.map(({ id, label }) => [id, label]))
+  let title = $derived(
+    url === `/` ? `` : `${page_titles.get(url) ?? route_label(url)} • `,
+  )
 </script>
 
 <CommandMenu
@@ -290,7 +290,7 @@
 {/await}
 
 <Footer links={footer_links} id="site-footer" style="--footer-bg: var(--nav-bg)">
-  <img src="/favicon.svg" alt="Logo" width="30px" style="vertical-align: middle" />
+  <img src="/favicon.svg" alt="Logo" width="30" style="vertical-align: middle" />
   &ensp;{pkg.title} &ensp; | &ensp; ©
   <a href={pkg[`author-url`]}>{pkg.author.split(`<`)[0]}</a>
   (<a href="{pkg.repository}/blob/main/license">2022</a>)

@@ -138,14 +138,20 @@ def maybe_auto_download_file(
     label: str | None = None,
     headers: dict[str, str] | None = None,
     md5: str | None = None,
-) -> None:
-    """Download a missing or checksum-stale file, else reuse the cached copy."""
+) -> bool:
+    """Download a missing or checksum-stale file, else reuse the cached copy.
+
+    Returns:
+        bool: True if the file was freshly downloaded (and, when md5 is given,
+            verified while streaming), False if the cached copy was reused.
+    """
     if os.path.isfile(abs_path):
         if md5 is None:
-            return
+            return False
         if (cached_md5 := file_digest(abs_path, "md5")) == md5:
-            return
+            return False
         print(f"Cached file {abs_path!r} has MD5 {cached_md5}, expected {md5}")
 
     print(f"Downloading {label!r} from {url!r} to {abs_path!r}")
     download_file(abs_path, url, headers=headers, md5=md5)
+    return True

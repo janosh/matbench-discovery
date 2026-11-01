@@ -87,7 +87,6 @@
 
   --text-muted: var(--text-secondary);
 }
-
 html {
   scroll-behavior: smooth;
   /* Disable scroll anchoring: re-rendering dynamic content (e.g. the metrics
@@ -210,7 +209,6 @@ img {
   max-width: 100%;
   margin-block: 1em;
 }
-
 table {
   display: block;
   width: max-content;
@@ -246,7 +244,6 @@ button are primary navigation, so keep theirs visible */
   flex-shrink: 0;
   white-space: nowrap;
 }
-
 h1 {
   text-align: center;
 }
@@ -259,7 +256,6 @@ blockquote {
 blockquote > :is(:first-child, :last-child) {
   margin: 0 auto;
 }
-
 /* longhands: the text-wrap shorthand would also reset an inherited white-space: nowrap */
 :where(h1, h2, h3, h4, h5, h6, address) {
   text-wrap-style: balance;
@@ -296,7 +292,6 @@ strong a[aria-hidden='true'] {
   position: absolute;
   left: 0;
 }
-
 @keyframes highlight-scroll-target {
   0%,
   90% {
@@ -307,14 +302,12 @@ strong a[aria-hidden='true'] {
 :target {
   animation: highlight-scroll-target 3s;
 }
-
 sub,
 sup {
   font-size: 0.7em;
   /* https://stackoverflow.com/a/6594576 */
   line-height: 0;
 }
-
 input {
   border: none;
   border-radius: 3pt;
@@ -344,7 +337,6 @@ kbd {
   padding: 1pt 3pt;
   border-radius: 2pt;
 }
-
 /* Full-bleed uses negative margin to span the full page width */
 .full-bleed {
   --margin: 50px;
@@ -369,12 +361,10 @@ kbd {
     --margin: 1rem;
   }
 }
-
 /* the light-on-dark logo needs darkening wherever it appears on the light theme */
 :root[data-theme='light'] img[src='/favicon.svg'] {
   filter: brightness(0.2);
 }
-
 /* Shared lazy-rendered grid for the diatomics task and spin-state detail page. */
 .diatomics-grid {
   display: grid;
@@ -435,7 +425,6 @@ kbd {
   --btn-group-btn-active-bg: var(--strong-tint);
   --btn-group-btn-active-border-color: var(--category-color);
 }
-
 /* In-plot metric annotation, bottom-right corner (energy/kappa parity plots) */
 .plot-annotation {
   position: absolute;

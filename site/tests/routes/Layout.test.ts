@@ -139,6 +139,10 @@ it.each([`/api`, `/data`, `/benchmarks/diatomics`])(
     })
     // the layout ships the pre-paint theme script (SSR places it in <head>)
     expect(document.head.innerHTML).toContain(theme_init_script)
+    // /data has no command-menu entry, so its title is derived from the URL like the menu does
+    expect(document.title).toBe(
+      `${{ '/api': `API`, '/data': `Data`, '/benchmarks/diatomics': `Diatomics` }[route]} • Matbench Discovery`,
+    )
     if (route === `/data`) return
 
     expect(doc_query(`.toc`).style.zIndex).toBe(`1`)
@@ -182,6 +186,10 @@ it.each([
   `labels the active navigation and opens %s from the command menu`,
   async (route, active_hrefs, label, query) => {
     await mount_with_url(Layout, `http://localhost${route}`)
+    // titles use the readable page label, not the raw URL path
+    expect(document.title).toBe(
+      route === `/` ? `Matbench Discovery` : `${label} • Matbench Discovery`,
+    )
     expect(
       [...document.querySelectorAll(`nav[data-nav] a`)].map((link) =>
         link.getAttribute(`href`),

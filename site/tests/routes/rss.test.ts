@@ -92,7 +92,7 @@ describe(`RSS feed endpoint`, () => {
     }
   })
 
-  it(`should include underscore-containing hyperparams in descriptions`, async () => {
+  it(`includes underscore-containing hyperparams in descriptions`, async () => {
     // regression: the filter used !key.includes('_') instead of startsWith, dropping
     // nearly every hyperparam (max_steps, ase_optimizer, ...) so the section was empty
     const inner_underscore = (key: string) => key.includes(`_`) && !key.startsWith(`_`)

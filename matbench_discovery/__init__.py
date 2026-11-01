@@ -57,12 +57,11 @@ DEFAULT_CACHE_DIR = os.getenv(
     else os.path.expanduser("~/.cache/matbench-discovery"),
 )
 
-for directory in (SITE_FIG_DATA, SITE_DIR, PDF_FIGS):
-    os.makedirs(directory, exist_ok=True)
-
-os.makedirs(MP_DIR := f"{DATA_DIR}/mp", exist_ok=True)
-os.makedirs(WBM_DIR := f"{DATA_DIR}/wbm", exist_ok=True)
-# JSON files with URLS to data files on figshare
+# no import-time makedirs: in a non-editable install ROOT is site-packages, and
+# creating DATA_DIR there would flip the DEFAULT_CACHE_DIR choice above on the next
+# import. Writers create the directories they write to.
+MP_DIR = f"{DATA_DIR}/mp"
+WBM_DIR = f"{DATA_DIR}/wbm"
 
 # threshold on hull distance for a material to be considered stable
 STABILITY_THRESHOLD = 0

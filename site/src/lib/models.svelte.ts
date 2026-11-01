@@ -1,5 +1,6 @@
 import { default as DATASETS } from '$data/datasets.yml'
 import type { ModelData, OrgLogo } from '#lib/types.js'
+import type { ModelMetadata } from '#lib/schema/model.js'
 import MODELING_TASKS from '$pkg/modeling-tasks.yml'
 import type { CpsConfig } from '#lib/combined-scores.svelte.js'
 import {
@@ -18,7 +19,7 @@ import { apply_weights_param, weights_to_param } from 'matterviz/url-params'
 import type { UrlParamEntry } from 'svelte-widgets/url-params'
 import { bind_url_params, UrlTableFilters } from './url-state.svelte.js'
 
-export const MODEL_METADATA_PATHS = import.meta.glob<ModelData>(
+export const MODEL_METADATA_PATHS = import.meta.glob<ModelMetadata>(
   `$root/models/[^_]**/[^_]*.yml`,
   { eager: true, import: 'default' },
 )
@@ -70,7 +71,10 @@ export function calculate_training_sizes(model_train_sets: string[]): {
   }
 }
 
-function to_model_data([key, metadata]: [string, ModelData], index: number): ModelData {
+function to_model_data(
+  [key, metadata]: [string, ModelMetadata],
+  index: number,
+): ModelData {
   const org_logos: OrgLogo[] = []
   for (const author of metadata.authors) {
     const org_logo = author.affiliation ? get_org_logo(author.affiliation) : undefined
@@ -85,7 +89,6 @@ function to_model_data([key, metadata]: [string, ModelData], index: number): Mod
   return {
     ...metadata,
     dirname: key.split(`/`)[2],
-    metadata_file: key.replace(/^..\//, ``),
     color: MODEL_COLORS[index % MODEL_COLORS.length],
     CPS: Number.NaN,
     n_estimators: metadata.n_estimators ?? 1,

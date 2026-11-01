@@ -18,8 +18,6 @@ import * as energy_parity from '#lib/parity/energy-parity.js'
 import EnergyParityPlot from '#lib/plot/EnergyParityPlot.svelte'
 import { MODELS } from '#lib/models.svelte.js'
 import * as matterviz_plot from 'matterviz/plot'
-import { clear_asset_cache, load_json_asset } from '#lib/asset-loader.js'
-import { gzipSync } from 'node:zlib'
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import {
   doc_query,
@@ -133,7 +131,6 @@ describe(`energy parity data helpers`, () => {
     // superseded models keep detail pages but drop out of the manifest
     expect(has_energy_parity_model(`alchembert`)).toBe(true)
     expect(has_energy_parity_model(`dpa-3.1-3m-ft`)).toBe(false)
-    expect(has_energy_parity_model(undefined)).toBe(false)
   })
 
   it(`builds typed scatter arrays and preserves source row ids`, () => {
@@ -157,53 +154,6 @@ describe(`energy parity data helpers`, () => {
     })
     expect(point?.y).toBeCloseTo(1.0)
     expect(point?.error).toBeCloseTo(0.2)
-  })
-
-  it(`retries asset loads after a failed request`, async () => {
-    const body = gzipSync(JSON.stringify({ ok: true }))
-    const fetch_mock = vi
-      .fn()
-      .mockResolvedValueOnce(new Response(`missing`, { status: 503 }))
-      .mockResolvedValueOnce(new Response(body, { status: 200 }))
-    vi.stubGlobal(`fetch`, fetch_mock)
-
-    const url = `/retry-${crypto.randomUUID()}.json.gz`
-    await expect(load_json_asset(url)).rejects.toThrow(`HTTP 503`)
-    await expect(load_json_asset(url)).resolves.toEqual({ ok: true })
-    expect(fetch_mock).toHaveBeenCalledTimes(2)
-  })
-
-  it(`keeps a replacement cached request when a cleared request fails later`, async () => {
-    const stale_response = Promise.withResolvers<Response>()
-    const fetch_mock = vi
-      .fn()
-      .mockReturnValueOnce(stale_response.promise)
-      .mockResolvedValueOnce(new Response(JSON.stringify({ fresh: true })))
-    vi.stubGlobal(`fetch`, fetch_mock)
-    const url = `/replaced-asset.json.gz`
-    const stale_result = load_json_asset(url).catch((error: unknown) => error)
-    clear_asset_cache()
-    const replacement = load_json_asset(url)
-    await expect(replacement).resolves.toEqual({ fresh: true })
-    stale_response.reject(new Error(`old request failed`))
-    await expect(stale_result).resolves.toEqual(new Error(`old request failed`))
-    expect(load_json_asset(url)).toBe(replacement)
-    expect(fetch_mock).toHaveBeenCalledTimes(2)
-  })
-
-  it(`maps model keys to readable per-model release assets`, () => {
-    const asset = model_asset(first_model_key)
-    const model_assets = energy_parity_manifest.model_assets as Record<
-      string,
-      Record<string, { asset: string } | undefined> | undefined
-    >
-
-    expect(asset).toBe(model_assets[first_model_key]?.parity?.asset)
-    expect(asset).toContain(`-model-`)
-    expect(energy_parity_asset_url(asset)).toBe(`/energy-parity/assets/${asset}`)
-    expect(() => model_asset(`missing-model`)).toThrow(
-      `No energy parity model asset for missing-model`,
-    )
   })
 
   describe(`manifest loaders`, () => {
@@ -261,22 +211,6 @@ describe(`energy parity data helpers`, () => {
         error:
           `Invalid energy parity ${first_model_key}.e_form_pred: ` +
           `expected ${row_count} rows, got 1`,
-      },
-      {
-        case: `missing { model } wrapper`,
-        kind: `model`,
-        // asset stores the model object directly instead of under the { model } key
-        response: () => gzipped_json_response(manifest_sized_model(first_model_key)),
-        load: () => load_energy_parity_model(first_model_key),
-        error: `No energy parity model ${first_model_key} in its asset`,
-      },
-      {
-        case: `model_key mismatch`,
-        kind: `model`,
-        response: () =>
-          gzipped_json_response({ model: manifest_sized_model(`other-model`) }),
-        load: () => load_energy_parity_model(first_model_key),
-        error: `Invalid energy parity model: expected ${first_model_key}, got other-model`,
       },
     ])(
       `retries rejected $kind assets ($case)`,

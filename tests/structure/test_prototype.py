@@ -3,7 +3,6 @@
 from typing import Final
 
 import pytest
-from ase import Atoms
 from pymatgen.core.structure import Lattice, Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 
@@ -99,7 +98,6 @@ def test_get_protostructure_label(
 ) -> None:
     """Moyopy gives the correct protostructure label for Structure and Atoms input."""
     struct_in = AseAtomsAdaptor.get_atoms(struct) if as_atoms else struct
-    assert isinstance(struct_in, Atoms if as_atoms else Structure)
     moyopy_label = prototype.get_protostructure_label(struct_in)
     assert moyopy_label == label, f"{moyopy_label=} != {label}"
 

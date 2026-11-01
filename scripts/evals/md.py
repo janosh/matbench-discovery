@@ -23,16 +23,15 @@ def resolve_metrics(
     """
     pred_file = None
     if run_dir is None:
-        md_path = model.md_path  # getter verifies/downloads the declared file
-        if not md_path or not os.path.isfile(md_path):
+        # getter verifies/downloads the declared file and raises if it is missing
+        if (md_path := model.md_path) is None:
             return None
         paths = [md_path]
     else:
         paths = sorted(glob(f"{escape(run_dir)}/*{model.name}-md-metrics-*.csv.gz"))
         if not paths:
             raise FileNotFoundError(f"No {model.name} MD metric CSVs in {run_dir!r}")
-        model_dir = os.path.splitext(model.rel_path)[0]
-        pred_file = f"models/{model_dir}/{artifact_filename(today, 'md_metrics')}"
+        pred_file = f"{model.artifact_dir}/{artifact_filename(today, 'md_metrics')}"
     # Retain duplicates so the coverage check rejects ambiguous reruns.
     return pd.concat(
         [
@@ -40,20 +39,6 @@ def resolve_metrics(
             for path in paths
         ]
     ), pred_file
-
-
-def coverage_problems(index: pd.Index, expected: set[str]) -> list[str]:
-    """Return duplicate, missing, and unexpected system coverage problems."""
-    present = set(index)
-    problems = []
-    if index.has_duplicates:
-        duplicates = sorted(index[index.duplicated()].unique())
-        problems.append(f"duplicate systems {duplicates}")
-    if missing := expected - present:
-        problems.append(f"{len(missing)} missing e.g. {sorted(missing)[:3]}")
-    if extra := present - expected:
-        problems.append(f"{len(extra)} unexpected e.g. {sorted(extra)[:3]}")
-    return problems
 
 
 def main() -> int:
@@ -70,7 +55,7 @@ def main() -> int:
         # Resolve the canonical set only after finding an artifact.
         if expected is None:
             expected = set(list_reference_systems(default_md_reference_path()))
-        if problems := coverage_problems(df_md.index, expected):
+        if problems := md_metrics.coverage_problems(df_md.index, expected):
             raise ValueError("; ".join(problems))
 
         metrics = md_metrics.calc_md_metrics(df_md)

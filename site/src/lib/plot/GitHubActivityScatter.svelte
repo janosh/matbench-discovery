@@ -6,11 +6,11 @@
   import type { GitHubActivityData, Label } from '#lib/types.js'
 
   let {
-    github_data = [],
+    github_data,
     color_scale = { type: `log` },
     ...rest
   }: {
-    github_data?: GitHubActivityData[]
+    github_data: GitHubActivityData[]
   } & ComponentProps<typeof ScatterPlot> = $props()
 
   const fmt = `,.0f`
@@ -41,18 +41,19 @@
         y: item[axes.y.key],
         color_value: item[axes.color_value.key],
         size_value: item[axes.size_value.key],
-        metadata: { name: item.name, repo: item.repo, model_key: item.model_key },
+        metadata: {
+          name: item.name,
+          repo: item.repo,
+          model_key: item.model_key,
+          commits_last_year: item.commits_last_year,
+          contributors: item.contributors,
+        },
       }
       const values = [point.x, point.y, point.color_value, point.size_value]
       if (!values.every((val) => typeof val === `number` && isFinite(val))) return []
       return [point]
     }),
   )
-  // O(1) lookup for tooltip by model name
-  let plot_data_by_name = $derived(
-    new Map(plot_data.map((point) => [point.metadata.name, point])),
-  )
-
   const point_style = { fill: `#4dabf7` }
   let series = $derived({
     x: plot_data.map((point) => point.x),
@@ -96,17 +97,16 @@
     {...rest}
   >
     {#snippet tooltip({ x_formatted, y_formatted, metadata })}
-      {@const name = (metadata as { name?: string })?.name}
-      {#if name}
-        {@const point = plot_data_by_name.get(name)}
+      {#if metadata}
+        {@const { name, commits_last_year, contributors } = metadata}
         <strong>{name}</strong><br />
         {axes.x.label}: {x_formatted}<br />
         {axes.y.label}: {y_formatted}<br />
-        {#if point?.color_value != null}
-          {axes.color_value.label}: {format_num(point.color_value)}<br />
+        {#if typeof commits_last_year === `number`}
+          {axes.color_value.label}: {format_num(commits_last_year)}<br />
         {/if}
-        {#if point?.size_value != null}
-          {axes.size_value.label}: {format_num(point.size_value)}<br />
+        {#if typeof contributors === `number`}
+          {axes.size_value.label}: {format_num(contributors)}<br />
         {/if}
       {/if}
     {/snippet}

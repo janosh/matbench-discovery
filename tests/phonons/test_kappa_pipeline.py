@@ -842,7 +842,7 @@ def test_get_kappa_adapter_dispatch(
     model_key: str, adapter_type: type[StandardKappaAdapter]
 ) -> None:
     """Backend families dispatch to their typed adapters."""
-    assert isinstance(get_kappa_adapter(model_key), adapter_type)
+    assert type(get_kappa_adapter(model_key)) is adapter_type
 
 
 def test_resumable_shards_strict_merge_and_artifacts(

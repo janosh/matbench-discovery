@@ -43,15 +43,18 @@
   {...rest}
 >
   {#snippet inset()}
-    {@const style = `height: 1.5em; visibility: ${active_element ? `visible` : `hidden`};`}
     <TableInset>
       <label>
         Log color scale<input type="checkbox" bind:checked={log} />
       </label>
       {#if active_element}
-        <PtableInset element={active_element} elem_counts={heatmap_values} {style} />
+        <PtableInset
+          element={active_element}
+          elem_counts={heatmap_values}
+          style="height: 1.5em"
+        />
       {:else}
-        <span {style}></span>
+        <span style="height: 1.5em; visibility: hidden"></span>
       {/if}
       <ColorBar
         title="Count"

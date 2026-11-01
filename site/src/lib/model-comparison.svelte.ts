@@ -70,15 +70,14 @@ export const toggle_row_model = (event: Event, row: RowData): void => {
   event.preventDefault()
   comparison.toggle(row.model_key)
 }
-export function mark_compared_rows<R extends { model_key: string; class?: string }>(
+export const mark_compared_rows = <R extends { model_key: string; class?: string }>(
   rows: R[],
   show_only: boolean,
-): R[] {
-  return comparison.filter(rows, show_only).map((row) => {
+): R[] =>
+  comparison.filter(rows, show_only).map((row) => {
     row.class = !show_only && comparison.keys.has(row.model_key) ? `highlight` : undefined
     return row
   })
-}
 
 // Mirror the selection into a `compare` URL param (comma-joined model keys) so comparisons
 // are shareable and survive reloads on leaderboard and model pages. Other pages keep
@@ -168,7 +167,7 @@ export const COST_ROWS: CompareRow[] = [
   {
     ...HYPERPARAMS.model_params,
     better: `lower`,
-    title: ({ n_estimators = 1, model_params }) =>
+    title: ({ n_estimators, model_params }) =>
       n_estimators > 1
         ? `Ensemble of ${n_estimators} models with ${format_num(model_params, `.3~s`)} parameters each`
         : undefined,

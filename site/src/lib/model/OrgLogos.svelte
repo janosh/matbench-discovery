@@ -6,13 +6,13 @@
 
   let {
     org_logos = [],
-    authors = [],
+    authors,
   }: {
     org_logos?: OrgLogo[]
-    authors?: Author[]
+    authors: [Author, ...Author[]]
   } = $props()
 
-  // Group authors by affiliation; fall back to supplied logos.
+  // Group authors by affiliation
   let entries = $derived.by(() => {
     const groups: { logo?: OrgLogo; label: string; names: string[] }[] = []
     for (const { name, affiliation } of authors) {
@@ -25,8 +25,7 @@
       }
       if (name) group.names.push(name)
     }
-    if (groups.length > 0) return groups
-    return org_logos.map((logo) => ({ logo, label: logo.name, names: [] as string[] }))
+    return groups
   })
 </script>
 

@@ -181,47 +181,74 @@ def test_all_active_models_have_required_metadata() -> None:
 
 
 @pytest.mark.parametrize(
-    ("file_ref", "error"),
+    ("key", "value", "errors"),
     [
-        ("legacy/path.csv.gz", "Invalid FileRef at metrics.discovery.pred_file"),
         (
+            "pred_file",
+            "legacy/path.csv.gz",
+            ("Invalid FileRef at metrics.discovery.pred_file",),
+        ),
+        (
+            "pred_file",
             {"name": "models/mace/mace-mpa-0/../2026-09-05-discovery.csv.gz"},
-            "must live under",
+            ("must live under",),
+        ),
+        # a runner-tagged cost block without the artifact it claims
+        (
+            "cost",
+            {"source": "runner", "hardware": "H200"},
+            ("Cost provenance: metrics.discovery", "run_info_file"),
         ),
     ],
 )
-def test_malformed_file_ref_fails_checklist(
-    monkeypatch: pytest.MonkeyPatch, file_ref: str | dict[str, str], error: str
+def test_bad_discovery_metadata_fails_checklist(
+    monkeypatch: pytest.MonkeyPatch,
+    key: str,
+    value: str | dict[str, str],
+    errors: tuple[str, ...],
 ) -> None:
-    """Malformed artifact metadata becomes a checklist failure instead of raising."""
+    """Malformed artifact or cost metadata becomes a checklist failure, not a raise."""
     model = Model["mace_mpa_0"]
     discovery = model.metadata["metrics"]["discovery"]
-    monkeypatch.setitem(discovery, "pred_file", file_ref)
+    monkeypatch.setitem(discovery, key, value)
     checks = ingest.Checklist()
     ingest.check_submission(model, checks, validate_runner=False)
-    assert any(error in message for message in msgs(checks, ingest.FAIL))
+    assert any(
+        all(error in message for error in errors)
+        for message in msgs(checks, ingest.FAIL)
+    )
 
 
 @pytest.mark.parametrize(
-    "argv",
+    ("argv", "expected_error"),
     [
-        ["definitely-not-a-model"],
-        [],
-        ["--payloads-only"],
-        ["mace-mpa-0", "--archive"],
-        ["mace-mpa-0", "--archive-only"],
-        ["mace-mpa-0", "--publish-parity"],
-        ["mace-mpa-0", "--full-roster"],
+        (
+            ["definitely-not-a-model"],
+            "invalid from_ref value: 'definitely-not-a-model'",
+        ),
+        ([], "model is required unless --payloads-only"),
+        (["--payloads-only"], "full payload refresh requires --full-roster"),
+        (["mace-mpa-0", "--archive"], "No Figshare API token"),
+        (["mace-mpa-0", "--archive-only"], "No Figshare API token"),
+        (["mace-mpa-0", "--publish-parity"], "--publish-parity does not accept models"),
+        (
+            ["mace-mpa-0", "--full-roster"],
+            "--full-roster requires --payloads-only without models",
+        ),
     ],
 )
 def test_cli_rejects_invalid_args(
-    monkeypatch: pytest.MonkeyPatch, argv: list[str]
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    argv: list[str],
+    expected_error: str,
 ) -> None:
     """Unknown, missing, or unauthenticated CLI arguments fail validation."""
     monkeypatch.delenv("FIGSHARE_TOKEN", raising=False)
     monkeypatch.setattr(ingest.figshare, "ENV_PATH", "/nonexistent/.env")
     with pytest.raises(SystemExit, match="2"):
         ingest.main(argv)
+    assert expected_error in capsys.readouterr().err
 
 
 def test_run_payload_refresh_scopes(run_cmd_calls: list[tuple[str, ...]]) -> None:
@@ -480,16 +507,3 @@ def test_archive_rejects_artifact_escaping_model_dir(
         upload.resolve_artifact_path(
             str(family_dir / yaml_name), artifact_rel_path, str(tmp_path)
         )
-
-
-def test_untraceable_cost_fails_checklist(monkeypatch: pytest.MonkeyPatch) -> None:
-    """A runner-tagged cost block without the artifact it claims fails ingestion."""
-    model = Model["mace_mpa_0"]
-    discovery = model.metadata["metrics"]["discovery"]
-    monkeypatch.setitem(discovery, "cost", {"source": "runner", "hardware": "H200"})
-    checks = ingest.Checklist()
-    ingest.check_submission(model, checks, validate_runner=False)
-    assert any(
-        "Cost provenance: metrics.discovery" in message and "run_info_file" in message
-        for message in msgs(checks, ingest.FAIL)
-    )

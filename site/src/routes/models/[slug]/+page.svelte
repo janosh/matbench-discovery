@@ -281,7 +281,7 @@
       parameters
     </span>
 
-    {#if (model.n_estimators ?? 1) > 1}
+    {#if model.n_estimators > 1}
       <span><Icon icon={Forest} /> Ensemble of {model.n_estimators} models</span>
     {/if}
 

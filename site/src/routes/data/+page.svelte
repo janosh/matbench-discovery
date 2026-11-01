@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
+  import pkg from '#site/package.json'
   import { onMount } from 'svelte'
 
   // Static hosting cannot see URL fragments; resolve old dataset anchors in the browser.
@@ -22,10 +23,7 @@
 </script>
 
 <svelte:head>
-  <link
-    rel="canonical"
-    href="https://matbench-discovery.materialsproject.org/benchmarks"
-  />
+  <link rel="canonical" href="{pkg.homepage}/benchmarks" />
 </svelte:head>
 <p>
   Benchmark data is now part of <a href="/benchmarks">Benchmarks</a>. Each task includes

@@ -121,6 +121,14 @@ describe(`Models Page`, () => {
         expect(card.querySelector(`.metrics li.active .metric-label`)?.innerHTML).toBe(
           Object.values(ALL_METRICS).find((metric) => metric.key === key)?.label,
         )
+        // names have no better/worse direction, so titles keep the neutral background
+        // instead of a NaN color scale position (d3 returns black for NaN)
+        const { backgroundColor } = doc_query(`h2`, card).style
+        if (key === `Model`) expect(backgroundColor).toBe(`rgba(255, 255, 255, 0.6)`)
+        else
+          expect([`rgba(255, 255, 255, 0.6)`, `rgb(0, 0, 0)`]).not.toContain(
+            backgroundColor,
+          )
       }
       // Inspecting another metric must not activate the matching page-level sort button.
       doc_query(`.metrics .metric-label`).click()

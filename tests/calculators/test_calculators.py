@@ -485,6 +485,11 @@ def test_nequip_factory_load_path(
     )
     monkeypatch.setitem(sys.modules, "nequip", ModuleType("nequip"))
     monkeypatch.setitem(sys.modules, "nequip.ase", nequip_ase)
+    torch = SimpleNamespace(
+        device=lambda name: SimpleNamespace(type=name.split(":")[0]),
+        cuda=SimpleNamespace(get_device_capability=lambda _device: (9, 0)),
+    )
+    monkeypatch.setitem(sys.modules, "torch", torch)
     monkeypatch.setattr(calculators, "_run_to_atomic_output", compile_stub)
 
     calc = CALCULATORS[model_key].make_calc("cuda")
@@ -495,9 +500,11 @@ def test_nequip_factory_load_path(
         assert kwargs == {"device": "cuda", "compile_mode": "eager"}
         assert not hasattr(calc, calculators.ACCELERATION_ATTR)
         return
-    (command, output_path), _ = compile_stub.call_args
+    (command, output_path), compile_kwargs = compile_stub.call_args
     assert command[command.index("--mode") + 1] == "aotinductor"
-    assert output_path.endswith(f"{model_key}-cuda.nequip.pt2")
+    # AOTI kernels are arch- and torch-specific, so both key the cached package
+    assert output_path.endswith(f"{model_key}-cuda-sm90.nequip.pt2")
+    assert compile_kwargs["tool_packages"] == ("nequip", "torch")
     compiled_loader.assert_called_once_with(compile_path=output_path, device="cuda")
     assert getattr(calc, calculators.ACCELERATION_ATTR) == ("torch_aot_inductor",)
 
@@ -510,7 +517,7 @@ def test_dpa_4_0_1_loads_eager_checkpoint(monkeypatch: pytest.MonkeyPatch) -> No
     monkeypatch.setitem(sys.modules, "deepmd.calculator", deepmd_calculator)
 
     spec = CALCULATORS["dpa_4_0_1_pro_mptrj"]
-    assert spec.make_calc is calculators._deepmd_eager  # noqa: SLF001
+    assert spec.make_calc is calculators._deepmd  # noqa: SLF001
     assert isinstance(spec.make_calc("cuda", checkpoint="/ckpt/dpa.pt"), EMT)
     deepmd_calculator.DP.assert_called_once_with("/ckpt/dpa.pt")  # no freeze, no .pt2
 

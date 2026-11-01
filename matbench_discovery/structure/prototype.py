@@ -78,7 +78,7 @@ def canonicalize_wyckoffs(element_wyckoffs: str, spg_num: int) -> str:
             counts = [char for char in groups if char.isnumeric()]
 
             sorted_pairs = sorted(
-                zip(counts, letters, strict=False), key=lambda x: x[1]
+                zip(counts, letters, strict=False), key=lambda pair: pair[1]
             )
             sorted_wyckoffs.append(
                 "".join(
@@ -90,7 +90,7 @@ def canonicalize_wyckoffs(element_wyckoffs: str, spg_num: int) -> str:
 
         scored_wyckoffs += [("_".join(sorted_wyckoffs), score)]
 
-    return min(scored_wyckoffs, key=lambda x: (x[1], x[0]))[0]
+    return min(scored_wyckoffs, key=lambda wyk_score: (wyk_score[1], wyk_score[0]))[0]
 
 
 def get_protostructure_label(struct: AnyStructure, *, symprec: float = 0.1) -> str:
@@ -148,19 +148,21 @@ def get_protostructure_label(struct: AnyStructure, *, symprec: float = 0.1) -> s
         for orbit in orbit_groups.values()
     ]
     equivalent_wyckoff_labels = sorted(
-        equivalent_wyckoff_labels, key=lambda x: (x[0], x[2])
+        equivalent_wyckoff_labels, key=lambda label: (label[0], label[2])
     )
 
-    for el, group in itertools.groupby(equivalent_wyckoff_labels, key=lambda x: x[0]):
+    for element, group in itertools.groupby(
+        equivalent_wyckoff_labels, key=lambda label: label[0]
+    ):
         # NOTE create a list from the iterator so that we can use it without exhausting
         label_group = list(group)
-        element_dict[el] = sum(
-            wyckoff_multiplicity_dict[spg_num][itm[2]] for itm in label_group
+        element_dict[element] = sum(
+            wyckoff_multiplicity_dict[spg_num][label[2]] for label in label_group
         )
         wyckoff_counts_str = "".join(
             f"{len(list(occurrences))}{wyk_letter}"
             for wyk_letter, occurrences in itertools.groupby(
-                label_group, key=lambda x: x[2]
+                label_group, key=lambda label: label[2]
             )
         )
 
