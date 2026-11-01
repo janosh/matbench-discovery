@@ -112,6 +112,11 @@ it.each([
       const tile = doc_query(`[data-element-symbol="${element}"]`, table)
       tile.dispatchEvent(new MouseEvent(`mouseenter`))
       await tick()
+      // diatomics disables the hover tooltip (one pair per element adds nothing)
+      if (task === `diatomics`) {
+        expect(table.querySelector(`.plot-tooltip`)).toBeNull()
+        continue
+      }
       const name = element_data.find(
         ({ symbol: elem_symbol }) => elem_symbol === element,
       )?.name
