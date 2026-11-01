@@ -1,6 +1,7 @@
 import { DEFAULT_CDS_CONFIG, DEFAULT_CMDS_CONFIG } from '#lib/combined-scores.svelte.js'
 import {
   DIATOMICS_METRICS,
+  GEO_OPT_SYMMETRY_METRICS,
   MD_METRICS,
   format_power_ten,
   format_property_path,
@@ -8,6 +9,7 @@ import {
   get_org_logo,
   plain_label,
 } from '#lib/labels.js'
+import { format_num } from 'matterviz/labels'
 import { Meta, Microsoft } from 'svelte-widgets/icons'
 import { describe, expect, it } from 'vite-plus/test'
 
@@ -177,3 +179,14 @@ it.each(Object.values(MD_METRICS))(
     expect(label.better).toBe(label.key === `combined_score` ? `higher` : `lower`)
   },
 )
+
+// symmetry fractions show at most one decimal (YAMLs store 4, some more)
+it.each([
+  [0.74731771, `74.7%`],
+  [0.0498, `5%`],
+  [0.0009, `0.1%`],
+])(`symmetry columns format %s as %s`, (value, expected) => {
+  for (const { format } of Object.values(GEO_OPT_SYMMETRY_METRICS)) {
+    expect(format_num(value, format)).toBe(expected)
+  }
+})

@@ -303,7 +303,7 @@ export const GEO_OPT_SYMMETRY_METRICS = Object.fromEntries(
         label: `Σ<sub>${symbol}</sub> ${format_power_ten(symprec)}`,
         description: `Fraction of structures where ML ground state has ${desc} DFT ground state at ${format_power_ten(symprec)} symprec. The remaining fraction changed space group with the same number of symmetry operations`,
         better,
-        format: `~%`,
+        format: `.1~%`,
         // visible by default so the landing-page "Geo Opt" column preset can surface
         // them; the discovery/phonons/MD tables hide them via their own col_filter
       },
