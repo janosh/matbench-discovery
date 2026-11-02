@@ -28,7 +28,7 @@ trained_by:
 repo: # model code is not released
 doi: # no paper yet
 paper: # no paper yet
-pr_url: https://github.com/janosh/matbench-discovery/pull/0 # TODO: set after opening the PR
+pr_url: https://github.com/janosh/matbench-discovery/pull/411
 checkpoint_url: # weights unreleased; sha256 of the internal artifact: 7255dcf831937b28a968d0b3dc2a2481d5e32cde9cca07fc33666b905ee6a877
 license:
   code: unreleased
