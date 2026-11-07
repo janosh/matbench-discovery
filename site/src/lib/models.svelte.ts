@@ -1,4 +1,4 @@
-import { default as DATASETS } from '$data/datasets.yml'
+import { default as DATASETS } from '$pkg/datasets.yml'
 import type { ModelData, OrgLogo } from '#lib/types.js'
 import type { ModelMetadata } from '#lib/schema/model.js'
 import MODELING_TASKS from '$pkg/modeling-tasks.yml'

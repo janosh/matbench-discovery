@@ -20,7 +20,7 @@ export async function render_data_markdown(
   filename: string,
 ): Promise<unknown> {
   const file = filename.replaceAll(`\\`, `/`)
-  const datasets = file.endsWith(`/data/datasets.yml`)
+  const datasets = file.endsWith(`/matbench_discovery/datasets.yml`)
   const data_files = file.endsWith(`/matbench_discovery/data-files.yml`)
   const model = /\/models\/[^_][^/]*\/[^_][^/]*\.yml$/u.test(file)
   if (!datasets && !data_files && !model) return data

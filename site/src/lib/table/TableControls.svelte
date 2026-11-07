@@ -1,5 +1,5 @@
 <script lang="ts">
-  import DATASETS from '$data/datasets.yml'
+  import DATASETS from '$pkg/datasets.yml'
   import { fit_toolbar_links } from './fit-toolbar-links.js'
   import type { Column, RowData } from 'matterviz/table'
   import { openness_tooltips } from '#lib/metrics.js'

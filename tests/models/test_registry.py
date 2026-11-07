@@ -5,17 +5,19 @@ from __future__ import annotations
 import os
 import re
 import sys
+import tomllib
 from contextlib import nullcontext
 from datetime import date
 from functools import cache
 from glob import glob
+from pathlib import PurePosixPath
 from typing import Any
 
 import pytest
 import yaml
 from jsonschema import Draft7Validator
 
-from matbench_discovery import DATA_DIR, PKG_DIR, ROOT, file_digest
+from matbench_discovery import PKG_DIR, ROOT, file_digest
 from matbench_discovery.calculators import CALCULATORS
 from matbench_discovery.data import (
     iter_file_refs,
@@ -115,8 +117,15 @@ def test_modeling_tasks_align_with_schema() -> None:
 
 
 def test_datasets_yaml_matches_python_registry() -> None:
-    """Dataset metadata validates and matches the Python registry."""
-    with open(f"{DATA_DIR}/datasets.yml", encoding="utf-8") as file:
+    """Dataset metadata validates, matches the Python registry and ships in wheels."""
+    # data.py reads datasets.yml at import, so pip installs crash if the wheel omits it
+    with open(f"{ROOT}/pyproject.toml", "rb") as file:
+        source_include = tomllib.load(file)["tool"]["uv"]["build-backend"][
+            "source-include"
+        ]
+    rel_path = os.path.relpath(f"{PKG_DIR}/datasets.yml", ROOT)
+    assert any(PurePosixPath(rel_path).full_match(glob) for glob in source_include)
+    with open(f"{PKG_DIR}/datasets.yml", encoding="utf-8") as file:
         datasets_from_file = yaml.safe_load(file)
     assert set(datasets_from_file) == set(DATASETS)
     with open(f"{ROOT}/tests/dataset-schema.yml", encoding="utf-8") as file:
@@ -132,7 +141,7 @@ def test_datasets_yaml_matches_python_registry() -> None:
             for key, dataset in datasets_from_file.items()
         },
         schema,
-        "data/datasets.yml",
+        "matbench_discovery/datasets.yml",
     )
     for dataset in datasets_from_file.values():
         assert set(dataset.get("contains", [])) <= set(DATASETS)

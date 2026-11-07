@@ -17,7 +17,7 @@ import {
 } from '#lib/metrics.js'
 import type { ModelData } from '#lib/types.js'
 import * as predictions from '#lib/server/predictions.js'
-import DATASETS from '$data/datasets.yml'
+import DATASETS from '$pkg/datasets.yml'
 import ModelPage from '#routes/models/[slug]/+page.svelte'
 import { load } from '#routes/models/[slug]/+page.server.js'
 import { format_num } from 'matterviz/labels'

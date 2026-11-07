@@ -1,4 +1,4 @@
-import DATASETS from '$data/datasets.yml'
+import DATASETS from '$pkg/datasets.yml'
 import {
   calculate_cps,
   CPS_CONFIG,
@@ -351,7 +351,7 @@ describe(`fig-helpers payload styling`, () => {
 // value, sequence item or flow collection). Use plain integers (`154719`) instead.
 const repo_root = path.resolve(import.meta.dirname, `..`, `..`, `..`)
 
-const yaml_files = [`models`, `data`].flatMap((dir) =>
+const yaml_files = [`models`, `matbench_discovery`].flatMap((dir) =>
   readdirSync(path.join(repo_root, dir), { recursive: true })
     .map(String)
     .filter((name) => name.endsWith(`.yml`))

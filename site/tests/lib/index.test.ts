@@ -1,5 +1,5 @@
 import data_files from '$pkg/data-files.yml'
-import DATASETS from '$data/datasets.yml'
+import DATASETS from '$pkg/datasets.yml'
 import { arr_to_str, format_date } from '#lib'
 import { MODELS } from '#lib/models.svelte.js'
 import { scatter_options_by_key } from '#lib/labels.js'
@@ -102,7 +102,7 @@ describe(`#lib data includes rendered YAML Markdown`, () => {
     `preserves Markdown separators in descriptions: %s`,
     async (description, expected) => {
       const data = { example: { description, description_html: `` } }
-      await render_data_markdown(data, `/repo/data/datasets.yml`)
+      await render_data_markdown(data, `/repo/matbench_discovery/datasets.yml`)
       const rendered = document.createElement(`div`)
       rendered.innerHTML = data.example.description_html
       rendered
@@ -114,9 +114,13 @@ describe(`#lib data includes rendered YAML Markdown`, () => {
 
   it.each([
     [`/repo/matbench_discovery/data-files.yml`, {}, `_links must be a string`],
-    [`/repo/data/datasets.yml`, { bad: { description: 7 } }, `bad.description`],
     [
-      `/repo/data/datasets.yml`,
+      `/repo/matbench_discovery/datasets.yml`,
+      { bad: { description: 7 } },
+      `bad.description`,
+    ],
+    [
+      `/repo/matbench_discovery/datasets.yml`,
       { bad: { description: ``, notes: { Access: 7 } } },
       `bad.notes.Access`,
     ],
@@ -130,7 +134,7 @@ describe(`#lib data includes rendered YAML Markdown`, () => {
     [`Test__Multiple   Spaces`, `test-multiple-spaces`],
   ])(`assigns dataset slug '%s' → '%s'`, async (input, expected) => {
     const data = { [input]: { description: `` } }
-    await render_data_markdown(data, `/repo/data/datasets.yml`)
+    await render_data_markdown(data, `/repo/matbench_discovery/datasets.yml`)
     expect(data[input]).toEqual({ description: ``, description_html: ``, slug: expected })
   })
 })

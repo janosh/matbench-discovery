@@ -1,5 +1,5 @@
 import { goto } from '$app/navigation'
-import DATASETS from '$data/datasets.yml'
+import DATASETS from '$pkg/datasets.yml'
 import { ACTIVE_MODELS, make_table_filters } from '#lib/models.svelte.js'
 import Page from '#routes/data/sets/+page.svelte'
 import type { ScatterPlot } from 'matterviz/plot'

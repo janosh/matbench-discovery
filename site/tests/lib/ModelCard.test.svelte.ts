@@ -1,4 +1,4 @@
-import DATASETS from '$data/datasets.yml'
+import DATASETS from '$pkg/datasets.yml'
 import ModelCard from '#lib/model/ModelCard.svelte'
 import { ACTIVE_MODELS, MODELS } from '#lib/models.svelte.js'
 import { ALL_METRICS, MD_METRICS } from '#lib/labels.js'

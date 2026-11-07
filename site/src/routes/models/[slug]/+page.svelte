@@ -2,7 +2,7 @@
   import Logo from '#lib/Logo.svelte'
   import type { Author } from '#lib/types.js'
   import { comparison } from '#lib/model-comparison.svelte.js'
-  import DATASETS from '$data/datasets.yml'
+  import DATASETS from '$pkg/datasets.yml'
   import { model_metric_ranks, rank_color, RANKED_METRICS } from '#lib/rankings.js'
   import PtableInset from '#lib/PtableInset.svelte'
   import {

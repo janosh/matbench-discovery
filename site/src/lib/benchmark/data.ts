@@ -1,4 +1,4 @@
-import DATASETS from '$data/datasets.yml'
+import DATASETS from '$pkg/datasets.yml'
 import data_files from '$pkg/data-files.yml'
 import pkg from '#site/package.json'
 import { format_num } from 'matterviz/labels'

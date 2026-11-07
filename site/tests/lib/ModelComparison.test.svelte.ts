@@ -1,6 +1,6 @@
 import { afterNavigate, onNavigate, type AfterNavigate } from '$app/navigation'
 import { page } from '$app/state'
-import DATASETS from '$data/datasets.yml'
+import DATASETS from '$pkg/datasets.yml'
 import { ALL_METRICS } from '#lib/labels.js'
 import { format_duration } from '#lib/metrics.js'
 import {

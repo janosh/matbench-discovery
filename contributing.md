@@ -171,7 +171,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    train_task: S2EFS
    test_task: IS2RE-SR
    targets: EFS_G
-   training_sets: [MPtrj] # keys from data/datasets.yml
+   training_sets: [MPtrj] # keys from matbench_discovery/datasets.yml
    # size: 10M  # optional
    # fine_tune: true  # optional
    # test_set_informed: [discovery]  # optional, see below
@@ -385,7 +385,7 @@ For PRs that change the payload *format* or the model roster, regenerate payload
 - Roster drift fails `tests/site/test_fig_payloads.py`'s coverage tests. After adding or updating an active model, run `uv run --with-editable . scripts/ingest_model.py <model_key> --payloads-only` to splice its freshly computed entries into the committed payloads. After removing, aborting, deprecating, or superseding a model, omit the model key and run `uv run --with-editable . scripts/ingest_model.py --payloads-only --full-roster` to rebuild payloads from the full active roster.
 - Payloads record hashes of the Python sources that computed them, ignoring comments, docstrings and formatting. A code change to one of those files fails `tests/site/test_fig_payloads.py` until you regenerate with `uv run --with-editable . scripts/ingest_model.py --payloads-only --full-roster`.
 - Parity generators are separate because their large assets live on the GitHub release. Run `uv run --with-editable . site/scripts/generate-energy-parity-assets.py` and `uv run --with-editable ".[phonons]" site/scripts/generate-kappa-parity-assets.py`, publish the generated files with `uv run --with-editable . scripts/ingest_model.py --publish-parity`, then commit both manifests.
-- Model-independent data-page payloads and route-local element counts are owned by `scripts/export_data_fig_payloads.py`. Run it after changing that script or `matbench_discovery/data_figs.py`; it requires the local `data/mp/2022-09-16-mp-trj-summary.json.bz2` cache. If absent, regenerate that cache from the extXYZ source with `uv run data/mp/eda_mp_trj.py`.
+- Model-independent data-page payloads and route-local element counts are owned by `scripts/export_data_fig_payloads.py`. Run it after changing that script or `matbench_discovery/data_figs.py`; it requires the local `data/mp/2022-09-16-mp-trj-summary.json.bz2` cache. If absent, regenerate that cache from the extXYZ source with `uv run --with-editable . data/mp/build_mp_trj_summary.py`.
 
 Maintainer note: `--archive` needs a Figshare API token in `$FIGSHARE_TOKEN` or as a `figshare_token=` line in `site/.env`, and `--publish-parity` needs `gh` with write access to this repo's releases.
 

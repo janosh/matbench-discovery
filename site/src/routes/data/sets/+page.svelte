@@ -1,5 +1,5 @@
 <script lang="ts">
-  import DATASETS from '$data/datasets.yml'
+  import DATASETS from '$pkg/datasets.yml'
   import { arr_to_str } from '#lib'
   import { title_case } from '#lib/labels.js'
   import { ACTIVE_MODELS } from '#lib/models.svelte.js'
@@ -364,7 +364,7 @@
 <p>
   <Icon icon={Edit} /> See incorrect data or a missing dataset? Suggest an edit to
   <a
-    href="{pkg.repository}/blob/main/data/datasets.yml"
+    href="{pkg.repository}/blob/main/matbench_discovery/datasets.yml"
     target="_blank"
     rel="noopener noreferrer">datasets.yml</a
   >.

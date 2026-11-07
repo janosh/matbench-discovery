@@ -32,7 +32,7 @@ from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 from tqdm import tqdm
 
-from matbench_discovery import DATA_DIR, atomic_output_path
+from matbench_discovery import PKG_DIR, atomic_output_path
 from matbench_discovery.enums import DataFiles, MbdKey, Model, TestSubset
 
 round_trip_yaml = YAML()  # round-trippable YAML for updating model metadata files
@@ -297,11 +297,8 @@ def parse_artifact_filename(filename: str) -> str:
 
 @functools.cache
 def load_datasets() -> dict[str, dict[str, Any]]:
-    """Load training/test dataset metadata from the repo's data/datasets.yml.
-
-    Read on demand (not at import) since installs outside a repo clone lack it.
-    """
-    with open(f"{DATA_DIR}/datasets.yml", encoding="utf-8") as file:
+    """Load training/test dataset metadata from the packaged datasets.yml."""
+    with open(f"{PKG_DIR}/datasets.yml", encoding="utf-8") as file:
         return yaml.safe_load(stream=file)
 
 
