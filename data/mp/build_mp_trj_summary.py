@@ -57,7 +57,9 @@ df_mp_trj = pd.DataFrame(
             if "magmoms" in atoms.calc.results
             else None,
             Key.formula: str(atoms.symbols),
-            Key.atom_nums: atoms.symbols,
+            # list: pandas serializes ase.Symbols as {formula, numbers}, so len() on the
+            # reloaded column would count 2 fields instead of the atoms
+            Key.atom_nums: list(atoms.symbols),
         }
         for atoms_list in tqdm(mp_trj_atoms.values(), total=len(mp_trj_atoms))
         for atoms in atoms_list

@@ -41,9 +41,10 @@ afterEach(() => {
 
 const default_filters = make_table_filters()
 // Mirrors the page's model_filter plus MetricsTable's default filters.
-const phonon_leaderboard_count = ACTIVE_MODELS.filter(
+const phonon_leaderboard_models = ACTIVE_MODELS.filter(
   (model) => model.metrics?.phonons?.kappa_103 != null && default_filters.matches(model),
-).length
+)
+const phonon_leaderboard_count = phonon_leaderboard_models.length
 
 const kappa_sort_select = (): HTMLSelectElement =>
   doc_query<HTMLSelectElement>(`.kappa-model-select select`)
@@ -177,16 +178,18 @@ describe(`Phonons Task Page`, () => {
     expect(sorted_header()?.textContent).toContain(`κSRME`)
     expect(sorted_header()?.getAttribute(`aria-sort`)).toBe(`ascending`)
 
-    // every phonon model shows the κ finite-difference step it was run with, and the
-    // leaderboard mixes legacy 0.01 Å runs with 0.03 Å ones, which the note explains
+    // every phonon model shows the κ finite-difference step recorded in its YAML (n/a
+    // when it records no kappa settings); compared as sorted lists so the check holds
+    // whatever mix of 0.01 Å and 0.03 Å runs the live roster contains
     const dx_idx = headers.indexOf(`Δxκ`)
-    const dx_cells = new Set(
-      rows.map((row) => row.querySelectorAll(`td`)[dx_idx].textContent?.trim()),
+    const shown_dx = rows.map((row) =>
+      row.querySelectorAll(`td`)[dx_idx].textContent?.trim(),
     )
-    expect(dx_cells).toContain(`0.01 Å`)
-    expect(dx_cells).toContain(`0.03 Å`)
-    // n/a only for MatRIS v0.5.0, whose pre-pipeline run records no kappa settings
-    for (const cell of dx_cells) expect(cell).toMatch(/^(?:0\.0\d Å|n\/a)$/u)
+    const expected_dx = phonon_leaderboard_models.map((model) => {
+      const dx = model.hyperparams?.evaluation?.kappa?.displacement_distance
+      return dx === undefined ? `n/a` : `${dx} Å`
+    })
+    expect(shown_dx.toSorted()).toEqual(expected_dx.toSorted())
     // collapse whitespace so the assertion doesn't depend on source line wrapping
     const page_text = document.body.textContent?.replaceAll(/\s+/gu, ` `)
     expect(page_text).toContain(`not strictly comparable`)
