@@ -178,18 +178,23 @@ describe(`Phonons Task Page`, () => {
     expect(sorted_header()?.textContent).toContain(`κSRME`)
     expect(sorted_header()?.getAttribute(`aria-sort`)).toBe(`ascending`)
 
-    // every phonon model shows the κ finite-difference step recorded in its YAML (n/a
-    // when it records no kappa settings); compared as sorted lists so the check holds
-    // whatever mix of 0.01 Å and 0.03 Å runs the live roster contains
+    // each row shows the κ finite-difference step recorded in its own model's YAML (n/a
+    // when it records no kappa settings), whatever mix of 0.01 Å and 0.03 Å runs the
+    // live roster contains
     const dx_idx = headers.indexOf(`Δxκ`)
-    const shown_dx = rows.map((row) =>
-      row.querySelectorAll(`td`)[dx_idx].textContent?.trim(),
+    const model_by_key = new Map(
+      phonon_leaderboard_models.map((model) => [model.model_key, model]),
     )
-    const expected_dx = phonon_leaderboard_models.map((model) => {
+    for (const row of rows) {
+      const href = doc_query(`a[href^="/models/"]`, row).getAttribute(`href`)
+      const model = model_by_key.get(href?.slice(`/models/`.length) ?? ``)
+      if (!model) throw new Error(`no leaderboard model for row link ${href}`)
       const dx = model.hyperparams?.evaluation?.kappa?.displacement_distance
-      return dx === undefined ? `n/a` : `${dx} Å`
-    })
-    expect(shown_dx.toSorted()).toEqual(expected_dx.toSorted())
+      expect(
+        row.querySelectorAll(`td`)[dx_idx].textContent?.trim(),
+        model.model_key,
+      ).toBe(dx === undefined ? `n/a` : `${dx} Å`)
+    }
     // collapse whitespace so the assertion doesn't depend on source line wrapping
     const page_text = document.body.textContent?.replaceAll(/\s+/gu, ` `)
     expect(page_text).toContain(`not strictly comparable`)
