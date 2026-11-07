@@ -118,14 +118,26 @@ def test_modeling_tasks_align_with_schema() -> None:
 
 def test_datasets_yaml_matches_python_registry() -> None:
     """Dataset metadata validates, matches the Python registry and ships in wheels."""
-    # data.py reads datasets.yml at import, so pip installs crash if the wheel omits it
+    # load_datasets() reads it from the installed package, so the wheel must ship it.
+    # uv_build wheels contain the whole module dir minus source-/wheel-exclude
+    # (source-include only affects sdists), so check location and excludes.
     with open(f"{ROOT}/pyproject.toml", "rb") as file:
-        source_include = tomllib.load(file)["tool"]["uv"]["build-backend"][
-            "source-include"
-        ]
-    # source-include globs use forward slashes; relpath gives backslashes on Windows
-    rel_path = os.path.relpath(f"{PKG_DIR}/datasets.yml", ROOT).replace(os.sep, "/")
-    assert any(PurePosixPath(rel_path).full_match(glob) for glob in source_include)
+        backend = tomllib.load(file)["tool"]["uv"]["build-backend"]
+    module_dir = os.path.join(ROOT, backend["module-root"], backend["module-name"])
+    assert os.path.samefile(PKG_DIR, module_dir)
+    # exclude globs use forward slashes; relpath gives backslashes on Windows
+    rel_paths = [
+        os.path.relpath(f"{PKG_DIR}/datasets.yml", base).replace(os.sep, "/")
+        for base in (ROOT, os.path.join(ROOT, backend["module-root"]))
+    ]
+    excludes = backend.get("source-exclude", []) + backend.get("wheel-exclude", [])
+    assert not [
+        (rel_path, glob)
+        for rel_path in rel_paths
+        for glob in excludes
+        if PurePosixPath(rel_path).full_match(glob)
+        or PurePosixPath(rel_path).full_match(f"**/{glob}")
+    ]
     with open(f"{PKG_DIR}/datasets.yml", encoding="utf-8") as file:
         datasets_from_file = yaml.safe_load(file)
     assert set(datasets_from_file) == set(DATASETS)
