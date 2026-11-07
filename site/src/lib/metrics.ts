@@ -85,9 +85,11 @@ export function get_nested_number(
 export const is_finite_num = (value: unknown): value is number =>
   typeof value === `number` && Number.isFinite(value)
 
-// Wrap a numeric value in a sortable span, or render `n/a` when undefined
-const sortable_span = (value: number | undefined): string =>
-  value === undefined ? `n/a` : `<span data-sort-value="${value}">${value}</span>`
+// Wrap a numeric value (and optional unit) in a sortable span, or `n/a` when undefined
+const sortable_span = (value: number | undefined, unit = ``): string =>
+  value === undefined
+    ? `n/a`
+    : `<span data-sort-value="${value}">${value}${unit && ` ${unit}`}</span>`
 
 // Build dot-separated data access path from a label, preferring `property` (actual
 // data field name) over `key` when the two differ
@@ -403,7 +405,6 @@ export function assemble_row_data(
       : `n/a`
 
     const r_cut = model.hyperparams?.architecture?.graph_construction_radius
-    const r_cut_str = r_cut ? `<span data-sort-value="${r_cut}">${r_cut} Å</span>` : `n/a`
 
     const { ase_optimizer, max_steps, max_force, cell_filter } =
       model.hyperparams?.evaluation ?? {}
@@ -480,11 +481,8 @@ export function assemble_row_data(
       },
       [METADATA_COLS.checkpoint_license.label]: checkpoint_license,
       [METADATA_COLS.code_license.label]: code_license,
-      [HYPERPARAMS.graph_construction_radius.key]: r_cut_str,
-      [HYPERPARAMS.displacement_distance.key]:
-        kappa_dx === undefined
-          ? `n/a`
-          : `<span data-sort-value="${kappa_dx}">${kappa_dx} Å</span>`,
+      [HYPERPARAMS.graph_construction_radius.key]: sortable_span(r_cut, `Å`),
+      [HYPERPARAMS.displacement_distance.key]: sortable_span(kappa_dx, `Å`),
       org_logos: model.org_logos,
       authors: model.authors,
     }
