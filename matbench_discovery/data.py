@@ -4,8 +4,7 @@ https://figshare.com/articles/dataset/22715158
 
 Environment Variables:
     MBD_CACHE_DIR: Directory to cache downloaded data files.
-        Defaults to DATA_DIR if the full repo was cloned, otherwise
-        ~/.cache/matbench-discovery.
+        Defaults to ~/.cache/matbench-discovery.
 """
 
 import functools

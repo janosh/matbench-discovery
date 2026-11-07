@@ -27,7 +27,7 @@ print(stable_metrics(df_wbm[MbdKey.each_true], each_pred))
 # {'F1': 0.665, 'DAF': 3.457, 'Precision': 0.576, 'Recall': 0.787, ...}
 ```
 
-Downloads are cached in `data/` if you cloned the repo and under `~/.cache/matbench-discovery` otherwise. Set `MBD_CACHE_DIR` to override.
+Downloads are cached under `~/.cache/matbench-discovery`. Set `MBD_CACHE_DIR` to override.
 
 ## Where to look
 

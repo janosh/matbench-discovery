@@ -41,11 +41,11 @@ def test_sync_matches_remote_by_rel_path(
 
     calls: list[tuple[str, object]] = []
     remote_file = {
-        "name": DATA_FILE.rel_path,  # uploads keep their DATA_DIR-relative name
+        "name": DATA_FILE.rel_path,  # uploads keep their cache-dir-relative name
         "computed_md5": local_md5 if remote_matches else "0" * 32,
         "id": 7,
     }
-    monkeypatch.setattr(upload_data, "DATA_DIR", str(tmp_path))
+    monkeypatch.setattr(upload_data, "DEFAULT_CACHE_DIR", str(tmp_path))
     figshare = upload_data.figshare
     monkeypatch.setattr(figshare, "article_exists", lambda _id: True)
     monkeypatch.setattr(figshare, "list_article_files", lambda _id: [remote_file])
@@ -114,7 +114,7 @@ def test_sync_rejects_missing_or_undescribed_files(
         local_file.write_bytes(b"wbm summary")
     yaml_path = tmp_path / "data-files.yml"
     write_registry(yaml_path, registry)
-    monkeypatch.setattr(upload_data, "DATA_DIR", str(tmp_path))
+    monkeypatch.setattr(upload_data, "DEFAULT_CACHE_DIR", str(tmp_path))
     # reaching Figshare would raise AttributeError instead of the validation error
     monkeypatch.delattr(upload_data.figshare, "article_exists")
     with pytest.raises(error, match=match):

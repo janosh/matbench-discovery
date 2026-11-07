@@ -1,8 +1,8 @@
 WBM:
   name: WBM Benchmark Test Set
-  url: https://github.com/janosh/matbench-discovery/blob/main/data/wbm/readme.md
+  url: https://github.com/janosh/matbench-discovery/blob/main/site/src/routes/data/%5Bslug%5D/wbm-readme.md
   doi: https://doi.org/10.1038/s41524-020-00481-6
-  n_structures: 256963 # 257_487 before filtering suspicious data, see data/wbm/compile_wbm_test_set.py
+  n_structures: 256963 # 257_487 before filtering suspicious data, see scripts/data/compile_wbm_test_set.py
   n_materials: 215488 # based on number of unique Aflow-style structure prototypes
   n_stable_materials: 42825
   n_uniq_stable_materials: 32942

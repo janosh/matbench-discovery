@@ -210,7 +210,7 @@ function yaml_schema_to_typescript_plugin(): Plugin {
   }
 }
 
-// Out-of-package dirs ($root, $data, $pkg) can't be # subpath imports (Node and TS reject ../
+// Out-of-package dirs ($root, $pkg) can't be # subpath imports (Node and TS reject ../
 // targets), so tsconfig.json paths declares them and Vite aliases are derived from it here.
 // Only this repo's compilerOptions are parsed: an own `paths` replaces (not merges with) the
 // one from kit's extended $app/tsconfig, which may not exist yet before the first kit sync.

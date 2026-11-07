@@ -59,7 +59,6 @@ def atomic_output_path(path: str) -> Generator[str]:
             os.remove(temporary_path)
 
 
-DATA_DIR = f"{ROOT}/data"  # directory to store raw data
 TEST_FILES = f"{ROOT}/tests/files"  # directory to store test data
 # directory for data-only figure payloads (gzipped JSON written by
 # matbench_discovery.figs, imported by Svelte pages and rendered with matterviz)
@@ -68,20 +67,14 @@ SITE_FIG_DATA = f"{ROOT}/site/src/figs"
 SITE_DIR = f"{ROOT}/site/src"
 PDF_FIGS = f"{ROOT}/paper/figs"  # directory for light-themed PDF figures
 
-# directory to cache downloaded data files
+# directory to cache downloaded data files, the same for repo clones and pip installs
 DEFAULT_CACHE_DIR = os.getenv(
-    "MBD_CACHE_DIR",
-    DATA_DIR  # use DATA_DIR to locally cache data files if full repo was cloned
-    if os.path.isdir(DATA_DIR)
-    # use ~/.cache if matbench-discovery was installed from PyPI
-    else os.path.expanduser("~/.cache/matbench-discovery"),
+    "MBD_CACHE_DIR", os.path.expanduser("~/.cache/matbench-discovery")
 )
 
-# no import-time makedirs: in a non-editable install ROOT is site-packages, and
-# creating DATA_DIR there would flip the DEFAULT_CACHE_DIR choice above on the next
-# import. Writers create the directories they write to.
-MP_DIR = f"{DATA_DIR}/mp"
-WBM_DIR = f"{DATA_DIR}/wbm"
+# no import-time makedirs: writers create the directories they write to
+MP_DIR = f"{DEFAULT_CACHE_DIR}/mp"
+WBM_DIR = f"{DEFAULT_CACHE_DIR}/wbm"
 
 # threshold on hull distance for a material to be considered stable
 STABILITY_THRESHOLD = 0

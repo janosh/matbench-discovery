@@ -35,6 +35,14 @@ jobs:
         with:
           python-version: "3.14"
 
+      # data.py loads the WBM summary at import; reuse downloads across runs
+      - name: Cache downloaded data files
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/matbench-discovery
+          key: mbd-data-${{ runner.os }}-${{ hashFiles('matbench_discovery/data-files.yml') }}
+          restore-keys: mbd-data-${{ runner.os }}-
+
       # Live URL/release checks run once in model-pr-guard, independent of OS.
       # Keep coverage on Linux; tracing the same suite again slows Windows down.
       - name: Run tests
@@ -93,8 +101,8 @@ jobs:
           path: |
             models/**/*.csv.gz
             models/**/*.json.gz
-            data/mp
-            data/wbm
+            ~/.cache/matbench-discovery/mp
+            ~/.cache/matbench-discovery/wbm
           key: model-preds-${{ hashFiles('models/**/*.yml') }}
           restore-keys: model-preds-
 

@@ -36,7 +36,7 @@ if os.path.isfile(mp_trj_summary_path):
 else:
     raise FileNotFoundError(
         f"{mp_trj_summary_path} not found, build it with "
-        "uv run --with-editable . data/mp/build_mp_trj_summary.py"
+        "uv run --with-editable . scripts/data/build_mp_trj_summary.py"
     )
 
 
