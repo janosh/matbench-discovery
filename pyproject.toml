@@ -109,8 +109,8 @@ isort.split-on-trailing-comma = false
 "scripts/*" = ["D103", "D100", "D107", "D105", "ERA001"]
 "models/*" = ["D102", "D103", "D100", "D107", "D105", "ERA001"]
 "scripts/data/*" = ["S101"]
-
 "paper/*" = ["ERA001", "S101"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-p no:warnings"

@@ -8,7 +8,8 @@ as a supervised validation set.
     uv run --with-editable . scripts/md_convert_references_to_hdf5.py \
         --ref-dir ~/data/dynamat-v1.0/reference_AIMD_trajectories \
         --settings-csv ~/data/dynamat-v1.0/reference_AIMD_timestep_and_stride.csv \
-        --out data/md/2026-06-29-dynamat-v1.0-reference-trajectories.h5
+        --out ~/.cache/matbench-discovery/md/\
+2026-06-29-dynamat-v1.0-reference-trajectories.h5
 
 Parsing uses ``Trajectory.from_extxyz`` (bulk numpy/pandas reader), which converts even
 the largest 20k-70k-frame references in seconds-to-minutes rather than the hours ASE's

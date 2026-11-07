@@ -117,7 +117,7 @@ _private_reference_data:
       file_id: 66310031
       file_url: https://figshare.com/files/66310031
       name: dynamat-v1.0-private-labeled-reference-trajectories.h5
-      local_path: data/md/2026-06-12-cfpmd-26-aimd-reference-md-trajectories.h5
+      local_path: md/2026-06-12-cfpmd-26-aimd-reference-md-trajectories.h5 # relative to the data cache dir
       size: 876143672
       md5: 9da61aeb3f99c5bbfb1f9499dcf2ef88
       public_counterpart: dynamat_v1_0_md_trajectories
