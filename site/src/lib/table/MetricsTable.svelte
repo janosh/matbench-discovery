@@ -187,7 +187,7 @@
           col.key === model_name.key ||
           col.id === primary ||
           col.key === model_params.key ||
-          mobile_keys.includes(col.key) ||
+          mobile_keys.some((key) => key === col.key) ||
           metrics.has(col),
       )
       .map((col) => col.id)
