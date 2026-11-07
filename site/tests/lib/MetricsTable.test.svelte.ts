@@ -673,6 +673,7 @@ describe(`MetricsTable`, () => {
       `Org`, // METADATA_COLS
       `Params`, // HYPERPARAMS (short label)
       `rcut`, // HYPERPARAMS (short label) - textContent doesn't keep subscript
+      `Δxκ`, // HYPERPARAMS (κ displacement) - task pages show it only on phonons
       `Σ= 10-2`, // ALL_METRICS (Geo Opt) - textContent doesn't keep superscript
       `Σ= 10-5`, // ALL_METRICS (Geo Opt) - textContent doesn't keep superscript
       `Σ↑ 10-2`, // ALL_METRICS (Geo Opt) - textContent doesn't keep superscript

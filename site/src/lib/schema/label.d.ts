@@ -175,6 +175,7 @@ export interface HyperparamLabels {
   max_steps: Label1
   ase_optimizer: Label1
   cell_filter: Label1
+  displacement_distance: Label1
   batch_size: Label1
   epochs: Label1
   n_layers: Label1

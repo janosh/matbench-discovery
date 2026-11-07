@@ -81,7 +81,7 @@
 
   const { model_name, training_sets, targets, benchmark_added, links } = METADATA_COLS
   const { checkpoint_license, code_license, org } = METADATA_COLS
-  const { graph_construction_radius, model_params } = HYPERPARAMS
+  const { displacement_distance, graph_construction_radius, model_params } = HYPERPARAMS
   const heatmap_disabled_cols = new Set([
     training_sets.key,
     graph_construction_radius.key,
@@ -92,6 +92,7 @@
   const default_columns = [
     model_name,
     ...Object.values(ALL_METRICS),
+    displacement_distance, // hidden except on the phonons page
     model_params,
     targets,
     benchmark_added,

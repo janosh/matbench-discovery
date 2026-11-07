@@ -99,6 +99,7 @@ definitions:
       max_steps: { $ref: '#/definitions/Label' }
       ase_optimizer: { $ref: '#/definitions/Label' }
       cell_filter: { $ref: '#/definitions/Label' }
+      displacement_distance: { $ref: '#/definitions/Label' }
       batch_size: { $ref: '#/definitions/Label' }
       epochs: { $ref: '#/definitions/Label' }
       n_layers: { $ref: '#/definitions/Label' }
@@ -112,6 +113,7 @@ definitions:
       - max_steps
       - ase_optimizer
       - cell_filter
+      - displacement_distance
       - batch_size
       - epochs
       - n_layers

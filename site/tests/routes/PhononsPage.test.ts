@@ -155,6 +155,7 @@ describe(`Phonons Task Page`, () => {
       `κfailed`,
       `Im(ω)`,
       `W1(ω)`,
+      `Δxκ`,
     ]) {
       expect(headers).toContain(column)
     }
@@ -175,6 +176,21 @@ describe(`Phonons Task Page`, () => {
     }
     expect(sorted_header()?.textContent).toContain(`κSRME`)
     expect(sorted_header()?.getAttribute(`aria-sort`)).toBe(`ascending`)
+
+    // every phonon model shows the κ finite-difference step it was run with, and the
+    // leaderboard mixes legacy 0.01 Å runs with 0.03 Å ones, which the note explains
+    const dx_idx = headers.indexOf(`Δxκ`)
+    const dx_cells = new Set(
+      rows.map((row) => row.querySelectorAll(`td`)[dx_idx].textContent?.trim()),
+    )
+    expect(dx_cells).toContain(`0.01 Å`)
+    expect(dx_cells).toContain(`0.03 Å`)
+    // n/a only for MatRIS v0.5.0, whose pre-pipeline run records no kappa settings
+    for (const cell of dx_cells) expect(cell).toMatch(/^(?:0\.0\d Å|n\/a)$/u)
+    // collapse whitespace so the assertion doesn't depend on source line wrapping
+    const page_text = document.body.textContent?.replaceAll(/\s+/gu, ` `)
+    expect(page_text).toContain(`not strictly comparable`)
+    expect(page_text).toContain(`prescribed value for future model submissions is 0.03 Å`)
   })
 
   it(`orders Compare models by κSRME and updates the model URL`, async () => {

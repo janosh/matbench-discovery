@@ -408,6 +408,7 @@ export function assemble_row_data(
     const { ase_optimizer, max_steps, max_force, cell_filter } =
       model.hyperparams?.evaluation ?? {}
     const { n_layers } = model.hyperparams?.architecture ?? {}
+    const kappa_dx = model.hyperparams?.evaluation?.kappa?.displacement_distance
     const cell_filter_display =
       cell_filter && typeof cell_filter === `string`
         ? cell_filter.replace(/CellFilter$/, ``)
@@ -480,6 +481,10 @@ export function assemble_row_data(
       [METADATA_COLS.checkpoint_license.label]: checkpoint_license,
       [METADATA_COLS.code_license.label]: code_license,
       [HYPERPARAMS.graph_construction_radius.key]: r_cut_str,
+      [HYPERPARAMS.displacement_distance.key]:
+        kappa_dx === undefined
+          ? `n/a`
+          : `<span data-sort-value="${kappa_dx}">${kappa_dx} Å</span>`,
       org_logos: model.org_logos,
       authors: model.authors,
     }

@@ -301,6 +301,9 @@ def test_runnable_models_have_complete_shared_settings() -> None:
         assert isinstance(RelaxationSettings.from_model(model_key), RelaxationSettings)
     for model_key in configured_models:
         assert isinstance(KappaSettings.from_model(model_key), KappaSettings)
+        # explicit so a protocol-default change can't relabel recorded kappa runs
+        kappa = Model[model_key].metadata["hyperparams"]["evaluation"]["kappa"]
+        assert "displacement_distance" in kappa, f"{model_key} must pin it"
 
     prediction_models = {
         model.name
