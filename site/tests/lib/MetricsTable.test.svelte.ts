@@ -6,6 +6,7 @@ import {
   DISCOVERY_SET_LABELS,
   HYPERPARAMS,
   MD_METRICS,
+  PHONON_METRICS,
 } from '#lib/labels.js'
 import { training_set_link } from '#lib/metrics.js'
 import { comparison } from '#lib/model-comparison.svelte.js'
@@ -42,6 +43,28 @@ const header_cells = () => [
   ...document.querySelectorAll<HTMLTableCellElement>(`th:not(.row-num-col)`),
 ]
 const header_names = () => header_cells().map(header_name)
+
+// Mock MetricsTable's (max-width: 600px) media query; returns a resize function.
+const mock_mobile_media = (initial_mobile: boolean) => {
+  let is_mobile = initial_mobile
+  const media = Object.assign(new EventTarget(), {
+    matches: is_mobile,
+    media: `(max-width: 600px)`,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+  }) as MediaQueryList
+  Object.defineProperty(media, `matches`, { get: () => is_mobile })
+  const match_media = window.matchMedia
+  vi.spyOn(window, `matchMedia`).mockImplementation((query) =>
+    query === media.media ? media : match_media(query),
+  )
+  return async (mobile: boolean): Promise<void> => {
+    is_mobile = mobile
+    media.dispatchEvent(new Event(`change`))
+    await tick()
+  }
+}
 const ranking_context = () =>
   doc_query(`.ranking-context`).textContent?.replaceAll(/\s+/g, ` `)
 // click a column's visibility checkbox in the (popover) column menu
@@ -1190,27 +1213,36 @@ describe(`MetricsTable`, () => {
       expect(query_param(`column_order`)).toBeNull()
     })
 
+    it.each([
+      [[], false],
+      [[HYPERPARAMS.displacement_distance.key], true],
+    ])(
+      `mobile_keys=%j keeps extra columns in the mobile view: %s`,
+      async (mobile_keys, shown) => {
+        const resize = mock_mobile_media(false)
+        const phonon_keys = new Set([
+          `Model`,
+          PHONON_METRICS.κ_SRME.key,
+          `model_params`,
+          HYPERPARAMS.displacement_distance.key,
+        ])
+        mount_table({
+          model_filter: (model: ModelData) => model === ACTIVE_MODELS[0],
+          col_filter: (col: Label) => phonon_keys.has(col.key),
+          default_sort: { column: PHONON_METRICS.κ_SRME.key, dir: `asc` },
+          mobile_keys,
+        })
+        await tick()
+        expect(header_names()).toContain(`Δxκ`) // desktop shows every visible column
+        await resize(true)
+        expect(header_names().includes(`Δxκ`)).toBe(shown)
+      },
+    )
+
     it.each([false, true])(
       `keeps labels and explicit columns consistent across mobile=%s and resizing`,
       async (initial_mobile) => {
-        let is_mobile = initial_mobile
-        const media = Object.assign(new EventTarget(), {
-          matches: is_mobile,
-          media: `(max-width: 600px)`,
-          onchange: null,
-          addListener: () => {},
-          removeListener: () => {},
-        }) as MediaQueryList
-        Object.defineProperty(media, `matches`, { get: () => is_mobile })
-        const match_media = window.matchMedia
-        vi.spyOn(window, `matchMedia`).mockImplementation((query) =>
-          query === media.media ? media : match_media(query),
-        )
-        const resize = async (mobile: boolean): Promise<void> => {
-          is_mobile = mobile
-          media.dispatchEvent(new Event(`change`))
-          await tick()
-        }
+        const resize = mock_mobile_media(initial_mobile)
         const diatomics_keys = new Set([
           `Model`,
           ...Object.values(DIATOMICS_METRICS).map((col) => col.key),

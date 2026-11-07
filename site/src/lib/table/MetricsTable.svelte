@@ -116,6 +116,7 @@
     sort = $bindable({ ...default_sort }),
     column_preset = `default`,
     repro_task,
+    mobile_keys = [],
     ...rest
   }: HTMLAttributes<HTMLDivElement> & {
     discovery_set?: DiscoverySet
@@ -130,6 +131,8 @@
     column_preset?: string
     // task page whose rerun checks get a Reproducible column
     repro_task?: TimedTask
+    // extra column keys kept visible in the compact mobile view
+    mobile_keys?: string[]
   } = $props()
   // rows left after search/filters in the table's displayed order (all pages), bound
   // from HeatmapTable so export and comparison seeding follow what the table shows
@@ -184,6 +187,7 @@
           col.key === model_name.key ||
           col.id === primary ||
           col.key === model_params.key ||
+          mobile_keys.includes(col.key) ||
           metrics.has(col),
       )
       .map((col) => col.id)
