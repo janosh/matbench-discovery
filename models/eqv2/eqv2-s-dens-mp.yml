@@ -67,6 +67,7 @@ hyperparams:
     cell_filter: FrechetCellFilter
     kappa:
       protocol: phonondb-v1
+      displacement_distance: 0.01 # run before the protocol default matched the 0.03 Å PhononDB reference
   architecture:
     graph_construction_radius: 12.0
     max_neighbors: 20

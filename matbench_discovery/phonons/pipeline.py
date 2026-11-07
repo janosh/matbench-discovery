@@ -71,7 +71,8 @@ PlusMinusSetting = bool | Literal["auto"]
 class KappaSettings:
     """Validated model-specific protocol for the PhononDB kappa benchmark."""
 
-    displacement_distance: float = 0.01
+    # PhononDB-PBE reference force sets use 0.03 Å for every fc2 and fc3 displacement
+    displacement_distance: float = 0.03
     temperatures: tuple[float, ...] = (300.0,)
     ase_optimizer: str = "FIRE"
     ase_filter: str | None = "FrechetCellFilter"

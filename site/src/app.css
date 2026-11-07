@@ -66,9 +66,9 @@
     color-mix(in srgb, currentcolor 12%, transparent)
   );
 
-  /* ColumnPicker (column-select) pane: its currentColor-based defaults are
+  /* svelte-widgets ColumnPicker pane: its currentColor-based defaults are
   near-invisible in light mode; use the theme border + shadow instead */
-  --column-picker-menu-border: var(--border);
+  --column-picker-menu-border: 1px solid var(--border);
   --column-picker-menu-shadow: 0 4px 12px var(--shadow);
 
   /* ButtonGroup site theme */

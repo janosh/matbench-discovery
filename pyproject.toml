@@ -131,7 +131,7 @@ exclude-scripts = true
 
 [tool.ty.rules]
 # The isolated hook has no project dependencies, so third-party imports are unresolved.
-unresolved-import = "ignore"
+import-not-found = "ignore"
 unused-ignore-comment = "ignore"
 
 [tool.typos.default]

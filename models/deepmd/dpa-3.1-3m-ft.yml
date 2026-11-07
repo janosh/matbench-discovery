@@ -67,6 +67,7 @@ hyperparams:
     cell_filter: ExpCellFilter
     kappa:
       protocol: phonondb-v1
+      displacement_distance: 0.01 # run before the protocol default matched the 0.03 Å PhononDB reference
   architecture:
     n_layers: 16
     graph_construction_radius: 6.0
