@@ -372,12 +372,13 @@
     <ColumnPicker
       bind:columns
       search_text={(col) =>
-        [col.id, strip_html(col.label), col.description, col.group]
+        [col.id, strip_html(col.label), strip_html(col.description ?? ``), col.group]
           .filter(Boolean)
           .join(` `)}
     >
       <!-- labels are site-authored HTML (sub/sup), as in the metrics table headers -->
       {#snippet toggle_label({ column })}{@html column.label}{/snippet}
+      {#snippet description({ column })}{@html column.description}{/snippet}
       {#snippet header()}
         <label class="heatmap-toggle">
           <input

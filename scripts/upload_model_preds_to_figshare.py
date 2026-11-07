@@ -133,7 +133,8 @@ def update_one_modeling_task_article(
     if dry_run:
         print("\nDry run mode - no files will be uploaded")
 
-    existing_files = figshare.get_existing_files(article_id)
+    # dry runs without an article use placeholder ID 0, which has no files to list
+    existing_files = figshare.get_existing_files(article_id) if article_id else {}
     print(f"Found {len(existing_files)} existing files:")
     for idx, (file_name, file_data) in enumerate(existing_files.items(), start=1):
         print(f"{idx}. {file_name}: {file_data.get('id')}")
