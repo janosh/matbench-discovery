@@ -428,7 +428,11 @@ SPLICE_HINT = (
 ROSTER_CASES = [
     *((name, has_discovery_metrics, SPLICE_HINT) for name in DISCOVERY_PAYLOADS),
     *(
-        (name, has_geo_opt_analysis, "Run `python scripts/evals/geo_opt.py`.")
+        (
+            name,
+            has_geo_opt_analysis,
+            "Run `uv run --with-editable . scripts/evals/geo_opt.py`.",
+        )
         for name in GEO_OPT_PAYLOADS
     ),
     ("kappa-103-analysis", has_kappa_preds, SPLICE_HINT),
