@@ -123,7 +123,8 @@ def test_datasets_yaml_matches_python_registry() -> None:
         source_include = tomllib.load(file)["tool"]["uv"]["build-backend"][
             "source-include"
         ]
-    rel_path = os.path.relpath(f"{PKG_DIR}/datasets.yml", ROOT)
+    # source-include globs use forward slashes; relpath gives backslashes on Windows
+    rel_path = os.path.relpath(f"{PKG_DIR}/datasets.yml", ROOT).replace(os.sep, "/")
     assert any(PurePosixPath(rel_path).full_match(glob) for glob in source_include)
     with open(f"{PKG_DIR}/datasets.yml", encoding="utf-8") as file:
         datasets_from_file = yaml.safe_load(file)
