@@ -431,7 +431,7 @@ ROSTER_CASES = [
         (
             name,
             has_geo_opt_analysis,
-            "Run `uv run --with-editable . scripts/evals/geo_opt.py`.",
+            "Run `uv run --with-editable . scripts/evals/geo_opt.py --full-roster`.",
         )
         for name in GEO_OPT_PAYLOADS
     ),

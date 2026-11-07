@@ -44,7 +44,7 @@ The full set of processing steps used to curate the WBM test set from the raw da
 > [#358](https://github.com/janosh/matbench-discovery/issues/358) for details and
 > a spot-check quantifying the effect.
 
-Invoking the script `uv run --with-editable . scripts/data/compile_wbm_test_set.py` will auto-download and regenerate the WBM test set files from scratch. If you find
+Invoking the script `uv run --with-editable ".[fetch-wbm-data]" scripts/data/compile_wbm_test_set.py` will auto-download and regenerate the WBM test set files from scratch. If you find
 
 - any questionable structures or data records in the released test set, or
 - inconsistencies between the files on GitHub vs the output of that script,
