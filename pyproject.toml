@@ -121,7 +121,7 @@ markers = ["network: checks live remote URLs and release assets"]
 ignore-words-list = "nd,te,fpr,matris,titel"
 
 [dependency-groups]
-dev = ["prek>=0.5.5", "ty>=0.0.89"]
+dev = ["prek>=0.5.5", "ty>=0.0.97"]
 
 [tool.ty.environment]
 python-version = "3.14"
