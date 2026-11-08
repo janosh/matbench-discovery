@@ -290,6 +290,7 @@ def test_calc_kappa_metrics_with_different_values(
         Key.mode_weights,
         Key.srd,
         phonon_metrics.SRME_CENSORED,
+        phonon_metrics.BELOW_KAPPA_FLOOR,
         MbdKey.true_kappa_tot_avg,
     }
     # kappa_tot_avg is recomputed from the tensors: 4 vs reference 2 for both rows
@@ -365,6 +366,8 @@ def test_calc_kappa_metrics_from_dfs_symmetry(df_minimal: pd.DataFrame) -> None:
     result = phonon_metrics.calc_kappa_metrics_from_dfs(df_pred, df_true)
     assert result[Key.srme].eq(2).tolist() == [True, True, True]
     assert result[phonon_metrics.SRME_CENSORED].tolist() == [False, True, True]
+    # a valid zero kappa is not censored but is flagged as below the physical floor
+    assert result[phonon_metrics.BELOW_KAPPA_FLOOR].tolist() == [True, False, False]
 
 
 @pytest.mark.parametrize(

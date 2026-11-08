@@ -31,6 +31,34 @@ from matbench_discovery.hpc import with_cost_block
 
 KAPPA_ERROR_MAX = 2.0
 SRME_CENSORED = "srme_censored"
+# Lattice thermal conductivity (W/mK) below which a predicted kappa is flagged as
+# physically implausible for a crystal. Flagged values most likely come from broken
+# force-constant fits (e.g. overestimated third-order constants or near-unstable soft
+# modes), not physics. The flag is diagnostic only and does not change any score.
+# Why 0.1 W/mK:
+# 1. Validity of the phonon Boltzmann transport equation (BTE). Kinetic theory gives
+#    kappa = C v L / 3 (heat capacity per volume x sound speed x mean free path).
+#    With the classical heat capacity 3 n k_B of a dense solid (n = 0.02-0.1
+#    atoms/A^3) and sound speeds of 1-5 km/s, kappa = 0.1 W/mK means L of roughly
+#    0.1-4 A, i.e. at or below one interatomic spacing (the Ioffe-Regel limit).
+#    Phonons that scatter within one spacing are not well-defined quasiparticles,
+#    so the perturbative three-phonon BTE that produced the number no longer
+#    applies. The Wigner coherence term relaxes this only partly, as it still
+#    assumes phonons survive at least one oscillation.
+# 2. The amorphous limit. A crystal should not conduct heat worse than its glass.
+#    The Cahill-Watson-Pohl minimum, where every vibration scatters within half a
+#    wavelength, is about 0.1-0.2 W/mK for the softest heavy-atom compounds (e.g.
+#    iodides) and several W/mK for stiff light ones (e.g. BN, SiC). The lowest
+#    kappa measured in any dense solid is ~0.05 W/mK, in disordered layered WSe2
+#    (Chiritescu et al., Science 315, 351, 2007).
+# 3. The dataset. The lowest PhononDB-PBE reference in kappa-103 is 0.44 W/mK
+#    (AgBr), so every flagged value is at least 4x below every reference.
+# A single fixed floor is deliberately conservative: it only catches gross failures.
+# Stiff compounds have glass-like minima far above 0.1 W/mK, so an unphysically low
+# prediction for them (e.g. 0.5 W/mK for BN) is not flagged. A per-material floor
+# from each compound's own density and phonon spectrum would be stricter.
+KAPPA_FLOOR = 0.1
+BELOW_KAPPA_FLOOR = "below_kappa_floor"
 
 
 class InvalidKappaReferenceError(ValueError):
@@ -100,6 +128,7 @@ def calc_kappa_metrics_from_dfs(
         - SRD: Symmetric Relative Difference between ML and DFT conductivities
         - SRE: Absolute value of SRD
         - SRME: Mode-resolved error
+        - below_kappa_floor: valid predicted kappa below KAPPA_FLOOR
         - DFT_kappa_tot_avg: Reference DFT conductivity values
     """
     df_pred = df_pred.copy()
@@ -115,6 +144,10 @@ def calc_kappa_metrics_from_dfs(
         )
     ]
     df_pred[Key.sre] = df_pred[Key.srd].abs()
+    df_pred[BELOW_KAPPA_FLOOR] = [
+        (kappa := _single_kappa(value)) is not None and kappa < KAPPA_FLOOR
+        for value in df_pred[MbdKey.kappa_tot_avg]
+    ]
     srme, srme_censored = calc_kappa_srme_dataframes(df_pred, df_true)
     df_pred[Key.srme] = srme
     df_pred[SRME_CENSORED] = srme_censored

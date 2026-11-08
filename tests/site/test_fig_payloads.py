@@ -263,7 +263,7 @@ def check_kappa_103_analysis() -> None:
         for field in ("kappa_ml", "srme", "freq_w1"):
             assert_num_list(model[field], length=n_materials)
         assert all(val is None or 0 <= val <= 2 for val in model["srme"])
-        for field in ("imag_modes", "broken_sym", "max_steps"):
+        for field in ("imag_modes", "broken_sym", "max_steps", "below_floor"):
             flags = model[field]
             assert len(flags) == n_materials
             assert all(flag is None or isinstance(flag, bool) for flag in flags)

@@ -34,6 +34,7 @@
     [`imag_modes`, `imaginary modes`],
     [`broken_sym`, `broken symmetry`],
     [`max_steps`, `hit max steps`],
+    [`below_floor`, `κ below the physical floor`],
   ] as const
   const series_colors: Record<CrystalSystem, string> = {
     ...CRYSTAL_SYSTEM_COLORS,

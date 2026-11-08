@@ -5,7 +5,8 @@ predictions:
 - per-material SRME and scalar conductivity (vs the DFT reference values), driving a
   "kappa error vs kappa magnitude" scatter (colored by crystal system client-side)
 - per-material failure flags (imaginary phonon modes, broken symmetry during
-  relaxation, relaxation hit max steps), shown in the inspector scatter tooltips
+  relaxation, relaxation hit max steps, kappa below the physical floor), shown in
+  the inspector scatter tooltips
 - phonon frequency spectrum comparison vs DFT: per-material Wasserstein-1 distances
   plus quantile-quantile parity pairs (ML and DFT q-meshes differ - full vs
   irreducible - so frequencies are compared as weighted distributions, not pointwise)
@@ -21,6 +22,7 @@ from pymatviz.enums import Key
 from matbench_discovery import ROOT, figs, payload_numerics
 from matbench_discovery.cli import cli_args, is_full_model_run
 from matbench_discovery.enums import DataFiles, MbdKey, Model
+from matbench_discovery.metrics.phonons import BELOW_KAPPA_FLOOR
 
 KAPPA_DECIMALS: Final = 4
 FREQ_DECIMALS: Final = 2  # THz
@@ -30,6 +32,7 @@ FAILURE_FLAG_COLS: Final = {
     "imag_modes": Key.has_imag_ph_modes,
     "broken_sym": "broken_symmetry",
     "max_steps": "reached_max_steps",
+    "below_floor": BELOW_KAPPA_FLOOR,
 }
 
 
@@ -167,7 +170,7 @@ def main() -> int:
         if is_full_model_run():
             return 1
 
-    from matbench_discovery.metrics.phonons import KAPPA_ERROR_MAX
+    from matbench_discovery.metrics.phonons import KAPPA_ERROR_MAX, KAPPA_FLOOR
 
     provenance = figs.build_payload_provenance(
         generator=__file__,
@@ -189,6 +192,7 @@ def main() -> int:
             "failure_flags": dict(FAILURE_FLAG_COLS),
             "frequency_decimals": FREQ_DECIMALS,
             "kappa_error_max": KAPPA_ERROR_MAX,
+            "kappa_floor": KAPPA_FLOOR,
             "kappa_decimals": KAPPA_DECIMALS,
             "qq_levels": payload_numerics.round_list(QQ_LEVELS),
         },

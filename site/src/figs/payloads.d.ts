@@ -199,6 +199,7 @@ declare module '#figs/kappa-103-analysis.jsonl' {
       imag_modes: (boolean | null)[] // imaginary phonon modes after relaxation
       broken_sym: (boolean | null)[] // symmetry broken during relaxation
       max_steps: (boolean | null)[] // relaxation hit max steps (non-converged)
+      below_floor: (boolean | null)[] // valid ML kappa below the physical floor (parameters.kappa_floor)
       freq_w1: (number | null)[] // phonon spectrum Wasserstein-1 dist vs DFT (THz)
       freq_w1_mean: number | null
       // ML vs DFT phonon frequency quantile-quantile parity pairs (THz), 17
