@@ -1,5 +1,5 @@
 <script lang="ts">
-  import DATASETS from '$data/datasets.yml'
+  import DATASETS from '$pkg/datasets.yml'
   import { arr_to_str } from '#lib'
   import { title_case } from '#lib/labels.js'
   import { ACTIVE_MODELS } from '#lib/models.svelte.js'
@@ -65,7 +65,7 @@
       key: `key`,
       cell: name_cell,
       description: `Name of the dataset`,
-      sticky: true,
+      pin: `left`,
     },
     Structures: {
       key: `n_structures`,
@@ -142,7 +142,7 @@
     columns.filter((col) => col.sortable !== false).map(({ id }) => id),
   )
   const default_sort = { column: `Models`, dir: `desc` as const }
-  let sort = $state<TableSort>({ ...default_sort })
+  let sort = $state<TableSort[]>([{ ...default_sort }])
   const default_filters = { q: ``, access: ``, role: ``, method: `` }
   let filters = $state({ ...default_filters })
   const plot_options = (
@@ -168,11 +168,17 @@
     for (const [key, options] of filter_options) {
       filters[key] = valid_query_param(params, key, ``, options)
     }
-    sort = sort_from_query(params, default_sort, sortable_columns)
+    // `sort=none` keeps a cleared sort (the data's order) across reloads
+    sort =
+      params.get(`sort`) === `none`
+        ? []
+        : [sort_from_query(params, default_sort, sortable_columns)]
   }
   bind_url_params(read_url, () => [
     ...Object.entries(filters),
-    ...sort_url_entries(sort, default_sort),
+    ...(sort.length
+      ? sort_url_entries(sort[0], default_sort)
+      : [[`sort`, `none`, default_sort.column] as const]),
   ])
   const search_words = $derived(filters.q.toLowerCase().trim().split(/\s+/))
   const filtered = $derived(
@@ -323,7 +329,6 @@
     data={filtered}
     {columns}
     bind:sort
-    initial_sort={{ column: default_sort.column, direction: default_sort.dir }}
     row_key="key"
     row_animation_ms={300}
     sort_hint=""
@@ -364,7 +369,7 @@
 <p>
   <Icon icon={Edit} /> See incorrect data or a missing dataset? Suggest an edit to
   <a
-    href="{pkg.repository}/blob/main/data/datasets.yml"
+    href="{pkg.repository}/blob/main/matbench_discovery/datasets.yml"
     target="_blank"
     rel="noopener noreferrer">datasets.yml</a
   >.

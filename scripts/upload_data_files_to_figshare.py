@@ -8,7 +8,7 @@ from typing import Any
 
 from tqdm import tqdm
 
-from matbench_discovery import DATA_DIR, PKG_DIR, ROOT
+from matbench_discovery import DEFAULT_CACHE_DIR, PKG_DIR, ROOT
 from matbench_discovery.data import round_trip_yaml
 from matbench_discovery.enums import DataFiles
 from matbench_discovery.remote import figshare
@@ -44,7 +44,9 @@ def main(
 
     # validate every file before touching Figshare so a bad request changes nothing
     local = {
-        item for item in DataFiles if os.path.isfile(f"{DATA_DIR}/{item.rel_path}")
+        item
+        for item in DataFiles
+        if os.path.isfile(f"{DEFAULT_CACHE_DIR}/{item.rel_path}")
     }
     if files is None:
         files = [data_file for data_file in DataFiles if data_file in local]
@@ -118,7 +120,7 @@ def main(
 
         for data_file in (pbar := tqdm(files)):
             pbar.set_description(f"Processing {data_file.name}")
-            file_path = f"{DATA_DIR}/{data_file.rel_path}"
+            file_path = f"{DEFAULT_CACHE_DIR}/{data_file.rel_path}"
 
             # copy so we don't mutate existing_yaml
             file_data = existing_yaml[data_file.name].copy()
@@ -126,7 +128,7 @@ def main(
 
             # Always record the freshly computed hash: reusing a stored md5 here once
             # let re-uploads leave stale registry checksums (#357).
-            # Files upload under their DATA_DIR-relative path (e.g. wbm/x.csv.gz), so
+            # Files upload under their cache-dir-relative path (e.g. wbm/x.csv.gz), so
             # the remote listing must be matched by that name, not the basename.
             file_name = data_file.rel_path
             file_hash, file_size = figshare.get_file_hash_and_size(file_path)

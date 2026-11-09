@@ -16,7 +16,7 @@
 </script>
 
 <script lang="ts">
-  import DataReadme from '$data/wbm/readme.md'
+  import DataReadme from './wbm-readme.md'
   import hist_e_form from '#figs/hist-wbm-e-form-per-atom.json.gz'
   import hist_hull_dist from '#figs/hist-wbm-hull-dist.json.gz'
   import arity_hist from '#figs/mp-vs-mp-trj-vs-wbm-arity-hist.json.gz'

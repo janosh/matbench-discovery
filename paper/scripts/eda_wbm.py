@@ -13,13 +13,13 @@ from pymatgen.core import Composition, Structure
 from pymatviz.enums import ElemCountMode, Key
 from pymatviz.utils import si_fmt_int
 
-from matbench_discovery import PDF_FIGS, STABILITY_THRESHOLD
+from matbench_discovery import PDF_FIGS, STABILITY_THRESHOLD, WBM_DIR
 from matbench_discovery.data import df_wbm, load_datasets
 from matbench_discovery.energy import mp_elem_ref_entries
 from matbench_discovery.enums import DataFiles, MbdKey
 
-module_dir = os.path.dirname(__file__)
-os.makedirs(PDF_FIGS, exist_ok=True)
+for directory in (PDF_FIGS, WBM_DIR):
+    os.makedirs(directory, exist_ok=True)
 
 
 # %% load MP training set
@@ -117,8 +117,6 @@ for dataset, count_mode, elem_counts in all_counts:
 
     fig.layout.margin = dict(l=0, r=0, b=0, t=0)
     fig.show()
-    svg_path = f"{module_dir}/figs/wbm-elements.svg"
-    # pmv.save_fig(fig, svg_path, width=1000, height=500)
     pmv.save_fig(fig, f"{PDF_FIGS}/{dataset}-element-{count_mode}-counts.pdf")
 
 
@@ -333,9 +331,9 @@ wbm_id = df_sym_change.index[0]
 struct = Structure.from_dict(
     df_wbm_final_structs.loc[wbm_id][Key.computed_structure_entry]["structure"]
 )
-struct.to(f"{module_dir}/{wbm_id}.cif")
-struct.to(f"{module_dir}/{wbm_id}.json")
+struct.to(f"{WBM_DIR}/{wbm_id}.cif")
+struct.to(f"{WBM_DIR}/{wbm_id}.json")
 
 struct = Structure.from_dict(df_wbm_init_structs.loc[wbm_id][Key.init_struct])
-struct.to(f"{module_dir}/{wbm_id}-init.cif")
-struct.to(f"{module_dir}/{wbm_id}-init.json")
+struct.to(f"{WBM_DIR}/{wbm_id}-init.cif")
+struct.to(f"{WBM_DIR}/{wbm_id}-init.json")

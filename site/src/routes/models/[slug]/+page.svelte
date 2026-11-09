@@ -2,7 +2,7 @@
   import Logo from '#lib/Logo.svelte'
   import type { Author } from '#lib/types.js'
   import { comparison } from '#lib/model-comparison.svelte.js'
-  import DATASETS from '$data/datasets.yml'
+  import DATASETS from '$pkg/datasets.yml'
   import { model_metric_ranks, rank_color, RANKED_METRICS } from '#lib/rankings.js'
   import PtableInset from '#lib/PtableInset.svelte'
   import {
@@ -85,7 +85,7 @@
     format,
   }))
   const md_col_defs = [
-    { id: `system`, label: `System`, sticky: true },
+    { id: `system`, label: `System`, pin: `left` as const },
     { id: `temperature_kelvin`, label: `T (K)`, format: `.0f` },
     { id: `n_atoms`, label: `Atoms`, format: `.0f` },
     ...md_metric_cols,
@@ -152,8 +152,11 @@
       ),
     )
   }
-  let selected_metric = $derived(
-    task_metrics.find((metric) => task_key(metric.rank_href) === diagnostic_task),
+  // the selected task, when it has diagnostics to render below
+  let shown_metric = $derived(
+    has_task_results(diagnostic_task)
+      ? task_metrics.find((metric) => task_key(metric.rank_href) === diagnostic_task)
+      : undefined,
   )
   // Each leaderboard reads a different param: geo-opt/phonons select diagnostic models,
   // diatomics' curve picker replaces its whole selection (so keep the DFT references),
@@ -177,7 +180,7 @@
   let comparing = $derived(comparison.keys.has(model.model_key))
   let n_others = $derived(comparison.keys.size - (comparing ? 1 : 0))
   let env_packages = $derived(
-    model.environment.dependencies
+    data.details.environment.dependencies
       .map(parse_dependency_spec)
       .toSorted((dep_a, dep_b) =>
         dep_a.name.localeCompare(dep_b.name, `en`, { sensitivity: `base` }),
@@ -323,7 +326,7 @@
               ><Icon icon={Graph} /> Predictions</button
             >
           {/snippet}
-          {#each pred_files as { name, url } (url)}
+          {#each pred_files as { name, url, size } (url)}
             <a
               href={url}
               target="_blank"
@@ -331,6 +334,7 @@
               style="display: block"
             >
               {@html name}
+              {#if size}<small>({format_num(size, `.3~s`)}B)</small>{/if}
             </a>
           {/each}
         </Popover>
@@ -422,6 +426,10 @@
     {/each}
   </section>
 
+  {#if !shown_metric}
+    <p class="rank-hint">Click a task score to show this model's diagnostics below.</p>
+  {/if}
+
   <section class="model-info" aria-labelledby="model-info">
     <h2 id="model-info">Model info</h2>
     <div class="info-grid">
@@ -475,42 +483,14 @@
     {/each}
   </section>
 
-  {#if model.license.checkpoint !== `unreleased`}
-    <details class="run-model">
-      <summary>Run this model</summary>
-      <p>
-        Use the <a href="#dependencies">submitted environment</a> with the
-        {#if model.docs || model.repo}
-          <a href={model.docs || model.repo || ``}>upstream instructions</a>.
-        {:else}
-          <a href="{pkg.repository}/tree/HEAD/models/{model.dirname}">submission files</a
-          >.
-        {/if}
-      </p>
-      {#if runner_command}
-        <p>
-          From a repository checkout, run <code
-            >uv run models/run_kappa.py --list-models</code
-          >
-          to check checkpoint requirements. If this model requires one, add
-          <code>--checkpoint /path/to/checkpoint</code> below. Then execute the printed command
-          for a phonon smoke test in the model's isolated environment.
-        </p>
-        <div class="runner-command">
-          <code>{runner_command}</code><CopyButton content={runner_command} />
-        </div>
-      {/if}
-    </details>
-  {/if}
-
   <section id="diagnostics" aria-label="Task diagnostics">
-    {#if selected_metric && has_task_results(diagnostic_task)}
+    {#if shown_metric}
       <p class="diagnostic-context">
         <a
-          href="{selected_metric.rank_href}?{leaderboard_query(
+          href="{shown_metric.rank_href}?{leaderboard_query(
             diagnostic_task,
             model.model_key,
-          )}">Open {@html selected_metric.label} leaderboard and task details</a
+          )}">Open {@html shown_metric.label} leaderboard and task details</a
         >
       </p>
       {#if diagnostic_task === `discovery`}
@@ -642,7 +622,7 @@
             <HeatmapTable
               data={md_rows}
               columns={md_cols}
-              initial_sort="system"
+              sort={[{ column: `system`, dir: `asc` }]}
               default_num_format=".3~f"
             />
           </section>
@@ -659,8 +639,6 @@
           model selected.
         </p>
       {/if}
-    {:else}
-      <p>Select an available task above to inspect this model's results.</p>
     {/if}
   </section>
 
@@ -675,11 +653,11 @@
     </ol>
   </section>
 
-  {#if model.trained_by}
+  {#if data.details.trained_by}
     <section class="trained-by">
       <h2 id="trained-by">Trained by</h2>
       <ol>
-        {#each model.trained_by as author (author.name)}
+        {#each data.details.trained_by as author (author.name)}
           <li>
             {@render author_brief(author)}
           </li>
@@ -688,9 +666,9 @@
     </section>
   {/if}
 
-  {#if model.notes?.html}
+  {#if data.details.notes?.html}
     <section class="notes">
-      {#each Object.entries(model.notes.html) as [key, note] (key)}
+      {#each Object.entries(data.details.notes.html) as [key, note] (key)}
         <h2 id={key}>{humanize(key)}</h2>
         <div>{@html note}</div>
       {/each}
@@ -732,6 +710,34 @@
           </li>
         {/each}
       </ul>
+    </details>
+  {/if}
+
+  {#if model.license.checkpoint !== `unreleased`}
+    <details class="run-model">
+      <summary><h2 id="run-this-model">Run this model</h2></summary>
+      <p>
+        Use the <a href="#dependencies">submitted environment</a> with the
+        {#if model.docs || model.repo}
+          <a href={model.docs || model.repo || ``}>upstream instructions</a>.
+        {:else}
+          <a href="{pkg.repository}/tree/HEAD/models/{model.dirname}">submission files</a
+          >.
+        {/if}
+      </p>
+      {#if runner_command}
+        <p>
+          From a repository checkout, run <code
+            >uv run models/run_kappa.py --list-models</code
+          >
+          to check checkpoint requirements. If this model requires one, add
+          <code>--checkpoint /path/to/checkpoint</code> below. Then execute the printed command
+          for a phonon smoke test in the model's isolated environment.
+        </p>
+        <div class="runner-command">
+          <code>{runner_command}</code><CopyButton content={runner_command} />
+        </div>
+      {/if}
     </details>
   {/if}
 </div>
@@ -797,11 +803,11 @@
     font-size: 0.9em;
     color: var(--text-secondary);
   }
-  .run-model {
-    margin: 1em 0;
-    summary {
-      padding-block: 0.5em;
-    }
+  .rank-hint {
+    margin-top: 0;
+    text-align: center;
+    font-size: 0.9em;
+    color: var(--text-secondary);
   }
   .runner-command {
     display: flex;
@@ -870,12 +876,14 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  details.deps {
+  details:is(.deps, .run-model) {
     margin: 2em 0;
     summary h2 {
       display: inline;
       cursor: pointer;
     }
+  }
+  details.deps {
     ul {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(min(18em, 100%), 1fr));

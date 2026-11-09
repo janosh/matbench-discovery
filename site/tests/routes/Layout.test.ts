@@ -1,5 +1,5 @@
 import { goto } from '$app/navigation'
-import DATASETS from '$data/datasets.yml'
+import DATASETS from '$pkg/datasets.yml'
 import { MODELS, score_weight_records } from '#lib/models.svelte.js'
 import {
   calculate_cds,

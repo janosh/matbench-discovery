@@ -69,7 +69,6 @@ hyperparams:
     kappa:
       protocol: phonondb-v1
       displacement_distance: 0.03
-      save_forces: true
   architecture:
     graph_construction_radius: 6.0
     max_neighbors: 384
@@ -243,10 +242,10 @@ metrics:
           size: 23627902
           md5: 43df28809e65359e6c666f5b3fca1187
         force_file:
-          name: models/deepmd/dpa-4.0.1-pro-mptrj/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-          url: https://figshare.com/files/70334259
-          size: 8810972
-          md5: 8b262342ef301318306ae69474012a51
+          name: models/deepmd/dpa-4.0.1-pro-mptrj/harmonic/2026-09-05-phonons-kappa-103-forces.h5
+          url: https://figshare.com/files/71263141
+          size: 2232730
+          md5: b6fe5c078bdc3a49d71c5f79ee53179c
         run_info_file:
           name: models/deepmd/dpa-4.0.1-pro-mptrj/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334262

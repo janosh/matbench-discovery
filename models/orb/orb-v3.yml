@@ -63,7 +63,6 @@ hyperparams:
       protocol: phonondb-v1
       displacement_distance: 0.03
       is_plusminus: true
-      save_forces: true
   architecture:
     n_layers: 5
     graph_construction_radius: 6.0
@@ -182,10 +181,10 @@ metrics:
           size: 23724816
           md5: 810a30b2b828e249522848266b37c3a2
         force_file:
-          name: models/orb/orb-v3/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-          url: https://figshare.com/files/70334646
-          size: 14120327
-          md5: 86cb0cbf5b1aed6a43a9f5d61af36655
+          name: models/orb/orb-v3/harmonic/2026-09-05-phonons-kappa-103-forces.h5
+          url: https://figshare.com/files/71263279
+          size: 3141884
+          md5: 92467a236cd7d7b7d9607363d475f110
         run_info_file:
           name: models/orb/orb-v3/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334640

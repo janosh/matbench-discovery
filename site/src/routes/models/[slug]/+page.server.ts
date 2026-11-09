@@ -1,4 +1,5 @@
 import { MODELS } from '#lib/models.svelte.js'
+import { model_details } from '#lib/server/model-details.js'
 import { read_md_per_system } from '#lib/server/predictions.js'
 import { error } from '@sveltejs/kit'
 import type { EntryGenerator, PageServerLoad } from './$types'
@@ -12,5 +13,9 @@ export const load: PageServerLoad = async ({ params }) => {
   if (!model) {
     error(404, `Model "${params.slug}" not found`)
   }
-  return { model_key: model.model_key, md_per_system: await read_md_per_system(model) }
+  return {
+    model_key: model.model_key,
+    md_per_system: await read_md_per_system(model),
+    details: model_details(model.model_key),
+  }
 }

@@ -15,9 +15,10 @@ import {
   openness_tooltips,
   targets_tooltips,
 } from '#lib/metrics.js'
-import type { ModelData } from '#lib/types.js'
+import { model_details } from '#lib/server/model-details.js'
+import type { ModelData, ModelDetails } from '#lib/types.js'
 import * as predictions from '#lib/server/predictions.js'
-import DATASETS from '$data/datasets.yml'
+import DATASETS from '$pkg/datasets.yml'
 import ModelPage from '#routes/models/[slug]/+page.svelte'
 import { load } from '#routes/models/[slug]/+page.server.js'
 import { format_num } from 'matterviz/labels'
@@ -40,17 +41,26 @@ type PageData = ComponentProps<typeof ModelPage>[`data`]
 const fixture_data = (
   model: ModelData,
   md_per_system: PageData[`md_per_system`] = null,
+  details: Partial<ModelDetails> = {},
 ): PageData => {
   const canonical = MODELS.find((entry) => entry.model_key === model.model_key)
   if (!canonical) throw new Error(`Missing fixture model ${model.model_key}`)
   patch_model(canonical, model)
-  return { model_key: model.model_key, md_per_system }
+  return {
+    model_key: model.model_key,
+    md_per_system,
+    details: { ...model_details(model.model_key), ...details },
+  }
 }
-const mount_page = (model = test_model) =>
-  mount(ModelPage, { target: document.body, props: { data: fixture_data(model) } })
+const mount_page = (model = test_model, details: Partial<ModelDetails> = {}) =>
+  mount(ModelPage, {
+    target: document.body,
+    props: { data: fixture_data(model, null, details) },
+  })
 const locator_model = MODELS.find((model) => model.model_key === `tace-oam-l`)
 if (!locator_model) throw new Error(`missing TACE-OAM-L model`)
-const locator_dependency = locator_model.environment.dependencies[0]
+const locator_deps = model_details(locator_model.model_key).environment.dependencies
+const locator_dependency = locator_deps[0]
 if (!locator_dependency) throw new Error(`missing TACE-OAM-L dependency`)
 const locator_detail = parse_dependency_spec(locator_dependency).detail
 
@@ -71,7 +81,14 @@ describe(`Model Detail Page`, () => {
       >[0]),
     )
     const data: PageData = JSON.parse(serialized)
-    expect(data).toEqual({ model_key: score_model.model_key, md_per_system: null })
+    // only the detail-page fields stripped from client bundles ride along with the key
+    expect(Object.keys(data).toSorted()).toEqual([
+      `details`,
+      `md_per_system`,
+      `model_key`,
+    ])
+    expect(data).toMatchObject({ model_key: score_model.model_key, md_per_system: null })
+    expect(data.details).toEqual(model_details(score_model.model_key))
     mount(ModelPage, { target: document.body, props: { data } })
     await tick()
     const initial_values = [
@@ -142,7 +159,7 @@ describe(`Model Detail Page`, () => {
         data_leakage: `<h3>Model notes</h3><p>Model description</p><ul><li>Run notes</li></ul>`,
       },
     }
-    mount_page({ ...test_model, hyperparams, pypi, notes })
+    mount_page({ ...test_model, hyperparams, pypi }, { notes })
     expect(document.querySelector(`.discovery-detail`)).toBeNull()
     await tick()
     doc_query<HTMLAnchorElement>(
@@ -227,7 +244,7 @@ describe(`Model Detail Page`, () => {
       )
     }
 
-    const expected_trainers = test_model.trained_by ?? []
+    const expected_trainers = model_details(test_model.model_key).trained_by ?? []
     const trainers = document.querySelectorAll(`.trained-by li`)
     expect(trainers).toHaveLength(expected_trainers.length)
     for (const [idx, trainer] of expected_trainers.entries()) {
@@ -353,6 +370,9 @@ describe(`Model Detail Page`, () => {
       expect(Boolean(document.querySelector(`.run-model a[href="#dependencies"]`))).toBe(
         checkpoint !== `unreleased`,
       )
+      // run instructions follow the environment they reference, not the task scores
+      const run_model = document.querySelector(`.run-model`)
+      if (run_model) expect(run_model.previousElementSibling?.matches(`.deps`)).toBe(true)
     },
   )
 
@@ -363,7 +383,7 @@ describe(`Model Detail Page`, () => {
     const names = [...document.querySelectorAll(`.deps li > a:first-child`)].map(
       (name) => name.textContent?.trim() ?? ``,
     )
-    expect(names).toHaveLength(locator_model.environment.dependencies.length)
+    expect(names).toHaveLength(locator_deps.length)
     expect(names).toEqual(
       names.toSorted((name_a, name_b) =>
         name_a.localeCompare(name_b, `en`, { sensitivity: `base` }),
@@ -403,6 +423,10 @@ describe(`Model Detail Page`, () => {
     expect(link_texts.some((text) => text.startsWith(`Discovery F1`))).toBe(true)
     expect(document.querySelector(`.energy-parity-plot`)).toBeNull()
     expect(rank_links.some((link) => link.textContent?.includes(`No results`))).toBe(true)
+    // until a task is picked, the hint sits right under the score cards
+    expect(doc_query(`.rank-card + .rank-hint`).textContent).toContain(
+      `Click a task score`,
+    )
     rank_links[0]?.dispatchEvent(new MouseEvent(`mouseenter`))
     await vi.waitFor(() =>
       expect(document.querySelector(`.popover`)?.textContent?.trim()).toMatch(
@@ -436,6 +460,7 @@ describe(`Model Detail Page`, () => {
     expect(query_param(`diagnostic`)).toBe(`discovery`)
     expect(document.querySelector(`.discovery-detail`)).not.toBeNull()
     expect(rank_links[0].getAttribute(`aria-current`)).toBe(`true`)
+    expect(document.querySelector(`.rank-hint`)).toBeNull()
     // discovery's leaderboard ignores `models`, so highlight the row via `compare`
     expect(doc_query(`.diagnostic-context a`).getAttribute(`href`)).toBe(
       `/benchmarks/discovery?compare=${test_model.model_key}`,
@@ -452,6 +477,22 @@ describe(`Model Detail Page`, () => {
     expect(doc_query(`.diagnostic-context a`).getAttribute(`href`)).toBe(
       `/benchmarks/phonons?model=${test_model.model_key}`,
     )
+  })
+
+  it(`keeps the score-card hint when the selected task has no results`, async () => {
+    const md_status_only = {
+      ...test_model,
+      metrics: { ...test_model.metrics, md: { status: `not_available` as const } },
+    }
+    await mount_with_url(
+      ModelPage,
+      `http://localhost/models/${test_model.model_key}?diagnostic=md`,
+      { props: { data: fixture_data(md_status_only) } },
+    )
+    expect(doc_query(`.rank-card + .rank-hint`).textContent).toContain(
+      `Click a task score`,
+    )
+    expect(document.querySelector(`.diagnostic-context`)).toBeNull()
   })
 
   it(`appends the model to the current comparison in its leaderboard link`, async () => {
@@ -554,7 +595,7 @@ describe(`Model Detail Page`, () => {
     await mount_with_url(
       ModelPage,
       `http://localhost/models/${test_model.model_key}?diagnostic=discovery&energy_tab=each`,
-      { props: { data: { model_key: test_model.model_key, md_per_system: null } } },
+      { props: { data: fixture_data(test_model) } },
     )
 
     expect(

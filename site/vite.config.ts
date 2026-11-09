@@ -16,7 +16,7 @@ import { parse_yaml, yaml_plugin } from 'svelte-widgets/yaml'
 import ts from 'typescript'
 import type { Alias, Plugin } from 'vite'
 import pkg from './package.json' with { type: 'json' }
-import { render_data_markdown } from './scripts/markdown-data.ts'
+import { render_data_markdown, slim_client_model_data } from './scripts/markdown-data.ts'
 
 // sveltekit() plugin options: svelte compiler settings plus kit options (adapter, version)
 export const svelte_config = {
@@ -127,6 +127,24 @@ export default /* @__PURE__ */ attach_style(JSON.parse(${JSON.stringify(json)}))
   },
 })
 
+// YAML imports with Markdown notes rendered; client bundles additionally drop model
+// fields only SSR needs (see slim_client_model_data). Vite passes `ssr` per transform.
+// Vitest has no client/server split (page tests mount components with server-loaded
+// fixtures), so it keeps full data; tests cover slim_client_model_data directly.
+const site_yaml_plugin = (): Plugin => {
+  const ssr_yaml = yaml_plugin({ transform: render_data_markdown })
+  const client_yaml = yaml_plugin({
+    transform: async (data, filename) =>
+      slim_client_model_data(await render_data_markdown(data, filename), filename),
+  })
+  return {
+    name: ssr_yaml.name,
+    enforce: ssr_yaml.enforce,
+    transform: (source, id, options) =>
+      (options?.ssr || process.env.VITEST ? ssr_yaml : client_yaml).transform(source, id),
+  }
+}
+
 // Custom Vite plugin that watches *-schema.yml files and writes src/lib/schema/*.d.ts
 function yaml_schema_to_typescript_plugin(): Plugin {
   const schema_map = {
@@ -210,7 +228,7 @@ function yaml_schema_to_typescript_plugin(): Plugin {
   }
 }
 
-// Out-of-package dirs ($root, $data, $pkg) can't be # subpath imports (Node and TS reject ../
+// Out-of-package dirs ($root, $pkg) can't be # subpath imports (Node and TS reject ../
 // targets), so tsconfig.json paths declares them and Vite aliases are derived from it here.
 // Only this repo's compilerOptions are parsed: an own `paths` replaces (not merges with) the
 // one from kit's extended $app/tsconfig, which may not exist yet before the first kit sync.
@@ -248,7 +266,7 @@ export default {
   },
   plugins: [
     sveltekit(svelte_config),
-    yaml_plugin({ transform: render_data_markdown }),
+    site_yaml_plugin(),
     yaml_schema_to_typescript_plugin(),
     json_payload_plugin(),
   ],

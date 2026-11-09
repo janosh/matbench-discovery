@@ -64,6 +64,7 @@ hyperparams:
     cell_filter: ExpCellFilter
     kappa:
       protocol: phonondb-v1
+      displacement_distance: 0.01 # legacy runs used 0.01 Å; the PhononDB-PBE reference uses 0.03 Å
   architecture:
     n_layers: 16
     graph_construction_radius: 6.0
@@ -190,10 +191,10 @@ metrics:
           size: 23537466
           md5: b473d9c26755cb6a7cc4f67935c66fa7
         force_file:
-          name: models/deepmd/dpa3-v1-mptrj/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-          url: https://figshare.com/files/70334196
-          size: 8762940
-          md5: 39485e243818fbacebb3bdbaf1ca15e1
+          name: models/deepmd/dpa3-v1-mptrj/harmonic/2026-09-05-phonons-kappa-103-forces.h5
+          url: https://figshare.com/files/71263117
+          size: 2149094
+          md5: b24008f803af30a3b8c897148d732be8
         run_info_file:
           name: models/deepmd/dpa3-v1-mptrj/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334199

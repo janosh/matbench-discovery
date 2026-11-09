@@ -104,7 +104,8 @@ def test_init_phono3py(
     assert len(ph3.supercell) == len(cu_atoms)  # 1x1x1 supercell
     np.testing.assert_allclose(
         np.linalg.norm(ph3.displacements, axis=-1),
-        0.01 if displacement_distance is None else displacement_distance,
+        # default must match the 0.03 Å PhononDB-PBE reference displacements
+        0.03 if displacement_distance is None else displacement_distance,
         rtol=1e-7,
         atol=0,
     )

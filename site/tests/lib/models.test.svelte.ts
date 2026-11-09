@@ -1,4 +1,4 @@
-import DATASETS from '$data/datasets.yml'
+import DATASETS from '$pkg/datasets.yml'
 import {
   calculate_cps,
   CPS_CONFIG,
@@ -9,6 +9,7 @@ import { ALL_METRICS } from '#lib/labels.js'
 import {
   ALL_TRAINING_SETS,
   calculate_training_sizes,
+  get_pred_file_urls,
   make_table_filters,
   MODEL_METADATA_PATHS,
   MODELS,
@@ -70,6 +71,86 @@ describe(`MODELS array`, () => {
     expect(mirror_physics_model.org_logos?.map((logo) => logo.name)).toContain(
       `Mirror Physics`,
     )
+  })
+})
+
+describe(`get_pred_file_urls`, () => {
+  it(`lists every task file with its size, incl. force sets, skipping missing urls`, () => {
+    const [base_model] = MODELS
+    if (!base_model) throw new Error(`no models`)
+    const file = (id: number, size?: number) => ({
+      name: `f${id}`,
+      url: `https://figshare.com/files/${id}`,
+      size,
+    })
+    const kappa_scores = {
+      κ_SRME: 0.1,
+      κ_SRE: 0.1,
+      κ_SRD: 0,
+      κ_failure_rate: 0,
+      imaginary_mode_rate: 0,
+      spectrum_w1: null,
+    }
+    const model: ModelData = {
+      ...base_model,
+      metrics: {
+        discovery: { pred_file: file(1, 1315780) },
+        geo_opt: {
+          pred_file: null,
+          // only symprec=1e-2 has an analysis file, so 1e-5 must be skipped
+          'symprec=1e-2': {
+            rmsd: 0.06,
+            n_sym_ops_mae: 2,
+            symmetry_decrease: 0.1,
+            symmetry_match: 0.8,
+            symmetry_increase: 0.1,
+            symmetry_lateral: 0,
+            n_structures: 256963,
+            analysis_file: file(7, 1349063),
+          },
+        },
+        phonons: {
+          kappa_103: {
+            ...kappa_scores,
+            pred_file: file(2),
+            force_file: file(3, 49427958),
+            harmonic: {
+              phonon_file: file(4),
+              force_file: file(5),
+              run_info_file: file(6),
+            },
+          },
+        },
+      },
+    }
+    expect(get_pred_file_urls(model)).toEqual([
+      { name: `Discovery: WBM formation energies`, url: file(1).url, size: 1315780 },
+      {
+        name: `Geometry Optimization: symmetry analysis at symprec=1e-2`,
+        url: file(7).url,
+        size: 1349063,
+      },
+      {
+        name: `Phonons: κ-103 thermal conductivities and frequencies`,
+        url: file(2).url,
+        size: undefined,
+      },
+      {
+        name: `Phonons: κ-103 FC2/FC3 HDF5 force sets`,
+        url: file(3).url,
+        size: 49427958,
+      },
+      {
+        name: `Phonons: harmonic band structures and DOS`,
+        url: file(4).url,
+        size: undefined,
+      },
+      {
+        name: `Phonons: harmonic FC2 HDF5 force sets`,
+        url: file(5).url,
+        size: undefined,
+      },
+    ])
   })
 })
 
@@ -351,7 +432,7 @@ describe(`fig-helpers payload styling`, () => {
 // value, sequence item or flow collection). Use plain integers (`154719`) instead.
 const repo_root = path.resolve(import.meta.dirname, `..`, `..`, `..`)
 
-const yaml_files = [`models`, `data`].flatMap((dir) =>
+const yaml_files = [`models`, `matbench_discovery`].flatMap((dir) =>
   readdirSync(path.join(repo_root, dir), { recursive: true })
     .map(String)
     .filter((name) => name.endsWith(`.yml`))

@@ -58,8 +58,8 @@ hyperparams:
     cell_filter: FrechetCellFilter
     kappa:
       protocol: phonondb-v1
+      displacement_distance: 0.01 # legacy runs used 0.01 Å; the PhononDB-PBE reference uses 0.03 Å
       is_plusminus: true
-      save_forces: true
   architecture:
     n_layers: 15
     graph_construction_radius: 10.0
@@ -223,10 +223,10 @@ metrics:
           size: 23672373
           md5: 0ec88ad933488a4fbfca1d04a65e9b13
         force_file:
-          name: models/orb/orb-v2-mptrj/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-          url: https://figshare.com/files/70334631
-          size: 14368360
-          md5: 103d2dfaeac8b4240e3e3d0bf175bff3
+          name: models/orb/orb-v2-mptrj/harmonic/2026-09-05-phonons-kappa-103-forces.h5
+          url: https://figshare.com/files/71263276
+          size: 3149873
+          md5: f025196b67c76e8df3f5a3e003b21602
         run_info_file:
           name: models/orb/orb-v2-mptrj/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334637

@@ -3,6 +3,8 @@ import { ACTIVE_MODELS, has_diatomics_curves } from '#lib/models.svelte.js'
 import * as predictions from '#lib/server/predictions.js'
 import { fetch_diatomics_data, read_md_per_system } from '#lib/server/predictions.js'
 import { load } from '#routes/benchmarks/diatomics/+page.server.js'
+import { GET } from '#routes/benchmarks/diatomics/curves/[key].json/+server.js'
+import { diatomic_page_curves } from '#lib/server/diatomics.js'
 import { createHash } from 'node:crypto'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -135,49 +137,56 @@ describe(`diatomics server data loader`, () => {
     ({ model_key }) => model_key,
   )
 
-  it(`page load returns model keys (not ModelData) with homonuclear energies only`, async () => {
+  it(`page load returns model keys only, no curves`, () => {
+    const data = load_page()
+    if (!data) throw new Error(`diatomics load returned nothing`)
+    // newest first: the page's color palette and curve picker follow this order
+    expect(data).toEqual({
+      diatomic_model_keys: ACTIVE_MODELS.filter(has_diatomics_curves)
+        .toSorted(by_benchmark_added_desc)
+        .map(({ model_key }) => model_key),
+      reference_names: [`PBE`, `r2SCAN`],
+    })
+  })
+
+  it(`per-model curves keep homonuclear energies only, rounded to 6 significant digits`, async () => {
     const curves = {
       distances: [1, 2],
-      'homo-nuclear': { 'H-H': { energies: [0, 1], forces: [[[0, 0, 0]]] } },
+      'homo-nuclear': {
+        'H-H': { energies: [0.123456789, -4.56789012345], forces: [[[0, 0, 0]]] },
+      },
       'hetero-nuclear': { 'H-He': { energies: [0, 1] } },
     }
     vi.spyOn(predictions, `fetch_diatomics_data`).mockResolvedValue(
       curves as unknown as Awaited<ReturnType<typeof fetch_diatomics_data>>,
     )
-    const data = await load_page()
-    if (!data) throw new Error(`diatomics load returned nothing`)
-    // newest first: the page's color palette and curve picker follow this order
-    expect(data.diatomic_model_keys).toEqual(
-      ACTIVE_MODELS.filter(has_diatomics_curves)
-        .toSorted(by_benchmark_added_desc)
-        .map(({ model_key }) => model_key),
-    )
-    expect(Object.keys(data).toSorted()).toEqual([
-      `diatomic_curves`,
-      `diatomic_model_keys`,
-      `reference_names`,
-    ])
-    expect(data.diatomic_curves[diatomics_keys[0]]).toEqual({
+    expect(await diatomic_page_curves(diatomics_keys[0])).toEqual({
       distances: [1, 2],
-      'homo-nuclear': { 'H-H': { energies: [0, 1] } },
+      'homo-nuclear': { 'H-H': { energies: [0.123457, -4.56789] } },
     })
+    // DFT references keep tooltip fields and come from the bundled file, not a download
+    const pbe = await diatomic_page_curves(`PBE`)
+    expect(Object.keys(pbe[`homo-nuclear`][`H-H`] ?? {}).toSorted()).toEqual([
+      `bond_forces`,
+      `distances`,
+      `energies`,
+      `magmoms`,
+      `spin_candidates`,
+    ])
   })
 
-  it(`page load fails (and so the build) when any model's curves fail to download`, async () => {
+  it(`a failed curve download fails its endpoint (and so the build)`, async () => {
     const failing_key = diatomics_keys[1]
-    vi.spyOn(predictions, `fetch_diatomics_data`).mockImplementation(async (opts) => {
-      if (
-        opts.pred_file ===
-        ACTIVE_MODELS.find(({ model_key }) => model_key === failing_key)?.metrics
-          ?.diatomics?.pred_file
-      )
-        throw new Error(`HTTP 503`)
-      return { distances: [], 'homo-nuclear': {} }
-    })
-    const result = load_page()
+    vi.spyOn(predictions, `fetch_diatomics_data`).mockRejectedValue(new Error(`HTTP 503`))
+    const result = diatomic_page_curves(failing_key)
     await expect(result).rejects.toThrow(
       `Failed to fetch diatomics curves for ${failing_key}`,
     )
     await expect(result).rejects.toHaveProperty(`cause.message`, `HTTP 503`)
+  })
+
+  it(`curves endpoint 404s for unknown keys`, async () => {
+    const request = { params: { key: `no-such-model` } } as Parameters<typeof GET>[0]
+    await expect(GET(request)).rejects.toMatchObject({ status: 404 })
   })
 })

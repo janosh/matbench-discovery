@@ -853,3 +853,13 @@ def test_targeted_kappa_handles_declared_artifacts(
                 "model_key": BrokenModel.key,
                 "materials": {},
             }
+
+
+def test_compact_extxyz_rounds_positions_and_drops_negative_zero() -> None:
+    """Positions round to the requested decimals; ulp-level -0.0 becomes 0.0."""
+    text = (
+        '2\nLattice="3 0 0 0 3 0 0 0 3" Properties=species:S:1:pos:R:3 pbc="T T T"\n'
+        "Na -1e-17 1.23456 0.0\nCl 1.5 -1.5004 1.5\n"
+    )
+    compact = asset_helpers.compact_extxyz(text, decimals=3).splitlines()
+    assert compact[2:] == ["Na 0.0 1.235 0.0", "Cl 1.5 -1.5 1.5"]

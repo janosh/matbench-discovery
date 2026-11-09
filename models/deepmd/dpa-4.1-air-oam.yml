@@ -81,7 +81,6 @@ hyperparams:
       max_steps: 300
       symprec: 1.0e-05
       conductivity_broken_symm: false
-      save_forces: true
     ase_optimizer: FIRE
     max_force: 0.02
     max_steps: 500
@@ -100,7 +99,11 @@ notes:
   evaluation: >-
     Per-structure relaxation convergence and iteration counts were not recorded. MD
     energy and force RMSEs are not reported because the labeled reference data are not
-    publicly available.
+    publicly available. The submitted κ-103 predictions for CuH (mp-24093) did not
+    come from the submitted FC2/FC3 forces (κ 5.11 vs 4.86 W/mK when refit from
+    them). The maintainers recomputed that row's frequencies and κ from the stored
+    forces with the original phono3py pipeline. The other 102 rows are unchanged,
+    and the original file remains on Figshare.
   diatomics: >-
     Some homonuclear pairs, especially Ne, exhibit large errors and numerical
     sensitivity at short separations. No elements were excluded from the metrics.
@@ -176,22 +179,17 @@ metrics:
         md5: d4c0af86ec0526b7aa240ae570744068
   phonons:
     kappa_103:
-      κ_SRME: 0.12900276964902535
-      κ_SRE: 0.07119088692388024
-      κ_SRD: -0.03732411764562597
+      κ_SRME: 0.1363
+      κ_SRE: 0.0717
+      κ_SRD: -0.0378
       κ_failure_rate: 0.0
       imaginary_mode_rate: 0.0
-      spectrum_w1: 0.06989805825242718
+      spectrum_w1: 0.0721
       pred_file:
         name: models/deepmd/dpa-4.1-air-oam/2026-10-02-phonons-kappa-103.json.gz
-        size: 11003523
-        md5: e8d45c3fff3c66262fb72badf707b05d
-        url: https://ndownloader.figshare.com/files/70537239
-      force_file:
-        name: models/deepmd/dpa-4.1-air-oam/2026-10-02-phonons-kappa-103-forces.json.gz
-        size: 59224134
-        md5: 32dc3cb055b9b9987c70ac0076bd7db8
-        url: https://ndownloader.figshare.com/files/70537242
+        size: 11095206
+        md5: 3f28a0b97b96d061c6a22a8822530a0f
+        url: https://figshare.com/files/71287342
       run_info_file:
         name: models/deepmd/dpa-4.1-air-oam/2026-10-02-phonons-kappa-103-run-info.json
         size: 964

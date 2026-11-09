@@ -276,7 +276,12 @@
         <div class="detail-panel">
           <header>
             <span>
-              <strong>{selected.material_id}</strong>
+              <strong
+                ><a
+                  href="/materials/phonons/{selected.material_id}"
+                  title="Compare all models on this material">{selected.material_id}</a
+                ></strong
+              >
               {#if selected.formula}({@html sanitize_compact_formula(
                   selected.formula,
                 )}){/if}

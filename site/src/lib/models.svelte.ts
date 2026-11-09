@@ -1,5 +1,5 @@
-import { default as DATASETS } from '$data/datasets.yml'
-import type { ModelData, OrgLogo } from '#lib/types.js'
+import { default as DATASETS } from '$pkg/datasets.yml'
+import type { ModelData, OrgLogo, ServerOnlyModelKey } from '#lib/types.js'
 import type { ModelMetadata } from '#lib/schema/model.js'
 import MODELING_TASKS from '$pkg/modeling-tasks.yml'
 import type { CpsConfig } from '#lib/combined-scores.svelte.js'
@@ -19,10 +19,10 @@ import { apply_weights_param, weights_to_param } from 'matterviz/url-params'
 import type { UrlParamEntry } from 'svelte-widgets/url-params'
 import { bind_url_params, UrlTableFilters } from './url-state.svelte.js'
 
-export const MODEL_METADATA_PATHS = import.meta.glob<ModelMetadata>(
-  `$root/models/[^_]**/[^_]*.yml`,
-  { eager: true, import: 'default' },
-)
+// client bundles lack the ServerOnlyModelKey fields (see #lib/types.js)
+export const MODEL_METADATA_PATHS = import.meta.glob<
+  Omit<ModelMetadata, ServerOnlyModelKey>
+>(`$root/models/[^_]**/[^_]*.yml`, { eager: true, import: 'default' })
 
 // Visually distinct color palette
 const MODEL_COLORS = [
@@ -72,7 +72,7 @@ export function calculate_training_sizes(model_train_sets: string[]): {
 }
 
 function to_model_data(
-  [key, metadata]: [string, ModelMetadata],
+  [key, metadata]: [string, Omit<ModelMetadata, ServerOnlyModelKey>],
   index: number,
 ): ModelData {
   const org_logos: OrgLogo[] = []
@@ -211,18 +211,32 @@ export function task_page_filters(
 export const has_diatomics_curves = (model: ModelData): boolean =>
   Boolean(model.metrics?.diatomics?.pred_file?.name)
 
-export function get_pred_file_urls(model: ModelData) {
-  const pred_files = [
-    [MODELING_TASKS.discovery.label, model.metrics?.discovery?.pred_file],
-    [MODELING_TASKS.geo_opt.label, model.metrics?.geo_opt?.pred_file],
-    [MODELING_TASKS.diatomics.label, model.metrics?.diatomics?.pred_file],
-    [MODELING_TASKS.md.label, model.metrics?.md?.pred_file],
-    [
-      MODELING_TASKS.phonons.subtasks?.kappa_103.label ?? MODELING_TASKS.phonons.label,
-      model.metrics?.phonons?.kappa_103?.pred_file,
-    ],
+// Downloadable per-model files, labeled by task and contents (raw force sets included
+// so users can refit force constants without rerunning the model)
+export function get_pred_file_urls(
+  model: ModelData,
+): { name: string; url: string; size?: number }[] {
+  const { discovery, geo_opt, diatomics, md, phonons } = model.metrics ?? {}
+  const kappa = phonons?.kappa_103
+  const { phonons: ph } = MODELING_TASKS
+  const files = [
+    [`${MODELING_TASKS.discovery.label}: WBM formation energies`, discovery?.pred_file],
+    [`${MODELING_TASKS.geo_opt.label}: relaxed WBM structures`, geo_opt?.pred_file],
+    ...([`1e-5`, `1e-2`] as const).map(
+      (symprec) =>
+        [
+          `${MODELING_TASKS.geo_opt.label}: symmetry analysis at symprec=${symprec}`,
+          geo_opt?.[`symprec=${symprec}`]?.analysis_file,
+        ] as const,
+    ),
+    [`${MODELING_TASKS.diatomics.label}: energy and force curves`, diatomics?.pred_file],
+    [`${MODELING_TASKS.md.label}: per-system metrics`, md?.pred_file],
+    [`${ph.label}: κ-103 thermal conductivities and frequencies`, kappa?.pred_file],
+    [`${ph.label}: κ-103 FC2/FC3 HDF5 force sets`, kappa?.force_file],
+    [`${ph.label}: harmonic band structures and DOS`, kappa?.harmonic?.phonon_file],
+    [`${ph.label}: harmonic FC2 HDF5 force sets`, kappa?.harmonic?.force_file],
   ] as const
-  return pred_files.flatMap(([name, file]) =>
-    file?.url ? [{ name, url: file.url }] : [],
+  return files.flatMap(([name, file]) =>
+    file?.url ? [{ name, url: file.url, size: file.size }] : [],
   )
 }

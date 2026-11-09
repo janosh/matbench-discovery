@@ -85,7 +85,6 @@ hyperparams:
     kappa:
       protocol: phonondb-v1
       displacement_distance: 0.03
-      save_forces: true
   architecture:
     preset: dpa4-max-v20260911
   training:
@@ -187,11 +186,6 @@ metrics:
         url: https://ndownloader.figshare.com/files/70836384
         size: 15621739
         md5: 855ad360242599963c5f2c7f32611aa2
-      force_file:
-        name: models/deepmd/dpa-4.1-max-oam-pft/2026-10-27-phonons-kappa-103-forces.json.gz
-        url: https://ndownloader.figshare.com/files/70836390
-        size: 253418078
-        md5: 0cf77f6bac1b27f0f3a925f18a71c888
       run_info_file:
         name: models/deepmd/dpa-4.1-max-oam-pft/2026-10-27-phonons-kappa-103-run-info.json
         url: https://ndownloader.figshare.com/files/70836381

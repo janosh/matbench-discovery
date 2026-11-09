@@ -4,7 +4,7 @@ import {
   type ElementGroupKey,
 } from 'matterviz/element'
 import { DEFAULT_CATEGORY_COLORS } from 'matterviz/colors'
-import type { SvelteSet } from 'svelte/reactivity'
+import { SvelteMap, type SvelteSet } from 'svelte/reactivity'
 import { in_view } from 'svelte-widgets/attachments'
 import { valid_query_param, type UrlParamEntry } from 'svelte-widgets/url-params'
 
@@ -78,3 +78,43 @@ export const make_plot_observer =
       visible.delete(key)
     }
   }
+
+// === Curves served by curves/[key].json ===
+// DFT references add per-formula distance grids plus the per-point electronic state
+// shown in plot tooltips; model predictions carry energies only
+export type PageDiatomicCurve = {
+  energies: number[]
+  distances?: number[]
+  magmoms?: ([number, number] | null)[] // site-projected moments of the two atoms (μB)
+  spin_candidates?: (string | null)[] // winning NUPDOWN (as string) or `afm`
+  bond_forces?: number[] // force on atom 2 along the bond (eV/Å), > 0 = repulsive
+}
+export type PageDiatomicsCurves = {
+  distances: number[]
+  'homo-nuclear': Record<string, PageDiatomicCurve>
+}
+
+// Fetches each selected model's curves once; plots react as files arrive. A failed key
+// is retried the next time it is requested.
+export class DiatomicCurveCache {
+  curves = new SvelteMap<string, PageDiatomicsCurves>()
+  errors = new SvelteMap<string, string>()
+  readonly #requested = new Set<string>()
+
+  request = (keys: readonly string[]): void => {
+    for (const key of keys) {
+      if (this.#requested.has(key)) continue
+      this.#requested.add(key)
+      this.errors.delete(key)
+      fetch(`/benchmarks/diatomics/curves/${encodeURIComponent(key)}.json`)
+        .then(async (response) => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`)
+          this.curves.set(key, (await response.json()) as PageDiatomicsCurves)
+        })
+        .catch((error: unknown) => {
+          this.#requested.delete(key)
+          this.errors.set(key, error instanceof Error ? error.message : String(error))
+        })
+    }
+  }
+}

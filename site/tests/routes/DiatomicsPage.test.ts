@@ -2,8 +2,11 @@ import { DEFAULT_CDS_CONFIG } from '#lib/combined-scores.svelte.js'
 import { ACTIVE_MODELS, has_diatomics_curves } from '#lib/models.svelte.js'
 import DiatomicsPage from '#routes/benchmarks/diatomics/+page.svelte'
 import { tick } from 'svelte'
-import { MODEL_COLORS } from '#routes/benchmarks/diatomics/diatomics.svelte.js'
-import { describe, expect, it } from 'vite-plus/test'
+import {
+  DiatomicCurveCache,
+  MODEL_COLORS,
+} from '#routes/benchmarks/diatomics/diatomics.svelte.js'
+import { describe, expect, it, vi } from 'vite-plus/test'
 import {
   button_for,
   doc_query,
@@ -14,6 +17,7 @@ import {
   open_filter_menu,
   patch_model,
   query_param,
+  request_url,
   selected_chips,
   selected_only_toggle,
 } from '../index.js'
@@ -33,19 +37,26 @@ const curve = {
     'F-F': { energies: [0] },
   },
 }
-const page_data = {
-  diatomic_model_keys: model_keys,
-  diatomic_curves: {
-    PBE: curve,
-    r2SCAN: curve,
-    ...Object.fromEntries(model_keys.map((key) => [key, curve])),
-  },
-  reference_names: [`PBE`, `r2SCAN`],
+const page_data = { diatomic_model_keys: model_keys, reference_names: [`PBE`, `r2SCAN`] }
+const curve_url = (key: string) => `/benchmarks/diatomics/curves/${key}.json`
+
+// serve curves/<key>.json for every key except `failing_keys` (HTTP 503)
+const stub_curves = (failing_keys: string[] = []) => {
+  const fetch_mock = vi.fn(async (url: RequestInfo | URL) => {
+    const key = /curves\/(?<key>.+)\.json$/.exec(request_url(url))?.groups?.key
+    if (!key || failing_keys.includes(key)) return new Response(`down`, { status: 503 })
+    return Response.json(curve)
+  })
+  vi.stubGlobal(`fetch`, fetch_mock)
+  return fetch_mock
 }
+const fetched_urls = (fetch_mock: ReturnType<typeof stub_curves>) =>
+  fetch_mock.mock.calls.map(([url]) => request_url(url))
 
 const model_select = () => doc_query(`.controls .multiselect`)
 
-const mount_page = async (search = ``): Promise<void> => {
+const mount_page = async (search = ``, failing_keys: string[] = []) => {
+  const fetch_mock = stub_curves(failing_keys)
   for (const [idx, [suffix, combined_score]] of Object.entries(
     fixture_scores,
   ).entries()) {
@@ -59,6 +70,7 @@ const mount_page = async (search = ``): Promise<void> => {
   await mount_with_url(DiatomicsPage, `http://localhost/benchmarks/diatomics${search}`, {
     props: { data: page_data },
   })
+  return fetch_mock
 }
 
 const selected_options = () =>
@@ -77,9 +89,27 @@ async function select_model_option(model_name: string): Promise<void> {
   await tick()
 }
 
+describe(`DiatomicCurveCache`, () => {
+  it(`fetches each key once, records failures and clears them on a successful retry`, async () => {
+    const fetch_mock = stub_curves([`bad`])
+    const cache = new DiatomicCurveCache()
+    cache.request([`PBE`, `bad`, `PBE`])
+    cache.request([`PBE`]) // already requested: no refetch
+    await vi.waitFor(() => expect(cache.errors.get(`bad`)).toBe(`HTTP 503`))
+    expect(cache.curves.get(`PBE`)).toEqual(curve)
+    expect(fetched_urls(fetch_mock)).toEqual([curve_url(`PBE`), curve_url(`bad`)])
+
+    stub_curves() // the failing key recovers
+    cache.request([`bad`])
+    expect(cache.errors.has(`bad`)).toBe(false) // a retry clears the stale error
+    await vi.waitFor(() => expect(cache.curves.get(`bad`)).toEqual(curve))
+    expect(cache.errors.has(`bad`)).toBe(false)
+  })
+})
+
 describe(`Diatomics Page URL state`, () => {
   it(`defaults to the top three CDS models with curves plus DFT references`, async () => {
-    await mount_page()
+    const fetch_mock = await mount_page()
 
     expect_task_page_layout(
       [
@@ -100,8 +130,15 @@ describe(`Diatomics Page URL state`, () => {
       `Model C`,
       `Model D`,
     ])
+    // only the selected curves are fetched, each once
+    const [key_d, key_c] = [model_keys[3], model_keys[2]]
+    const default_urls = [`PBE`, `r2SCAN`, key_b, key_c, key_d].map(curve_url)
+    expect(fetched_urls(fetch_mock).toSorted()).toEqual(default_urls.toSorted())
     await select_model_option(`Model A`)
     expect(selected_options()?.textContent).toContain(`Model A`)
+    expect(fetched_urls(fetch_mock).toSorted()).toEqual(
+      [...default_urls, curve_url(key_a)].toSorted(),
+    )
     doc_query<HTMLAnchorElement>(
       `section[aria-labelledby="test-set"] a[href="#diatomic-energy-curves"]`,
     ).click()
@@ -129,8 +166,18 @@ describe(`Diatomics Page URL state`, () => {
 
     expect(button_for(`All`).getAttribute(`aria-checked`)).toBe(`false`)
     expect(button_for(`Halogens`).getAttribute(`aria-checked`)).toBe(`true`)
-    expect(document.querySelectorAll(`.diatomic-plot-title`)).toHaveLength(1)
+    await vi.waitFor(() =>
+      expect(document.querySelectorAll(`.diatomic-plot-title`)).toHaveLength(1),
+    )
     expect(doc_query(`.diatomic-plot-title`).textContent).toContain(`F-F`)
+  })
+
+  it(`names models whose curves failed to load and still plots the rest`, async () => {
+    await mount_page(`?models=PBE,${key_b}`, [key_b])
+    await vi.waitFor(() =>
+      expect(doc_query(`.curve-status[role="alert"]`).textContent).toContain(`Model B`),
+    )
+    expect(document.querySelectorAll(`.diatomic-plot-shell`).length).toBeGreaterThan(0)
   })
 
   it(`restores metrics-table sort and filters and syncs filter changes`, async () => {

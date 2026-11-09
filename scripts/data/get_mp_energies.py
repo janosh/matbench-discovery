@@ -29,11 +29,11 @@ from pymatgen.core import Element, Structure
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery import STABILITY_THRESHOLD, today
+from matbench_discovery import MP_DIR, STABILITY_THRESHOLD, today
 from matbench_discovery.data import DataFiles
 from matbench_discovery.structure import prototype
 
-module_dir = os.path.dirname(__file__)
+os.makedirs(MP_DIR, exist_ok=True)
 potcar_spec_key = "potcar_spec"
 fields = {
     Key.mat_id,
@@ -92,7 +92,7 @@ spg_nums = df_mp[f"{Key.protostructure}_moyo"].str.split("_").str[2].astype(int)
 if n_mismatch := (spg_nums != df_spg["number"]).sum():
     raise ValueError(f"{n_mismatch:,} moyo space groups differ from MP's")
 
-out_path = f"{module_dir}/{today}-mp-energies.csv.gz"
+out_path = f"{MP_DIR}/{today}-mp-energies.csv.gz"
 df_mp.to_csv(out_path)
 print(f"Wrote {out_path}; register it in data-files.yml to replace mp_energies")
 # df_mp = pd.read_csv(out_path, na_filter=False).set_index(Key.mat_id)
@@ -113,7 +113,7 @@ pmv.powerups.annotate_metrics(df_mp[e_form_key], df_mp[e_decomp_enth_key], fig=f
 fig.show()
 # result on 2023-01-10: plots match. no correlation between formation energy and
 # decomposition enthalpy. R^2 = -1.571, MAE = 1.604
-# pmv.save_fig(fig, f"{module_dir}/mp-decomp-enth-vs-e-form.webp", dpi=300)
+# pmv.save_fig(fig, f"{MP_DIR}/mp-decomp-enth-vs-e-form.webp", dpi=300)
 
 
 # %% scatter plot energy above convex hull vs decomposition enthalpy
@@ -131,7 +131,7 @@ fig = px.scatter(
     f"MP materials with<br>energy_above_hull - {e_decomp_enth_key}.clip(0) > 0.1",
 )
 fig.show()
-# pmv.save_fig(fig, f"{module_dir}/mp-e-above-hull-vs-decomp-enth.webp", dpi=300)
+# pmv.save_fig(fig, f"{MP_DIR}/mp-e-above-hull-vs-decomp-enth.webp", dpi=300)
 
 
 # %% pull all single-element entries and filter for lowest energy per atom system for

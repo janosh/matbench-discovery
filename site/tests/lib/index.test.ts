@@ -1,9 +1,13 @@
 import data_files from '$pkg/data-files.yml'
-import DATASETS from '$data/datasets.yml'
+import DATASETS from '$pkg/datasets.yml'
 import { arr_to_str, format_date } from '#lib'
 import { MODELS } from '#lib/models.svelte.js'
+import { model_details } from '#lib/server/model-details.js'
 import { scatter_options_by_key } from '#lib/labels.js'
-import { render_data_markdown } from '../../scripts/markdown-data.js'
+import {
+  render_data_markdown,
+  slim_client_model_data,
+} from '../../scripts/markdown-data.js'
 import { sync_url_params } from '#lib/url-state.svelte.js'
 import { goto } from '$app/navigation'
 import { valid_query_param } from 'svelte-widgets/url-params'
@@ -44,7 +48,10 @@ describe(`#lib data includes rendered YAML Markdown`, () => {
   })
 
   it(`model notes are rendered through eager YAML imports`, () => {
-    const notes = MODELS.flatMap((model) => (model.notes ? [model.notes] : []))
+    const notes = MODELS.flatMap(({ model_key }) => {
+      const { notes: model_notes } = model_details(model_key)
+      return model_notes ? [model_notes] : []
+    })
     expect(notes.length).toBeGreaterThan(20)
     for (const note of notes) {
       for (const [key, value] of Object.entries(note)) {
@@ -54,6 +61,33 @@ describe(`#lib data includes rendered YAML Markdown`, () => {
             `missing rendered note ${key}`,
           ).toBeGreaterThan(0)
       }
+    }
+  })
+
+  it(`client model YAML drops only the detail-page fields`, () => {
+    const metrics = { discovery: { pred_file: { name: `x.csv.gz`, md5: `abc` } } }
+    const model = {
+      model_name: `X`,
+      notes: { description: `note` },
+      environment: { dependencies: [`x==1`] },
+      trained_by: [{ name: `A` }],
+      authors: [{ name: `A`, affiliation: `Org` }],
+      metrics,
+    }
+    expect(slim_client_model_data(model, `/repo/models/x/x.yml`)).toEqual({
+      model_name: `X`,
+      authors: [{ name: `A`, affiliation: `Org` }],
+      metrics,
+    })
+    // the input is left intact (SSR and client transforms may share parsed data)
+    expect(model.notes).toEqual({ description: `note` })
+    // non-model YAML and _-prefixed model files pass through untouched
+    for (const path of [
+      `/repo/matbench_discovery/datasets.yml`,
+      `/repo/models/_x/x.yml`,
+    ]) {
+      const data = { notes: { a: `b` } }
+      expect(slim_client_model_data(data, path)).toBe(data)
     }
   })
 
@@ -102,7 +136,7 @@ describe(`#lib data includes rendered YAML Markdown`, () => {
     `preserves Markdown separators in descriptions: %s`,
     async (description, expected) => {
       const data = { example: { description, description_html: `` } }
-      await render_data_markdown(data, `/repo/data/datasets.yml`)
+      await render_data_markdown(data, `/repo/matbench_discovery/datasets.yml`)
       const rendered = document.createElement(`div`)
       rendered.innerHTML = data.example.description_html
       rendered
@@ -114,9 +148,13 @@ describe(`#lib data includes rendered YAML Markdown`, () => {
 
   it.each([
     [`/repo/matbench_discovery/data-files.yml`, {}, `_links must be a string`],
-    [`/repo/data/datasets.yml`, { bad: { description: 7 } }, `bad.description`],
     [
-      `/repo/data/datasets.yml`,
+      `/repo/matbench_discovery/datasets.yml`,
+      { bad: { description: 7 } },
+      `bad.description`,
+    ],
+    [
+      `/repo/matbench_discovery/datasets.yml`,
       { bad: { description: ``, notes: { Access: 7 } } },
       `bad.notes.Access`,
     ],
@@ -130,7 +168,7 @@ describe(`#lib data includes rendered YAML Markdown`, () => {
     [`Test__Multiple   Spaces`, `test-multiple-spaces`],
   ])(`assigns dataset slug '%s' → '%s'`, async (input, expected) => {
     const data = { [input]: { description: `` } }
-    await render_data_markdown(data, `/repo/data/datasets.yml`)
+    await render_data_markdown(data, `/repo/matbench_discovery/datasets.yml`)
     expect(data[input]).toEqual({ description: ``, description_html: ``, slug: expected })
   })
 })

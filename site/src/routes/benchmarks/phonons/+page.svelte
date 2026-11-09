@@ -11,6 +11,7 @@
   import KappaParityPlot from '#lib/plot/KappaParityPlot.svelte'
   import { valid_query_param } from 'svelte-widgets/url-params'
   import {
+    HYPERPARAMS,
     PHONON_METRICS,
     scatter_axis_label,
     task_page_visible_cols,
@@ -21,8 +22,11 @@
   import KappaSrmeScatter from './KappaSrmeScatter.svelte'
   import PhononFreqParity from './PhononFreqParity.svelte'
 
-  // Default column visibility: metadata + phonon metrics only
-  const visible_cols = task_page_visible_cols(...Object.values(PHONON_METRICS))
+  // Default column visibility: metadata, phonon metrics and the κ displacement step
+  const visible_cols = task_page_visible_cols(
+    ...Object.values(PHONON_METRICS),
+    HYPERPARAMS.displacement_distance,
+  )
 
   const kappa_srme = (model: ModelData): number =>
     model.metrics?.phonons?.kappa_103?.κ_SRME ?? Infinity
@@ -127,11 +131,18 @@
     >SRME</sub
   > of 2 is not a failure; Im(ω) separately reports the imaginary-mode rate.
 </p>
+<p>
+  Δx<sub>κ</sub> is the atomic displacement each model used to compute force constants by
+  finite differences. The PhononDB-PBE reference uses 0.03 Å. Earlier submissions were run
+  with 0.01 Å; finite-difference third-order force constants depend on the step size, so
+  their κ<sub>SRME</sub> is not strictly comparable with models run at 0.03 Å. The prescribed
+  value for future model submissions is 0.03 Å.
+</p>
 <section class="full-bleed">
   <MetricsTable
     model_filter={has_phonon_metrics}
     col_filter={(col) => visible_cols[col.key] ?? true}
-    default_sort={{ column: PHONON_METRICS.κ_SRME.key, dir: `asc` }}
+    default_sort={[{ column: PHONON_METRICS.κ_SRME.key, dir: `asc` }]}
     {filters}
   />
 </section>
@@ -194,9 +205,12 @@
     </h3>
     <p>
       Left: per-material κ<sub>SRME</sub> against DFT conductivity, colored by crystal
-      system. Hollow markers are censored failures; valid κ<sub>SRME</sub> = 2 points stay filled.
-      Right: quantile-quantile parity of the ML vs DFT phonon frequency spectra, colored by
-      W₁(ω); points below the diagonal are too soft and points above are too stiff.
+      system. Hollow markers are censored failures; valid κ<sub>SRME</sub> = 2 points stay
+      filled. Right: quantile-quantile parity of the ML vs DFT phonon frequency spectra,
+      colored by W₁(ω); points below the diagonal are too soft and points above are too
+      stiff. Click a κ<sub>SRME</sub> point to compare all models on that material, or
+      browse the
+      <a href="/materials/phonons">per-material results</a>.
     </p>
     <div class="diagnostics-grid bleed-1400">
       <KappaSrmeScatter

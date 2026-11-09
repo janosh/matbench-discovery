@@ -72,7 +72,7 @@ export type ModelMetadata = {
   }
   environment: Environment
   /**
-   * Dataset keys validated against data/datasets.yml in registry tests.
+   * Dataset keys validated against matbench_discovery/datasets.yml in registry tests.
    *
    * @minItems 1
    */

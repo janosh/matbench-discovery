@@ -65,7 +65,7 @@ hyperparams:
     cell_filter: FrechetCellFilter
     kappa:
       protocol: phonondb-v1
-      save_forces: true
+      displacement_distance: 0.01 # legacy runs used 0.01 Å; the PhononDB-PBE reference uses 0.03 Å
   architecture:
     n_layers: 5
     graph_construction_radius: 5.0
@@ -176,10 +176,10 @@ metrics:
           size: 23633106
           md5: 8ca1e3e30d3581ace6231e1734929e50
         force_file:
-          name: models/sevennet/sevennet-0/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-          url: https://figshare.com/files/70334664
-          size: 8818269
-          md5: 73baefb8b0a85ea847b84e75575e13b0
+          name: models/sevennet/sevennet-0/harmonic/2026-09-05-phonons-kappa-103-forces.h5
+          url: https://figshare.com/files/71263288
+          size: 2136789
+          md5: e9c26f55029c7bac9c65658289e50fef
         run_info_file:
           name: models/sevennet/sevennet-0/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334658

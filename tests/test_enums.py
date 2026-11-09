@@ -10,7 +10,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from matbench_discovery import DATA_DIR, ROOT, file_digest
+from matbench_discovery import DEFAULT_CACHE_DIR, ROOT, file_digest
 from matbench_discovery.enums import (
     ArchitectureType,
     DataFiles,
@@ -82,7 +82,7 @@ def test_label_enum_member_spot_checks(
 
 def test_files_enum() -> None:
     """Files subclasses take base_dir from a class keyword and must define url/label."""
-    assert Files.base_dir == DATA_DIR
+    assert Files.base_dir == DEFAULT_CACHE_DIR
 
     class SubFiles(Files, base_dir="foo"):
         test_file = auto(), "test/file.txt"

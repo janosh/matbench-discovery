@@ -1,4 +1,4 @@
-import DATASETS from '$data/datasets.yml'
+import DATASETS from '$pkg/datasets.yml'
 import { error } from '@sveltejs/kit'
 import type { PageServerLoad } from './$types'
 

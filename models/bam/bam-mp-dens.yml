@@ -89,7 +89,6 @@ hyperparams:
       symprec: 1.0e-5
       ase_optimizer: FIRE
       ase_filter: FrechetCellFilter
-      save_forces: true
   architecture:
     graph_construction_radius: 7.0
     max_neighbors:
@@ -261,10 +260,10 @@ metrics:
           size: 23718873
           md5: 9b5b48569504b845d039d02ebd05b322
         force_file:
-          name: models/bam/bam-mp-dens/harmonic/2026-10-19-phonons-kappa-103-forces.json.gz
-          url: https://figshare.com/files/70334172
-          size: 8815871
-          md5: fd2e3f9e35a2c77038f98b3950bed150
+          name: models/bam/bam-mp-dens/harmonic/2026-10-19-phonons-kappa-103-forces.h5
+          url: https://figshare.com/files/71263108
+          size: 2185501
+          md5: 6450d0466ec6cc318d77006569ef7414
         run_info_file:
           name: models/bam/bam-mp-dens/harmonic/2026-10-19-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334166

@@ -19,8 +19,14 @@ type ScoredMetrics<Metrics> = Metrics & { combined_score?: number }
 // tasks with per-model run cost (GPU, wall time) and rerun checks (reproducibility)
 export type TimedTask = `diatomics` | `md`
 
-export type ModelData = ModelMetadata & {
-  metrics?: ModelMetadata[`metrics`] & {
+// Model YAML fields stripped from client bundles (scripts/markdown-data.ts
+// slim_client_model_data): only the model page shows them, via $lib/server/model-details
+export type ServerOnlyModelKey = `notes` | `environment` | `trained_by`
+export type ModelDetails = Pick<ModelMetadata, ServerOnlyModelKey>
+type ClientModelMetadata = Omit<ModelMetadata, ServerOnlyModelKey>
+
+export type ModelData = ClientModelMetadata & {
+  metrics?: ClientModelMetadata[`metrics`] & {
     diatomics?: ScoredMetrics<DiatomicsMetrics>
     md?: ScoredMetrics<MdMetrics>
   }

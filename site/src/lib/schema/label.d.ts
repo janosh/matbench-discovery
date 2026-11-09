@@ -104,9 +104,9 @@ export interface Label1 {
    */
   format?: string
   /**
-   * Whether the metric is sticky
+   * Table edge the column stays pinned to while scrolling sideways
    */
-  sticky?: boolean
+  pin?: 'left' | 'right'
   /**
    * Whether the metric is sortable
    */
@@ -175,6 +175,7 @@ export interface HyperparamLabels {
   max_steps: Label1
   ase_optimizer: Label1
   cell_filter: Label1
+  displacement_distance: Label1
   batch_size: Label1
   epochs: Label1
   n_layers: Label1

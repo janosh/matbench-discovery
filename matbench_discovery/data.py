@@ -4,8 +4,7 @@ https://figshare.com/articles/dataset/22715158
 
 Environment Variables:
     MBD_CACHE_DIR: Directory to cache downloaded data files.
-        Defaults to DATA_DIR if the full repo was cloned, otherwise
-        ~/.cache/matbench-discovery.
+        Defaults to ~/.cache/matbench-discovery.
 """
 
 import functools
@@ -32,7 +31,7 @@ from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 from tqdm import tqdm
 
-from matbench_discovery import DATA_DIR, atomic_output_path
+from matbench_discovery import PKG_DIR, atomic_output_path
 from matbench_discovery.enums import DataFiles, MbdKey, Model, TestSubset
 
 round_trip_yaml = YAML()  # round-trippable YAML for updating model metadata files
@@ -58,7 +57,7 @@ ARTIFACT_SUFFIXES: Final[dict[str, str]] = {
     "discovery_run_info": "discovery-run-info.json",
     "geo_opt": "geo-opt.jsonl.gz",
     "phonons_kappa_103": "phonons-kappa-103.json.gz",
-    "phonons_kappa_103_forces": "phonons-kappa-103-forces.json.gz",
+    "phonons_kappa_103_forces": "phonons-kappa-103-forces.h5",
     "phonons_kappa_103_phonons": "phonons-kappa-103-phonons.json.gz",
     "phonons_kappa_103_run_info": "phonons-kappa-103-run-info.json",
     "md_metrics": "md-metrics.csv.gz",
@@ -297,11 +296,8 @@ def parse_artifact_filename(filename: str) -> str:
 
 @functools.cache
 def load_datasets() -> dict[str, dict[str, Any]]:
-    """Load training/test dataset metadata from the repo's data/datasets.yml.
-
-    Read on demand (not at import) since installs outside a repo clone lack it.
-    """
-    with open(f"{DATA_DIR}/datasets.yml", encoding="utf-8") as file:
+    """Load training/test dataset metadata from the packaged datasets.yml."""
+    with open(f"{PKG_DIR}/datasets.yml", encoding="utf-8") as file:
         return yaml.safe_load(stream=file)
 
 

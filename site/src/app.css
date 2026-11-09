@@ -28,7 +28,7 @@
   --highlight: light-dark(seagreen, mediumseagreen);
   --warning: light-dark(#b45309, orange);
   --table-odd: light-dark(rgba(0, 0, 0, 0.03), rgba(0, 0, 0, 0.5));
-  --heatmap-sticky-cell-odd-bg:
+  --table-sticky-cell-odd-bg:
     linear-gradient(var(--table-odd), var(--table-odd)), var(--page-bg);
   --nav-bg: light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.08));
   --card-bg: light-dark(rgba(255, 255, 255, 0.4), rgba(0, 0, 0, 0.3));
@@ -66,9 +66,9 @@
     color-mix(in srgb, currentcolor 12%, transparent)
   );
 
-  /* ColumnPicker (column-select) pane: its currentColor-based defaults are
+  /* svelte-widgets ColumnPicker pane: its currentColor-based defaults are
   near-invisible in light mode; use the theme border + shadow instead */
-  --column-picker-menu-border: var(--border);
+  --column-picker-menu-border: 1px solid var(--border);
   --column-picker-menu-shadow: 0 4px 12px var(--shadow);
 
   /* ButtonGroup site theme */

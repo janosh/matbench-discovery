@@ -132,7 +132,7 @@ export const METADATA_COLS: MetadataLabels = {
     key: `Model`,
     label: `Model`,
     description: `Model name`,
-    sticky: true,
+    pin: `left`,
     sortable: true,
     better: undefined,
   },
@@ -254,6 +254,13 @@ export const HYPERPARAMS: HyperparamLabels = {
     label: `Cell filter`,
     path: `hyperparams.evaluation`,
     description: `ASE cell filter used during relaxation (e.g., FrechetCellFilter, ExpCellFilter)`,
+  },
+  displacement_distance: {
+    key: `displacement_distance`,
+    label: `Δx<sub>κ</sub>`,
+    path: `hyperparams.evaluation.kappa`,
+    description: `Finite-difference atomic displacement for the κ force constants. The PhononDB-PBE reference uses 0.03 Å, so κ<sub>SRME</sub> of models run with 0.01 Å is not strictly comparable`,
+    unit: `Å`,
   },
   batch_size: {
     key: `batch_size`,
@@ -618,6 +625,7 @@ export const task_page_visible_cols = (
   Object.fromEntries([
     ...Object.values(ALL_METRICS).map((col) => [col.key, false]),
     ...Object.values(METADATA_COLS).map((col) => [col.key, true]),
+    [HYPERPARAMS.displacement_distance.key, false], // phonons-only protocol column
     ...shown_metrics.map((col) => [col.key, true]),
   ])
 

@@ -83,6 +83,20 @@ def test_upload_preserves_unicode_yaml(
     assert yaml_path.read_text(encoding="utf-8") == original
 
 
+def test_dry_run_without_article_makes_no_api_calls(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+) -> None:
+    """A dry run for a task without an article never queries Figshare for files."""
+    monkeypatch.setitem(figshare.ARTICLE_IDS, "model_preds_phonons", None)
+    for api_fn in ("get_existing_files", "list_article_files", "create_article"):
+        monkeypatch.setattr(figshare, api_fn, MagicMock(side_effect=AssertionError))
+    monkeypatch.setattr(figshare, "make_request", MagicMock(side_effect=AssertionError))
+    upload_models.update_one_modeling_task_article(
+        "phonons", [], modeling_tasks={"phonons": {}}, dry_run=True
+    )
+    assert "Would create new article for task='phonons'" in capsys.readouterr().out
+
+
 @pytest.mark.parametrize(
     "content,expected,binary",
     [
@@ -507,7 +521,7 @@ def test_similar_files_keep_artifact_roles_and_directories(suffix_idx: int) -> N
     """Match dates without conflating complementary artifacts, settings or folders."""
     suffixes = [
         "phonons-kappa-103.json.gz",
-        "phonons-kappa-103-forces.json.gz",
+        "phonons-kappa-103-forces.h5",
         "phonons-kappa-103-phonons.json.gz",
         "phonons-kappa-103-run-info.json",
         "geo-opt-symprec=1e-2-moyo=0.12.0.csv.gz",

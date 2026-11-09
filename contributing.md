@@ -19,7 +19,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
 
    - geometry optimization: `<yyyy-mm-dd>-geo-opt.jsonl.gz` — final relaxed structures with `energy`, `converged`, `n_steps`, and WBM material IDs in [JSON Lines format](https://jsonlines.org). Optional analysis files use `<yyyy-mm-dd>-geo-opt-symprec=<symprec>-moyo=<version>.csv.gz`.
    - discovery: `<yyyy-mm-dd>-discovery.csv.gz` — compressed CSV with `material_id` and final `e_form_per_atom` columns.
-   - phonons: `<yyyy-mm-dd>-phonons-kappa-103.json.gz` — predictions for exactly the 103 PhononDB material IDs. Use canonical fields `material_id`, `init_spg_num`, `final_spg_num`, `has_imag_ph_modes`, and `ph_freqs`; legacy spellings such as `mp_id`, `spg_num`, and `frequencies` are rejected rather than converted while loading. The shared runner also writes `-phonons.json.gz` (referenced as `phonon_file`): unrounded compact FC2 (primitive-atom rows, which phonopy expands losslessly) with cell bases and masses, weighted mesh spectra, seekpath bands with eigenvectors and group velocities, tetrahedron DOS, and thermal properties. Schema v3 records can be restored with `matbench_discovery.phonons.harmonic.phonopy_from_harmonic_data(record)` to evaluate new metrics without MLIP force calls. Each harmonic analysis reports its own `errors`; these also appear as `phonon_errors` in predictions and never invalidate successful conductivity. Resume skips recorded failures unless `--retry-failures` is passed. The site displays modes for successful band paths. Optional force sets and run provenance use `-forces.json.gz` and `-run-info.json`.
+   - phonons: `<yyyy-mm-dd>-phonons-kappa-103.json.gz` — predictions for exactly the 103 PhononDB material IDs. Use canonical fields `material_id`, `init_spg_num`, `final_spg_num`, `has_imag_ph_modes`, and `ph_freqs`; legacy spellings such as `mp_id`, `spg_num`, and `frequencies` are rejected rather than converted while loading. The shared runner also writes `-phonons.json.gz` (referenced as `phonon_file`): unrounded compact FC2 (primitive-atom rows, which phonopy expands losslessly) with cell bases and masses, weighted mesh spectra, seekpath bands with eigenvectors and group velocities, tetrahedron DOS, and thermal properties. Schema v3 records can be restored with `matbench_discovery.phonons.harmonic.phonopy_from_harmonic_data(record)` to evaluate new metrics without MLIP force calls. Each harmonic analysis reports its own `errors`; these also appear as `phonon_errors` in predictions and never invalidate successful conductivity. Resume skips recorded failures unless `--retry-failures` is passed. The site displays modes for successful band paths. It also writes the raw FC2/FC3 finite-displacement force sets to `-forces.h5` (referenced as `force_file`, ~42 MB): per material the relaxed unit cell, supercell and primitive matrices, phono3py displacement datasets and float32 forces. Force constants can be refit from them without MLIP calls via `ph3 = matbench_discovery.phonons.force_sets.load_phono3py(path, material_id)`, then `ph3.produce_fc2()` / `ph3.produce_fc3()`. Set `save_forces: false` in the kappa hyperparams to skip it. Run provenance uses `-run-info.json`.
    - molecular dynamics: `<yyyy-mm-dd>-md-metrics.csv.gz`.
    - diatomics: `<yyyy-mm-dd>-diatomics.json.gz`.
 
@@ -171,7 +171,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    train_task: S2EFS
    test_task: IS2RE-SR
    targets: EFS_G
-   training_sets: [MPtrj] # keys from data/datasets.yml
+   training_sets: [MPtrj] # keys from matbench_discovery/datasets.yml
    # size: 10M  # optional
    # fine_tune: true  # optional
    # test_set_informed: [discovery]  # optional, see below
@@ -193,7 +193,6 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
        cell_filter: FrechetCellFilter
        kappa:
          protocol: phonondb-v1
-         save_forces: true
      architecture:
        graph_construction_radius: 6.0
        max_neighbors: 50
@@ -385,7 +384,7 @@ For PRs that change the payload *format* or the model roster, regenerate payload
 - Roster drift fails `tests/site/test_fig_payloads.py`'s coverage tests. After adding or updating an active model, run `uv run --with-editable . scripts/ingest_model.py <model_key> --payloads-only` to splice its freshly computed entries into the committed payloads. After removing, aborting, deprecating, or superseding a model, omit the model key and run `uv run --with-editable . scripts/ingest_model.py --payloads-only --full-roster` to rebuild payloads from the full active roster.
 - Payloads record hashes of the Python sources that computed them, ignoring comments, docstrings and formatting. A code change to one of those files fails `tests/site/test_fig_payloads.py` until you regenerate with `uv run --with-editable . scripts/ingest_model.py --payloads-only --full-roster`.
 - Parity generators are separate because their large assets live on the GitHub release. Run `uv run --with-editable . site/scripts/generate-energy-parity-assets.py` and `uv run --with-editable ".[phonons]" site/scripts/generate-kappa-parity-assets.py`, publish the generated files with `uv run --with-editable . scripts/ingest_model.py --publish-parity`, then commit both manifests.
-- Model-independent data-page payloads and route-local element counts are owned by `scripts/export_data_fig_payloads.py`. Run it after changing that script or `matbench_discovery/data_figs.py`; it requires the local `data/mp/2022-09-16-mp-trj-summary.json.bz2` cache. If absent, regenerate that cache from the extXYZ source with `uv run data/mp/eda_mp_trj.py`.
+- Model-independent data-page payloads and route-local element counts are owned by `scripts/export_data_fig_payloads.py`. Run it after changing that script or `matbench_discovery/data_figs.py`; it requires the MPtrj summary cache `mp/2022-09-16-mp-trj-summary.json.bz2` in the data cache dir (`~/.cache/matbench-discovery` or `$MBD_CACHE_DIR`). If absent, regenerate that cache from the extXYZ source with `uv run --with-editable . scripts/data/build_mp_trj_summary.py`.
 
 Maintainer note: `--archive` needs a Figshare API token in `$FIGSHARE_TOKEN` or as a `figshare_token=` line in `site/.env`, and `--publish-parity` needs `gh` with write access to this repo's releases.
 

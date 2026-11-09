@@ -5,17 +5,19 @@ from __future__ import annotations
 import os
 import re
 import sys
+import tomllib
 from contextlib import nullcontext
 from datetime import date
 from functools import cache
 from glob import glob
+from pathlib import PurePosixPath
 from typing import Any
 
 import pytest
 import yaml
 from jsonschema import Draft7Validator
 
-from matbench_discovery import DATA_DIR, PKG_DIR, ROOT, file_digest
+from matbench_discovery import PKG_DIR, ROOT, file_digest
 from matbench_discovery.calculators import CALCULATORS
 from matbench_discovery.data import (
     iter_file_refs,
@@ -115,8 +117,28 @@ def test_modeling_tasks_align_with_schema() -> None:
 
 
 def test_datasets_yaml_matches_python_registry() -> None:
-    """Dataset metadata validates and matches the Python registry."""
-    with open(f"{DATA_DIR}/datasets.yml", encoding="utf-8") as file:
+    """Dataset metadata validates, matches the Python registry and ships in wheels."""
+    # load_datasets() reads it from the installed package, so the wheel must ship it.
+    # uv_build wheels contain the whole module dir minus source-/wheel-exclude
+    # (source-include only affects sdists), so check location and excludes.
+    with open(f"{ROOT}/pyproject.toml", "rb") as file:
+        backend = tomllib.load(file)["tool"]["uv"]["build-backend"]
+    module_dir = os.path.join(ROOT, backend["module-root"], backend["module-name"])
+    assert os.path.samefile(PKG_DIR, module_dir)
+    # exclude globs use forward slashes; relpath gives backslashes on Windows
+    rel_paths = [
+        os.path.relpath(f"{PKG_DIR}/datasets.yml", base).replace(os.sep, "/")
+        for base in (ROOT, os.path.join(ROOT, backend["module-root"]))
+    ]
+    excludes = backend.get("source-exclude", []) + backend.get("wheel-exclude", [])
+    assert not [
+        (rel_path, glob)
+        for rel_path in rel_paths
+        for glob in excludes
+        if PurePosixPath(rel_path).full_match(glob)
+        or PurePosixPath(rel_path).full_match(f"**/{glob}")
+    ]
+    with open(f"{PKG_DIR}/datasets.yml", encoding="utf-8") as file:
         datasets_from_file = yaml.safe_load(file)
     assert set(datasets_from_file) == set(DATASETS)
     with open(f"{ROOT}/tests/dataset-schema.yml", encoding="utf-8") as file:
@@ -132,7 +154,7 @@ def test_datasets_yaml_matches_python_registry() -> None:
             for key, dataset in datasets_from_file.items()
         },
         schema,
-        "data/datasets.yml",
+        "matbench_discovery/datasets.yml",
     )
     for dataset in datasets_from_file.values():
         assert set(dataset.get("contains", [])) <= set(DATASETS)
@@ -291,6 +313,9 @@ def test_runnable_models_have_complete_shared_settings() -> None:
         assert isinstance(RelaxationSettings.from_model(model_key), RelaxationSettings)
     for model_key in configured_models:
         assert isinstance(KappaSettings.from_model(model_key), KappaSettings)
+        # explicit so a protocol-default change can't relabel recorded kappa runs
+        kappa = Model[model_key].metadata["hyperparams"]["evaluation"]["kappa"]
+        assert "displacement_distance" in kappa, f"{model_key} must pin it"
 
     prediction_models = {
         model.name
