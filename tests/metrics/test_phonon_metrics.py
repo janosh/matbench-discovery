@@ -290,7 +290,6 @@ def test_calc_kappa_metrics_with_different_values(
         Key.mode_weights,
         Key.srd,
         phonon_metrics.SRME_CENSORED,
-        phonon_metrics.BELOW_KAPPA_FLOOR,
         MbdKey.true_kappa_tot_avg,
     }
     # kappa_tot_avg is recomputed from the tensors: 4 vs reference 2 for both rows
@@ -366,8 +365,6 @@ def test_calc_kappa_metrics_from_dfs_symmetry(df_minimal: pd.DataFrame) -> None:
     result = phonon_metrics.calc_kappa_metrics_from_dfs(df_pred, df_true)
     assert result[Key.srme].eq(2).tolist() == [True, True, True]
     assert result[phonon_metrics.SRME_CENSORED].tolist() == [False, True, True]
-    # a valid zero kappa is not censored but is flagged as below the physical floor
-    assert result[phonon_metrics.BELOW_KAPPA_FLOOR].tolist() == [True, False, False]
 
 
 @pytest.mark.parametrize(
@@ -512,6 +509,49 @@ def test_phonon_spectrum_w1_unusable_inputs(
     )
 
 
+K_B = 1.380649e-23  # J/K
+
+
+@pytest.mark.parametrize("atom_density", [0.02, 0.05, 0.1])
+def test_diffuson_kappa_min_classical_limit(atom_density: float) -> None:
+    """At high T each mode has C = k_B, giving kappa_min = 2 n^(1/3) k_B f_THz 1e12."""
+    freqs = np.full((2, 6), 1.5)  # THz, 2 atoms per primitive cell
+    kappa_min = phonon_metrics.diffuson_kappa_min(
+        freqs, None, atom_density, temperature=1e7
+    )
+    # (1/V) sum_modes k_B omega a^2 / (3 pi) with V = n_prim / n, a = n^(-1/3)
+    expected = (atom_density * 1e30) ** (1 / 3) * K_B * 2 * 1.5e12
+    assert_allclose(kappa_min, expected, rtol=1e-9)
+
+
+def test_diffuson_kappa_min_weights_and_soft_modes() -> None:
+    """q-point weights equal repeated q-points; imaginary modes carry no heat."""
+    kappa_min = partial(phonon_metrics.diffuson_kappa_min, atom_density=0.05)
+    weighted = kappa_min([[1, 2, 3], [4, 5, 6]], [3, 1])
+    repeated = kappa_min([[1, 2, 3]] * 3 + [[4, 5, 6]], None)
+    assert_allclose(weighted, repeated, rtol=1e-12)
+    assert kappa_min([[-2, 0, 3]], None) == kappa_min([[0, 0, 3]], None)
+    # quantum heat capacities lower the floor at low T
+    assert kappa_min([[5, 5, 5]], None, temperature=50) < kappa_min([[5, 5, 5]], None)
+
+
+@pytest.mark.parametrize(
+    ("freqs", "atom_density", "match"),
+    [
+        ([1, 2, 3], 0.05, "expected"),
+        ([[1, 2]], 0.05, "expected"),
+        ([[1, 2, 3]], 0, "atom_density"),
+        ([[1, 2, 3]], np.nan, "atom_density"),
+    ],
+)
+def test_diffuson_kappa_min_rejects_bad_input(
+    freqs: list[object], atom_density: float, match: str
+) -> None:
+    """Malformed spectra or non-positive densities raise."""
+    with pytest.raises(ValueError, match=match):
+        phonon_metrics.diffuson_kappa_min(freqs, None, atom_density)
+
+
 @pytest.mark.parametrize(
     "spacegroup_num", [225, None, np.nan, 0, 231, 1.5, True, "bad"]
 )
@@ -538,9 +578,22 @@ def test_kappa_analysis_uses_shared_spectrum_helpers(
     df_true = df_true.set_axis(material_ids)
     df_pred[Key.ph_freqs] = [np.array([[0.0, 1.0, 2.0]]), np.array([[0.5, 1.0, 2.0]])]
     df_true[Key.ph_freqs] = [np.array([[0.0, 1.0, 2.0]])] * len(material_ids)
+    atom_densities = {"mp-1": 0.05, "mp-2": 0.08}
     payload = model_payload(
-        Model["mace_mp_0"], __file__, df_pred, df_true, material_ids
+        Model["mace_mp_0"], __file__, df_pred, df_true, material_ids, atom_densities
     )
+    # floor uses each model's own spectrum and the material's atom density
+    expected_floor = [
+        phonon_metrics.diffuson_kappa_min(
+            df_pred.loc[mat_id, Key.ph_freqs], None, atom_densities[mat_id]
+        )
+        for mat_id in material_ids
+    ]
+    assert payload["kappa_min"] == pytest.approx(expected_floor, abs=5e-5)
+    assert payload["below_floor"] == [
+        kappa < phonon_metrics.DIFFUSON_FLOOR_FRACTION * floor
+        for kappa, floor in zip(payload["kappa_ml"], payload["kappa_min"], strict=True)
+    ]
 
     expected_w1 = [
         phonon_metrics.phonon_spectrum_w1(df_pred.loc[mat_id], df_true.loc[mat_id])

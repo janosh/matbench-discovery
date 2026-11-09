@@ -16,6 +16,7 @@
     spg_num: number
     kappa_dft: number
     kappa_ml: number | null
+    kappa_min: number | null
     srme: number
     censored: boolean
     failures: string
@@ -34,7 +35,7 @@
     [`imag_modes`, `imaginary modes`],
     [`broken_sym`, `broken symmetry`],
     [`max_steps`, `hit max steps`],
-    [`below_floor`, `κ below the physical floor`],
+    [`below_floor`, `κ below half the diffuson minimum`],
   ] as const
   const series_colors: Record<CrystalSystem, string> = {
     ...CRYSTAL_SYSTEM_COLORS,
@@ -61,6 +62,7 @@
         spg_num: base.spg_nums[idx],
         kappa_dft,
         kappa_ml: entry.kappa_ml[idx],
+        kappa_min: entry.kappa_min[idx],
         srme,
         censored,
         failures,
@@ -98,6 +100,12 @@
       PBE κ: {format_num(point.kappa_dft, `.3~`)} <small>W/mK</small><br />
       {#if point.kappa_ml !== null}
         {entry.label} κ: {format_num(point.kappa_ml, `.3~`)} <small>W/mK</small><br />
+        {#if point.kappa_min}
+          κ / κ<sub>min</sub>: {format_num(point.kappa_ml / point.kappa_min, `.2~`)}
+          <small title="Agne et al. 2018 diffuson minimum from {entry.label}'s phonon spectrum"
+            >(κ<sub>min</sub> {format_num(point.kappa_min, `.2~`)} W/mK)</small
+          ><br />
+        {/if}
       {/if}
       κ<sub>SRME</sub>: {format_num(point.srme, `.3~`)}
       {#if point.failures}<br /><em>{point.failures}</em>{/if}

@@ -5,8 +5,10 @@ predictions:
 - per-material SRME and scalar conductivity (vs the DFT reference values), driving a
   "kappa error vs kappa magnitude" scatter (colored by crystal system client-side)
 - per-material failure flags (imaginary phonon modes, broken symmetry during
-  relaxation, relaxation hit max steps, kappa below the physical floor), shown in
+  relaxation, relaxation hit max steps, kappa below half the diffuson minimum), shown in
   the inspector scatter tooltips
+- per-material diffuson minimum kappa (Agne et al. 2018) from each model's own
+  phonon spectrum, shown as the kappa_ML / kappa_min ratio in tooltips
 - phonon frequency spectrum comparison vs DFT: per-material Wasserstein-1 distances
   plus quantile-quantile parity pairs (ML and DFT q-meshes differ - full vs
   irreducible - so frequencies are compared as weighted distributions, not pointwise)
@@ -22,7 +24,6 @@ from pymatviz.enums import Key
 from matbench_discovery import ROOT, figs, payload_numerics
 from matbench_discovery.cli import cli_args, is_full_model_run
 from matbench_discovery.enums import DataFiles, MbdKey, Model
-from matbench_discovery.metrics.phonons import BELOW_KAPPA_FLOOR
 
 KAPPA_DECIMALS: Final = 4
 FREQ_DECIMALS: Final = 2  # THz
@@ -32,7 +33,6 @@ FAILURE_FLAG_COLS: Final = {
     "imag_modes": Key.has_imag_ph_modes,
     "broken_sym": "broken_symmetry",
     "max_steps": "reached_max_steps",
-    "below_floor": BELOW_KAPPA_FLOOR,
 }
 
 
@@ -87,15 +87,27 @@ def model_payload(
     df_ml: pd.DataFrame,
     df_dft: pd.DataFrame,
     material_ids: list[str],
+    atom_densities: dict[str, float],
 ) -> dict[str, Any]:
-    """Per-material diagnostics for one model, aligned to the DFT material order."""
+    """Per-material diagnostics for one model, aligned to the DFT material order.
+
+    atom_densities maps material IDs to atoms per Å³ for the diffuson floor.
+    """
     from matbench_discovery.metrics import phonons as phonon_metrics
 
     df_metrics = phonon_metrics.calc_kappa_metrics_from_dfs(df_ml.copy(), df_dft)
 
     # per-material columns, all aligned to material_ids (None = missing/unusable).
     # dict order defines the payload key order
-    payload_cols = ("kappa_ml", "srme", "srme_censored", *FAILURE_FLAG_COLS, "freq_w1")
+    payload_cols = (
+        "kappa_ml",
+        "kappa_min",
+        "srme",
+        "srme_censored",
+        *FAILURE_FLAG_COLS,
+        "below_floor",
+        "freq_w1",
+    )
     cols: dict[str, list[Any]] = {col: [] for col in payload_cols}
     qq_dft: list[float] = []
     qq_ml: list[float] = []
@@ -107,7 +119,8 @@ def model_payload(
             continue
         row_ml = df_metrics.loc[mat_id]
         row_dft = df_dft.loc[mat_id]
-        cols["kappa_ml"].append(first_scalar(row_ml.get(MbdKey.kappa_tot_avg)))
+        kappa_ml = first_scalar(row_ml.get(MbdKey.kappa_tot_avg))
+        cols["kappa_ml"].append(kappa_ml)
         cols["srme"].append(first_scalar(row_ml.get(Key.srme)))
         cols["srme_censored"].append(row_flag(row_ml, phonon_metrics.SRME_CENSORED))
         for key, flag_col in FAILURE_FLAG_COLS.items():
@@ -115,6 +128,21 @@ def model_payload(
 
         ml_freqs = phonon_metrics.phonon_spectrum_data(row_ml)
         dft_freqs = phonon_metrics.phonon_spectrum_data(row_dft)
+        # diffuson floor from the model's own spectrum: a model that softens its
+        # phonons also lowers its floor, so the flag isolates kappa errors beyond that
+        kappa_min = (
+            None
+            if ml_freqs is None
+            else first_scalar(
+                phonon_metrics.diffuson_kappa_min(*ml_freqs, atom_densities[mat_id])
+            )
+        )
+        cols["kappa_min"].append(kappa_min)
+        cols["below_floor"].append(
+            None
+            if kappa_ml is None or kappa_min is None
+            else kappa_ml < phonon_metrics.DIFFUSON_FLOOR_FRACTION * kappa_min
+        )
         if ml_freqs is None or dft_freqs is None:
             cols["freq_w1"].append(None)
             continue
@@ -149,11 +177,17 @@ def model_payload(
 
 def main() -> int:
     """Build the kappa-103-analysis payload across all requested models."""
+    import ase.io
+
     from matbench_discovery.phonons import read_kappa_json
 
     df_dft = read_kappa_json(DataFiles.phonondb_pbe_103_kappa_no_nac.path)
     material_ids = [str(mat_id) for mat_id in df_dft.index]
     spg_nums = canonical_spacegroup_numbers(df_dft, material_ids)
+    atom_densities = {
+        atoms.info["material_id"]: len(atoms) / atoms.get_volume()
+        for atoms in ase.io.iread(DataFiles.phonondb_pbe_103_structures.path)
+    }
 
     models: list[dict[str, Any]] = []
     for model in cli_args.models:
@@ -162,7 +196,11 @@ def main() -> int:
             print(f"Skipping {model.label}: no kappa_103 predictions")
             continue
         df_ml = read_kappa_json(kappa_path)
-        models.append(model_payload(model, kappa_path, df_ml, df_dft, material_ids))
+        models.append(
+            model_payload(
+                model, kappa_path, df_ml, df_dft, material_ids, atom_densities
+            )
+        )
         print(f"Processed {model.label}")
 
     if not models:
@@ -170,14 +208,19 @@ def main() -> int:
         if is_full_model_run():
             return 1
 
-    from matbench_discovery.metrics.phonons import KAPPA_ERROR_MAX, KAPPA_FLOOR
+    from matbench_discovery.metrics.phonons import (
+        DIFFUSON_FLOOR_FRACTION,
+        KAPPA_ERROR_MAX,
+        KAPPA_TEMPERATURE,
+    )
 
     provenance = figs.build_payload_provenance(
         generator=__file__,
         benchmark_inputs={
             "phonondb_pbe_103_kappa_no_nac": (
                 DataFiles.phonondb_pbe_103_kappa_no_nac.path
-            )
+            ),
+            "phonondb_pbe_103_structures": DataFiles.phonondb_pbe_103_structures.path,
         },
         source_files={
             "kappa_metrics": f"{ROOT}/matbench_discovery/metrics/phonons.py",
@@ -192,11 +235,12 @@ def main() -> int:
             "failure_flags": dict(FAILURE_FLAG_COLS),
             "frequency_decimals": FREQ_DECIMALS,
             "kappa_error_max": KAPPA_ERROR_MAX,
-            "kappa_floor": KAPPA_FLOOR,
+            "diffuson_floor_fraction": DIFFUSON_FLOOR_FRACTION,
+            "kappa_temperature": KAPPA_TEMPERATURE,
             "kappa_decimals": KAPPA_DECIMALS,
             "qq_levels": payload_numerics.round_list(QQ_LEVELS),
         },
-        packages=("numpy", "pandas", "pymatviz", "scipy"),
+        packages=("ase", "numpy", "pandas", "pymatviz", "scipy"),
     )
     payload = {
         **provenance,

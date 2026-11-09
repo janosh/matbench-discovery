@@ -260,13 +260,19 @@ def check_kappa_103_analysis() -> None:
     assert all(spg is None or 1 <= spg <= 230 for spg in payload["spg_nums"])
     assert_num_list(payload["kappa_dft"], length=n_materials)
     for model in assert_models(payload, "freq_w1_mean", "freq_pairs"):
-        for field in ("kappa_ml", "srme", "freq_w1"):
+        for field in ("kappa_ml", "kappa_min", "srme", "freq_w1"):
             assert_num_list(model[field], length=n_materials)
         assert all(val is None or 0 <= val <= 2 for val in model["srme"])
         for field in ("imag_modes", "broken_sym", "max_steps", "below_floor"):
             flags = model[field]
             assert len(flags) == n_materials
             assert all(flag is None or isinstance(flag, bool) for flag in flags)
+        floor_fraction = payload["identity"]["parameters"]["diffuson_floor_fraction"]
+        for kappa, floor, flag in zip(
+            model["kappa_ml"], model["kappa_min"], model["below_floor"], strict=True
+        ):
+            if kappa is not None and floor is not None:
+                assert flag == (kappa < floor_fraction * floor)
         # freq_pairs may be empty for models whose phonon runs all failed
         pairs = model["freq_pairs"]
         if pairs["dft"] or pairs["ml"]:

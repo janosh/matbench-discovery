@@ -31,34 +31,86 @@ from matbench_discovery.hpc import with_cost_block
 
 KAPPA_ERROR_MAX = 2.0
 SRME_CENSORED = "srme_censored"
-# Lattice thermal conductivity (W/mK) below which a predicted kappa is flagged as
-# physically implausible for a crystal. Flagged values most likely come from broken
-# force-constant fits (e.g. overestimated third-order constants or near-unstable soft
-# modes), not physics. The flag is diagnostic only and does not change any score.
-# Why 0.1 W/mK:
+# A predicted kappa below DIFFUSON_FLOOR_FRACTION x the material's diffuson minimum
+# (diffuson_kappa_min) is flagged as physically implausible. Such values most likely
+# come from broken force-constant fits (e.g. overestimated third-order constants or
+# near-unstable soft modes), not physics. The flag is diagnostic only and does not
+# change any score.
+# Why a per-material diffuson floor:
 # 1. Validity of the phonon Boltzmann transport equation (BTE). Kinetic theory gives
-#    kappa = C v L / 3 (heat capacity per volume x sound speed x mean free path).
-#    With the classical heat capacity 3 n k_B of a dense solid (n = 0.02-0.1
-#    atoms/A^3) and sound speeds of 1-5 km/s, kappa = 0.1 W/mK means L of roughly
-#    0.1-4 A, i.e. at or below one interatomic spacing (the Ioffe-Regel limit).
-#    Phonons that scatter within one spacing are not well-defined quasiparticles,
-#    so the perturbative three-phonon BTE that produced the number no longer
-#    applies. The Wigner coherence term relaxes this only partly, as it still
-#    assumes phonons survive at least one oscillation.
-# 2. The amorphous limit. A crystal should not conduct heat worse than its glass.
-#    The Cahill-Watson-Pohl minimum, where every vibration scatters within half a
-#    wavelength, is about 0.1-0.2 W/mK for the softest heavy-atom compounds (e.g.
-#    iodides) and several W/mK for stiff light ones (e.g. BN, SiC). The lowest
-#    kappa measured in any dense solid is ~0.05 W/mK, in disordered layered WSe2
-#    (Chiritescu et al., Science 315, 351, 2007).
-# 3. The dataset. The lowest PhononDB-PBE reference in kappa-103 is 0.44 W/mK
-#    (AgBr), so every flagged value is at least 4x below every reference.
-# A single fixed floor is deliberately conservative: it only catches gross failures.
-# Stiff compounds have glass-like minima far above 0.1 W/mK, so an unphysically low
-# prediction for them (e.g. 0.5 W/mK for BN) is not flagged. A per-material floor
-# from each compound's own density and phonon spectrum would be stricter.
-KAPPA_FLOOR = 0.1
-BELOW_KAPPA_FLOOR = "below_kappa_floor"
+#    kappa = C v L / 3. Once the mean free path L drops to about one interatomic
+#    spacing (the Ioffe-Regel limit), phonons are no longer well-defined
+#    quasiparticles and the perturbative three-phonon BTE that produced the number
+#    no longer applies. The Wigner coherence term relaxes this only partly.
+# 2. The amorphous limit. A crystal should not conduct heat worse than its glass,
+#    where vibrations carry heat by diffusive hopping between neighboring atoms
+#    (diffusons). Agne et al. (Energy Environ. Sci. 11, 609, 2018) model each mode
+#    as a random walk with diffusivity D_i = a^2 omega_i / (3 pi), a = n^(-1/3) the
+#    mean interatomic spacing, so kappa_min = (1/V) sum_i C_i D_i. This matches
+#    measured glass and disordered-crystal conductivities better than the older
+#    Cahill-Watson-Pohl estimate, which it undercuts by ~37%.
+# 3. Per material, not fixed. The minimum spans 0.11-1.22 W/mK across kappa-103
+#    (soft heavy-atom RbI to stiff light BeO), so a single fixed floor misses gross
+#    underpredictions for stiff compounds. Every PhononDB-PBE reference in
+#    kappa-103 sits at least 2x above its own DFT diffuson minimum.
+# 4. The 0.5 tolerance. The floor is evaluated on the model's own phonon spectrum,
+#    so a model that softens the spectrum also lowers its floor. Real low-kappa
+#    crystals can approach but not drop far below the diffuson limit; the factor 2
+#    margin keeps the flag to clear failures.
+DIFFUSON_FLOOR_FRACTION = 0.5
+KAPPA_TEMPERATURE = 300.0  # K, temperature of the kappa-103 conductivities
+_K_B = 1.380649e-23  # J/K
+_HBAR = 1.054571817e-34  # J s
+
+
+def diffuson_kappa_min(
+    ph_freqs: np.ndarray,
+    q_weights: np.ndarray | None,
+    atom_density: float,
+    temperature: float = KAPPA_TEMPERATURE,
+) -> float:
+    """Agne et al. (2018) diffuson minimum lattice thermal conductivity in W/mK.
+
+    kappa_min = (1/V) sum_i C_i a^2 omega_i / (3 pi), with quantum mode heat
+    capacities C_i, a = n^(-1/3) the mean interatomic spacing and the sum over the
+    modes of one primitive cell, averaged over the q-point mesh. Imaginary and zero
+    modes carry no heat.
+
+    Args:
+        ph_freqs: (n_qpoints, 3 * n_atoms) phonon frequencies (THz) of the primitive
+            cell.
+        q_weights: q-point weights (irreducible mesh), or None for a uniform mesh.
+        atom_density: atoms per cubic angstrom (Å⁻³) of the crystal.
+        temperature: temperature (K) for the mode heat capacities.
+
+    Returns:
+        float: diffuson minimum kappa (W/mK).
+
+    Raises:
+        ValueError: If frequencies are not a 2D array with a multiple of 3 modes, or
+            atom_density is not positive.
+    """
+    freqs = np.asarray(ph_freqs, dtype=float)
+    if freqs.ndim != 2 or freqs.shape[1] == 0 or freqs.shape[1] % 3:
+        raise ValueError(f"expected (n_qpoints, 3 * n_atoms) freqs, got {freqs.shape}")
+    if not atom_density > 0:
+        raise ValueError(f"atom_density must be positive, got {atom_density}")
+    mode_weights = mode_weights_for_freqs(freqs, q_weights)
+    if mode_weights is None:
+        mode_weights = np.ones(freqs.size)
+    mode_weights = mode_weights.reshape(freqs.shape)
+    mode_weights = mode_weights / mode_weights[:, 0].sum()  # normalize over q-points
+    omega = 2 * np.pi * 1e12 * np.clip(freqs, 0, None)  # rad/s
+    x_val = _HBAR * omega / (_K_B * temperature)
+    with np.errstate(over="ignore", divide="ignore", invalid="ignore"):
+        heat_cap = _K_B * x_val**2 * np.exp(x_val) / np.expm1(x_val) ** 2
+    heat_cap = np.where(x_val > 1e-8, np.nan_to_num(heat_cap), _K_B)
+    heat_cap[omega == 0] = 0  # acoustic modes at Gamma and imaginary modes
+    density_m3 = atom_density * 1e30
+    spacing = density_m3 ** (-1 / 3)
+    cell_volume = (freqs.shape[1] // 3) / density_m3
+    per_cell = np.sum(mode_weights * heat_cap * omega) * spacing**2 / (3 * np.pi)
+    return float(per_cell / cell_volume)
 
 
 class InvalidKappaReferenceError(ValueError):
@@ -128,7 +180,6 @@ def calc_kappa_metrics_from_dfs(
         - SRD: Symmetric Relative Difference between ML and DFT conductivities
         - SRE: Absolute value of SRD
         - SRME: Mode-resolved error
-        - below_kappa_floor: valid predicted kappa below KAPPA_FLOOR
         - DFT_kappa_tot_avg: Reference DFT conductivity values
     """
     df_pred = df_pred.copy()
@@ -144,10 +195,6 @@ def calc_kappa_metrics_from_dfs(
         )
     ]
     df_pred[Key.sre] = df_pred[Key.srd].abs()
-    df_pred[BELOW_KAPPA_FLOOR] = [
-        (kappa := _single_kappa(value)) is not None and kappa < KAPPA_FLOOR
-        for value in df_pred[MbdKey.kappa_tot_avg]
-    ]
     srme, srme_censored = calc_kappa_srme_dataframes(df_pred, df_true)
     df_pred[Key.srme] = srme
     df_pred[SRME_CENSORED] = srme_censored
