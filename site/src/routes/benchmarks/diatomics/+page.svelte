@@ -169,7 +169,9 @@
   <MetricsTable
     model_filter={has_diatomics_curves}
     col_filter={(col) => visible_cols[col.key] ?? true}
-    default_sort={{ column: DIATOMICS_METRICS.diatomics_combined_score.key, dir: `desc` }}
+    default_sort={[
+      { column: DIATOMICS_METRICS.diatomics_combined_score.key, dir: `desc` },
+    ]}
     {filters}
     repro_task="diatomics"
   />

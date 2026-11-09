@@ -518,7 +518,7 @@ export const sort_models = (
         ? model.model_name
         : get_nested_value(model, sort_by)) as CellVal,
     })),
-    [{ key: `value`, ascending: order === `asc` }],
+    [{ column: `value`, dir: order }],
   ).map(({ model }) => model)
 
 // === Reproducibility ===

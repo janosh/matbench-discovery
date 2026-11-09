@@ -29,7 +29,12 @@ definitions:
         description: 'Range of possible values for the metric'
       visible: { type: 'boolean', description: 'Whether the metric is visible' }
       format: { type: string, description: 'd3-format string' }
-      sticky: { type: 'boolean', description: 'Whether the metric is sticky' }
+      pin:
+        {
+          type: string,
+          enum: ['left', 'right'],
+          description: 'Table edge the column stays pinned to while scrolling sideways',
+        }
       sortable:
         { type: 'boolean', description: 'Whether the metric is sortable' }
       better:

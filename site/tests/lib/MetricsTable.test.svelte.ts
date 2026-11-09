@@ -137,13 +137,13 @@ describe(`MetricsTable`, () => {
 
     const table = doc_query(`table`)
     const table_container = doc_query(`.table-container`)
-    expect(table_container.style.getPropertyValue(`--heatmap-column-max-width`)).toBe(
+    expect(table_container.style.getPropertyValue(`--table-column-max-width`)).toBe(
       `14.4em`,
     )
     expect(
-      table_container.style.getPropertyValue(`--heatmap-sticky-cell-odd-bg`),
+      table_container.style.getPropertyValue(`--table-sticky-cell-odd-bg`),
     ).toContain(`linear-gradient`)
-    expect(table_container.style.getPropertyValue(`--heatmap-row-num-padding-left`)).toBe(
+    expect(table_container.style.getPropertyValue(`--table-row-num-padding-left`)).toBe(
       `0`,
     )
 
@@ -173,9 +173,10 @@ describe(`MetricsTable`, () => {
       for (const [idx, row] of [...table.querySelectorAll(`tbody tr`)].entries()) {
         expect(row).toBe(initial_rows[idx])
         const f1 = models[idx].metrics?.discovery?.[subset]?.F1
-        expect(doc_query(`td[data-col="F1"]`, row).getAttribute(`data-sort-value`)).toBe(
-          f1 == null ? null : String(f1),
-        )
+        // each row shows its own model's F1 for the selected subset
+        const f1_text = doc_query(`td[data-col="F1"]`, row).textContent?.trim()
+        if (f1 == null) expect(f1_text).toBe(`n/a`)
+        else expect(Number(f1_text)).toBeCloseTo(f1, 3)
       }
     }
 
@@ -316,7 +317,8 @@ describe(`MetricsTable`, () => {
       })
       await tick()
       const cell = doc_query(`tbody td[data-col="Δω"]`)
-      expect(cell.getAttribute(`data-sort-value`)).toBe(coverage.n_valid ? `47.7` : null)
+      // the coverage tooltip leaves the cell's own value (what it sorts by) in place
+      expect(cell.textContent?.trim()).toContain(coverage.n_valid ? `47.7` : `n/a`)
       if (!tooltip) {
         expect(cell.textContent?.trim()).toBe(`47.7`)
         expect(cell.querySelector(`small, [data-title]`)).toBeNull()
@@ -438,8 +440,8 @@ describe(`MetricsTable`, () => {
 
   it.each([
     {
-      name: `sticky columns only`,
-      col_filter: (col: Label) => col.sticky === true,
+      name: `pinned columns only`,
+      col_filter: (col: Label) => col.pin !== undefined,
       expected_headers: [`Model`],
     },
     {
@@ -456,7 +458,7 @@ describe(`MetricsTable`, () => {
     mount_table({ col_filter, model_filter: few_models })
 
     expect(header_names()).toStrictEqual(expected_headers)
-    expect(header_cells()[0].classList.contains(`sticky-col`)).toBe(true)
+    expect(header_cells()[0].classList.contains(`pinned`)).toBe(true)
   })
 
   describe(`Column Sorting`, () => {
@@ -997,7 +999,7 @@ describe(`MetricsTable`, () => {
         model_filter: (model: ModelData) => keys.has(model.model_key),
         col_filter: (col: Label) => [`Model`, `F1`, `DAF`].includes(col.key),
         column_order: [`Model`, `DAF`, `F1`],
-        default_sort: { column: `DAF`, dir: `desc` },
+        default_sort: [{ column: `DAF`, dir: `desc` }],
       },
     })
     await tick()
@@ -1090,6 +1092,8 @@ describe(`MetricsTable`, () => {
       )
       await tick()
     }
+    // Shift-click toggles sort keys: the URL's ascending F1 out, back in best-first, then Params
+    await shift_click(`F1`)
     await shift_click(`F1`)
     await shift_click(`model_params`)
     expect(query_param(`multi_sort`)).toBe(`-F1,-model_params`)
@@ -1126,8 +1130,8 @@ describe(`MetricsTable`, () => {
       filters: { ...filters.config, selected_only: false },
       weights: score_weight_records(),
       sort: [
-        { column: `F1`, ascending: false },
-        { column: `model_params`, ascending: false },
+        { column: `F1`, dir: `desc` },
+        { column: `model_params`, dir: `desc` },
       ],
       columns: visible_ids.map((id) => expect.objectContaining({ id })),
       models: exported_models.map((model) => ({
@@ -1229,7 +1233,7 @@ describe(`MetricsTable`, () => {
         mount_table({
           model_filter: (model: ModelData) => model === ACTIVE_MODELS[0],
           col_filter: (col: Label) => phonon_keys.has(col.key),
-          default_sort: { column: PHONON_METRICS.κ_SRME.key, dir: `asc` },
+          default_sort: [{ column: PHONON_METRICS.κ_SRME.key, dir: `asc` }],
           mobile_keys,
         })
         await tick()
@@ -1251,7 +1255,7 @@ describe(`MetricsTable`, () => {
         mount_table({
           model_filter: (model: ModelData) => model === ACTIVE_MODELS[0],
           col_filter: (col: Label) => diatomics_keys.has(col.key),
-          default_sort: { column: `diatomics_combined_score`, dir: `desc` },
+          default_sort: [{ column: `diatomics_combined_score`, dir: `desc` }],
         })
         // The first client render must match server HTML before onMount compacts it.
         expect(header_cells().length).toBeGreaterThan(5)

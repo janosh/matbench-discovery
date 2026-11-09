@@ -85,7 +85,7 @@
     format,
   }))
   const md_col_defs = [
-    { id: `system`, label: `System`, sticky: true },
+    { id: `system`, label: `System`, pin: `left` as const },
     { id: `temperature_kelvin`, label: `T (K)`, format: `.0f` },
     { id: `n_atoms`, label: `Atoms`, format: `.0f` },
     ...md_metric_cols,
@@ -642,7 +642,7 @@
             <HeatmapTable
               data={md_rows}
               columns={md_cols}
-              initial_sort="system"
+              sort={[{ column: `system`, dir: `asc` }]}
               default_num_format=".3~f"
             />
           </section>

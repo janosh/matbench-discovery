@@ -112,8 +112,8 @@
     show_row_numbers = true,
     filters = make_table_filters(),
     column_order = $bindable([]),
-    default_sort = { column: `CPS`, dir: `desc` }, // omitted from shared URLs
-    sort = $bindable({ ...default_sort }),
+    default_sort = [{ column: `CPS`, dir: `desc` }], // omitted from shared URLs
+    sort = $bindable([...default_sort]),
     column_preset = `default`,
     repro_task,
     mobile_keys = [],
@@ -126,8 +126,9 @@
     show_row_numbers?: boolean
     filters?: UrlTableFilters
     column_order?: string[]
-    default_sort?: TableSort
-    sort?: TableSort
+    default_sort?: TableSort[]
+    // keys in priority order (Shift-click adds one); empty keeps the data's order
+    sort?: TableSort[]
     column_preset?: string
     // task page whose rerun checks get a Reproducible column
     repro_task?: TimedTask
@@ -151,10 +152,6 @@
     mounted = true
   })
   const initial_column_order = untrack(() => [...column_order])
-  let multi_sort = $derived.by((): { column: string; ascending: boolean }[] => {
-    void column_preset
-    return []
-  })
   // task pages get their Reproducible column last
   const column_defaults = $derived(
     column_labels.concat(repro_task ? REPRO_COLS[repro_task] : []).map((col): Column => ({
@@ -177,7 +174,7 @@
     const visible = column_defaults.filter((col) => col.visible)
     // Match the server's full table for hydration before applying the mobile view.
     if (!mounted || !mobile.current) return visible.map((col) => col.id)
-    const primary = multi_sort[0]?.column ?? sort.column
+    const primary = sort[0]?.column
     const metrics = new Set(
       visible.filter((col) => col.better && col.id !== primary).slice(0, 2),
     )
@@ -213,7 +210,25 @@
   }
   bind_url_params(
     (params) => {
-      sort = sort_from_query(params, default_sort)
+      // one key rides the `sort`/`dir` params, several the `multi_sort` list, none `sort=none`
+      const criteria =
+        params
+          .get(`multi_sort`)
+          ?.split(`,`)
+          .filter(Boolean)
+          .map((key): TableSort => ({
+            column: key.startsWith(`-`) ? key.slice(1) : key,
+            dir: key.startsWith(`-`) ? `desc` : `asc`,
+          })) ?? []
+      const sortable = criteria.every(({ column }) =>
+        column_defaults.some((col) => col.id === column && col.sortable !== false),
+      )
+      sort =
+        sortable && criteria.length
+          ? criteria
+          : params.get(`sort`) === `none`
+            ? []
+            : [sort_from_query(params, default_sort[0])]
       custom_visible = read_ids(params, `columns`)
       column_order = [
         ...new Set([
@@ -221,23 +236,14 @@
           ...default_column_order,
         ]),
       ]
-      const criteria =
-        params
-          .get(`multi_sort`)
-          ?.split(`,`)
-          .filter(Boolean)
-          .map((key) => ({
-            column: key.startsWith(`-`) ? key.slice(1) : key,
-            ascending: !key.startsWith(`-`),
-          })) ?? []
-      multi_sort = criteria.every(({ column }) =>
-        column_defaults.some((col) => col.id === column && col.sortable !== false),
-      )
-        ? criteria
-        : []
     },
     () => [
-      ...sort_url_entries(sort, default_sort),
+      ...(sort.length === 0
+        ? [[`sort`, `none`, default_sort[0].column] as const]
+        : sort_url_entries(
+            sort.length === 1 ? sort[0] : default_sort[0],
+            default_sort[0],
+          )),
       // Persist mobile defaults as well, so a shared view has the same columns on desktop.
       [
         `columns`,
@@ -250,9 +256,11 @@
       [`column_order`, column_order.join(`,`), default_column_order.join(`,`)],
       [
         `multi_sort`,
-        multi_sort
-          .map(({ column, ascending }) => `${ascending ? `` : `-`}${column}`)
-          .join(`,`),
+        sort.length > 1
+          ? sort
+              .map(({ column, dir }) => `${dir === `asc` ? `` : `-`}${column}`)
+              .join(`,`)
+          : ``,
       ],
     ],
   )
@@ -260,13 +268,6 @@
     const visible = updated.filter((col) => col.visible !== false).map((col) => col.id)
     custom_visible = visible.join(`,`) === default_visible_ids.join(`,`) ? null : visible
   }
-  const active_sort = $derived(
-    multi_sort.length
-      ? multi_sort
-      : sort.column
-        ? [{ column: sort.column, ascending: sort.dir === `asc` }]
-        : [],
-  )
   const show_discovery_context = $derived(
     column_labels.some(
       (label) =>
@@ -367,7 +368,7 @@
           discovery_set,
           cps_discovery_set: `unique_prototypes`,
           filters: { ...filters.config, selected_only: filters.show_selected_only },
-          sort: active_sort,
+          sort,
           columns: ordered_columns.map(({ id, key, label, format }) => ({
             id,
             key,
@@ -512,12 +513,12 @@
 <div class="ranking-context" role="group" aria-label="Ranking context">
   <p>
     <strong>{metrics_data.length} of {cohort_models.length} eligible models</strong>
-    · {#if active_sort.length}Sorted by {#each active_sort as criterion, idx}{@const label =
+    · {#if sort.length}Sorted by {#each sort as criterion, idx}{@const label =
           columns.find(
             (col) => col.id === criterion.column,
           )?.label}{#if idx}{`, then `}{/if}{#if label}{@html label}{:else}{criterion.column}{/if}
-        ({criterion.ascending ? `ascending` : `descending`}){/each}{:else}Sort order: see
-      column headers{/if}
+        ({criterion.dir === `asc` ? `ascending` : `descending`}){/each}{:else}Sort order:
+      see column headers{/if}
     {#if show_discovery_context}· Discovery: {DISCOVERY_SET_LABELS[discovery_set]
         .label}{/if}
     {#if show_row_numbers}· Row numbers follow this filtered order.{/if}
@@ -541,7 +542,6 @@
   row_key="model_key"
   {columns}
   bind:sort
-  bind:multi_sort
   bind:visible_rows
   {show_row_numbers}
   default_num_format=".3f"
@@ -551,7 +551,7 @@
   {...rest}
   oncontextmenucapture={open_menu}
   class={[`leaderboard`, rest.class]}
-  root_style="--heatmap-sticky-cell-odd-bg: linear-gradient(var(--table-odd), var(--table-odd)), var(--page-bg); --heatmap-row-num-padding-left: 0; --heatmap-column-max-width: 14.4em;"
+  root_style="--table-sticky-cell-odd-bg: linear-gradient(var(--table-odd), var(--table-odd)), var(--page-bg); --table-row-num-padding-left: 0; --table-column-max-width: 14.4em;"
 >
   {#snippet controls()}
     <TableControls

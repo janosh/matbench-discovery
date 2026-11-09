@@ -24,13 +24,13 @@ vi.mock(`matterviz/plot`, async (import_original) => ({
 const mount_query = (query: string) =>
   mount_with_url(Page, `http://localhost/data/sets?${query}`)
 const rows = () => [
-  ...document.querySelectorAll<HTMLTableRowElement>(`.heatmap tbody tr[data-row-idx]`),
+  ...document.querySelectorAll<HTMLTableRowElement>(`.data-table tbody tr[data-row-idx]`),
 ]
 const names = () =>
   rows().map((row) => row.querySelector(`[data-col="Name"] > a`)?.textContent)
 const dataset_row = (key: string) => {
   const row = doc_query(
-    `.heatmap [data-col="Name"] > a[href="/data/${DATASETS[key].slug}"]`,
+    `.data-table [data-col="Name"] > a[href="/data/${DATASETS[key].slug}"]`,
   ).closest(`tr`)
   if (!row) throw new Error(`Missing dataset row: ${key}`)
   return row
@@ -45,7 +45,7 @@ describe(`Datasets Page`, () => {
     plot_mock.mockClear()
     mount(Page, { target: document.body })
     expect(rows()).toHaveLength(Object.keys(DATASETS).length)
-    expect(document.querySelectorAll(`.heatmap th`)).toHaveLength(12)
+    expect(document.querySelectorAll(`.data-table th`)).toHaveLength(12)
     expect(sorted_header()?.textContent).toContain(`Models`)
     expect(sorted_header()?.getAttribute(`aria-sort`)).toBe(`descending`)
     expect(names()[0]).toBe(`MPtrj`)
@@ -147,7 +147,7 @@ describe(`Datasets Page`, () => {
     expect(unknown_count.getAttribute(`title`)).toContain(`Structure count not reported`)
     expect(DATASETS.OCx24.notes?.Size).toMatch(/\S/)
     expect(
-      [...document.querySelectorAll(`.heatmap th.not-sortable`)].map((header) =>
+      [...document.querySelectorAll(`.data-table th.not-sortable`)].map((header) =>
         header.textContent?.trim(),
       ),
     ).toEqual([`API`, `Links`])
@@ -237,10 +237,11 @@ describe(`Datasets Page`, () => {
       expect(query_param(key)).toBeNull()
     }
     expect(query_param(`color`)).toBe(`role`)
+    // a third click on the sole sort key clears it, back to the data's order
     header?.click()
     await tick()
-    expect(query_param(`sort`)).toBe(`Name`)
-    expect(sorted_header()?.getAttribute(`aria-sort`)).toBe(`descending`)
+    expect(query_param(`sort`)).toBe(`none`)
+    expect(sorted_header()).toBeNull()
   })
 
   it(`links exact model counts to matching leaderboard filters without expanding composites`, () => {

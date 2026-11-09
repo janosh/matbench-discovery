@@ -28,7 +28,7 @@
   --highlight: light-dark(seagreen, mediumseagreen);
   --warning: light-dark(#b45309, orange);
   --table-odd: light-dark(rgba(0, 0, 0, 0.03), rgba(0, 0, 0, 0.5));
-  --heatmap-sticky-cell-odd-bg:
+  --table-sticky-cell-odd-bg:
     linear-gradient(var(--table-odd), var(--table-odd)), var(--page-bg);
   --nav-bg: light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.08));
   --card-bg: light-dark(rgba(255, 255, 255, 0.4), rgba(0, 0, 0, 0.3));

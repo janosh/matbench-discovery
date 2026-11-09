@@ -75,7 +75,9 @@
     new Set([...headline_metric_keys, ...col_presets[col_preset].map((col) => col.key)]),
   )
   let discovery_set: DiscoverySet = $state(`unique_prototypes`)
-  let sort = $state(default_sort_for(default_col_preset))
+  // MetricsTable reads and writes the sort's URL params; this page only re-sorts on a preset
+  // change until the user picks a column themselves
+  let sort = $state<TableSort[]>([default_sort_for(default_col_preset)])
   let auto_sort_enabled = $state(true)
 
   function handle_table_event(event: Event) {
@@ -96,8 +98,9 @@
     const default_sort = default_sort_for(next_preset)
     const next_sort = sort_from_query(params, default_sort)
     auto_sort_enabled =
-      next_sort.column === default_sort.column && next_sort.dir === default_sort.dir
-    sort = next_sort
+      !params.has(`multi_sort`) &&
+      next_sort.column === default_sort.column &&
+      next_sort.dir === default_sort.dir
 
     discovery_set = valid_query_param(params, `set`, `unique_prototypes`, valid_sets)
     col_preset = next_preset
@@ -138,7 +141,7 @@
       options={col_preset_options}
       tooltip_options={{ placement: `top` }}
       on_change={() => {
-        if (auto_sort_enabled) sort = default_sort_for(col_preset)
+        if (auto_sort_enabled) sort = [default_sort_for(col_preset)]
       }}
     />
   </div>
@@ -171,7 +174,7 @@
           : preset_metric_keys.has(col.key) && !supplementary_hidden.has(col.key)}
       {discovery_set}
       column_preset={col_preset}
-      default_sort={default_sort_for(col_preset)}
+      default_sort={[default_sort_for(col_preset)]}
       model_filter={has_preset_data}
       bind:sort
       {filters}

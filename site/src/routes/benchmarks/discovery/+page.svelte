@@ -65,7 +65,7 @@
     {discovery_set}
     model_filter={has_discovery_metrics}
     {filters}
-    default_sort={{ column: labels.ALL_METRICS.F1.key, dir: `desc` }}
+    default_sort={[{ column: labels.ALL_METRICS.F1.key, dir: `desc` }]}
   />
 </section>
 

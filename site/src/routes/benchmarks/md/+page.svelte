@@ -59,7 +59,7 @@
   <MetricsTable
     model_filter={has_md_metrics}
     col_filter={(col) => visible_cols[col.key] ?? true}
-    default_sort={{ column: MD_METRICS.md_combined_score.key, dir: `desc` }}
+    default_sort={[{ column: MD_METRICS.md_combined_score.key, dir: `desc` }]}
     {filters}
     repro_task="md"
   />

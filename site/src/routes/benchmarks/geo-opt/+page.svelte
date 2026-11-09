@@ -129,7 +129,7 @@
         model_filter={has_geo_opt_metrics}
         column_labels={columns}
         show_row_numbers={false}
-        default_sort={{ column: ALL_METRICS.RMSD.key, dir: `asc` }}
+        default_sort={[{ column: ALL_METRICS.RMSD.key, dir: `asc` }]}
       />
     </section>
   {/snippet}

@@ -132,7 +132,7 @@ export const METADATA_COLS: MetadataLabels = {
     key: `Model`,
     label: `Model`,
     description: `Model name`,
-    sticky: true,
+    pin: `left`,
     sortable: true,
     better: undefined,
   },

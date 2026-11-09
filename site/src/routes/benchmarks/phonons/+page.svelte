@@ -143,7 +143,7 @@
     model_filter={has_phonon_metrics}
     col_filter={(col) => visible_cols[col.key] ?? true}
     mobile_keys={[HYPERPARAMS.displacement_distance.key]}
-    default_sort={{ column: PHONON_METRICS.κ_SRME.key, dir: `asc` }}
+    default_sort={[{ column: PHONON_METRICS.κ_SRME.key, dir: `asc` }]}
     {filters}
   />
 </section>

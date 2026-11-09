@@ -104,9 +104,9 @@ export interface Label1 {
    */
   format?: string
   /**
-   * Whether the metric is sticky
+   * Table edge the column stays pinned to while scrolling sideways
    */
-  sticky?: boolean
+  pin?: 'left' | 'right'
   /**
    * Whether the metric is sortable
    */
