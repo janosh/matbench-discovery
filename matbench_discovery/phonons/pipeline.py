@@ -37,7 +37,7 @@ from matbench_discovery.hpc import (
     partition_material_ids,
     reset_gpu_peak_memory,
 )
-from matbench_discovery.phonons import check_imaginary_freqs
+from matbench_discovery.phonons import check_imaginary_freqs, force_sets
 from matbench_discovery.phonons.adapters import StandardKappaAdapter, get_kappa_adapter
 from matbench_discovery.phonons.schema import normalize_kappa_result
 
@@ -85,7 +85,8 @@ class KappaSettings:
     batch_size: int = 1
     max_atoms_per_batch: int | None = None
     relaxation_mode: RelaxationMode = "single-stage"
-    save_forces: bool = False
+    # raw FC2/FC3 force sets as an HDF5 sidecar (phonons.force_sets), ~42 MB/model
+    save_forces: bool = True
     harmonic_only: bool = False
 
     def __post_init__(self) -> None:
@@ -427,6 +428,7 @@ def kappa_source_paths(adapter: StandardKappaAdapter, model_key: str) -> set[str
         os.path.realpath(harmonic.__file__),
         os.path.realpath(hpc.__file__),
         os.path.realpath(phonons.__file__),
+        os.path.realpath(force_sets.__file__),
         os.path.realpath(schema.__file__),
         os.path.realpath(thermal_conductivity.__file__),
         os.path.realpath(f"{ROOT}/models/run_kappa.py"),
@@ -646,11 +648,7 @@ def calculate_kappa_for_structure(
             str(Key.ph_freqs): frequencies[phono3py.grid.grg2bzg],
         }
         if settings.save_forces:
-            forces = {
-                "fc2_set": fc2_set,
-                "fc2_displacements": phono3py.phonon_dataset,
-                "fc3_set": [],
-            }
+            forces = force_sets.force_set_from_phono3py(phono3py, fc2_set)
         # Harmonic analysis owns its failures: normalization treats result.errors as
         # conductivity failures, so placing a sidecar error there destroys valid kappa.
         try:
@@ -675,8 +673,7 @@ def calculate_kappa_for_structure(
                 max_evaluations=max_fc3_evaluations,
             )
             if forces is not None:
-                forces["fc3_set"] = fc3_set
-                forces["fc3_displacements"] = phono3py.dataset
+                forces = force_sets.add_fc3_forces(forces, phono3py, fc3_set)
             phono3py.produce_fc3(symmetrize_fc3r=True)
             error_stage = "Conductivity"
             from matbench_discovery.phonons import thermal_conductivity as ltc
@@ -705,8 +702,13 @@ def _write_sidecar(
     """Write one per-material sidecar and return its shard-relative path (or None)."""
     if data is None:
         return None
-    relative_path = f"{SIDECAR_DIRS[attribute]}/{record_filename(material_id)}"
-    atomic_write_json(f"{shard_dir}/{relative_path}", data)
+    if attribute == "force_file":
+        file_name = f"{force_sets.material_group_name(material_id)}.h5"
+        relative_path = f"{SIDECAR_DIRS[attribute]}/{file_name}"
+        force_sets.write_force_set_file(f"{shard_dir}/{relative_path}", data)
+    else:
+        relative_path = f"{SIDECAR_DIRS[attribute]}/{record_filename(material_id)}"
+        atomic_write_json(f"{shard_dir}/{relative_path}", data)
     return relative_path
 
 
@@ -994,7 +996,8 @@ def write_kappa_artifacts(
     """Write normalized predictions plus force, phonon and provenance sidecars.
 
     Sidecar paths derive from the prediction file stem: ``{stem}-run-info.json``,
-    ``{stem}-phonons.json.gz`` and, when forces were saved, ``{stem}-forces.json.gz``.
+    ``{stem}-phonons.json.gz`` and, when forces were saved, ``{stem}-forces.h5``
+    (phonons.force_sets).
     """
     artifact_stem = (
         pred_file_path.removesuffix(".json.gz")
@@ -1003,7 +1006,7 @@ def write_kappa_artifacts(
     )
     run_info_path = f"{artifact_stem}-run-info.json"
     candidate_force_path = (
-        f"{artifact_stem}-forces.json.gz"
+        f"{artifact_stem}-forces.h5"
         if merged_run.manifest.settings.save_forces
         else None
     )
@@ -1031,17 +1034,16 @@ def write_kappa_artifacts(
     )
 
     if candidate_force_path is not None:
-        stream_sidecar_artifact(
+        force_sets.merge_force_set_files(
             candidate_force_path,
-            records=merged_run.records,
-            shard_dir=merged_run.shard_dir,
-            attribute="force_file",
+            (
+                (record.material_id, f"{merged_run.shard_dir}/{record.force_file}")
+                for record in merged_run.records
+                if record.force_file is not None
+            ),
         )
-    stream_sidecar_artifact(
-        phonon_file_path,
-        records=merged_run.records,
-        shard_dir=merged_run.shard_dir,
-        attribute="phonon_file",
+    stream_phonon_artifact(
+        phonon_file_path, records=merged_run.records, shard_dir=merged_run.shard_dir
     )
 
     df_predictions = pd.DataFrame(rows)
@@ -1076,14 +1078,10 @@ def write_json_records(
     output_file.write("\n]")
 
 
-def stream_sidecar_artifact(
-    path: str,
-    *,
-    records: Sequence[KappaRecord],
-    shard_dir: str,
-    attribute: SidecarAttribute,
+def stream_phonon_artifact(
+    path: str, *, records: Sequence[KappaRecord], shard_dir: str
 ) -> None:
-    """Atomically stream per-material sidecars into one gzip JSON array.
+    """Atomically stream per-material harmonic sidecars into one gzip JSON array.
 
     Records without the sidecar (failed before the producing stage) are skipped, so the
     array may hold fewer entries than the prediction file; each entry carries its
@@ -1093,7 +1091,7 @@ def stream_sidecar_artifact(
     def sidecar_payloads() -> Iterator[dict[str, Any]]:
         """Read each record's sidecar, stamped with the record's authoritative ID."""
         for record in records:
-            relative_path: str | None = getattr(record, attribute)
+            relative_path = record.phonon_file
             if relative_path is None:
                 continue
             with gzip.open(
@@ -1102,7 +1100,7 @@ def stream_sidecar_artifact(
                 sidecar_data = json.load(source_file)
             if not isinstance(sidecar_data, dict):
                 raise TypeError(
-                    f"{attribute} sidecar for {record.material_id} must be a dict"
+                    f"phonon_file sidecar for {record.material_id} must be a dict"
                 )
             yield {**sidecar_data, str(Key.mat_id): record.material_id}
 

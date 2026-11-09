@@ -59,7 +59,6 @@ hyperparams:
     kappa:
       protocol: phonondb-v1
       is_plusminus: true
-      save_forces: true
   architecture:
     n_layers: 15
     graph_construction_radius: 10.0

@@ -88,7 +88,6 @@ hyperparams:
       symprec: 1.0e-5
       ase_optimizer: FIRE
       ase_filter: FrechetCellFilter
-      save_forces: true
   architecture:
     graph_construction_radius: 6.0
     max_neighbors:

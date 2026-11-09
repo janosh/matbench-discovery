@@ -63,7 +63,6 @@ hyperparams:
     cell_filter: FrechetCellFilter
     kappa:
       protocol: phonondb-v1
-      save_forces: true
   architecture:
     n_layers: 5
     graph_construction_radius: 5.0

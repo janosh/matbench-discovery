@@ -54,7 +54,6 @@ hyperparams:
       protocol: phonondb-v1
       displacement_distance: 0.03
       is_plusminus: true
-      save_forces: true
   upstream_config:
     d_pet: 640
     d_node: 2560

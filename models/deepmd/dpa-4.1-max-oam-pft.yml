@@ -85,7 +85,6 @@ hyperparams:
     kappa:
       protocol: phonondb-v1
       displacement_distance: 0.03
-      save_forces: true
   architecture:
     preset: dpa4-max-v20260911
   training:

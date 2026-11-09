@@ -20,6 +20,7 @@ from pymatviz.enums import Key
 
 from matbench_discovery import file_digest
 from matbench_discovery.enums import MbdKey, Model
+from matbench_discovery.phonons import force_sets
 from matbench_discovery.phonons.adapters import (
     FairchemKappaAdapter,
     StandardKappaAdapter,
@@ -92,14 +93,7 @@ class ComputationStub:
             "errors": [],
             "error_traceback": [],
         }
-        forces = (
-            {
-                "fc2_set": np.full((1, len(atoms), 3), 2),
-                "fc3_set": np.full((1, len(atoms), 3), 3),
-            }
-            if settings.save_forces
-            else None
-        )
+        forces = make_force_set(len(atoms)) if settings.save_forces else None
         return KappaComputation(
             result=result,
             forces=forces,
@@ -108,12 +102,38 @@ class ComputationStub:
         )
 
 
+def make_force_set(n_atoms: int) -> dict[str, Any]:
+    """Return a valid force set with constant FC2 (2) and FC3 (3) forces."""
+    return {
+        "unitcell": {
+            "cell": np.eye(3),
+            "scaled_positions": np.zeros((n_atoms, 3)),
+            "numbers": np.ones(n_atoms, dtype=int),
+            "masses": np.ones(n_atoms),
+        },
+        "supercell_matrix": np.eye(3),
+        "phonon_supercell_matrix": np.eye(3),
+        "primitive_matrix": np.eye(3),
+        "symprec": 1e-5,
+        "fc2_dataset": {"natom": n_atoms, "first_atoms": []},
+        "fc2_forces": np.full((1, n_atoms, 3), 2),
+        "fc3_dataset": {"natom": n_atoms, "first_atoms": []},
+        "fc3_forces": np.full((1, n_atoms, 3), 3),
+    }
+
+
 class Phono3pyStub:
     """Minimal mutable phono3py state used by the orchestration test."""
 
     def __init__(self) -> None:
         """Initialize without force constants."""
         self.forces: np.ndarray | None = None
+        self.unitcell = SimpleNamespace(
+            cell=np.eye(3), scaled_positions=np.zeros((1, 3)), numbers=[1], masses=[1.0]
+        )
+        self.supercell_matrix = self.phonon_supercell_matrix = np.eye(3)
+        self.primitive_matrix = np.eye(3)
+        self.symmetry = SimpleNamespace(tolerance=1e-5)
         self.phonon_dataset = {
             "first_atoms": [{"number": 0, "displacement": [0.01, 0, 0]}]
         }
@@ -676,9 +696,11 @@ def test_calculate_kappa_for_structure_runs_shared_physics_flow(
             computation.result[MbdKey.kappa_tot_rta], np.eye(3)
         )
     assert computation.forces is not None
-    assert computation.forces["fc2_displacements"] == adapter.phono3py.phonon_dataset
-    assert np.asarray(computation.forces["fc2_set"]).shape == (1, 1, 3)
-    assert np.asarray(computation.forces["fc3_set"]).size == adapter.n_fc3_calls * 3
+    assert computation.forces["fc2_dataset"] == adapter.phono3py.phonon_dataset
+    assert computation.forces["fc2_forces"].shape == (1, 1, 3)
+    fc3_forces = computation.forces["fc3_forces"]
+    assert (0 if fc3_forces is None else fc3_forces.size) == adapter.n_fc3_calls * 3
+    assert (computation.forces["fc3_dataset"] is None) is (fc3_forces is None)
     # harmonic data is recorded for every material with an FC2, imaginary modes or not
     if harmonic_failure:
         assert computation.phonons is None
@@ -706,8 +728,8 @@ def test_calculate_kappa_for_structure_runs_shared_physics_flow(
         )
         assert failed.error == "ForceConstantError: RuntimeError: fc3 failed"
         assert failed.forces is not None
-        np.testing.assert_array_equal(failed.forces["fc2_set"], np.ones((1, 1, 3)))
-        assert failed.forces["fc3_set"] == []
+        np.testing.assert_array_equal(failed.forces["fc2_forces"], np.ones((1, 1, 3)))
+        assert failed.forces["fc3_forces"] is None
         assert (failed.phonons is None) is harmonic_failure
 
 
@@ -925,14 +947,21 @@ def test_resumable_shards_strict_merge_and_artifacts(
     pred_path = f"{stem}.json.gz"
     artifacts = write_kappa_artifacts(merged_run, pred_file_path=pred_path)
     assert len(artifacts.predictions) == len(atoms_by_id)
-    assert artifacts.force_file_path == f"{stem}-forces.json.gz"
+    assert artifacts.force_file_path == f"{stem}-forces.h5"
     with gzip.open(artifacts.pred_file_path, mode="rt", encoding="utf-8") as file:
         prediction_rows = json.load(file)
-    assert all("fc2_set" not in row and "fc3_set" not in row for row in prediction_rows)
-    assert artifacts.force_file_path is not None
-    with gzip.open(artifacts.force_file_path, mode="rt", encoding="utf-8") as file:
-        force_rows = json.load(file)
-    assert len(force_rows) == len(atoms_by_id)
+    assert all("fc2_forces" not in row for row in prediction_rows)
+    # every material's force set lands in one HDF5 file, in ID order
+    assert force_sets.material_ids(artifacts.force_file_path) == list(atoms_by_id)
+    for material_id, n_atoms in zip(atoms_by_id, (1, 4, 2, 3), strict=True):
+        force_set = force_sets.load_force_set(artifacts.force_file_path, material_id)
+        assert force_set["fc2_forces"].dtype == np.float32
+        np.testing.assert_array_equal(
+            force_set["fc2_forces"], np.full((1, n_atoms, 3), 2)
+        )
+        np.testing.assert_array_equal(
+            force_set["fc3_forces"], np.full((1, n_atoms, 3), 3)
+        )
     # harmonic sidecars are always written and merged in ID order
     assert artifacts.phonon_file_path == f"{stem}-phonons.json.gz"
     assert all(record.phonon_file is not None for record in merged_run.records)
