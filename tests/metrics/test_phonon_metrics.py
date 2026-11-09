@@ -20,10 +20,10 @@ from matbench_discovery.metrics import phonons as phonon_metrics
 
 _KAPPA_MODEL_DIR = "models/mace/mace-mp-0"
 KAPPA_PRED = f"{_KAPPA_MODEL_DIR}/2026-07-01-phonons-kappa-103.json.gz"
-KAPPA_FORCE = f"{_KAPPA_MODEL_DIR}/2026-07-01-phonons-kappa-103-forces.json.gz"
+KAPPA_FORCE = f"{_KAPPA_MODEL_DIR}/2026-07-01-phonons-kappa-103-forces.h5"
 KAPPA_RUN_INFO = f"{_KAPPA_MODEL_DIR}/2026-07-01-phonons-kappa-103-run-info.json"
 KAPPA_PRED_EXISTING = f"{_KAPPA_MODEL_DIR}/2025-01-01-phonons-kappa-103.json.gz"
-KAPPA_FORCE_NEW = f"{_KAPPA_MODEL_DIR}/2026-07-02-phonons-kappa-103-forces.json.gz"
+KAPPA_FORCE_NEW = f"{_KAPPA_MODEL_DIR}/2026-07-02-phonons-kappa-103-forces.h5"
 _GEO_OPT_FILE = "models/alignn/alignn/2026-07-01-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz"
 KAPPA_METRICS: dict[str, float | None] = {
     "srme": 0.25,
@@ -742,7 +742,7 @@ def test_write_harmonic_to_yaml(tmp_path: Path) -> None:
     """Harmonic-only reruns land in kappa_103.harmonic with their own cost/refs."""
     phonon_path, run_info_path, force_path = (
         f"{_KAPPA_MODEL_DIR}/harmonic/2026-09-05-phonons-kappa-103-{name}"
-        for name in ("phonons.json.gz", "run-info.json", "forces.json.gz")
+        for name in ("phonons.json.gz", "run-info.json", "forces.h5")
     )
     conductivity_run = {
         "pred_file": {"name": KAPPA_PRED, "url": "https://example.com/pred.gz"},

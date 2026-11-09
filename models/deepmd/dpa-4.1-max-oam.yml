@@ -186,11 +186,6 @@ metrics:
         size: 11056346
         md5: 006a9d2e42b517877725280c47a5c7ec
         url: https://ndownloader.figshare.com/files/70537449
-      force_file:
-        name: models/deepmd/dpa-4.1-max-oam/2026-10-12-phonons-kappa-103-forces.json.gz
-        size: 59184127
-        md5: a959d71fc064a17a8a9e4065d85b9ff2
-        url: https://ndownloader.figshare.com/files/70537452
       run_info_file:
         name: models/deepmd/dpa-4.1-max-oam/2026-10-12-phonons-kappa-103-run-info.json
         size: 969

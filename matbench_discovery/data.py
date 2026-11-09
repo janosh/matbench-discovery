@@ -58,9 +58,6 @@ ARTIFACT_SUFFIXES: Final[dict[str, str]] = {
     "geo_opt": "geo-opt.jsonl.gz",
     "phonons_kappa_103": "phonons-kappa-103.json.gz",
     "phonons_kappa_103_forces": "phonons-kappa-103-forces.h5",
-    # force sets published before the HDF5 format (phonons.force_sets); new runs
-    # write .h5, these stay valid references to existing Figshare artifacts
-    "phonons_kappa_103_forces_json": "phonons-kappa-103-forces.json.gz",
     "phonons_kappa_103_phonons": "phonons-kappa-103-phonons.json.gz",
     "phonons_kappa_103_run_info": "phonons-kappa-103-run-info.json",
     "md_metrics": "md-metrics.csv.gz",
