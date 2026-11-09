@@ -102,7 +102,8 @@
         {entry.label} κ: {format_num(point.kappa_ml, `.3~`)} <small>W/mK</small><br />
         {#if point.kappa_min}
           κ / κ<sub>min</sub>: {format_num(point.kappa_ml / point.kappa_min, `.2~`)}
-          <small title="Agne et al. 2018 diffuson minimum from {entry.label}'s phonon spectrum"
+          <small
+            title="Agne et al. 2018 diffuson minimum from {entry.label}'s phonon spectrum"
             >(κ<sub>min</sub> {format_num(point.kappa_min, `.2~`)} W/mK)</small
           ><br />
         {/if}
