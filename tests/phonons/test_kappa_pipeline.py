@@ -955,8 +955,8 @@ def test_resumable_shards_strict_merge_and_artifacts(
     with gzip.open(artifacts.pred_file_path, mode="rt", encoding="utf-8") as file:
         prediction_rows = json.load(file)
     assert all("fc2_forces" not in row for row in prediction_rows)
-    # every material's force set lands in one HDF5 file, in ID order
-    assert force_sets.material_ids(artifacts.force_file_path) == list(atoms_by_id)
+    # every material's force set lands in one HDF5 file (IDs listed sorted)
+    assert force_sets.material_ids(artifacts.force_file_path) == sorted(atoms_by_id)
     for material_id, n_atoms in zip(atoms_by_id, (1, 4, 2, 3), strict=True):
         force_set = force_sets.load_force_set(artifacts.force_file_path, material_id)
         assert force_set["fc2_forces"].dtype == np.float32

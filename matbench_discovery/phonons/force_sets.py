@@ -201,10 +201,12 @@ def merge_force_set_files(path: str, sources: Iterable[tuple[str, str]]) -> None
 
 
 def material_ids(path: str) -> list[str]:
-    """Return the material IDs stored in a merged force-set file."""
+    """Return the material IDs stored in a merged force-set file, sorted (HDF5 lists
+    groups alphabetically, not in insertion order).
+    """
     with h5py.File(path, "r") as h5_file:
         _check_schema(h5_file, path)
-        return [unquote(name) for name in h5_file]
+        return sorted(unquote(name) for name in h5_file)
 
 
 def load_force_set(path: str, material_id: str) -> dict[str, Any]:
