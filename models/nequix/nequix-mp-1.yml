@@ -76,7 +76,6 @@ hyperparams:
       displacement_distance: 0.03
       max_steps: 500
       force_max: 0.02
-      save_forces: true
   architecture:
     graph_construction_radius: 6.0
   training:

@@ -521,7 +521,7 @@ def test_similar_files_keep_artifact_roles_and_directories(suffix_idx: int) -> N
     """Match dates without conflating complementary artifacts, settings or folders."""
     suffixes = [
         "phonons-kappa-103.json.gz",
-        "phonons-kappa-103-forces.json.gz",
+        "phonons-kappa-103-forces.h5",
         "phonons-kappa-103-phonons.json.gz",
         "phonons-kappa-103-run-info.json",
         "geo-opt-symprec=1e-2-moyo=0.12.0.csv.gz",

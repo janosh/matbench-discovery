@@ -81,7 +81,6 @@ hyperparams:
       max_steps: 300
       symprec: 1.0e-05
       conductivity_broken_symm: false
-      save_forces: true
     ase_optimizer: FIRE
     max_force: 0.02
     max_steps: 500

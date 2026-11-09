@@ -71,7 +71,6 @@ hyperparams:
     kappa:
       protocol: phonondb-v1
       displacement_distance: 0.05
-      save_forces: true
   architecture:
     graph_construction_radius: 7.0
     n_layers: 4

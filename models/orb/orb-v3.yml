@@ -63,7 +63,6 @@ hyperparams:
       protocol: phonondb-v1
       displacement_distance: 0.03
       is_plusminus: true
-      save_forces: true
   architecture:
     n_layers: 5
     graph_construction_radius: 6.0

@@ -69,7 +69,6 @@ hyperparams:
     cell_filter: FrechetCellFilter
     kappa:
       protocol: phonondb-v1
-      save_forces: true
       displacement_distance: 0.03
       force_max: 0.0001
       max_steps: 300
