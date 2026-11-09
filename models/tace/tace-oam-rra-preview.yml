@@ -225,10 +225,10 @@ metrics:
           size: 23555710
           md5: 62387230c1b9891b5abd3c3650743dad
         force_file:
-          name: models/tace/tace-oam-rra-preview/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-          url: https://figshare.com/files/70334706
-          size: 8722295
-          md5: 7bac20007b9fa8f0e41bb5a9011efe3a
+          name: models/tace/tace-oam-rra-preview/harmonic/2026-09-05-phonons-kappa-103-forces.h5
+          url: https://figshare.com/files/71263306
+          size: 2183028
+          md5: 1e48682b452c51a30fa48a122467ee39
         run_info_file:
           name: models/tace/tace-oam-rra-preview/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334709

@@ -107,7 +107,7 @@ def update_one_modeling_task_article(
     *,
     modeling_tasks: dict[str, dict[str, str]],
     dry_run: bool = False,
-    file_type: Literal["all", "analysis", "pred"] = "all",
+    file_type: Literal["all", "analysis", "force", "phonon", "pred"] = "all",
     force_reupload: bool = False,
     interactive: bool = True,
 ) -> None:
@@ -320,9 +320,9 @@ def main(raw_args: Sequence[str] | None = None) -> int:
     )
     figshare_group.add_argument(
         "--file-type",
-        choices=["all", "analysis", "pred"],
+        choices=["all", "analysis", "force", "phonon", "pred"],
         default="all",
-        help="Type of files to upload: analysis, pred or all (default)",
+        help="Type of files to upload: analysis, force, phonon, pred or all (default)",
     )
     figshare_group.add_argument(
         "--force-reupload",

@@ -162,10 +162,10 @@ metrics:
           size: 23564124
           md5: 2db1e00418d30a02a471f4da346cf605
         force_file:
-          name: models/equflash/equflash-29m-oam/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-          url: https://figshare.com/files/70334382
-          size: 8710855
-          md5: 2499d510c261149fde1bf3c1dba877e6
+          name: models/equflash/equflash-29m-oam/harmonic/2026-09-05-phonons-kappa-103-forces.h5
+          url: https://figshare.com/files/71263150
+          size: 2172024
+          md5: 865cf9101cf8b7a189a4ab237e69784e
         run_info_file:
           name: models/equflash/equflash-29m-oam/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334385

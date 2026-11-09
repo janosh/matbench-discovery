@@ -241,10 +241,10 @@ metrics:
           size: 24011009
           md5: 16f3486c3e998b587ea9b96299e51720
         force_file:
-          name: models/allegro/allegro-oam-l-0.1/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-          url: https://figshare.com/files/70334142
-          size: 8765190
-          md5: 6388f2eef9c2099a660e214f26613782
+          name: models/allegro/allegro-oam-l-0.1/harmonic/2026-09-05-phonons-kappa-103-forces.h5
+          url: https://figshare.com/files/71263099
+          size: 2208426
+          md5: 3ab993a92f95d23fab3653f4b5e1bbfd
         run_info_file:
           name: models/allegro/allegro-oam-l-0.1/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334145

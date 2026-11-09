@@ -161,10 +161,10 @@ metrics:
           size: 23183186
           md5: df6c7b470a6d36af9c2fd1a43dba3e32
         force_file:
-          name: models/m3gnet/m3gnet/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-          url: https://figshare.com/files/70334505
-          size: 8056204
-          md5: 3a3ae1a93fcdb39abfb319569cb5798b
+          name: models/m3gnet/m3gnet/harmonic/2026-09-05-phonons-kappa-103-forces.h5
+          url: https://figshare.com/files/71263192
+          size: 1951016
+          md5: cbb23237b11c2d50b203cd4fcc9605aa
         run_info_file:
           name: models/m3gnet/m3gnet/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334508

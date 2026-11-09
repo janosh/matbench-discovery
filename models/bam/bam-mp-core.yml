@@ -186,10 +186,10 @@ metrics:
           size: 23926506
           md5: 612e1f6b449247a17d3a486901949cea
         force_file:
-          name: models/bam/bam-mp-core/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-          url: https://figshare.com/files/70334163
-          size: 8835923
-          md5: c19f5965744f5585754407d84115f493
+          name: models/bam/bam-mp-core/harmonic/2026-09-05-phonons-kappa-103-forces.h5
+          url: https://figshare.com/files/71263105
+          size: 2156132
+          md5: 5c23db217c0633bd108cd9519cc64aef
         run_info_file:
           name: models/bam/bam-mp-core/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334157
