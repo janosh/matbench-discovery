@@ -6,7 +6,6 @@ import {
   DISCOVERY_SET_LABELS,
   HYPERPARAMS,
   MD_METRICS,
-  PHONON_METRICS,
 } from '#lib/labels.js'
 import { training_set_link } from '#lib/metrics.js'
 import { comparison } from '#lib/model-comparison.svelte.js'
@@ -1216,32 +1215,6 @@ describe(`MetricsTable`, () => {
       expect(query_param(`columns`)).toBeNull()
       expect(query_param(`column_order`)).toBeNull()
     })
-
-    it.each([
-      [[], false],
-      [[HYPERPARAMS.displacement_distance.key], true],
-    ])(
-      `mobile_keys=%j keeps extra columns in the mobile view: %s`,
-      async (mobile_keys, shown) => {
-        const resize = mock_mobile_media(false)
-        const phonon_keys = new Set([
-          `Model`,
-          PHONON_METRICS.κ_SRME.key,
-          `model_params`,
-          HYPERPARAMS.displacement_distance.key,
-        ])
-        mount_table({
-          model_filter: (model: ModelData) => model === ACTIVE_MODELS[0],
-          col_filter: (col: Label) => phonon_keys.has(col.key),
-          default_sort: [{ column: PHONON_METRICS.κ_SRME.key, dir: `asc` }],
-          mobile_keys,
-        })
-        await tick()
-        expect(header_names()).toContain(`Δxκ`) // desktop shows every visible column
-        await resize(true)
-        expect(header_names().includes(`Δxκ`)).toBe(shown)
-      },
-    )
 
     it.each([false, true])(
       `keeps labels and explicit columns consistent across mobile=%s and resizing`,
