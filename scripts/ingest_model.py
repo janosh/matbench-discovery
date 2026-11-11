@@ -74,6 +74,16 @@ FIG_STEPS = (
         "site/scripts/generate-kappa-parity-assets.py",
     ),
 )
+# These steps require task-specific reference files even before checking whether
+# the selected models submitted that task. Keep existing payloads for tasks absent
+# from a targeted ingestion; a full-roster refresh still runs every step.
+TASK_SCOPED_SCRIPTS = {
+    "scripts/evals/kappa.py": "phonons",
+    "scripts/analyze_geo_opt.py": "geo_opt",
+    "site/scripts/generate-kappa-parity-assets.py": "phonons",
+    "scripts/model_figs/kappa_103_analysis.py": "phonons",
+    "scripts/evals/geo_opt.py": "geo_opt",
+}
 
 
 class Checklist:
@@ -263,6 +273,22 @@ def check_submission(
     return energy_only
 
 
+def unsubmitted_task(args: str, models: Sequence[Model]) -> str | None:
+    """Return the optional task absent from every explicitly selected model."""
+    script = next((arg for arg in shlex.split(args) if arg.endswith(".py")), "")
+    task = TASK_SCOPED_SCRIPTS.get(script)
+    if (
+        task
+        and models
+        and not any(
+            task_coverage(model.metadata, task)[0] in COVERED_STATUSES
+            for model in models
+        )
+    ):
+        return task
+    return None
+
+
 def run_model_steps(
     title: str,
     steps: Sequence[tuple[str, bool, bool, str]],
@@ -277,6 +303,8 @@ def run_model_steps(
     for label, needs_forces, fatal, args in steps:
         if needs_forces and energy_only:
             checks.skip(f"{label} skipped (targets=E, no forces)")
+        elif task := unsubmitted_task(args, (model,)):
+            checks.skip(f"{label} skipped ({task} not submitted)")
         elif run_cmd(*uv_run_args(args), *model_args):
             checks.ok(f"{label} completed")
         elif fatal:
@@ -388,6 +416,9 @@ def run_payload_refresh(
         else ("--full-roster",)
     )
     for script in PAYLOAD_SCRIPTS:
+        if task := unsubmitted_task(script, models):
+            checks.skip(f"{script} skipped ({task} not submitted)")
+            continue
         if not run_cmd(*uv_run_args(script), *payload_args):
             checks.fail(f"{script} failed")
             return
