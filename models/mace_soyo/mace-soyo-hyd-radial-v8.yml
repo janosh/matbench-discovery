@@ -1,0 +1,118 @@
+model_name: MACE-SOYO-HYD radial v8
+model_key: mace-soyo-hyd-radial-v8
+model_version: '0.1-radial-v8'
+dates:
+  benchmark_added: '2026-11-11'
+  paper_published:
+lifecycle: pending
+authors:
+  - name: HYD
+    email: 949801198@qq.com
+    github: https://github.com/donkeey11
+    corresponding: true
+trained_by:
+  - name: HYD
+repo: https://github.com/janosh/matbench-discovery
+doi:
+paper:
+pr_url:
+checkpoint_url: https://github.com/PrincessHakuryu/MACE-SOYO/releases/download/v0.1/mace_soyo_oam.pth
+license:
+  code: MIT
+  code_url_reason: HYD additions include the MIT license in this submission; upstream code is MIT.
+  checkpoint: MIT
+  checkpoint_url: https://github.com/PrincessHakuryu/MACE-SOYO/blob/387b5114c974fb04b8aceffac82d1d8f10ea4ac0/LICENSE
+environment:
+  python_version: '3.14'
+  dependencies:
+    - mace-soyo @ git+https://github.com/PrincessHakuryu/MACE-SOYO.git@387b5114c974fb04b8aceffac82d1d8f10ea4ac0
+    - torch==2.12.0+cu126
+    - cuequivariance==0.12.0
+    - cuequivariance-torch==0.12.0
+    - cuequivariance-ops-torch-cu12==0.12.0
+    - nvalchemi-toolkit-ops==0.4.1
+    - warp-lang==1.13.0
+  find_links:
+    - https://download.pytorch.org/whl/cu126/torch/
+openness: OSOD
+architecture_types: [gnn]
+train_task: S2EFS
+test_task: IS2RE
+targets: EFS_G
+training_sets: [MPtrj, OMat24, sAlex, HYD-PBE-Dimers]
+model_params: 6475352
+test_set_informed: [diatomics]
+hyperparams:
+  evaluation:
+    max_force: 0.05
+    max_steps: 0
+    ase_optimizer: FIRE
+    cell_filter: FrechetCellFilter
+    kappa:
+      protocol: phonondb-v1
+      displacement_distance: 0.03
+      force_max: 0.0001
+      max_steps: 300
+  architecture:
+    graph_construction_radius: 6.0
+  training:
+    optimizer: ridge
+    ridge_penalty: 0.85
+    centered_energy_weight: 16.0
+    correction_parameters: 16
+notes:
+  description: Frozen MACE-SOYO-OAM salexmp potential plus a 16-parameter energy/force-consistent isolated-dimer radial correction. No D3. Ordinary crystals use the original potential.
+  training: Foundation weights by the MACE-SOYO authors remain unchanged; HYD fits only the 16 radial coefficients using independently generated heteronuclear PBE/def2-SVP references and molecule-grouped development cross-validation.
+  disclosure: The scientific model was frozen before official evaluation. After the serial official evaluation, canonical-input batching was implemented and numerically verified against frozen serial predictions; the diatomics flag conservatively discloses this post-evaluation execution-path work. No official reference labels or public predictions were used to train, tune, calibrate, ensemble, or select the scientific model.
+  wbm_protocol: Zero-step single-point initial-structure energy predictions, max_steps=0. No structure relaxation, phonon evaluation, or molecular-dynamics evaluation was performed. WBM completion and artifact URLs are still pending in this local draft.
+  acceleration: Isolated-dimer calls prefetch a fixed 119-point geometric distance grid in batches of 32 with unchanged scalar coordinate conversion. Crystals and stress requests delegate to scalar ASE. Public adapter GPU replay is required before submission.
+  provenance: Base source 387b5114c974fb04b8aceffac82d1d8f10ea4ac0; base checkpoint SHA256 180784bad2fdee6aec58dae2cdb0d581ad1c4f3d2272d2857bce6315ea43b82b; frozen radial file SHA256 cf601a2cda2510069f9efc118c2f7ce47f6201734e5b44480d3ed547af33f3d9.
+  attribution: MACE-SOYO by Qi-Ming Liang, Jia-Jie Du, and Zhi-Pan Liu. HYD contributes the independent reference calculations, radial correction, and canonical batching integration.
+  unevaluated_tasks: Kappa settings are the standard shared-runner configuration for interface completeness, not measured results. Phonons and molecular dynamics remain pending and have not been evaluated.
+metrics:
+  discovery:
+    status: pending
+    reason: Full frozen WBM inference is running; no partial discovery score is reported.
+  geo_opt:
+    status: not_available
+    reason: WBM is evaluated with zero optimization steps; no structure-relaxation result is claimed.
+  phonons:
+    status: pending
+    reason: Not evaluated for this submission.
+  md:
+    status: pending
+    reason: Not evaluated for this submission.
+  diatomics:
+    pred_file:
+      name: models/mace_soyo/mace-soyo-hyd-radial-v8/2026-11-11-diatomics.json.gz
+      size: 236624
+      md5: a709cc3efe4dc8f0505e936d08fbd02f
+    cost:
+      source: runner
+      hardware: NVIDIA A100-SXM4-80GB
+      device: cuda
+      acceleration: [cuequivariance, torch_aot_inductor]
+      n_shards: 1
+      n_processes: 1
+      run_time_sec: 69.26
+      load_time_sec: 9.02
+      max_rss_gb: 4.174
+      max_gpu_mem_gb: 0.082
+    pbe_wall_dist_mae: 0.07835
+    pbe_energy_mae: 0.6453
+    pbe_bond_length_error: 0.2483
+    pbe_well_depth_error: 0.4887
+    pbe_vib_freq_error: 51.7
+    tortuosity: 1.01
+    energy_diff_flips: 1.632
+    energy_jump: 0.1089
+    force_flips: 1.644
+    force_total_variation: 186.7
+    force_jump: 0.9493
+    pbe_force_mae: 0.5763
+    pbe_vib_freq_coverage:
+      n_valid: 80
+      n_eligible: 81
+      failed_elements: [K]
+      missing_elements: []
+    excluded_formula_reasons: {}
