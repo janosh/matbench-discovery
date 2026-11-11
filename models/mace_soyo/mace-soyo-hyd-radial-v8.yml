@@ -6,12 +6,12 @@ dates:
   paper_published:
 lifecycle: pending
 authors:
-  - name: HYD
-    email: 949801198@qq.com
-    github: https://github.com/donkeey11
-    corresponding: true
+- name: HYD
+  email: 949801198@qq.com
+  github: https://github.com/donkeey11
+  corresponding: true
 trained_by:
-  - name: HYD
+- name: HYD
 repo: https://github.com/janosh/matbench-discovery
 doi:
 paper:
@@ -19,21 +19,21 @@ pr_url:
 checkpoint_url: https://github.com/PrincessHakuryu/MACE-SOYO/releases/download/v0.1/mace_soyo_oam.pth
 license:
   code: MIT
-  code_url_reason: HYD additions include the MIT license in this submission; upstream code is MIT.
   checkpoint: MIT
   checkpoint_url: https://github.com/PrincessHakuryu/MACE-SOYO/blob/387b5114c974fb04b8aceffac82d1d8f10ea4ac0/LICENSE
+  code_url: https://github.com/donkeey11/matbench-discovery/blob/f8b80da6e63f5f158d0e7d48dc515d84b6afd3ad/models/mace_soyo/LICENSE_HYD
 environment:
   python_version: '3.14'
   dependencies:
-    - mace-soyo @ git+https://github.com/PrincessHakuryu/MACE-SOYO.git@387b5114c974fb04b8aceffac82d1d8f10ea4ac0
-    - torch==2.12.0+cu126
-    - cuequivariance==0.12.0
-    - cuequivariance-torch==0.12.0
-    - cuequivariance-ops-torch-cu12==0.12.0
-    - nvalchemi-toolkit-ops==0.4.1
-    - warp-lang==1.13.0
+  - mace-soyo @ git+https://github.com/PrincessHakuryu/MACE-SOYO.git@387b5114c974fb04b8aceffac82d1d8f10ea4ac0
+  - torch==2.12.0+cu126
+  - cuequivariance==0.12.0
+  - cuequivariance-torch==0.12.0
+  - cuequivariance-ops-torch-cu12==0.12.0
+  - nvalchemi-toolkit-ops==0.4.1
+  - warp-lang==1.13.0
   find_links:
-    - https://download.pytorch.org/whl/cu126/torch/
+  - https://download.pytorch.org/whl/cu126/torch/
 openness: OSOD
 architecture_types: [gnn]
 train_task: S2EFS
@@ -64,15 +64,65 @@ notes:
   description: Frozen MACE-SOYO-OAM salexmp potential plus a 16-parameter energy/force-consistent isolated-dimer radial correction. No D3. Ordinary crystals use the original potential.
   training: Foundation weights by the MACE-SOYO authors remain unchanged; HYD fits only the 16 radial coefficients using independently generated heteronuclear PBE/def2-SVP references and molecule-grouped development cross-validation.
   disclosure: The scientific model was frozen before official evaluation. After the serial official evaluation, canonical-input batching was implemented and numerically verified against frozen serial predictions; the diatomics flag conservatively discloses this post-evaluation execution-path work. No official reference labels or public predictions were used to train, tune, calibrate, ensemble, or select the scientific model.
-  wbm_protocol: Zero-step single-point initial-structure energy predictions, max_steps=0. No structure relaxation, phonon evaluation, or molecular-dynamics evaluation was performed. WBM completion and artifact URLs are still pending in this local draft.
-  acceleration: Isolated-dimer calls prefetch a fixed 119-point geometric distance grid in batches of 32 with unchanged scalar coordinate conversion. Crystals and stress requests delegate to scalar ASE. Public adapter GPU replay is required before submission.
+  wbm_protocol: Zero-step single-point IS2RE predictions cover all 256963 inputs; native postprocessing retains 256963 successful and 0 failed structures. No relaxation, phonons, or molecular dynamics was performed.
+  acceleration: Fixed canonical 119-point dimer batches; scalar crystal/stress delegation. Public compiled and raw-checkpoint paths passed all 10948 diatomic points against frozen outputs under the original tolerances, plus 32 WBM structures and seven independent synthetic structures. The formal canonical timing is retained, not replaced by the replay.
   provenance: Base source 387b5114c974fb04b8aceffac82d1d8f10ea4ac0; base checkpoint SHA256 180784bad2fdee6aec58dae2cdb0d581ad1c4f3d2272d2857bce6315ea43b82b; frozen radial file SHA256 cf601a2cda2510069f9efc118c2f7ce47f6201734e5b44480d3ed547af33f3d9.
   attribution: MACE-SOYO by Qi-Ming Liang, Jia-Jie Du, and Zhi-Pan Liu. HYD contributes the independent reference calculations, radial correction, and canonical batching integration.
   unevaluated_tasks: Kappa settings are the standard shared-runner configuration for interface completeness, not measured results. Phonons and molecular dynamics remain pending and have not been evaluated.
 metrics:
   discovery:
-    status: pending
-    reason: Full frozen WBM inference is running; no partial discovery score is reported.
+    status: complete
+    pred_file:
+      name: models/mace_soyo/mace-soyo-hyd-radial-v8/2026-11-11-discovery.csv.gz
+      url: https://github.com/donkeey11/matbench-discovery/releases/download/v0.1.0-hyd-radial-v8/2026-11-11-discovery.csv.gz
+      size: 1335635
+      md5: 2885be590f363f1a75145b2548214f24
+    run_info_file:
+      name: models/mace_soyo/mace-soyo-hyd-radial-v8/2026-11-11-discovery-run-info.json
+      url: https://github.com/donkeey11/matbench-discovery/releases/download/v0.1.0-hyd-radial-v8/2026-11-11-discovery-run-info.json
+      size: 900
+      md5: 70957c4c821d410e7832fa83ad68c727
+    cost:
+      source: runner
+      hardware: NVIDIA A100-SXM4-80GB
+      device: cuda
+      acceleration:
+      - cuequivariance
+      - torch_aot_inductor
+      n_shards: 1
+      n_processes: 8
+      run_time_sec: 3627.73
+      load_time_sec: 107.89
+      max_rss_gb: 7.695
+      max_gpu_mem_gb: 0.264
+    full_test_set:
+      F1: 0.605 # fraction
+      DAF: 5.518 # dimensionless
+      Precision: 0.947 # fraction
+      Recall: 0.444 # fraction
+      Accuracy: 0.9 # fraction
+      TP: 19593 # count
+      FP: 1102 # count
+      TN: 211769 # count
+      FN: 24499 # count
+      MAE: 0.124 # eV/atom
+      RMSE: 0.224 # eV/atom
+      R2: -0.538 # dimensionless
+      missing_preds: 1 # count
+    unique_prototypes:
+      F1: 0.622 # fraction
+      DAF: 6.25 # dimensionless
+      Precision: 0.955 # fraction
+      Recall: 0.461 # fraction
+      Accuracy: 0.913 # fraction
+      TP: 15371 # count
+      FP: 716 # count
+      TN: 181398 # count
+      FN: 18003 # count
+      MAE: 0.126 # eV/atom
+      RMSE: 0.224 # eV/atom
+      R2: -0.48 # dimensionless
+      missing_preds: 0 # count
   geo_opt:
     status: not_available
     reason: WBM is evaluated with zero optimization steps; no structure-relaxation result is claimed.
@@ -85,6 +135,7 @@ metrics:
   diatomics:
     pred_file:
       name: models/mace_soyo/mace-soyo-hyd-radial-v8/2026-11-11-diatomics.json.gz
+      url: https://github.com/donkeey11/matbench-discovery/releases/download/v0.1.0-hyd-radial-v8/2026-11-11-diatomics.json.gz
       size: 236624
       md5: a709cc3efe4dc8f0505e936d08fbd02f
     cost:
