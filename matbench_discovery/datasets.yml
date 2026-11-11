@@ -1299,3 +1299,31 @@ QM9:
     Equilibrium geometries and quantum-chemical properties of small organic molecules with up to nine heavy atoms. Includes energies, harmonic frequencies, dipoles, polarizabilities, and thermochemical properties, rather than off-equilibrium force trajectories.
   notes:
     Coverage: Counts the full 133,885-molecule archive. The [authors' README](https://springernature.figshare.com/articles/dataset/Readme_file_Data_description_for_Quantum_chemistry_structures_and_properties_of_134_kilo_molecules_/1057641) flags 3,054 structures failing a geometry-to-SMILES consistency check; filtered benchmark variants should state their exclusions.
+
+HYD-PBE-Dimers:
+  name: HYD independent heteronuclear PBE dimer references
+  url: https://github.com/donkeey11/matbench-discovery
+  doi: https://doi.org/10.1063/5.0006074
+  n_structures: 297
+  n_materials: 36
+  access: public
+  role: training
+  static: true
+  compliant: true
+  license: CC-BY-4.0
+  date_created: 2026-11-10
+  description: Independently generated neutral heteronuclear RKS/UKS PBE/def2-SVP curves with baseline predictions, used to fit an isolated-dimer correction. No official benchmark inputs, labels, or public predictions were used in the fit.
+  notes:
+    counting: Counts include the bundled fit and molecule-disjoint validation partitions, retaining unsuccessful references. The fit partition has 233 attempted geometries in 28 groups; only its 24 groups with at least five converged finite references enter the fit. Validation does not enter the coefficient solve.
+    doi_scope: The DOI cites the PySCF calculation method, not a DOI assigned to this HYD dataset. No dataset-specific DOI has been minted.
+    code: Calculations use PySCF with def2-SVP basis, grid level 3, and conv_tol 1e-9. The raw references and original generating sources are included with the model submission.
+  method: DFT
+  params:
+    code: Various
+    code_name: PySCF
+    code_version: '2.12.1'
+    functional: PBE
+    basis: def2-SVP
+  created_by:
+    - name: HYD
+      github: https://github.com/donkeey11
