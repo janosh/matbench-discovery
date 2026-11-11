@@ -299,6 +299,75 @@ def test_run_model_steps_installs_project_extras(
     assert checks.n_failed == 0
 
 
+@pytest.mark.parametrize("status", ["pending", "not_available"])
+def test_partial_submission_runs_only_applicable_evals_and_figures(
+    monkeypatch: pytest.MonkeyPatch,
+    run_cmd_calls: list[tuple[str, ...]],
+    status: str,
+) -> None:
+    """A force model need not download references for unsubmitted tasks."""
+    model = Model["mace_mpa_0"]
+    metadata = {
+        **model.metadata,
+        "metrics": {
+            **model.metrics,
+            "phonons": {"status": status, "reason": "Not evaluated"},
+            "geo_opt": {"status": status, "reason": "Not evaluated"},
+        },
+    }
+    monkeypatch.setattr(model, "metadata", metadata)
+    checks = ingest.Checklist()
+    for steps in (ingest.EVAL_STEPS, ingest.FIG_STEPS):
+        ingest.run_model_steps("partial", steps, model, checks, energy_only=False)
+    scripts = [command[4] for command in run_cmd_calls]
+    assert scripts == [
+        "scripts/evals/discovery.py",
+        "scripts/evals/diatomic_metrics.py",
+        "site/scripts/generate-energy-parity-assets.py",
+    ]
+    assert len(msgs(checks, ingest.SKIP)) == 3
+    assert checks.n_failed == 0
+
+
+def test_partial_payload_refresh_preserves_unsubmitted_task_payloads(
+    monkeypatch: pytest.MonkeyPatch,
+    run_cmd_calls: list[tuple[str, ...]],
+) -> None:
+    """Targeted ingestion leaves unrelated phonon/geometry payloads untouched."""
+    model = Model["mace_mpa_0"]
+    monkeypatch.setattr(
+        model,
+        "metadata",
+        {
+            **model.metadata,
+            "metrics": {
+                **model.metrics,
+                "phonons": {"status": "pending", "reason": "Not evaluated"},
+                "geo_opt": {"status": "not_available", "reason": "No relaxation"},
+            },
+        },
+    )
+    checks = ingest.Checklist()
+    ingest.run_payload_refresh(checks, (model,))
+    commands = "\n".join(" ".join(command) for command in run_cmd_calls)
+    assert "kappa_103_analysis.py" not in commands
+    assert "scripts/evals/geo_opt.py" not in commands
+    assert "roc_curves_models.py" in commands
+    assert "tests/site/test_fig_payloads.py" in commands
+    assert checks.n_failed == 0
+
+
+def test_mixed_payload_refresh_keeps_a_task_submitted_by_either_model(
+    run_cmd_calls: list[tuple[str, ...]],
+) -> None:
+    """Do not skip a task because just one of the selected models lacks it."""
+    checks = ingest.Checklist()
+    ingest.run_payload_refresh(checks, (Model["alignn"], Model["mace_mpa_0"]))
+    commands = "\n".join(" ".join(command) for command in run_cmd_calls)
+    assert "kappa_103_analysis.py" in commands
+    assert checks.n_failed == 0
+
+
 def test_publish_parity_assets_once(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
