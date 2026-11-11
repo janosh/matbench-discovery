@@ -1,7 +1,9 @@
 """Frozen radial correction and canonical-input batched ASE calculator.
 
-Scientific method bodies are copied from the evaluated sources. The source
-archive and source-method-verification.json retain their exact provenance.
+Scientific arithmetic is copied from the evaluated sources. Post-evaluation
+input guards mirror the pinned upstream charge/spin contract; their regression
+tests do not tune or replace the frozen scientific model or predictions.
+The source archive retains the original evaluated code and provenance.
 """
 
 import json
@@ -189,12 +191,33 @@ class CanonicalBatchedDimerCalculator(Calculator):
         self.plan = plan
         self.cached = {}
 
+    def check_state(self, atoms: Atoms, tol: float = 1e-15) -> list[str]:
+        """Invalidate ASE results when electronic-state metadata changes."""
+        changes = super().check_state(atoms, tol=tol)
+        if self.atoms is not None:
+            for name in ("charge", "spin"):
+                if atoms.info.get(name) != self.atoms.info.get(name):
+                    changes.append(name)
+        return changes
+
+    def validate_input(self, atoms: Atoms) -> None:
+        """Match the pinned upstream unconditioned-package input contract."""
+        if not self.model._conditioned and all(  # noqa: SLF001
+            atoms.info.get(name) is not None for name in ("charge", "spin")
+        ):
+            raise ValueError(
+                "This package has no charge/spin inputs. "
+                "Export a use_spin_charge=True model."
+            )
+
     def predict_base(self, group: list[Atoms]) -> tuple[np.ndarray, np.ndarray]:
         """Concatenate scalar ASE graph inputs without changing their conversion."""
         if self.model._conditioned:  # noqa: SLF001
             raise ValueError(
                 "Canonical batching currently requires an unconditioned package"
             )
+        for atoms in group:
+            self.validate_input(atoms)
         inputs = [self.model._atoms_to_inputs(atoms) for atoms in group]  # noqa: SLF001
         z = torch.cat([item[0] for item in inputs])
         fractional = torch.cat([item[1] for item in inputs])
@@ -256,6 +279,7 @@ class CanonicalBatchedDimerCalculator(Calculator):
     ) -> None:
         """Populate ASE results for the requested geometry."""
         super().calculate(atoms, properties, system_changes)
+        self.validate_input(self.atoms)
         target = key(self.atoms)
         if target not in self.cached:
             group = self.plan(self.atoms) if self.plan else [self.atoms]
