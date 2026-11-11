@@ -98,6 +98,24 @@ tolerances, plus 32 WBM structures and seven independent synthetic structures.
 This is numerical reproduction, not model selection or replacement of the
 recorded canonical sweep timing.
 
+## Post-publication input-contract repair
+
+Automated code review identified that the batched wrapper bypassed the pinned
+upstream rejection of unconditioned packages when both `atoms.info["charge"]`
+and `atoms.info["spin"]` are specified (including two zero values). The wrapper
+now checks that contract before cache lookup and direct batch conversion, and
+invalidates ASE results when either metadata field changes. Partial metadata
+keeps the upstream behavior. Twelve CPU regression cases exercise rejection,
+cache invalidation, recovery to neutral inputs, and unchanged neutral routing.
+
+This is an input-validation repair after the native ingestion at source commit
+`3cdb4db9398bcbf4f1575abcd97afac023091637`, not another model selection or GPU
+assessment. The official dimer generator supplies neither metadata field. The
+scientific arithmetic, coefficients, foundation weights, published prediction
+bytes and canonical timing remain unchanged. The full GPU replay and native
+ingestion evidence refers to the earlier source commit; the later guard is
+covered by the separate CPU regressions rather than a claimed new GPU replay.
+
 ## WBM protocol
 
 WBM uses **zero-step single-point initial-structure energy predictions** for all
