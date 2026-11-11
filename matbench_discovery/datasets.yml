@@ -9,8 +9,8 @@ WBM:
   access: public
   role: test
   static: true
-  optimade_api: null
-  native_api: null
+  optimade_api:
+  native_api:
   date_created: 2021-01-01
   license: CC-BY-4.0
   description: |
@@ -24,15 +24,15 @@ WBM:
     functional: PBE+U
     pseudopotentials: PBE
   created_by:
-    - name: Hai-Chen Wang
-      affiliation: Martin-Luther-Universität Halle-Wittenberg, Germany
-    - name: Silvana Botti
-      affiliation: Friedrich-Schiller-Universität Jena, Germany
-      email: silvana.botti@uni-jena.de
-      url: https://wikipedia.org/wiki/Silvana_Botti
-    - name: Miguel A. L. Marques
-      affiliation: Martin-Luther-Universität Halle-Wittenberg, Germany
-      orcid: https://orcid.org/0000-0003-0170-8222
+  - name: Hai-Chen Wang
+    affiliation: Martin-Luther-Universität Halle-Wittenberg, Germany
+  - name: Silvana Botti
+    affiliation: Friedrich-Schiller-Universität Jena, Germany
+    email: silvana.botti@uni-jena.de
+    url: https://wikipedia.org/wiki/Silvana_Botti
+  - name: Miguel A. L. Marques
+    affiliation: Martin-Luther-Universität Halle-Wittenberg, Germany
+    orcid: https://orcid.org/0000-0003-0170-8222
 
 MP 2022:
   name: MP v2022.10.28
@@ -44,8 +44,8 @@ MP 2022:
   role: training
   static: true
   compliant: true
-  optimade_api: null
-  native_api: null
+  optimade_api:
+  native_api:
   date_created: 2022-10-28
   license: CC-BY-4.0
   doi: https://doi.org/10.1063/1.4812323
@@ -58,8 +58,8 @@ MP 2022:
     functional: PBE+U
     pseudopotentials: PBE
   created_by:
-    - name: Materials Project Team
-      url: https://materialsproject.org/about/people
+  - name: Materials Project Team
+    url: https://materialsproject.org/about/people
 
 MPtrj:
   name: MPtrj
@@ -72,8 +72,8 @@ MPtrj:
   role: training
   static: true
   compliant: true
-  optimade_api: null
-  native_api: null
+  optimade_api:
+  native_api:
   date_created: 2023-07-19
   license: MIT
   description: Materials Project DFT relaxation trajectories cleaned of unrealistic energies and forces, and filtered for less redundancy using pymatgen's StructureMatcher to contain only about every 10th ionic step (1.5M structures). Originally created for training CHGNet.
@@ -87,11 +87,11 @@ MPtrj:
     functional: PBE+U
     pseudopotentials: PBE
   created_by:
-    - name: Materials Project Team
-      url: https://materialsproject.org/about/people
-    - name: Bowen Deng
-      affiliation: UC Berkeley
-      orcid: https://orcid.org/0000-0002-5720-5299
+  - name: Materials Project Team
+    url: https://materialsproject.org/about/people
+  - name: Bowen Deng
+    affiliation: UC Berkeley
+    orcid: https://orcid.org/0000-0002-5720-5299
 
 MPF:
   name: MPF.2021.2.8
@@ -104,8 +104,8 @@ MPF:
   role: training
   static: true
   compliant: true
-  optimade_api: null
-  native_api: null
+  optimade_api:
+  native_api:
   date_created: 2022-03-05
   license: CC-BY-4.0
   description: Materials Project Force dataset used to train the M3GNet model reported in https://arxiv.org/abs/2202.02450.
@@ -115,12 +115,12 @@ MPF:
     functional: PBE+U
     pseudopotentials: PBE
   created_by:
-    - name: Materials Project Team
-      url: https://materialsproject.org/about/people
-    - name: Chi Chen
-      affiliation: UC San Diego
-      orcid: https://orcid.org/0000-0001-8008-7043
-      github: https://github.com/chc273
+  - name: Materials Project Team
+    url: https://materialsproject.org/about/people
+  - name: Chi Chen
+    affiliation: UC San Diego
+    orcid: https://orcid.org/0000-0001-8008-7043
+    github: https://github.com/chc273
 
 MP Graphs:
   name: Graphs of MP 2019
@@ -133,8 +133,8 @@ MP Graphs:
   role: training
   static: true
   compliant: true
-  optimade_api: null
-  native_api: null
+  optimade_api:
+  native_api:
   date_created: 2019-06-06
   license: MIT
   description: Contains 133,420 graph-target pairs for Materials Project structures which were used to train the MEGNet formation energy model.
@@ -146,12 +146,12 @@ MP Graphs:
     functional: PBE+U
     pseudopotentials: PBE
   created_by:
-    - name: Materials Project Team
-      url: https://materialsproject.org/about/people
-    - name: Chi Chen
-      affiliation: UC San Diego
-      orcid: https://orcid.org/0000-0001-8008-7043
-      github: https://github.com/chc273
+  - name: Materials Project Team
+    url: https://materialsproject.org/about/people
+  - name: Chi Chen
+    affiliation: UC San Diego
+    orcid: https://orcid.org/0000-0001-8008-7043
+    github: https://github.com/chc273
 
 GNoME:
   name: GNoME
@@ -165,7 +165,7 @@ GNoME:
   role: training
   static: true
   optimade_api: https://optimade-gnome.odbx.science
-  native_api: null
+  native_api:
   date_created: 2023-11-29 # https://github.com/google-deepmind/materials_discovery/commit/a701b9529
   license: CC-BY-NC-4.0
   description: Google DeepMind's Graph Networks for Materials Exploration dataset containing millions of crystal structures generated with symmetry aware partial substitutions (SAPS) and their DFT-calculated energies, forces and stresses. Aimed at large-scale materials discovery.
@@ -175,22 +175,22 @@ GNoME:
     functional: PBE+U
     pseudopotentials: PBE
   created_by:
-    - name: Amil Merchant
-      affiliation: Google DeepMind
-      email: amilmerchant@google.com
-      orcid: https://orcid.org/0000-0001-5262-6599
-    - name: Simon Batzner
-      affiliation: Google DeepMind
-    - name: Samuel S. Schoenholz
-      affiliation: Google DeepMind
-    - name: Muratahan Aykol
-      affiliation: Google DeepMind
-    - name: Gowoon Cheon
-      affiliation: Google DeepMind
-    - name: Ekin Dogus Cubuk
-      affiliation: Google DeepMind
-      email: cubuk@google.com
-      orcid: https://orcid.org/0000-0003-0524-2837
+  - name: Amil Merchant
+    affiliation: Google DeepMind
+    email: amilmerchant@google.com
+    orcid: https://orcid.org/0000-0001-5262-6599
+  - name: Simon Batzner
+    affiliation: Google DeepMind
+  - name: Samuel S. Schoenholz
+    affiliation: Google DeepMind
+  - name: Muratahan Aykol
+    affiliation: Google DeepMind
+  - name: Gowoon Cheon
+    affiliation: Google DeepMind
+  - name: Ekin Dogus Cubuk
+    affiliation: Google DeepMind
+    email: cubuk@google.com
+    orcid: https://orcid.org/0000-0003-0524-2837
 
 MatterSim:
   name: MatterSim
@@ -204,8 +204,8 @@ MatterSim:
   access: unreleased
   role: training
   static: true
-  optimade_api: null
-  native_api: null
+  optimade_api:
+  native_api:
   date_created: 2024-05-08
   license: unreleased
   description: Large-scale materials simulation dataset from Microsoft Research containing DFT-calculated properties across a wide range of temperatures and pressures. Aimed at training robust universal interatomic potentials that remain accurate even far from equilibrium.
@@ -215,8 +215,8 @@ MatterSim:
     functional: PBE+U
     pseudopotentials: PBE
   created_by:
-    - name: Microsoft Research AI for Science Team
-      url: https://microsoft.com/research/lab/microsoft-research-ai-for-science/people
+  - name: Microsoft Research AI for Science Team
+    url: https://microsoft.com/research/lab/microsoft-research-ai-for-science/people
 
 Alex:
   name: Alexandria
@@ -229,7 +229,7 @@ Alex:
   role: training
   static: true
   optimade_api: https://optimade.org/providers-dashboard/providers/alexandria
-  native_api: null
+  native_api:
   date_created: 2023-04-22
   license: CC-BY-4.0
   description: Large collection of DFT structure relaxation trajectories with energies, forces, stresses for ~3M materials. Aimed at training ML potentials for materials discovery.
@@ -244,23 +244,23 @@ Alex:
     functional: PBE
     pseudopotentials: PBE
   created_by:
-    - name: Jonathan Schmidt
-      orcid: https://orcid.org/0000-0001-5685-6404
-      affiliation: Martin-Luther-Universität Halle-Wittenberg, Germany
-    - name: Noah Hoffmann
-    - name: Hai-Chen Wang
-      orcid: https://orcid.org/0000-0002-2892-5879
-      affiliation: Martin-Luther-Universität Halle-Wittenberg, Germany
-    - name: Pedro Borlido
-    - name: Pedro J. M. A. Carriço
-    - name: Tiago F. T. Cerqueira
-    - name: Silvana Botti
-      email: silvana.botti@uni-jena.de
-      url: https://wikipedia.org/wiki/Silvana_Botti
-      affiliation: Friedrich-Schiller-Universität Jena, Germany
-    - name: Miguel A. L. Marques
-      affiliation: Martin-Luther-Universität Halle-Wittenberg, Germany
-      orcid: https://orcid.org/0000-0003-0170-8222
+  - name: Jonathan Schmidt
+    orcid: https://orcid.org/0000-0001-5685-6404
+    affiliation: Martin-Luther-Universität Halle-Wittenberg, Germany
+  - name: Noah Hoffmann
+  - name: Hai-Chen Wang
+    orcid: https://orcid.org/0000-0002-2892-5879
+    affiliation: Martin-Luther-Universität Halle-Wittenberg, Germany
+  - name: Pedro Borlido
+  - name: Pedro J. M. A. Carriço
+  - name: Tiago F. T. Cerqueira
+  - name: Silvana Botti
+    email: silvana.botti@uni-jena.de
+    url: https://wikipedia.org/wiki/Silvana_Botti
+    affiliation: Friedrich-Schiller-Universität Jena, Germany
+  - name: Miguel A. L. Marques
+    affiliation: Martin-Luther-Universität Halle-Wittenberg, Germany
+    orcid: https://orcid.org/0000-0003-0170-8222
 
 OMat24:
   name: OMat24
@@ -273,8 +273,8 @@ OMat24:
   access: public
   role: training
   static: true
-  optimade_api: null
-  native_api: null
+  optimade_api:
+  native_api:
   date_created: 2024-10-16
   license: CC-BY-4.0
   description: Open Materials 2024 dataset from Meta's FAIRchem containing over 100M structures derived from applying perturbations to Alexandria structures. Aimed at training foundation models for materials science.
@@ -284,31 +284,31 @@ OMat24:
     functional: PBE+U
     pseudopotentials: PBE_54
   created_by:
-    - name: Luis Barroso-Luque
-      affiliation: FAIR at Meta
-      email: lbluque@meta.com
-      orcid: https://orcid.org/0000-0002-6453-9545
-      github: https://github.com/lbluque
-      corresponding: true
-    - name: Muhammed Shuaibi
-      affiliation: FAIR at Meta
-    - name: Xiang Fu
-      affiliation: FAIR at Meta
-    - name: Brandon M. Wood
-      affiliation: FAIR at Meta
-    - name: Misko Dzamba
-      affiliation: FAIR at Meta
-    - name: Meng Gao
-      affiliation: FAIR at Meta
-    - name: Ammar Rizvi
-      affiliation: FAIR at Meta
-    - name: C. Lawrence Zitnick
-      affiliation: FAIR at Meta
-    - name: Zachary W. Ulissi
-      affiliation: FAIR at Meta
-      email: zulissi@meta.com
-      orcid: https://orcid.org/0000-0002-9401-4918
-      corresponding: true
+  - name: Luis Barroso-Luque
+    affiliation: FAIR at Meta
+    email: lbluque@meta.com
+    orcid: https://orcid.org/0000-0002-6453-9545
+    github: https://github.com/lbluque
+    corresponding: true
+  - name: Muhammed Shuaibi
+    affiliation: FAIR at Meta
+  - name: Xiang Fu
+    affiliation: FAIR at Meta
+  - name: Brandon M. Wood
+    affiliation: FAIR at Meta
+  - name: Misko Dzamba
+    affiliation: FAIR at Meta
+  - name: Meng Gao
+    affiliation: FAIR at Meta
+  - name: Ammar Rizvi
+    affiliation: FAIR at Meta
+  - name: C. Lawrence Zitnick
+    affiliation: FAIR at Meta
+  - name: Zachary W. Ulissi
+    affiliation: FAIR at Meta
+    email: zulissi@meta.com
+    orcid: https://orcid.org/0000-0002-9401-4918
+    corresponding: true
 
 sAlex:
   name: Subsampled Alexandria
@@ -322,7 +322,7 @@ sAlex:
   role: training
   static: true
   optimade_api: https://optimade.org/providers-dashboard/providers/alexandria
-  native_api: null
+  native_api:
   date_created: 2024-10-16
   license: CC-BY-4.0
   description: Subsampled version of the Alexandria dataset, containing approximately 10 million structures filtered to remove structure prototype overlap with Matbench Discovery's WBM test set. See [`matbench_discovery.structure.prototype.get_protostructure_label`](https://github.com/janosh/matbench-discovery/blob/5f02f790e1/matbench_discovery/structure/prototype.py#L104-L193).
@@ -332,11 +332,11 @@ sAlex:
     functional: PBE+U
     pseudopotentials: PBE
   created_by:
-    - name: Luis Barroso-Luque
-      affiliation: FAIR at Meta
-      email: lbluque@meta.com
-      orcid: https://orcid.org/0000-0002-6453-9545
-      github: https://github.com/lbluque
+  - name: Luis Barroso-Luque
+    affiliation: FAIR at Meta
+    email: lbluque@meta.com
+    orcid: https://orcid.org/0000-0002-6453-9545
+    github: https://github.com/lbluque
 
 sAlex Validation:
   name: Subsampled Alexandria Validation Set
@@ -350,7 +350,7 @@ sAlex Validation:
   role: validation
   static: true
   optimade_api: https://optimade.org/providers-dashboard/providers/alexandria
-  native_api: null
+  native_api:
   date_created: 2024-10-16
   license: CC-BY-4.0
   description: Validation subset of the subsampled Alexandria dataset, containing ~500k structures for evaluating model performance during training. Filtered to remove structure prototype overlap with WBM.
@@ -360,11 +360,11 @@ sAlex Validation:
     functional: PBE+U
     pseudopotentials: PBE
   created_by:
-    - name: Luis Barroso-Luque
-      affiliation: FAIR at Meta
-      email: lbluque@meta.com
-      orcid: https://orcid.org/0000-0002-6453-9545
-      github: https://github.com/lbluque
+  - name: Luis Barroso-Luque
+    affiliation: FAIR at Meta
+    email: lbluque@meta.com
+    orcid: https://orcid.org/0000-0002-6453-9545
+    github: https://github.com/lbluque
 
 OpenLAM:
   name: OpenLAM dataset v1
@@ -377,8 +377,8 @@ OpenLAM:
   access: public
   role: training
   static: true
-  optimade_api: null
-  native_api: null
+  optimade_api:
+  native_api:
   date_created: 2025-02-17
   license: CC-BY-4.0
   method: DFT
@@ -387,17 +387,17 @@ OpenLAM:
     functional: Various
     pseudopotentials: Various
   created_by:
-    - name: AISI
-      email: pengay@aisi.ac.cn
-      affiliation: AI for Science Institute, Beijing, China
-    - name: Xinzijian Liu
-      affiliation: AI for Science Institute, Beijing, China
-    - name: Ming-Yu Guo
-      affiliation: DP Technology, Beijing, China
-    - name: Linfeng Zhang
-      affiliation: AI for Science Institute, Beijing, China
-    - name: Han Wang
-      affiliation: HEDPS, CAPT, College of Engineering, Peking University, Beijing, China
+  - name: AISI
+    email: pengay@aisi.ac.cn
+    affiliation: AI for Science Institute, Beijing, China
+  - name: Xinzijian Liu
+    affiliation: AI for Science Institute, Beijing, China
+  - name: Ming-Yu Guo
+    affiliation: DP Technology, Beijing, China
+  - name: Linfeng Zhang
+    affiliation: AI for Science Institute, Beijing, China
+  - name: Han Wang
+    affiliation: HEDPS, CAPT, College of Engineering, Peking University, Beijing, China
   description: |
     This dataset integrates multidisciplinary DFT data sourced from Deep Modeling community (https://github.com/deepmodeling)
     and other open repositories to pre-train large atomic models (LAMs),
@@ -415,8 +415,8 @@ COSMOSDataset:
   access: public
   role: training
   static: true
-  optimade_api: null
-  native_api: null
+  optimade_api:
+  native_api:
   date_created: 2025-10-21
   license: CC-BY-4.0
   method: DFT
@@ -425,16 +425,16 @@ COSMOSDataset:
     functional: Various
     pseudopotentials: Various
   created_by:
-    - name: Jaesun Kim
-      affiliation: Seoul National University
-      orcid: https://orcid.org/0009-0000-6646-1318
-    - name: Jinmu You
-      affiliation: Seoul National University
-      orcid: https://orcid.org/0009-0003-7152-7774
-    - name: Seungwu Han
-      affiliation: Seoul National University, Korea Institute for Advanced Study
-      email: hansw@snu.ac.kr
-      orcid: https://orcid.org/0000-0003-3958-0922
+  - name: Jaesun Kim
+    affiliation: Seoul National University
+    orcid: https://orcid.org/0009-0000-6646-1318
+  - name: Jinmu You
+    affiliation: Seoul National University
+    orcid: https://orcid.org/0009-0003-7152-7774
+  - name: Seungwu Han
+    affiliation: Seoul National University, Korea Institute for Advanced Study
+    email: hansw@snu.ac.kr
+    orcid: https://orcid.org/0000-0003-3958-0922
   description: |
     COSMOS Dataset (Combined Organic, Surface and Materials Open Source Dataset) aggregates 15 publicly available ab initio databases spanning molecules, inorganic crystals, metal and oxide surfaces, and metal-organic frameworks, covering levels of theory from generalized gradient approximation to hybrid functionals. It also includes a domain-bridging set, sampled from OC20, OC22, MatPES, ODAC23, OMol25, and QCML dataset and recomputed with MPtrj-consistent computational settings, which facilitates cross-domain knowledge transfer in a multi-task training framework. For detailed information about the dataset composition, see Table 1 from [the paper](https://arxiv.org/abs/2510.11241).
 
@@ -448,8 +448,8 @@ OC20:
   access: public
   role: training
   static: true
-  optimade_api: null
-  native_api: null
+  optimade_api:
+  native_api:
   date_created: 2020-10-01
   license: CC-BY-4.0
   method: DFT
@@ -458,8 +458,8 @@ OC20:
     functional: RPBE
     pseudopotentials: PBE
   created_by:
-    - name: Open Catalyst Project Team
-      url: https://opencatalystproject.org
+  - name: Open Catalyst Project Team
+    url: https://opencatalystproject.org
   description: |
     A dataset for catalysis research containing DFT relaxations of adsorbates on catalyst surfaces,
     specifically designed for training ML models to predict adsorption energies and atomic forces.
@@ -486,64 +486,64 @@ NOMAD:
     functional: Various
     pseudopotentials: Various
   created_by:
-    - name: Markus Scheidgen
-      orcid: https://orcid.org/0000-0002-8038-2277
-    - name: Lauri Himanen
-      orcid: https://orcid.org/0000-0002-3130-8193
-    - name: Alvin Noe Ladines # codespell:ignore
-      orcid: https://orcid.org/0000-0003-0077-2097
-    - name: David Sikter
-      orcid: https://orcid.org/0000-0002-2102-7160
-    - name: Mohammad Nakhaee
-      orcid: https://orcid.org/0000-0003-4146-0129
-    - name: Ádám Fekete
-      orcid: https://orcid.org/0000-0002-6263-897X
-    - name: Theodore Chang
-      orcid: https://orcid.org/0000-0002-4911-0230
-    - name: Amir Golparvar
-      orcid: https://orcid.org/0000-0002-2412-6615
-    - name: José A. Márquez
-      orcid: https://orcid.org/0000-0002-8173-2566
-    - name: Sandor Brockhauser
-      orcid: https://orcid.org/0000-0002-9700-4803
-    - name: Sebastian Brückner
-      orcid: https://orcid.org/0000-0002-5969-847X
-    - name: Luca M. Ghiringhelli
-      orcid: https://orcid.org/0000-0001-5099-3029
-    - name: Felix Dietrich
-      orcid: https://orcid.org/0000-0002-2906-1769
-    - name: Daniel Lehmberg
-      orcid: https://orcid.org/0000-0002-4012-5014
-    - name: Thea Denell
-      orcid: https://orcid.org/0009-0000-7185-9363
-    - name: Andrea Albino
-      orcid: https://orcid.org/0000-0001-9280-7431
-    - name: Hampus Näsström
-      orcid: https://orcid.org/0000-0002-3264-1692
-    - name: Sherjeel Shabih
-      orcid: https://orcid.org/0009-0008-6635-4465
-    - name: Florian Dobener
-      orcid: https://orcid.org/0000-0003-1987-6224
-    - name: Markus Kühbach
-      orcid: https://orcid.org/0000-0002-7117-5196
-    - name: Rubel Mozumder
-      orcid: https://orcid.org/0009-0007-5926-6646
-    - name: Joseph F. Rudzinski
-      orcid: https://orcid.org/0000-0003-3403-640X
-    - name: Nathan Daelman
-      orcid: https://orcid.org/0000-0002-7647-1816
-    - name: José M. Pizarro
-      orcid: https://orcid.org/0000-0002-6751-8192
-    - name: Martin Kuban
-      orcid: https://orcid.org/0000-0002-1619-2460
-    - name: Cuauhtemoc Salazar
-      orcid: https://orcid.org/0000-0002-9635-5062
-    - name: Pavel Ondračka
-      orcid: https://orcid.org/0000-0003-0729-629X
-    - name: Hans-Joachim Bungartz
-      orcid: https://orcid.org/0000-0002-0171-0712
-    - name: Claudia Draxl
-      orcid: https://orcid.org/0000-0003-3523-6657
+  - name: Markus Scheidgen
+    orcid: https://orcid.org/0000-0002-8038-2277
+  - name: Lauri Himanen
+    orcid: https://orcid.org/0000-0002-3130-8193
+  - name: Alvin Noe Ladines   # codespell:ignore
+    orcid: https://orcid.org/0000-0003-0077-2097
+  - name: David Sikter
+    orcid: https://orcid.org/0000-0002-2102-7160
+  - name: Mohammad Nakhaee
+    orcid: https://orcid.org/0000-0003-4146-0129
+  - name: Ádám Fekete
+    orcid: https://orcid.org/0000-0002-6263-897X
+  - name: Theodore Chang
+    orcid: https://orcid.org/0000-0002-4911-0230
+  - name: Amir Golparvar
+    orcid: https://orcid.org/0000-0002-2412-6615
+  - name: José A. Márquez
+    orcid: https://orcid.org/0000-0002-8173-2566
+  - name: Sandor Brockhauser
+    orcid: https://orcid.org/0000-0002-9700-4803
+  - name: Sebastian Brückner
+    orcid: https://orcid.org/0000-0002-5969-847X
+  - name: Luca M. Ghiringhelli
+    orcid: https://orcid.org/0000-0001-5099-3029
+  - name: Felix Dietrich
+    orcid: https://orcid.org/0000-0002-2906-1769
+  - name: Daniel Lehmberg
+    orcid: https://orcid.org/0000-0002-4012-5014
+  - name: Thea Denell
+    orcid: https://orcid.org/0009-0000-7185-9363
+  - name: Andrea Albino
+    orcid: https://orcid.org/0000-0001-9280-7431
+  - name: Hampus Näsström
+    orcid: https://orcid.org/0000-0002-3264-1692
+  - name: Sherjeel Shabih
+    orcid: https://orcid.org/0009-0008-6635-4465
+  - name: Florian Dobener
+    orcid: https://orcid.org/0000-0003-1987-6224
+  - name: Markus Kühbach
+    orcid: https://orcid.org/0000-0002-7117-5196
+  - name: Rubel Mozumder
+    orcid: https://orcid.org/0009-0007-5926-6646
+  - name: Joseph F. Rudzinski
+    orcid: https://orcid.org/0000-0003-3403-640X
+  - name: Nathan Daelman
+    orcid: https://orcid.org/0000-0002-7647-1816
+  - name: José M. Pizarro
+    orcid: https://orcid.org/0000-0002-6751-8192
+  - name: Martin Kuban
+    orcid: https://orcid.org/0000-0002-1619-2460
+  - name: Cuauhtemoc Salazar
+    orcid: https://orcid.org/0000-0002-9635-5062
+  - name: Pavel Ondračka
+    orcid: https://orcid.org/0000-0003-0729-629X
+  - name: Hans-Joachim Bungartz
+    orcid: https://orcid.org/0000-0002-0171-0712
+  - name: Claudia Draxl
+    orcid: https://orcid.org/0000-0003-3523-6657
   description: |
     A repository hosting over 19 million calculations across various computational materials science codes,
     providing a rich source of DFT and molecular dynamics data for training ML models.
@@ -567,20 +567,20 @@ AFLOW:
     functional: Various
     pseudopotentials: Various
   created_by:
-    - name: Stefano Curtarolo
-    - name: Wahyu Setyawan
-    - name: Gus L.W. Hart # codespell:ignore
-    - name: Michal Jahnatek
-    - name: Roman V. Chepulskii
-    - name: Richard H. Taylor
-    - name: Shidong Wang
-    - name: Junkai Xue
-    - name: Kesong Yang
-    - name: Ohad Levy
-    - name: Michael J. Mehl
-    - name: Harold T. Stokes
-    - name: Denis O. Demchenko
-    - name: Dane Morgan
+  - name: Stefano Curtarolo
+  - name: Wahyu Setyawan
+  - name: Gus L.W. Hart   # codespell:ignore
+  - name: Michal Jahnatek
+  - name: Roman V. Chepulskii
+  - name: Richard H. Taylor
+  - name: Shidong Wang
+  - name: Junkai Xue
+  - name: Kesong Yang
+  - name: Ohad Levy
+  - name: Michael J. Mehl
+  - name: Harold T. Stokes
+  - name: Denis O. Demchenko
+  - name: Dane Morgan
   description: |
     A database of over 3.5 million materials with calculated thermodynamic, electronic, and structural properties,
     using standardized high-throughput DFT calculations.
@@ -608,11 +608,11 @@ OQMD:
     energy_cutoff: 520 eV
     kpoint_density: 8000 KPPRA
   created_by:
-    - name: James E. Saal
-    - name: Scott Kirklin
-    - name: Muratahan Aykol
-    - name: Bryce Meredig
-    - name: Chris Wolverton
+  - name: James E. Saal
+  - name: Scott Kirklin
+  - name: Muratahan Aykol
+  - name: Bryce Meredig
+  - name: Chris Wolverton
   description: |
     A database of DFT-calculated thermodynamic and structural properties for over 1 million inorganic compounds,
     focused on providing data for materials discovery and design. Calculations use a four-step relaxation scheme
@@ -628,8 +628,8 @@ MatPES PBE:
   access: public
   role: training
   static: true
-  optimade_api: null
-  native_api: null
+  optimade_api:
+  native_api:
   date_created: 2025-03-06
   doi: https://doi.org/10.48550/arXiv.2503.04070
   license: MIT
@@ -640,15 +640,15 @@ MatPES PBE:
     functional: PBE
     pseudopotentials: PBE_64
   created_by:
-    - name: Aaron D. Kaplan
-    - name: Runze Liu
-    - name: Ji Qi
-    - name: Tsz Wai Ko
-    - name: Bowen Deng
-    - name: Janosh Riebesell
-    - name: Gerbrand Ceder
-    - name: Kristin A. Persson
-    - name: Shyue Ping Ong
+  - name: Aaron D. Kaplan
+  - name: Runze Liu
+  - name: Ji Qi
+  - name: Tsz Wai Ko
+  - name: Bowen Deng
+  - name: Janosh Riebesell
+  - name: Gerbrand Ceder
+  - name: Kristin A. Persson
+  - name: Shyue Ping Ong
   description: |
     A dataset containing 434,712 structures from ~300K molecular dynamics simulations,
     providing potential energy surfaces that are valuable for training ML interatomic potentials.
@@ -664,8 +664,8 @@ MatPES r2SCAN:
   access: public
   role: training
   static: true
-  optimade_api: null
-  native_api: null
+  optimade_api:
+  native_api:
   date_created: 2025-03-06
   doi: https://doi.org/10.48550/arXiv.2503.04070
   license: MIT
@@ -676,15 +676,15 @@ MatPES r2SCAN:
     functional: r2SCAN
     pseudopotentials: PBE_64
   created_by:
-    - name: Aaron D. Kaplan
-    - name: Runze Liu
-    - name: Ji Qi
-    - name: Tsz Wai Ko
-    - name: Bowen Deng
-    - name: Janosh Riebesell
-    - name: Gerbrand Ceder
-    - name: Kristin A. Persson
-    - name: Shyue Ping Ong
+  - name: Aaron D. Kaplan
+  - name: Runze Liu
+  - name: Ji Qi
+  - name: Tsz Wai Ko
+  - name: Bowen Deng
+  - name: Janosh Riebesell
+  - name: Gerbrand Ceder
+  - name: Kristin A. Persson
+  - name: Shyue Ping Ong
   description: |
     A dataset containing 387,897 structures from ~300K molecular dynamics simulations,
     providing potential energy surfaces that are valuable for training ML interatomic potentials.
@@ -701,8 +701,8 @@ MDR Phonon PBE:
   access: public
   role: test
   static: true
-  optimade_api: null
-  native_api: null
+  optimade_api:
+  native_api:
   date_created: 2024-12-21
   license: CC-BY-4.0
   method: DFT
@@ -711,11 +711,11 @@ MDR Phonon PBE:
     functional: PBE+U
     pseudopotentials: PBE
   created_by:
-    - name: Antoine Loew
-    - name: Dewen Sun
-    - name: Hai-Chen Wang
-    - name: Silvana Botti
-    - name: Miguel A. L. Marques
+  - name: Antoine Loew
+  - name: Dewen Sun
+  - name: Hai-Chen Wang
+  - name: Silvana Botti
+  - name: Miguel A. L. Marques
   description: |
     PBE recalculations of the MDR Phonon dataset
     (https://mdr.nims.go.jp/collections/d7aab932-8512-4b9a-b93d-b61f6e5e7019),
@@ -739,7 +739,7 @@ MDR-MP PBE ω_q:
   date_created: 2026-01-08
   license: CC-BY-4.0
   created_by:
-    - name: Teddy Koker
+  - name: Teddy Koker
   description: |
     Subset of the MDR Phonon PBE dataset to be used for phonon fine-tuning, as
     introduced in "PFT: Phonon Fine-tuning for Machine Learning Interatomic
@@ -761,8 +761,8 @@ ELEMENTA:
   access: partial
   role: training
   static: true
-  optimade_api: null
-  native_api: null
+  optimade_api:
+  native_api:
   date_created: 2026-07-27
   license: CC-BY-NC-4.0
   description: |
@@ -774,9 +774,9 @@ ELEMENTA:
     functional: PBE+U
     pseudopotentials: PBE
   created_by:
-    - name: Kairos Materials Team
-      email: research@kairosmaterials.com
-      url: https://www.kairosmaterials.com
+  - name: Kairos Materials Team
+    email: research@kairosmaterials.com
+    url: https://www.kairosmaterials.com
 
 SMAX:
   name: SMAX Maximum Entropy Dataset
@@ -795,11 +795,11 @@ SMAX:
     functional: PBE
     cutoff_energy: 500 eV
   created_by:
-    - name: Anton Bochkarev
-    - name: Yury Lysogorskiy
-    - name: Aparna Subramanyam
-    - name: Ralf Drautz
-    - name: Danny Perez
+  - name: Anton Bochkarev
+  - name: Yury Lysogorskiy
+  - name: Aparna Subramanyam
+  - name: Ralf Drautz
+  - name: Danny Perez
   description: |
     Chemistry-agnostic maximum-entropy configurations for robust interatomic potentials under extreme thermodynamic conditions, augmented with relaxed structures and lower-energy environments. Used to train the GRACE SMAX models.
   notes:
@@ -1066,7 +1066,7 @@ OCx24:
   url: https://github.com/facebookresearch/fairchem/blob/main/docs/catalysts/datasets/ocx24.md
   download_url: https://github.com/facebookresearch/fairchem/tree/main/src/fairchem/applications/ocx/data/experimental_data
   doi: https://doi.org/10.48550/arXiv.2411.11783
-  n_structures: null
+  n_structures:
   n_materials: 19406
   access: public
   role: test
@@ -1302,7 +1302,7 @@ QM9:
 
 HYD-PBE-Dimers:
   name: HYD independent heteronuclear PBE dimer references
-  url: https://github.com/donkeey11/matbench-discovery
+  url: https://github.com/donkeey11/matbench-discovery/tree/f8b80da6e63f5f158d0e7d48dc515d84b6afd3ad/models/mace_soyo/mace-soyo-hyd-radial-v8
   doi: https://doi.org/10.1063/5.0006074
   n_structures: 297
   n_materials: 36
@@ -1325,5 +1325,6 @@ HYD-PBE-Dimers:
     functional: PBE
     basis: def2-SVP
   created_by:
-    - name: HYD
-      github: https://github.com/donkeey11
+  - name: HYD
+    github: https://github.com/donkeey11
+  download_url: https://raw.githubusercontent.com/donkeey11/matbench-discovery/f8b80da6e63f5f158d0e7d48dc515d84b6afd3ad/models/mace_soyo/mace-soyo-hyd-radial-v8/frozen-source.zip
