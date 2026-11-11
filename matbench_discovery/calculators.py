@@ -514,6 +514,14 @@ def _mace_soyo(head: str) -> Callable[..., Calculator]:
     return make_calc
 
 
+def _mace_soyo_hyd(device: str, checkpoint: str) -> Calculator:
+    """Frozen HYD radial correction with canonical input batching for dimers."""
+    from matbench_discovery.mace_soyo_hyd.adapter import make_calculator
+
+    calc = make_calculator(device, checkpoint)
+    return _with_acceleration(calc, "cuequivariance", "torch_aot_inductor")
+
+
 def _orb(variant: str) -> Callable[[str], Calculator]:
     """ORB pretrained model by registry variant name."""
 
@@ -1096,6 +1104,9 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
     {
         "mace_soyo_mptrj": _checkpoint_spec(
             "mace_soyo_mptrj", _mace_soyo("mptraj"), ext=".pth"
+        ),
+        "mace_soyo_hyd_radial_v8": _checkpoint_spec(
+            "mace_soyo_hyd_radial_v8", _mace_soyo_hyd, ext=".pth"
         ),
         "mace_soyo_oam": _checkpoint_spec(
             "mace_soyo_oam", _mace_soyo("salexmp"), ext=".pth"
