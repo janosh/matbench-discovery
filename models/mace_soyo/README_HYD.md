@@ -106,10 +106,10 @@ performed. Initial structures saved for provenance are not presented as a
 completed geometry-optimization task. Phonons and molecular dynamics have not
 been evaluated. The zero-step protocol was frozen before any WBM prediction.
 
-Frozen WBM predictions cover all 256,963 inputs and have been verified and
-published in the [prediction release](https://github.com/donkeey11/matbench-discovery/releases/tag/v0.1.0-hyd-radial-v8).
-The model metadata and actual native ingestion check are being finalized.
-A local score or pull request does not establish an official public ranking.
+Predictions and explicit failure records cover all 256,963 inputs and are
+verified and published at the metadata URLs. Mark the submission ready for review only after the actual
+native ingestion command has completed. A local score or a pull request
+does not establish an official public ranking.
 
 ## Partial-task ingestion
 
