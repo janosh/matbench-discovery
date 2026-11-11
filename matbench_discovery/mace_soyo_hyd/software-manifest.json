@@ -1,0 +1,22 @@
+{
+  "frozen_at_utc": "2026-11-11T06:51:38.134599+00:00",
+  "purpose": "Portable source freeze for numerical reproduction; scientific weights remain the pre-evaluation frozen v8 model",
+  "code_and_training_sha256": {
+    "matbench_discovery/calculators.py": "406c48e44e6195a353a6a505788ee6cbdcbe6d39645e6a1f934d04cab7148ab8",
+    "matbench_discovery/mace_soyo_hyd/__init__.py": "812032a3d433903722a5ddadb738cda8aab8f33109010e3f087f825426f6ff58",
+    "matbench_discovery/mace_soyo_hyd/calculator.py": "7e377c6ca8dac4cf25b57b09dfe10d97cd9813bce246b4ff499b28e080aa3043",
+    "matbench_discovery/mace_soyo_hyd/adapter.py": "7e8204050f7787fbee8d6df46e56829c309910d4f34f812f162d96ae0ff84ab4",
+    "matbench_discovery/mace_soyo_hyd/frozen-candidate.json": "cf601a2cda2510069f9efc118c2f7ce47f6201734e5b44480d3ed547af33f3d9",
+    "models/mace_soyo/train_mace_soyo_hyd.py": "6a705526af14a77eb70b55865993ad139acacdb63615b4e95bd7596a0f2fcb57",
+    "models/mace_soyo/mace-soyo-hyd-radial-v8/frozen-source.zip": "f29f5d21250764e3b5e4128521ca118a4e988f54db51138ea661369c5061ab2c"
+  },
+  "candidate_sha256": "cf601a2cda2510069f9efc118c2f7ce47f6201734e5b44480d3ed547af33f3d9",
+  "reference_labels_used_for_selection": false,
+  "gpu_replay_status_at_freeze": "pending",
+  "archived_training_sha256": {
+    "training/transfer-fit.jsonl": "b21fc8ca4bb51bbb32c551e76ffc9137880ca3b45472eebf535070b883ab0e6e",
+    "training/initial-fit.jsonl": "7aedca2539e1421a1a4a021cf0d7588261acac9c010de3d84ef0d1c1ab14f0a7",
+    "training/transfer-validation.jsonl": "af045559797d644b5e32351548f634dbc4e7c78aa37d58e82745a7bb1f1f1ec1"
+  },
+  "draft_started_at_utc": "2026-11-11T06:06:33.879284+00:00"
+}
