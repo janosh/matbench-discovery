@@ -466,6 +466,18 @@ def _mace(checkpoint: str, head: str | None = None) -> Callable[[str, str], Calc
     return make_calc
 
 
+def _rune_mobius() -> Callable[[str, str], Calculator]:
+    """RUNE Möbius calculator backed by the public inference checkpoint."""
+
+    def make_calc(device: str, checkpoint: str) -> Calculator:
+        """Load the checkpoint through RUNE's ASE calculator interface."""
+        from rune.mobius.plugin import build_calculator
+
+        return build_calculator(checkpoint, device=device)
+
+    return make_calc
+
+
 def _mace_soyo(head: str) -> Callable[..., Calculator]:
     """Export a MACE-SOYO checkpoint to an AOTI package once per GPU arch."""
 
@@ -1102,6 +1114,9 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
         ),
         "mace_mp_0": _runtime_calc_spec("mace_mp_0", _mace("medium")),
         "mace_mpa_0": _runtime_calc_spec("mace_mpa_0", _mace("medium-mpa-0")),
+        "mobius_oam": _checkpoint_spec(
+            "mobius_oam", _rune_mobius(), ext=".pt"
+        ),
         "orb_v2": _runtime_calc_spec("orb_v2", _orb("orb-v2")),
         "orb_v3": _runtime_calc_spec("orb_v3", _orb("orb-v3-conservative-inf-mpa")),
         "orb_v2_mptrj": _runtime_calc_spec("orb_v2_mptrj", _orb("orb-mptraj-only-v2")),
