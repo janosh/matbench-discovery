@@ -1100,9 +1100,7 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
         ),
         "mace_mp_0": _runtime_calc_spec("mace_mp_0", _mace("medium")),
         "mace_mpa_0": _runtime_calc_spec("mace_mpa_0", _mace("medium-mpa-0")),
-        "mobius_oam": _checkpoint_spec(
-            "mobius_oam", _rune_mobius(), ext=".pt"
-        ),
+        "mobius_oam": _checkpoint_spec("mobius_oam", _rune_mobius(), ext=".pt"),
         "orb_v2": _runtime_calc_spec("orb_v2", _orb("orb-v2")),
         "orb_v3": _runtime_calc_spec("orb_v3", _orb("orb-v3-conservative-inf-mpa")),
         "orb_v2_mptrj": _runtime_calc_spec("orb_v2_mptrj", _orb("orb-mptraj-only-v2")),

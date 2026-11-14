@@ -43,7 +43,7 @@ uses an older schema than the current Matbench loader.
 ## Results
 
 | Task | Result |
-|---|---:|
+| --- | ---: |
 | Discovery F1 (full test set) | 0.866356 |
 | Discovery F1 (unique prototypes) | 0.885614 |
 | Geometry RMSD | 0.062821 |

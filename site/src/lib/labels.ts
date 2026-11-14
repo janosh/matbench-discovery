@@ -773,6 +773,9 @@ const org_logos = {
   EPFL: `/logos/ecole-polytechnique-federale-de-lausanne.svg`,
   'ShanghaiTech University': `/logos/shanghaitech-university.svg`,
   'Nanjing University': `/logos/nanjing-university.svg`,
+  'Zhongguancun Academy': `/logos/zhongguancun-academy.png`,
+  'Zhongguancun Institute of Artificial Intelligence':
+    `/logos/zhongguancun-institute-of-artificial-intelligence.png`,
 } as const
 
 export function get_org_logo(affiliation: string): OrgLogo | undefined {
