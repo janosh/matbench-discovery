@@ -523,3 +523,92 @@ def test_archive_rejects_artifact_escaping_model_dir(
         upload.resolve_artifact_path(
             str(family_dir / yaml_name), artifact_rel_path, str(tmp_path)
         )
+
+
+def test_not_applicable_tasks_skip_bulk_artifacts_and_runners(
+    shared_runner_calls: list[list[str]],
+) -> None:
+    """A declared dimer specialist must not require bulk data or bulk runners."""
+    checks = ingest.Checklist()
+    ingest.check_submission(Model["pet_xs_pair_bo_v1"], checks)
+    assert not msgs(checks, ingest.FAIL)
+    scripts = [
+        part for call in shared_runner_calls for part in call if part.endswith(".py")
+    ]
+    assert scripts == [f"{ingest.ROOT}/models/run_diatomics.py"]
+
+
+def test_declared_runtime_precision_reaches_ingestion_smoke(
+    shared_runner_calls: list[list[str]],
+) -> None:
+    """Dropping the declared fp32/CPU options would run a different frozen model."""
+    checks = ingest.Checklist()
+    ingest.check_submission(Model["pet_xs_pair_bo_v1"], checks)
+    command = next(
+        call
+        for call in shared_runner_calls
+        if any("run_diatomics.py" in p for p in call)
+    )
+    assert command[command.index("--dtype") + 1] == "float32"
+    assert command[command.index("--device") + 1] == "cpu"
+
+
+def test_not_applicable_tasks_skip_evaluations_and_figures(
+    run_cmd_calls: list[tuple[str, ...]],
+) -> None:
+    """Do not launch bulk/phonon evaluators for task coverage explicitly marked N/A."""
+    checks = ingest.Checklist()
+    model = Model["pet_xs_pair_bo_v1"]
+    ingest.run_model_steps("evals", ingest.EVAL_STEPS, model, checks, energy_only=False)
+    ingest.run_model_steps("figs", ingest.FIG_STEPS, model, checks, energy_only=False)
+    scripts = [part for call in run_cmd_calls for part in call if part.endswith(".py")]
+    assert scripts == ["scripts/evals/diatomic_metrics.py"]
+
+
+@pytest.mark.parametrize("status", ["pending", "partial", "complete", "not_available"])
+def test_non_na_discovery_still_requires_prediction_url(
+    status: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """N/A support must not excuse missing artifacts for other coverage statuses."""
+    model = Model["pet_xs_pair_bo_v1"]
+    monkeypatch.setitem(
+        model.metadata["metrics"],
+        "discovery",
+        {"status": status, "reason": "declared test coverage"},
+    )
+    checks = ingest.Checklist()
+    ingest.check_submission(model, checks, validate_runner=False)
+    assert any("No discovery.pred_file.url" in msg for msg in msgs(checks, ingest.FAIL))
+
+
+def test_payload_refresh_skips_only_explicitly_na_target_tasks(
+    run_cmd_calls: list[tuple[str, ...]],
+) -> None:
+    """A new dimer entry needs no discovery/phonon/geometry payload jobs."""
+    checks = ingest.Checklist()
+    ingest.run_payload_refresh(checks, (Model["pet_xs_pair_bo_v1"],))
+    assert len(run_cmd_calls) == 2  # change summary and existing payload shape tests
+    assert any("summarize_payload_changes.py" in part for part in run_cmd_calls[0])
+    assert checks.n_failed == 0
+
+
+@pytest.mark.parametrize("status", ["pending", None])
+def test_pending_or_missing_coverage_keeps_payload_jobs(
+    status: str | None,
+    monkeypatch: pytest.MonkeyPatch,
+    run_cmd_calls: list[tuple[str, ...]],
+) -> None:
+    """Pending/missing discovery is not permission to omit its validation jobs."""
+    model = Model["pet_xs_pair_bo_v1"]
+    monkeypatch.setitem(
+        model.metadata["metrics"],
+        "discovery",
+        {"status": status, "reason": "not complete"} if status else {},
+    )
+    ingest.run_payload_refresh(ingest.Checklist(), (model,))
+    scripts = [
+        part for call in run_cmd_calls for part in call if "scripts/model_figs/" in part
+    ]
+    assert len(scripts) == 6
+    assert all("kappa_103_analysis.py" not in script for script in scripts)

@@ -1013,6 +1013,13 @@ def _pet(device: str, checkpoint: str, dtype: str = "float64") -> Calculator:
     return MetatomicCalculator(model, device=device, non_conservative=False)
 
 
+def _pet_pair_bo(device: str, checkpoint: str, dtype: str = "float32") -> Calculator:
+    """Load the frozen two-atom PET specialist through its public ASE adapter."""
+    from pet_pair_bo.ase import PETPairCalculator
+
+    return PETPairCalculator.from_frozen(checkpoint, device=device, dtype=dtype)
+
+
 def _chgnet(device: str) -> Calculator:
     """Load the CHGNet calculator bundled with the chgnet package."""
     from chgnet.model.dynamics import CHGNetCalculator
@@ -1153,6 +1160,9 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
             _nequix, "nequix_mp_1_pft", checkpoint=True, ext=".nqx"
         ),
         "pet_oam_xl_1_0_0": _checkpoint_spec("pet_oam_xl_1_0_0", _pet),
+        "pet_xs_pair_bo_v1": _checkpoint_spec(
+            "pet_xs_pair_bo_v1", _pet_pair_bo, ext=".json"
+        ),
         "alphanet_v1_mptrj": _checkpoint_spec(
             "alphanet_v1_mptrj",
             _alphanet("alphanet_v1_mptrj", f"{_ALPHANET_PRETRAINED}/MPtrj/mp.json"),

@@ -52,6 +52,16 @@ PAYLOAD_SCRIPTS = (
     "--extra phonons scripts/model_figs/kappa_103_analysis.py",
     "scripts/evals/geo_opt.py",
 )
+PAYLOAD_TASKS = {
+    "scripts/model_figs/roc_curves_models.py": "discovery",
+    "scripts/model_figs/hull_dist_box_plot.py": "discovery",
+    "scripts/model_figs/cumulative_metrics.py": "discovery",
+    "scripts/model_figs/rolling_hull_dist_mae_models.py": "discovery",
+    "scripts/model_figs/tiles_hist_classified_stable_models.py": "discovery",
+    "scripts/model_figs/single_model_per_element_errors.py": "discovery",
+    "--extra phonons scripts/model_figs/kappa_103_analysis.py": "phonons",
+    "scripts/evals/geo_opt.py": "geo_opt",
+}
 # (label, skipped for energy-only models, fatal on failure, `uv run` args).
 # kappa needs the phonons extra (phono3py/phonopy); geo-opt the symmetry extra (moyopy)
 EVAL_STEPS = (
@@ -174,7 +184,9 @@ def check_submission(
     # E = energy only (no forces -> no relaxation, phonons or diatomics)
     energy_only = metadata.get("targets") == "E"
     discovery = metrics_by_task.get("discovery")
-    if isinstance(discovery, dict) and file_ref_url(discovery.get("pred_file")):
+    if task_coverage(metadata, "discovery")[0] == "not_applicable":
+        checks.skip("Discovery predictions declared not_applicable")
+    elif isinstance(discovery, dict) and file_ref_url(discovery.get("pred_file")):
         checks.ok("Prediction file URL found in YAML (discovery.pred_file.url)")
     else:
         checks.fail(f"No discovery.pred_file.url found in {yaml_path}")
@@ -213,6 +225,10 @@ def check_submission(
         if energy_only and task != "discovery":
             checks.skip(f"{task} test script check skipped (targets=E, no forces)")
             continue
+        coverage_task = "phonons" if task == "kappa" else task
+        if task_coverage(metadata, coverage_task)[0] == "not_applicable":
+            checks.skip(f"{task} shared runner declared not_applicable")
+            continue
         if task == "discovery" and (
             reason := ARCHIVED_DISCOVERY_MODELS.get(model.name)
         ):
@@ -242,8 +258,15 @@ def check_submission(
             if not os.path.isfile(runner):
                 raise ValueError(f"shared runner not found: {runner}")
             if not (task == "kappa" and calc_spec.requires_checkpoint):
+                runtime = metadata.get("hyperparams", {}).get("evaluation", {})
+                runtime_args = [
+                    part
+                    for key in ("dtype", "device")
+                    if key in runtime
+                    for part in (f"--{key}", str(runtime[key]))
+                ]
                 command = calc_spec.uv_run_cmd(
-                    runner, "--model", model.name, "--dry-run"
+                    runner, "--model", model.name, "--dry-run", *runtime_args
                 )
                 subprocess.run(command, check=True, cwd=ROOT)
             if task == "discovery":
@@ -274,9 +297,20 @@ def run_model_steps(
     """Run model-specific commands, recording each result."""
     banner(title)
     model_args = ("--models", model.name)
+    task_by_script = {
+        "scripts/evals/discovery.py": "discovery",
+        "scripts/evals/kappa.py": "phonons",
+        "scripts/analyze_geo_opt.py": "geo_opt",
+        "scripts/evals/diatomic_metrics.py": "diatomics",
+        "site/scripts/generate-energy-parity-assets.py": "discovery",
+        "site/scripts/generate-kappa-parity-assets.py": "phonons",
+    }
     for label, needs_forces, fatal, args in steps:
+        task = task_by_script.get(args.rsplit(maxsplit=1)[-1])
         if needs_forces and energy_only:
             checks.skip(f"{label} skipped (targets=E, no forces)")
+        elif task and task_coverage(model.metadata, task)[0] == "not_applicable":
+            checks.skip(f"{label} declared not_applicable")
         elif run_cmd(*uv_run_args(args), *model_args):
             checks.ok(f"{label} completed")
         elif fatal:
@@ -388,6 +422,13 @@ def run_payload_refresh(
         else ("--full-roster",)
     )
     for script in PAYLOAD_SCRIPTS:
+        task = PAYLOAD_TASKS[script]
+        if models and all(
+            (model.metrics.get(task) or {}).get("status") == "not_applicable"
+            for model in models
+        ):
+            checks.skip(f"{script}: all targeted models declare {task} not_applicable")
+            continue
         if not run_cmd(*uv_run_args(script), *payload_args):
             checks.fail(f"{script} failed")
             return

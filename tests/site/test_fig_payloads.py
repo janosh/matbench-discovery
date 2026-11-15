@@ -407,8 +407,29 @@ def test_multi_model_payload_provenance_matches_computation() -> None:
 
 
 def has_discovery_metrics(model: Model) -> bool:
-    """Whether a model has any discovery metrics."""
-    return bool(model.metrics.get("discovery"))
+    """Whether a model claims discovery data rather than explicit inapplicability."""
+    discovery = model.metrics.get("discovery") or {}
+    return bool(discovery) and discovery.get("status") != "not_applicable"
+
+
+@pytest.mark.parametrize(
+    ("discovery", "expected"),
+    [
+        (None, False),
+        ({}, False),
+        ({"status": "not_applicable", "reason": "isolated-pair model"}, False),
+        ({"status": "pending"}, True),
+        ({"status": "partial"}, True),
+        ({"F1": 0.9}, True),
+    ],
+)
+def test_discovery_payload_coverage_respects_only_explicit_na(
+    monkeypatch: pytest.MonkeyPatch, discovery: dict[str, Any] | None, expected: bool
+) -> None:
+    """N/A is not a payload claim; other nonempty declarations remain checked."""
+    model = Model.from_ref("pet_xs_pair_bo_v1")
+    monkeypatch.setattr(model, "metadata", {"metrics": {"discovery": discovery}})
+    assert has_discovery_metrics(model) is expected
 
 
 def has_geo_opt_analysis(model: Model) -> bool:

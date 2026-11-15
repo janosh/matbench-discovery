@@ -1299,3 +1299,33 @@ QM9:
     Equilibrium geometries and quantum-chemical properties of small organic molecules with up to nine heavy atoms. Includes energies, harmonic frequencies, dipoles, polarizabilities, and thermochemical properties, rather than off-equilibrium force trajectories.
   notes:
     Coverage: Counts the full 133,885-molecule archive. The [authors' README](https://springernature.figshare.com/articles/dataset/Readme_file_Data_description_for_Quantum_chemistry_structures_and_properties_of_134_kilo_molecules_/1057641) flags 3,054 structures failing a geometry-to-SMILES consistency check; filtered benchmark variants should state their exclusions.
+
+PET-Pair-PBE-v2:
+  name: PET Pair independent PBE reference v2
+  url: https://github.com/nkwork9999/pet-xs-pair-bo
+  doi: null
+  download_url: https://github.com/nkwork9999/pet-xs-pair-bo/releases/download/v0.1.0/pet-pair-pbe-v2-reference.tar.gz
+  n_structures: 176
+  access: public
+  role: training
+  static: true
+  date_created: 2026-11-16
+  license: BSD-3-Clause
+  description: |
+    Independent heteronuclear molecular PBE/def2-SVP energy and force curves
+    generated with PySCF for a frozen radial correction of PET-OMat-XS.
+    Element-pair groups define training, validation and audit splits. No official
+    Matbench Discovery homonuclear reference curve is included.
+  notes:
+    Revision: Reference schema family 2, numerical protocol revision 2.2; the same 16 chemical groups and 176 geometries as revision 2.1, whose full QA failed. Failed revisions remain immutable.
+    Auxiliary audit: LiH/BeS/MgS remain excluded from fitting and hyperparameter objectives, but their earlier QA failures informed solver repair. The retained partition is descriptive and QA-informed, not an unseen confirmatory test.
+    Archive: No DOI has been registered; the versioned public archive preserves the reference records and provenance.
+    Counting: 176 main configurations from 16 chemical groups passed all predeclared numerical QA gates; 110 training, 33 validation, and 33 descriptive auxiliary-evaluation points. Additional SCF and derivative probes are provenance records, not extra fitting rows.
+    Theory: All-electron restricted molecular PBE/def2-SVP with explicitly checked SCF stability and force consistency; distinct from the official plane-wave/PAW reference setup.
+  method: DFT
+  params:
+    code: PySCF
+    functional: PBE
+  created_by:
+  - name: nk (Enuke)
+    github: https://github.com/nkwork9999

@@ -17,7 +17,7 @@ definitions:
 
   dft_code_enum:
     type: string
-    enum: [VASP, Quantum ESPRESSO, CASTEP, AbInit, FHI-aims, CP2K, ORCA, Psi4, Various]
+    enum: [VASP, Quantum ESPRESSO, CASTEP, AbInit, FHI-aims, CP2K, ORCA, Psi4, PySCF, Various]
     description: DFT code used for calculations
 
   functional_enum:
@@ -62,6 +62,13 @@ definitions:
       - license
       - date_created
       - doi
+    allOf:
+      - if:
+          properties:
+            doi: {type: 'null'}
+          required: [doi]
+        then:
+          required: [download_url]
     properties:
       # Basic dataset information
       name:
@@ -136,8 +143,10 @@ definitions:
         $ref: '#/definitions/http_url'
         description: URL to download the dataset
       doi:
-        $ref: '#/definitions/http_url'
-        description: DOI reference for the dataset
+        oneOf:
+          - $ref: '#/definitions/http_url'
+          - type: 'null'
+        description: DOI reference, or null when a public download_url is supplied
       contains:
         type: array
         items:

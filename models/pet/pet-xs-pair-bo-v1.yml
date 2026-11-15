@@ -1,0 +1,134 @@
+model_name: PET-XS Pair-BO v1
+model_key: pet-xs-pair-bo-v1
+model_version: 0.1.0
+dates:
+  benchmark_added: '2026-11-16'
+  paper_published:
+lifecycle: pending
+authors:
+- name: nk (Enuke)
+  github: https://github.com/nkwork9999
+repo: https://github.com/nkwork9999/pet-xs-pair-bo
+doi:
+paper:
+pr_url:
+checkpoint_url: https://github.com/nkwork9999/pet-xs-pair-bo/releases/download/v0.1.0/pet-xs-pair-bo-v1.json
+license:
+  code: BSD-3-Clause
+  code_url: https://github.com/nkwork9999/pet-xs-pair-bo/blob/main/LICENSE
+  checkpoint: BSD-3-Clause
+  checkpoint_url: https://github.com/nkwork9999/pet-xs-pair-bo/blob/main/LICENSE
+environment:
+  dependencies:
+  - pet-xs-pair-bo @ git+https://github.com/nkwork9999/pet-xs-pair-bo.git@12ed3dce5231b46b7a81c3003d3b9cbcf5bab586
+  - upet==0.3.1
+  - torch==2.14.1
+  - numpy==2.5.4
+  - ase==3.29.0
+  - metatomic-torch==0.1.19
+  - metatensor-torch==0.10.8
+  python_version: '3.14'
+openness: OSOD
+architecture_types: [transformer, bayesian_optimization]
+train_task: S2EF
+test_task: IS2E
+targets: EF_G
+training_sets: [OMat24, PET-Pair-PBE-v2]
+model_params: 4487998
+hyperparams:
+  evaluation:
+    dtype: float32
+    device: cpu
+  architecture:
+    graph_construction_radius: 7.5
+  training:
+    frozen_backbone: PET-OMat-XS v1.0.0
+    residual_coefficients: 36
+    correction_cutoff_angstrom: 5.0
+    correction_atomic_number_interval: [1, 17]
+    bayesian_optimization_trials: 16
+    initial_sobol_trials: 8
+notes:
+  description: |
+    Frozen PET-OMat-XS plus a conservative 36-coefficient radial residual specialized
+    for isolated one- and two-atom systems. The public upstream PET backbone has
+    4,487,962 parameters. A GP expected-improvement search chooses four residual
+    fitting hyperparameters using independent heteronuclear validation groups.
+    This submission is the prespecified PET-plus-BO branch, not a claim that it
+    outperforms the unchanged PET or equal-budget Sobol comparators.
+  scope: |
+    One atom receives zero correction; two atoms receive the correction only when
+    both atomic numbers are in 1..17. Outside that interval the base PET output is
+    retained. Inputs with more than two atoms are rejected. No stress is exposed.
+    Periodic inputs require a sufficiently large isolated vacuum cell; the shared
+    diatomic runner's 50 Angstrom cubic cell is supported. CPU float32 PET weights
+    and conservative forces are fixed; correction arithmetic is float64.
+  license: |
+    The frozen JSON residual artifact and original adapter are BSD-3-Clause licensed.
+    The separately downloaded PET-OMat-XS weights and UPET code retain their
+    upstream BSD-3-Clause license; their original attribution is retained.
+  provenance: |
+    PET-OMat-XS v1.0.0 uses OMat24 pretraining (89 elements documented by UPET).
+    The model API accepts atomic numbers 1..102, which does not establish trained
+    coverage for all 102. Upstream checkpoint SHA256:
+    64235c15f9351577db36068a833c36ba2bc0682f77121345926668c58c582299.
+  disclosure: |
+    Public model metadata and leaderboards informed task and backbone choice.
+    The v1 pilot and the full revision 2.1 reference generation failed physical
+    or numerical QA; their failed reference records are retained and cannot
+    authorize candidate fitting. Revision 2.2 repairs a generic SCF solver on
+    training chemistry without changing the 16 chemical groups, 176 geometries,
+    acceptance thresholds, model family, search budget or submitted variant.
+    Auxiliary LiH/BeS/MgS chemistry is retained without replacement. Its QA
+    observations informed the solver repair, so it is exposed and descriptive
+    only, not an unseen or confirmatory audit; it remains excluded from fitting
+    and hyperparameter objectives.
+    This candidate's residual training and search do not use official homonuclear
+    labels or score feedback. The model, source, base checkpoint and runtime are
+    frozen before its first canonical official evaluation. This statement does
+    not guarantee complete benchmark non-exposure of upstream PET pretraining.
+    Intent SHA256: 255a3395caef44cd217959384fd79ee1087d06487c7472aa2c19bbfe3e95387e.
+    See https://github.com/nkwork9999/pet-xs-pair-bo/blob/v0.1.0/configs/submission_intent_v2_2.json.
+  limitations: |
+    The underlying PET architecture is approximately rotationally invariant.
+    A radial correction preserves the base model's transverse force errors.
+    Independent molecular all-electron PBE/def2-SVP training labels differ from
+    the official plane-wave/PAW reference setup.
+  auxiliary_results: The prespecified PET+BO candidate worsened validation radial-force MAE from 0.6502 to 0.7831 eV/Angstrom and QA-informed auxiliary radial-force MAE from 0.5150 to 0.9943 eV/Angstrom versus unchanged PET. These negative results are disclosed; no superiority or rank claim is made and no official-score reselection was performed.
+metrics:
+  diatomics:
+    pred_file:
+      name: models/pet/pet-xs-pair-bo-v1/2026-11-15-diatomics.json.gz
+      url: https://github.com/nkwork9999/pet-xs-pair-bo/releases/download/v0.1.0/2026-11-15-diatomics.json.gz
+      size: 509991
+      md5: 25195e95ea78501bf843d38030457a84
+    cost: {source: runner, hardware: CPU (arm), device: cpu, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 167.35, load_time_sec: 9.45, max_rss_gb: 0.83}
+    pbe_wall_dist_mae: 0.2346
+    pbe_energy_mae: 7.634
+    pbe_bond_length_error: 0.3731
+    pbe_well_depth_error: 13.25
+    pbe_vib_freq_error: 181.2
+    tortuosity: 1.023
+    energy_diff_flips: 2.0
+    energy_jump: 0.6142
+    force_flips: 2.023
+    force_total_variation: 291.9
+    force_jump: 18.04
+    pbe_force_mae: 3.624
+    pbe_vib_freq_coverage:
+      n_valid: 81
+      n_eligible: 81
+      failed_elements: []
+      missing_elements: []
+  discovery:
+    status: not_applicable
+    reason: Isolated one/two-atom specialist; bulk crystal inputs are rejected.
+  geo_opt:
+    status: not_applicable
+    reason: Isolated one/two-atom specialist; bulk crystal inputs are rejected.
+  phonons:
+    status: not_applicable
+    reason: Isolated one/two-atom specialist; bulk crystal inputs are rejected.
+  md:
+    status: not_applicable
+    reason: Isolated one/two-atom specialist; no general materials dynamics model.

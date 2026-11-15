@@ -22,6 +22,7 @@ from matbench_discovery.calculators import CALCULATORS
 from matbench_discovery.data import (
     iter_file_refs,
     load_datasets,
+    task_coverage,
     validate_artifact_path,
 )
 from matbench_discovery.discovery import ARCHIVED_DISCOVERY_MODELS
@@ -308,8 +309,20 @@ def test_runnable_models_have_complete_shared_settings() -> None:
         for model in Model
         if model.metadata.get("hyperparams", {}).get("evaluation", {}).get("kappa")
     }
-    assert configured_models == set(CALCULATORS) - {"emt"}
+    phonon_models = {
+        key
+        for key in CALCULATORS
+        if key != "emt"
+        and task_coverage(Model[key].metadata, "phonons")[0] != "not_applicable"
+    }
+    assert configured_models == phonon_models
     for model_key in CALCULATORS:
+        if (
+            model_key != "emt"
+            and task_coverage(Model[model_key].metadata, "discovery")[0]
+            == "not_applicable"
+        ):
+            continue
         assert isinstance(RelaxationSettings.from_model(model_key), RelaxationSettings)
     for model_key in configured_models:
         assert isinstance(KappaSettings.from_model(model_key), KappaSettings)
@@ -470,3 +483,38 @@ def test_reproducibility_run_files_match_md5(model: Model) -> None:
             if os.path.isfile(abs_path := f"{ROOT}/{ref['name']}"):
                 actual = (os.path.getsize(abs_path), file_digest(abs_path, "md5"))
                 assert actual == (ref["size"], ref["md5"]), abs_path
+
+
+@pytest.mark.parametrize(
+    ("doi", "download_url", "valid"),
+    [
+        (None, "https://example.org/v1/reference.tar.gz", True),
+        (None, None, False),
+        ("not-a-doi-url", "https://example.org/v1/reference.tar.gz", False),
+    ],
+)
+def test_unregistered_dataset_doi_requires_public_download(
+    doi: str | None,
+    download_url: str | None,
+    valid: bool,
+) -> None:
+    """A dataset without a DOI still needs a direct public archive URL."""
+    with open(f"{ROOT}/tests/dataset-schema.yml", encoding="utf-8") as file:
+        schema = yaml.safe_load(file)
+    for key in ("person", "http_url", "license_enum"):
+        schema["definitions"][key] = MODEL_SCHEMA["definitions"][key]
+    dataset = {
+        "name": "Independent data",
+        "description": "Versioned generated reference data",
+        "url": "https://example.org/project",
+        "doi": doi,
+        "n_structures": 2,
+        "access": "public",
+        "role": "training",
+        "license": "BSD-3-Clause",
+        "date_created": "2026-11-16",
+    }
+    if download_url is not None:
+        dataset["download_url"] = download_url
+    errors = list(Draft7Validator(schema).iter_errors({"Independent": dataset}))
+    assert (not errors) is valid
