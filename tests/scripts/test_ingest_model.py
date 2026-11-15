@@ -612,3 +612,90 @@ def test_pending_or_missing_coverage_keeps_payload_jobs(
     ]
     assert len(scripts) == 6
     assert all("kappa_103_analysis.py" not in script for script in scripts)
+
+
+@pytest.mark.parametrize(
+    "payload_path",
+    [
+        "site/src/figs/roc-models.jsonl",
+        "site/src/figs/box-hull-dist-errors.jsonl",
+        "site/src/figs/cumulative-precision-recall.jsonl",
+        "site/src/figs/rolling-mae-vs-hull-dist.jsonl",
+        "site/src/figs/hist-clf-pred-hull-dist.jsonl",
+        "site/src/figs/element-prevalence-vs-error.jsonl",
+        "site/src/routes/models/per-element-each-errors.jsonl",
+        "site/src/figs/kappa-103-analysis.jsonl",
+        "site/src/figs/spg-sankeys.jsonl",
+        "site/src/figs/sym-ops-diff-bar.jsonl",
+        "site/src/figs/struct-rmsd-cdf.jsonl",
+    ],
+)
+@pytest.mark.parametrize("mixed_targets", [False, True])
+def test_na_payload_refresh_removes_stale_target_only(
+    payload_path: str,
+    mixed_targets: bool,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    run_cmd_calls: list[tuple[str, ...]],
+) -> None:
+    """N/A task updates remove old records without changing shared or other data."""
+    from matbench_discovery import figs
+
+    # Use an existing validated base; numerical entries are just opaque old records.
+    template = figs.read_jsonl_payload(f"{ingest.ROOT}/site/src/figs/roc-models.jsonl")
+    model = Model["pet_xs_pair_bo_v1"]
+    other = Model["mace_mpa_0"]
+    old_record = template["models"][0]
+    template["models"] = [
+        old_record | {"model_key": model.key, "label": model.label},
+        old_record | {"model_key": other.key, "label": other.label},
+    ]
+    path = tmp_path / payload_path
+    figs.write_jsonl_payload(str(path), template, target_keys=None)
+    old_lines = path.read_bytes().splitlines(keepends=True)
+    expected_lines = [
+        line for line in old_lines if json.loads(line).get("model_key") != model.key
+    ]
+    monkeypatch.setattr(ingest, "ROOT", str(tmp_path))
+    targets = (model, other) if mixed_targets else (model,)
+    checks = ingest.Checklist()
+    ingest.run_payload_refresh(checks, targets)
+    assert checks.n_failed == 0
+    assert path.read_bytes() == b"".join(expected_lines)
+    assert run_cmd_calls  # The remaining payload validation still runs.
+
+
+def test_mixed_payload_refresh_does_not_regenerate_na_models(
+    run_cmd_calls: list[tuple[str, ...]],
+) -> None:
+    """A surviving legacy artifact cannot restore a removed N/A model record."""
+    ingest.run_payload_refresh(
+        ingest.Checklist(), (Model["pet_xs_pair_bo_v1"], Model["mace_mpa_0"])
+    )
+    for command in run_cmd_calls:
+        if "--models" in command:
+            assert command[command.index("--models") + 1 :] == ("mace_mpa_0",)
+
+
+@pytest.mark.parametrize(
+    "status", [None, "pending", "partial", "complete", "not_available"]
+)
+def test_non_na_payload_records_are_not_pruned(
+    status: str | None,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    run_cmd_calls: list[tuple[str, ...]],
+) -> None:
+    """Missing or unfinished coverage never authorizes deleting old results."""
+    model = Model["mace_mpa_0"]
+    monkeypatch.setitem(
+        model.metadata["metrics"], "discovery", {"status": status} if status else {}
+    )
+    path = tmp_path / "site/src/figs/roc-models.jsonl"
+    path.parent.mkdir(parents=True)
+    old_bytes = Path(f"{ingest.ROOT}/site/src/figs/roc-models.jsonl").read_bytes()
+    path.write_bytes(old_bytes)
+    monkeypatch.setattr(ingest, "ROOT", str(tmp_path))
+    ingest.run_payload_refresh(ingest.Checklist(), (model,))
+    assert path.read_bytes() == old_bytes
+    assert run_cmd_calls

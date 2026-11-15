@@ -26,7 +26,7 @@ from asset_helpers import (
 from pymatviz.enums import Key
 
 from matbench_discovery import ROOT
-from matbench_discovery.data import load_df_wbm_with_preds
+from matbench_discovery.data import load_df_wbm_with_preds, task_coverage
 from matbench_discovery.enums import DataFiles, MbdKey
 
 if TYPE_CHECKING:
@@ -133,7 +133,12 @@ def main(argv: Sequence[str] | None = None) -> None:
     """Generate base data, model prediction assets, structures, and manifests."""
     args = parse_args(argv)
     manifest_path = Path(args.manifest)
-    models = resolve_models(args.models)
+    requested_models = resolve_models(args.models)
+    models = tuple(
+        model
+        for model in requested_models
+        if task_coverage(model.metadata, "discovery")[0] != "not_applicable"
+    )
     df_preds = load_df_wbm_with_preds(models=models, pbar=True)
     if args.limit_rows is not None:
         df_preds = df_preds.head(args.limit_rows)
@@ -143,7 +148,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     material_ids_sha256 = hashlib.sha256("\n".join(material_ids).encode()).hexdigest()
     asset_dir = Path(args.out_dir) / "assets"
     previous_manifest = read_manifest(manifest_path)
-    target_keys = {model.key for model in models} if args.models else set()
+    # Retain filtered targets here so a change to N/A removes their old assets.
+    target_keys = {model.key for model in requested_models} if args.models else set()
     structure_identity = {
         "schema_version": PARITY_MANIFEST_SCHEMA_VERSION,
         "row_count": len(material_ids),

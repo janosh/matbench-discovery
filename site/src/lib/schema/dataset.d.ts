@@ -58,6 +58,7 @@ export type DftCodeEnum =
   | 'CP2K'
   | 'ORCA'
   | 'Psi4'
+  | 'PySCF'
   | 'Various'
 /**
  * Exchange-correlation functional used in DFT calculations
@@ -91,26 +92,11 @@ export type FunctionalEnum =
  * via the `definition` "pseudo_potentials_enum".
  */
 export type PseudoPotentialsEnum = 'PBE' | 'PBE_52' | 'PBE_54' | 'PBE_64' | 'Various'
-
-export type DatasetRecord = Record<string, Dataset>
-/**
- * This interface was referenced by `DatasetRecord`'s JSON-Schema
- * via the `definition` "person".
- */
-export interface Person {
-  name: string
-  affiliation?: string
-  email?: string
-  url?: HttpUrl
-  orcid?: HttpUrl
-  github?: HttpUrl
-  corresponding?: boolean
-}
 /**
  * This interface was referenced by `DatasetRecord`'s JSON-Schema
  * via the `definition` "dataset".
  */
-export interface Dataset {
+export type Dataset = {
   /**
    * Full name of the dataset
    */
@@ -170,9 +156,9 @@ export interface Dataset {
    */
   download_url?: string
   /**
-   * DOI reference for the dataset
+   * DOI reference, or null when a public download_url is supplied
    */
-  doi: string
+  doi: HttpUrl | null
   /**
    * Other datasets this dataset contains or is derived from
    */
@@ -255,4 +241,19 @@ export interface Dataset {
     pseudopotentials?: PseudoPotentialsEnum | PseudoPotentialsEnum[]
     [k: string]: unknown
   }
+}
+
+export type DatasetRecord = Record<string, Dataset>
+/**
+ * This interface was referenced by `DatasetRecord`'s JSON-Schema
+ * via the `definition` "person".
+ */
+export interface Person {
+  name: string
+  affiliation?: string
+  email?: string
+  url?: HttpUrl
+  orcid?: HttpUrl
+  github?: HttpUrl
+  corresponding?: boolean
 }

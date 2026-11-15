@@ -22,7 +22,7 @@ from collections import Counter
 from collections.abc import Sequence
 from functools import partialmethod
 
-from matbench_discovery import ROOT
+from matbench_discovery import ROOT, figs
 from matbench_discovery.calculators import CALCULATORS
 from matbench_discovery.data import (
     file_ref_url,
@@ -61,6 +61,33 @@ PAYLOAD_TASKS = {
     "scripts/model_figs/single_model_per_element_errors.py": "discovery",
     "--extra phonons scripts/model_figs/kappa_103_analysis.py": "phonons",
     "scripts/evals/geo_opt.py": "geo_opt",
+}
+PAYLOAD_OUTPUTS = {
+    "scripts/model_figs/roc_curves_models.py": ("site/src/figs/roc-models.jsonl",),
+    "scripts/model_figs/hull_dist_box_plot.py": (
+        "site/src/figs/box-hull-dist-errors.jsonl",
+    ),
+    "scripts/model_figs/cumulative_metrics.py": (
+        "site/src/figs/cumulative-precision-recall.jsonl",
+    ),
+    "scripts/model_figs/rolling_hull_dist_mae_models.py": (
+        "site/src/figs/rolling-mae-vs-hull-dist.jsonl",
+    ),
+    "scripts/model_figs/tiles_hist_classified_stable_models.py": (
+        "site/src/figs/hist-clf-pred-hull-dist.jsonl",
+    ),
+    "scripts/model_figs/single_model_per_element_errors.py": (
+        "site/src/figs/element-prevalence-vs-error.jsonl",
+        "site/src/routes/models/per-element-each-errors.jsonl",
+    ),
+    "--extra phonons scripts/model_figs/kappa_103_analysis.py": (
+        "site/src/figs/kappa-103-analysis.jsonl",
+    ),
+    "scripts/evals/geo_opt.py": (
+        "site/src/figs/spg-sankeys.jsonl",
+        "site/src/figs/sym-ops-diff-bar.jsonl",
+        "site/src/figs/struct-rmsd-cdf.jsonl",
+    ),
 }
 # (label, skipped for energy-only models, fatal on failure, `uv run` args).
 # kappa needs the phonons extra (phono3py/phonopy); geo-opt the symmetry extra (moyopy)
@@ -416,19 +443,36 @@ def run_payload_refresh(
     """
     suffix = f" for {', '.join(model.name for model in models)}" if models else ""
     banner(f"Refreshing multi-model site figure payloads{suffix}")
-    payload_args = (
-        ("--models", *(model.name for model in models))
-        if models
-        else ("--full-roster",)
-    )
     for script in PAYLOAD_SCRIPTS:
         task = PAYLOAD_TASKS[script]
-        if models and all(
-            (model.metrics.get(task) or {}).get("status") == "not_applicable"
+        na_keys = {
+            model.key
             for model in models
-        ):
+            if (model.metrics.get(task) or {}).get("status") == "not_applicable"
+        }
+        if na_keys:
+            for relative_path in PAYLOAD_OUTPUTS[script]:
+                path = f"{ROOT}/{relative_path}"
+                if not os.path.isfile(path):
+                    continue  # The final shape tests still require expected payloads.
+                try:
+                    payload = figs.read_jsonl_payload(path)
+                    if any(row["model_key"] in na_keys for row in payload["models"]):
+                        figs.write_jsonl_payload(
+                            path, payload | {"models": []}, target_keys=na_keys
+                        )
+                except (OSError, ValueError, TypeError) as exc:
+                    checks.fail(f"Removing N/A records from {relative_path}: {exc}")
+                    return
+        applicable_models = [model for model in models if model.key not in na_keys]
+        if models and not applicable_models:
             checks.skip(f"{script}: all targeted models declare {task} not_applicable")
             continue
+        payload_args = (
+            ("--models", *(model.name for model in applicable_models))
+            if models
+            else ("--full-roster",)
+        )
         if not run_cmd(*uv_run_args(script), *payload_args):
             checks.fail(f"{script} failed")
             return
