@@ -556,13 +556,16 @@ def test_declared_runtime_precision_reaches_ingestion_smoke(
 def test_not_applicable_tasks_skip_evaluations_and_figures(
     run_cmd_calls: list[tuple[str, ...]],
 ) -> None:
-    """Do not launch bulk/phonon evaluators for task coverage explicitly marked N/A."""
+    """N/A skips scientific jobs but keeps the metadata-only parity cleanup."""
     checks = ingest.Checklist()
     model = Model["pet_xs_pair_bo_v1"]
     ingest.run_model_steps("evals", ingest.EVAL_STEPS, model, checks, energy_only=False)
     ingest.run_model_steps("figs", ingest.FIG_STEPS, model, checks, energy_only=False)
     scripts = [part for call in run_cmd_calls for part in call if part.endswith(".py")]
-    assert scripts == ["scripts/evals/diatomic_metrics.py"]
+    assert scripts == [
+        "scripts/evals/diatomic_metrics.py",
+        "site/scripts/generate-energy-parity-assets.py",
+    ]
 
 
 @pytest.mark.parametrize("status", ["pending", "partial", "complete", "not_available"])
@@ -699,3 +702,26 @@ def test_non_na_payload_records_are_not_pruned(
     ingest.run_payload_refresh(ingest.Checklist(), (model,))
     assert path.read_bytes() == old_bytes
     assert run_cmd_calls
+
+
+def test_na_energy_parity_cleanup_remains_reachable(
+    run_cmd_calls: list[tuple[str, ...]],
+) -> None:
+    """N/A discovery must reach metadata-only cleanup for any old parity assets."""
+    checks = ingest.Checklist()
+    ingest.run_model_steps(
+        "figures",
+        ingest.FIG_STEPS,
+        Model["pet_xs_pair_bo_v1"],
+        checks,
+        energy_only=False,
+    )
+    assert run_cmd_calls == [
+        uv_cmd(
+            ".",
+            "site/scripts/generate-energy-parity-assets.py",
+            "--models",
+            "pet_xs_pair_bo_v1",
+        )
+    ]
+    assert checks.n_failed == 0

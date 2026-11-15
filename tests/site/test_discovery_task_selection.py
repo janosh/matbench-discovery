@@ -2,6 +2,8 @@
 
 import gzip
 import json
+import os
+import subprocess
 import sys
 from argparse import Namespace
 from pathlib import Path
@@ -197,3 +199,178 @@ def test_targeted_energy_na_prunes_its_previous_asset(
     assert after["model_assets"][peer.key] == before["model_assets"][peer.key]
     assert after["base"] == before["base"]
     assert not (manifest_path.parent / "parity/assets" / obsolete).exists()
+
+
+@pytest.mark.parametrize("existing_peer_manifest", [False, True])
+def test_targeted_new_energy_na_needs_no_wbm_or_manifest_write(
+    local_parity_inputs: tuple[ModuleType, Model, Model, list[str], Path],
+    monkeypatch: pytest.MonkeyPatch,
+    existing_peer_manifest: bool,
+) -> None:
+    """An N/A target with no old entry is a no-op even when WBM is unavailable."""
+    generator, candidate, _peer, argv, manifest_path = local_parity_inputs
+    patch_model_metadata(
+        monkeypatch,
+        candidate,
+        candidate.metadata | {"metrics": {"discovery": {"status": "not_applicable"}}},
+    )
+    if existing_peer_manifest:
+        generator.main(argv)
+    before = manifest_path.read_bytes() if manifest_path.exists() else None
+
+    def forbidden(*_args: object, **_kwargs: object) -> None:
+        pytest.fail("N/A-only no-op must not load data or write assets/manifests")
+
+    for name in (
+        "load_df_wbm_with_preds",
+        "write_structure_shards",
+        "write_json_gz",
+        "write_manifest",
+        "prune_unreferenced_assets",
+    ):
+        monkeypatch.setattr(generator, name, forbidden)
+    generator.main([*argv, "--models", candidate.name])
+    assert (manifest_path.read_bytes() if manifest_path.exists() else None) == before
+    if not existing_peer_manifest:
+        assert not (manifest_path.parent / "parity").exists()
+
+
+def test_targeted_energy_na_cleanup_preserves_all_shared_data_without_wbm(
+    local_parity_inputs: tuple[ModuleType, Model, Model, list[str], Path],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Remove the target offline, preserving peers, shared fields and other orphans."""
+    generator, candidate, peer, argv, manifest_path = local_parity_inputs
+    generator.main(argv)
+    before = json.loads(manifest_path.read_text())
+    before["publication_note"] = {"preserve": "future shared metadata"}
+    generator.write_manifest(manifest_path, before)
+    asset_dir = manifest_path.parent / "parity/assets"
+    obsolete = before["model_assets"][candidate.key]["parity"]["asset"]
+    orphan = asset_dir / f"{generator.ASSET_PREFIX}-unrelated-orphan.json.gz"
+    orphan.write_bytes(b"unrelated prior asset")
+    preserved_bytes = {
+        path.name: path.read_bytes()
+        for path in asset_dir.iterdir()
+        if path.name != obsolete
+    }
+    patch_model_metadata(
+        monkeypatch,
+        candidate,
+        candidate.metadata | {"metrics": {"discovery": {"status": "not_applicable"}}},
+    )
+    # Cleanup must not turn into a global lifecycle refresh either.
+    patch_model_metadata(monkeypatch, peer, peer.metadata | {"lifecycle": "pending"})
+
+    def forbidden(*_args: object, **_kwargs: object) -> None:
+        pytest.fail("N/A cleanup must not load WBM or regenerate base/structures")
+
+    for name in ("load_df_wbm_with_preds", "write_structure_shards", "write_json_gz"):
+        monkeypatch.setattr(generator, name, forbidden)
+    generator.main([*argv, "--models", candidate.name])
+    assert json.loads(manifest_path.read_text()) == before | {
+        "model_assets": {peer.key: before["model_assets"][peer.key]}
+    }
+    assert not (asset_dir / obsolete).exists()
+    assert {
+        path.name: path.read_bytes() for path in asset_dir.iterdir()
+    } == preserved_bytes
+
+
+def test_targeted_energy_na_cleanup_rejects_changed_prefix_before_writing(
+    local_parity_inputs: tuple[ModuleType, Model, Model, list[str], Path],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An offline deletion must not bypass the existing manifest-prefix guard."""
+    generator, candidate, _peer, argv, manifest_path = local_parity_inputs
+    generator.main(argv)
+    before = manifest_path.read_bytes()
+    patch_model_metadata(
+        monkeypatch,
+        candidate,
+        candidate.metadata | {"metrics": {"discovery": {"status": "not_applicable"}}},
+    )
+
+    def forbidden(*_args: object, **_kwargs: object) -> None:
+        pytest.fail("Prefix validation must precede WBM or asset access")
+
+    monkeypatch.setattr(generator, "load_df_wbm_with_preds", forbidden)
+    with pytest.raises(ValueError, match="prefix changed"):
+        generator.main(
+            [*argv, "--models", candidate.name, "--asset-prefix", "different"]
+        )
+    assert manifest_path.read_bytes() == before
+
+
+def test_scoped_asset_pruning_keeps_referenced_and_unrelated_files(
+    tmp_path: Path,
+) -> None:
+    """A deletion candidate is removed only if absent from the new manifest."""
+    asset_dir = tmp_path / "assets"
+    asset_dir.mkdir()
+    for name in (
+        "parity-base.json.gz",
+        "parity-target.json.gz",
+        "parity-other.json.gz",
+    ):
+        (asset_dir / name).write_bytes(name.encode())
+    manifest = {"base": {"asset": "parity-base.json.gz"}, "model_assets": {}}
+    removed = energy_assets.prune_unreferenced_assets(
+        asset_dir,
+        "parity",
+        manifest,
+        target_assets={"parity-base.json.gz", "parity-target.json.gz"},
+    )
+    assert removed == ["parity-target.json.gz"]
+    assert {path.name for path in asset_dir.iterdir()} == {
+        "parity-base.json.gz",
+        "parity-other.json.gz",
+    }
+
+
+@pytest.mark.parametrize("existing_target", [False, True])
+def test_na_only_energy_command_avoids_import_time_wbm_access(
+    local_parity_inputs: tuple[ModuleType, Model, Model, list[str], Path],
+    existing_target: bool,
+) -> None:
+    """A fresh interpreter must reach both N/A paths without importing WBM data."""
+    generator, candidate, peer, argv, manifest_path = local_parity_inputs
+    if existing_target:
+        generator.main(argv)
+    script_file = generator.__file__
+    assert script_file is not None
+    script = Path(script_file).resolve()
+    code = """
+import importlib.abc
+from pathlib import Path
+import runpy
+import sys
+
+class BlockWbmData(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname == 'matbench_discovery.data':
+            raise RuntimeError('N/A-only command imported eager WBM data module')
+        return None
+
+script = Path(sys.argv[1])
+sys.meta_path.insert(0, BlockWbmData())
+sys.path.insert(0, str(script.parents[2]))
+sys.path.insert(0, str(script.parent))
+sys.argv = sys.argv[1:]
+runpy.run_path(str(script), run_name='__main__')
+"""
+    cache = manifest_path.parent / "empty-cache"
+    result = subprocess.run(
+        [sys.executable, "-c", code, str(script), *argv, "--models", candidate.name],
+        text=True,
+        capture_output=True,
+        check=False,
+        timeout=30,
+        env=os.environ | {"MBD_CACHE_DIR": str(cache), "PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    assert result.returncode == 0, result.stderr
+    assert not cache.exists()
+    if existing_target:
+        assert set(json.loads(manifest_path.read_text())["model_assets"]) == {peer.key}
+    else:
+        assert not manifest_path.exists()

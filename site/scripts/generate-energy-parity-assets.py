@@ -10,12 +10,14 @@ from typing import TYPE_CHECKING, Final, TypeGuard
 from zipfile import ZipFile
 
 from asset_helpers import (
+    ASSET_KINDS,
     PARITY_MANIFEST_SCHEMA_VERSION,
     ModelAssets,
     clean_floats,
     clean_ints,
     compact_extxyz,
     is_asset_metadata,
+    model_asset_stem,
     prune_unreferenced_assets,
     read_manifest,
     resolve_models,
@@ -26,11 +28,14 @@ from asset_helpers import (
 from pymatviz.enums import Key
 
 from matbench_discovery import ROOT
-from matbench_discovery.data import load_df_wbm_with_preds, task_coverage
 from matbench_discovery.enums import DataFiles, MbdKey
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from pandas import DataFrame
+
+    from matbench_discovery.enums import Model
 
 OUT_DIR: Final = f"{ROOT}/site/static/energy-parity"
 MANIFEST_PATH: Final = f"{ROOT}/site/src/lib/parity/energy-parity-manifest.json"
@@ -44,6 +49,13 @@ ENERGY_DECIMALS: Final = 6
 # round atomic positions to 0.001 A when re-serializing structures; the header
 # (Lattice, Properties, material_id, ...) and any extra columns are kept verbatim.
 STRUCTURE_DECIMALS: Final = 3
+
+
+def load_df_wbm_with_preds(*, models: Sequence[Model], pbar: bool) -> DataFrame:
+    """Load WBM lazily so an N/A-only cleanup never imports the eager data module."""
+    from matbench_discovery.data import load_df_wbm_with_preds as load_predictions
+
+    return load_predictions(models=models, pbar=pbar)
 
 
 def positive_int(value: str) -> int:
@@ -137,8 +149,64 @@ def main(argv: Sequence[str] | None = None) -> None:
     models = tuple(
         model
         for model in requested_models
-        if task_coverage(model.metadata, "discovery")[0] != "not_applicable"
+        if (model.metrics.get("discovery") or {}).get("status") != "not_applicable"
     )
+    target_keys = {model.key for model in requested_models} if args.models else set()
+    asset_dir = Path(args.out_dir) / "assets"
+    if args.models and not models:
+        previous_manifest = read_manifest(manifest_path)
+        if previous_manifest is None:
+            return
+        previous_assets = previous_manifest.get("model_assets")
+        if not isinstance(previous_assets, dict):
+            raise TypeError("Parity manifest model_assets must be an object")
+        if not target_keys.intersection(previous_assets):
+            return
+        if previous_manifest.get("schema_version") != PARITY_MANIFEST_SCHEMA_VERSION:
+            raise ValueError("Parity manifest schema changed; run a full refresh")
+        if previous_manifest.get("asset_prefix") != args.asset_prefix:
+            raise ValueError("Parity asset prefix changed; run a full refresh")
+        if not is_asset_metadata(
+            previous_manifest.get("base"), f"{args.asset_prefix}-base"
+        ):
+            raise ValueError(
+                "Parity base asset metadata is invalid; run a full refresh"
+            )
+        bundles = previous_manifest.get("structure_bundles")
+        if not isinstance(bundles, list) or not valid_structure_bundles(
+            bundles, args.asset_prefix, len(bundles)
+        ):
+            raise ValueError("Parity structure metadata is invalid; run a full refresh")
+        target_assets: set[str] = set()
+        for model_key, kinds in previous_assets.items():
+            if not isinstance(model_key, str) or not isinstance(kinds, dict):
+                raise TypeError("Parity model assets must map string keys to objects")
+            if set(kinds) - set(ASSET_KINDS) or "parity" not in kinds:
+                raise ValueError(
+                    "Parity model asset kinds are invalid; run a full refresh"
+                )
+            for kind, meta in kinds.items():
+                if not is_asset_metadata(
+                    meta, model_asset_stem(args.asset_prefix, kind, model_key)
+                ):
+                    raise ValueError(
+                        "Parity model asset metadata is invalid; run a full refresh"
+                    )
+                if model_key in target_keys:
+                    target_assets.add(meta["asset"])
+        manifest = previous_manifest | {
+            "model_assets": {
+                key: value
+                for key, value in previous_assets.items()
+                if key not in target_keys
+            }
+        }
+        write_manifest(manifest_path, manifest)
+        for removed in prune_unreferenced_assets(
+            asset_dir, args.asset_prefix, manifest, target_assets=target_assets
+        ):
+            print(f"Pruned unreferenced asset {removed}")
+        return
     df_preds = load_df_wbm_with_preds(models=models, pbar=True)
     if args.limit_rows is not None:
         df_preds = df_preds.head(args.limit_rows)
@@ -146,10 +214,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     material_ids = df_preds[Key.mat_id].astype(str).tolist()
     # hash material IDs in row order to detect stale asset manifests
     material_ids_sha256 = hashlib.sha256("\n".join(material_ids).encode()).hexdigest()
-    asset_dir = Path(args.out_dir) / "assets"
     previous_manifest = read_manifest(manifest_path)
     # Retain filtered targets here so a change to N/A removes their old assets.
-    target_keys = {model.key for model in requested_models} if args.models else set()
     structure_identity = {
         "schema_version": PARITY_MANIFEST_SCHEMA_VERSION,
         "row_count": len(material_ids),

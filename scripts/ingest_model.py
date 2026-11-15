@@ -333,10 +333,16 @@ def run_model_steps(
         "site/scripts/generate-kappa-parity-assets.py": "phonons",
     }
     for label, needs_forces, fatal, args in steps:
-        task = task_by_script.get(args.rsplit(maxsplit=1)[-1])
+        script = args.rsplit(maxsplit=1)[-1]
+        task = task_by_script.get(script)
         if needs_forces and energy_only:
             checks.skip(f"{label} skipped (targets=E, no forces)")
-        elif task and task_coverage(model.metadata, task)[0] == "not_applicable":
+        elif (
+            task
+            and task_coverage(model.metadata, task)[0] == "not_applicable"
+            # This generator has a metadata-only N/A cleanup path for old assets.
+            and script != "site/scripts/generate-energy-parity-assets.py"
+        ):
             checks.skip(f"{label} declared not_applicable")
         elif run_cmd(*uv_run_args(args), *model_args):
             checks.ok(f"{label} completed")
