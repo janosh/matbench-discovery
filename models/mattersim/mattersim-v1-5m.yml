@@ -108,6 +108,7 @@ hyperparams:
     max_force: 0.02
     kappa:
       protocol: phonondb-v1
+      displacement_distance: 0.01 # legacy runs used 0.01 Å; the PhononDB-PBE reference uses 0.03 Å
   architecture:
     graph_construction_radius: 5.0
   training:
@@ -272,10 +273,10 @@ metrics:
           size: 23283243
           md5: 16cdec860e7afc0e25f409f92ccdb4bb
         force_file:
-          name: models/mattersim/mattersim-v1-5m/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-          url: https://figshare.com/files/70334550
-          size: 8815419
-          md5: 8c02bb04c3f813b3cc0335836dd63bbe
+          name: models/mattersim/mattersim-v1-5m/harmonic/2026-09-05-phonons-kappa-103-forces.h5
+          url: https://figshare.com/files/71263249
+          size: 2070813
+          md5: 5f55dc33037783b4a6ceedd4081ac0af
         run_info_file:
           name: models/mattersim/mattersim-v1-5m/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334553

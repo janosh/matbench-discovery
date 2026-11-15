@@ -199,6 +199,8 @@ declare module '#figs/kappa-103-analysis.jsonl' {
       imag_modes: (boolean | null)[] // imaginary phonon modes after relaxation
       broken_sym: (boolean | null)[] // symmetry broken during relaxation
       max_steps: (boolean | null)[] // relaxation hit max steps (non-converged)
+      kappa_min: (number | null)[] // Agne diffuson minimum kappa from the ML spectrum (W/mK)
+      below_floor: (boolean | null)[] // ML kappa below parameters.diffuson_floor_fraction x kappa_min
       freq_w1: (number | null)[] // phonon spectrum Wasserstein-1 dist vs DFT (THz)
       freq_w1_mean: number | null
       // ML vs DFT phonon frequency quantile-quantile parity pairs (THz), 17

@@ -195,7 +195,7 @@ def init_phono3py(
     fc2_supercell: np.ndarray,
     fc3_supercell: np.ndarray,
     q_point_mesh: tuple[int, int, int] = (20, 20, 20),
-    displacement_distance: float = 0.01,
+    displacement_distance: float = 0.03,
     symprec: float = 1e-5,
     is_plusminus: bool | Literal["auto"] = "auto",
 ) -> Phono3py:
@@ -208,7 +208,7 @@ def init_phono3py(
         q_point_mesh (tuple[int, int, int]): Mesh size for q-point sampling. Defaults
             to (20, 20, 20).
         displacement_distance (float): Displacement distance for force calculations.
-            Defaults to 0.01.
+            Defaults to 0.03, matching the PhononDB-PBE reference force sets.
         symprec (float): Symmetry precision for finding space group. Defaults to 1e-5.
         is_plusminus (bool | Literal["auto"]): Whether to generate plus/minus
             displacements. Defaults to Phono3py's automatic selection.

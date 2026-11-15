@@ -1,6 +1,6 @@
 import { afterNavigate, onNavigate, type AfterNavigate } from '$app/navigation'
 import { page } from '$app/state'
-import DATASETS from '$data/datasets.yml'
+import DATASETS from '$pkg/datasets.yml'
 import { ALL_METRICS } from '#lib/labels.js'
 import { format_duration } from '#lib/metrics.js'
 import {
@@ -487,7 +487,17 @@ describe(`ModelComparison dialog`, () => {
   it(`the model page opens comparison without deselecting the current model`, async () => {
     mount(ModelPage, {
       target: document.body,
-      props: { data: { model_key: key_a, md_per_system: null } },
+      props: {
+        data: {
+          model_key: key_a,
+          md_per_system: null,
+          details: {
+            notes: undefined,
+            environment: { dependencies: [`x==1`], python_version: `3.14` },
+            trained_by: undefined,
+          },
+        },
+      },
     })
     const button = doc_query<HTMLButtonElement>(`.links > button`)
     expect(button.textContent?.trim()).toBe(`Compare with…`)

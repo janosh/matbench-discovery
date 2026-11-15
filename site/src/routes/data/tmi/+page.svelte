@@ -10,7 +10,7 @@
     bool_from_param,
     bool_url_entry,
     valid_query_param,
-  } from 'svelte-widgets/url-params'
+  } from 'svelte-widgets/browser'
 
   const raw_counts = import.meta.glob<Record<ElementSymbol, number>>(
     `../wbm-element-counts-*=*.json`,

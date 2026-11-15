@@ -108,7 +108,8 @@ isort.split-on-trailing-comma = false
 "tests/*" = ["D103", "FBT001", "S101"]
 "scripts/*" = ["D103", "D100", "D107", "D105", "ERA001"]
 "models/*" = ["D102", "D103", "D100", "D107", "D105", "ERA001"]
-"data/*" = ["ERA001", "S101"]
+"scripts/data/*" = ["S101"]
+"paper/*" = ["ERA001", "S101"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -120,7 +121,7 @@ markers = ["network: checks live remote URLs and release assets"]
 ignore-words-list = "nd,te,fpr,matris,titel"
 
 [dependency-groups]
-dev = ["prek>=0.5.5", "ty>=0.0.89"]
+dev = ["prek>=0.5.5", "ty>=0.0.97"]
 
 [tool.ty.environment]
 python-version = "3.14"
@@ -131,7 +132,7 @@ exclude-scripts = true
 
 [tool.ty.rules]
 # The isolated hook has no project dependencies, so third-party imports are unresolved.
-unresolved-import = "ignore"
+import-not-found = "ignore"
 unused-ignore-comment = "ignore"
 
 [tool.typos.default]

@@ -241,6 +241,7 @@ def compact_extxyz(text: str, decimals: int = 3) -> str:
     for atom_line in lines[2 : 2 + n_atoms]:
         tokens = atom_line.split()
         for col_idx in range(pos_start, pos_start + pos_n):
-            tokens[col_idx] = str(round(float(tokens[col_idx]), decimals))
+            # + 0.0 maps -0.0 (from ulp-level negative zeros) to 0.0
+            tokens[col_idx] = str(round(float(tokens[col_idx]), decimals) + 0.0)
         rows.append(" ".join(tokens))
     return "\n".join(rows) + "\n"

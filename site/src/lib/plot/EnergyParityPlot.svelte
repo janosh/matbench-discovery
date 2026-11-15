@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { format_num } from 'svelte-widgets/format'
   import {
     build_energy_parity_series,
     energy_parity_stats,
@@ -20,7 +21,6 @@
   import { to_error } from 'svelte-widgets/utils'
   import type { ModelData } from '#lib/types.js'
   import { compact_formula, sanitize_compact_formula } from 'matterviz/sanitize'
-  import { format_num } from 'matterviz/labels'
   import { Spinner } from 'svelte-widgets'
   import type { AnyStructure } from 'matterviz/structure'
   import { BinnedScatterPlot } from 'matterviz/plot'

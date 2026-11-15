@@ -1,4 +1,5 @@
 <script lang="ts" module>
+  import { format_num } from 'svelte-widgets/format'
   import type { ChemicalElement } from 'matterviz/element'
 
   // Plot-title tooltip: full element name, atomic number and periodic-table category
@@ -10,7 +11,6 @@
   import { ScatterPlot } from 'matterviz/plot'
   import { DEFAULT_CATEGORY_COLORS } from 'matterviz/colors'
   import { element_data } from 'matterviz/element'
-  import { format_num } from 'matterviz/labels'
   import { tooltip as add_tooltip } from 'svelte-widgets/attachments'
   import type { HTMLAttributes } from 'svelte/elements'
 

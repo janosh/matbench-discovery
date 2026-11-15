@@ -1,6 +1,6 @@
 <script lang="ts">
+  import { format_num } from 'svelte-widgets/format'
   import { goto } from '$app/navigation'
-  import { format_num } from 'matterviz/labels'
   import { ScatterPlot } from 'matterviz/plot'
   import type { ComponentProps } from 'svelte'
   import type { GitHubActivityData, Label } from '#lib/types.js'

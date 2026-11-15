@@ -1,8 +1,8 @@
 <script lang="ts">
-  import DATASETS from '$data/datasets.yml'
+  import { format_num } from 'svelte-widgets/format'
+  import DATASETS from '$pkg/datasets.yml'
   import { arr_to_str, format_date } from '#lib'
   import { format_relative_time, title_case } from '#lib/labels.js'
-  import { format_num } from 'matterviz/labels'
   import { Icon } from 'svelte-widgets'
   import {
     Calendar,
@@ -29,7 +29,7 @@
   let { data }: { data: PageData } = $props()
   let dataset = $derived(data.dataset)
   const link_props = { target: `_blank`, rel: `noopener noreferrer` }
-  const source_url = `${pkg.repository}/blob/main/data/datasets.yml`
+  const source_url = `${pkg.repository}/blob/main/matbench_discovery/datasets.yml`
 
   const metadata = $derived([
     [Tag, dataset.version ? `Version: ${dataset.version}` : null],

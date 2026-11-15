@@ -305,6 +305,29 @@ describe(`TableControls`, () => {
     expect(boxes.at(-1)?.checked).toBe(true)
   })
 
+  it(`renders HTML column labels and descriptions as markup`, async () => {
+    // site labels/descriptions are authored HTML (e.g. labels.ts κ<sub>SRME</sub>)
+    const columns: Column[] = [
+      {
+        id: `kappa`,
+        label: `κ<sub>SRME</sub>`,
+        description: `Censored κ<sub>SRME</sub>`,
+        visible: true,
+      },
+    ]
+    await mount_with_filters(undefined, columns)
+    const column_menu = await open_column_menu()
+    const label = doc_query(`.toggle-label`, column_menu)
+    expect(label.querySelector(`sub`)?.textContent).toBe(`SRME`)
+    label.dispatchEvent(new PointerEvent(`pointerenter`, { bubbles: true }))
+    label.dispatchEvent(new MouseEvent(`mouseenter`, { bubbles: true }))
+    await tick()
+    await vi.waitFor(() =>
+      expect(document.body.innerHTML).toContain(`Censored κ<sub>SRME</sub>`),
+    )
+    expect(document.body.textContent).not.toContain(`<sub>`)
+  })
+
   it(`opens, updates and closes the columns panel with its heatmap setting`, async () => {
     const filters = make_table_filters()
     const props = $state({ columns: structuredClone(sample_columns), filters })

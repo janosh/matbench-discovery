@@ -71,7 +71,6 @@ hyperparams:
     kappa:
       protocol: phonondb-v1
       displacement_distance: 0.03
-      save_forces: true
   architecture:
     graph_construction_radius: 6.0
     n_layers: 5
@@ -241,10 +240,10 @@ metrics:
           size: 24465329
           md5: 54ba27e740036da9177d1132b0547082
         force_file:
-          name: models/allegro/allegro-mp-l-0.1/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-          url: https://figshare.com/files/70334130
-          size: 8814254
-          md5: c523e6c5f4c71f914150f2fe8527b2c7
+          name: models/allegro/allegro-mp-l-0.1/harmonic/2026-09-05-phonons-kappa-103-forces.h5
+          url: https://figshare.com/files/71263096
+          size: 2214849
+          md5: cd8c01e4fd0c3d4429c52a3f2a04d6ca
         run_info_file:
           name: models/allegro/allegro-mp-l-0.1/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334133

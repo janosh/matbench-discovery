@@ -20,7 +20,7 @@ export async function render_data_markdown(
   filename: string,
 ): Promise<unknown> {
   const file = filename.replaceAll(`\\`, `/`)
-  const datasets = file.endsWith(`/data/datasets.yml`)
+  const datasets = file.endsWith(`/matbench_discovery/datasets.yml`)
   const data_files = file.endsWith(`/matbench_discovery/data-files.yml`)
   const model = /\/models\/[^_][^/]*\/[^_][^/]*\.yml$/u.test(file)
   if (!datasets && !data_files && !model) return data
@@ -75,4 +75,20 @@ export async function render_data_markdown(
     }
   }
   return data
+}
+
+// Model YAML fields only the model detail page shows (it receives them from its
+// server load). Dropping them from client bundles keeps the eagerly globbed model
+// metadata, which every page loads, small.
+const SERVER_ONLY_MODEL_KEYS = new Set([`notes`, `environment`, `trained_by`])
+
+// Client-bundle variant of a model YAML (SSR keeps the full data)
+export function slim_client_model_data(data: unknown, filename: string): unknown {
+  const file = filename.replaceAll(`\\`, `/`)
+  if (!/\/models\/[^_][^/]*\/[^_][^/]*\.yml$/u.test(file)) return data
+  return Object.fromEntries(
+    Object.entries(record(data, filename)).filter(
+      ([key]) => !SERVER_ONLY_MODEL_KEYS.has(key),
+    ),
+  )
 }

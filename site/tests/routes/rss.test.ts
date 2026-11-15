@@ -1,8 +1,8 @@
+import { format_num } from 'svelte-widgets/format'
 import { by_benchmark_added_desc } from '#lib'
 import { MODELS } from '#lib/models.svelte.js'
 import { GET } from '#routes/rss.xml/+server.js'
 import pkg from '#site/package.json'
-import { format_num } from 'matterviz/labels'
 import { escape_html } from 'svelte-widgets/utils'
 import { describe, expect, it, onTestFinished } from 'vite-plus/test'
 

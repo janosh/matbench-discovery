@@ -37,6 +37,7 @@ describe(`MD Task Page`, () => {
     // the diatomics wall-time columns must not leak onto the MD page despite
     // sharing labels with the MD ones (col visibility is keyed by unique col.key)
     expect(headers).not.toContain(`ΔRDF`)
+    expect(headers).not.toContain(`Δxκ`) // κ displacement step is phonons-only
     expect(headers.filter((header) => header === `twall`)).toHaveLength(1)
     expect(headers.filter((header) => header === `t/tmin`)).toHaveLength(1)
 

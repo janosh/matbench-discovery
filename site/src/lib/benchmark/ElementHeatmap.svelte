@@ -1,6 +1,6 @@
 <script lang="ts">
+  import { format_num } from 'svelte-widgets/format'
   import type { BenchmarkDataset } from './data.js'
-  import { format_num } from 'matterviz/labels'
   import type { ChemicalElement } from 'matterviz/element'
   import { PeriodicTable } from 'matterviz/periodic-table'
 

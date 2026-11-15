@@ -1,3 +1,5 @@
+import type { RowData } from 'svelte-widgets/table'
+import { format_num } from 'svelte-widgets/format'
 import { page } from '$app/state'
 import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from '#lib/labels.js'
 import {
@@ -16,9 +18,7 @@ import { ACTIVE_MODELS, MODELS } from '#lib/models.svelte.js'
 import { competition_rank, RANKED_METRICS } from '#lib/rankings.js'
 import type { Author, Label, ModelData } from '#lib/types.js'
 import { bind_url_params } from '#lib/url-state.svelte.js'
-import { format_num } from 'matterviz/labels'
 import { escape_html } from 'svelte-widgets/utils'
-import type { RowData } from 'matterviz/table'
 import { SvelteSet } from 'svelte/reactivity'
 
 const model_by_key = new Map(MODELS.map((model) => [model.model_key, model]))
@@ -33,7 +33,7 @@ class Comparison {
   get models(): ModelData[] {
     return [...this.keys].flatMap((key) => model_by_key.get(key) ?? [])
   }
-  filter = <Model extends { model_key: string }>(
+  keep_selected = <Model extends { model_key: string }>(
     models: Model[],
     selected_only: boolean,
   ): Model[] =>
@@ -74,7 +74,7 @@ export const mark_compared_rows = <R extends { model_key: string; class?: string
   rows: R[],
   show_only: boolean,
 ): R[] =>
-  comparison.filter(rows, show_only).map((row) => {
+  comparison.keep_selected(rows, show_only).map((row) => {
     row.class = !show_only && comparison.keys.has(row.model_key) ? `highlight` : undefined
     return row
   })

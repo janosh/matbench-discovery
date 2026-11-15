@@ -15,7 +15,11 @@ from tqdm import tqdm
 
 from matbench_discovery import PKG_DIR, ROOT, repo_relative_path
 from matbench_discovery.cli import cli_parser, models_arg, parse_cli_args
-from matbench_discovery.data import iter_file_refs, round_trip_yaml
+from matbench_discovery.data import (
+    iter_file_refs,
+    round_trip_yaml,
+    validate_artifact_path,
+)
 from matbench_discovery.enums import Model
 from matbench_discovery.remote import figshare
 
@@ -57,16 +61,23 @@ def resolve_artifact_path(
     relative_file_path: str,
     root_dir: str = ROOT,
 ) -> str:
-    """Resolve an artifact file confined to its model-owned directory."""
-    if os.path.isabs(relative_file_path):
-        raise ValueError(f"Artifact path must be relative: {relative_file_path!r}")
+    """Resolve an artifact file confined to its model-owned directory.
 
+    validate_artifact_path checks the path lexically (relative, inside the model's
+    directory, canonical filename); the realpath check adds what only the filesystem
+    can tell: a symlink inside the model directory pointing elsewhere.
+    """
+    yaml_rel = os.path.relpath(model_yaml_path, root_dir).replace(os.sep, "/")
+    model_dir = os.path.splitext(yaml_rel)[0]
+    validate_artifact_path(relative_file_path, model_dir)
     file_path = os.path.abspath(f"{root_dir}/{relative_file_path}")
-    model_key = os.path.splitext(os.path.basename(model_yaml_path))[0]
-    model_dir = os.path.realpath(f"{os.path.dirname(model_yaml_path)}/{model_key}")
-    if os.path.commonpath((model_dir, os.path.realpath(file_path))) != model_dir:
+    real_model_dir = os.path.realpath(f"{root_dir}/{model_dir}")
+    if (
+        os.path.commonpath((real_model_dir, os.path.realpath(file_path)))
+        != real_model_dir
+    ):
         raise ValueError(
-            f"Artifact path escapes model directory {model_dir!r}: "
+            f"Artifact path escapes model directory {real_model_dir!r}: "
             f"{relative_file_path!r}"
         )
     if not os.path.isfile(file_path):
@@ -96,7 +107,7 @@ def update_one_modeling_task_article(
     *,
     modeling_tasks: dict[str, dict[str, str]],
     dry_run: bool = False,
-    file_type: Literal["all", "analysis", "pred"] = "all",
+    file_type: Literal["all", "analysis", "force", "phonon", "pred"] = "all",
     force_reupload: bool = False,
     interactive: bool = True,
 ) -> None:
@@ -133,7 +144,8 @@ def update_one_modeling_task_article(
     if dry_run:
         print("\nDry run mode - no files will be uploaded")
 
-    existing_files = figshare.get_existing_files(article_id)
+    # dry runs without an article use placeholder ID 0, which has no files to list
+    existing_files = figshare.get_existing_files(article_id) if article_id else {}
     print(f"Found {len(existing_files)} existing files:")
     for idx, (file_name, file_data) in enumerate(existing_files.items(), start=1):
         print(f"{idx}. {file_name}: {file_data.get('id')}")
@@ -308,9 +320,9 @@ def main(raw_args: Sequence[str] | None = None) -> int:
     )
     figshare_group.add_argument(
         "--file-type",
-        choices=["all", "analysis", "pred"],
+        choices=["all", "analysis", "force", "phonon", "pred"],
         default="all",
-        help="Type of files to upload: analysis, pred or all (default)",
+        help="Type of files to upload: analysis, force, phonon, pred or all (default)",
     )
     figshare_group.add_argument(
         "--force-reupload",

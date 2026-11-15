@@ -1,13 +1,13 @@
 <script lang="ts">
+  import { format_num } from 'svelte-widgets/format'
   import ModelSelect from '#lib/ModelSelect.svelte'
   import { ACTIVE_MODELS } from '#lib/models.svelte.js'
   import { max } from 'd3-array'
   import { ColorBar } from 'matterviz/plot'
-  import { format_num } from 'matterviz/labels'
   import { PeriodicTable, TableInset } from 'matterviz/periodic-table'
   import { per_element_each_errors as each_errors } from '#lib/per-element-errors.js'
   import { bind_url_params } from '#lib/url-state.svelte.js'
-  import { bool_from_param, bool_url_entry } from 'svelte-widgets/url-params'
+  import { bool_from_param, bool_url_entry } from 'svelte-widgets/browser'
 
   const model_options = ACTIVE_MODELS.filter(
     ({ model_key }) => model_key in each_errors,

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { format_num } from 'svelte-widgets/format'
   import type { Label, ModelData } from '#lib/types.js'
   import {
     cost_annotation,
@@ -12,7 +13,6 @@
   import { ACTIVE_MODELS } from '#lib/models.svelte.js'
   import { model_metric_ranks, rank_color, RANKED_METRICS } from '#lib/rankings.js'
   import pkg from '#site/package.json'
-  import { format_num } from 'matterviz/labels'
   import { strip_html } from 'svelte-widgets/utils'
   import { Icon, Popover } from 'svelte-widgets'
   import {

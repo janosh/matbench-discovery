@@ -1,4 +1,4 @@
-import DATASETS from '$data/datasets.yml'
+import DATASETS from '$pkg/datasets.yml'
 import { MODELS } from '#lib/models.svelte.js'
 import {
   ALL_METRICS,

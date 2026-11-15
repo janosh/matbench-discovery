@@ -1,4 +1,4 @@
-import DATASETS from '$data/datasets.yml'
+import DATASETS from '$pkg/datasets.yml'
 import type { Dataset } from '#lib/types.js'
 import Page from '#routes/data/[slug]/+page.svelte'
 import pkg from '#site/package.json'
@@ -45,7 +45,7 @@ describe(`Dataset Detail Page`, () => {
     expect(document.querySelector(`.description p p`)).toBeNull()
     expect(
       document.querySelectorAll(
-        `a[href="${pkg.repository}/blob/main/data/datasets.yml"]`,
+        `a[href="${pkg.repository}/blob/main/matbench_discovery/datasets.yml"]`,
       ),
     ).toHaveLength(2)
     if (dataset_key === `MPtrj`) {

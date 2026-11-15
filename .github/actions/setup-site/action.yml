@@ -26,15 +26,21 @@ runs:
     - name: Install site dependencies
       shell: bash
       working-directory: site
+      # pnpm settings go in pnpm_config_* env vars, not CLI flags: git dependencies
+      # (matterviz) run a nested `pnpm install` in their own dir to prepare, which
+      # ignores CLI flags and would refuse to build svelte-widgets (pnpm 11
+      # ERR_PNPM_GIT_DEP_PREPARE_NOT_ALLOWED)
       env:
         npm_config_legacy_peer_deps: true
+        pnpm_config_dangerously_allow_all_builds: true
+        pnpm_config_block_exotic_subdeps: false
         BUILD_API_DOCS: ${{ inputs.api-docs }}
       run: |
         if [[ "$BUILD_API_DOCS" == true ]]; then
           uv run --with-editable "..[phonons]" ../scripts/make_api_docs.py &
           docs_pid=$!
         fi
-        pnpm install --lockfile=false --prefer-offline --config.dangerously-allow-all-builds=true --config.block-exotic-subdeps=false
+        pnpm install --lockfile=false --prefer-offline
         if [[ "$BUILD_API_DOCS" == true ]]; then
           wait "$docs_pid"
         fi

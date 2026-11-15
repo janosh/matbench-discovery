@@ -1,7 +1,7 @@
-import DATASETS from '$data/datasets.yml'
+import { format_num } from 'svelte-widgets/format'
+import DATASETS from '$pkg/datasets.yml'
 import data_files from '$pkg/data-files.yml'
 import pkg from '#site/package.json'
-import { format_num } from 'matterviz/labels'
 import {
   Search,
   Download,

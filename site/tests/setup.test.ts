@@ -52,8 +52,14 @@ it(`patched happy-dom isFollowing matches the original document-order walk`, () 
   const shadow_child = document.createElement(`span`)
   shadow_root.append(shadow_child, document.createTextNode(`shadow text`))
   const detached = make_tree(30) // never appended: a separate tree
-  const nodes = [document, document.body, ...attached, shadow_root, shadow_child]
-  nodes.push(...detached)
+  const nodes = [
+    document,
+    document.body,
+    ...attached,
+    shadow_root,
+    shadow_child,
+    ...detached,
+  ]
 
   let n_following = 0
   for (const node_a of nodes) {

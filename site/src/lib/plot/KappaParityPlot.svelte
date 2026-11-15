@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { format_num } from 'svelte-widgets/format'
   import { Icon, Spinner } from 'svelte-widgets'
   import { Cross } from 'svelte-widgets/icons'
   import {
@@ -26,7 +27,6 @@
   import { parity_diagonal } from '#lib/fig-helpers.js'
   import { get_nested_number, is_finite_num } from '#lib/metrics.js'
   import type { ModelData } from '#lib/types.js'
-  import { format_num } from 'matterviz/labels'
   import { sanitize_compact_formula, sanitize_html } from 'matterviz/sanitize'
   import { ScatterPlot } from 'matterviz/plot'
   import type { DataSeries, RefLine } from 'matterviz/plot'
@@ -276,7 +276,12 @@
         <div class="detail-panel">
           <header>
             <span>
-              <strong>{selected.material_id}</strong>
+              <strong
+                ><a
+                  href="/materials/phonons/{selected.material_id}"
+                  title="Compare all models on this material">{selected.material_id}</a
+                ></strong
+              >
               {#if selected.formula}({@html sanitize_compact_formula(
                   selected.formula,
                 )}){/if}
@@ -378,7 +383,7 @@
                 {#if material}
                   {@const PhononModeExplorer = spectral.PhononModeExplorer}
                   <PhononModeExplorer
-                    dataset={{
+                    phonons={{
                       modes: build_phonon_mode_data(material),
                       filename: `${selected.material_id}-${modes_model.model_key}`,
                     }}

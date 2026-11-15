@@ -778,7 +778,7 @@ properties:
     uniqueItems: true
     items:
       type: string
-    description: Dataset keys validated against data/datasets.yml in registry tests.
+    description: Dataset keys validated against matbench_discovery/datasets.yml in registry tests.
   size:
     type: string
     description: Optional model-size label (e.g. 10M, L, XL).

@@ -72,7 +72,6 @@ hyperparams:
     kappa:
       protocol: phonondb-v1
       displacement_distance: 0.03
-      save_forces: true
   architecture:
     graph_construction_radius: 6.0
     n_layers: 6
@@ -241,10 +240,10 @@ metrics:
           size: 23571969
           md5: 661a86950ee5b58fc6c6442101242423
         force_file:
-          name: models/nequip/nequip-oam-xl-0.1/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-          url: https://figshare.com/files/70334592
-          size: 8709102
-          md5: 5898922e147e967fe116ffbe2d7ee25d
+          name: models/nequip/nequip-oam-xl-0.1/harmonic/2026-09-05-phonons-kappa-103-forces.h5
+          url: https://figshare.com/files/71263261
+          size: 2206683
+          md5: e7f7be45a8fa00c054076a1d84194b7e
         run_info_file:
           name: models/nequip/nequip-oam-xl-0.1/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334595

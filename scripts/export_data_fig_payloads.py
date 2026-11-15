@@ -100,7 +100,8 @@ def main() -> None:
     if not os.path.isfile(MP_TRJ_SUMMARY_PATH):
         raise FileNotFoundError(
             f"MPtrj summary cache not found at {MP_TRJ_SUMMARY_PATH}. Regenerate it "
-            "from the extXYZ source with data/mp/eda_mp_trj.py, then rerun this."
+            "from the extXYZ source with uv run --with-editable . "
+            "scripts/data/build_mp_trj_summary.py, then rerun this."
         )
 
     df_mp_trj = pd.read_json(MP_TRJ_SUMMARY_PATH)

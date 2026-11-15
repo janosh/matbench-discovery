@@ -16,6 +16,7 @@ MODEL = Model["mace_mp_0"]
 PRED_REL = "models/arch/model/geo-opt.jsonl.gz"
 ANALYSIS_REL = "models/arch/model/geo-opt-symprec=1e-2.csv.gz"
 REPRO_REL = "models/arch/model/old-run.jsonl.gz"  # reproducibility.runs[0].file
+FORCE_REL = "models/arch/model/2026-11-09-phonons-kappa-103-forces.h5"
 TASKS = {"geo_opt": {"label": "Geo-opt", "description": "Relaxed structures"}}
 
 
@@ -38,20 +39,21 @@ def test_process_exclusion_prefixes(
 
 @pytest.mark.parametrize(
     ("file_type", "same_hash"),
-    [("all", False), ("analysis", False), ("all", True)],
+    [("all", False), ("analysis", False), ("force", False), ("all", True)],
 )
 def test_upload_writes_file_refs_back_to_yaml(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
-    file_type: Literal["all", "analysis", "pred"],
+    file_type: Literal["all", "analysis", "force", "phonon", "pred"],
     same_hash: bool,
 ) -> None:
     """Uploads or same-hash matches write url/size/md5 to the filtered refs only."""
-    for rel_path in (PRED_REL, ANALYSIS_REL, REPRO_REL):
+    for rel_path in (PRED_REL, ANALYSIS_REL, REPRO_REL, FORCE_REL):
         (tmp_path / rel_path).parent.mkdir(parents=True, exist_ok=True)
         (tmp_path / rel_path).write_bytes(b"artifact")
     metrics = {
         "pred_file": {"name": PRED_REL},
+        "force_file": {"name": FORCE_REL},
         "symprec=1e-2": {"analysis_file": {"name": ANALYSIS_REL}, "rmsd": 0.1},
         "reproducibility": {"runs": [{"label": "old", "file": {"name": REPRO_REL}}]},
     }
@@ -70,7 +72,7 @@ def test_upload_writes_file_refs_back_to_yaml(
     figshare = upload.figshare
     uploads: list[str] = []
     published: list[int] = []
-    existing_ids = {PRED_REL: 5, ANALYSIS_REL: 6, REPRO_REL: 7}
+    existing_ids = {PRED_REL: 5, ANALYSIS_REL: 6, REPRO_REL: 7, FORCE_REL: 8}
 
     def fake_upload(_article_id: int, _path: str, **kwargs: object) -> tuple[int, bool]:
         """Record the upload name and return a fresh file ID."""
@@ -97,10 +99,16 @@ def test_upload_writes_file_refs_back_to_yaml(
         written = round_trip_yaml.load(file)["metrics"]["geo_opt"]
     refs = {
         PRED_REL: written["pred_file"],
+        FORCE_REL: written["force_file"],
         ANALYSIS_REL: written["symprec=1e-2"]["analysis_file"],
         REPRO_REL: written["reproducibility"]["runs"][0]["file"],
     }
-    kinds = ((PRED_REL, "pred"), (ANALYSIS_REL, "analysis"), (REPRO_REL, "run"))
+    kinds = (
+        (PRED_REL, "pred"),
+        (FORCE_REL, "force"),
+        (ANALYSIS_REL, "analysis"),
+        (REPRO_REL, "run"),
+    )
     selected = [rel_path for rel_path, kind in kinds if file_type in ("all", kind)]
     assert uploads == ([] if same_hash else selected)
     # unchanged files only get their existing URL recorded, so nothing to publish

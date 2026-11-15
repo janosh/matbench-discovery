@@ -76,7 +76,6 @@ hyperparams:
       displacement_distance: 0.03
       max_steps: 500
       force_max: 0.02
-      save_forces: true
   architecture:
     graph_construction_radius: 6.0
   training:
@@ -246,10 +245,10 @@ metrics:
           size: 23776670
           md5: a6c65a1d92efde821bed5fba6bd188bb
         force_file:
-          name: models/nequix/nequix-mp-1/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-          url: https://figshare.com/files/70334601
-          size: 8708557
-          md5: 21c9311b41faf404de5923c76f9445d2
+          name: models/nequix/nequix-mp-1/harmonic/2026-09-05-phonons-kappa-103-forces.h5
+          url: https://figshare.com/files/71263264
+          size: 2162559
+          md5: 1edf7628302e7aeb633d0bf7b53f283e
         run_info_file:
           name: models/nequix/nequix-mp-1/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334604

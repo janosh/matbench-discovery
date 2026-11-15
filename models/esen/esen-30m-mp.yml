@@ -211,10 +211,10 @@ metrics:
           size: 23083376
           md5: 686968dc5fa47ab5765112d352e98a7f
         force_file:
-          name: models/esen/esen-30m-mp/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-          url: https://figshare.com/files/70334430
-          size: 8777027
-          md5: e96eef451359eb63b9d47c26060725f6
+          name: models/esen/esen-30m-mp/harmonic/2026-09-05-phonons-kappa-103-forces.h5
+          url: https://figshare.com/files/71263162
+          size: 2239086
+          md5: 849667872dcce45c1a037785ab871d35
         run_info_file:
           name: models/esen/esen-30m-mp/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334433

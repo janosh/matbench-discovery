@@ -7,7 +7,7 @@ import {
   bool_url_entry,
   sync_url_params as write_changed_url,
   type UrlParamEntry,
-} from 'svelte-widgets/url-params'
+} from 'svelte-widgets/browser'
 
 // color_scale param: valid d3 interpolate names, defaulting to Viridis
 export const url_color_scale = {

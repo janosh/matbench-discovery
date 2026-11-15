@@ -242,10 +242,10 @@ metrics:
           size: 22677880
           md5: 13192c4cebd82b235169052232d60e1a
         force_file:
-          name: models/alphanet/alphanet-v1-oam/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-          url: https://figshare.com/files/70334154
-          size: 8372780
-          md5: 44ab1fe099bb088c16fbfdec74daf58f
+          name: models/alphanet/alphanet-v1-oam/harmonic/2026-09-05-phonons-kappa-103-forces.h5
+          url: https://figshare.com/files/71263102
+          size: 2211840
+          md5: 49ae45f96f100cbe403d63afa9ccea0b
         run_info_file:
           name: models/alphanet/alphanet-v1-oam/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334148

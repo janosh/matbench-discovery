@@ -29,7 +29,12 @@ definitions:
         description: 'Range of possible values for the metric'
       visible: { type: 'boolean', description: 'Whether the metric is visible' }
       format: { type: string, description: 'd3-format string' }
-      sticky: { type: 'boolean', description: 'Whether the metric is sticky' }
+      pin:
+        {
+          type: string,
+          enum: ['left', 'right'],
+          description: 'Table edge the column stays pinned to while scrolling sideways',
+        }
       sortable:
         { type: 'boolean', description: 'Whether the metric is sortable' }
       better:
@@ -99,6 +104,7 @@ definitions:
       max_steps: { $ref: '#/definitions/Label' }
       ase_optimizer: { $ref: '#/definitions/Label' }
       cell_filter: { $ref: '#/definitions/Label' }
+      displacement_distance: { $ref: '#/definitions/Label' }
       batch_size: { $ref: '#/definitions/Label' }
       epochs: { $ref: '#/definitions/Label' }
       n_layers: { $ref: '#/definitions/Label' }
@@ -112,6 +118,7 @@ definitions:
       - max_steps
       - ase_optimizer
       - cell_filter
+      - displacement_distance
       - batch_size
       - epochs
       - n_layers

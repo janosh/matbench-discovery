@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import { page } from '$app/state'
-  import DATASETS from '$data/datasets.yml'
+  import DATASETS from '$pkg/datasets.yml'
   import { title_case } from '#lib/labels.js'
   import { bind_score_weights, MODELS } from '#lib/models.svelte.js'
   import { bind_comparison_url, comparison } from '#lib/model-comparison.svelte.js'

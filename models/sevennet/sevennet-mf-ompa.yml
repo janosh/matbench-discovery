@@ -75,7 +75,6 @@ hyperparams:
     kappa:
       protocol: phonondb-v1
       displacement_distance: 0.03
-      save_forces: true
   architecture:
     n_layers: 5
     graph_construction_radius: 6.0
@@ -191,10 +190,10 @@ metrics:
           size: 23573998
           md5: dd70042e2257b0d0d4b8d463492da14f
         force_file:
-          name: models/sevennet/sevennet-mf-ompa/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-          url: https://figshare.com/files/70334682
-          size: 8667538
-          md5: 719888d988ec273bb06472074d8068ef
+          name: models/sevennet/sevennet-mf-ompa/harmonic/2026-09-05-phonons-kappa-103-forces.h5
+          url: https://figshare.com/files/71263294
+          size: 2131540
+          md5: 1ff14c42bcf6aae2650aac3cfd305924
         run_info_file:
           name: models/sevennet/sevennet-mf-ompa/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334676

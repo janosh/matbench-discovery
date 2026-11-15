@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { format_num } from 'svelte-widgets/format'
   import TestSet from '#lib/benchmark/TestSet.svelte'
   import TaskNavigation from '#lib/benchmark/TaskNavigation.svelte'
   import spg_sankeys from '#figs/spg-sankeys.jsonl'
@@ -20,7 +21,6 @@
   import { UrlModelSelection } from '#lib/model-selection.svelte.js'
   import DynamicScatter from '#lib/plot/DynamicScatter.svelte'
   import { min } from 'd3-array'
-  import { format_num } from 'matterviz/labels'
   import { BarPlot, Sankey, sankey_from_links, ScatterPlot } from 'matterviz/plot'
   import GeoOptReadme from './geo-opt-readme.md'
 
@@ -129,7 +129,7 @@
         model_filter={has_geo_opt_metrics}
         column_labels={columns}
         show_row_numbers={false}
-        default_sort={{ column: ALL_METRICS.RMSD.key, dir: `asc` }}
+        default_sort={[{ column: ALL_METRICS.RMSD.key, dir: `asc` }]}
       />
     </section>
   {/snippet}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { format_num } from 'svelte-widgets/format'
   import { page } from '$app/state'
   import { ALL_METRICS, HYPERPARAMS, scatter_options } from '#lib/labels.js'
   import { is_finite_num } from '#lib/metrics.js'
@@ -12,7 +13,6 @@
   import DynamicScatter from '#lib/plot/DynamicScatter.svelte'
   import { rank_color, RANKED_METRICS } from '#lib/rankings.js'
   import type { ModelData } from '#lib/types.js'
-  import { format_num } from 'matterviz/labels'
   import { tick, untrack } from 'svelte'
   import { Dialog, Icon, MultiSelect, Popover } from 'svelte-widgets'
   import { tooltip } from 'svelte-widgets/attachments'

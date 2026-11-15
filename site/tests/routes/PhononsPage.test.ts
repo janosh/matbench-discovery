@@ -41,9 +41,10 @@ afterEach(() => {
 
 const default_filters = make_table_filters()
 // Mirrors the page's model_filter plus MetricsTable's default filters.
-const phonon_leaderboard_count = ACTIVE_MODELS.filter(
+const phonon_leaderboard_models = ACTIVE_MODELS.filter(
   (model) => model.metrics?.phonons?.kappa_103 != null && default_filters.matches(model),
-).length
+)
+const phonon_leaderboard_count = phonon_leaderboard_models.length
 
 const kappa_sort_select = (): HTMLSelectElement =>
   doc_query<HTMLSelectElement>(`.kappa-model-select select`)
@@ -155,6 +156,7 @@ describe(`Phonons Task Page`, () => {
       `κfailed`,
       `Im(ω)`,
       `W1(ω)`,
+      `Δxκ`,
     ]) {
       expect(headers).toContain(column)
     }
@@ -175,6 +177,28 @@ describe(`Phonons Task Page`, () => {
     }
     expect(sorted_header()?.textContent).toContain(`κSRME`)
     expect(sorted_header()?.getAttribute(`aria-sort`)).toBe(`ascending`)
+
+    // each row shows the κ finite-difference step recorded in its own model's YAML (n/a
+    // when it records no kappa settings), whatever mix of 0.01 Å and 0.03 Å runs the
+    // live roster contains
+    const dx_idx = headers.indexOf(`Δxκ`)
+    const model_by_key = new Map(
+      phonon_leaderboard_models.map((model) => [model.model_key, model]),
+    )
+    for (const row of rows) {
+      const href = doc_query(`a[href^="/models/"]`, row).getAttribute(`href`)
+      const model = model_by_key.get(href?.slice(`/models/`.length) ?? ``)
+      if (!model) throw new Error(`no leaderboard model for row link ${href}`)
+      const dx = model.hyperparams?.evaluation?.kappa?.displacement_distance
+      expect(
+        row.querySelectorAll(`td`)[dx_idx].textContent?.trim(),
+        model.model_key,
+      ).toBe(dx === undefined ? `n/a` : `${dx} Å`)
+    }
+    // collapse whitespace so the assertion doesn't depend on source line wrapping
+    const page_text = document.body.textContent?.replaceAll(/\s+/gu, ` `)
+    expect(page_text).toContain(`not strictly comparable`)
+    expect(page_text).toContain(`prescribed value for future model submissions is 0.03 Å`)
   })
 
   it(`orders Compare models by κSRME and updates the model URL`, async () => {

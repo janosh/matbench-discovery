@@ -1,7 +1,8 @@
 <script lang="ts">
-  import DATASETS from '$data/datasets.yml'
+  import type { RowData } from 'svelte-widgets/table'
+  import DATASETS from '$pkg/datasets.yml'
   import { fit_toolbar_links } from './fit-toolbar-links.js'
-  import type { Column, RowData } from 'matterviz/table'
+  import type { Column } from 'matterviz/table'
   import { openness_tooltips } from '#lib/metrics.js'
   import { comparison } from '#lib/model-comparison.svelte.js'
   import { ACTIVE_MODELS, make_table_filters } from '#lib/models.svelte.js'
@@ -19,6 +20,7 @@
   import { Icon, Popover, Sheet } from 'svelte-widgets'
   import { Cross, Filter, Scale } from 'svelte-widgets/icons'
   import { ColumnPicker } from 'svelte-widgets/table'
+  import { strip_html } from 'svelte-widgets/utils'
   import type { Snippet } from 'svelte'
   import { tooltip } from 'svelte-widgets/attachments'
   import type { HTMLAttributes } from 'svelte/elements'
@@ -368,7 +370,16 @@
   {/if}
 
   {#if columns.length}
-    <ColumnPicker bind:columns>
+    <ColumnPicker
+      bind:columns
+      search_text={(col) =>
+        [col.id, strip_html(col.label), strip_html(col.description ?? ``), col.group]
+          .filter(Boolean)
+          .join(` `)}
+    >
+      <!-- labels are site-authored HTML (sub/sup), as in the metrics table headers -->
+      {#snippet toggle_label({ column })}{@html column.label}{/snippet}
+      {#snippet description({ column })}{@html column.description}{/snippet}
       {#snippet header()}
         <label class="heatmap-toggle">
           <input

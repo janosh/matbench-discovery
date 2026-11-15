@@ -8,7 +8,7 @@
     has_diatomics_curves,
     task_page_filters,
   } from '#lib/models.svelte.js'
-  import { ButtonGroup } from 'svelte-widgets'
+  import { ButtonGroup, Spinner } from 'svelte-widgets'
   import { CDS_CONFIG, DEFAULT_CDS_CONFIG } from '#lib/combined-scores.svelte.js'
   import {
     DIATOMICS_METRICS,
@@ -26,6 +26,7 @@
   import type { PageData } from './$types'
   import {
     DFT_REF_COLORS,
+    DiatomicCurveCache,
     ElementGroupParam,
     make_plot_observer,
     MODEL_COLORS,
@@ -40,7 +41,10 @@
     return model
   }
   let diatomic_models = $derived(data.diatomic_model_keys.map(find_model))
-  let { diatomic_curves, reference_names } = $derived(data)
+  let { reference_names } = $derived(data)
+  // per-model curves load on demand: only the selected models' files are fetched
+  const curve_cache = new DiatomicCurveCache()
+  let diatomic_curves = $derived(Object.fromEntries(curve_cache.curves))
   let model_idx_by_key = $derived(
     Object.fromEntries(diatomic_models.map(({ model_key }, idx) => [model_key, idx])),
   )
@@ -100,6 +104,15 @@
     defaults: default_selected_keys,
   }))
   let selected_model_keys = $derived(model_selection.values)
+  $effect(() => curve_cache.request(selected_model_keys))
+  let failed_keys = $derived(
+    selected_model_keys.filter((key) => curve_cache.errors.has(key)),
+  )
+  let pending_keys = $derived(
+    selected_model_keys.filter(
+      (key) => !curve_cache.curves.has(key) && !curve_cache.errors.has(key),
+    ),
+  )
   const visible_diatomics = new SvelteSet<string>()
   const observe_plot = make_plot_observer(visible_diatomics)
   let diatomics_to_render = $derived(
@@ -169,7 +182,9 @@
   <MetricsTable
     model_filter={has_diatomics_curves}
     col_filter={(col) => visible_cols[col.key] ?? true}
-    default_sort={{ column: DIATOMICS_METRICS.diatomics_combined_score.key, dir: `desc` }}
+    default_sort={[
+      { column: DIATOMICS_METRICS.diatomics_combined_score.key, dir: `desc` },
+    ]}
     {filters}
     repro_task="diatomics"
   />
@@ -228,6 +243,17 @@
   <ModelSelect options={selectable_options} bind:value={model_selection.selected} />
 </div>
 
+{#if failed_keys.length}
+  <div class="curve-status" role="alert">
+    Could not load curves for {failed_keys.map(label_for).join(`, `)}.
+  </div>
+{/if}
+{#if pending_keys.length}
+  <div class="curve-status">
+    <Spinner text="Loading curves for {pending_keys.map(label_for).join(`, `)}..." />
+  </div>
+{/if}
+
 <div class="diatomics-grid bleed-1400">
   {#each diatomics_to_render as formula (formula)}
     {@const is_visible = visible_diatomics.has(formula)}
@@ -252,6 +278,10 @@
 <DiatomicsNote />
 
 <style>
+  .curve-status {
+    display: flex;
+    justify-content: center;
+  }
   h1 {
     margin: 0;
   }

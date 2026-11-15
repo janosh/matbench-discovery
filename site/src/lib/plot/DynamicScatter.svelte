@@ -32,7 +32,7 @@
   import { wide_legend } from '#lib/fig-helpers.js'
   import { pareto_staircase, sota_frontier_indices, sota_step_line } from '#lib/sota.js'
   import { bind_url_params } from '#lib/url-state.svelte.js'
-  import { valid_query_param } from 'svelte-widgets/url-params'
+  import { valid_query_param } from 'svelte-widgets/browser'
   import { untrack } from 'svelte'
 
   // Keep size-select labels short by dropping discovery-set segments and abbreviating

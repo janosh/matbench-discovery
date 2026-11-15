@@ -5,7 +5,6 @@
     // single source for these aliases: vite.config.ts derives resolve.alias from them
     "paths": {
       "$root/*": ["../*"],
-      "$data/*": ["../data/*"],
       "$pkg/*": ["../matbench_discovery/*"]
     }
   },

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { pick_contrast_color } from 'svelte-widgets/attachments'
   import ModelCard from '#lib/model/ModelCard.svelte'
   import GitHubActivityScatter from '#lib/plot/GitHubActivityScatter.svelte'
   import type { Label } from '#lib/types.js'
@@ -8,10 +9,10 @@
   import { get_nested_value, label_data_path, sort_models } from '#lib/metrics.js'
   import { MODELS } from '#lib/models.svelte.js'
   import { bind_url_params } from '#lib/url-state.svelte.js'
-  import { valid_query_param } from 'svelte-widgets/url-params'
+  import { valid_query_param } from 'svelte-widgets/browser'
   import { clamp_integer } from 'svelte-widgets/utils'
   import { ColorBar } from 'matterviz/plot'
-  import { get_d3_interpolator, pick_contrast_color } from 'matterviz/colors'
+  import { get_d3_interpolator } from 'matterviz/colors'
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
   import github_activity_data from './mlip-github-activity.json'
@@ -162,7 +163,7 @@ track, which would miscenter it and overflow at wider browser zoom levels. -->
         ? get_nested_value(model, sort_by_path)
         : Number.NaN}
       {@const bg_clr = bg_color(metric_val as number)}
-      {@const text_color = pick_contrast_color({ background: bg_clr, backdrop: `white` })}
+      {@const text_color = pick_contrast_color({ bg_color: bg_clr, backdrop: `white` })}
       <li
         animate:flip={{ duration: 400 }}
         in:fade={{ delay: 100 }}

@@ -68,7 +68,6 @@ hyperparams:
     cell_filter: FrechetCellFilter
     kappa:
       protocol: phonondb-v1
-      save_forces: true
       displacement_distance: 0.03
       force_max: 0.0001
       max_steps: 300
@@ -128,10 +127,10 @@ metrics:
         size: 15679466
         md5: 296690b28b4d8b29654602de716e3e31
       force_file:
-        name: models/mace_soyo/mace-soyo-oam/phonon-oam/2026-10-22-phonons-kappa-103-forces.json.gz
-        url: https://ndownloader.figshare.com/files/70537104
-        size: 252614411
-        md5: 3be87ffaae5473978bfec9467f0ce72f
+        name: models/mace_soyo/mace-soyo-oam/phonon-oam/2026-10-22-phonons-kappa-103-forces.h5
+        url: https://figshare.com/files/71263225
+        size: 48287373
+        md5: 252f2489fb88d21a4afa3637aa2890eb
       phonon_file:
         name: models/mace_soyo/mace-soyo-oam/phonon-oam/2026-10-22-phonons-kappa-103-phonons.json.gz
         url: https://ndownloader.figshare.com/files/70547589

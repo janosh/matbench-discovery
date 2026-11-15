@@ -1,3 +1,4 @@
+import { format_num } from 'svelte-widgets/format'
 import { DEFAULT_CDS_CONFIG, DEFAULT_CMDS_CONFIG } from '#lib/combined-scores.svelte.js'
 import {
   DIATOMICS_METRICS,
@@ -10,7 +11,6 @@ import {
   plain_label,
 } from '#lib/labels.js'
 import { MODELS } from '#lib/models.svelte.js'
-import { format_num } from 'matterviz/labels'
 import { Meta, Microsoft } from 'svelte-widgets/icons'
 import { describe, expect, it } from 'vite-plus/test'
 

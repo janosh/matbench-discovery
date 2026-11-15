@@ -1,5 +1,5 @@
+import { format_num } from 'svelte-widgets/format'
 import PtableHeatmap from '#lib/PtableHeatmap.svelte'
-import { format_num } from 'matterviz/labels'
 import type { ElementSymbol } from 'matterviz/element'
 import { tick } from 'svelte'
 import { describe, expect, it } from 'vite-plus/test'

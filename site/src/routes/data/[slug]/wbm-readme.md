@@ -18,7 +18,7 @@ Each iteration has varying numbers of materials which are counted by the 2nd int
 
 ## 🪓 &thinsp; Data Processing Steps
 
-The full set of processing steps used to curate the WBM test set from the raw data files (downloaded from [URLs listed below](#links-to-wbm-files)) can be found in [`data/wbm/compile_wbm_test_set.py`](https://github.com/janosh/matbench-discovery/blob/-/data/wbm/compile_wbm_test_set.py). Processing steps taken:
+The full set of processing steps used to curate the WBM test set from the raw data files (downloaded from [URLs listed below](#links-to-wbm-files)) can be found in [`scripts/data/compile_wbm_test_set.py`](https://github.com/janosh/matbench-discovery/blob/-/scripts/data/compile_wbm_test_set.py). Processing steps taken:
 
 - re-format material IDs: `step_1-0->wbm-1-1`, `step_1-1->wbm-1-2`, ...
 - correctly align initial structures to DFT-relaxed [`ComputedStructureEntries`](https://github.com/materialsproject/pymatgen/blob/02a4ca8aa/pymatgen/entries/computed_entries.py#L536) (the initial structure files had 6 extra structures inserted towards the end of step 3 which had no corresponding IDs in the summary file)
@@ -44,10 +44,10 @@ The full set of processing steps used to curate the WBM test set from the raw da
 > [#358](https://github.com/janosh/matbench-discovery/issues/358) for details and
 > a spot-check quantifying the effect.
 
-Invoking the script `python compile_wbm_test_set.py` will auto-download and regenerate the WBM test set files from scratch. If you find
+Invoking the script `uv run --with-editable ".[fetch-wbm-data]" scripts/data/compile_wbm_test_set.py` will auto-download and regenerate the WBM test set files from scratch. If you find
 
 - any questionable structures or data records in the released test set, or
-- inconsistencies between the files on GitHub vs the output of that script,
+- inconsistencies between the files on Figshare vs the output of that script,
 
 please [raise an issue](https://github.com/janosh/matbench-discovery/issues).
 

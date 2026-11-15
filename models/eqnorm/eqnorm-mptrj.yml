@@ -74,7 +74,6 @@ hyperparams:
       protocol: phonondb-v1
       displacement_distance: 0.03
       max_steps: 500
-      save_forces: true
   architecture:
     n_layers: 4
     graph_construction_radius: 6.0
@@ -250,10 +249,10 @@ metrics:
           size: 23223104
           md5: f32409f5867594cf8a4516c6c2111422
         force_file:
-          name: models/eqnorm/eqnorm-mptrj/harmonic/2026-09-05-phonons-kappa-103-forces.json.gz
-          url: https://figshare.com/files/70334349
-          size: 8785393
-          md5: 01fee46ba7178cc47fafb394716efb01
+          name: models/eqnorm/eqnorm-mptrj/harmonic/2026-09-05-phonons-kappa-103-forces.h5
+          url: https://figshare.com/files/71263147
+          size: 2169045
+          md5: d9ebfd2be99d7817c05c265437d24a68
         run_info_file:
           name: models/eqnorm/eqnorm-mptrj/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334277

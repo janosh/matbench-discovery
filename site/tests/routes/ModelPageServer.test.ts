@@ -1,4 +1,4 @@
-import type { ModelData } from '#lib/types.js'
+import type { ModelData, ModelDetails } from '#lib/types.js'
 import { entries, load } from '#routes/models/[slug]/+page.server.js'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -9,6 +9,13 @@ import { describe, expect, it, onTestFinished, vi } from 'vite-plus/test'
 const model: Pick<ModelData, `model_key` | `metrics`> = vi.hoisted(() => ({
   model_key: `model-key`,
 }))
+// detail-page fields stripped from client bundles reach the page via load data
+const details: ModelDetails = vi.hoisted(() => ({
+  notes: { html: { description: `<p>note</p>` } },
+  environment: { dependencies: [`pkg==1`], python_version: `3.14` },
+  trained_by: [{ name: `Trainer` }],
+}))
+vi.mock(`#lib/server/model-details.js`, () => ({ model_details: () => details }))
 
 vi.mock(`#lib/models.svelte.js`, () => ({ MODELS: [model] }))
 
@@ -31,6 +38,7 @@ describe(`model-key routes`, () => {
       expect(await load_model()).toEqual({
         model_key: model.model_key,
         md_per_system: null,
+        details,
       })
     },
   )
@@ -56,6 +64,7 @@ describe(`model-key routes`, () => {
 
       expect(await load_model()).toEqual({
         model_key: model.model_key,
+        details,
         md_per_system: [
           {
             system: `CsSnI3_500K_Ivor_VASP`,

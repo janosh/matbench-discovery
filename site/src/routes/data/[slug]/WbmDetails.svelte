@@ -1,4 +1,5 @@
 <script lang="ts" module>
+  import { format_num } from 'svelte-widgets/format'
   import type { ElementSymbol } from 'matterviz'
 
   const elem_counts = import.meta.glob<Record<ElementSymbol, number>>(
@@ -16,7 +17,7 @@
 </script>
 
 <script lang="ts">
-  import DataReadme from '$data/wbm/readme.md'
+  import DataReadme from './wbm-readme.md'
   import hist_e_form from '#figs/hist-wbm-e-form-per-atom.json.gz'
   import hist_hull_dist from '#figs/hist-wbm-hull-dist.json.gz'
   import arity_hist from '#figs/mp-vs-mp-trj-vs-wbm-arity-hist.json.gz'
@@ -35,7 +36,6 @@
     sunburst_from_labels_parents,
     Sunburst,
   } from 'matterviz/plot'
-  import { format_num } from 'matterviz/labels'
   import type { D3InterpolateName } from 'matterviz/colors'
   import { Icon, MultiSelect, Popover } from 'svelte-widgets'
   import { Info } from 'svelte-widgets/icons'
@@ -44,7 +44,7 @@
     bool_from_param,
     bool_url_entry,
     valid_query_param,
-  } from 'svelte-widgets/url-params'
+  } from 'svelte-widgets/browser'
   import MPtrjElemCountsPtable from './MPtrjElemCountsPtable.svelte'
   import MpTrjNSitesHist from './MpTrjNSitesHist.svelte'
   import MpElementalReferenceEnergies from '../mp-elemental-reference-energies.md'

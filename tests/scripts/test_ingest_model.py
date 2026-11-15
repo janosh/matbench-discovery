@@ -480,16 +480,32 @@ def test_figshare_dry_run_hashes_only_for_exact_match(
 
 
 @pytest.mark.parametrize(
-    ("yaml_name", "artifact_rel_path", "symlink_target"),
+    ("yaml_name", "artifact_rel_path", "symlink_target", "error"),
     [
         # a submitted symlink pointing outside the model directory
-        ("model.yml", "models/arch/model/leak", "secret"),
+        (
+            "model.yml",
+            "models/arch/model/2025-01-01-discovery.csv.gz",
+            "secret",
+            "escapes model directory",
+        ),
         # a real file that belongs to a sibling model in the same family
-        ("model-b.yml", "models/arch/model-a/preds.csv.gz", None),
+        (
+            "model-b.yml",
+            "models/arch/model-a/2025-01-01-discovery.csv.gz",
+            None,
+            "must live under",
+        ),
+        # inside the model directory but not a canonical artifact filename
+        ("model.yml", "models/arch/model/preds.csv.gz", None, "Not a canonical"),
     ],
 )
 def test_archive_rejects_artifact_escaping_model_dir(
-    yaml_name: str, artifact_rel_path: str, symlink_target: str | None, tmp_path: Path
+    yaml_name: str,
+    artifact_rel_path: str,
+    symlink_target: str | None,
+    error: str,
+    tmp_path: Path,
 ) -> None:
     """Archive paths cannot escape the model directory via symlinks or siblings."""
     family_dir = tmp_path / "models/arch"
@@ -503,7 +519,7 @@ def test_archive_rejects_artifact_escaping_model_dir(
         except OSError as exc:
             pytest.skip(f"Symlinks unavailable: {exc}")
 
-    with pytest.raises(ValueError, match="escapes model directory"):
+    with pytest.raises(ValueError, match=error):
         upload.resolve_artifact_path(
             str(family_dir / yaml_name), artifact_rel_path, str(tmp_path)
         )

@@ -25,7 +25,7 @@ from matbench_discovery.energy import (
 )
 from matbench_discovery.enums import DataFiles
 
-module_dir = os.path.dirname(__file__)
+os.makedirs(MP_DIR, exist_ok=True)
 
 
 # %% run on 2022-09-16 and again on 2023-02-07
@@ -43,7 +43,7 @@ df_mp_cse = pd.DataFrame(
 # mp-15590 appeared twice on 2023-02-07
 df_mp_cse = df_mp_cse[~df_mp_cse.index.duplicated()]
 df_mp_cse.reset_index().to_json(
-    f"{module_dir}/{today}-mp-computed-structure-entries.json.gz",
+    f"{MP_DIR}/{today}-mp-computed-structure-entries.json.gz",
     default_handler=lambda x: x.as_dict(),
 )
 
@@ -78,7 +78,7 @@ print(f"{ppd_mp} on {today}")
 # pymatgen's Composition class since its original pickling.
 
 # save MP PPD to disk
-with gzip.open(f"{module_dir}/{today}-ppd-mp.pkl.gz", mode="wb") as zip_file:
+with gzip.open(f"{MP_DIR}/{today}-ppd-mp.pkl.gz", mode="wb") as zip_file:
     pickle.dump(ppd_mp, zip_file)
 
 
@@ -107,7 +107,7 @@ mp_wbm_ppd = PatchedPhaseDiagram(
 )
 
 # save MP+WBM PPD to disk (was not run)
-with gzip.open(f"{module_dir}/{today}-ppd-mp-wbm.pkl.gz", mode="wb") as zip_file:
+with gzip.open(f"{MP_DIR}/{today}-ppd-mp-wbm.pkl.gz", mode="wb") as zip_file:
     pickle.dump(mp_wbm_ppd, zip_file)
 
 
