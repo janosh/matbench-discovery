@@ -11,7 +11,7 @@ authors:
 repo: https://github.com/nkwork9999/pet-xs-pair-bo
 doi:
 paper:
-pr_url:
+pr_url: https://github.com/janosh/matbench-discovery/pull/416
 checkpoint_url: https://github.com/nkwork9999/pet-xs-pair-bo/releases/download/v0.1.0/pet-xs-pair-bo-v1.json
 license:
   code: BSD-3-Clause
