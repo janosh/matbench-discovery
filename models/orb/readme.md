@@ -55,3 +55,15 @@ E.g. to download structures for a specific model, run:
 ```bash
 gsutil cp gs://orbitalmaterials-public-models/matbench-evals/orb-mptraj-only-v2-20241014.json.gz models/orb/
 ```
+
+## ORB-G2 GroupCV v1 (independent calibration submission)
+
+[Source, fixed data, plans and reproduction](https://github.com/nkwork9999/orb-g2-groupcv) / [release v0.1.3](https://github.com/nkwork9999/orb-g2-groupcv/releases/tag/v0.1.3). The frozen ORB-v3 conservative MPA backbone is credited separately above; this calibration is by nk (Enuke).
+
+A 36-coefficient conservative pair-energy head is fitted on 83 multi-atom ASE G2 molecules (68 formula groups). Training-only five-fold formula-group CV selects width/ridge/shrinkage with a fixed 16-trial GP-EI budget. A metadata-only split reserves 19 molecules in 18 disjoint formula groups; all one/two-atom molecules are excluded. Targets are experimental atomization energies extrapolated with ZPE/thermal corrections, not PBE force labels. The fixed molecular holdout macro-MAE changes from 0.4933 to 0.2175 eV (15 groups improve, 3 worsen). Upstream pretraining overlap has not been proven absent.
+
+The head supplies general multi-atom/periodic energies, forces and stress. Only Diatomics is benchmarked here; no bulk/force/MD accuracy improvement is claimed. Historical Diatomics feedback informed redesign, so `test_set_informed: [diatomics]` is mandatory. Official labels and outer scores never select this trained state. Runtime-only v0.1.1 preserves all learned coefficients, selecting exact fast neighbor enumeration and four CPU threads using training structures only. Compilation failed the prospective speed threshold and is disabled.
+
+The model-specific uv project documents the Python 3.14 dm-tree/filelock compatibility overrides. A portable training wrapper is `models/orb/orb-g2-groupcv-v1/train.py`; run it against the unpacked, SHA256-verified release data archive. It reproduces the fixed model using training rows only. Upstream weights remain separately downloaded and hash-verified.
+
+Deployment v0.1.3 uses MLX float32 geometry, ZBL and dense inference on Apple GPU, with CPU graph construction and conservative edge-vector derivatives. All learned weights stay unchanged.183 training/synthetic cases meet atol1e-4+rtol1e-5. Compilation/warmup is included in load time. The common CLI adds `mps` to match the existing schema, and run-cost instrumentation measures real MLX GPU memory. The official sampling/scoring code is unchanged. Run `uv run --project models/orb/orb-g2-groupcv-v1 --isolated python models/run_diatomics.py --model orb_g2_groupcv_v1 --device mps --dtype float32`; use `--device cpu` for the numerically equivalent CPU reference. Apple GPU evaluation requires an Apple Silicon Mac; CPU reproduction is portable.

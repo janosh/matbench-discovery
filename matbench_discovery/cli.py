@@ -96,9 +96,11 @@ def is_full_model_run() -> bool:
 
 
 def complete_models() -> list[Model]:
-    """Return CLI-selected active models that have discovery prediction files."""
+    """Return active discovery models with predictions and no explicit N/A status."""
     return [
         model
         for model in _cli_args().models
-        if model.is_active and (model.metrics.get("discovery") or {}).get("pred_file")
+        if model.is_active
+        and (discovery := model.metrics.get("discovery") or {}).get("pred_file")
+        and discovery.get("status") not in {"not_applicable", "not_available"}
     ]

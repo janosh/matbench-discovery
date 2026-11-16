@@ -523,3 +523,52 @@ def test_archive_rejects_artifact_escaping_model_dir(
         upload.resolve_artifact_path(
             str(family_dir / yaml_name), artifact_rel_path, str(tmp_path)
         )
+
+
+@pytest.mark.parametrize("status", ["not_available", "not_applicable"])
+@pytest.mark.parametrize("device", ["cpu", "mps"])
+def test_explicit_unavailable_task_artifacts_and_runners_are_not_claimed(
+    monkeypatch: pytest.MonkeyPatch,
+    shared_runner_calls: list[list[str]],
+    status: str,
+    device: str,
+) -> None:
+    """No-data declarations must not be interpreted as discovery measurements."""
+    model = Model["orb_g2_groupcv_v1"]
+    monkeypatch.setitem(model.metadata["hyperparams"]["evaluation"], "device", device)
+    for task in ("discovery", "geo_opt", "phonons", "md"):
+        monkeypatch.setitem(
+            model.metadata["metrics"],
+            task,
+            {"status": status, "reason": "not evaluated"},
+        )
+    checks = ingest.Checklist()
+    ingest.check_submission(model, checks)
+    assert not msgs(checks, ingest.FAIL)
+    scripts = [p for call in shared_runner_calls for p in call if p.endswith(".py")]
+    assert scripts == [f"{ingest.ROOT}/models/run_diatomics.py"]
+    command = shared_runner_calls[0]
+    assert command[command.index("--dtype") + 1] == "float32"
+    assert command[command.index("--device") + 1] == device
+
+
+@pytest.mark.parametrize("status", ["pending", "partial", "complete", None])
+def test_other_discovery_coverage_still_requires_url(
+    monkeypatch: pytest.MonkeyPatch, status: str | None
+) -> None:
+    model = Model["orb_g2_groupcv_v1"]
+    discovery = {"status": status, "reason": "test"} if status else {}
+    monkeypatch.setitem(model.metadata["metrics"], "discovery", discovery)
+    checks = ingest.Checklist()
+    ingest.check_submission(model, checks, validate_runner=False)
+    assert any("No discovery.pred_file.url" in msg for msg in msgs(checks, ingest.FAIL))
+
+
+def test_explicit_unavailable_payloads_do_not_generate_scientific_data(
+    run_cmd_calls: list[tuple[str, ...]],
+) -> None:
+    model = Model["orb_g2_groupcv_v1"]
+    checks = ingest.Checklist()
+    ingest.run_payload_refresh(checks, (model,))
+    assert len(run_cmd_calls) == 2  # change summary + payload-shape validation
+    assert checks.n_failed == 0

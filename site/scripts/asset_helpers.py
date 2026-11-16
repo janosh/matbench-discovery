@@ -142,14 +142,19 @@ def retained_parity_assets(
 
 
 def prune_unreferenced_assets(
-    asset_dir: Path, asset_prefix: str, manifest: Mapping[str, Any]
+    asset_dir: Path,
+    asset_prefix: str,
+    manifest: Mapping[str, Any],
+    *,
+    target_assets: set[str] | None = None,
 ) -> list[str]:
     """Delete generated assets the freshly built manifest no longer references.
 
     Pruning after the new manifest is committed keeps every referenced asset available
     if a refresh fails. It also
     collects assets a targeted refresh cannot name, such as a model deactivated since
-    the last run.
+    the last run. Supplying target_assets restricts deletion to those names, without
+    weakening protection for any asset still referenced by the manifest.
     """
     keep = {
         str(manifest["base"]["asset"]),
@@ -162,7 +167,9 @@ def prune_unreferenced_assets(
     }
     removed: list[str] = []
     for path in sorted(asset_dir.glob(f"{asset_prefix}-*.json.gz")):
-        if path.name not in keep:
+        if path.name not in keep and (
+            target_assets is None or path.name in target_assets
+        ):
             path.unlink()
             removed.append(path.name)
     return removed

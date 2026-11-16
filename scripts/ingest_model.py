@@ -22,7 +22,7 @@ from collections import Counter
 from collections.abc import Sequence
 from functools import partialmethod
 
-from matbench_discovery import ROOT
+from matbench_discovery import ROOT, figs
 from matbench_discovery.calculators import CALCULATORS
 from matbench_discovery.data import (
     file_ref_url,
@@ -52,6 +52,43 @@ PAYLOAD_SCRIPTS = (
     "--extra phonons scripts/model_figs/kappa_103_analysis.py",
     "scripts/evals/geo_opt.py",
 )
+PAYLOAD_TASKS = {
+    "scripts/model_figs/roc_curves_models.py": "discovery",
+    "scripts/model_figs/hull_dist_box_plot.py": "discovery",
+    "scripts/model_figs/cumulative_metrics.py": "discovery",
+    "scripts/model_figs/rolling_hull_dist_mae_models.py": "discovery",
+    "scripts/model_figs/tiles_hist_classified_stable_models.py": "discovery",
+    "scripts/model_figs/single_model_per_element_errors.py": "discovery",
+    "--extra phonons scripts/model_figs/kappa_103_analysis.py": "phonons",
+    "scripts/evals/geo_opt.py": "geo_opt",
+}
+PAYLOAD_OUTPUTS = {
+    "scripts/model_figs/roc_curves_models.py": ("site/src/figs/roc-models.jsonl",),
+    "scripts/model_figs/hull_dist_box_plot.py": (
+        "site/src/figs/box-hull-dist-errors.jsonl",
+    ),
+    "scripts/model_figs/cumulative_metrics.py": (
+        "site/src/figs/cumulative-precision-recall.jsonl",
+    ),
+    "scripts/model_figs/rolling_hull_dist_mae_models.py": (
+        "site/src/figs/rolling-mae-vs-hull-dist.jsonl",
+    ),
+    "scripts/model_figs/tiles_hist_classified_stable_models.py": (
+        "site/src/figs/hist-clf-pred-hull-dist.jsonl",
+    ),
+    "scripts/model_figs/single_model_per_element_errors.py": (
+        "site/src/figs/element-prevalence-vs-error.jsonl",
+        "site/src/routes/models/per-element-each-errors.jsonl",
+    ),
+    "--extra phonons scripts/model_figs/kappa_103_analysis.py": (
+        "site/src/figs/kappa-103-analysis.jsonl",
+    ),
+    "scripts/evals/geo_opt.py": (
+        "site/src/figs/spg-sankeys.jsonl",
+        "site/src/figs/sym-ops-diff-bar.jsonl",
+        "site/src/figs/struct-rmsd-cdf.jsonl",
+    ),
+}
 # (label, skipped for energy-only models, fatal on failure, `uv run` args).
 # kappa needs the phonons extra (phono3py/phonopy); geo-opt the symmetry extra (moyopy)
 EVAL_STEPS = (
@@ -174,7 +211,12 @@ def check_submission(
     # E = energy only (no forces -> no relaxation, phonons or diatomics)
     energy_only = metadata.get("targets") == "E"
     discovery = metrics_by_task.get("discovery")
-    if isinstance(discovery, dict) and file_ref_url(discovery.get("pred_file")):
+    if (discovery_status := task_coverage(metadata, "discovery")[0]) in {
+        "not_applicable",
+        "not_available",
+    }:
+        checks.skip(f"Discovery predictions declared {discovery_status}")
+    elif isinstance(discovery, dict) and file_ref_url(discovery.get("pred_file")):
         checks.ok("Prediction file URL found in YAML (discovery.pred_file.url)")
     else:
         checks.fail(f"No discovery.pred_file.url found in {yaml_path}")
@@ -213,6 +255,13 @@ def check_submission(
         if energy_only and task != "discovery":
             checks.skip(f"{task} test script check skipped (targets=E, no forces)")
             continue
+        coverage_task = "phonons" if task == "kappa" else task
+        if (coverage_status := task_coverage(metadata, coverage_task)[0]) in {
+            "not_applicable",
+            "not_available",
+        }:
+            checks.skip(f"{task} shared runner declared {coverage_status}")
+            continue
         if task == "discovery" and (
             reason := ARCHIVED_DISCOVERY_MODELS.get(model.name)
         ):
@@ -242,8 +291,15 @@ def check_submission(
             if not os.path.isfile(runner):
                 raise ValueError(f"shared runner not found: {runner}")
             if not (task == "kappa" and calc_spec.requires_checkpoint):
+                runtime = metadata.get("hyperparams", {}).get("evaluation", {})
+                runtime_args = [
+                    part
+                    for key in ("dtype", "device")
+                    if key in runtime
+                    for part in (f"--{key}", str(runtime[key]))
+                ]
                 command = calc_spec.uv_run_cmd(
-                    runner, "--model", model.name, "--dry-run"
+                    runner, "--model", model.name, "--dry-run", *runtime_args
                 )
                 subprocess.run(command, check=True, cwd=ROOT)
             if task == "discovery":
@@ -274,9 +330,27 @@ def run_model_steps(
     """Run model-specific commands, recording each result."""
     banner(title)
     model_args = ("--models", model.name)
+    task_by_script = {
+        "scripts/evals/discovery.py": "discovery",
+        "scripts/evals/kappa.py": "phonons",
+        "scripts/analyze_geo_opt.py": "geo_opt",
+        "scripts/evals/diatomic_metrics.py": "diatomics",
+        "site/scripts/generate-energy-parity-assets.py": "discovery",
+        "site/scripts/generate-kappa-parity-assets.py": "phonons",
+    }
     for label, needs_forces, fatal, args in steps:
+        script = args.rsplit(maxsplit=1)[-1]
+        task = task_by_script.get(script)
         if needs_forces and energy_only:
             checks.skip(f"{label} skipped (targets=E, no forces)")
+        elif (
+            task
+            and task_coverage(model.metadata, task)[0]
+            in {"not_applicable", "not_available"}
+            # This generator has a metadata-only N/A cleanup path for old assets.
+            and script != "site/scripts/generate-energy-parity-assets.py"
+        ):
+            checks.skip(f"{label} declared {task_coverage(model.metadata, task)[0]}")
         elif run_cmd(*uv_run_args(args), *model_args):
             checks.ok(f"{label} completed")
         elif fatal:
@@ -382,12 +456,44 @@ def run_payload_refresh(
     """
     suffix = f" for {', '.join(model.name for model in models)}" if models else ""
     banner(f"Refreshing multi-model site figure payloads{suffix}")
-    payload_args = (
-        ("--models", *(model.name for model in models))
-        if models
-        else ("--full-roster",)
-    )
     for script in PAYLOAD_SCRIPTS:
+        task = PAYLOAD_TASKS[script]
+        unavailable_keys = {
+            model.key
+            for model in models
+            if (model.metrics.get(task) or {}).get("status")
+            in {"not_applicable", "not_available"}
+        }
+        if unavailable_keys:
+            for relative_path in PAYLOAD_OUTPUTS[script]:
+                path = f"{ROOT}/{relative_path}"
+                if not os.path.isfile(path):
+                    continue  # The final shape tests still require expected payloads.
+                try:
+                    payload = figs.read_jsonl_payload(path)
+                    if any(
+                        row["model_key"] in unavailable_keys
+                        for row in payload["models"]
+                    ):
+                        figs.write_jsonl_payload(
+                            path, payload | {"models": []}, target_keys=unavailable_keys
+                        )
+                except (OSError, ValueError, TypeError) as exc:
+                    checks.fail(
+                        f"Removing unavailable records from {relative_path}: {exc}"
+                    )
+                    return
+        applicable_models = [
+            model for model in models if model.key not in unavailable_keys
+        ]
+        if models and not applicable_models:
+            checks.skip(f"{script}: all targeted models declare {task} unavailable")
+            continue
+        payload_args = (
+            ("--models", *(model.name for model in applicable_models))
+            if models
+            else ("--full-roster",)
+        )
         if not run_cmd(*uv_run_args(script), *payload_args):
             checks.fail(f"{script} failed")
             return

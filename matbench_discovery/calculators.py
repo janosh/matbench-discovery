@@ -988,6 +988,13 @@ def _alphanet(model_key: str, config_url: str) -> Callable[..., Calculator]:
     return make_calc
 
 
+def _orb_g2(device: str, checkpoint: str, dtype: str = "float32") -> Calculator:
+    """Load the source-pinned grouped-CV ORB molecular calibration."""
+    from orb_g2_cv.ase import load_calculator
+
+    return load_calculator(checkpoint=checkpoint, device=device, dtype=dtype)
+
+
 def _pet(device: str, checkpoint: str, dtype: str = "float64") -> Calculator:
     """Export PET's metatrain checkpoint and load it as a metatomic calculator."""
     import torch
@@ -1104,6 +1111,9 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
         "mace_mpa_0": _runtime_calc_spec("mace_mpa_0", _mace("medium-mpa-0")),
         "orb_v2": _runtime_calc_spec("orb_v2", _orb("orb-v2")),
         "orb_v3": _runtime_calc_spec("orb_v3", _orb("orb-v3-conservative-inf-mpa")),
+        "orb_g2_groupcv_v1": _checkpoint_spec(
+            "orb_g2_groupcv_v1", _orb_g2, ext=".json"
+        ),
         "orb_v2_mptrj": _runtime_calc_spec("orb_v2_mptrj", _orb("orb-mptraj-only-v2")),
         "mattersim_v1_5m": _runtime_calc_spec(
             "mattersim_v1_5m", _mattersim("mattersim-v1.0.0-5m.pth")

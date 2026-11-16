@@ -1299,3 +1299,31 @@ QM9:
     Equilibrium geometries and quantum-chemical properties of small organic molecules with up to nine heavy atoms. Includes energies, harmonic frequencies, dipoles, polarizabilities, and thermochemical properties, rather than off-equilibrium force trajectories.
   notes:
     Coverage: Counts the full 133,885-molecule archive. The [authors' README](https://springernature.figshare.com/articles/dataset/Readme_file_Data_description_for_Quantum_chemistry_structures_and_properties_of_134_kilo_molecules_/1057641) flags 3,054 structures failing a geometry-to-SMILES consistency check; filtered benchmark variants should state their exclusions.
+
+ASE-G2-GroupCV:
+  name: ASE G2 GroupCV multi-atom subset
+  version: ASE3.29.0-GroupCV-v1
+  url: https://github.com/nkwork9999/orb-g2-groupcv
+  download_url: https://github.com/nkwork9999/orb-g2-groupcv/releases/download/v0.1.0/ase-g2-groupcv-data.tar.gz
+  doi: https://doi.org/10.1063/1.477422
+  n_structures: 102
+  access: public
+  role: training
+  static: true
+  date_created: '2026-11-16'
+  license: LGPL-3.0
+  method: experiment
+  description: |
+    Fixed ASE3.29.0 merged G2/97 subset with102 multi-atom molecular configurations.
+    Targets are experimental atomization energies extrapolated using calculated ZPE/thermal
+    corrections, converted kcal/mol to eV. Coordinates are the source molecular geometries.
+    Eligibility uses3-14 atoms, Z<=17 and zero supplied initial magnetic moments; no target/error filtering.
+  notes:
+    Split: 83 training molecules in68 groups;19 held-out molecules in18 disjoint formula groups. All isomers stay together. Metadata-only SHA256 split is fixed before target export.
+    Source: ASE g2.py/g2_1.py/g2_2.py hashes and every structure are recorded. The documented target formula uses merged g2.data, retaining extended G2 records.
+    Licensing: ASE is LGPL-2.1-or-later; this redistribution elects its LGPL-3.0 option and retains the original notice. Literature and reference conventions are attributed in the archive.
+    Scope: No one/two-atom systems are used in this fine-tuning subset. These are not PBE force/stress references. Upstream ORB pretraining overlap has not been proven absent.
+  params:
+    source_version: ASE3.29.0
+    target_units: eV
+    target_definition: experimental atomization energy with ZPE/thermal extrapolation

@@ -52,7 +52,9 @@ def add_shard_args(
     parser.add_argument("--write-yaml", action="store_true", help=write_yaml_help)
     parser.add_argument("--shard-dir", help="Override the resumable shard directory")
     parser.add_argument(
-        "--device", choices=("cpu", "cuda"), help="Calculator device. default auto"
+        "--device",
+        choices=("cpu", "cuda", "mps"),
+        help="Calculator device. default auto",
     )
     parser.add_argument(
         "--n-shards",

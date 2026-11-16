@@ -112,6 +112,26 @@ def detect_runtime(calculator: object, *, requested_device: str) -> dict[str, st
     ``torch_probe`` labeled by the requested device (memory_peaks later requires
     measured VRAM to back a GPU label).
     """
+    if getattr(calculator, "mbd_backend", None) == "mlx":
+        # An explicit opt-in is needed: mixed adapters may keep Torch CPU master
+        # weights for geometric preprocessing while dense inference runs on Metal.
+        mx = sys.modules.get("mlx.core")
+        arrays = getattr(calculator, "mbd_mlx_arrays", ())
+        if mx is None or mx.default_device() != mx.gpu:
+            raise ValueError("MLX GPU runtime is not active")
+        if not arrays or any(not isinstance(array, mx.array) for array in arrays):
+            raise ValueError("MLX runtime requires actual weight arrays")
+        dtypes = {str(array.dtype).rsplit(".", 1)[-1] for array in arrays}
+        if len(dtypes) != 1 or not dtypes <= {"float32", "float16", "bfloat16"}:
+            raise ValueError("MLX weight dtypes must be uniform floating point")
+        if not (name := mx.device_info().get("device_name")):
+            raise ValueError("MLX Metal device reports no device_name")
+        return {
+            "backend": "mlx",
+            "device": "mps",
+            "dtype": dtypes.pop(),
+            "hardware": f"{name} (Metal)",
+        }
     if (torch_runtime := _torch_runtime(calculator)) is not None:
         return torch_runtime
     backend = next((name for name in ("jax", "tensorflow") if name in sys.modules), "")
@@ -153,6 +173,9 @@ def reset_gpu_peak_memory(runtime: Mapping[str, Any]) -> None:
     """Reset a torch CUDA run's peak-VRAM counter so memory_peaks() measures only
     work after this point (e.g. one rollout of a multi-system process).
     """
+    if runtime.get("backend") == "mlx":
+        sys.modules["mlx.core"].reset_peak_memory()
+        return
     if not _is_torch_cuda_run(runtime):
         return
     # broad except: a broken CUDA runtime (e.g. driver mismatch mid-job) raises
@@ -185,6 +208,13 @@ def memory_peaks(runtime: Mapping[str, Any], *, succeeded: bool) -> dict[str, fl
         mem["max_rss_gb"] = round(max_rss / 1e9, 3)
     except ImportError:
         pass
+    if runtime.get("backend") == "mlx":
+        peak = sys.modules["mlx.core"].get_peak_memory()
+        if succeeded and peak <= 0:
+            raise ValueError("Successful MLX run allocated no measured GPU memory")
+        if peak > 0:
+            mem["max_gpu_mem_gb"] = round(peak / 1e9, 3)
+        return mem
     if not _is_torch_cuda_run(runtime):
         return mem
     # broad except like reset_gpu_peak_memory: memory introspection failing (broken

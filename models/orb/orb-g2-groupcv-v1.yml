@@ -1,0 +1,153 @@
+model_name: ORB-G2 GroupCV v1
+model_key: orb-g2-groupcv-v1
+model_version: 0.1.3
+dates:
+  benchmark_added: '2026-11-16'
+  paper_published:
+lifecycle: pending
+authors:
+- name: nk (Enuke)
+  github: https://github.com/nkwork9999
+repo: https://github.com/nkwork9999/orb-g2-groupcv
+doi:
+paper:
+pr_url:
+checkpoint_url: https://github.com/nkwork9999/orb-g2-groupcv/releases/download/v0.1.3/orb-g2-groupcv-v1.json
+license:
+  code: BSD-3-Clause
+  code_url: https://github.com/nkwork9999/orb-g2-groupcv/blob/main/LICENSE
+  checkpoint: BSD-3-Clause
+  checkpoint_url: https://github.com/nkwork9999/orb-g2-groupcv/blob/main/LICENSE
+environment:
+  dependencies:
+  - orb-g2-cv[metal] @ git+https://github.com/nkwork9999/orb-g2-groupcv.git@7f80d510bfe454ef5f7a744880ca447cda690437
+  - orb-models==0.5.4
+  - torch==2.14.1
+  - dm-tree==0.1.10
+  - cached-path==1.8.0
+  - filelock==4.2.10
+  python_version: '3.14'
+  project: models/orb/orb-g2-groupcv-v1
+openness: OSOD
+architecture_types: [transformer, bayesian_optimization]
+train_task: S2E
+test_task: IS2E
+targets: EFS_G
+training_sets: [MPtrj, Alex, OMat24, ASE-G2-GroupCV]
+model_params: 25510618
+fine_tune: true
+test_set_informed: [diatomics]
+hyperparams:
+  evaluation:
+    device: mps
+    dtype: float32
+    max_force: 0.02
+    max_steps: 500
+    ase_optimizer: FIRE
+    cell_filter: FrechetCellFilter
+    kappa:
+      protocol: phonondb-v1
+      displacement_distance: 0.03
+      is_plusminus: true
+  architecture:
+    graph_construction_radius: 6.0
+  training:
+    frozen_backbone: ORB-v3 conservative inf MPA
+    train_molecules: 83
+    train_formula_groups: 68
+    holdout_molecules: 19
+    holdout_formula_groups: 18
+    residual_coefficients: 36
+    correction_cutoff_angstrom: 5.0
+    inner_group_folds: 5
+    bo_trials: 16
+    initial_sobol_trials: 8
+    seed: 42
+notes:
+  description: |
+    Frozen ORB-v3 conservative MPA with a 36-coefficient smooth pair-energy calibration.
+    Multi-atom and periodic energy/force/stress inference is supported. It is trained
+    on multi-atom molecular atomization energies, not isolated diatomics.
+  protocol: |
+    A metadata-only SHA256 formula-group split (seed20261116) reserves19 molecules/18 groups.
+    Training has83 molecules/68 groups; all one/two-atom species are excluded. GP-EI selects
+    ridge, width and fixed-grid shrinkage using training-only5-fold formula-group CV.
+    Each fold fits scales/coefficients on its training groups only; outer rows are rejected.
+    The final candidate is frozen before the first held-out target export.
+  reference: |
+    ASE3.29.0 G2 experimental atomization energies extrapolated using calculated ZPE/thermal
+    corrections, converted kcal/mol to eV. Source geometries/reference conventions are preserved.
+    These are not PBE force labels; no force or stress targets are fitted.
+  disclosure: |
+    Earlier PET/ORB Diatomics scores and public task rankings influenced this backbone/redesign,
+    so diatomics is explicitly test_set_informed. Freezing/refitting does not erase historical
+    exposure. Official homonuclear labels are not used for fit/search. G2 holdout labels and
+    official scores never reselect this checkpoint. Upstream pretraining overlap is not proven absent.
+    Historical sources: https://github.com/janosh/matbench-discovery/pull/416 and
+    https://github.com/nkwork9999/orb-g2-groupcv/releases/tag/v0.1.2 .
+    Prior selection-review lesson: https://github.com/materialsproject/matbench/pull/363#issuecomment-6379417619 .
+  heldout_results: |
+    Fixed held-out formula-macro atomization MAE: unchanged ORB0.493296 eV, calibrated0.217541 eV.
+    15/18 groups improved and3 worsened. Small molecular holdout only; no demonstrated bulk,
+    force or MD accuracy improvement. Negative results and an equal-budget Sobol control are retained.
+  scope: |
+    Correction acts on pairs with both Z in1..17; other pairs retain ORB. The periodic pair
+    sum has conservative analytic forces/stress and no isolated-pair atom-count restriction.
+    The other official tasks have not been benchmarked; they are not physically inapplicable.
+  upstream: |
+    ORB code/checkpoint remain Apache-2.0; credit and original training provenance:
+    https://github.com/orbital-materials/orb-models and the existing orb-v3.yml entry.
+    The25,510,582 frozen base parameters plus36 correction coefficients total25,510,618.
+    Upstream weights are separately downloaded and SHA256 verified.
+  runtime: |
+    Deployment0.1.3 keeps all learned coefficients/base weights unchanged. MLX0.32.4
+    runs the original geometry, ZBL and dense encoder/attention/energy head on Apple GPU.
+    CPU topology and original normalization/indexing conventions remain. Derivatives
+    of raw energy with respect to directed edge vectors give conservative forces/stress.
+    All183 training/synthetic cases passed atol1e-4+rtol1e-5. Runtime selection uses
+    only training geometries, not held-out/official errors; all failed trials remain.
+    Four CPU threads remain after a fixed-block1/2/4-thread study. Load includes
+    synthetic warm-up/compilation; full sweep reports measured cost, not estimates.
+    MacOS14-compatible official wheels pin the same MLX version with smaller footprint.
+    CPU inference remains available for reproduction; reported evaluation uses Metal.
+  environment: |
+    Native Python3.14 uses a documented uv project override: dm-tree0.1.10 replaces upstream
+    dm-tree0.1.8 for wheels, and filelock4.2.10 satisfies the benchmark core despite cached-path<4.
+    Compatibility-only overrides are checked by real inference/reproduction; no base weights change.
+metrics:
+  diatomics:
+    pred_file:
+      name: models/orb/orb-g2-groupcv-v1/runtime-v013-isolated/2026-11-16-diatomics.json.gz
+      url: https://github.com/nkwork9999/orb-g2-groupcv/releases/download/v0.1.3/2026-11-16-diatomics.json.gz
+      size: 522041
+      md5: 653dacbeaf280e81e6ba014853fc7e7c
+    cost: {source: runner, hardware: Apple M1 (Metal), device: mps, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 106.5, load_time_sec: 16.81, max_rss_gb: 0.927, max_gpu_mem_gb: 0.098}
+    pbe_wall_dist_mae: 0.1149
+    pbe_energy_mae: 0.5809
+    pbe_bond_length_error: 0.2271
+    pbe_well_depth_error: 0.4042
+    pbe_vib_freq_error: 35.42
+    tortuosity: 1.001
+    energy_diff_flips: 1.31
+    energy_jump: 0.1145
+    force_flips: 1.368
+    force_total_variation: 210.3
+    force_jump: 25.46
+    pbe_force_mae: 1.292
+    pbe_vib_freq_coverage:
+      n_valid: 81
+      n_eligible: 81
+      failed_elements: []
+      missing_elements: []
+  discovery:
+    status: not_available
+    reason: General E/F/stress inference is supported but this full official task has not been evaluated.
+  geo_opt:
+    status: not_available
+    reason: General E/F/stress inference is supported but this full official task has not been evaluated.
+  phonons:
+    status: not_available
+    reason: General E/F/stress inference is supported but this full official task has not been evaluated.
+  md:
+    status: not_available
+    reason: General E/F/stress inference is supported but this full official task has not been evaluated.
