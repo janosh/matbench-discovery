@@ -1305,7 +1305,7 @@ ASE-G2-GroupCV:
   version: ASE3.29.0-GroupCV-v1
   url: https://github.com/nkwork9999/orb-g2-groupcv
   download_url: https://github.com/nkwork9999/orb-g2-groupcv/releases/download/v0.1.0/ase-g2-groupcv-data.tar.gz
-  doi: https://doi.org/10.1063/1.477422
+  doi: https://doi.org/10.1063/1.473182
   n_structures: 102
   access: public
   role: training
@@ -1320,6 +1320,7 @@ ASE-G2-GroupCV:
     Eligibility uses3-14 atoms, Z<=17 and zero supplied initial magnetic moments; no target/error filtering.
   notes:
     Split: 83 training molecules in68 groups;19 held-out molecules in18 disjoint formula groups. All isomers stay together. Metadata-only SHA256 split is fixed before target export.
+    References: G2/97 thermochemistry (10.1063/1.473182); ASE also cites the G3 paper (10.1063/1.477422) for set details.
     Source: ASE g2.py/g2_1.py/g2_2.py hashes and every structure are recorded. The documented target formula uses merged g2.data, retaining extended G2 records.
     Licensing: ASE is LGPL-2.1-or-later; this redistribution elects its LGPL-3.0 option and retains the original notice. Literature and reference conventions are attributed in the archive.
     Scope: No one/two-atom systems are used in this fine-tuning subset. These are not PBE force/stress references. Upstream ORB pretraining overlap has not been proven absent.

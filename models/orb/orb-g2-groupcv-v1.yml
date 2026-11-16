@@ -28,7 +28,7 @@ environment:
   - filelock==4.2.10
   python_version: '3.14'
   project: models/orb/orb-g2-groupcv-v1
-openness: OSOD
+openness: OSCD
 architecture_types: [transformer, bayesian_optimization]
 train_task: S2E
 test_task: IS2E
@@ -99,6 +99,8 @@ notes:
     https://github.com/orbital-materials/orb-models and the existing orb-v3.yml entry.
     The25,510,582 frozen base parameters plus36 correction coefficients total25,510,618.
     Upstream weights are separately downloaded and SHA256 verified.
+    The frozen backbone retains upstream ORB-v3 OSCD classification; the additional
+    G2 calibration data and code are fully public. Translated e3nn equations retain MIT notices.
   runtime: |
     Deployment0.1.3 keeps all learned coefficients/base weights unchanged. MLX0.32.4
     runs the original geometry, ZBL and dense encoder/attention/energy head on Apple GPU.
@@ -117,7 +119,7 @@ notes:
 metrics:
   diatomics:
     pred_file:
-      name: models/orb/orb-g2-groupcv-v1/runtime-v013-isolated/2026-11-16-diatomics.json.gz
+      name: models/orb/orb-g2-groupcv-v1/2026-11-16-diatomics.json.gz
       url: https://github.com/nkwork9999/orb-g2-groupcv/releases/download/v0.1.3/2026-11-16-diatomics.json.gz
       size: 522041
       md5: 653dacbeaf280e81e6ba014853fc7e7c
