@@ -26,6 +26,13 @@ forces = atoms.get_forces()
 stress = atoms.get_stress()
 ```
 
+The pinned RUNE release `7f2a36c643bb79149b4714c04263002b7aea5f92` preserves the
+dtype stored in the Möbius checkpoint. The public `model.pt` contains `float32`
+weights, so this calculator runs in `float32`. This release does not expose a
+Möbius `dtype` override; precision is checkpoint-defined. The historical
+`float32` cost label records the actual inference precision and is not a
+separate loader switch.
+
 The exact checkpoint is linked by `models/mobius/mobius-oam.yml`. The RUNE code
 is released under [LGPL-3.0](https://github.com/Jonsnow-willow/rune/blob/main/LICENSE),
 and the inference checkpoint is released under
