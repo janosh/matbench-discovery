@@ -82,9 +82,12 @@ notes:
   reproducibility: |
     The public model.pt is state-identical to the historical epoch-0001
     checkpoint. The submission pins RUNE to public release commit
-    7f2a36c643bb79149b4714c04263002b7aea5f92. The harmonic sidecar is omitted
-    because it uses schema v2 while current main requires schema v3;
-    save_forces=false means no force-set artifact is required.
+    7f2a36c643bb79149b4714c04263002b7aea5f92. RUNE preserves the precision
+    stored in the Möbius checkpoint and this model.pt contains float32 weights;
+    the pinned release does not expose a Möbius dtype override. The historical
+    cost dtype records that actual float32 inference was used. The harmonic
+    sidecar is omitted because it uses schema v2 while current main requires
+    schema v3; save_forces=false means no force-set artifact is required.
   checkpoint_sha256: 9d05e3cbad32ef410ab68d9853de5f0a50877ba807e778e0ab570e67e68d72cd
   inference_weight_sha256: 971e74ddfea4026d5507bd5158c825ec4ad07fb58d287670cd3d6ecd5bff3712
 
