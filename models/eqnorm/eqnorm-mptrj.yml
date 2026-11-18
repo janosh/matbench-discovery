@@ -250,9 +250,9 @@ metrics:
           md5: f32409f5867594cf8a4516c6c2111422
         force_file:
           name: models/eqnorm/eqnorm-mptrj/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71263147
-          size: 2169045
-          md5: d9ebfd2be99d7817c05c265437d24a68
+          url: https://figshare.com/files/71275456
+          size: 3889073
+          md5: 743c3544ab4bd647b837df60060c79d5
         run_info_file:
           name: models/eqnorm/eqnorm-mptrj/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334277

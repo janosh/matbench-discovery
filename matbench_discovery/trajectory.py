@@ -1,16 +1,14 @@
 """Dense-array MD trajectory container with HDF5 I/O.
 
-Decouples the MD benchmark from ASE/extxyz: reference trajectories of tens of
-thousands of frames load from a chunked, compressed HDF5 file orders of magnitude
-faster than the minutes-to-hours ASE's pure-Python extxyz parser needs to build one
-``Atoms`` object per frame (measured ~4000x on a 625-frame reference). A full read
-still returns the arrays in memory; strided/partial reads only touch the requested
-chunks. The metric functions consume this columnar representation directly; ASE is
-only used for the MD rollout (integrator + calculators) and interop (``to_ase`` /
-``from_ase``).
+Reference trajectories of tens of thousands of frames load from a chunked, compressed
+HDF5 file orders of magnitude faster than parsing extxyz into one object per frame
+(measured ~4000x on a 625-frame reference with ASE's reader). A full read still returns
+the arrays in memory; strided/partial reads only touch the requested chunks. The metric
+functions consume this columnar representation directly; per-frame
+``matscikit.io.Frame`` objects are only built for MD rollouts and interop
+(``to_frames`` / ``from_frames``).
 """
 
-import os
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -20,7 +18,8 @@ import numpy as np
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
-    from ase import Atoms
+    from matscikit import Structure
+    from matscikit.io import Frame
 
 # bump when the on-disk layout changes incompatibly; readers fail closed on mismatch
 TRAJECTORY_SCHEMA = 1
@@ -105,76 +104,74 @@ class Trajectory:
         }
         return Trajectory(atomic_numbers=self.atomic_numbers, pbc=self.pbc, **sliced)
 
-    def frame_as_atoms(self, idx: int) -> Atoms:
-        """The idx-th frame as an ASE ``Atoms`` (with results attached if present)."""
-        return self[idx].to_ase()[0]
+    def frame_as_structure(self, idx: int) -> Structure:
+        """The idx-th frame as a ``matscikit.Structure`` (md_step in ``info``)."""
+        return self[idx].to_frames()[0].structure
 
-    def to_ase(self) -> list[Atoms]:
-        """Convert all frames to ASE ``Atoms`` with a SinglePointCalculator carrying
-        energy/forces/stress when available. Used for interop and to feed calculators
+    def to_frames(self) -> list[Frame]:
+        """Convert all frames to ``matscikit.io.Frame`` objects carrying
+        energy/forces/stress when available. Used for interop and to feed models
         (energy/force RMSE); not on the hot read path.
         """
-        from ase import Atoms
-        from ase.calculators.singlepoint import SinglePointCalculator
+        from matscikit import Structure
+        from matscikit.elements import CHEMICAL_SYMBOLS
+        from matscikit.io import Frame
+        from matscikit.model import voigt_to_matrix
 
-        out: list[Atoms] = []
+        symbols = [CHEMICAL_SYMBOLS[number] for number in self.atomic_numbers]
+        out: list[Frame] = []
         for idx in range(self.n_frames):
-            atoms = Atoms(
-                numbers=self.atomic_numbers,
-                positions=self.positions[idx],
-                cell=self.cell[idx],
-                pbc=self.pbc,
+            info = {} if self.md_step is None else {"md_step": int(self.md_step[idx])}
+            structure = Structure(
+                self.cell[idx],
+                symbols,
+                self.positions[idx],
+                pbc=tuple(bool(flag) for flag in self.pbc),
+                info=info,
             )
-            results = {
-                key: arr[idx]
-                for key in ("energy", "forces", "stress")
-                if (arr := getattr(self, key)) is not None
-            }
-            if results:
-                atoms.calc = SinglePointCalculator(atoms, **results)
-            if self.md_step is not None:
-                atoms.info["md_step"] = int(self.md_step[idx])
-            out.append(atoms)
+            out.append(
+                Frame(
+                    structure,
+                    energy=None if self.energy is None else float(self.energy[idx]),
+                    forces=None if self.forces is None else self.forces[idx],
+                    stress=None
+                    if self.stress is None
+                    else voigt_to_matrix(self.stress[idx]),
+                )
+            )
         return out
 
     @classmethod
-    def from_ase(cls, frames: Sequence[Atoms]) -> Trajectory:
-        """Build a Trajectory from ASE frames, extracting energy/forces/stress/md_step
-        where present (e.g. from a SinglePointCalculator on extxyz frames).
+    def from_frames(cls, frames: Sequence[Frame]) -> Trajectory:
+        """Build a Trajectory from frames, extracting energy/forces/stress/md_step
+        where present (e.g. from MD rollouts; files go through ``from_extxyz``).
         """
-        from ase.calculators.calculator import PropertyNotImplementedError
+        from matscikit.model import matrix_to_voigt
 
         if len(frames) == 0:
             raise ValueError("Cannot build a Trajectory from zero frames")
-        first = frames[0]
+        first = frames[0].structure
         n_atoms = len(first)
-        for idx, atoms in enumerate(frames):
-            if len(atoms) != n_atoms:
+        for idx, frame in enumerate(frames):
+            structure = frame.structure
+            if len(structure) != n_atoms:
                 raise ValueError(
-                    f"Inconsistent atom counts: frame {idx} has {len(atoms)}, "
+                    f"Inconsistent atom counts: frame {idx} has {len(structure)}, "
                     f"expected {n_atoms}"
                 )
-            if not np.array_equal(atoms.numbers, first.numbers):
+            if not np.array_equal(structure.numbers, first.numbers):
                 raise ValueError(f"frame {idx} chemical species differ from frame 0")
-            if not np.array_equal(atoms.pbc, first.pbc):
+            if structure.pbc != first.pbc:
                 raise ValueError(f"frame {idx} pbc differs from frame 0")
-        positions = np.array([atoms.positions for atoms in frames])
-        cell = np.array([atoms.cell.array for atoms in frames])
+        positions = np.array([frame.structure.positions for frame in frames])
+        cell = np.array([frame.structure.lattice for frame in frames])
 
-        def stack(getter: Callable[[Atoms], np.ndarray]) -> np.ndarray | None:
+        def stack(getter: Callable[[Frame], object]) -> np.ndarray | None:
             """Stack a per-frame quantity. Returns None if no frame has it; raises on
             mixed availability (so a partially-labeled trajectory fails loud instead
-            of silently dropping the field) and on genuine calculator backend errors.
+            of silently dropping the field).
             """
-            values: list[np.ndarray | None] = []
-            for atoms in frames:
-                if atoms.calc is None:
-                    values.append(None)
-                    continue
-                try:
-                    values.append(getter(atoms))
-                except PropertyNotImplementedError:
-                    values.append(None)  # property simply not stored on this frame
+            values = [getter(frame) for frame in frames]
             present = [value is not None for value in values]
             if not any(present):
                 return None
@@ -185,7 +182,7 @@ class Trajectory:
                 )
             return np.array(values)
 
-        md_steps = [atoms.info.get("md_step") for atoms in frames]
+        md_steps = [frame.structure.info.get("md_step") for frame in frames]
         present = [step is not None for step in md_steps]
         # match stack(): all present -> keep, none present -> drop, partial -> fail loud
         # rather than silently dropping the field
@@ -193,177 +190,39 @@ class Trajectory:
             frame_idx = present.index(False)
             raise ValueError(f"{frame_idx=} missing md_step that other frames have")
         return cls(
-            atomic_numbers=first.numbers.copy(),
+            atomic_numbers=np.asarray(first.numbers, dtype=int),
             positions=positions,
             cell=cell,
             pbc=np.asarray(first.pbc, dtype=bool),
-            energy=stack(lambda atoms: atoms.get_potential_energy()),
-            forces=stack(lambda atoms: atoms.get_forces()),
-            stress=stack(lambda atoms: atoms.get_stress(voigt=True)),
-            md_step=np.array(md_steps) if all(present) else None,
+            energy=stack(lambda frame: frame.energy),
+            forces=stack(lambda frame: frame.forces),
+            stress=stack(
+                lambda frame: (
+                    None if frame.stress is None else matrix_to_voigt(frame.stress)
+                )
+            ),
+            md_step=np.array(md_steps, dtype=int) if all(present) else None,
         )
 
     @classmethod
     def from_extxyz(cls, path: str) -> Trajectory:
-        """Bulk-parse a (optionally xz/gz/bz2-compressed) extxyz trajectory into stacked
-        arrays without building one ASE ``Atoms`` per frame.
-
-        ASE's pure-Python extxyz reader rebuilds an ``Atoms`` (and re-parses the header)
-        for every frame, which is minutes-to-hours for the 10k-70k-frame DynaMat
-        references (~0.5 frames/s measured). This reads the file once, slices the
-        constant-stride atom blocks with numpy, and parses the numeric columns with
-        pandas' C engine, reproducing ASE's cell/stress/energy conventions exactly
-        (verified against ``from_ase(read_trajectory(...))`` in tests). It assumes a
-        constant atom count and column layout across frames (true for these NVT
-        references); a varying atom count fails loud on the frame-stride check.
+        """Read a (optionally .gz/.xz/.bz2) one-system extxyz trajectory with
+        matscikit's parallel Rust reader straight into stacked arrays (positions exactly
+        as written). Frames that differ in atoms, pbc or columns, or that only partly
+        carry energy, forces, stress or md_step, raise ValueError.
         """
-        import bz2
-        import gzip
-        import lzma
-        import re
-        from io import StringIO
+        from matscikit.io import read_extxyz_arrays
+        from matscikit.model import matrix_to_voigt
 
-        import pandas as pd
-        from ase.symbols import symbols2numbers
-
-        openers = {".xz": lzma.open, ".gz": gzip.open, ".bz2": bz2.open}
-        opener = openers.get(os.path.splitext(path)[1], open)
-        with opener(path, mode="rt") as file:
-            lines = file.read().split("\n")
-        while lines and not lines[-1].strip():  # tolerate trailing blank lines
-            lines.pop()
-        if not lines:
-            raise ValueError(f"empty extxyz file {path!r}")
-
-        n_atoms = int(lines[0].split()[0])
-        stride = n_atoms + 2  # count line + comment line + n_atoms atom lines
-        n_frames, remainder = divmod(len(lines), stride)
-        if remainder or n_frames == 0:
-            raise ValueError(
-                f"{path!r}: {len(lines)} lines is not a multiple of frame stride "
-                f"{stride} (n_atoms={n_atoms}); from_extxyz needs a constant atom count"
-            )
-        grid = np.asarray(lines, dtype=object).reshape(n_frames, stride)
-        comments = grid[:, 1]
-        atom_lines = grid[:, 2:].reshape(-1)  # frame-major (n_frames * n_atoms,)
-
-        # frame-invariant metadata is parsed from frame 0 only (count line, Properties
-        # header, species, pbc); validate every frame matches so differing later frames
-        # can't silently mix systems into the stacked arrays
-        counts = grid[:, 0].astype(int)
-        if (count_differs := counts != n_atoms).any():
-            bad = int(np.argmax(count_differs))
-            raise ValueError(
-                f"{path!r}: frame {bad} count line says {counts[bad]} atoms != "
-                f"{n_atoms} (frame 0)"
-            )
-
-        def uniform_comment(pattern: str, label: str, default: str) -> str:
-            """Frame 0's `pattern` capture, raising if any frame differs."""
-            values = [
-                match.group(1) if (match := re.search(pattern, comment)) else default
-                for comment in comments
-            ]
-            for idx, value in enumerate(values):
-                if value != values[0]:
-                    raise ValueError(
-                        f"{path!r}: frame {idx} {label} differs from frame 0"
-                    )
-            return values[0]
-
-        # column layout from the Properties header (name:type:count triples)
-        properties = uniform_comment(r"Properties=(\S+)", "Properties header", "")
-        if not properties:
-            raise ValueError(f"{path!r}: first comment line has no Properties=...")
-        tokens = properties.split(":")
-        col_start: dict[str, int] = {}
-        col = 0
-        for name, count in zip(tokens[::3], tokens[2::3], strict=True):
-            col_start[name] = col
-            col += int(count)
-        for required in ("species", "pos"):
-            if required not in col_start:
-                raise ValueError(f"{path!r}: Properties is missing {required!r}")
-
-        # bulk-parse every atom block in one C-engine call (\s+ skips leading space)
-        table = pd.read_csv(
-            StringIO("\n".join(atom_lines.tolist())),
-            sep=r"\s+",
-            header=None,
-            names=range(col),
-        )
-
-        def grab(start: int) -> np.ndarray:
-            """The 3 columns at ``start`` as (n_frames, n_atoms, 3) float."""
-            block = table.iloc[:, start : start + 3].to_numpy(dtype=float)
-            return block.reshape(n_frames, n_atoms, 3)
-
-        positions = grab(col_start["pos"])
-        forces = grab(col_start["forces"]) if "forces" in col_start else None
-        species_col = table.iloc[:, col_start["species"]].to_numpy(dtype=str)
-        species_all = species_col.reshape(n_frames, -1)
-        if (species_differs := (species_all != species_all[0]).any(axis=1)).any():
-            bad = int(np.argmax(species_differs))
-            raise ValueError(f"{path!r}: frame {bad} species differ from frame 0")
-        species = species_all[0]
-        atomic_numbers = np.asarray(symbols2numbers(list(species)))
-
-        # per-frame floats parsed from the comment lines
-        def comment_field(pattern: str, width: int) -> np.ndarray | None:
-            """Flat (n_frames * width,) floats from a per-frame comment field, or None
-            if no frame carries it. Mixed availability raises (matching from_ase).
-            """
-            rgx = re.compile(pattern)
-            found = [
-                match.group(1) if (match := rgx.search(comment)) else None
-                for comment in comments
-            ]
-            n_missing = found.count(None)
-            if n_missing == n_frames:
-                return None
-            if n_missing:
-                raise ValueError(
-                    f"{path!r}: frame {found.index(None)} is missing a comment "
-                    "field that other frames provide"
-                )
-            flat = np.fromstring(
-                " ".join(value for value in found if value is not None), sep=" "
-            )
-            if flat.size != n_frames * width:
-                raise ValueError(
-                    f"{path!r}: expected {n_frames * width} values for {pattern!r}, "
-                    f"got {flat.size}"
-                )
-            return flat
-
-        lattices = comment_field(r'Lattice="([^"]*)"', 9)
-        if lattices is None:
-            raise ValueError(f"{path!r}: every frame must carry a Lattice")
-        cell = lattices.reshape(n_frames, 3, 3)  # 9 row-major floats == ASE cell
-
-        # (?<!\w): only a bare energy= key, never *_energy= (free_/kinetic_/total_...)
-        energy = comment_field(r"(?<!\w)energy=(\S+)", 1)  # width 1 -> (n_frames,)
-
-        stress = comment_field(r'\bstress="([^"]*)"', 9)
-        if stress is not None:
-            # ASE Fortran-reshapes the 9-vec, then Voigt-orders [xx,yy,zz,yz,xz,xy]
-            stress = stress.reshape(n_frames, 9)[:, [0, 4, 8, 7, 6, 3]]
-
-        steps = comment_field(r"\bmd_step=(\S+)", 1)
-        md_step = steps.astype(int) if steps is not None else None
-
-        pbc_str = uniform_comment(r'pbc="([^"]*)"', "pbc", "T T T")
-        pbc = np.array([tok.lower().startswith("t") for tok in pbc_str.split()])
-
+        arrays = read_extxyz_arrays(path)
+        stress = arrays["stress"]
+        fields = ("pbc", "positions", "cell", "energy", "forces")
         return cls(
-            atomic_numbers=atomic_numbers,
-            positions=positions,
-            cell=cell,
-            pbc=pbc,
-            energy=energy,
-            forces=forces,
-            stress=stress,
-            md_step=md_step,
+            # matscikit reads uint8 atomic numbers; keep the int64 of the other readers
+            atomic_numbers=np.asarray(arrays["atomic_numbers"], dtype=int),
+            **{name: arrays[name] for name in fields},
+            md_step=arrays["md_step"],
+            stress=None if stress is None else matrix_to_voigt(stress),
         )
 
     def write_to_h5_group(self, group: h5py.Group) -> None:

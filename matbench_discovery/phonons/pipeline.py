@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import copy
 import glob
 import gzip
 import hashlib
@@ -24,8 +23,12 @@ from filelock import FileLock
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, atomic_output_path, file_digest
-from matbench_discovery.ase_relax import canonical_filter_name, canonical_optimizer_name
+from matbench_discovery import (
+    MATSCIKIT_EXTENSION,
+    ROOT,
+    atomic_output_path,
+    file_digest,
+)
 from matbench_discovery.enums import DataFiles, Model
 from matbench_discovery.hpc import (
     LOAD_CHARGED,
@@ -40,10 +43,15 @@ from matbench_discovery.hpc import (
 from matbench_discovery.phonons import check_imaginary_freqs, force_sets
 from matbench_discovery.phonons.adapters import StandardKappaAdapter, get_kappa_adapter
 from matbench_discovery.phonons.schema import normalize_kappa_result
+from matbench_discovery.relaxation import (
+    canonical_filter_name,
+    canonical_optimizer_name,
+)
 
 if TYPE_CHECKING:
-    from ase import Atoms
-    from ase.calculators.calculator import Calculator
+    from matscikit import Structure
+    from matscikit.model import Model as ForceModel
+
 
 # v3: harmonic analysis failures are separate from conductivity failures
 KAPPA_RECORD_SCHEMA_VERSION = 3
@@ -124,6 +132,10 @@ class KappaSettings:
                 "max_atoms_per_batch must be a positive integer or null, got "
                 f"{self.max_atoms_per_batch}"
             )
+        if self.max_atoms_per_batch is not None and self.batch_size != 1:
+            raise ValueError(
+                "batch_size and max_atoms_per_batch are mutually exclusive"
+            )
         if not isinstance(self.ase_optimizer, str):
             raise TypeError("ase_optimizer must be a string")
         if self.ase_filter is not None and not isinstance(self.ase_filter, str):
@@ -164,19 +176,6 @@ class KappaSettings:
             self, "ase_optimizer", canonical_optimizer_name(self.ase_optimizer)
         )
         object.__setattr__(self, "ase_filter", filter_name)
-
-    def validate_for_adapter(self, adapter_name: str) -> None:
-        """Reject execution options ignored by the selected adapter."""
-        if self.batch_size != 1 and adapter_name not in {"pet", "equflash"}:
-            raise ValueError(f"batch_size is unsupported by {adapter_name}")
-        if self.max_atoms_per_batch is None:
-            return
-        if adapter_name != "equflash":
-            raise ValueError(f"max_atoms_per_batch is unsupported by {adapter_name}")
-        if self.batch_size != 1:
-            raise ValueError(
-                "batch_size and max_atoms_per_batch are mutually exclusive"
-            )
 
     @classmethod
     def from_mapping(cls, data: Mapping[str, Any]) -> KappaSettings:
@@ -294,7 +293,6 @@ class KappaRunManifest:
             raise ValueError("Kappa manifest material_id_hash is invalid")
         if self.settings_hash != self.settings.digest:
             raise ValueError("Kappa manifest settings_hash is invalid")
-        self.settings.validate_for_adapter(self.adapter_name)
         if self.dtype not in {"float64", "float32", "bfloat16", "float16", None}:
             raise ValueError(f"Kappa manifest has invalid dtype {self.dtype!r}")
         if self.device not in {"cpu", "cuda", "gpu", "mps"}:  # gpu: JAX/TensorFlow
@@ -416,11 +414,11 @@ def kappa_source_paths(adapter: StandardKappaAdapter, model_key: str) -> set[str
     leaves the digest unmoved across an edit, so a resume keeps stale outputs written
     by the previous code version.
     """
-    from matbench_discovery import ase_relax, calculators, hpc, phonons
+    from matbench_discovery import calculators, hpc, phonons, relaxation
     from matbench_discovery.phonons import harmonic, schema, thermal_conductivity
 
     source_paths = {
-        os.path.realpath(ase_relax.__file__),
+        os.path.realpath(relaxation.__file__),
         os.path.realpath(__file__),
         os.path.realpath(calculators.__file__),
         # harmonic is imported inside harmonic_phonons, so the adapter MRO loop below
@@ -433,6 +431,8 @@ def kappa_source_paths(adapter: StandardKappaAdapter, model_key: str) -> set[str
         os.path.realpath(schema.__file__),
         os.path.realpath(thermal_conductivity.__file__),
         os.path.realpath(f"{ROOT}/models/run_kappa.py"),
+        # the compiled numerics: matscikit.__version__ stays put across rebuilds
+        os.path.realpath(MATSCIKIT_EXTENSION),
     }
     if (calc_spec := calculators.CALCULATORS.get(model_key)) and calc_spec.project:
         source_paths.add(os.path.realpath(f"{ROOT}/{calc_spec.project}/pyproject.toml"))
@@ -461,13 +461,13 @@ def load_phonondb_atoms(
     *,
     dry_run: bool = False,
     dry_run_size: int = 1,
-) -> dict[str, Atoms]:
+) -> dict[str, Structure]:
     """Load the canonical 103 structures and optionally retain a smoke-test subset."""
-    from ase.io import read
+    from matscikit.io import read_extxyz
 
     path = dataset_path or DataFiles.phonondb_pbe_103_structures.path
-    atoms_list = read(path, format="extxyz", index=":")
-    atoms_by_id: dict[str, Atoms] = {}
+    atoms_list = [frame.structure for frame in read_extxyz(path)]
+    atoms_by_id: dict[str, Structure] = {}
     for atoms in atoms_list:
         material_id = material_id_from_atoms(atoms)
         if material_id in atoms_by_id:
@@ -493,7 +493,7 @@ def load_phonondb_atoms(
 def build_kappa_manifest(
     *,
     model_key: str,
-    atoms_by_id: Mapping[str, Atoms],
+    atoms_by_id: Mapping[str, Structure],
     dataset_path: str,
     settings: KappaSettings,
     adapter: StandardKappaAdapter,
@@ -598,8 +598,8 @@ def should_calculate_conductivity(
 
 def calculate_kappa_for_structure(
     *,
-    atoms: Atoms,
-    calculator: Calculator,
+    atoms: Structure,
+    model: ForceModel,
     settings: KappaSettings,
     adapter: StandardKappaAdapter,
     log_file: str | None = None,
@@ -607,11 +607,11 @@ def calculate_kappa_for_structure(
 ) -> KappaComputation:
     """Run the common relax → FC2 → gate → FC3 → conductivity flow."""
     material_id = material_id_from_atoms(atoms)
-    atoms = copy.deepcopy(atoms)
+    atoms = atoms.copy()
     formula = atoms.info.get("name")
     result: dict[str, Any] = {
         str(Key.mat_id): material_id,
-        str(Key.formula): str(formula) if formula else atoms.get_chemical_formula(),
+        str(Key.formula): str(formula) if formula else atoms.composition.formula,
         "errors": [],
         "error_traceback": [],
     }
@@ -620,7 +620,7 @@ def calculate_kappa_for_structure(
     error: str | None = None
     error_stage = "Relax"
     try:
-        relaxation = adapter.relax(atoms, calculator, settings, log_file=log_file)
+        relaxation = adapter.relax(atoms, model, settings, log_file=log_file)
         atoms = relaxation.atoms
         result |= {
             str(Key.init_spg_num): relaxation.initial_spg_num,
@@ -632,28 +632,22 @@ def calculate_kappa_for_structure(
             "redirected_to_symmetry": relaxation.redirected_to_symmetry,
         }
         error_stage = "ForceConstant"
-        phono3py = adapter.init_phono3py(atoms, settings)
-        phono3py, fc2_set, frequencies = adapter.calculate_fc2(
-            phono3py,
-            calculator,
-            settings,
-        )
+        calc = adapter.init_phonons(atoms, settings)
+        frequencies = adapter.calculate_fc2(calc, model, settings)
         has_imaginary_modes = check_imaginary_freqs(frequencies)
         result |= {
             str(Key.has_imag_ph_modes): has_imaginary_modes,
-            # the BZ grid repeats symmetry-equivalent surface q-points, which would bias
-            # the unweighted spectrum W1 of rows without conductivity (mode_weights is
-            # NaN there); grg2bzg selects each regular-grid point once (Gamma stays
-            # first), the uniform-weight equivalent of the weighted irreducible grid
-            # that conductivity rows overwrite this with
-            str(Key.ph_freqs): frequencies[phono3py.grid.grg2bzg],
+            # every regular-grid point once (Gamma first), the uniform-weight equivalent
+            # of the weighted irreducible grid that conductivity rows overwrite this
+            # with (mode_weights is NaN in rows without conductivity)
+            str(Key.ph_freqs): frequencies,
         }
         if settings.save_forces:
-            forces = force_sets.force_set_from_phono3py(phono3py, fc2_set)
+            forces = calc.phonons.force_set()
         # Harmonic analysis owns its failures: normalization treats result.errors as
         # conductivity failures, so placing a sidecar error there destroys valid kappa.
         try:
-            phonons = adapter.harmonic_phonons(phono3py, settings)
+            phonons = adapter.harmonic_phonons(calc, settings)
             result["phonon_errors"] = phonons["errors"]
         except Exception as exc:  # noqa: BLE001 - sidecar is optional, kappa is not
             result["phonon_errors"] = {
@@ -667,20 +661,16 @@ def calculate_kappa_for_structure(
             broken_symmetry=bool(result["broken_symmetry"]),
             settings=settings,
         ):
-            fc3_set = adapter.calculate_fc3(
-                phono3py,
-                calculator,
-                settings,
-                max_evaluations=max_fc3_evaluations,
+            adapter.calculate_fc3(
+                calc, model, settings, max_evaluations=max_fc3_evaluations
             )
-            if forces is not None:
-                forces = force_sets.add_fc3_forces(forces, phono3py, fc3_set)
-            phono3py.produce_fc3(symmetrize_fc3r=True)
+            if forces is not None:  # dry runs (capped FC3) never save forces
+                forces = calc.phonons.force_set()
             error_stage = "Conductivity"
             from matbench_discovery.phonons import thermal_conductivity as ltc
 
-            _phono3py, kappa_data, _conductivity = ltc.calculate_conductivity(
-                phono3py, temperatures=settings.temperatures
+            kappa_data = ltc.calculate_conductivity(
+                calc, temperatures=settings.temperatures
             )
             result.update(kappa_data)
         else:
@@ -715,9 +705,9 @@ def _write_sidecar(
 
 def run_kappa_shard(
     *,
-    calculator: Calculator,
+    model: ForceModel,
     model_key: str,
-    atoms_by_id: Mapping[str, Atoms],
+    atoms_by_id: Mapping[str, Structure],
     dataset_path: str,
     shard_dir: str,
     shard_index: int,
@@ -760,7 +750,7 @@ def run_kappa_shard(
 
     for sub_dir in (KAPPA_RECORD_DIR, *SIDECAR_DIRS.values()):
         os.makedirs(f"{shard_dir}/{sub_dir}", exist_ok=True)
-    calculator = adapter.prepare_calculator(calculator, settings)
+    model = adapter.prepare_model(model, settings)
     assigned_ids = manifest.assignments[shard_index]
     runtime = {**runtime, **_manifest_provenance(manifest)}
     labels_checked = False
@@ -803,7 +793,7 @@ def run_kappa_shard(
             start_time = time.perf_counter()
             computation = calculate_kappa_for_structure(
                 atoms=atoms_by_id[material_id],
-                calculator=calculator,
+                model=model,
                 settings=settings,
                 adapter=adapter,
                 log_file=(

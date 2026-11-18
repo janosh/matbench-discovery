@@ -3,7 +3,7 @@
 from collections.abc import Sequence
 
 import pandas as pd
-from pymatgen.core import Composition
+from matscikit import Composition
 from pymatviz.enums import Key
 
 from matbench_discovery import ROOT

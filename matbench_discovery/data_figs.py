@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING, Any, cast
 import numpy as np
 import pandas as pd
 import pymatviz as pmv
-from pymatgen.core import Composition
+from matscikit import Composition
+from matscikit.elements import ATOMIC_NUMBERS
 from pymatviz.enums import ElemCountMode, Key
 from pymatviz.utils import spg_to_crystal_sys
 
@@ -17,7 +18,7 @@ from matbench_discovery.enums import MbdKey
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
-    from pymatgen.analysis.phase_diagram import Entry
+    from matbench_discovery.energy import Entry
 
 SERIES_COLORS = ("#636EFA", "#EF553B", "#00CC96")
 
@@ -59,10 +60,12 @@ def build_mp_elemental_ref_energies(
     """Build elemental reference energies ordered by atomic number."""
     entries = sorted(
         elemental_ref_entries.values(),
-        key=lambda entry: entry.composition.elements[0].number,
+        key=lambda entry: ATOMIC_NUMBERS[entry.composition.elements[0]],
     )
     return {
-        "x": [float(entry.composition.elements[0].number) for entry in entries],
+        "x": [
+            float(ATOMIC_NUMBERS[entry.composition.elements[0]]) for entry in entries
+        ],
         "y": [round(float(entry.energy_per_atom), 2) for entry in entries],
     }
 
@@ -177,7 +180,7 @@ def build_route_element_counts(
         [df_mp[Key.formula], df_wbm[Key.formula], df_mp_trj[Key.formula]]
     ).unique():
         composition = Composition(formula, allow_negative=formula not in wbm_formulas)
-        compositions[formula] = composition.element_composition.as_dict()
+        compositions[formula] = composition.as_dict()
         arities[formula] = len(composition)
     for dataset, formulas in (
         ("wbm", df_wbm[Key.formula]),

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import copy
 import json
 import os
 from functools import partial
@@ -13,11 +12,8 @@ import numpy as np
 import pandas as pd
 import pytest
 import yaml
-from ase.build import bulk
-from ase.calculators.emt import EMT
-from pymatgen.core import Lattice, Structure
-from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
-from pymatgen.entries.computed_entries import ComputedStructureEntry
+from matscikit import EMT, Structure
+from matscikit.interop import structure_to_pymatgen_dict
 from pymatviz.enums import Key
 
 import matbench_discovery.discovery as discovery_core
@@ -33,7 +29,6 @@ from matbench_discovery.discovery import (
     RelaxationSettings,
     merge_discovery_shards,
     read_discovery_shard,
-    relax_atoms,
     run_discovery_shard,
     write_discovery_artifacts,
 )
@@ -48,30 +43,39 @@ from matbench_discovery.hpc import (
 from tests.utils import patch_model_metadata
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from pathlib import Path
 
-    from ase import Atoms
+# (lattice constant, fractional basis) of fcc Cu and diamond Si primitive cells
+BULK = {"Cu": (3.61, [[0, 0, 0]]), "Si": (5.43, [[0, 0, 0], [0.25, 0.25, 0.25]])}
 
 
 # per-process run provenance of an EMT "model" that took 1.5 s to load
 EMT_RUNTIME = load_calculator_with_runtime("emt")[1] | {"load_time_sec": 1.5}
 
 
-def bulk_atoms(material_id: str, element: str = "Cu", repeat: int = 1) -> Atoms:
-    """Build a tagged periodic structure for discovery runner tests."""
-    atoms = bulk(element) * (repeat, 1, 1)
-    atoms.info[str(Key.mat_id)] = material_id
-    return atoms
+def bulk_atoms(material_id: str, element: str = "Cu", repeat: int = 1) -> Structure:
+    """Build a tagged periodic primitive cell (repeated along a1) for runner tests."""
+    a, basis = BULK[element]
+    primitive = a / 2 * np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]])
+    cell = Structure(
+        primitive,
+        [element] * len(basis),
+        basis,
+        fractional=True,
+        info={str(Key.mat_id): material_id},
+    )
+    return cell.make_supercell([repeat, 1, 1])
 
 
 def run_single_point_shard(
-    atoms_by_id: dict[str, Atoms], shard_path: str, **overrides: object
+    atoms_by_id: dict[str, Structure], shard_path: str, **overrides: object
 ) -> discovery_core.LoadedShard:
     """Run an EMT shard with fixed-cell settings, allowing overrides."""
     kwargs: dict[str, Any] = {
-        "calculator": EMT(),
+        "model": EMT(),
         "model_key": "emt",
-        "atoms_by_id": atoms_by_id,
+        "structures_by_id": atoms_by_id,
         "assigned_material_ids": list(atoms_by_id),
         "shard_path": shard_path,
         "shard_index": 0,
@@ -84,22 +88,21 @@ def run_single_point_shard(
     return run_discovery_shard(**kwargs)
 
 
-def test_artifacts_match_legacy_mp2020_join_semantics(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_artifacts_match_legacy_mp2020_join_semantics(tmp_path: Path) -> None:
     """MP2020 artifacts retain valid entries and record individual rejections."""
     material_id = "wbm-1"
     failed_id = "wbm-2"
     rejected_id = "wbm-3"
     structure = Structure(
-        Lattice.cubic(3.6),
+        3.6 * np.eye(3),
         ["Cu"] * 4,
         [[0, 0, 0], [0, 0.5, 0.5], [0.5, 0, 0.5], [0.5, 0.5, 0]],
+        fractional=True,
     )
     raw_energy = -14.0
     record = RelaxationRecord(
         material_id=material_id,
-        structure=structure.as_dict(),
+        structure=structure_to_pymatgen_dict(structure),
         energy=raw_energy,
         converged=True,
         n_steps=4,
@@ -111,7 +114,7 @@ def test_artifacts_match_legacy_mp2020_join_semantics(
             record,
             RelaxationRecord(
                 material_id=rejected_id,
-                structure=structure.as_dict(),
+                structure=structure_to_pymatgen_dict(structure),
                 energy=-13.0,
                 converged=True,
                 n_steps=3,
@@ -127,36 +130,31 @@ def test_artifacts_match_legacy_mp2020_join_semantics(
             Key.formula: ["Cu4", "Cu", "Cu4"],
         }
     ).set_index(Key.mat_id)
-    original_entry = ComputedStructureEntry(
-        structure, -8.0, parameters={"run_type": "GGA"}
-    )
+    # the WBM entry's DFT energy is replaced by the ML energy before correcting; an
+    # LDA run type is outside the MP2020 scheme and must be rejected
+    gga = {"run_type": "GGA", "potcar_symbols": ["PBE Cu_pv"]}
+    entry = {
+        "composition": {"Cu": 4.0},
+        "energy": -8.0,
+        "correction": 0.0,
+        "parameters": gga,
+    }
     df_entries = pd.DataFrame(
-        {Key.computed_structure_entry: [original_entry, copy.deepcopy(original_entry)]},
+        {
+            Key.computed_structure_entry: [
+                entry | {"entry_id": material_id},
+                entry
+                | {"entry_id": rejected_id, "parameters": gga | {"run_type": "LDA"}},
+            ]
+        },
         index=[material_id, rejected_id],
     )
-    compatibility = MaterialsProject2020Compatibility(check_potcar=False)
     ref_energies = {"Cu": -3.0}
-    legacy_entry = copy.deepcopy(original_entry)
-    legacy_entry._energy = raw_energy  # noqa: SLF001
-    legacy_entry._structure = structure  # noqa: SLF001
-    processed_entry = compatibility.process_entries(
-        [legacy_entry], clean=True, verbose=False
-    )[0]
+    # Cu has no MP2020 adjustments, so the corrected energy is the ML energy
     expected_e_form = calc_energy_from_e_refs(
-        "Cu4", ref_energies, total_energy=processed_entry.energy
+        "Cu4", ref_energies, total_energy=raw_energy
     )
-
-    process_entry = compatibility.process_entry
-
-    def reject_selected_entry(
-        entry: ComputedStructureEntry, **kwargs: bool
-    ) -> ComputedStructureEntry | None:
-        """Reject one entry while processing all others normally."""
-        if entry.energy == -13.0:
-            return None
-        return process_entry(entry, **kwargs)
-
-    monkeypatch.setattr(compatibility, "process_entry", reject_selected_entry)
+    assert expected_e_form == pytest.approx(-0.5)
     pred_file = tmp_path / "preds.csv.gz"
     geo_file = tmp_path / "geo.jsonl.gz"
     artifacts = write_discovery_artifacts(
@@ -165,7 +163,6 @@ def test_artifacts_match_legacy_mp2020_join_semantics(
         geo_opt_file_path=str(geo_file),
         df_wbm_summary=df_summary,
         df_wbm_cse=df_entries,
-        compatibility=compatibility,
         elemental_ref_energies=ref_energies,
     )
     pred_col = DISCOVERY_PRED_COL
@@ -466,7 +463,7 @@ def test_cli_returns_failure_when_any_relaxation_fails(
 
     def load_partially_failing_atoms(
         model_key: str, *, dry_run: bool = False
-    ) -> dict[str, Atoms]:
+    ) -> dict[str, Structure]:
         """Return one EMT-compatible and one incompatible structure."""
         assert model_key == "emt"
         assert dry_run is True
@@ -476,7 +473,7 @@ def test_cli_returns_failure_when_any_relaxation_fails(
         }
 
     monkeypatch.setattr(
-        discovery_runner, "load_wbm_atoms", load_partially_failing_atoms
+        discovery_runner, "load_wbm_structures", load_partially_failing_atoms
     )
     assert (
         discovery_runner.main(
@@ -533,38 +530,81 @@ def test_relaxation_settings_load_yaml_and_overrides(
         ({"max_steps": -1}, "max_steps"),
         ({"ase_optimizer": "unknown"}, "optimizer"),
         ({"cell_filter": "unknown"}, "cell filter"),
+        ({"max_batch_structures": 0}, "max_batch_structures"),
+        ({"max_batch_atoms": -1}, "max_batch_atoms"),
     ],
 )
 def test_relaxation_settings_reject_invalid_values(
     kwargs: dict[str, Any], match: str
 ) -> None:
-    """Invalid optimizer, filter, force, and step settings fail early."""
+    """Invalid optimizer, filter, force, step and batch settings fail early."""
     with pytest.raises(ValueError, match=match):
         RelaxationSettings(**kwargs)
 
 
-def test_emt_relaxation_smoke() -> None:
-    """EMT produces a finite energy, structure, and step-capped convergence state."""
+class FailingModel:
+    """EMT that raises for any call containing ``bad_id`` and returns NaN forces for
+    ``nan_id`` (a diverged model).
+    """
+
+    def __init__(self, bad_id: str, nan_id: str) -> None:
+        """Tag the raising and the NaN material."""
+        self.bad_id, self.nan_id = bad_id, nan_id
+        self.call_sizes: list[int] = []
+
+    def compute(
+        self, structures: Sequence[Structure], properties: Sequence[str]
+    ) -> list[dict[str, object]]:
+        """Evaluate with EMT, raising or poisoning the tagged structures."""
+        ids = [structure.info[str(Key.mat_id)] for structure in structures]
+        self.call_sizes.append(len(ids))
+        if self.bad_id in ids:
+            raise ValueError(f"cannot featurize {self.bad_id}")
+        results = EMT().compute(structures, properties)
+        for material_id, result in zip(ids, results, strict=True):
+            if material_id == self.nan_id:
+                result["forces"] = np.full_like(result["forces"], np.nan)
+        return results
+
+
+def test_shard_records_relaxations_and_isolated_failures(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Shard records: step-capped successes and failures that spare the rest."""
+    atoms_by_id = {f"wbm-{idx}": bulk_atoms(f"wbm-{idx}") for idx in range(4)}
     # fixed-cell EMT Cu converges at step 0, so relax the cell to a tight fmax to
     # make the step cap bind
-    record = relax_atoms(
-        bulk_atoms("wbm-cu"),
-        EMT(),
-        RelaxationSettings(
-            max_force=0.01, max_steps=2, cell_filter="FrechetCellFilter"
-        ),
+    settings = RelaxationSettings(max_force=0.01, max_steps=2, max_batch_structures=3)
+    model = FailingModel(bad_id="wbm-1", nan_id="wbm-2")
+    # a clock ticking 1 s per read: each record's time since the previous one is 1 s
+    ticks = iter(range(1_000))
+    monkeypatch.setattr(discovery_core.time, "perf_counter", lambda: float(next(ticks)))
+    shard = run_single_point_shard(
+        atoms_by_id,
+        f"{tmp_path}/shard-000-of-001.jsonl",
+        model=model,
+        settings=settings,
     )
-    assert record.material_id == "wbm-cu"
-    assert record.error is None
-    assert record.structure is not None
-    assert np.isfinite(record.energy)
-    assert (record.converged, record.n_steps) == (False, 2)
-    single_point_record = relax_atoms(
-        bulk_atoms("wbm-cu-single-point"),
-        EMT(),
-        RelaxationSettings(max_steps=0, cell_filter=None),
+    monkeypatch.undo()
+    # the batch limit reaches matscikit.relax (all 4 would share one call without it)
+    assert max(model.call_sizes) == settings.max_batch_structures
+    records = {record.material_id: record for record in shard.records}
+    assert set(records) == set(atoms_by_id)
+    bad, nan = records.pop("wbm-1"), records.pop("wbm-2")
+    assert bad.error == "model call failed: ValueError: cannot featurize wbm-1"
+    assert "non-finite" in str(nan.error)
+    assert bad.structure is nan.structure is bad.energy is None
+    for record in records.values():
+        assert record.error is None
+        assert record.structure is not None
+        assert np.isfinite(record.energy or np.nan)
+        assert (record.converged, record.n_steps) == (False, 2)
+    # records partition the segment's wall time (not cumulative since its start)
+    assert [record.run_time_sec for record in shard.records] == [1.0] * 4
+    single_point = run_single_point_shard(
+        {"wbm-cu": bulk_atoms("wbm-cu")}, f"{tmp_path}/single-000-of-001.jsonl"
     )
-    assert single_point_record.converged is False
+    assert single_point.records[0].converged is False
 
 
 def _run_two_test_shards(tmp_path: Path) -> list[str]:
@@ -653,6 +693,31 @@ def test_slurm_shard_selection(
         assert slurm_shard_selection(n_shards, None) == expected
 
 
+def test_shard_record_write_failure_propagates(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A failed record write raises instead of appending a duplicate failure record,
+    so the shard still reads and resumes.
+    """
+    atoms_by_id = {"wbm-cu": bulk_atoms("wbm-cu"), "wbm-ag": bulk_atoms("wbm-ag")}
+    shard_path = f"{tmp_path}/shard-000-of-001.jsonl"
+    real_fsync = os.fsync
+
+    def failing_fsync(fd: int) -> None:
+        """Fail the first fsync after a record line was written."""
+        with open(shard_path) as file:
+            if '"type": "record"' in file.read():
+                monkeypatch.setattr(os, "fsync", real_fsync)
+                raise OSError("disk full")
+        real_fsync(fd)
+
+    monkeypatch.setattr(os, "fsync", failing_fsync)
+    with pytest.raises(OSError, match="disk full"):
+        run_single_point_shard(atoms_by_id, shard_path)
+    resumed = run_single_point_shard(atoms_by_id, shard_path)
+    assert [record.material_id for record in resumed.records] == ["wbm-cu", "wbm-ag"]
+
+
 def test_shard_resume_preserves_success_and_failure_records(tmp_path: Path) -> None:
     """Completed and failed attempts are both durable and skipped on resume."""
     atoms_by_id = {
@@ -701,6 +766,15 @@ def test_shard_resume_handles_incomplete_events_and_header_change(
             str(shard_path),
             settings=RelaxationSettings(max_steps=1, cell_filter=None),
         )
+    # a schema 2 shard predates batched relaxation: refuse to finish it in batches
+    old_path = tmp_path / "old" / "shard-000-of-001.jsonl"
+    old_path.parent.mkdir()
+    old_lines = shard_path.read_text().splitlines(keepends=True)
+    header = json.loads(old_lines[0]) | {"schema_version": 2}
+    old_path.write_text(json.dumps(header) + "\n" + "".join(old_lines[1:]))
+    with pytest.raises(ValueError, match="Unsupported discovery shard schema 2"):
+        read_discovery_shard(str(old_path))
+
     with shard_path.open(mode="a", encoding="utf-8") as file:
         file.write("{malformed}\n")
     with pytest.raises(ValueError, match="Malformed JSON event"):

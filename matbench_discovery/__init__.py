@@ -1,6 +1,7 @@
 """Global variables used all across the matbench_discovery package."""
 
 import hashlib
+import importlib.util
 import os
 import tempfile
 import warnings
@@ -59,6 +60,14 @@ def atomic_output_path(path: str) -> Generator[str]:
             os.remove(temporary_path)
 
 
+# compiled matscikit numerics: resumes hash this file because
+# matscikit.__version__ stays put across rebuilds of the extension
+_matscikit_core = importlib.util.find_spec("matscikit._core")
+if _matscikit_core is None or _matscikit_core.origin is None:
+    raise ImportError(
+        "matscikit._core extension not found: build or install matscikit first"
+    )
+MATSCIKIT_EXTENSION: str = _matscikit_core.origin
 TEST_FILES = f"{ROOT}/tests/files"  # directory to store test data
 # directory for data-only figure payloads (gzipped JSON written by
 # matbench_discovery.figs, imported by Svelte pages and rendered with matterviz)
@@ -82,19 +91,5 @@ STABILITY_THRESHOLD = 0
 timestamp = f"{datetime.now(tz=UTC):%Y-%m-%d@%H-%M-%S}"
 today = timestamp.split("@", maxsplit=1)[0]
 
-# filter pymatgen warnings that spam the logs when e.g. applying corrections to
-# ComputedStructureEntries or using PatchedPhaseDiagram to get e_above_hull
-# and MaterialsProject2020Compatibility to get formation energies. Warnings are:
-# > No Pauling electronegativity for Ne. Setting to NaN. This has no physical meaning
-# > Failed to guess oxidation states for Entry
-# pymatgen warns with stacklevel=2, attributing Element.X's warning to its caller
-# (functools.cached_property, or user code), so that filter can't pin a module.
-for msg, category, module in {
-    ("No Pauling electronegativity for", UserWarning, ""),
-    ("Failed to guess oxidation states for Entry", UserWarning, "pymatgen"),
-    ("torch.load", FutureWarning, ""),
-    ("logm result may be inaccurate, approximate err", RuntimeWarning, ""),
-}:
-    warnings.filterwarnings(
-        action="ignore", category=category, module=module, message=msg
-    )
+# model checkpoints loaded with torch.load warn on every load
+warnings.filterwarnings(action="ignore", category=FutureWarning, message="torch.load")

@@ -7,9 +7,11 @@ from pathlib import Path
 from types import ModuleType
 from unittest.mock import PropertyMock, patch
 
+import numpy as np
 import pandas as pd
 import pytest
-from pymatgen.core import Lattice, Structure
+from matscikit import Structure
+from matscikit.interop import structure_to_pymatgen_dict
 
 from matbench_discovery.enums import MbdKey, Model
 from tests.utils import import_repo_script
@@ -26,13 +28,20 @@ def analyze_geo_opt_fixture() -> ModuleType:
 
 def write_geo_opt_file(model_dir: Path, material_ids: list[str]) -> Path:
     """Write a canonical geo-opt JSONL artifact with one cubic structure per ID."""
-    struct = Structure(Lattice.cubic(3.0), ["Na", "Cl"], [[0] * 3, [0.5] * 3])
+    struct = Structure(
+        3.0 * np.eye(3), ["Na", "Cl"], [[0] * 3, [0.5] * 3], fractional=True
+    )
     geo_opt_path = model_dir / "2026-07-01-geo-opt.jsonl.gz"
     model_dir.mkdir(parents=True, exist_ok=True)
     with gzip.open(geo_opt_path, mode="wt") as file:
         for mat_id in material_ids:
             file.write(
-                json.dumps({"material_id": mat_id, "structure": struct.as_dict()})
+                json.dumps(
+                    {
+                        "material_id": mat_id,
+                        "structure": structure_to_pymatgen_dict(struct),
+                    }
+                )
             )
             file.write("\n")
     return geo_opt_path

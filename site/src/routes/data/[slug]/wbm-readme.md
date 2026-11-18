@@ -69,7 +69,7 @@ This approach has the downside that it can be quite expensive to compute, especi
 We adopt the procedure of determining the prototype of each crystal by looking at the Wyckoff positions of the different elements.
 This approach is a middle ground between the two approaches mentioned above in terms of cost, number of hyperparameters and ability to distinguish polymorphs.
 
-We used [`get_protostructure_label`] importable from `matbench_discovery.structure.prototype` in [`compile_wbm_test_set.py`] to get prototype labels in a modified Aflow format for each structure.
+We used [`get_protostructure_label`] (then in `matbench_discovery.structure.prototype`, now `matscikit.protostructure_label`, which gives identical labels) in [`compile_wbm_test_set.py`] to get prototype labels in a modified Aflow format for each structure.
 Having determined the prototypes for both the MP and WBM datasets, we first removed any structures in the WBM dataset that had the same prototype as any structure in the MP dataset.
 The next filter was to drop all but the lowest energy structure for each unique prototype label remaining in the WBM dataset.
 The WBM prototypes were determined for the relaxed structures. This choice avoids inflating the metrics due to duplicates arising from different initial prototypes that fall into the same basin of attraction during relaxation.

@@ -11,6 +11,8 @@ from glob import glob
 
 import numpy as np
 import pandas as pd
+from matscikit import protostructure_label
+from matscikit.interop import structure_from_pymatgen_dict
 from pandas.core.util.hashing import hash_pandas_object
 from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram
 from pymatgen.core import Composition, Structure
@@ -27,7 +29,6 @@ from matbench_discovery.data import DataFiles, load_datasets
 from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
 from matbench_discovery.enums import MbdKey
 from matbench_discovery.remote.fetch import download_file
-from matbench_discovery.structure import prototype
 
 try:
     import gdown
@@ -583,34 +584,23 @@ df_summary[MbdKey.e_form_raw.replace("uncorrected", "mp2020_corrected")] = (
 
 
 # %%
-# from initial structures
-for idx in tqdm(df_wbm.index):
-    if not pd.isna(df_summary.loc[idx].get(MbdKey.init_protostructure_spglib)):
-        continue  # Aflow label already computed
-    try:
-        struct = Structure.from_dict(df_wbm.loc[idx, Key.init_struct])
-        df_summary.loc[idx, MbdKey.init_protostructure_spglib] = (
-            prototype.get_protostructure_label(struct)
-        )
-    except (ValueError, KeyError, RuntimeError) as exc:
-        print(f"{idx=} {exc=}")
-
-# from relaxed structures
-for idx in tqdm(df_wbm.index):
-    if not pd.isna(df_summary.loc[idx].get(MbdKey.protostructure_spglib)):
-        continue
-
-    try:
-        cse = df_wbm.loc[idx, Key.computed_structure_entry]
-        struct = Structure.from_dict(cse["structure"])
-        df_summary.loc[idx, MbdKey.protostructure_spglib] = (
-            prototype.get_protostructure_label(struct)
-        )
-    except (ValueError, KeyError, RuntimeError) as exc:
-        print(f"{idx=} {exc=}")
-
-assert df_summary[MbdKey.init_protostructure_spglib].isna().sum() == 0
-assert df_summary[MbdKey.protostructure_spglib].isna().sum() == 0
+# Aflow-style protostructure labels of initial and relaxed structures (None where
+# symmetry detection fails, which raises naming the failed IDs)
+relaxed_structs = df_wbm[Key.computed_structure_entry].map(lambda cse: cse["structure"])
+for label_key, struct_dicts in (
+    (MbdKey.init_protostructure_spglib, df_wbm[Key.init_struct]),
+    (MbdKey.protostructure_spglib, relaxed_structs),
+):
+    if label_key not in df_summary:
+        df_summary[label_key] = None
+    todo = df_wbm.index[df_summary.loc[df_wbm.index, label_key].isna()]
+    structs = [
+        structure_from_pymatgen_dict(struct_dicts[idx])
+        for idx in tqdm(todo, desc=f"Hydrating {label_key}")
+    ]
+    df_summary.loc[todo, label_key] = protostructure_label(structs)
+    if failed_ids := list(df_summary.index[df_summary[label_key].isna()]):
+        raise ValueError(f"no {label_key} for {len(failed_ids):,} IDs: {failed_ids}")
 
 
 # %%

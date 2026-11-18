@@ -8,7 +8,7 @@ from types import ModuleType
 
 import numpy as np
 import pytest
-from ase.data import atomic_numbers, covalent_radii
+from matscikit.elements import ATOMIC_NUMBERS, COVALENT_RADII
 
 from matbench_discovery.enums import Model
 from matbench_discovery.metrics.diatomics.exclusions import drop_metric_exclusions
@@ -106,7 +106,7 @@ def test_trim_curve_to_finite(run_diatomics: ModuleType) -> None:
     }
     assert run_diatomics.trim_curve_to_finite("Cu-Cu", finite_curve) == finite_curve
 
-    wall_r_min = 0.8 * covalent_radii[atomic_numbers["Cu"]]
+    wall_r_min = 0.8 * COVALENT_RADII[ATOMIC_NUMBERS["Cu"]]
     wall_idx = int(np.flatnonzero(np.asarray(distances) >= wall_r_min)[0])
     for formula, bad_idx, value, expected_distances in (
         # Cu wall scoring starts at ~1.06 A; a NaN below that is unscored.

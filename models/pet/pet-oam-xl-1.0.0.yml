@@ -233,9 +233,9 @@ metrics:
           md5: efc31640be92772ff6e19e0c22388c5d
         force_file:
           name: models/pet/pet-oam-xl-1.0.0/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71263285
-          size: 3200836
-          md5: 1716d2ce3e8bea8f9cd91b6ac46cb6cc
+          url: https://figshare.com/files/71275534
+          size: 4967953
+          md5: c7276a636cb81a81e1eeef04774a409c
         run_info_file:
           name: models/pet/pet-oam-xl-1.0.0/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334655

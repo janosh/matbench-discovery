@@ -16,9 +16,17 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
-from ase import Atoms, units
-from ase.data import atomic_masses, covalent_radii
-from ase.geometry import find_mic, get_distances, minkowski_reduce
+from matscikit import (
+    FEMTOSECOND,
+    K_B,
+    Structure,
+    adf,
+    finite_difference_velocities,
+    rdf,
+    vdos,
+)
+from matscikit.elements import ATOMIC_MASSES, CHEMICAL_SYMBOLS
+from matscikit.io import Frame
 from scipy.stats import wasserstein_distance
 
 from matbench_discovery import repo_relative_path
@@ -31,20 +39,24 @@ from matbench_discovery.hpc import COST_KEYS, merge_audit_metadata, with_cost_bl
 from matbench_discovery.trajectory import Trajectory
 
 if TYPE_CHECKING:
-    from ase.calculators.calculator import Calculator
+    from matscikit.model import Model as ForceModel
 
     from matbench_discovery.enums import Model
 
-TrajectoryLike = Trajectory | Sequence[Atoms]
+TrajectoryLike = Trajectory | Sequence[Frame]
+# 1 amu (Å/fs)^2 in eV: velocities in Å/fs are 1/FEMTOSECOND in matscikit units
+AMU_A2_PER_FS2_IN_EV = FEMTOSECOND**-2
+# eV/Å³ to GPa: the elementary charge (C, exact) times 1e30 Å³/m³ over 1e9 Pa/GPa
+EV_PER_A3_TO_GPA = 1.602176634e-19 * 1e30 / 1e9
 
 
 def _as_trajectory(trajectory: TrajectoryLike) -> Trajectory:
-    """Coerce a Trajectory or a sequence of ASE Atoms to a Trajectory, so metrics run
+    """Coerce a Trajectory or a sequence of frames to a Trajectory, so metrics run
     on dense arrays regardless of input. Passing a Trajectory (the hot path) is a no-op.
     """
     if isinstance(trajectory, Trajectory):
         return trajectory
-    return Trajectory.from_ase(list(trajectory))
+    return Trajectory.from_frames(list(trajectory))
 
 
 def _check_density(values: np.ndarray, label: str, *, check_area: bool = True) -> None:
@@ -83,81 +95,37 @@ MD_COST_COLS = tuple(
 )
 
 
-def min_image_radius(cells: np.ndarray, pbc: np.ndarray) -> float:
-    """Largest radius at which minimum-image pair distances count each pair at most
-    once = half the shortest lattice vector (Minkowski first successive minimum),
-    minimized over frames.
-
-    Minimum-image distances record only the nearest periodic image of each atom, so a
-    histogram (RDF) is complete only while no two images of an atom lie within the
-    cutoff sphere; two distinct images are at least one shortest lattice vector apart,
-    giving the half-shortest-vector limit. For skewed or non-reduced cells a lattice-
-    vector combination can be shorter than every basis vector, so half the shortest
-    *basis* vector overestimates this and silently corrupts g(r) at large r.
-    """
-
-    def shortest_lattice_vector(cell: np.ndarray) -> float:
-        """Shortest periodic lattice vector length of the Minkowski-reduced cell."""
-        reduced, _ = minkowski_reduce(cell, pbc)
-        lengths = np.linalg.norm(reduced, axis=1)
-        periodic = lengths[pbc]  # only periodic directions are true lattice vectors
-        return float(periodic.min() if periodic.size else lengths.min())
-
-    # cells are usually constant (NVT) -> reduce once; else minimize over frames
-    unique_cells = cells[:1] if np.allclose(cells, cells[0]) else cells
-    return min(shortest_lattice_vector(cell) for cell in unique_cells) / 2
+def _frame_arrays(traj: Trajectory) -> tuple[np.ndarray, np.ndarray, tuple[bool, ...]]:
+    """(positions, cells, pbc) arguments of the matscikit trajectory kernels."""
+    return traj.positions, traj.cell, tuple(bool(flag) for flag in traj.pbc)
 
 
-def calc_rdf(
+# observable name -> (grid, density): rdf (r in A, g(r)), adf (angles in deg,
+# unit-area density), vdos (frequencies in THz, power per degree of freedom)
+Observables = dict[str, tuple[np.ndarray, np.ndarray]]
+
+
+def trajectory_observables(
     trajectory: TrajectoryLike,
     *,
-    n_bins: int = 500,
+    time_step_fs: float,
+    n_rdf_bins: int = 500,
     r_max: float | None = None,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Time-averaged all-pair radial distribution function g(r) of a trajectory.
-
-    Returns bin-center distances r in Angstrom and g(r), histogrammed into n_bins
-    between 0 and r_max. r_max defaults to the minimum-image radius (half the
-    shortest lattice vector, minimized over all frames, see min_image_radius) and
-    raises if set above it.
+) -> Observables:
+    """Time-averaged g(r) (paper Eq. 4 normalization, per-frame densities), the
+    covalent-radius bond-angle distribution and the vDOS (centre-of-mass drift removed)
+    of a trajectory saved every ``time_step_fs``, from matscikit's frame-parallel
+    kernels (``matscikit.rdf``, ``matscikit.adf``, ``matscikit.vdos``). ``r_max``
+    defaults to the minimum-image radius (half the shortest lattice vector over
+    frames).
     """
     traj = _as_trajectory(trajectory)
-    if traj.n_frames == 0:
-        raise ValueError("Cannot compute RDF of empty trajectory")
-    if n_bins < 2:
-        raise ValueError(f"Need >= 2 RDF bins, got {n_bins=}")
-    n_atoms = traj.n_atoms
-    if n_atoms < 2:
-        raise ValueError(f"Cannot compute RDF with {n_atoms=} < 2")
-    mic_radius = min_image_radius(traj.cell, traj.pbc)
-    if r_max is None:
-        r_max = mic_radius
-    elif r_max > mic_radius + 1e-12:
-        raise ValueError(
-            f"{r_max=} exceeds minimum-image validity limit {mic_radius:.6g} A "
-            "for at least one trajectory frame"
-        )
-    if r_max <= 0:
-        raise ValueError(f"{r_max=} must be positive")
-
-    bin_edges = np.linspace(0, r_max, n_bins + 1)
-    counts = np.zeros(n_bins)
-    upper_tri_idx = np.triu_indices(n_atoms, k=1)
-    inv_volume_sum = 0.0  # per-frame densities make this exact for varying cells
-    for idx in range(traj.n_frames):
-        cell = traj.cell[idx]
-        # get_distances is the exact kernel Atoms.get_all_distances(mic=True) uses, so
-        # results match the previous Atoms-based path to machine precision
-        _, dist_matrix = get_distances(traj.positions[idx], cell=cell, pbc=traj.pbc)
-        counts += np.histogram(dist_matrix[upper_tri_idx], bins=bin_edges)[0]
-        inv_volume_sum += 1 / abs(float(np.linalg.det(cell)))
-
-    radii = (bin_edges[:-1] + bin_edges[1:]) / 2
-    shell_volumes = 4 / 3 * np.pi * np.diff(bin_edges**3)
-    # Paper Eq. 4 normalization: rho*N shell volume. The upper-triangle histogram
-    # counts unordered pairs, hence the /2 relative to Eq. 4's ordered i != j sum.
-    ideal_counts = n_atoms**2 / 2 * inv_volume_sum * shell_volumes
-    return radii, counts / ideal_counts
+    frame_arrays = _frame_arrays(traj)
+    return {
+        "rdf": rdf(*frame_arrays, n_bins=n_rdf_bins, r_max=r_max),
+        "adf": adf(*frame_arrays, traj.atomic_numbers),
+        "vdos": vdos(*frame_arrays, traj.atomic_numbers, time_step_fs),
+    }
 
 
 def calc_rdf_error(
@@ -182,80 +150,6 @@ def calc_rdf_error(
         return 100.0
     numerator = np.trapezoid(np.abs(g_r_ref - g_r_pred), x=radii)
     return float(min(1, numerator / denominator) * 100)
-
-
-def calc_adf(
-    trajectory: TrajectoryLike,
-    *,
-    n_bins: int = 180,
-    bond_tolerance: float = 1.25,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Time-averaged bond-angle distribution function of a trajectory.
-
-    Returns bin-center angles in degrees and a unit-area angular density over
-    0-180 degrees. For each frame and central atom, every unordered pair of *bonded*
-    neighbors contributes one angle. A pair (i, j) counts as bonded when its minimum-
-    image distance is within ``bond_tolerance * (r_cov[Z_i] + r_cov[Z_j])`` (ASE
-    covalent radii). Species-aware cutoffs capture first-coordination-shell bonding
-    angles (tetrahedral, octahedral, aromatic, ...) across mixed bond length scales
-    (e.g. Pb-Br vs C-H in a hybrid perovskite). A single global cutoff instead lets the
-    many long-range neighbor pairs dominate, collapsing every structure's ADF onto the
-    universal sin(theta) background and washing out the bonding-angle signal.
-    """
-    traj = _as_trajectory(trajectory)
-    if traj.n_frames == 0:
-        raise ValueError("Cannot compute ADF of empty trajectory")
-    if n_bins < 2:
-        raise ValueError(f"Need >= 2 ADF bins, got {n_bins=}")
-    if bond_tolerance <= 0:
-        raise ValueError(f"{bond_tolerance=} must be positive")
-    n_atoms = traj.n_atoms
-    if n_atoms < 3:
-        raise ValueError(f"Cannot compute ADF with {n_atoms=} < 3")
-    # Clamp only periodic systems to the minimum-image limit; isolated molecules have
-    # no image ambiguity, so keep their full covalent-radius cutoff.
-    r_cov = covalent_radii[traj.atomic_numbers]
-    bond_cutoffs = bond_tolerance * (r_cov[:, None] + r_cov[None, :])
-    if traj.pbc.any():
-        bond_cutoffs = np.minimum(bond_cutoffs, min_image_radius(traj.cell, traj.pbc))
-
-    bin_edges = np.linspace(0, 180, n_bins + 1)
-    counts = np.zeros(n_bins)
-    for frame_idx in range(traj.n_frames):
-        mic_vectors, distances = get_distances(
-            traj.positions[frame_idx], cell=traj.cell[frame_idx], pbc=traj.pbc
-        )
-        bonded = (distances > 1e-12) & (distances <= bond_cutoffs)
-        # directed bonds (center -> neighbor); np.nonzero is row-major so ``centers``
-        # is non-decreasing and each center's neighbors form one contiguous run
-        centers, neighbors = np.nonzero(bonded)
-        bond_unit_vecs = (
-            mic_vectors[centers, neighbors] / distances[centers, neighbors][:, None]
-        )
-        # all unordered neighbor pairs per center, computed only over bonded pairs (so
-        # this is O(n * coord^2), not the O(n^3) of a full all-triplet cosine tensor)
-        seg_starts = np.unique(centers, return_index=True)[1]
-        seg_counts = np.diff(np.append(seg_starts, len(centers)))
-        left_idx, right_idx = [], []
-        for start, count in zip(seg_starts, seg_counts, strict=True):
-            if count >= 2:  # need >= 2 neighbors to form an angle
-                tri_a, tri_b = np.triu_indices(count, k=1)
-                left_idx.append(start + tri_a)
-                right_idx.append(start + tri_b)
-        if not left_idx:
-            continue
-        left = np.concatenate(left_idx)
-        right = np.concatenate(right_idx)
-        cosines = np.einsum("pd,pd->p", bond_unit_vecs[left], bond_unit_vecs[right])
-        pair_angles = np.degrees(np.arccos(np.clip(cosines, -1, 1)))
-        counts += np.histogram(pair_angles, bins=bin_edges)[0]
-
-    if not counts.any():
-        raise ValueError("Cannot compute ADF: no bonded neighbor angle pairs found")
-
-    angles = (bin_edges[:-1] + bin_edges[1:]) / 2
-    bin_widths = np.diff(bin_edges)
-    return angles, counts / np.sum(counts * bin_widths)
 
 
 def calc_adf_error(
@@ -290,8 +184,8 @@ def calc_adf_error(
         raise ValueError("Need >= 2 ADF angle grid points")
     if not np.all(angle_steps > 0) or not np.allclose(angle_steps, angle_steps[0]):
         raise ValueError("ADF angle grid must be strictly increasing and evenly spaced")
-    for label, adf in (("reference ADF", adf_ref), ("predicted ADF", adf_pred)):
-        _check_density(adf, label)
+    for label, density in (("reference ADF", adf_ref), ("predicted ADF", adf_pred)):
+        _check_density(density, label)
 
     # sin(theta) random-neighbor background = the angular ideal gas.
     # wasserstein_distance normalizes weights, so unnormalized densities are fine.
@@ -305,33 +199,6 @@ def calc_adf_error(
     if w1_background <= 0:  # featureless reference -> structural error undefined
         return 100.0
     return float(min(1, w1_pred / w1_background) * 100)
-
-
-def calc_velocities(trajectory: TrajectoryLike, *, time_step_fs: float) -> np.ndarray:
-    """Finite-difference velocities of shape (n_frames, n_atoms, 3) in Angstrom/fs.
-
-    Positions are unwrapped via minimum-image displacements between consecutive
-    frames before differentiating, so periodic boundary crossings don't produce
-    velocity spikes. Using the same estimator for reference and MLIP trajectories
-    keeps vDOS comparisons unbiased even when one stores explicit velocities.
-    """
-    traj = _as_trajectory(trajectory)
-    if traj.n_frames < 2:
-        raise ValueError(
-            f"Need >= 2 frames to estimate velocities, got {traj.n_frames}"
-        )
-    if time_step_fs <= 0:
-        raise ValueError(f"{time_step_fs=} must be positive")
-
-    positions = traj.positions
-    mic_displacements = [
-        find_mic(positions[idx + 1] - positions[idx], traj.cell[idx], traj.pbc)[0]
-        for idx in range(traj.n_frames - 1)
-    ]
-    unwrapped = positions[0] + np.cumsum(
-        [np.zeros_like(positions[0]), *mic_displacements], axis=0
-    )
-    return np.gradient(unwrapped, time_step_fs, axis=0)
 
 
 def equipartition_temperature(
@@ -350,12 +217,12 @@ def equipartition_temperature(
     compare against the target with a generous tolerance, not for exact equality.
     """
     traj = _as_trajectory(trajectory)
-    velocities = calc_velocities(traj, time_step_fs=time_step_fs)  # Angstrom/fs
-    masses = atomic_masses[traj.atomic_numbers]  # amu
-    # 1 amu * (Angstrom/fs)^2 in eV.
-    amu_ang2_fs2_in_ev = 1e10 * units.J / units.kg
-    kinetic_ev = 0.5 * amu_ang2_fs2_in_ev * np.einsum("a,tad->t", masses, velocities**2)
-    return float((2 * kinetic_ev / (3 * traj.n_atoms * units.kB)).mean())
+    velocities = finite_difference_velocities(*_frame_arrays(traj), time_step_fs)
+    masses = ATOMIC_MASSES[traj.atomic_numbers]  # amu
+    kinetic_ev = (
+        0.5 * AMU_A2_PER_FS2_IN_EV * np.einsum("a,tad->t", masses, velocities**2)
+    )
+    return float((2 * kinetic_ev / (3 * traj.n_atoms * K_B)).mean())
 
 
 def check_reference_dt(
@@ -407,41 +274,6 @@ def coverage_problems(index: pd.Index, expected: set[str]) -> list[str]:
     if extra := present - expected:
         problems.append(f"{len(extra)} unexpected e.g. {sorted(extra)[:3]}")
     return problems
-
-
-def calc_vdos(
-    velocities: np.ndarray, *, time_step_fs: float
-) -> tuple[np.ndarray, np.ndarray]:
-    """Vibrational density of states from velocities of shape (n_frames, n_atoms, 3).
-
-    Returns frequencies in THz and vDOS intensities: the one-sided power spectrum of
-    each Hann-windowed velocity component (the Fourier transform of its
-    autocorrelation function by the Wiener-Khinchin theorem), normalized to unit
-    total power per component before summing. Per-component normalization weights
-    every degree of freedom equally as required by equipartition (a raw sum would
-    overweight light atoms by 1/mass) and mirrors the paper's normalized-VACF
-    estimator. Components with zero total power (frozen atoms) are skipped.
-    """
-    velocities = np.asarray(velocities, dtype=float)
-    if velocities.ndim != 3 or velocities.shape[-1] != 3:
-        raise ValueError(
-            f"Expected shape (n_frames, n_atoms, 3), got {velocities.shape}"
-        )
-    # hanning(n < 4) has at most one non-zero sample, making the windowed
-    # spectrum identically zero or a featureless constant
-    if (n_frames := len(velocities)) < 4:
-        raise ValueError(f"Need >= 4 frames to compute vDOS, got {n_frames}")
-    if time_step_fs <= 0:
-        raise ValueError(f"{time_step_fs=} must be positive")
-
-    window = np.hanning(n_frames)[:, None, None]
-    spectra = np.abs(np.fft.rfft(velocities * window, axis=0)) ** 2
-    total_power = spectra.sum(axis=0, keepdims=True)
-    spectra = np.divide(
-        spectra, total_power, out=np.zeros_like(spectra), where=total_power > 0
-    )
-    freqs_thz = np.fft.rfftfreq(n_frames, d=time_step_fs * 1e-3)  # fs -> ps = 1/THz
-    return freqs_thz, spectra.sum(axis=(1, 2))
 
 
 def calc_vdos_error(
@@ -522,7 +354,7 @@ def get_trajectory_pressures(
     traj = _as_trajectory(trajectory)
     if traj.stress is None:
         raise ValueError("trajectory has no stress data to compute pressures")
-    return -traj.stress[:, :3].sum(axis=1) / 3 / units.GPa
+    return -traj.stress[:, :3].sum(axis=1) / 3 * EV_PER_A3_TO_GPA
 
 
 def _time_strides(ref_time_step_fs: float, pred_time_step_fs: float) -> tuple[int, int]:
@@ -601,9 +433,9 @@ def calc_pressure_histogram_error(
 
 
 def calc_energy_force_rmse(
-    trajectory: TrajectoryLike, calculator: Calculator
+    trajectory: TrajectoryLike, model: ForceModel
 ) -> dict[str, float]:
-    """Private-label energy-fluctuation (eV/atom) and force (eV/Å) RMSE of calculator
+    """Private-label energy-fluctuation (eV/atom) and force (eV/Å) RMSE of model
     single-points on labeled reference frames.
 
     The energy RMSE uses per-trajectory mean-subtracted energies, i.e. the energy
@@ -613,23 +445,32 @@ def calc_energy_force_rmse(
     """
     traj = _as_trajectory(trajectory)
     if traj.n_frames == 0:
-        raise ValueError("Cannot evaluate a calculator on an empty trajectory")
+        raise ValueError("Cannot evaluate a model on an empty trajectory")
     if traj.energy is None or traj.forces is None:
         raise ValueError("trajectory lacks private reference energy/forces for RMSE")
 
-    energy_pred = np.empty(traj.n_frames)
-    force_se = np.empty(traj.n_frames)
-    for frame_idx in range(traj.n_frames):
-        # fresh Atoms (no stored results) so the calculator computes the prediction
-        atoms = Atoms(
-            numbers=traj.atomic_numbers,
-            positions=traj.positions[frame_idx],
-            cell=traj.cell[frame_idx],
-            pbc=traj.pbc,
+    symbols = [CHEMICAL_SYMBOLS[number] for number in traj.atomic_numbers]
+    pbc = tuple(bool(flag) for flag in traj.pbc)
+    structures = [
+        Structure(traj.cell[idx], symbols, traj.positions[idx], pbc=pbc)
+        for idx in range(traj.n_frames)
+    ]
+    # chunked model calls bound memory for long trajectories
+    chunk = 64
+    results = [
+        result
+        for start in range(0, len(structures), chunk)
+        for result in model.compute(
+            structures[start : start + chunk], ["energy", "forces"]
         )
-        atoms.calc = calculator
-        energy_pred[frame_idx] = atoms.get_potential_energy()
-        force_se[frame_idx] = ((atoms.get_forces() - traj.forces[frame_idx]) ** 2).sum()
+    ]
+    energy_pred = np.array([float(result["energy"]) for result in results])
+    force_se = np.array(
+        [
+            ((np.asarray(result["forces"]) - traj.forces[idx]) ** 2).sum()
+            for idx, result in enumerate(results)
+        ]
+    )
 
     pred_dev = (energy_pred - energy_pred.mean()) / traj.n_atoms
     ref_dev = (traj.energy - traj.energy.mean()) / traj.n_atoms
@@ -707,22 +548,22 @@ def evaluate_md_system(
     ref_matched = ref[:n_ref_use]
     pred_matched = pred[:n_pred_use]
 
-    log_progress("RDF")
-    radii, g_r_ref = calc_rdf(ref_matched, n_bins=n_rdf_bins)
-    r_max = float(radii[-1] + (radii[1] - radii[0]) / 2)
-    _, g_r_pred = calc_rdf(pred_matched, n_bins=n_rdf_bins, r_max=r_max)
-    metrics = {"rdf_error": calc_rdf_error(radii, g_r_ref, g_r_pred)}
-    log_progress("ADF")
-    angles, adf_ref = calc_adf(ref_matched)
-    _, adf_pred = calc_adf(pred_matched)
-    metrics["adf_error"] = calc_adf_error(angles, adf_ref, adf_pred)
-
-    log_progress("vDOS")
-    ref_velocities = calc_velocities(ref_matched, time_step_fs=ref_time_step_fs)
-    pred_velocities = calc_velocities(pred_matched, time_step_fs=pred_time_step_fs)
-    freqs_ref, vdos_ref = calc_vdos(ref_velocities, time_step_fs=ref_time_step_fs)
-    freqs_pred, vdos_pred = calc_vdos(pred_velocities, time_step_fs=pred_time_step_fs)
-    metrics["vdos_error"] = calc_vdos_error(freqs_ref, vdos_ref, freqs_pred, vdos_pred)
+    log_progress("structure and vDOS observables")
+    ref_obs = trajectory_observables(
+        ref_matched, time_step_fs=ref_time_step_fs, n_rdf_bins=n_rdf_bins
+    )
+    radii, g_r_ref = ref_obs["rdf"]
+    pred_obs = trajectory_observables(
+        pred_matched,
+        time_step_fs=pred_time_step_fs,
+        n_rdf_bins=n_rdf_bins,
+        r_max=float(radii[-1] + (radii[1] - radii[0]) / 2),  # the reference's grid
+    )
+    metrics = {
+        "rdf_error": calc_rdf_error(radii, g_r_ref, pred_obs["rdf"][1]),
+        "adf_error": calc_adf_error(*ref_obs["adf"], pred_obs["adf"][1]),
+        "vdos_error": calc_vdos_error(*ref_obs["vdos"], *pred_obs["vdos"]),
+    }
 
     log_progress("pressure")
     if ref_matched.stress is not None and pred_matched.stress is not None:

@@ -28,6 +28,7 @@ Typical cluster usage:
 #
 # [tool.uv.sources]
 # matbench-discovery = { path = "../", editable = true }
+# matscikit = { path = "../../matscikit", editable = true }
 # ///
 
 import argparse
@@ -41,8 +42,8 @@ from datetime import UTC, datetime
 from glob import glob
 
 import numpy as np
-from ase.calculators.calculator import Calculator
-from ase.data import chemical_symbols
+from matscikit.elements import CHEMICAL_SYMBOLS
+from matscikit.model import Model as ForceModel
 
 from matbench_discovery import ROOT, today
 from matbench_discovery.calculators import (
@@ -106,7 +107,7 @@ def trim_curve_to_finite(formula: str, curve: CurveDict) -> CurveDict | None:
 
 
 def predict_curves(
-    calculator: Calculator,
+    model: ForceModel,
     model_key: str,
     z_values: Sequence[int],
     distances: np.ndarray,
@@ -119,7 +120,7 @@ def predict_curves(
     curves: DiatomicResults = {}
     calc_diatomic_curve(
         pairs=[(z_value, z_value) for z_value in z_values],
-        calculator=calculator,
+        model=model,
         model_name=model_key,
         distances=distances,
         results=curves,
@@ -308,7 +309,7 @@ def main() -> int:
             curves.update(shard.get(homo_nuc, {}))
             shard_metadatas.append(shard.get("run_metadata", {}))
         expected_formulas = {
-            f"{chemical_symbols[z_value]}-{chemical_symbols[z_value]}"
+            f"{CHEMICAL_SYMBOLS[z_value]}-{CHEMICAL_SYMBOLS[z_value]}"
             for z_value in all_z_values
         }
         missing_formulas = {
@@ -333,7 +334,7 @@ def main() -> int:
         print(f"Merged {len(curves)}/{max_z} diatomic curves into {json_path}")
     else:
         z_values = all_z_values[shard_index::n_shards]
-        calculator, runtime = load_calculator_with_runtime(
+        force_model, runtime = load_calculator_with_runtime(
             args.model, device=args.device, dtype=args.dtype, checkpoint=args.checkpoint
         )
         hardware = runtime["hardware"]
@@ -348,7 +349,7 @@ def main() -> int:
         for z_group in z_groups:
             start_time = time.perf_counter()
             curves, invalid_formulas = predict_curves(
-                calculator, args.model, z_group, distances
+                force_model, args.model, z_group, distances
             )
             if n_shards == 1 and not curves:  # never write an empty final artifact
                 break
@@ -359,7 +360,7 @@ def main() -> int:
                 **runtime,
                 "run_time_sec": run_time_sec,
                 "n_shards": n_shards,
-                # peak memory covers calculator load + sweep so far (one process)
+                # peak memory covers model load + sweep so far (one process)
                 **memory_peaks(runtime, succeeded=bool(curves)),
                 "completed_at": datetime.now(UTC).isoformat(),
                 "excluded_formula_reasons": get_excluded_formula_reasons(

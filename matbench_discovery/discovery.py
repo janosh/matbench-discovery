@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import copy
 import json
 import os
 import time
@@ -12,20 +11,12 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 import pandas as pd
 from filelock import FileLock
-from pymatgen.core import Structure
-from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
-from pymatgen.entries.computed_entries import ComputedStructureEntry
-from pymatgen.io.ase import AseAtomsAdaptor
+from matscikit import Structure, mp2020_corrections
+from matscikit.interop import structure_from_pymatgen_dict, structure_to_pymatgen_dict
 from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import atomic_output_path
-from matbench_discovery.ase_relax import (
-    canonical_filter_name,
-    canonical_optimizer_name,
-    resolve_cell_filter,
-    resolve_optimizer,
-)
 from matbench_discovery.enums import DataFiles, Model, TestSubset
 from matbench_discovery.hpc import (
     check_resume_labels,
@@ -35,15 +26,20 @@ from matbench_discovery.hpc import (
     merge_audit_metadata,
     reset_gpu_peak_memory,
 )
+from matbench_discovery.relaxation import (
+    canonical_filter_name,
+    canonical_optimizer_name,
+    relax_structures,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
 
-    from ase import Atoms
-    from ase.calculators.calculator import Calculator
+    from matscikit.model import Model as ForceModel
 
 # schema 2: segment_start events (process runtime), records with run time + memory
-DISCOVERY_SHARD_SCHEMA_VERSION = 2
+# schema 3: batch limits in the relaxation settings (float32 results depend on them)
+DISCOVERY_SHARD_SCHEMA_VERSION = 3
 DISCOVERY_PRED_COL = "e_form_per_atom"
 DISCOVERY_STRUCT_COL = "structure"
 DISCOVERY_ID_COL = "material_id"
@@ -62,7 +58,7 @@ ARCHIVED_DISCOVERY_MODELS: dict[str, str] = {
             "voronoi_rf",
             "wrenformer",
         ),
-        "archived direct predictor without an ASE calculator",
+        "archived direct predictor without a force-field interface",
     ),
     **dict.fromkeys(
         ("equflash_29m_oam", "equflashv2_45m_oam"),
@@ -78,12 +74,19 @@ ARCHIVED_DISCOVERY_MODELS: dict[str, str] = {
 
 @dataclass(frozen=True)
 class RelaxationSettings:
-    """ASE geometry-relaxation settings shared by all calculator-backed models."""
+    """Geometry-relaxation settings shared by all force-field models.
+
+    Structures relax in lock-step batches of at most ``max_batch_structures`` /
+    ``max_batch_atoms`` per model call. They belong here (and so in the shard header)
+    because float32 GPU models give batch-dependent results (~1e-4 eV).
+    """
 
     max_force: float = 0.05
     max_steps: int = 500
     ase_optimizer: str = "FIRE"
     cell_filter: str | None = "FrechetCellFilter"
+    max_batch_structures: int | None = 64
+    max_batch_atoms: int | None = None
 
     def __post_init__(self) -> None:
         """Validate and canonicalize optimizer and cell-filter names."""
@@ -93,6 +96,9 @@ class RelaxationSettings:
             )
         if self.max_steps < 0:
             raise ValueError(f"max_steps must be non-negative, got {self.max_steps}")
+        for name in ("max_batch_structures", "max_batch_atoms"):
+            if (limit := getattr(self, name)) is not None and limit < 1:
+                raise ValueError(f"{name} must be positive or None, got {limit}")
         object.__setattr__(
             self, "ase_optimizer", canonical_optimizer_name(self.ase_optimizer)
         )
@@ -152,9 +158,11 @@ class RelaxationRecord:
     """One attempted WBM relaxation, including failures for complete coverage.
 
     The defaults describe a failed attempt; successful relaxations set them all.
-    ``run_time_sec`` is the attempt's wall time and ``max_rss_gb``/``max_gpu_mem_gb``
-    the segment's running memory peaks after it (RSS includes loading WBM), so a
-    later-killed segment's cost still counts after resuming.
+    ``run_time_sec`` is the wall time since the segment's previous record: structures
+    share lock-step model calls, so records partition the segment's relaxation time in
+    completion order instead of pricing each structure. ``max_rss_gb``/
+    ``max_gpu_mem_gb`` are the segment's running memory peaks after it (RSS includes
+    loading WBM), so a later-killed segment's cost still counts after resuming.
     """
 
     material_id: str
@@ -273,17 +281,17 @@ class DiscoveryArtifacts:
     n_failed: int
 
 
-def load_wbm_atoms(
+def load_wbm_structures(
     model_key: str,
     *,
     dry_run: bool = False,
-) -> dict[str, Atoms]:
+) -> dict[str, Structure]:
     """Load WBM initial structures and optionally select a small smoke-test subset."""
-    from matbench_discovery.data import ase_atoms_from_zip, df_wbm
+    from matbench_discovery.data import df_wbm, structures_from_zip
 
     read_limit = 2048 if dry_run else None
-    atoms_list = ase_atoms_from_zip(DataFiles.wbm_initial_atoms.path, limit=read_limit)
-    atoms_by_id: dict[str, Atoms] = {}
+    atoms_list = structures_from_zip(DataFiles.wbm_initial_atoms.path, limit=read_limit)
+    atoms_by_id: dict[str, Structure] = {}
     for atoms in atoms_list:
         material_id = material_id_from_atoms(atoms)
         if material_id in atoms_by_id:
@@ -309,7 +317,7 @@ def load_wbm_atoms(
         candidate_ids = [
             material_id
             for material_id in candidate_ids
-            if set(atoms_by_id[material_id].get_chemical_symbols()) <= emt_elements
+            if set(atoms_by_id[material_id].symbols) <= emt_elements
         ]
     selected_ids = candidate_ids[:DEFAULT_DRY_RUN_STRUCTURES]
     if not selected_ids:
@@ -317,45 +325,31 @@ def load_wbm_atoms(
     return {material_id: atoms_by_id[material_id] for material_id in selected_ids}
 
 
-def relax_atoms(
-    atoms: Atoms,
-    calculator: Calculator,
-    settings: RelaxationSettings,
+def relaxation_record(
+    material_id: str, result: Mapping[str, Any], settings: RelaxationSettings
 ) -> RelaxationRecord:
-    """Relax one structure with ASE and return a serializable success record."""
-    material_id = material_id_from_atoms(atoms)
-    atoms = atoms.copy()
-    atoms.calc = calculator
-    optimizer_steps = 0
-    converged = False
-    if settings.max_steps > 0:
-        filter_cls = resolve_cell_filter(settings.cell_filter)
-        relax_target = filter_cls(atoms) if filter_cls is not None else atoms
-        optimizer_cls = resolve_optimizer(settings.ase_optimizer)
-        optimizer = optimizer_cls(relax_target, logfile=None)  # ty: ignore[invalid-argument-type]
-        converged = bool(
-            optimizer.run(fmax=settings.max_force, steps=settings.max_steps)
-        )
-        optimizer_steps = optimizer.get_number_of_steps()
-
-    energy = float(atoms.get_potential_energy())
-    if not np.isfinite(energy):
-        raise ValueError(f"{material_id} produced non-finite energy {energy}")
-    structure = AseAtomsAdaptor.get_structure(atoms).as_dict()
+    """Serializable record of one ``matscikit.relax`` result (failure if it failed)."""
+    if result["error"] is not None:
+        return RelaxationRecord(material_id, error=result["error"])
+    relaxed = result["structure"]
+    structure_dict = structure_to_pymatgen_dict(relaxed)
+    # structure info (incl. arrays a model attached) travels as structure properties
+    structure_dict["properties"] = dict(relaxed.info)
     return RelaxationRecord(
         material_id=material_id,
-        structure=structure,
-        energy=energy,
-        converged=converged,
-        n_steps=optimizer_steps,
+        structure=structure_dict,
+        energy=float(result["energy"]),
+        # a zero-step budget evaluates the start geometry without optimizing it
+        converged=bool(result["converged"]) and settings.max_steps > 0,
+        n_steps=int(result["n_steps"]),
     )
 
 
 def _json_default(value: object) -> object:
     """Convert NumPy values while rejecting unsupported JSON objects.
 
-    Calculators may stuff arrays into ``atoms.info``, which
-    ``AseAtomsAdaptor.get_structure`` copies into ``Structure.properties``.
+    Structure info (copied into the serialized structure's properties) may hold
+    NumPy scalars and arrays.
     """
     if isinstance(value, np.generic):
         return value.item()
@@ -364,9 +358,18 @@ def _json_default(value: object) -> object:
     raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
 
 
+def _event_payload(event: Mapping[str, Any]) -> str:
+    """One JSONL event line (raises on non-serializable or non-finite values)."""
+    return json.dumps(event, default=_json_default, allow_nan=False)
+
+
 def _append_shard_event(shard_path: str, event: Mapping[str, Any]) -> None:
     """Append and fsync one JSONL event."""
-    payload = json.dumps(event, default=_json_default, allow_nan=False)
+    _append_shard_line(shard_path, _event_payload(event))
+
+
+def _append_shard_line(shard_path: str, payload: str) -> None:
+    """Append and fsync one serialized JSONL event."""
     with open(shard_path, mode="ab+") as file:
         file.seek(0, os.SEEK_END)
         if file.tell():
@@ -475,9 +478,9 @@ def _discard_interrupted_header(shard_path: str) -> None:
 
 def run_discovery_shard(
     *,
-    calculator: Calculator,
+    model: ForceModel,
     model_key: str,
-    atoms_by_id: Mapping[str, Atoms],
+    structures_by_id: Mapping[str, Structure],
     assigned_material_ids: Sequence[str],
     shard_path: str,
     shard_index: int,
@@ -486,7 +489,11 @@ def run_discovery_shard(
     dataset_material_ids: Sequence[str],
     runtime: Mapping[str, Any],
 ) -> LoadedShard:
-    """Run or resume one shard, appending a durable record after each structure.
+    """Run or resume one shard, appending a durable record as each structure finishes.
+
+    All pending structures stream through one batched ``matscikit.relax`` call; a
+    structure whose model call or relaxation fails (or that is too large for one
+    call) gets a failure record while the others carry on.
 
     Each execution appends a ``segment_start`` event holding ``runtime``
     (calculators.load_calculator_with_runtime), then records with their run time
@@ -545,30 +552,55 @@ def run_discovery_shard(
         _append_shard_event(
             shard_path, {"type": "segment_start", "runtime": dict(runtime)}
         )
-        for material_id in tqdm(pending_ids, desc=f"{model_key} discovery shard"):
-            start_time = time.perf_counter()
-            try:
-                record = relax_atoms(atoms_by_id[material_id], calculator, settings)
-            except Exception as exc:  # noqa: BLE001 - every failure needs a record
-                record = RelaxationRecord(
-                    material_id=material_id, error=f"{type(exc).__name__}: {exc}"
-                )
-                print(f"Failed to relax {material_id}: {record.error}")
-            cost = {
-                "run_time_sec": round(time.perf_counter() - start_time, 3),
-                # failures may legitimately never reach the GPU
-                **memory_peaks(runtime, succeeded=record.error is None),
-            }
-            record = replace(record, **cost)
-            try:
-                _append_shard_event(shard_path, {"type": "record", **asdict(record)})
-            except (TypeError, ValueError) as exc:
-                # a non-JSON-serializable relaxed structure must not become a poison
-                # pill that crashes this run and every resume at the same material
-                error = f"unserializable relaxation record: {exc}"
-                record = replace(RelaxationRecord(material_id, error=error), **cost)
-                print(f"Failed to serialize {material_id}: {record.error}")
-                _append_shard_event(shard_path, {"type": "record", **asdict(record)})
+        with tqdm(
+            total=len(pending_ids), desc=f"{model_key} discovery shard"
+        ) as progress:
+            last_time = time.perf_counter()
+
+            def append_record(index: int, result: dict[str, Any]) -> None:
+                """Durably append the record of the structure that just finished."""
+                nonlocal last_time
+                material_id, now = pending_ids[index], time.perf_counter()
+                cost = {
+                    "run_time_sec": round(now - last_time, 3),
+                    # failures may legitimately never reach the GPU
+                    **memory_peaks(runtime, succeeded=result["error"] is None),
+                }
+                last_time = now
+                try:
+                    record = replace(
+                        relaxation_record(material_id, result, settings), **cost
+                    )
+                    payload = _event_payload({"type": "record", **asdict(record)})
+                except Exception as exc:  # noqa: BLE001
+                    # an unconvertible or non-JSON-serializable result must not become
+                    # a poison pill crashing this run and every resume at its material
+                    error = (
+                        f"unserializable relaxation record: {type(exc).__name__}: {exc}"
+                    )
+                    record = replace(RelaxationRecord(material_id, error=error), **cost)
+                    payload = _event_payload({"type": "record", **asdict(record)})
+                # outside the try: a failed write (e.g. fsync OSError) must propagate,
+                # not append a second record for the same material
+                _append_shard_line(shard_path, payload)
+                if record.error is not None:
+                    print(f"Failed to relax {material_id}: {record.error}")
+                progress.update()
+
+            relax_structures(
+                [structures_by_id[material_id] for material_id in pending_ids],
+                model,
+                optimizer=settings.ase_optimizer,
+                cell_filter=settings.cell_filter,
+                max_force=settings.max_force,
+                max_steps=settings.max_steps,
+                batch={
+                    "structures": settings.max_batch_structures,
+                    "atoms": settings.max_batch_atoms,
+                },
+                on_model_error="isolate",
+                on_result=append_record,
+            )
         return read_discovery_shard(shard_path)
 
 
@@ -680,18 +712,12 @@ def write_discovery_metrics(
 
 
 def _load_wbm_cse_frame(material_ids: Sequence[str] | None = None) -> pd.DataFrame:
-    """Load canonical WBM entries, subsetting before expensive CSE hydration."""
+    """Load canonical WBM computed-structure-entry dicts for the given materials."""
     df_wbm_cse = pd.read_json(
         DataFiles.wbm_computed_structure_entries.path, lines=True
     ).set_index(Key.mat_id)
     if material_ids is not None:
         df_wbm_cse = df_wbm_cse.loc[df_wbm_cse.index.isin(material_ids)]
-    df_wbm_cse[Key.computed_structure_entry] = [
-        ComputedStructureEntry.from_dict(entry)
-        for entry in tqdm(
-            df_wbm_cse[Key.computed_structure_entry], desc="Hydrating WBM entries"
-        )
-    ]
     return df_wbm_cse
 
 
@@ -702,15 +728,13 @@ def write_discovery_artifacts(
     geo_opt_file_path: str,
     df_wbm_summary: pd.DataFrame | None = None,
     df_wbm_cse: pd.DataFrame | None = None,
-    compatibility: MaterialsProject2020Compatibility | None = None,
     elemental_ref_energies: Mapping[str, float] | None = None,
 ) -> DiscoveryArtifacts:
     """Apply MP2020 corrections and write canonical prediction CSV and JSONL."""
+    from matscikit import Composition, PhaseDiagram
+
     from matbench_discovery.data import df_wbm
-    from matbench_discovery.energy import (
-        calc_energy_from_e_refs,
-        mp_elemental_ref_energies,
-    )
+    from matbench_discovery.energy import mp_elemental_ref_energies
 
     df_summary = df_wbm if df_wbm_summary is None else df_wbm_summary
     successful_ids = [
@@ -730,9 +754,36 @@ def write_discovery_artifacts(
         if elemental_ref_energies is None
         else dict(elemental_ref_energies)
     )
-    compatibility = compatibility or MaterialsProject2020Compatibility()
     output_rows: dict[str, dict[str, Any]] = {}
+    successful = [
+        record
+        for record in merged_run.records
+        if record.structure is not None and record.energy is not None
+    ]
+    # MP2020 corrections of the WBM entries re-evaluated at the ML energy and relaxed
+    # structure (all records in one parallel call)
+    entries, structures = [], []
+    for record in successful:
+        if record.material_id not in df_entries.index:
+            raise ValueError(
+                f"No WBM computed structure entry for {record.material_id}"
+            )
+        entry = df_entries.loc[record.material_id, Key.computed_structure_entry]
+        entry = entry.as_dict() if hasattr(entry, "as_dict") else dict(entry)
+        entries.append(entry | {"energy": record.energy})
+        if record.structure is None:  # excluded above; narrows the type
+            raise ValueError(f"{record.material_id} has no relaxed structure")
+        structures.append(structure_from_pymatgen_dict(record.structure))
+    corrections = dict(
+        zip(
+            [record.material_id for record in successful],
+            mp2020_corrections(entries, structures),
+            strict=True,
+        )
+    )
     geo_opt_rows: list[dict[str, Any]] = []
+    # (material_id, formula, corrected total energy) for one batched e_form call
+    to_reference: list[tuple[str, str, float]] = []
     for record in merged_run.records:
         row = output_rows[record.material_id] = {
             "energy": record.energy,
@@ -744,31 +795,16 @@ def write_discovery_artifacts(
         }
         if record.structure is None or record.energy is None:
             continue
-        if record.material_id not in df_entries.index:
-            raise ValueError(
-                f"No WBM computed structure entry for {record.material_id}"
-            )
-        entry = df_entries.loc[record.material_id, Key.computed_structure_entry]
-        if df_wbm_cse is not None:
-            entry = copy.deepcopy(entry)
-        if isinstance(entry, dict):
-            entry = ComputedStructureEntry.from_dict(entry)
-        entry._energy = record.energy  # noqa: SLF001 - preserves legacy join semantics
-        entry._structure = Structure.from_dict(record.structure)  # noqa: SLF001
-        processed_entry = compatibility.process_entry(entry, clean=True)
-        if processed_entry is None:
+        processed = corrections[record.material_id]
+        if processed is None:
             row["error"] = "MP2020 compatibility rejected entry"
             continue
 
         if record.material_id not in df_summary.index:
             raise ValueError(f"No WBM summary row for {record.material_id}")
         formula = str(df_summary.loc[record.material_id, Key.formula])
-        row["corrected_energy"] = float(processed_entry.energy)
-        row[DISCOVERY_PRED_COL] = calc_energy_from_e_refs(
-            formula,
-            ref_energies=ref_energies,
-            total_energy=float(processed_entry.energy),
-        )
+        row["corrected_energy"] = float(processed["corrected_energy"])
+        to_reference.append((record.material_id, formula, row["corrected_energy"]))
         geo_opt_rows.append(
             {
                 DISCOVERY_ID_COL: record.material_id,
@@ -778,6 +814,16 @@ def write_discovery_artifacts(
                 "n_steps": record.n_steps,
             }
         )
+
+    if to_reference:
+        material_ids, formulas, energies = zip(*to_reference, strict=True)
+        n_atoms = [Composition(formula).num_atoms for formula in formulas]
+        elemental_refs = PhaseDiagram(list(ref_energies), list(ref_energies.values()))
+        e_forms = elemental_refs.formation_energy(
+            list(formulas), list(np.divide(energies, n_atoms))
+        )
+        for material_id, e_form in zip(material_ids, e_forms, strict=True):
+            output_rows[material_id][DISCOVERY_PRED_COL] = float(e_form)
 
     df_predictions = pd.DataFrame.from_dict(output_rows, orient="index")
     df_predictions.index.name = DISCOVERY_ID_COL

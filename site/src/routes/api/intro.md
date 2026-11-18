@@ -33,7 +33,7 @@ Downloads are cached under `~/.cache/matbench-discovery`. Set `MBD_CACHE_DIR` to
 
 - **Registries and data** — `enums` holds the `Model` and `DataFiles` registries plus the column-name enums (`MbdKey`, `Task`, `TestSubset`), and `data` loads them into dataframes.
 - **Metrics** — `metrics.discovery`, `metrics.geo_opt`, `metrics.phonons`, `metrics.md` and `metrics.diatomics` compute the leaderboard numbers for each task.
-- **Task runners** — `discovery`, `phonons`, `md` and `diatomics` drive the evaluations, `calculators` builds each model's ASE calculator, and `ase_relax` performs the relaxations.
+- **Task runners** — `discovery`, `phonons`, `md` and `diatomics` drive the evaluations, `calculators` loads each model behind the matscikit model protocol, and `relaxation` resolves the relaxation settings.
 - **Supporting modules** — `figs` and `data_figs` build this site's plots, `remote` handles downloads and Figshare uploads, and `hpc`, `cli` and `runner_cli` back the Slurm submission scripts.
 
 Contributing a model means registering a calculator rather than calling these modules yourself — see [the contribution guide](/contribute).

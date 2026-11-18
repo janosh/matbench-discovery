@@ -244,9 +244,9 @@ metrics:
           md5: 231e72d66f5dce3a90bb250f1e4932ce
         force_file:
           name: models/hienet/hienet/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71263189
-          size: 2138063
-          md5: aa2ce4ef1b735b07b11258ad6243ef85
+          url: https://figshare.com/files/71275480
+          size: 3839157
+          md5: 24413238a86eb0e330407604333afe52
         run_info_file:
           name: models/hienet/hienet/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334499

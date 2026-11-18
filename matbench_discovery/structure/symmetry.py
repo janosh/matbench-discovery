@@ -3,90 +3,86 @@
 from collections.abc import Mapping
 from typing import Any
 
-import ase.atoms
 import pandas as pd
-from pymatgen.analysis.structure_matcher import StructureMatcher
-from pymatgen.core import Structure
+from matscikit import Structure, rms_distances, symmetry_summary
+from matscikit.interop import structure_from_pymatgen_dict
 from pymatviz.enums import Key
-from pymatviz.typing import AnyStructure
-from tqdm import tqdm
 
 from matbench_discovery.enums import MbdKey
 
 
+def as_structure(struct: Structure | Mapping[str, Any]) -> Structure:
+    """Accept a matscikit Structure or a pymatgen-style structure dict."""
+    if isinstance(struct, Structure):
+        return struct
+    if isinstance(struct, Mapping):
+        return structure_from_pymatgen_dict(struct)
+    raise TypeError(f"Expected Structure or structure dict, got {type(struct)}")
+
+
 def get_sym_info_from_structs(
-    structures: Mapping[str, AnyStructure | Structure],
+    structures: Mapping[str, Structure | Mapping[str, Any]],
     *,
-    pbar: bool | dict[str, Any] = True,
     symprec: float = 1e-2,
     angle_tolerance: float | None = None,
 ) -> pd.DataFrame:
     """Compile DataFrame of high-level symmetry information for a dictionary of
-    structures.
+    structures, searching their symmetry in parallel (matscikit.symmetry_summary). Rows
+    whose symmetry search fails are NaN/None (calc_geo_opt_metrics skips them).
 
     Args:
-        structures (dict[str, Structure | Atoms]): Map of material IDs to pymatgen
-            Structures or ASE Atoms objects
-        pbar (bool | dict[str, Any], optional): Whether to show progress bar. Defaults
-            to True.
-        symprec (float, optional): Symmetry precision of moyopy. Defaults to 1e-2.
-        angle_tolerance (float, optional): Angle tolerance of moyopy (in radians unlike
-            spglib which uses degrees!). Defaults to None.
+        structures (dict[str, Structure | dict]): Map of material IDs to structures
+            (or pymatgen-style structure dicts)
+        symprec (float, optional): Symmetry precision in Å. Defaults to 1e-2.
+        angle_tolerance (float, optional): Angle tolerance in radians (unlike spglib
+            which uses degrees!). Defaults to None.
 
     Returns:
         pd.DataFrame: DataFrame containing symmetry information for each structure
     """
-    import moyopy
-    from moyopy.interface import MoyoAdapter
-
-    results: dict[str, dict[str, str | int | list[str] | float | None]] = {}
-    iterator = structures.items()
-    if pbar:
-        pbar_kwargs = {"desc": "Analyzing symmetry"} | (
-            pbar if isinstance(pbar, dict) else {}
+    mat_ids = list(structures)
+    structs = []
+    for mat_id, struct in structures.items():
+        try:
+            structs.append(as_structure(struct))
+        except TypeError as exc:
+            raise TypeError(f"{exc} for {mat_id!r}") from None
+    try:
+        summary = symmetry_summary(
+            structs, symprec=symprec, angle_tolerance=angle_tolerance
         )
-        iterator = tqdm(iterator, total=len(structures), **pbar_kwargs)
-
-    for struct_key, struct in iterator:
-        if not isinstance(struct, (Structure, ase.atoms.Atoms)):
-            raise TypeError(
-                f"Expected Structure or Atoms for {struct_key!r}, got {type(struct)}"
-            )
-        moyo_cell = MoyoAdapter.from_py_obj(struct)
-
-        sym_data = moyopy.MoyoDataset(
-            moyo_cell, symprec=symprec, angle_tolerance=angle_tolerance
-        )
-
-        sym_ops = sym_data.operations
-        hall_symbol_entry = moyopy.HallSymbolEntry(hall_number=sym_data.hall_number)
-
-        sym_info = {
-            Key.spg_num: sym_data.number,
-            Key.hall_num: sym_data.hall_number,
-            MbdKey.international_spg_name: hall_symbol_entry.hm_short,
-            Key.wyckoff_symbols: sym_data.wyckoffs,
-            Key.n_sym_ops: sym_ops.num_operations,
-            Key.n_rot_syms: len(sym_ops.rotations),
-            Key.n_trans_syms: len(sym_ops.translations),
-            Key.hall_symbol: hall_symbol_entry.hall_symbol,
-        }
-        results[struct_key] = sym_info | dict(
-            symprec=symprec, angle_tolerance=angle_tolerance
-        )
-
-    df_sym = pd.DataFrame(results).T
-    df_sym.index.name = Key.mat_id
-    return df_sym
+    except ValueError as exc:  # e.g. a structure without sites
+        failed_id = mat_ids[exc.index]  # ty: ignore[unresolved-attribute]
+        exc.add_note(f"{Key.mat_id}={failed_id!r}")
+        raise
+    # nullable integers: a failed search leaves NA, not a float column (225.0 in CSVs)
+    numbers, hall_numbers, n_ops = (
+        pd.array(summary[key], dtype="Int64")
+        for key in ("number", "hall_number", "n_operations")
+    )
+    return pd.DataFrame(
+        {
+            Key.spg_num: numbers,
+            Key.hall_num: hall_numbers,
+            MbdKey.international_spg_name: summary["hm_short"],
+            Key.wyckoff_symbols: summary["wyckoffs"],
+            Key.n_sym_ops: n_ops,
+            # every operation pairs one rotation with one translation
+            Key.n_rot_syms: n_ops,
+            Key.n_trans_syms: n_ops,
+            Key.hall_symbol: summary["hall_symbol"],
+            Key.symprec: symprec,
+            Key.angle_tolerance: angle_tolerance,
+        },
+        index=pd.Index(mat_ids, name=Key.mat_id),
+    )
 
 
 def pred_vs_ref_struct_symmetry(
     df_sym_pred: pd.DataFrame,
     df_sym_ref: pd.DataFrame,
-    pred_structs: dict[str, Structure],
-    ref_structs: dict[str, Structure],
-    *,
-    pbar: bool | dict[str, Any] = True,
+    pred_structs: Mapping[str, Structure | Mapping[str, Any]],
+    ref_structs: Mapping[str, Structure | Mapping[str, Any]],
 ) -> pd.DataFrame:
     """Get RMSD and compare symmetry between ML and DFT reference structures.
 
@@ -100,8 +96,6 @@ def pred_vs_ref_struct_symmetry(
             analyze_symmetry.
         pred_structs (dict[str, Structure]): Map material IDs to ML-relaxed structures
         ref_structs (dict[str, Structure]): Map material IDs to reference structures
-        pbar (bool | dict[str, Any], optional): Whether to show progress bar. Defaults
-            to True.
 
     Returns:
         pd.DataFrame: with added columns for symmetry differences
@@ -120,26 +114,24 @@ def pred_vs_ref_struct_symmetry(
 
     # scale=False and stol=1 are important for getting accurate distance of atomic
     # positions from DFT-relaxed positions. details in https://github.com/janosh/matbench-discovery/issues/230
-    structure_matcher = StructureMatcher(stol=1.0, scale=False)
     ref_ids, pred_ids = set(ref_structs), set(pred_structs)
-    shared_ids = ref_ids & pred_ids
+    shared_ids = sorted(ref_ids & pred_ids)
     if len(shared_ids) == 0:
         raise ValueError(f"No shared IDs between:\n{pred_ids=}\n{ref_ids=}")
 
-    df_result[MbdKey.structure_rmsd_vs_dft] = None
-
-    if pbar:
-        pbar_kwargs = pbar if isinstance(pbar, dict) else {}
-        shared_ids = tqdm(
-            shared_ids,
-            **dict(leave=False, desc="Calculating RMSD") | pbar_kwargs,
-        )
-
-    for mat_id in shared_ids:
-        rmsd, max_dist = structure_matcher.get_rms_dist(
-            pred_structs[mat_id], ref_structs[mat_id]
-        ) or (None, None)
-        df_result.loc[mat_id, MbdKey.structure_rmsd_vs_dft] = rmsd
-        df_result.loc[mat_id, Key.max_pair_dist] = max_dist
+    pairs = [
+        (as_structure(pred_structs[mat_id]), as_structure(ref_structs[mat_id]))
+        for mat_id in shared_ids
+    ]
+    # one parallel call; matscikit's matcher reproduces StructureMatcher(stol=1,
+    # scale=False).get_rms_dist (normalized RMS and max displacement), NaN for no match
+    nan_pair = (float("nan"), float("nan"))
+    df_rms = pd.DataFrame(
+        [match or nan_pair for match in rms_distances(pairs, stol=1.0)],
+        index=shared_ids,
+        columns=[MbdKey.structure_rmsd_vs_dft, Key.max_pair_dist],
+        dtype=float,
+    )
+    df_result[df_rms.columns] = df_rms.reindex(df_result.index)
 
     return df_result

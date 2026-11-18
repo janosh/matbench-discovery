@@ -274,9 +274,9 @@ metrics:
           md5: 16cdec860e7afc0e25f409f92ccdb4bb
         force_file:
           name: models/mattersim/mattersim-v1-5m/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71263249
-          size: 2070813
-          md5: 5f55dc33037783b4a6ceedd4081ac0af
+          url: https://figshare.com/files/71275504
+          size: 3777308
+          md5: 053aa79119a444589c36c892fe707a08
         run_info_file:
           name: models/mattersim/mattersim-v1-5m/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334553

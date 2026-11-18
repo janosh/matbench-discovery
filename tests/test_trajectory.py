@@ -1,11 +1,12 @@
-"""Tests for the dense-array Trajectory container and its HDF5 / ASE interop."""
+"""Tests for the dense-array Trajectory container and its HDF5 / frame interop."""
 
 from pathlib import Path
 
 import h5py
 import numpy as np
 import pytest
-from ase import Atoms
+from matscikit import Structure
+from matscikit.io import Frame, write_extxyz
 
 from matbench_discovery.trajectory import TRAJECTORY_SCHEMA, Trajectory
 
@@ -32,9 +33,15 @@ def make_traj(
     return Trajectory(**fields)
 
 
-def make_atoms(symbols: str = "Cu2", *, pbc: bool = True) -> Atoms:
-    """Minimal ASE Atoms (positions at the origin) in a 4 A cubic cell."""
-    return Atoms(symbols, cell=np.eye(3) * 4, pbc=pbc)
+def make_atoms(
+    symbols: str = "Cu2", *, pbc: bool = True, **results: np.ndarray | float
+) -> Frame:
+    """Minimal frame (atoms at the origin) in a 4 A cubic cell, e.g. "Cu2" or "He2"."""
+    element, count = symbols.rstrip("0123456789"), int(symbols[-1])
+    structure = Structure(
+        np.eye(3) * 4, [element] * count, np.zeros((count, 3)), pbc=(pbc,) * 3
+    )
+    return Frame(structure, **results)  # ty: ignore[invalid-argument-type]
 
 
 @pytest.mark.parametrize(
@@ -78,7 +85,10 @@ def test_trajectory_len_props_and_slicing() -> None:
     assert single.n_frames == 1
     np.testing.assert_array_equal(single.positions[0], traj.positions[2])
     np.testing.assert_array_equal(traj[-1].positions[0], traj.positions[5])
-    np.testing.assert_array_equal(traj.frame_as_atoms(-1).positions, traj.positions[5])
+    # positions pass through fractional storage (~1 ulp)
+    np.testing.assert_allclose(
+        traj.frame_as_structure(-1).positions, traj.positions[5], rtol=0, atol=1e-14
+    )
     with pytest.raises(IndexError):
         _ = traj[6]
     with pytest.raises(IndexError):
@@ -114,19 +124,19 @@ def test_trajectory_hdf5_roundtrip(tmp_path: Path, *, results: bool) -> None:
     np.testing.assert_array_equal(strided.positions, traj.positions[0:20:4])
 
 
-def test_trajectory_ase_roundtrip() -> None:
-    """from_ase extracts results; to_ase restores positions/cell/results/md_step."""
+def test_trajectory_frames_roundtrip() -> None:
+    """from_frames extracts results; to_frames restores geometry, results, md_step."""
     traj = make_traj(n_frames=5, n_atoms=3)
     assert traj.forces is not None
     assert traj.energy is not None
     assert traj.stress is not None
     assert traj.md_step is not None
-    atoms_list = traj.to_ase()
-    assert len(atoms_list) == 5
-    np.testing.assert_array_equal(atoms_list[0].get_forces(), traj.forces[0])
-    assert atoms_list[2].info["md_step"] == traj.md_step[2]
+    frames = traj.to_frames()
+    assert len(frames) == 5
+    np.testing.assert_array_equal(frames[0].forces, traj.forces[0])
+    assert frames[2].structure.info["md_step"] == traj.md_step[2]
 
-    back = Trajectory.from_ase(atoms_list)
+    back = Trajectory.from_frames(frames)
     assert back.energy is not None
     assert back.stress is not None
     np.testing.assert_allclose(back.positions, traj.positions, rtol=0, atol=1e-12)
@@ -134,16 +144,16 @@ def test_trajectory_ase_roundtrip() -> None:
     np.testing.assert_allclose(back.stress, traj.stress, rtol=0, atol=1e-12)
 
 
-def test_from_ase_missing_results() -> None:
-    """ASE conversions omit calculators/results when frames carry no results."""
-    traj = Trajectory.from_ase([make_atoms()])
+def test_from_frames_missing_results() -> None:
+    """Frame conversions omit results when frames carry none."""
+    traj = Trajectory.from_frames([make_atoms()])
     assert traj.energy is None
     assert traj.forces is None
     assert traj.stress is None
     assert traj.md_step is None
 
-    atoms = make_traj(results=False).to_ase()[0]
-    assert atoms.calc is None
+    frame = make_traj(results=False).to_frames()[0]
+    assert (frame.energy, frame.forces, frame.stress) == (None, None, None)
 
 
 @pytest.mark.parametrize(
@@ -156,186 +166,90 @@ def test_from_ase_missing_results() -> None:
     ],
     ids=["empty", "ragged_count", "species", "pbc"],
 )
-def test_from_ase_rejects_bad_input(frames: list[Atoms], match: str) -> None:
-    """from_ase rejects empty input and frames inconsistent with frame 0."""
+def test_from_frames_rejects_bad_input(frames: list[Frame], match: str) -> None:
+    """from_frames rejects empty input and frames inconsistent with frame 0."""
     with pytest.raises(ValueError, match=match):
-        Trajectory.from_ase(frames)
+        Trajectory.from_frames(frames)
 
 
-def test_from_ase_reraises_genuine_backend_error() -> None:
-    """from_ase returns None for unavailable properties but re-raises real failures."""
-    from ase.calculators.calculator import Calculator, all_changes
-
-    class BrokenStress(Calculator):
-        implemented_properties = ("stress",)
-
-        def calculate(
-            self,
-            atoms: Atoms | None = None,
-            properties: list[str] | None = None,
-            system_changes: list[str] = all_changes,
-        ) -> None:
-            super().calculate(atoms, properties, system_changes)
-            raise RuntimeError("simulated stress backend failure")
-
-    atoms = make_atoms()
-    atoms.calc = BrokenStress()
-    with pytest.raises(RuntimeError, match="stress backend failure"):
-        Trajectory.from_ase([atoms])
-
-
-def test_from_ase_rejects_mixed_property_availability() -> None:
+def test_from_frames_rejects_mixed_property_availability() -> None:
     """A property present on some frames but not others fails loud (not silent None)."""
-    from ase.calculators.singlepoint import SinglePointCalculator
-
-    with_energy = make_atoms()
-    with_energy.calc = SinglePointCalculator(with_energy, energy=-1.0)
     with pytest.raises(ValueError, match="missing a property"):
-        Trajectory.from_ase([with_energy, make_atoms()])
+        Trajectory.from_frames([make_atoms(energy=-1.0), make_atoms()])
 
     # md_step on some frames but not others must also fail loud (not silently drop it)
     with_step = make_atoms()
-    with_step.info["md_step"] = 0
+    with_step.structure.info["md_step"] = 0
     with pytest.raises(ValueError, match="missing md_step"):
-        Trajectory.from_ase([with_step, make_atoms()])
+        Trajectory.from_frames([with_step, make_atoms()])
 
 
 @pytest.mark.parametrize("suffix", ["", ".xz", ".gz"])
-def test_from_extxyz_matches_ase_parser(tmp_path: Path, suffix: str) -> None:
-    """The fast bulk reader matches the ASE extxyz reader, compressed or not."""
-    import ase.io
-
-    from matbench_discovery.md import read_trajectory
-
+def test_extxyz_roundtrip(tmp_path: Path, suffix: str) -> None:
+    """to_frames -> write_extxyz -> from_extxyz restores every field."""
     traj = make_traj(n_frames=5, n_atoms=4)
-    assert traj.energy is not None
-    # non-orthogonal cell so the parity check catches Lattice row/column-order or
-    # transpose bugs that a diagonal cell would hide
+    # non-orthogonal cell catches Lattice row/column-order or transpose bugs and
+    # out-of-cell positions catch wrapping (MD trajectories stay unwrapped)
     traj.cell[:] = [[5.0, 0.5, 0.3], [0.0, 5.2, 0.4], [0.0, 0.0, 4.7]]
+    traj.positions[:, 0] += [12.0, -7.0, 30.0]
     path = str(tmp_path / f"traj.extxyz{suffix}")
-    ase.io.write(path, traj.to_ase())
+    write_extxyz(path, traj.to_frames())
 
-    fast = Trajectory.from_extxyz(path)
-    slow = Trajectory.from_ase(read_trajectory(path))
-    assert slow.energy is not None
-    assert slow.n_frames == 5
-    # extxyz is a text format, so positions/energy round-trip to its print precision
-    np.testing.assert_allclose(slow.positions, traj.positions, rtol=0, atol=1e-6)
-    np.testing.assert_allclose(slow.energy, traj.energy, rtol=0, atol=1e-6)
-    np.testing.assert_array_equal(fast.atomic_numbers, slow.atomic_numbers)
-    np.testing.assert_array_equal(fast.pbc, slow.pbc)
-    for field in ("positions", "cell", "energy", "forces", "stress", "md_step"):
-        fast_arr, slow_arr = getattr(fast, field), getattr(slow, field)
-        assert fast_arr is not None, field
-        assert slow_arr is not None, field
-        np.testing.assert_array_equal(fast_arr, slow_arr, err_msg=field)
+    back = Trajectory.from_extxyz(path)
+    np.testing.assert_array_equal(back.atomic_numbers, traj.atomic_numbers)
+    assert back.atomic_numbers.dtype == np.int64  # not matscikit's uint8
+    np.testing.assert_array_equal(back.pbc, traj.pbc)
+    # to_frames stores positions as fractions (~1 ulp); the file keeps those exactly
+    written = np.array([frame.structure.positions for frame in traj.to_frames()])
+    np.testing.assert_array_equal(back.positions, written)
+    np.testing.assert_allclose(back.positions, traj.positions, rtol=0, atol=1e-13)
+    for field in ("cell", "energy", "forces", "stress", "md_step"):
+        np.testing.assert_array_equal(
+            getattr(back, field), getattr(traj, field), err_msg=field
+        )
 
 
-def test_from_extxyz_real_format_stress_energy(tmp_path: Path) -> None:
+def test_extxyz_dynamat_format(tmp_path: Path) -> None:
     """A hand-written DynaMat-style file (3x3 asymmetric stress, free_energy alongside
-    energy, leading-whitespace atom lines) matches ASE; the asymmetric stress pins the
-    Voigt index order (ASE reshapes the 9-vector Fortran-order, then takes
-    [00, 11, 22, 12, 02, 01]).
+    energy, leading-whitespace atom lines, extra per-atom columns) parses to the right
+    arrays; the asymmetric stress pins the Voigt index order (ASE reshapes the 9-vector
+    Fortran-order, then takes [00, 11, 22, 12, 02, 01]).
     """
-    from matbench_discovery.md import read_trajectory
-
     lattice = '"4.0 0.0 0.0 0.0 4.0 0.0 0.0 0.0 4.0"'
-    props = "species:S:1:pos:R:3:forces:R:3"
+    props = "species:S:1:pos:R:3:forces:R:3:momenta:R:3:tags:I:1"
     content = (
         f"2\nLattice={lattice} Properties={props} energy=-1.5 "
         'stress="1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0" free_energy=-1.6 pbc="T T T"\n'
-        "Cu       0.10000       0.20000       0.30000      0.01      0.02      0.03\n"
-        "Cu       1.10000       1.20000       1.30000      0.11      0.12      0.13\n"
+        "Cu       0.10000       0.20000       0.30000      0.01      0.02      0.03"
+        "  1 1 1  7\n"
+        "Cu       1.10000       1.20000       1.30000      0.11      0.12      0.13"
+        "  2 2 2  8\n"
         f"2\nLattice={lattice} Properties={props} energy=-2.5 "
         'stress="9.0 8.0 7.0 6.0 5.0 4.0 3.0 2.0 1.0" free_energy=-2.6 pbc="T T T"\n'
-        "Cu       0.40000       0.50000       0.60000      0.04      0.05      0.06\n"
-        "Cu       1.40000       1.50000       1.60000      0.14      0.15      0.16\n"
+        "Cu       0.40000       0.50000       0.60000      0.04      0.05      0.06"
+        "  3 3 3  9\n"
+        "Cu       1.40000       1.50000       1.60000      0.14      0.15      0.16"
+        "  4 4 4  10\n"
     )
     path = str(tmp_path / "traj.extxyz")
     with open(path, "w") as file:
         file.write(content)
 
-    fast = Trajectory.from_extxyz(path)
-    slow = Trajectory.from_ase(read_trajectory(path))
-    assert fast.stress is not None
-    np.testing.assert_array_equal(fast.stress, slow.stress)
-    np.testing.assert_array_equal(fast.stress[0], [1, 5, 9, 8, 7, 4])
-    np.testing.assert_array_equal(fast.energy, [-1.5, -2.5])  # energy, not free_energy
-    np.testing.assert_array_equal(fast.positions, slow.positions)
-    np.testing.assert_array_equal(fast.forces, slow.forces)
-
-
-@pytest.mark.parametrize(
-    ("frame1", "match"),
-    [
-        # frame 1 has a different number of atom lines -> fails the frame-stride check
-        (
-            (
-                '3\nLattice="4 0 0 0 4 0 0 0 4" '
-                'Properties=species:S:1:pos:R:3 pbc="T T T"\n'
-                "Cu 0 0 0\nCu 1 1 1\nCu 2 2 2\n"
-            ),
-            "not a multiple of frame stride",
-        ),
-        # same atom count but different species composition
-        (
-            (
-                '2\nLattice="4 0 0 0 4 0 0 0 4" '
-                'Properties=species:S:1:pos:R:3 pbc="T T T"\n'
-                "Ag 0 0 0\nAg 1 1 1\n"
-            ),
-            "species differ",
-        ),
-        # different periodic boundary conditions
-        (
-            (
-                '2\nLattice="4 0 0 0 4 0 0 0 4" '
-                'Properties=species:S:1:pos:R:3 pbc="T T F"\n'
-                "Cu 0 0 0\nCu 1 1 1\n"
-            ),
-            "pbc differs",
-        ),
-        # different Properties header (column layout)
-        (
-            (
-                '2\nLattice="4 0 0 0 4 0 0 0 4" '
-                'Properties=species:S:1:pos:R:3:forces:R:3 pbc="T T T"\n'
-                "Cu 0 0 0\nCu 1 1 1\n"
-            ),
-            "Properties header differs",
-        ),
-        # count line value disagrees with frame 0 while the frame stride still aligns
-        (
-            (
-                '5\nLattice="4 0 0 0 4 0 0 0 4" '
-                'Properties=species:S:1:pos:R:3 pbc="T T T"\n'
-                "Cu 0 0 0\nCu 1 1 1\n"
-            ),
-            "count line says 5 atoms",
-        ),
-        # md_step on frame 1 only: partial md_step fails loud like from_ase
-        (
-            (
-                '2\nLattice="4 0 0 0 4 0 0 0 4" '
-                'Properties=species:S:1:pos:R:3 pbc="T T T" md_step=10\n'
-                "Cu 0 0 0\nCu 1 1 1\n"
-            ),
-            "frame 0 is missing a comment field",
-        ),
-    ],
-    ids=["varying_count", "species", "pbc", "properties", "count_line", "md_step"],
-)
-def test_from_extxyz_rejects_inconsistent_metadata(
-    tmp_path: Path, frame1: str, match: str
-) -> None:
-    """Frames inconsistent with frame 0 fail loudly instead of mixing systems."""
-    frame0 = (
-        '2\nLattice="4 0 0 0 4 0 0 0 4" '
-        'Properties=species:S:1:pos:R:3 pbc="T T T"\n'
-        "Cu 0 0 0\nCu 1 1 1\n"
+    traj = Trajectory.from_extxyz(path)
+    assert traj.stress is not None
+    assert traj.forces is not None
+    # Voigt (xx, yy, zz, yz, xz, xy) of the symmetric part of the 9-value stress
+    np.testing.assert_array_equal(traj.stress, [[1, 5, 9, 7, 5, 3], [9, 5, 1, 3, 5, 7]])
+    np.testing.assert_array_equal(traj.energy, [-1.5, -2.5])  # energy, not free_energy
+    np.testing.assert_array_equal(
+        traj.positions[:, 0], [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]
     )
-    path = str(tmp_path / "traj.extxyz")
+    np.testing.assert_array_equal(traj.forces[1, 1], [0.14, 0.15, 0.16])
+    assert traj.md_step is None
+
+    # a frame lacking a result the others carry fails loud instead of dropping it
+    first_frame = content[: content.index("2\nLattice", 1)]
     with open(path, "w") as file:
-        file.write(frame0 + frame1)
-    with pytest.raises(ValueError, match=match):
+        file.write(first_frame + first_frame.replace(" energy=-1.5", ""))
+    with pytest.raises(ValueError, match="frame 1 has no energy"):
         Trajectory.from_extxyz(path)

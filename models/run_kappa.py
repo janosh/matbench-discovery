@@ -11,11 +11,13 @@ Examples:
 # /// script
 # requires-python = ">=3.14"
 # dependencies = [
-#   "matbench-discovery[phonons,symmetry]",
+#   "ase>=3.29",
+#   "matbench-discovery[symmetry]",
 # ]
 #
 # [tool.uv.sources]
 # matbench-discovery = { path = "../", editable = true }
+# matscikit = { path = "../../matscikit", editable = true }
 # ///
 
 from __future__ import annotations
@@ -369,7 +371,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
         parser.error(str(exc))
 
     resolved_device = resolve_device(model_key, args.device)
-    calculator, runtime = load_calculator_with_runtime(
+    force_model, runtime = load_calculator_with_runtime(
         model_key,
         device=resolved_device,
         dtype=args.dtype,
@@ -377,7 +379,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
     )
     checkpoint = resolved_artifact_identifier(model, args.checkpoint)
     records = run_kappa_shard(
-        calculator=calculator,
+        model=force_model,
         model_key=model_key,
         atoms_by_id=atoms_by_id,
         dataset_path=dataset_path,

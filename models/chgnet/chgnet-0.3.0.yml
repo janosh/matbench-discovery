@@ -219,9 +219,9 @@ metrics:
           md5: 216d33d39482212a2e1cb4fc18ec5cf4
         force_file:
           name: models/chgnet/chgnet-0.3.0/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71263114
-          size: 2012721
-          md5: 64ec0208bd113a41e38924534e22c7ce
+          url: https://figshare.com/files/71275417
+          size: 3722107
+          md5: 3fa0f7559ece45d93937f50e43084b02
         run_info_file:
           name: models/chgnet/chgnet-0.3.0/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334178

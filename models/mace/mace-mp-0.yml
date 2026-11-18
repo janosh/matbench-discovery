@@ -228,9 +228,9 @@ metrics:
           md5: 243b42fc775e6956e24b07173162fa38
         force_file:
           name: models/mace/mace-mp-0/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71263195
-          size: 1927178
-          md5: c00c2bd32f79c7f2ba54d4dcb16a5ece
+          url: https://figshare.com/files/71275486
+          size: 3726772
+          md5: 98948b8f9abf6f231013c509ddac4a8b
         run_info_file:
           name: models/mace/mace-mp-0/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334511

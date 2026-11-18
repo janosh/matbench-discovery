@@ -177,9 +177,9 @@ metrics:
           md5: 8ca1e3e30d3581ace6231e1734929e50
         force_file:
           name: models/sevennet/sevennet-0/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71263288
-          size: 2136789
-          md5: e9c26f55029c7bac9c65658289e50fef
+          url: https://figshare.com/files/71275537
+          size: 3886942
+          md5: c0680ff77848d0247d8574c791009e9d
         run_info_file:
           name: models/sevennet/sevennet-0/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334658

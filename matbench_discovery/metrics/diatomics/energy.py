@@ -1,7 +1,7 @@
 """Energy-based metrics for diatomic curves."""
 
 import numpy as np
-from ase.data import atomic_masses, atomic_numbers
+from matscikit.elements import ATOMIC_MASSES, ATOMIC_NUMBERS
 from numpy.typing import ArrayLike
 
 PBE_WALL_ENERGY_THRESHOLDS_EV: tuple[float, ...] = (1, 5, 10, 20, 50, 100)
@@ -247,7 +247,7 @@ def _vibrational_wavenumber_cm(elem_symbol: str, curvature_ev_per_a2: float) -> 
         return np.nan
     atomic_symbol = elem_symbol.split("-", maxsplit=1)[0]
     reduced_mass_kg = (
-        atomic_masses[atomic_numbers[atomic_symbol]] * 1.66053906660e-27 / 2
+        ATOMIC_MASSES[ATOMIC_NUMBERS[atomic_symbol]] * 1.66053906660e-27 / 2
     )
     force_constant_n_per_m = curvature_ev_per_a2 * 16.02176634
     angular_freq_per_s = np.sqrt(force_constant_n_per_m / reduced_mass_kg)

@@ -26,6 +26,7 @@ Model dependency trees conflict, so each model resolves its own environment via
 #
 # [tool.uv.sources]
 # matbench-discovery = { path = "../", editable = true }
+# matscikit = { path = "../../matscikit", editable = true }
 # ///
 
 import argparse
@@ -132,11 +133,11 @@ def main() -> int:
     arch_dir = os.path.dirname(model.rel_path) if model else args.model
     out_dir = args.out_dir or f"{module_dir}/{arch_dir}/{today}-md-nvt"
 
-    calculator, runtime = load_calculator_with_runtime(
+    force_model, runtime = load_calculator_with_runtime(
         args.model, device=args.device, dtype=args.dtype
     )
     df_md = run_md_benchmark(
-        calculator=calculator,
+        model=force_model,
         model_key=args.model,
         out_dir=out_dir,
         ref_file=args.ref_file,

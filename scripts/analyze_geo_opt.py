@@ -13,19 +13,17 @@ Example usage (moyopy comes from the symmetry extra):
         --models mace_mp_0 m3gnet --symprec 1e-2 1e-5
     # only analyze first 10 structures (CSV goes to a debug/ subdir, no YAML write)
     uv run --with-editable '.[symmetry]' scripts/analyze_geo_opt.py --debug 10
-    uv run --with-editable '.[symmetry]' scripts/analyze_geo_opt.py --workers 4
 """
 
 # %%
 import importlib.metadata
 import itertools
-import multiprocessing as mp
 import os
-from concurrent.futures import ProcessPoolExecutor
 from typing import TYPE_CHECKING, Any, Final
 
 import pandas as pd
-from pymatgen.core import Structure
+from matscikit import Structure
+from matscikit.interop import structure_from_pymatgen_dict
 from pymatviz.enums import Key
 
 from matbench_discovery import ROOT, file_digest, today
@@ -77,7 +75,7 @@ def load_model_structs(model: Model, debug_mode: int) -> dict[str, Structure]:
         df_ml_structs = df_ml_structs.head(debug_mode)
 
     return {
-        mat_id: Structure.from_dict(struct_dict)
+        mat_id: structure_from_pymatgen_dict(struct_dict)
         for mat_id, struct_dict in df_ml_structs["structure"].items()
     }
 
@@ -90,7 +88,6 @@ def analyze_model_symprec(
     dft_structs: dict[str, Structure],
     *,
     debug_mode: int = 0,
-    pbar_pos: int = 0,  # tqdm progress bar position
     overwrite: bool = False,
 ) -> pd.DataFrame | None:
     """Analyze a single model for a single symprec value."""
@@ -156,20 +153,12 @@ def analyze_model_symprec(
         print(f"{action} {model.label} for {symprec=}")
         model_structs = load_model_structs(model, debug_mode)
 
-        pbar_desc = f"Process {pbar_pos}: Analyzing {model.label} for {symprec=}"
         df_model_analysis = symmetry.get_sym_info_from_structs(
-            model_structs,
-            pbar=dict(desc=pbar_desc, position=pbar_pos, leave=True),
-            symprec=symprec,
+            model_structs, symprec=symprec
         )
 
-        pbar_desc = f"Process {pbar_pos}: Comparing DFT vs {model.label} for {symprec=}"
         df_ml_geo_analysis = symmetry.pred_vs_ref_struct_symmetry(
-            df_model_analysis,
-            df_dft_analysis,
-            model_structs,
-            dft_structs,
-            pbar=dict(desc=pbar_desc, position=pbar_pos, leave=True),
+            df_model_analysis, df_dft_analysis, model_structs, dft_structs
         )
 
         os.makedirs(os.path.dirname(geo_opt_csv_path), exist_ok=True)
@@ -200,11 +189,7 @@ def write_dft_reference(
     )
     if os.path.isfile(out_path):
         raise FileExistsError(f"Refusing to overwrite DFT reference {out_path}")
-    df_dft_analysis = symmetry.get_sym_info_from_structs(
-        dft_structs,
-        pbar=dict(desc=f"Getting DFT symmetries {symprec=}"),
-        symprec=symprec,
-    )
+    df_dft_analysis = symmetry.get_sym_info_from_structs(dft_structs, symprec=symprec)
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     df_dft_analysis.to_csv(out_path)
     md5 = file_digest(out_path, "md5")
@@ -240,9 +225,6 @@ def main(raw_args: list[str] | None = None) -> int:
         "--debug", type=int, default=0, help="If > 0, analyze only this many."
     )
     geo_opt_group.add_argument(
-        "--workers", type=int, default=max(1, mp.cpu_count() - 1)
-    )
-    geo_opt_group.add_argument(
         "--overwrite", action="store_true", help="Recompute cached analysis CSVs."
     )
     args = parse_cli_args(raw_args)
@@ -260,7 +242,7 @@ def main(raw_args: list[str] | None = None) -> int:
     ).set_index(Key.mat_id)
 
     dft_structs: dict[str, Structure] = {
-        mat_id: Structure.from_dict(cse[Key.structure])
+        mat_id: structure_from_pymatgen_dict(cse[Key.structure])
         for mat_id, cse in df_wbm_structs[Key.computed_structure_entry].items()
     }
 
@@ -290,31 +272,19 @@ def main(raw_args: list[str] | None = None) -> int:
             )
         dft_analysis_dict[symprec] = pd.read_csv(data_file.path).set_index(Key.mat_id)
 
+    # sequential: each analysis already uses every core (matscikit's rayon pool), and
+    # worker processes would each hold a copy of the DFT structures
     tasks = list(itertools.product(args.models, symprec_values))
-    n_workers = min(len(tasks), args.workers)
-
-    # %% Process model-symprec combinations in parallel
-    print(
-        f"\nAnalyzing {len(tasks)} model-symprec combos using {n_workers} processes..."
-    )
-
-    with ProcessPoolExecutor(max_workers=n_workers) as executor:
-        futures = [
-            executor.submit(
-                analyze_model_symprec,
-                model=model,
-                symprec=symprec,
-                moyo_version=moyo_version,
-                df_dft_analysis=dft_analysis_dict[symprec],
-                dft_structs=dft_structs,
-                debug_mode=debug_mode,
-                pbar_pos=idx,  # assign unique position to each task's progress bar
-                overwrite=args.overwrite,
-            )
-            for idx, (model, symprec) in enumerate(tasks)
-        ]
-        for future in futures:
-            future.result()  # re-raises any worker exception
+    for model, symprec in tasks:
+        analyze_model_symprec(
+            model=model,
+            symprec=symprec,
+            moyo_version=moyo_version,
+            df_dft_analysis=dft_analysis_dict[symprec],
+            dft_structs=dft_structs,
+            debug_mode=debug_mode,
+            overwrite=args.overwrite,
+        )
 
     print(f"\nAll {len(tasks)} model-symprec combinations processed!")
     return 0

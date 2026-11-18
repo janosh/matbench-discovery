@@ -224,9 +224,9 @@ metrics:
           md5: 0ec88ad933488a4fbfca1d04a65e9b13
         force_file:
           name: models/orb/orb-v2-mptrj/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71263276
-          size: 3149873
-          md5: f025196b67c76e8df3f5a3e003b21602
+          url: https://figshare.com/files/71275522
+          size: 5081273
+          md5: 2bf4f4cfc9c70694befa844757ea4c8d
         run_info_file:
           name: models/orb/orb-v2-mptrj/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334637

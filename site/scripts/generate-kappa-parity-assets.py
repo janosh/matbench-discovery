@@ -16,15 +16,12 @@ from __future__ import annotations
 
 import argparse
 import gzip
-import io
 import json
 import math
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final
 
-import ase.io
 import numpy as np
-from ase import Atoms
 from asset_helpers import (
     PARITY_MANIFEST_SCHEMA_VERSION,
     clean_float,
@@ -36,8 +33,8 @@ from asset_helpers import (
     write_json_gz,
     write_manifest,
 )
-from pymatgen.core import Structure
-from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+from matscikit import Structure, symmetry_dataset
+from matscikit.io import format_extxyz, read_extxyz
 from pymatviz.enums import Key
 
 from matbench_discovery import ROOT
@@ -293,24 +290,25 @@ def load_reference() -> tuple[
 
     structures: dict[str, str] = {}
     meta: dict[str, dict[str, str | int]] = {}
-    for atoms in ase.io.read(DataFiles.phonondb_pbe_103_structures.path, index=":"):
-        mat_id = atoms.info["material_id"]
+    for frame in read_extxyz(DataFiles.phonondb_pbe_103_structures.path):
+        struct = frame.structure
+        mat_id = struct.info["material_id"]
         # keep only geometry + id; drop bulky phonon-calc metadata (fc2/q-mesh/...)
-        clean = Atoms(
-            symbols=atoms.get_chemical_symbols(),
-            positions=atoms.positions,
-            cell=atoms.cell,
-            pbc=atoms.pbc,
+        clean = Structure(
+            struct.lattice,
+            struct.symbols,
+            struct.positions,
+            pbc=struct.pbc,
+            info={"material_id": mat_id},
         )
-        clean.info["material_id"] = mat_id
-        buffer = io.StringIO()
-        ase.io.write(buffer, clean, format="extxyz")
-        structures[mat_id] = compact_extxyz(buffer.getvalue(), STRUCTURE_DECIMALS)
-        struct = Structure.from_ase_atoms(atoms)
+        structures[mat_id] = compact_extxyz(format_extxyz([clean]), STRUCTURE_DECIMALS)
         meta[mat_id] = {
-            "formula": struct.formula,
+            "formula": struct.composition.formula,
             "n_sites": len(struct),
-            "spacegroup": SpacegroupAnalyzer(struct).get_space_group_number(),
+            # pymatgen SpacegroupAnalyzer defaults: symprec 0.01, angle_tolerance 5 deg
+            "spacegroup": symmetry_dataset(
+                struct, symprec=0.01, angle_tolerance=np.radians(5)
+            )["number"],
         }
     return df_dft, structures, meta
 

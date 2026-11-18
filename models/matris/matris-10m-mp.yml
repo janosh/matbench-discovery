@@ -233,9 +233,9 @@ metrics:
           md5: 99eec59a2ae4ec371972b506850d6648
         force_file:
           name: models/matris/matris-10m-mp/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71263243
-          size: 2135688
-          md5: e5ea98c9201061350eed939d600c1b02
+          url: https://figshare.com/files/71275498
+          size: 3899071
+          md5: 93dab35285afc33c22596dc680174b8e
         run_info_file:
           name: models/matris/matris-10m-mp/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334535

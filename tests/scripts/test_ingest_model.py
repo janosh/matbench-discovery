@@ -271,7 +271,7 @@ def test_run_payload_refresh_scopes(run_cmd_calls: list[tuple[str, ...]]) -> Non
         for cmd in script_calls
         if any("kappa_103_analysis.py" in arg for arg in cmd)
     )
-    assert kappa_call[2:4] == ("--with-editable", ".[phonons]")
+    assert kappa_call[2:4] == ("--with-editable", ".")
     assert "--extra" not in kappa_call
     assert "summarize_payload_changes.py" in " ".join(report_call)
     assert "pytest" in test_call
@@ -286,15 +286,17 @@ def test_run_payload_refresh_scopes(run_cmd_calls: list[tuple[str, ...]]) -> Non
 def test_run_model_steps_installs_project_extras(
     run_cmd_calls: list[tuple[str, ...]],
 ) -> None:
-    """Per-model eval subprocesses resolve project extras such as phonons."""
+    """Per-model eval subprocesses resolve project extras such as symmetry."""
     checks = ingest.Checklist()
-    step_cmd = "--extra phonons scripts/evals/kappa.py"
-    steps = [("Kappa metrics", True, True, step_cmd)]
+    step_cmd = "--extra symmetry scripts/analyze_geo_opt.py"
+    steps = [("Geo-opt analysis", True, True, step_cmd)]
     ingest.run_model_steps(
         "evals", steps, Model["mace_mpa_0"], checks, energy_only=False
     )
 
-    expected = uv_cmd(".[phonons]", "scripts/evals/kappa.py", "--models", "mace_mpa_0")
+    expected = uv_cmd(
+        ".[symmetry]", "scripts/analyze_geo_opt.py", "--models", "mace_mpa_0"
+    )
     assert run_cmd_calls == [expected]
     assert checks.n_failed == 0
 
