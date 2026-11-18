@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from matscikit import EMT, Structure
-from matscikit.io import Frame, write_extxyz
+from matscikit.io import Frame, read_extxyz, write_extxyz
 
 from matbench_discovery import today
 from matbench_discovery.calculators import load_calculator_with_runtime
@@ -27,7 +27,6 @@ from matbench_discovery.md import (
     NvtParams,
     list_reference_systems,
     read_reference_trajectory,
-    read_trajectory,
     run_info_path,
     run_md_benchmark,
     run_nvt_md,
@@ -300,7 +299,7 @@ def test_evaluate_md_system(tmp_path: Path, cu_emt_frames: list[Frame]) -> None:
     # apart), round-tripped through extxyz so energies/forces/stress survive file IO
     pred_path = tmp_path / "pred.extxyz"
     write_extxyz(str(pred_path), cu_emt_frames[:41:2])
-    strided_pred = read_trajectory(str(pred_path))
+    strided_pred = read_extxyz(str(pred_path))
     ref_dt = 0.25  # 1 saved frame per 0.25 fs MD step
 
     def evaluate(pred: list[Frame], pred_dt: float) -> dict[str, float]:
@@ -427,25 +426,6 @@ def test_validate_pred_trajectory(tmp_path: Path, cu_emt_frames: list[Frame]) ->
     nan_positions = tmp_path / "nan-positions.extxyz"
     nan_positions.write_text("\n".join(lines) + "\n")
     assert validate(nan_positions) is None
-
-
-def test_nvt_checkpoint_state() -> None:
-    """The integrator exposes the full state (positions, momenta, thermostat, step)."""
-    from matbench_discovery.md import _nvt_state, _thermalized_nvt_dynamics
-
-    atoms = bulk("Cu", cubic=True).make_supercell([2, 2, 2])
-    dynamics = _thermalized_nvt_dynamics(
-        atoms,
-        EMT(),
-        temperature_kelvin=300,
-        time_step_fs=0.25,
-        thermostat_time_scale_fs=25,
-        seed=0,
-    )
-    state = _nvt_state(dynamics.frame(0))
-    assert {"positions", "momenta", "eta", "p_eta", "n_steps"} <= set(state)
-    assert state["positions"].shape == state["momenta"].shape == (len(atoms), 3)
-    assert state["n_steps"] == 0
 
 
 def _run_short_resumable(
@@ -764,7 +744,7 @@ def test_run_md_benchmark_resume_matches_single_run(
     assert rollout.is_file()
     assert not (out_dir / "bulkCu_300K_test-nvt-emt.part.extxyz").is_file()
     assert not (out_dir / "bulkCu_300K_test-nvt-emt.extxyz.ckpt.npz").is_file()
-    assert len(read_trajectory(str(rollout))) == 21
+    assert len(read_extxyz(str(rollout))) == 21
     # rollout wall time accumulated across the interrupted sessions (rounded to 0.01 s)
     assert resumed.loc["bulkCu_300K_test", "run_time_sec"] >= 0
 

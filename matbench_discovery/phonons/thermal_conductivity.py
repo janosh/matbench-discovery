@@ -14,7 +14,6 @@ from typing import Literal
 
 import numpy as np
 from matscikit import AnharmonicPhonons, Structure
-from matscikit.model import Model as ForceModel
 from pymatviz.enums import Key
 
 from matbench_discovery.enums import MbdKey
@@ -80,43 +79,6 @@ def init_phonons(
     if len(mesh) != 3:
         raise ValueError(f"q_point_mesh needs 3 entries, got {q_point_mesh}")
     return KappaCalculation(phonons, mesh)  # ty: ignore[invalid-argument-type]
-
-
-def calculate_fc2(
-    calc: KappaCalculation,
-    model: ForceModel,
-    *,
-    max_batch_structures: int | None = None,
-) -> np.ndarray:
-    """Fit fc2 to the model's displacement forces (kept as ``fc2_forces``) and return
-    the frequencies (n_grid, n_bands) in THz on each regular grid point once (Gamma
-    first), the uniform-weight counterpart of the weighted irreducible mesh.
-    ``max_batch_structures`` caps the supercells per model call.
-    """
-    calc.phonons.produce_fc2(
-        model, symmetrize=True, batch={"structures": max_batch_structures}
-    )
-    mesh = calc.phonons.harmonic.mesh(list(calc.mesh))
-    return mesh["frequencies"][mesh["ir_of_grid"]]
-
-
-def calculate_fc3(
-    calc: KappaCalculation,
-    model: ForceModel,
-    *,
-    max_batch_structures: int | None = None,
-    max_evaluations: int | None = None,
-) -> None:
-    """Fit fc3 (with sum rules and permutation symmetry) to the model's displacement
-    forces (kept as ``fc3_forces``), batched as ``calculate_fc2``. ``max_evaluations``
-    caps the evaluated supercells, the rest taking zero forces (dry runs).
-    """
-    calc.phonons.produce_fc3(
-        model,
-        symmetrize=True,
-        batch={"structures": max_batch_structures},
-        max_evaluations=max_evaluations,
-    )
 
 
 def calculate_conductivity(

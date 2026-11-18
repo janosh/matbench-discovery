@@ -112,13 +112,6 @@ def read_reference_trajectory(
     return trajectory, dt_fs, temperature_kelvin
 
 
-def read_trajectory(file_path: str, *, index: int | slice = slice(None)) -> list[Frame]:
-    """Frames of an (optionally compressed) extxyz trajectory file; ``index`` selects
-    frames like a list index (an int returns a one-frame list).
-    """
-    return read_extxyz(file_path, index=index)
-
-
 def run_nvt_md(
     atoms: Structure,
     model: ForceModel,
@@ -355,19 +348,6 @@ def _atomic_savez(path: str, **arrays: NpzValue) -> None:
         np.savez(file, **cast("dict[str, Any]", arrays))
 
 
-def _nvt_state(state: dict[str, Any]) -> dict[str, np.ndarray]:
-    """Full integrator state (positions, momenta, eta, p_eta, n_steps) of a frame
-    dict, as passed to ``NoseHooverChainNVT.run`` callbacks or from ``frame()``.
-    """
-    return {
-        "positions": np.asarray(state["structure"].positions),
-        "momenta": np.asarray(state["momenta"]),
-        "eta": np.asarray(state["eta"]),
-        "p_eta": np.asarray(state["p_eta"]),
-        "n_steps": np.asarray(int(state["step"])),
-    }
-
-
 def _load_checkpoint(
     ckpt_path: str, *, atoms: Structure, params: NvtParams, n_steps: int
 ) -> tuple[dict[str, np.ndarray], list[dict[str, Any]]] | None:
@@ -507,7 +487,7 @@ def run_nvt_md_resumable(
         # keep only checkpointed frames; a kill may have appended an un-checkpointed
         # (possibly malformed) tail, so read just the first n_ckpt and rewrite cleanly
         try:
-            kept = read_trajectory(part_path, index=slice(None, n_ckpt))
+            kept = read_extxyz(part_path, index=slice(None, n_ckpt))
         except (OSError, ValueError, IndexError) as exc:
             print(f"  resume failed reading {part_path} ({exc}); recomputing")
             kept = []
@@ -539,18 +519,18 @@ def run_nvt_md_resumable(
         write_extxyz(part_path, _snapshot_frame(state), append=True)
         frames_written += 1
         if frames_written % checkpoint_every_n_frames == 0:
-            nvt_state = _nvt_state(state)
+            # full integrator state: positions, momenta, thermostat and step count
             _atomic_savez(
                 ckpt_path,
                 schema=CHECKPOINT_SCHEMA,
                 matscikit_build=matscikit_build_digest(),
-                nsteps=int(nvt_state["n_steps"]),
+                nsteps=int(state["step"]),
                 n_steps=n_steps,
                 n_frames=frames_written,
-                q=nvt_state["positions"],
-                p=nvt_state["momenta"],
-                eta=nvt_state["eta"],
-                p_eta=nvt_state["p_eta"],
+                q=np.asarray(state["structure"].positions),
+                p=np.asarray(state["momenta"]),
+                eta=np.asarray(state["eta"]),
+                p_eta=np.asarray(state["p_eta"]),
                 record_interval=params.record_interval,
                 time_step_fs=params.time_step_fs,
                 temperature_kelvin=params.temperature_kelvin,
@@ -575,7 +555,7 @@ def run_nvt_md_resumable(
         label=progress_label,
     )
 
-    frames = read_trajectory(part_path)
+    frames = read_extxyz(part_path)
     if len(frames) != target_frames:
         raise RuntimeError(
             f"{out_path} rollout produced {len(frames)} frames != {target_frames}"
@@ -619,7 +599,7 @@ def validate_pred_trajectory(
         return None
     record_interval = params.record_interval
     try:
-        frames = read_trajectory(path)
+        frames = read_extxyz(path)
     except (OSError, ValueError, IndexError, StopIteration) as exc:
         print(f"  recomputing {path}: unreadable ({exc})")
         return None

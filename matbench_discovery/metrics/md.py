@@ -16,16 +16,8 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
-from matscikit import (
-    FEMTOSECOND,
-    K_B,
-    Structure,
-    adf,
-    finite_difference_velocities,
-    rdf,
-    vdos,
-)
-from matscikit.elements import ATOMIC_MASSES, CHEMICAL_SYMBOLS
+from matscikit import FEMTOSECOND, K_B, adf, finite_difference_velocities, rdf, vdos
+from matscikit.elements import ATOMIC_MASSES
 from matscikit.io import Frame
 from scipy.stats import wasserstein_distance
 
@@ -449,12 +441,7 @@ def calc_energy_force_rmse(
     if traj.energy is None or traj.forces is None:
         raise ValueError("trajectory lacks private reference energy/forces for RMSE")
 
-    symbols = [CHEMICAL_SYMBOLS[number] for number in traj.atomic_numbers]
-    pbc = tuple(bool(flag) for flag in traj.pbc)
-    structures = [
-        Structure(traj.cell[idx], symbols, traj.positions[idx], pbc=pbc)
-        for idx in range(traj.n_frames)
-    ]
+    structures = [frame.structure for frame in traj.to_frames()]
     # chunked model calls bound memory for long trajectories
     chunk = 64
     results = [
@@ -465,19 +452,13 @@ def calc_energy_force_rmse(
         )
     ]
     energy_pred = np.array([float(result["energy"]) for result in results])
-    force_se = np.array(
-        [
-            ((np.asarray(result["forces"]) - traj.forces[idx]) ** 2).sum()
-            for idx, result in enumerate(results)
-        ]
-    )
+    forces_pred = np.array([result["forces"] for result in results], dtype=float)
 
     pred_dev = (energy_pred - energy_pred.mean()) / traj.n_atoms
     ref_dev = (traj.energy - traj.energy.mean()) / traj.n_atoms
-    n_force_components = traj.n_frames * traj.n_atoms * 3
     return {
         "energy_rmse": float(np.sqrt(np.mean((pred_dev - ref_dev) ** 2))),
-        "force_rmse": float(np.sqrt(force_se.sum() / n_force_components)),
+        "force_rmse": float(np.sqrt(np.mean((forces_pred - traj.forces) ** 2))),
     }
 
 

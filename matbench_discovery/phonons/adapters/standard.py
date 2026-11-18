@@ -219,11 +219,17 @@ class StandardKappaAdapter:
         model: ForceModel,
         settings: KappaSettings,
     ) -> np.ndarray:
-        """Fit FC2; return the frequencies on every grid point."""
-        from matbench_discovery.phonons import thermal_conductivity as ltc
-
+        """Fit symmetrized FC2 to the model's displacement forces (kept as
+        ``fc2_forces``) in batches of ``supercell_batch_size`` supercells and return
+        the frequencies (n_grid, n_bands) in THz on each regular grid point once
+        (Gamma first), the uniform-weight counterpart of the weighted irreducible mesh.
+        """
         batch_size = supercell_batch_size(settings, len(calc.phonons.phonon_supercell))
-        return ltc.calculate_fc2(calc, model, max_batch_structures=batch_size)
+        calc.phonons.produce_fc2(
+            model, symmetrize=True, batch={"structures": batch_size}
+        )
+        mesh = calc.phonons.harmonic.mesh(list(calc.mesh))
+        return mesh["frequencies"][mesh["ir_of_grid"]]
 
     def harmonic_phonons(
         self,
@@ -235,9 +241,9 @@ class StandardKappaAdapter:
         Runs after calculate_fc2 for every material, so it must not depend on FC3 or
         the conductivity solver.
         """
-        from matbench_discovery.phonons.harmonic import harmonic_data_from_calculation
+        from matbench_discovery.phonons.harmonic import harmonic_phonon_data
 
-        return harmonic_data_from_calculation(calc)
+        return harmonic_phonon_data(calc.phonons.harmonic, mesh=calc.mesh)
 
     def calculate_fc3(
         self,
@@ -247,14 +253,16 @@ class StandardKappaAdapter:
         *,
         max_evaluations: int | None = None,
     ) -> None:
-        """Fit FC3 in batches of ``supercell_batch_size`` supercells."""
-        from matbench_discovery.phonons import thermal_conductivity as ltc
-
+        """Fit FC3 (with sum rules and permutation symmetry) to the model's
+        displacement forces (kept as ``fc3_forces``), batched as ``calculate_fc2``.
+        ``max_evaluations`` caps the evaluated supercells, the rest taking zero forces
+        (dry runs).
+        """
         batch_size = supercell_batch_size(settings, len(calc.phonons.supercell))
-        ltc.calculate_fc3(
-            calc,
+        calc.phonons.produce_fc3(
             model,
-            max_batch_structures=batch_size,
+            symmetrize=True,
+            batch={"structures": batch_size},
             max_evaluations=max_evaluations,
         )
 

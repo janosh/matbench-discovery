@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from matscikit import Structure
-from matscikit.io import format_extxyz
+from matscikit.io import Frame, format_extxyz
 from pymatviz.enums import Key
 from ruamel.yaml.comments import CommentedMap
 
@@ -26,6 +26,7 @@ from matbench_discovery.data import (
     df_wbm,
     file_ref_name,
     file_ref_url,
+    frames_from_zip,
     glob_to_df,
     iter_file_refs,
     load_df_wbm_with_preds,
@@ -33,7 +34,6 @@ from matbench_discovery.data import (
     merge_file_ref,
     parse_artifact_filename,
     round_trip_yaml,
-    structures_from_zip,
     task_coverage,
     update_yaml_file,
 )
@@ -153,7 +153,7 @@ def mock_wbm_preds() -> Iterator[Mock]:
 
 def test_atoms_zip_round_trip(dummy_atoms_zip: Path) -> None:
     """Zipped extXYZ structures load back without Atoms.info drift."""
-    read_atoms = structures_from_zip(str(dummy_atoms_zip))
+    read_atoms = [frame.structure for frame in frames_from_zip(str(dummy_atoms_zip))]
     assert len(read_atoms) == len(dummy_atoms)
 
     for original, read in zip(dummy_atoms, read_atoms, strict=True):
@@ -170,25 +170,35 @@ def test_atoms_zip_round_trip(dummy_atoms_zip: Path) -> None:
                 assert value == read_val, f"Mismatch in {key}"
 
 
-def test_structures_from_zip_skips_non_extxyz_members(dummy_atoms_zip: Path) -> None:
-    """Archive members without an .extxyz suffix are ignored."""
+def test_frames_from_zip_skips_non_extxyz_members_keeps_results(
+    dummy_atoms_zip: Path,
+) -> None:
+    """Non-.extxyz members are ignored; stored forces and stress come back too."""
+    forces, stress = np.arange(9.0).reshape(3, 3), np.diag([1.0, 2.0, 3.0])
+    frame = Frame(dummy_atoms[0], energy=-1.5, forces=forces, stress=stress)
     with zipfile.ZipFile(dummy_atoms_zip, mode="a") as zip_file:
         zip_file.writestr("readme.txt", "not a structure")
-    read_atoms = structures_from_zip(str(dummy_atoms_zip))
-    assert [atoms.composition.reduced_formula for atoms in read_atoms] == ["H2O", "CO2"]
+        zip_file.writestr("with-results.extxyz", format_extxyz([frame]))
+    frames = frames_from_zip(str(dummy_atoms_zip))
+    formulas = [frame.structure.composition.reduced_formula for frame in frames]
+    assert formulas == ["H2O", "CO2", "H2O"]
+    assert frames[0].forces is None
+    assert frames[-1].energy == -1.5
+    np.testing.assert_array_equal(frames[-1].forces, forces)
+    np.testing.assert_array_equal(frames[-1].stress, stress)
 
 
-def test_structures_from_zip_bad_inputs(tmp_path: Path) -> None:
+def test_frames_from_zip_bad_inputs(tmp_path: Path) -> None:
     """Empty zips return []; corrupt zips raise BadZipFile."""
     empty_zip = tmp_path / "empty.zip"
     with zipfile.ZipFile(empty_zip, mode="w"):
         pass
-    assert structures_from_zip(str(empty_zip)) == []
+    assert frames_from_zip(str(empty_zip)) == []
 
     invalid_zip = tmp_path / "invalid.zip"
     invalid_zip.write_text("This is not a zip file")
     with pytest.raises(zipfile.BadZipFile):
-        structures_from_zip(str(invalid_zip))
+        frames_from_zip(str(invalid_zip))
 
 
 @pytest.mark.parametrize(
@@ -206,7 +216,7 @@ def test_structures_from_zip_bad_inputs(tmp_path: Path) -> None:
         (slice(10, 20), []),
     ],
 )
-def test_structures_from_zip_with_limit(
+def test_frames_from_zip_with_limit(
     tmp_path: Path, limit: int | slice | None, expected_formulas: list[str]
 ) -> None:
     """Integer and slice limits select zip members by archive order."""
@@ -223,9 +233,9 @@ def test_structures_from_zip_with_limit(
 
     zip_path = tmp_path / "limit_test_structures.zip"
     write_atoms_zip(more_atoms, zip_path)
-    read_atoms = structures_from_zip(str(zip_path), limit=limit)
+    frames = frames_from_zip(str(zip_path), limit=limit)
     assert [
-        atoms.composition.reduced_formula for atoms in read_atoms
+        frame.structure.composition.reduced_formula for frame in frames
     ] == expected_formulas
 
 

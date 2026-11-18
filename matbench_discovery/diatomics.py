@@ -7,7 +7,7 @@ https://arxiv.org/abs/2401.00096 (see fig. 56).
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, get_args
+from typing import TYPE_CHECKING
 
 import numpy as np
 from matscikit import Structure
@@ -19,9 +19,7 @@ if TYPE_CHECKING:
 
     from matscikit.model import Model as ForceModel
 
-DiatomicsType = Literal["homo-nuclear", "hetero-nuclear"]
-homo_nuc = get_args(DiatomicsType)[0]
-atom_num_symbol_map = dict(enumerate(CHEMICAL_SYMBOLS, start=0))
+homo_nuc = "homo-nuclear"  # DiatomicResults section key in prediction files
 # one curve's distances/energies/forces lists, keyed by formula in DiatomicResults
 CurveDict = dict[str, list[float | list[list[float]]]]
 DiatomicResults = dict[str, CurveDict]
@@ -90,8 +88,10 @@ def calc_diatomic_curve(
     """
     expected_distances = np.asarray(distances)
     for idx, (z1, z2) in (pbar := tqdm(enumerate(pairs, start=1))):
-        elem1 = atom_num_symbol_map.get(z1, z1)
-        elem2 = atom_num_symbol_map.get(z2, z2)
+        elem1, elem2 = (
+            elem if isinstance(elem, str) else CHEMICAL_SYMBOLS[elem]
+            for elem in (z1, z2)
+        )
         formula = f"{elem1}-{elem2}"
         curve_data = results.get(formula, {})
         len_energies = len(curve_data.get("energies", []))
@@ -108,18 +108,14 @@ def calc_diatomic_curve(
             f"{idx}/{len(pairs)} {formula} diatomic curve with {model_name}"
         )
 
-        # reset curve_data in case we had prior results
-        curve_data = results[formula] = {
-            "distances": expected_distances.tolist(),
-            "energies": [],
-            "forces": [],
-        }
+        energies: list[float | list[list[float]]]
+        forces: list[float | list[list[float]]]
         try:
             # one batched model call per pair covers the whole distance grid
             dimers = generate_diatomics(elem1, elem2, distances)
-            for result in model.compute(dimers, ["energy", "forces"]):
-                curve_data["energies"].append(float(result["energy"]))
-                curve_data["forces"].append(np.asarray(result["forces"]).tolist())
+            outputs = model.compute(dimers, ["energy", "forces"])
+            energies = [float(result["energy"]) for result in outputs]
+            forces = [np.asarray(result["forces"]).tolist() for result in outputs]
         except (
             ValueError,
             RuntimeError,
@@ -131,10 +127,12 @@ def calc_diatomic_curve(
             # asserted element list, ...) raise here; skip that pair's curve rather than
             # aborting the whole sweep
             print(f"{idx}/{len(pairs)} {formula} failed: {exc!r}")
-            results[formula] = {
-                "distances": expected_distances.tolist(),
-                "energies": [],
-                "forces": [],
-            }
+            energies, forces = [], []
+        # replaces any stale cached curve
+        results[formula] = {
+            "distances": expected_distances.tolist(),
+            "energies": energies,
+            "forces": forces,
+        }
 
     return results

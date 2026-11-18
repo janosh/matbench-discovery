@@ -194,6 +194,14 @@ def test_resolve_verified_file_rechecks_stale_cache(
     if repair_succeeds:
         assert resolve() == abs_path
         assert Path(abs_path).read_bytes() == b"fresh"
+        # a verified file version is hashed once per process ...
+        with patch.object(enums_mod, "file_digest") as digest:
+            assert resolve() == abs_path
+        digest.assert_not_called()
+        # ... but a changed file (size/mtime) is verified again, so gets repaired
+        Path(abs_path).write_bytes(b"stale!")
+        assert resolve() == abs_path
+        assert Path(abs_path).read_bytes() == b"fresh"
     else:
         with pytest.raises(
             ValueError, match=f"expected MD5 {expected_md5}, got {actual_md5}"

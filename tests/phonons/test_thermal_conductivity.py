@@ -11,6 +11,11 @@ from pymatviz.enums import Key
 from matbench_discovery.enums import MbdKey
 from matbench_discovery.phonons import harmonic
 from matbench_discovery.phonons import thermal_conductivity as ltc
+from matbench_discovery.phonons.adapters import StandardKappaAdapter
+from matbench_discovery.phonons.pipeline import KappaSettings
+
+ADAPTER = StandardKappaAdapter()
+SETTINGS = KappaSettings()
 
 
 @pytest.fixture
@@ -89,27 +94,25 @@ class CountingModel:
 def test_fc3_forces_batch_and_cap(cu_calc: ltc.KappaCalculation) -> None:
     """Forces are evaluated in batches; capped evaluations leave zero slots."""
     model = CountingModel()
-    ltc.calculate_fc3(cu_calc, model, max_batch_structures=3)
+    ADAPTER.calculate_fc3(cu_calc, model, KappaSettings(batch_size=3))
     forces = cu_calc.phonons.fc3_forces
     assert forces.shape == (len(cu_calc.phonons.displacements), 27, 3)
     assert model.batch_sizes[:-1] == [3] * (len(model.batch_sizes) - 1)
     assert sum(model.batch_sizes) == len(forces)
     # matscikit's native EMT gives the same forces bit for bit, batched or not
-    ltc.calculate_fc3(cu_calc, EMT())
+    ADAPTER.calculate_fc3(cu_calc, EMT(), SETTINGS)
     np.testing.assert_array_equal(cu_calc.phonons.fc3_forces, forces)
-    ltc.calculate_fc3(cu_calc, EMT(), max_evaluations=2)
+    ADAPTER.calculate_fc3(cu_calc, EMT(), SETTINGS, max_evaluations=2)
     capped = cu_calc.phonons.fc3_forces
     np.testing.assert_array_equal(capped[:2], forces[:2])
     assert not capped[2:].any()
-    with pytest.raises(ValueError, match="batch structures must be positive"):
-        ltc.calculate_fc3(cu_calc, EMT(), max_batch_structures=0)
     with pytest.raises(ValueError, match="supercell 0 are not finite"):
-        ltc.calculate_fc3(cu_calc, CountingModel(forces_scale=np.nan))
+        ADAPTER.calculate_fc3(cu_calc, CountingModel(forces_scale=np.nan), SETTINGS)
 
 
 def test_calculate_conductivity(cu_calc: ltc.KappaCalculation) -> None:
     """End-to-end EMT Cu kappa: finite, isotropic and consistent with mode sums."""
-    freqs = ltc.calculate_fc2(cu_calc, EMT())
+    freqs = ADAPTER.calculate_fc2(cu_calc, EMT(), SETTINGS)
     assert cu_calc.phonons.fc2_forces.shape == (1, 8, 3)
     assert freqs.shape == (64, 3)  # every point of the 4x4x4 grid, 3 bands
     np.testing.assert_allclose(freqs[0], 0, atol=1e-5)  # acoustic modes at Gamma
@@ -124,7 +127,7 @@ def test_calculate_conductivity(cu_calc: ltc.KappaCalculation) -> None:
     np.testing.assert_allclose(
         freqs[1], [2.42804731, 2.42804731, 5.45674688], rtol=1e-8
     )
-    ltc.calculate_fc3(cu_calc, EMT())
+    ADAPTER.calculate_fc3(cu_calc, EMT(), SETTINGS)
     assert cu_calc.phonons.fc3_forces.shape == (
         len(cu_calc.phonons.displacements),
         27,
@@ -153,8 +156,8 @@ def test_calculate_conductivity(cu_calc: ltc.KappaCalculation) -> None:
 
 def test_harmonic_data(cu_calc: ltc.KappaCalculation) -> None:
     """FC2 yields an HPKOT band structure with normalized eigenvectors, DOS and Cv."""
-    mesh_freqs = ltc.calculate_fc2(cu_calc, EMT())
-    data = harmonic.harmonic_data_from_calculation(cu_calc)
+    mesh_freqs = ADAPTER.calculate_fc2(cu_calc, EMT(), SETTINGS)
+    data = ADAPTER.harmonic_phonons(cu_calc, SETTINGS)
     assert data["errors"] == {}
     mesh = data["mesh"]
     assert np.asarray(mesh["weights"]).sum() == np.prod(mesh["numbers"])
@@ -231,7 +234,7 @@ def test_harmonic_data(cu_calc: ltc.KappaCalculation) -> None:
 
 def test_harmonic_artifact_round_trip(cu_calc: ltc.KappaCalculation) -> None:
     """Stored FC2 restores the same phonons; a foreign schema is rejected."""
-    ltc.calculate_fc2(cu_calc, EMT())
+    ADAPTER.calculate_fc2(cu_calc, EMT(), SETTINGS)
     data = harmonic.harmonic_phonon_data(cu_calc.phonons.harmonic, mesh=(2, 2, 2))
     restored = harmonic.phonons_from_harmonic_data(data)
     # compact FC2 is re-expanded by the lattice translations; the symmetrized fit is
@@ -286,7 +289,7 @@ def test_harmonic_analysis_failures_are_independent(
     cu_calc: ltc.KappaCalculation, method: str, section: str, absent: set[str]
 ) -> None:
     """An analysis failure keeps FC2 and every independent successful analysis."""
-    ltc.calculate_fc2(cu_calc, EMT())
+    ADAPTER.calculate_fc2(cu_calc, EMT(), SETTINGS)
     data = harmonic.harmonic_phonon_data(
         FailingPhonons(cu_calc.phonons.harmonic, method),  # ty: ignore[invalid-argument-type]
         mesh=(2, 2, 2),

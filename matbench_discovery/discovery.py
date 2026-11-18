@@ -287,12 +287,12 @@ def load_wbm_structures(
     dry_run: bool = False,
 ) -> dict[str, Structure]:
     """Load WBM initial structures and optionally select a small smoke-test subset."""
-    from matbench_discovery.data import df_wbm, structures_from_zip
+    from matbench_discovery.data import df_wbm, frames_from_zip
 
     read_limit = 2048 if dry_run else None
-    atoms_list = structures_from_zip(DataFiles.wbm_initial_atoms.path, limit=read_limit)
+    frames = frames_from_zip(DataFiles.wbm_initial_atoms.path, limit=read_limit)
     atoms_by_id: dict[str, Structure] = {}
-    for atoms in atoms_list:
+    for atoms in (frame.structure for frame in frames):
         material_id = material_id_from_atoms(atoms)
         if material_id in atoms_by_id:
             raise ValueError(f"Duplicate WBM structure {material_id!r}")
@@ -731,19 +731,17 @@ def write_discovery_artifacts(
     elemental_ref_energies: Mapping[str, float] | None = None,
 ) -> DiscoveryArtifacts:
     """Apply MP2020 corrections and write canonical prediction CSV and JSONL."""
-    from matscikit import Composition, PhaseDiagram
-
     from matbench_discovery.data import df_wbm
-    from matbench_discovery.energy import mp_elemental_ref_energies
+    from matbench_discovery.energy import formation_energies, mp_elemental_ref_energies
 
     df_summary = df_wbm if df_wbm_summary is None else df_wbm_summary
-    successful_ids = [
-        record.material_id
+    successful = [
+        record
         for record in merged_run.records
         if record.structure is not None and record.energy is not None
     ]
     df_entries = (
-        _load_wbm_cse_frame(material_ids=successful_ids)
+        _load_wbm_cse_frame(material_ids=[record.material_id for record in successful])
         if df_wbm_cse is None
         else df_wbm_cse.copy()
     )
@@ -752,14 +750,9 @@ def write_discovery_artifacts(
     ref_energies = (
         mp_elemental_ref_energies
         if elemental_ref_energies is None
-        else dict(elemental_ref_energies)
+        else elemental_ref_energies
     )
     output_rows: dict[str, dict[str, Any]] = {}
-    successful = [
-        record
-        for record in merged_run.records
-        if record.structure is not None and record.energy is not None
-    ]
     # MP2020 corrections of the WBM entries re-evaluated at the ML energy and relaxed
     # structure (all records in one parallel call)
     entries, structures = [], []
@@ -769,7 +762,6 @@ def write_discovery_artifacts(
                 f"No WBM computed structure entry for {record.material_id}"
             )
         entry = df_entries.loc[record.material_id, Key.computed_structure_entry]
-        entry = entry.as_dict() if hasattr(entry, "as_dict") else dict(entry)
         entries.append(entry | {"energy": record.energy})
         if record.structure is None:  # excluded above; narrows the type
             raise ValueError(f"{record.material_id} has no relaxed structure")
@@ -817,11 +809,7 @@ def write_discovery_artifacts(
 
     if to_reference:
         material_ids, formulas, energies = zip(*to_reference, strict=True)
-        n_atoms = [Composition(formula).num_atoms for formula in formulas]
-        elemental_refs = PhaseDiagram(list(ref_energies), list(ref_energies.values()))
-        e_forms = elemental_refs.formation_energy(
-            list(formulas), list(np.divide(energies, n_atoms))
-        )
+        e_forms = formation_energies(formulas, energies, ref_energies)
         for material_id, e_form in zip(material_ids, e_forms, strict=True):
             output_rows[material_id][DISCOVERY_PRED_COL] = float(e_form)
 

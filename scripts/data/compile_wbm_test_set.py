@@ -26,7 +26,7 @@ from tqdm import tqdm
 
 from matbench_discovery import WBM_DIR, today
 from matbench_discovery.data import DataFiles, load_datasets
-from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
+from matbench_discovery.energy import formation_energies, mp_elemental_ref_energies
 from matbench_discovery.enums import MbdKey
 from matbench_discovery.remote.fetch import download_file
 
@@ -559,15 +559,17 @@ for mat_id, cse in tqdm(
 # first make sure source and target dfs have matching indices
 assert sum(df_wbm.index != df_summary.index) == 0
 
-for mat_id, row in tqdm(
-    df_wbm.iterrows(), total=len(df_wbm), desc="ML energies to CSEs"
+e_forms_raw = formation_energies(
+    df_wbm.formula_from_cse,
+    [cse.uncorrected_energy for cse in df_wbm[Key.computed_structure_entry]],
+    mp_elemental_ref_energies,
+)
+for (mat_id, cse), e_form in tqdm(
+    zip(df_wbm[Key.computed_structure_entry].items(), e_forms_raw, strict=True),
+    total=len(df_wbm),
+    desc="Check formation energies",
 ):
-    cse, formula = row[Key.computed_structure_entry], row.formula_from_cse
     assert mat_id == cse.entry_id, f"{mat_id=} != {cse.entry_id=}"
-    assert mat_id in df_summary.index, f"{mat_id=} not in df_summary"
-
-    entry_like = dict(composition=formula, energy=cse.uncorrected_energy)
-    e_form = calc_energy_from_e_refs(entry_like, ref_energies=mp_elemental_ref_energies)
     e_form_ppd = ppd_mp.get_form_energy_per_atom(cse) - cse.correction_per_atom
 
     # make sure the phase diagram and standalone reference-energy methods of
@@ -575,7 +577,7 @@ for mat_id, row in tqdm(
     assert abs(e_form - e_form_ppd) < 1e-4, (
         f"{mat_id}: {e_form=:.3} != {e_form_ppd=:.3} (diff={e_form - e_form_ppd:.3}))"
     )
-    df_summary.loc[cse.entry_id, MbdKey.e_form_raw] = e_form
+df_summary[MbdKey.e_form_raw] = e_forms_raw
 
 
 df_summary[MbdKey.e_form_raw.replace("uncorrected", "mp2020_corrected")] = (

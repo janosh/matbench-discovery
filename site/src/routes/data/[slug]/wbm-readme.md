@@ -157,7 +157,7 @@ These sunburst diagrams show the spacegroup distribution of MP on the left and W
 The `DataFiles` class in `matbench_discovery.data` automatically downloads and locally caches data files needed for different model training and testing tasks. For example the following code snippet shows how to download and access the WBM summary data:
 
 ```py
-from matbench_discovery.data import DataFiles, ase_atoms_from_zip
+from matbench_discovery.data import DataFiles, frames_from_zip
 import pandas as pd
 
 df_wbm = pd.read_csv(DataFiles.wbm_summary.path)
@@ -167,9 +167,11 @@ assert df_wbm.shape == (256_963, 18)
 # WBM initial structures in pymatgen JSON format
 df_init_structs = pd.read_json(DataFiles.wbm_initial_structures.path, lines=True)
 # Columns: material_id, formula_from_cse, initial_structure
-# WBM initial structures as ASE Atoms
-wbm_init_atoms = ase_atoms_from_zip(DataFiles.wbm_initial_atoms.path)
-assert len(wbm_init_atoms) == 256_963
+# WBM initial structures as matscikit Structures
+wbm_init_structs = [
+    frame.structure for frame in frames_from_zip(DataFiles.wbm_initial_atoms.path)
+]
+assert len(wbm_init_structs) == 256_963
 ```
 
 `"wbm-summary"` columns:

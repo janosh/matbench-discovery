@@ -178,7 +178,7 @@ def model_payload(
 
 def main() -> int:
     """Build the kappa-103-analysis payload across all requested models."""
-    import ase.io
+    from matscikit.io import read_extxyz
 
     from matbench_discovery.phonons import read_kappa_json
 
@@ -186,8 +186,9 @@ def main() -> int:
     material_ids = [str(mat_id) for mat_id in df_dft.index]
     spg_nums = canonical_spacegroup_numbers(df_dft, material_ids)
     atom_densities = {
-        atoms.info["material_id"]: len(atoms) / atoms.get_volume()
-        for atoms in ase.io.iread(DataFiles.phonondb_pbe_103_structures.path)
+        frame.structure.info["material_id"]: len(frame.structure)
+        / frame.structure.volume
+        for frame in read_extxyz(DataFiles.phonondb_pbe_103_structures.path)
     }
 
     models: list[dict[str, Any]] = []
@@ -241,7 +242,7 @@ def main() -> int:
             "kappa_decimals": KAPPA_DECIMALS,
             "qq_levels": payload_numerics.round_list(QQ_LEVELS),
         },
-        packages=("ase", "numpy", "pandas", "pymatviz", "scipy"),
+        packages=("matscikit", "numpy", "pandas", "pymatviz", "scipy"),
     )
     payload = {
         **provenance,

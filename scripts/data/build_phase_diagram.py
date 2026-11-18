@@ -18,11 +18,7 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import MP_DIR, ROOT, today
-from matbench_discovery.energy import (
-    calc_energy_from_e_refs,
-    get_elemental_ref_entries,
-    mp_elemental_ref_energies,
-)
+from matbench_discovery.energy import formation_energies, mp_elemental_ref_energies
 from matbench_discovery.enums import DataFiles
 
 os.makedirs(MP_DIR, exist_ok=True)
@@ -112,8 +108,17 @@ with gzip.open(f"{MP_DIR}/{today}-ppd-mp-wbm.pkl.gz", mode="wb") as zip_file:
 
 
 # %% compute terminal reference entries across all MP (can be used to compute MP
-# compatible formation energies quickly)
-elemental_ref_entries = get_elemental_ref_entries(mp_computed_entries)
+# compatible formation energies quickly): the lowest-energy entry of each element
+elemental_ref_entries: dict[str, ComputedEntry] = {}
+for entry in mp_computed_entries:
+    if not entry.composition.is_element:
+        continue
+    element = str(entry.composition.elements[0])
+    if (
+        element not in elemental_ref_entries
+        or entry.energy_per_atom < elemental_ref_entries[element].energy_per_atom
+    ):
+        elemental_ref_entries[element] = entry
 
 # save MP phase diagram elemental_ref_entries as JSON
 mp_pd_elem_ref_entries_path = f"{MP_DIR}/{today}-mp-elemental-reference-entries.json.gz"
@@ -127,10 +132,12 @@ df_mp = pd.read_csv(DataFiles.mp_energies.path, na_filter=False).set_index(Key.m
 # %%
 e_form_us = "e_form_us"
 mp_entries_by_id = {entry.entry_id: entry for entry in mp_computed_entries}
-df_mp[e_form_us] = [
-    calc_energy_from_e_refs(mp_entries_by_id[mp_id], mp_elemental_ref_energies)
-    for mp_id in df_mp.index
-]
+mp_entries = [mp_entries_by_id[mp_id] for mp_id in df_mp.index]
+df_mp[e_form_us] = formation_energies(
+    [entry.composition.formula for entry in mp_entries],
+    [entry.energy for entry in mp_entries],
+    mp_elemental_ref_energies,
+)
 
 
 # make sure get_form_energy_per_atom() reproduces MP formation energies

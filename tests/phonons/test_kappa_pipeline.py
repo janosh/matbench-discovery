@@ -787,6 +787,34 @@ def test_skipped_conductivity_rows_store_regular_grid_spectrum() -> None:
     )
 
 
+def test_load_phonondb_atoms_decodes_ase_json_info(tmp_path: Path) -> None:
+    """ASE's "_JSON "-prefixed extxyz info loads as data the phonon setup accepts."""
+    from matscikit.io import format_extxyz
+
+    from matbench_discovery.phonons.pipeline import load_phonondb_atoms
+
+    info = {
+        "fc2_supercell": "_JSON [[2, 0, 0], [0, 2, 0], [0, 0, 2]]",
+        "fc3_supercell": "_JSON [[1, 0, 0], [0, 1, 0], [0, 0, 1]]",
+        "q_point_mesh": "_JSON [3, 4, 5]",
+    }
+    structures = [
+        Structure(
+            np.eye(3) * 3, ["Cu"], [[0, 0, 0]], info=info | {"material_id": f"mp-{idx}"}
+        )
+        for idx in range(103)
+    ]
+    dataset_path = f"{tmp_path}/phonondb.extxyz"
+    with open(dataset_path, mode="w", encoding="utf-8") as file:
+        file.write(format_extxyz(structures))
+    (atoms,) = load_phonondb_atoms(dataset_path, dry_run=True).values()
+    assert atoms.info["material_id"] == "mp-0"
+    assert atoms.info["fc3_supercell"] == np.eye(3, dtype=int).tolist()
+    calc = StandardKappaAdapter().init_phonons(atoms, KappaSettings())
+    assert calc.mesh == (3, 4, 5)
+    assert len(calc.phonons.phonon_supercell) == 8
+
+
 def test_normalize_kappa_schema_and_voigt() -> None:
     """Canonical records normalize tensors and retain failure/symmetry semantics."""
     result = normalize_kappa_result(

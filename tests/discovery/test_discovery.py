@@ -32,7 +32,6 @@ from matbench_discovery.discovery import (
     run_discovery_shard,
     write_discovery_artifacts,
 )
-from matbench_discovery.energy import calc_energy_from_e_refs
 from matbench_discovery.enums import MbdKey, Model, TestSubset
 from matbench_discovery.hpc import (
     effective_shard_args,
@@ -151,9 +150,7 @@ def test_artifacts_match_legacy_mp2020_join_semantics(tmp_path: Path) -> None:
     )
     ref_energies = {"Cu": -3.0}
     # Cu has no MP2020 adjustments, so the corrected energy is the ML energy
-    expected_e_form = calc_energy_from_e_refs(
-        "Cu4", ref_energies, total_energy=raw_energy
-    )
+    expected_e_form = raw_energy / 4 - ref_energies["Cu"]
     assert expected_e_form == pytest.approx(-0.5)
     pred_file = tmp_path / "preds.csv.gz"
     geo_file = tmp_path / "geo.jsonl.gz"

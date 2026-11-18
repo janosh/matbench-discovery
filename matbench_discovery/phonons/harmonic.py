@@ -41,8 +41,6 @@ from matbench_discovery.phonons import IMAGINARY_FREQ_THRESHOLD
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from matbench_discovery.phonons.thermal_conductivity import KappaCalculation
-
 # v4: compact FC2 (primitive-atom rows) in matscikit's recorded supercell atom order,
 # v3: full FC2 in that order, v2: full FC2 in phonopy's order
 HARMONIC_SCHEMA_VERSION = 4
@@ -247,8 +245,3 @@ def harmonic_mesh_data(phonons: Phonons, mesh: Sequence[int]) -> dict[str, Any]:
         },
         "thermal_properties": harmonic_thermal_data(result),
     }
-
-
-def harmonic_data_from_calculation(calc: KappaCalculation) -> dict[str, Any]:
-    """Harmonic phonon data for a kappa calculation with FC2 on its benchmark mesh."""
-    return harmonic_phonon_data(calc.phonons.harmonic, mesh=calc.mesh)

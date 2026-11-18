@@ -24,8 +24,7 @@ from typing import Any, Final, NotRequired, TypedDict
 import pandas as pd
 import yaml
 from filelock import FileLock
-from matscikit import Structure
-from matscikit.io import parse_extxyz
+from matscikit.io import Frame, parse_extxyz
 from pymatviz.enums import Key
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
@@ -345,10 +344,11 @@ def glob_to_df(
     return pd.concat(reader(file, **kwargs) for file in tqdm(files, disable=not pbar))
 
 
-def structures_from_zip(
+def frames_from_zip(
     zip_filename: str, *, limit: int | slice | None = None
-) -> list[Structure]:
-    """Read structures from the .extxyz members of a ZIP file.
+) -> list[Frame]:
+    """Read extxyz frames (structure plus any stored energy, forces, stress and
+    per-atom arrays) from the .extxyz members of a ZIP file.
 
     Args:
         zip_filename (str): Path to the ZIP file.
@@ -357,9 +357,9 @@ def structures_from_zip(
             Use a small number to speed up debugging runs.
 
     Returns:
-        list[Structure]: Structures with frame metadata in ``info``.
+        list[Frame]: Frames with their metadata in ``frame.structure.info``.
     """
-    structures: list[Structure] = []
+    frames: list[Frame] = []
     with zipfile.ZipFile(zip_filename) as zip_file:
         desc = f"Reading structures from {zip_filename=}"
         filenames = zip_file.namelist()
@@ -372,9 +372,9 @@ def structures_from_zip(
                 continue
             with zip_file.open(filename) as file:
                 content = io.TextIOWrapper(file, encoding="utf-8").read()
-            # a file holding a trajectory yields one structure per frame
-            structures.extend(frame.structure for frame in parse_extxyz(content))
-    return structures
+            # a file holding a trajectory yields one frame per step
+            frames.extend(parse_extxyz(content))
+    return frames
 
 
 # str() around Key.mat_id added for https://github.com/janosh/matbench-discovery/issues/81

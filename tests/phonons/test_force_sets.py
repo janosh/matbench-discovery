@@ -14,6 +14,7 @@ from matscikit import EMT, AnharmonicPhonons, Structure
 
 from matbench_discovery.phonons import force_sets
 from matbench_discovery.phonons import thermal_conductivity as ltc
+from matbench_discovery.phonons.adapters import StandardKappaAdapter
 from matbench_discovery.phonons.pipeline import KappaSettings
 
 
@@ -30,8 +31,8 @@ def cu_calc() -> ltc.KappaCalculation:
         q_point_mesh=(4, 4, 4),
         displacement_distance=0.03,
     )
-    ltc.calculate_fc2(calc, EMT())
-    ltc.calculate_fc3(calc, EMT())
+    StandardKappaAdapter().calculate_fc2(calc, EMT(), KappaSettings())
+    StandardKappaAdapter().calculate_fc3(calc, EMT(), KappaSettings())
     return calc
 
 
@@ -198,8 +199,8 @@ def test_migrate_force_sets_v2_to_v3(
         q_point_mesh=(4, 4, 4),
         displacement_distance=0.03,
     )
-    ltc.calculate_fc2(calc, EMT())
-    ltc.calculate_fc3(calc, EMT())
+    StandardKappaAdapter().calculate_fc2(calc, EMT(), KappaSettings())
+    StandardKappaAdapter().calculate_fc3(calc, EMT(), KappaSettings())
     phonons = calc.phonons
     old_path, new_path = f"{tmp_path}/v2.h5", f"{tmp_path}/v3.h5"
     write_schema_2(old_path, phonons)

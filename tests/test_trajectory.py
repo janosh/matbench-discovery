@@ -180,7 +180,7 @@ def test_from_frames_rejects_mixed_property_availability() -> None:
     # md_step on some frames but not others must also fail loud (not silently drop it)
     with_step = make_atoms()
     with_step.structure.info["md_step"] = 0
-    with pytest.raises(ValueError, match="missing md_step"):
+    with pytest.raises(ValueError, match="missing a property"):
         Trajectory.from_frames([with_step, make_atoms()])
 
 

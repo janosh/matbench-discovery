@@ -6,24 +6,13 @@ from collections.abc import Sequence
 
 import numpy as np
 import pytest
-from matscikit import Structure, protostructure_label
+from matscikit import Structure, lattice_from_parameters, protostructure_label
 from matscikit.interop import structure_from_pymatgen_dict, structure_to_pymatgen_dict
 from matscikit.io import read_poscar
 
 from matbench_discovery import TEST_FILES
 
 FCC_PRIMITIVE = [[2, 2, 0], [0, 2, 2], [2, 0, 2]]
-
-
-def lattice_from_parameters(
-    a: float, b: float, c: float, alpha: float, beta: float, gamma: float
-) -> np.ndarray:
-    """Row lattice vectors from cell lengths (Å) and angles (degrees), a along x."""
-    alpha, beta, gamma = np.radians([alpha, beta, gamma])
-    vec_b = b * np.array([np.cos(gamma), np.sin(gamma), 0])
-    c_x = c * np.cos(beta)
-    c_y = c * (np.cos(alpha) - np.cos(beta) * np.cos(gamma)) / np.sin(gamma)
-    return np.array([[a, 0, 0], vec_b, [c_x, c_y, np.sqrt(c**2 - c_x**2 - c_y**2)]])
 
 
 def frac_structure(

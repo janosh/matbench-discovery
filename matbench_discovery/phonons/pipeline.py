@@ -469,6 +469,11 @@ def load_phonondb_atoms(
     atoms_list = [frame.structure for frame in read_extxyz(path)]
     atoms_by_id: dict[str, Structure] = {}
     for atoms in atoms_list:
+        # matscikit keeps ASE's "_JSON "-prefixed info values (supercell matrices,
+        # q-point mesh) as strings
+        for key, value in list(atoms.info.items()):
+            if isinstance(value, str) and value.startswith("_JSON "):
+                atoms.info[key] = json.loads(value.removeprefix("_JSON "))
         material_id = material_id_from_atoms(atoms)
         if material_id in atoms_by_id:
             raise ValueError(f"Duplicate PhononDB material ID {material_id!r}")
