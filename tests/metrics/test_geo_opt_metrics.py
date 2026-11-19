@@ -65,7 +65,7 @@ def test_calc_geo_opt_metrics_parametrized(
     """Test calc_geo_opt_metrics with various symmetry difference patterns."""
     # RMSD NaN pattern deliberately differs from the spg NaN pattern: n_structures
     # must count valid symmetry rows only and NaN RMSDs are filled with 1.0 (the
-    # StructureMatcher stol) before averaging
+    # matcher stol) before averaging
     rmsds = [0.1] * (len(spg_diffs) - 1) + [np.nan]
     df_geo_opt = pd.DataFrame(
         {

@@ -150,35 +150,35 @@ metrics:
   geo_opt:
     pred_file:
       name: models/mace_soyo/mace-soyo-mptrj/2026-10-19-geo-opt.jsonl.gz
-      url: https://ndownloader.figshare.com/files/70344513
+      url: https://figshare.com/files/71653132
       size: 103631154
       md5: 724e3089ab8f669f0c42364872a31b41
     symprec=1e-5:
-      rmsd: 0.0832 # unitless
-      n_sym_ops_mae: 2.0332 # unitless
-      symmetry_decrease: 0.063 # fraction
+      rmsd: 0.0784 # unitless
+      n_sym_ops_mae: 2.0331 # unitless
+      symmetry_decrease: 0.0629 # fraction
       symmetry_match: 0.6982 # fraction
       symmetry_increase: 0.2327 # fraction
       symmetry_lateral: 0.0061 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/mace_soyo/mace-soyo-mptrj/2026-10-19-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://ndownloader.figshare.com/files/70344501
-        size: 6805810
-        md5: 628a392e72db21bfda041f221b1005b6
+        name: models/mace_soyo/mace-soyo-mptrj/2026-10-19-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653138
+        size: 6834342
+        md5: 32dd10b8e40a47c7b6adee10b9e435e6
     symprec=1e-2:
-      rmsd: 0.0832 # unitless
-      n_sym_ops_mae: 1.8003 # unitless
+      rmsd: 0.0784 # unitless
+      n_sym_ops_mae: 1.8004 # unitless
       symmetry_decrease: 0.056 # fraction
       symmetry_match: 0.8121 # fraction
       symmetry_increase: 0.1246 # fraction
       symmetry_lateral: 0.0073 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/mace_soyo/mace-soyo-mptrj/2026-10-19-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://ndownloader.figshare.com/files/70344498
-        size: 6785439
-        md5: 3b38ae3638ae905dfc1a2cea3ff1c416
+        name: models/mace_soyo/mace-soyo-mptrj/2026-10-19-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653141
+        size: 6815154
+        md5: 82de6fb73971330809b76b061a96607b
   phonons:
     kappa_103:
       κ_SRME: 0.3496

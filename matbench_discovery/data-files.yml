@@ -66,16 +66,16 @@ wbm_summary:
   md5: 1555268d3aa59d20262cb9d01ce0994b
 
 wbm_dft_geo_opt_symprec_1e_2:
-  url: https://figshare.com/files/70326696
-  path: wbm/dft-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-  description: WBM DFT-relaxed crystal symmetries as determined by moyopy==0.21.0 with symprec=1e-2.
-  md5: a202a985bfb9366df6f5fc11430a698d
+  url: https://figshare.com/files/71649838
+  path: wbm/2026-11-19-dft-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+  description: WBM DFT-relaxed crystal symmetries as determined by moyo 0.22.0 (bundled in matscikit, Hall numbers in spglib's smallest-number setting) with symprec=1e-2.
+  md5: ff3eefb5af9b64c8a85e1989ed598cf3
 
 wbm_dft_geo_opt_symprec_1e_5:
-  url: https://figshare.com/files/70326702
-  path: wbm/dft-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-  description: WBM DFT-relaxed crystal symmetries as determined by moyopy==0.21.0 with symprec=1e-5.
-  md5: 18b4c160c190553b8b86984e526873e6
+  url: https://figshare.com/files/71649844
+  path: wbm/2026-11-19-dft-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+  description: WBM DFT-relaxed crystal symmetries as determined by moyo 0.22.0 (bundled in matscikit, Hall numbers in spglib's smallest-number setting) with symprec=1e-5.
+  md5: 5631925d91ffeef3462ab18aa82b88ed
 
 phonondb_pbe_103_structures:
   url: https://figshare.com/files/52179965

@@ -171,35 +171,35 @@ metrics:
   geo_opt:
     pred_file:
       name: models/tace/tece-oam-rra-1.0/2026-07-05-geo-opt.jsonl.gz
-      url: https://figshare.com/files/66313751
-      size: 107698558
-      md5: 35c7b9cf6e7125a0522df128d399dcbd
+      url: https://figshare.com/files/71653342
+      size: 108417889
+      md5: c22e71838056b43b88ddf4c1afd76f73
     symprec=1e-2:
-      rmsd: 0.0575 # unitless
-      n_sym_ops_mae: 1.699 # unitless
+      rmsd: 0.0539 # unitless
+      n_sym_ops_mae: 1.6989 # unitless
       symmetry_decrease: 0.0498 # fraction
       symmetry_match: 0.8183 # fraction
       symmetry_increase: 0.1245 # fraction
       symmetry_lateral: 0.0074 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/tace/tece-oam-rra-1.0/2026-07-05-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333962
-        size: 7547731
-        md5: a8439e0c7c787d9901695795800a560f
+        name: models/tace/tece-oam-rra-1.0/2026-07-05-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653351
+        size: 7569822
+        md5: 47083ae2167c9dce0282fb3d9d161bde
     symprec=1e-5:
-      rmsd: 0.0575 # unitless
-      n_sym_ops_mae: 2.7951 # unitless
-      symmetry_decrease: 0.1846 # fraction
-      symmetry_match: 0.5907 # fraction
+      rmsd: 0.0539 # unitless
+      n_sym_ops_mae: 2.7941 # unitless
+      symmetry_decrease: 0.1845 # fraction
+      symmetry_match: 0.5908 # fraction
       symmetry_increase: 0.2102 # fraction
       symmetry_lateral: 0.0145 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/tace/tece-oam-rra-1.0/2026-07-05-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333965
-        size: 7601017
-        md5: e2920d55eb551c363dd746df098a27be
+        name: models/tace/tece-oam-rra-1.0/2026-07-05-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653354
+        size: 7622035
+        md5: ad2154b9c8f667880b8e3d17b8a56339
   md:
     pred_file:
       name: models/tace/tece-oam-rra-1.0/2026-07-26-md-metrics.csv.gz

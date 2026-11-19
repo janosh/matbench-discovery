@@ -116,31 +116,31 @@ metrics:
       size: 119057902
       md5: 48afeae1de05f2d3a143999fcbefb67d
     symprec=1e-5:
-      rmsd: 0.1117 # unitless
-      n_sym_ops_mae: 1.8691 # unitless
+      rmsd: 0.1053 # unitless
+      n_sym_ops_mae: 1.8692 # unitless
       symmetry_decrease: 0.0671 # fraction
       symmetry_match: 0.7408 # fraction
       symmetry_increase: 0.1869 # fraction
       symmetry_lateral: 0.0052 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/m3gnet/m3gnet/2023-06-01-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333755
-        size: 6624733
-        md5: c26a85d623f15c6949bc2945bed8e96a
+        name: models/m3gnet/m3gnet/2023-06-01-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653111
+        size: 6661981
+        md5: 09973352b97e876f3bb07f516d21f2d0
     symprec=1e-2:
-      rmsd: 0.1117 # unitless
-      n_sym_ops_mae: 1.9848 # unitless
+      rmsd: 0.1053 # unitless
+      n_sym_ops_mae: 1.9847 # unitless
       symmetry_decrease: 0.0681 # fraction
       symmetry_match: 0.8031 # fraction
       symmetry_increase: 0.1217 # fraction
       symmetry_lateral: 0.0071 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/m3gnet/m3gnet/2023-06-01-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333839
-        size: 6649397
-        md5: f79ec645ab0c1a90f51bd70e7c58e37f
+        name: models/m3gnet/m3gnet/2023-06-01-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653114
+        size: 6687388
+        md5: e2c06894b79b689633627c3bedea0b7a
   phonons:
     kappa_103:
       κ_SRME: 1.4094

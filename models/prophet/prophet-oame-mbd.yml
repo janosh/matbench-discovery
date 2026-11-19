@@ -163,31 +163,31 @@ metrics:
       size: 117605743
       md5: 1f4fc63eab4d022ed9f1155c56b917fa
     symprec=1e-5:
-      rmsd: 0.0591 # unitless
-      n_sym_ops_mae: 3.1329 # unitless
-      symmetry_decrease: 0.1784 # fraction
+      rmsd: 0.0556 # unitless
+      n_sym_ops_mae: 3.1322 # unitless
+      symmetry_decrease: 0.1783 # fraction
       symmetry_match: 0.6071 # fraction
-      symmetry_increase: 0.205 # fraction
+      symmetry_increase: 0.2051 # fraction
       symmetry_lateral: 0.0095 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/prophet/prophet-oame-mbd/2026-09-03-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333938
-        size: 7998422
-        md5: 4b9bbdf1a33d387b836b3c0d18ffc03a
+        name: models/prophet/prophet-oame-mbd/2026-09-03-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653309
+        size: 8019500
+        md5: 1f4dd24a2e4020cba10aa3e89c32e6d5
     symprec=1e-2:
-      rmsd: 0.0591 # unitless
-      n_sym_ops_mae: 1.7733 # unitless
+      rmsd: 0.0556 # unitless
+      n_sym_ops_mae: 1.7731 # unitless
       symmetry_decrease: 0.0559 # fraction
       symmetry_match: 0.8148 # fraction
       symmetry_increase: 0.1222 # fraction
       symmetry_lateral: 0.0071 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/prophet/prophet-oame-mbd/2026-09-03-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333941
-        size: 7994444
-        md5: 039ed787cb7520b7a59774f7d69a4830
+        name: models/prophet/prophet-oame-mbd/2026-09-03-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653312
+        size: 8015731
+        md5: 3d67d9a6678fb4b2bbad5ea617bc1ca9
   phonons:
     kappa_103:
       pred_file:

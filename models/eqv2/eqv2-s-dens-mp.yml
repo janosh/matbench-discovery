@@ -182,31 +182,31 @@ metrics:
       size: 217166844
       md5: a5fdfd11e44a0617bcc4beb9cd09d137
     symprec=1e-5:
-      rmsd: 0.0757 # unitless
+      rmsd: 0.0715 # unitless
       n_sym_ops_mae: 10.1045 # unitless
       symmetry_decrease: 0.8671 # fraction
-      symmetry_match: 0.1322 # fraction
+      symmetry_match: 0.1321 # fraction
       symmetry_increase: 0.0006 # fraction
       symmetry_lateral: 0.0002 # fraction
       n_structures: 256614 # count
       analysis_file:
-        name: models/eqv2/eqv2-s-dens-mp/2024-10-18-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333692
-        size: 6224438
-        md5: 0df11eaa4355e741a216f0b6810aab8c
+        name: models/eqv2/eqv2-s-dens-mp/2024-10-18-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71652682
+        size: 6245412
+        md5: ed44b5e7da57d582bb0cf72761cbdeb4
     symprec=1e-2:
-      rmsd: 0.0757 # unitless
-      n_sym_ops_mae: 3.7426 # unitless
-      symmetry_decrease: 0.3724 # fraction
-      symmetry_match: 0.5396 # fraction
+      rmsd: 0.0715 # unitless
+      n_sym_ops_mae: 3.7393 # unitless
+      symmetry_decrease: 0.3722 # fraction
+      symmetry_match: 0.5398 # fraction
       symmetry_increase: 0.0653 # fraction
       symmetry_lateral: 0.0228 # fraction
       n_structures: 256614 # count
       analysis_file:
-        name: models/eqv2/eqv2-s-dens-mp/2024-10-18-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333695
-        size: 6971081
-        md5: 7b785d894804b160067db12f7d7f9043
+        name: models/eqv2/eqv2-s-dens-mp/2024-10-18-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71652751
+        size: 6995582
+        md5: cc5d5de9a0c9c23b3e0b77955db9c370
   md:
     pred_file:
       name: models/eqv2/eqv2-s-dens-mp/2026-06-28-md-metrics.csv.gz

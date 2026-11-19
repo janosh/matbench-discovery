@@ -175,31 +175,31 @@ metrics:
       size: 197152265
       md5: 1213bbac261de149a1d9bd19802d0398
     symprec=1e-5:
-      rmsd: 0.0691 # unitless
-      n_sym_ops_mae: 9.7872 # unitless
+      rmsd: 0.065 # unitless
+      n_sym_ops_mae: 9.7871 # unitless
       symmetry_decrease: 0.852 # fraction
       symmetry_match: 0.1422 # fraction
       symmetry_increase: 0.0045 # fraction
       symmetry_lateral: 0.0013 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/eqv2/eqv2-m-omat-salex-mp/2024-10-18-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333686
-        size: 6429074
-        md5: 6f4d9d940eb540929bdcf20646395b18
+        name: models/eqv2/eqv2-m-omat-salex-mp/2024-10-18-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71652499
+        size: 6450651
+        md5: 5140f73b825e16f1eb244b2d89808062
     symprec=1e-2:
-      rmsd: 0.0691 # unitless
+      rmsd: 0.065 # unitless
       n_sym_ops_mae: 1.9989 # unitless
-      symmetry_decrease: 0.1118 # fraction
-      symmetry_match: 0.7725 # fraction
+      symmetry_decrease: 0.1117 # fraction
+      symmetry_match: 0.7726 # fraction
       symmetry_increase: 0.1052 # fraction
       symmetry_lateral: 0.0105 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/eqv2/eqv2-m-omat-salex-mp/2024-10-18-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333689
-        size: 6892677
-        md5: 9b92c24ac407560159dd1fbd575b0409
+        name: models/eqv2/eqv2-m-omat-salex-mp/2024-10-18-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71652583
+        size: 6918357
+        md5: de8fcea6fba712cb42b1c4d19cb3854b
   md:
     pred_file:
       name: models/eqv2/eqv2-m-omat-salex-mp/2026-06-28-md-metrics.csv.gz

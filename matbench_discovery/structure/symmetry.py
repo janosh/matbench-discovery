@@ -123,8 +123,10 @@ def pred_vs_ref_struct_symmetry(
         (as_structure(pred_structs[mat_id]), as_structure(ref_structs[mat_id]))
         for mat_id in shared_ids
     ]
-    # one parallel call; matscikit's matcher reproduces StructureMatcher(stol=1,
-    # scale=False).get_rms_dist (normalized RMS and max displacement), NaN for no match
+    # one parallel call returning normalized RMS and max displacement (NaN for no
+    # match). Unlike StructureMatcher(stol=1, scale=False).get_rms_dist, it searches
+    # both argument orders and equivalent reduced bases, so its RMSD is never higher
+    # than pymatgen's, and it can match pairs pymatgen rejects
     nan_pair = (float("nan"), float("nan"))
     df_rms = pd.DataFrame(
         [match or nan_pair for match in rms_distances(pairs, stol=1.0)],

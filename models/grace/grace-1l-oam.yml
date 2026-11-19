@@ -128,7 +128,7 @@ metrics:
       size: 93094424
       md5: 24d1f465b6780d4a6c44932bc65f015d
     symprec=1e-5:
-      rmsd: 0.0721 # unitless
+      rmsd: 0.0676 # unitless
       n_sym_ops_mae: 1.8528 # unitless
       symmetry_decrease: 0.0329 # fraction
       symmetry_match: 0.7336 # fraction
@@ -136,23 +136,23 @@ metrics:
       symmetry_lateral: 0.0042 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/grace/grace-1l-oam/2025-02-02-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333713
-        size: 6814296
-        md5: c82060fb244a382e39c37c0bb3f56a59
+        name: models/grace/grace-1l-oam/2025-02-02-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71652955
+        size: 6835647
+        md5: c28c63994c20398b21968c66fa80422a
     symprec=1e-2:
-      rmsd: 0.0721 # unitless
-      n_sym_ops_mae: 1.8157 # unitless
+      rmsd: 0.0676 # unitless
+      n_sym_ops_mae: 1.8158 # unitless
       symmetry_decrease: 0.0576 # fraction
       symmetry_match: 0.814 # fraction
       symmetry_increase: 0.1216 # fraction
       symmetry_lateral: 0.0068 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/grace/grace-1l-oam/2025-02-02-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333716
-        size: 6829588
-        md5: a02021ef30499ac0a748ecff2afa5c40
+        name: models/grace/grace-1l-oam/2025-02-02-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71652961
+        size: 6851450
+        md5: 8f1141b678f3dbe283b6aa16af94a4bc
   md:
     pred_file:
       name: models/grace/grace-1l-oam/2026-06-28-md-metrics.csv.gz

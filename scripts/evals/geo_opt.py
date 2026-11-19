@@ -5,7 +5,7 @@ scripts/analyze_geo_opt.py.
 
 RMSD values (structure_rmsd_vs_dft) are normalized by (volume per atom)^1/3 and
 thus unitless, not in Ångström. NaN values from structures that couldn't be
-matched are filled with 1.0 (the stol value from StructureMatcher) for
+matched are filled with 1.0 (the matcher's stol value) for
 metrics calculation.
 """
 

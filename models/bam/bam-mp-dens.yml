@@ -210,11 +210,11 @@ metrics:
   geo_opt:
     pred_file:
       name: models/bam/bam-mp-dens/2026-10-12-geo-opt.jsonl.gz
-      url: https://figshare.com/files/70285257
+      url: https://figshare.com/files/71649991
       size: 106063830
       md5: 608eead8a86c56211bb86e46cef2a4ef
     symprec=1e-5:
-      rmsd: 0.0832 # unitless
+      rmsd: 0.0781 # unitless
       n_sym_ops_mae: 1.9173 # unitless
       symmetry_decrease: 0.063 # fraction
       symmetry_match: 0.7242 # fraction
@@ -222,23 +222,23 @@ metrics:
       symmetry_lateral: 0.0052 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/bam/bam-mp-dens/2026-10-12-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333605
-        size: 7326907
-        md5: 63b122be5bc31d2492448b48766a257e
+        name: models/bam/bam-mp-dens/2026-10-12-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71650354
+        size: 7358532
+        md5: e16e7c10eb6d6d40a2f69b8bc77be809
     symprec=1e-2:
-      rmsd: 0.0832 # unitless
-      n_sym_ops_mae: 1.8647 # unitless
+      rmsd: 0.0781 # unitless
+      n_sym_ops_mae: 1.8649 # unitless
       symmetry_decrease: 0.0623 # fraction
       symmetry_match: 0.8101 # fraction
       symmetry_increase: 0.1207 # fraction
       symmetry_lateral: 0.007 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/bam/bam-mp-dens/2026-10-12-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333611
-        size: 7379584
-        md5: fc58f94b7d8d742ce184c78f591ac86e
+        name: models/bam/bam-mp-dens/2026-10-12-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71650432
+        size: 7411539
+        md5: 5cc103da27cd9b5339872e09006405ab
   phonons:
     kappa_103:
       pred_file:

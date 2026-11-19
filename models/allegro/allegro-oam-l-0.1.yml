@@ -180,7 +180,7 @@ metrics:
       size: 107007627
       md5: d725bf21722d32a024ea6e72512b3610
     symprec=1e-2:
-      rmsd: 0.0651 # unitless
+      rmsd: 0.061 # unitless
       n_sym_ops_mae: 1.7418 # unitless
       symmetry_decrease: 0.0542 # fraction
       symmetry_match: 0.816 # fraction
@@ -188,23 +188,23 @@ metrics:
       symmetry_lateral: 0.0072 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/allegro/allegro-oam-l-0.1/2025-09-08-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333593
-        size: 8207440
-        md5: 92b9ce27fc9c658860b2fdb94a1dce07
+        name: models/allegro/allegro-oam-l-0.1/2025-09-08-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71649832
+        size: 8232597
+        md5: ba2941e5bd169eaf74a9db0f9d6c4b45
     symprec=1e-5:
-      rmsd: 0.0651 # unitless
-      n_sym_ops_mae: 1.9239 # unitless
+      rmsd: 0.061 # unitless
+      n_sym_ops_mae: 1.924 # unitless
       symmetry_decrease: 0.0753 # fraction
-      symmetry_match: 0.7163 # fraction
+      symmetry_match: 0.7162 # fraction
       symmetry_increase: 0.2023 # fraction
       symmetry_lateral: 0.0062 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/allegro/allegro-oam-l-0.1/2025-09-08-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333596
-        size: 8136783
-        md5: 6feb33a1fc60275eed9b1fcf6a595a04
+        name: models/allegro/allegro-oam-l-0.1/2025-09-08-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71649841
+        size: 8163370
+        md5: a58c16541467f20a207fdac81da2e4dc
   md:
     pred_file:
       name: models/allegro/allegro-oam-l-0.1/2026-06-28-md-metrics.csv.gz

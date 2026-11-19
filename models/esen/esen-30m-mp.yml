@@ -150,31 +150,31 @@ metrics:
       size: 208111495
       md5: e686253c1813a65456d88d42c0bc0643
     symprec=1e-5:
-      rmsd: 0.0752 # unitless
-      n_sym_ops_mae: 3.3144 # unitless
+      rmsd: 0.071 # unitless
+      n_sym_ops_mae: 3.3143 # unitless
       symmetry_decrease: 0.4281 # fraction
       symmetry_match: 0.3859 # fraction
       symmetry_increase: 0.1282 # fraction
       symmetry_lateral: 0.0578 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/esen/esen-30m-mp/2025-03-17-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333701
-        size: 6760391
-        md5: 8e30826d21a50a76769d267c6167d155
+        name: models/esen/esen-30m-mp/2025-03-17-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71652805
+        size: 6785791
+        md5: 8c95e5762343aea6dd63f303bc7d697a
     symprec=1e-2:
-      rmsd: 0.0752 # unitless
-      n_sym_ops_mae: 2.521 # unitless
+      rmsd: 0.071 # unitless
+      n_sym_ops_mae: 2.5209 # unitless
       symmetry_decrease: 0.2604 # fraction
       symmetry_match: 0.6106 # fraction
       symmetry_increase: 0.098 # fraction
-      symmetry_lateral: 0.031 # fraction
+      symmetry_lateral: 0.0311 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/esen/esen-30m-mp/2025-03-17-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333704
-        size: 6888052
-        md5: 604ddc852d4d6ed1debc3637dec94966
+        name: models/esen/esen-30m-mp/2025-03-17-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71652868
+        size: 6913686
+        md5: 8037503ef4ed2cc970e05842b0aacbbf
   md:
     pred_file:
       name: models/esen/esen-30m-mp/2026-06-28-md-metrics.csv.gz

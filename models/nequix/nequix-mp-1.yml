@@ -184,31 +184,31 @@ metrics:
       size: 145172284
       md5: a181716a7f21c1581d4965fd5789c8be
     symprec=1e-5:
-      rmsd: 0.0853 # unitless
-      n_sym_ops_mae: 2.0462 # unitless
+      rmsd: 0.08 # unitless
+      n_sym_ops_mae: 2.0464 # unitless
       symmetry_decrease: 0.0607 # fraction
       symmetry_match: 0.6999 # fraction
       symmetry_increase: 0.2335 # fraction
       symmetry_lateral: 0.0059 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/nequix/nequix-mp-1/2025-08-17-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333902
-        size: 7135057
-        md5: dff1d71690367cedde51c41ccc5cad51
+        name: models/nequix/nequix-mp-1/2025-08-17-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653216
+        size: 7165717
+        md5: a7b66d7670e7ac34390a6ebbdff0ec6d
     symprec=1e-2:
-      rmsd: 0.0853 # unitless
-      n_sym_ops_mae: 1.7969 # unitless
+      rmsd: 0.08 # unitless
+      n_sym_ops_mae: 1.7968 # unitless
       symmetry_decrease: 0.0554 # fraction
       symmetry_match: 0.8111 # fraction
       symmetry_increase: 0.1261 # fraction
       symmetry_lateral: 0.0074 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/nequix/nequix-mp-1/2025-08-17-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333905
-        size: 7131424
-        md5: e5fc07f0612d84f538262c9881e8e934
+        name: models/nequix/nequix-mp-1/2025-08-17-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653219
+        size: 7163164
+        md5: 4a44fa2f37f31d3473dcfd1ef9d41d20
   md:
     pred_file:
       name: models/nequix/nequix-mp-1/2026-06-28-md-metrics.csv.gz

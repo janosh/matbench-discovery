@@ -218,32 +218,32 @@ metrics:
   geo_opt:
     pred_file:
       name: models/mace_soyo/mace-soyo-oam/2026-10-22-geo-opt.jsonl.gz
-      url: https://ndownloader.figshare.com/files/70537101
+      url: https://figshare.com/files/71653144
       size: 104347504
       md5: 8711762af4b8aa69e4b4d2e58e92bdf8
     symprec=1e-5:
-      rmsd: 0.0619 # unitless
-      n_sym_ops_mae: 2.1821 # unitless
-      symmetry_decrease: 0.0678 # fraction
+      rmsd: 0.0581 # unitless
+      n_sym_ops_mae: 2.1816 # unitless
+      symmetry_decrease: 0.0677 # fraction
       symmetry_match: 0.6863 # fraction
       symmetry_increase: 0.2397 # fraction
       symmetry_lateral: 0.0063 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/mace_soyo/mace-soyo-oam/2026-10-22-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://ndownloader.figshare.com/files/70537089
-        size: 6899869
-        md5: cc3dc2651704b0dee33bc3d28820081b
+        name: models/mace_soyo/mace-soyo-oam/2026-10-22-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653147
+        size: 6922679
+        md5: c3108b2bd0d1f2ef37a195cdee24208a
     symprec=1e-2:
-      rmsd: 0.0619 # unitless
-      n_sym_ops_mae: 1.711 # unitless
+      rmsd: 0.0581 # unitless
+      n_sym_ops_mae: 1.7109 # unitless
       symmetry_decrease: 0.0475 # fraction
       symmetry_match: 0.8178 # fraction
       symmetry_increase: 0.1273 # fraction
       symmetry_lateral: 0.0074 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/mace_soyo/mace-soyo-oam/2026-10-22-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://ndownloader.figshare.com/files/70537086
-        size: 6861114
-        md5: 8c5ecb42cd977722183a91d0f40cbee4
+        name: models/mace_soyo/mace-soyo-oam/2026-10-22-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653162
+        size: 6885330
+        md5: 3c14a26abcc513b64a585361efd9796c

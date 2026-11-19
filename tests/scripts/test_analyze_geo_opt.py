@@ -172,3 +172,42 @@ def test_write_dft_reference_never_overwrites(
     pd.testing.assert_frame_equal(
         pd.read_csv(out_path, index_col="material_id"), df_sym
     )
+
+
+@pytest.mark.parametrize(
+    ("engine_version", "write_reference", "error"),
+    [
+        ("0.21.0", False, "WBM load reached"),
+        # moyopy's version is irrelevant: only matscikit's bundled moyo names files
+        ("0.22.0", False, "matscikit's moyo 0.22.0 does not match the registered"),
+        # substring matches must not pass (0.2 is not 0.21.0)
+        ("0.2", False, "matscikit's moyo 0.2 does not match the registered"),
+        ("0.22.0", True, "WBM load reached"),
+    ],
+)
+def test_main_checks_dft_reference_against_matscikit_moyo(
+    engine_version: str,
+    write_reference: bool,
+    error: str,
+    analyze_geo_opt: ModuleType,
+) -> None:
+    """main() compares registered DFT references to matscikit's moyo before WBM load."""
+    raw_args = ["--models", "alignn", "--symprec", "1e-2"]
+    raw_args += ["--write-dft-reference"] * write_reference
+    with (
+        patch.object(analyze_geo_opt, "MOYO_VERSION", engine_version),
+        patch.object(
+            analyze_geo_opt.DataFiles,
+            "path",
+            new_callable=PropertyMock,
+            side_effect=RuntimeError("WBM load reached"),
+        ),
+        patch.object(
+            analyze_geo_opt.DataFiles,
+            "rel_path",
+            new_callable=PropertyMock,
+            return_value="wbm/dft-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz",
+        ),
+        pytest.raises((ValueError, RuntimeError), match=error),
+    ):
+        analyze_geo_opt.main(raw_args)

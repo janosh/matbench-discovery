@@ -153,28 +153,28 @@ metrics:
       size: 105718510
       md5: 773ada061cd2e0e46df61804a1672fc8
     symprec=1e-5:
-      rmsd: 0.0901 # unitless
-      n_sym_ops_mae: 3.4095 # unitless
+      rmsd: 0.0851 # unitless
+      n_sym_ops_mae: 3.4092 # unitless
       symmetry_decrease: 0.2366 # fraction
       symmetry_match: 0.586 # fraction
-      symmetry_increase: 0.1668 # fraction
+      symmetry_increase: 0.1669 # fraction
       symmetry_lateral: 0.0105 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/alignn_ff/alignn-ff-mptrj/2026-10-24-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70945005
-        size: 6856047
-        md5: b95567ba2ad3b9b8a971674d67cd16d9
+        name: models/alignn_ff/alignn-ff-mptrj/2026-10-24-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71649811
+        size: 6884663
+        md5: 5ad2f70a6cb2b4a409a858453f178bd8
     symprec=1e-2:
-      rmsd: 0.0901 # unitless
-      n_sym_ops_mae: 1.9804 # unitless
-      symmetry_decrease: 0.0892 # fraction
+      rmsd: 0.0851 # unitless
+      n_sym_ops_mae: 1.9805 # unitless
+      symmetry_decrease: 0.0893 # fraction
       symmetry_match: 0.7967 # fraction
       symmetry_increase: 0.1072 # fraction
       symmetry_lateral: 0.0069 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/alignn_ff/alignn-ff-mptrj/2026-10-24-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70945008
-        size: 6796196
-        md5: 92a61e82ff024f70e66d376cac2f106d
+        name: models/alignn_ff/alignn-ff-mptrj/2026-10-24-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71649814
+        size: 6825764
+        md5: 045bd1ef2a9fc6ccb8bbd019ce2b487d

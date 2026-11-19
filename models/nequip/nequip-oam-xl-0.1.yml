@@ -179,31 +179,31 @@ metrics:
       size: 107380551
       md5: ee518b4fc8d790b6051e893d4e85f8c7
     symprec=1e-5:
-      rmsd: 0.063 # unitless
-      n_sym_ops_mae: 2.0821 # unitless
-      symmetry_decrease: 0.0975 # fraction
+      rmsd: 0.0592 # unitless
+      n_sym_ops_mae: 2.082 # unitless
+      symmetry_decrease: 0.0974 # fraction
       symmetry_match: 0.6834 # fraction
       symmetry_increase: 0.2117 # fraction
       symmetry_lateral: 0.0074 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/nequip/nequip-oam-xl-0.1/2025-11-30-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333893
-        size: 8146220
-        md5: 2f4ab7b9f6f9ee824f7432bd4498d05f
+        name: models/nequip/nequip-oam-xl-0.1/2025-11-30-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653201
+        size: 8169950
+        md5: afa5739c5db57efb6b94e1dd3bc01cda
     symprec=1e-2:
-      rmsd: 0.063 # unitless
-      n_sym_ops_mae: 1.6986 # unitless
+      rmsd: 0.0592 # unitless
+      n_sym_ops_mae: 1.6985 # unitless
       symmetry_decrease: 0.0253 # fraction
       symmetry_match: 0.8223 # fraction
-      symmetry_increase: 0.1437 # fraction
+      symmetry_increase: 0.1436 # fraction
       symmetry_lateral: 0.0087 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/nequip/nequip-oam-xl-0.1/2025-11-30-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333896
-        size: 8189472
-        md5: 665c1d0c9b8a9b0c49a4584a861d6fd6
+        name: models/nequip/nequip-oam-xl-0.1/2025-11-30-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653213
+        size: 8212944
+        md5: 261139101fdfc2c6afc219bc1f90b47b
   md:
     pred_file:
       name: models/nequip/nequip-oam-xl-0.1/2026-06-28-md-metrics.csv.gz

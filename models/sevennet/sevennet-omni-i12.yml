@@ -197,11 +197,11 @@ metrics:
   geo_opt:
     pred_file:
       name: models/sevennet/sevennet-omni-i12/2026-01-12-geo-opt.jsonl.gz
-      url: https://figshare.com/files/60979039
-      size: 92916028
-      md5: a8b39f29537f8d20673fd66ef80a5e5a
+      url: https://figshare.com/files/71653321
+      size: 94914320
+      md5: fa7ccac6aba438b6aef27b896cbf2f54
     symprec=1e-2:
-      rmsd: 0.0618 # unitless
+      rmsd: 0.0577 # unitless
       n_sym_ops_mae: 1.7096 # unitless
       symmetry_decrease: 0.0469 # fraction
       symmetry_match: 0.8187 # fraction
@@ -209,23 +209,23 @@ metrics:
       symmetry_lateral: 0.0072 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/sevennet/sevennet-omni-i12/2026-01-12-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333950
-        size: 6892205
-        md5: 778710d0e8572cf50ae23435ef74c702
+        name: models/sevennet/sevennet-omni-i12/2026-01-12-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653327
+        size: 6917752
+        md5: 3c010929a2568a6f6541463631370606
     symprec=1e-5:
-      rmsd: 0.0618 # unitless
-      n_sym_ops_mae: 2.0291 # unitless
+      rmsd: 0.0577 # unitless
+      n_sym_ops_mae: 2.029 # unitless
       symmetry_decrease: 0.0439 # fraction
       symmetry_match: 0.7056 # fraction
       symmetry_increase: 0.2454 # fraction
       symmetry_lateral: 0.0051 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/sevennet/sevennet-omni-i12/2026-01-12-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333953
-        size: 6906164
-        md5: eebfd197eac277bc0f3836458e74ed96
+        name: models/sevennet/sevennet-omni-i12/2026-01-12-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653330
+        size: 6931018
+        md5: f427d7469da6ba043e469ea40c781b34
   md:
     pred_file:
       name: models/sevennet/sevennet-omni-i12/2026-06-28-md-metrics.csv.gz

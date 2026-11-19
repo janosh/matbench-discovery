@@ -170,31 +170,31 @@ metrics:
       size: 140628230
       md5: 1413ed2de31ba9b8b93311d4594296b3
     symprec=1e-2:
-      rmsd: 0.0601 # unitless
-      n_sym_ops_mae: 1.732 # unitless
+      rmsd: 0.0565 # unitless
+      n_sym_ops_mae: 1.7319 # unitless
       symmetry_decrease: 0.0547 # fraction
       symmetry_match: 0.8153 # fraction
       symmetry_increase: 0.1227 # fraction
       symmetry_lateral: 0.0072 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/matris/matris-10m-oam/2025-10-29-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333866
-        size: 6888255
-        md5: da4219e15e13f58f1c7cada05af33f3e
+        name: models/matris/matris-10m-oam/2025-10-29-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653171
+        size: 6910223
+        md5: 8d6c24ff81f0dde17940e116f7092cdd
     symprec=1e-5:
-      rmsd: 0.0601 # unitless
-      n_sym_ops_mae: 3.0682 # unitless
+      rmsd: 0.0565 # unitless
+      n_sym_ops_mae: 3.0673 # unitless
       symmetry_decrease: 0.195 # fraction
       symmetry_match: 0.5955 # fraction
       symmetry_increase: 0.1996 # fraction
       symmetry_lateral: 0.0099 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/matris/matris-10m-oam/2025-10-29-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333869
-        size: 6998375
-        md5: 65347c0bc617cb27f9a9e7a2847263b3
+        name: models/matris/matris-10m-oam/2025-10-29-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653174
+        size: 7019553
+        md5: f2d9401665c3a0931511c24b5ccb31c0
   md:
     pred_file:
       name: models/matris/matris-10m-oam/2026-06-28-md-metrics.csv.gz

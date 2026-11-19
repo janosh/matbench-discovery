@@ -182,31 +182,31 @@ metrics:
       size: 142688075
       md5: e85f99ac89f805843e52697c345b9204
     symprec=1e-2:
-      rmsd: 0.0796 # unitless
-      n_sym_ops_mae: 1.8758 # unitless
+      rmsd: 0.0749 # unitless
+      n_sym_ops_mae: 1.8759 # unitless
       symmetry_decrease: 0.0755 # fraction
       symmetry_match: 0.8002 # fraction
       symmetry_increase: 0.1163 # fraction
       symmetry_lateral: 0.008 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/hienet/hienet/2025-07-01-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333749
-        size: 6823514
-        md5: f1ba446c5d553895b61424e5af046677
+        name: models/hienet/hienet/2025-07-01-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653003
+        size: 6852680
+        md5: 52e80e11fe69635f720875efed73254e
     symprec=1e-5:
-      rmsd: 0.0796 # unitless
-      n_sym_ops_mae: 2.6208 # unitless
+      rmsd: 0.0749 # unitless
+      n_sym_ops_mae: 2.6206 # unitless
       symmetry_decrease: 0.3493 # fraction
       symmetry_match: 0.4521 # fraction
       symmetry_increase: 0.1532 # fraction
       symmetry_lateral: 0.0454 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/hienet/hienet/2025-07-01-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333752
-        size: 6750262
-        md5: 428e67078395aead22aae7c0461ca461
+        name: models/hienet/hienet/2025-07-01-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653033
+        size: 6778807
+        md5: 7e0d4b6eff3212f6c6de100f05cf1145
   md:
     pred_file:
       name: models/hienet/hienet/2026-06-28-md-metrics.csv.gz

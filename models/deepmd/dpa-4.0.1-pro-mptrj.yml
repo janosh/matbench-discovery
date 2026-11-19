@@ -177,35 +177,35 @@ metrics:
   geo_opt:
     pred_file:
       name: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-05-geo-opt.jsonl.gz
-      url: https://figshare.com/files/65469201
-      size: 102808527
-      md5: 9a6489770e53cd4c3fd268e8dc33091a
+      url: https://figshare.com/files/71650957
+      size: 125630480
+      md5: ebee944990ebccf558ca143c2b283e6c
     symprec=1e-2:
-      rmsd: 0.0687 # unitless
-      n_sym_ops_mae: 2.2966 # unitless
+      rmsd: 0.0646 # unitless
+      n_sym_ops_mae: 2.2967 # unitless
       symmetry_decrease: 0.208 # fraction
-      symmetry_match: 0.6631 # fraction
-      symmetry_increase: 0.1037 # fraction
+      symmetry_match: 0.6632 # fraction
+      symmetry_increase: 0.1038 # fraction
       symmetry_lateral: 0.0251 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-05-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333650
-        size: 6909311
-        md5: 0112a7c30b1b0193941889463420054b
+        name: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-05-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71651335
+        size: 6933888
+        md5: df1f43465c9452dff66ad1a3d269900b
     symprec=1e-5:
-      rmsd: 0.0687 # unitless
+      rmsd: 0.0646 # unitless
       n_sym_ops_mae: 3.522 # unitless
-      symmetry_decrease: 0.41 # fraction
+      symmetry_decrease: 0.4099 # fraction
       symmetry_match: 0.3899 # fraction
-      symmetry_increase: 0.1422 # fraction
+      symmetry_increase: 0.1423 # fraction
       symmetry_lateral: 0.0579 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-05-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333653
-        size: 6818818
-        md5: 17e0039256e04d9fa4c5cfcafa153760
+        name: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-05-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71651338
+        size: 6843335
+        md5: 3d573ee987eb5a0cfd003e76fc18ade3
   md:
     pred_file:
       name: models/deepmd/dpa-4.0.1-pro-mptrj/2026-06-28-md-metrics.csv.gz

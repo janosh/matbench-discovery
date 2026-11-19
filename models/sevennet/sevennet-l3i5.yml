@@ -189,31 +189,31 @@ metrics:
       size: 143322218
       md5: e0595138dada18001796768384a366c2
     symprec=1e-5:
-      rmsd: 0.0848 # unitless
-      n_sym_ops_mae: 2.7178 # unitless
+      rmsd: 0.0799 # unitless
+      n_sym_ops_mae: 2.7175 # unitless
       symmetry_decrease: 0.3667 # fraction
       symmetry_match: 0.4412 # fraction
       symmetry_increase: 0.1451 # fraction
       symmetry_lateral: 0.047 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/sevennet/sevennet-l3i5/2024-12-10-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333944
-        size: 7858059
-        md5: aa73366725750462cfc10f2b22948525
+        name: models/sevennet/sevennet-l3i5/2024-12-10-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653315
+        size: 7885677
+        md5: d6c2480edaef195d925c915a4d09d05b
     symprec=1e-2:
-      rmsd: 0.0848 # unitless
-      n_sym_ops_mae: 1.9379 # unitless
+      rmsd: 0.0799 # unitless
+      n_sym_ops_mae: 1.938 # unitless
       symmetry_decrease: 0.0895 # fraction
       symmetry_match: 0.788 # fraction
       symmetry_increase: 0.1134 # fraction
       symmetry_lateral: 0.0091 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/sevennet/sevennet-l3i5/2024-12-10-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333947
-        size: 8094516
-        md5: 7d1ed179a19d3fb01b08aaa69648a713
+        name: models/sevennet/sevennet-l3i5/2024-12-10-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653318
+        size: 8122100
+        md5: fda87a6b303878793f257c470cacc11f
   md:
     pred_file:
       name: models/sevennet/sevennet-l3i5/2026-06-28-md-metrics.csv.gz

@@ -133,35 +133,35 @@ metrics:
   geo_opt:
     pred_file:
       name: models/tace/tace-v1-oam-m/2026-01-06-geo-opt.jsonl.gz
-      url: https://figshare.com/files/60806854
-      size: 99169662
-      md5: 6051870d62b11b597dc2626a8a3ca79a
+      url: https://figshare.com/files/71653486
+      size: 100450247
+      md5: c811af63218e77e5c4203bfd1b69d019
     symprec=1e-2:
-      rmsd: 0.0651 # unitless
+      rmsd: 0.0611 # unitless
       n_sym_ops_mae: 1.7372 # unitless
       symmetry_decrease: 0.0544 # fraction
-      symmetry_match: 0.8167 # fraction
+      symmetry_match: 0.8168 # fraction
       symmetry_increase: 0.1219 # fraction
       symmetry_lateral: 0.007 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/tace/tace-v1-oam-m/2026-01-06-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70334076
-        size: 7511399
-        md5: b7bf8a2b3319da0a9a3d3346f83c1082
+        name: models/tace/tace-v1-oam-m/2026-01-06-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653657
+        size: 7532165
+        md5: c8578efd30b399f6d11483e8dd165100
     symprec=1e-5:
-      rmsd: 0.0651 # unitless
-      n_sym_ops_mae: 1.8278 # unitless
+      rmsd: 0.0611 # unitless
+      n_sym_ops_mae: 1.828 # unitless
       symmetry_decrease: 0.0559 # fraction
       symmetry_match: 0.7327 # fraction
       symmetry_increase: 0.2061 # fraction
       symmetry_lateral: 0.0053 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/tace/tace-v1-oam-m/2026-01-06-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70334079
-        size: 7483052
-        md5: 14f0f7d2ee26902766e8b2d46bb1fb64
+        name: models/tace/tace-v1-oam-m/2026-01-06-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653663
+        size: 7502446
+        md5: 5043920084e67d053761909215c29cb9
   phonons:
     kappa_103:
       pred_file:

@@ -4,25 +4,27 @@ individual CSV files (one per symprec value) in a model's directory.
 Output files will have the same name as the input file containing the model's relaxed
 structures, but with the symprec value appended to the filename.
 
-Note: StructureMatcher is configured with stol=1.0 and scale=False for exact matching.
+Note: RMSDs come from matscikit.rms_distances with stol=1.0 and no volume scaling.
 RMSD values are normalized (unitless) and NaN values are filled with 1.0 (the stol
 value) to properly account for structures that couldn't be matched.
 
-Example usage (moyopy comes from the symmetry extra):
-    uv run --with-editable '.[symmetry]' scripts/analyze_geo_opt.py \
+Symmetry runs on matscikit's bundled moyo crate, so file names and the DFT reference
+check use matscikit.MOYO_VERSION (not any installed moyopy).
+
+Example usage:
+    uv run --with-editable '.' scripts/analyze_geo_opt.py \
         --models mace_mp_0 m3gnet --symprec 1e-2 1e-5
     # only analyze first 10 structures (CSV goes to a debug/ subdir, no YAML write)
-    uv run --with-editable '.[symmetry]' scripts/analyze_geo_opt.py --debug 10
+    uv run --with-editable '.' scripts/analyze_geo_opt.py --debug 10
 """
 
 # %%
-import importlib.metadata
 import itertools
 import os
 from typing import TYPE_CHECKING, Any, Final
 
 import pandas as pd
-from matscikit import Structure
+from matscikit import MOYO_VERSION, Structure
 from matscikit.interop import structure_from_pymatgen_dict
 from pymatviz.enums import Key
 
@@ -181,7 +183,7 @@ def write_dft_reference(
     dft_structs: dict[str, Structure], symprec: float, moyo_version: str, out_dir: str
 ) -> pd.DataFrame:
     """Recompute the WBM DFT symmetry reference into a new file named by date and
-    moyopy version (never overwriting one) to upload and register in data-files.yml.
+    moyo version (never overwriting one) to upload and register in data-files.yml.
     """
     out_path = (
         f"{out_dir}/wbm/{today}-dft-geo-opt-symprec="
@@ -219,7 +221,7 @@ def main(raw_args: list[str] | None = None) -> int:
     geo_opt_group.add_argument(
         "--write-dft-reference",
         action="store_true",
-        help="Recompute the WBM DFT symmetry reference with the installed moyopy.",
+        help="Recompute the WBM DFT symmetry reference with matscikit's moyo.",
     )
     geo_opt_group.add_argument(
         "--debug", type=int, default=0, help="If > 0, analyze only this many."
@@ -232,7 +234,28 @@ def main(raw_args: list[str] | None = None) -> int:
     # > 0 activates debug mode, analyzing only that many structures
     debug_mode: Final[int] = args.debug
     symprec_values: Final[Sequence[float]] = args.symprec
-    moyo_version = importlib.metadata.version("moyopy")
+    moyo_version = MOYO_VERSION  # matscikit's moyo crate does the symmetry search
+
+    # %% Check the registered DFT reference for each symprec value before the slow WBM
+    # load. Model analyses are only comparable to a reference from the same moyo
+    # version, so a mismatch fails here instead of silently mixing moyo versions.
+    reference_files: dict[float, DataFiles] = {}
+    for symprec in symprec_values:
+        symprec_str = f"symprec={canonical_scientific_notation(symprec)}"
+        data_file = DFT_REFERENCE_FILES.get(symprec)
+        if data_file is None:
+            raise ValueError(
+                f"No registered DFT reference for {symprec_str}, available: "
+                f"{sorted(DFT_REFERENCE_FILES)}"
+            )
+        ref_suffix = f"-moyo={moyo_version}.csv.gz"
+        if not args.write_dft_reference and not data_file.rel_path.endswith(ref_suffix):
+            raise ValueError(
+                f"matscikit's moyo {moyo_version} does not match the registered DFT "
+                f"reference {data_file.rel_path}. Pass --write-dft-reference and "
+                "register the new file in data-files.yml"
+            )
+        reference_files[symprec] = data_file
 
     # %%
     print("Loading WBM PBE structures...")
@@ -246,31 +269,14 @@ def main(raw_args: list[str] | None = None) -> int:
         for mat_id, cse in df_wbm_structs[Key.computed_structure_entry].items()
     }
 
-    # %% Load the registered DFT reference for each symprec value. Model analyses are
-    # only comparable to a reference computed with the same moyopy version, so a version
-    # mismatch fails here instead of silently recomputing an unregistered reference.
-    dft_analysis_dict: dict[float, pd.DataFrame] = {}
-    for symprec in symprec_values:
-        symprec_str = f"symprec={canonical_scientific_notation(symprec)}"
-        data_file = DFT_REFERENCE_FILES.get(symprec)
-        if data_file is None:
-            raise ValueError(
-                f"No registered DFT reference for {symprec_str}, available: "
-                f"{sorted(DFT_REFERENCE_FILES)}"
-            )
-        if args.write_dft_reference:
-            dft_analysis_dict[symprec] = write_dft_reference(
-                dft_structs, symprec, moyo_version, DataFiles.base_dir
-            )
-            continue
-        if f"moyo={moyo_version}" not in data_file.rel_path:
-            raise ValueError(
-                f"Installed moyopy {moyo_version} does not match the registered "
-                f"DFT reference {data_file.rel_path}. Install the registered version, "
-                "or pass --write-dft-reference and register the new file in "
-                "data-files.yml"
-            )
-        dft_analysis_dict[symprec] = pd.read_csv(data_file.path).set_index(Key.mat_id)
+    dft_analysis_dict: dict[float, pd.DataFrame] = {
+        symprec: write_dft_reference(
+            dft_structs, symprec, moyo_version, DataFiles.base_dir
+        )
+        if args.write_dft_reference
+        else pd.read_csv(data_file.path).set_index(Key.mat_id)
+        for symprec, data_file in reference_files.items()
+    }
 
     # sequential: each analysis already uses every core (matscikit's rayon pool), and
     # worker processes would each hold a copy of the DFT structures

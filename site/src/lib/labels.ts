@@ -606,7 +606,7 @@ export const ALL_METRICS: AllMetrics = {
     // Unit intentionally hidden for concise table column headers.
     range: [0, RMSD_BASELINE],
     better: `lower`,
-    description: `Normalized, unitless StructureMatcher RMSD between ML- and DFT-relaxed structures after matching; unmatched structures are assigned 1.0`,
+    description: `Normalized, unitless structure-matching RMSD (matscikit rms_distances, stol=1) between ML- and DFT-relaxed structures; unmatched structures are assigned 1.0`,
     style: `border-left: 1px solid var(--border);`,
   },
   ...GEO_OPT_SYMMETRY_METRICS,

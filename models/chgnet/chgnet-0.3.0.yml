@@ -157,31 +157,31 @@ metrics:
       size: 118451301
       md5: 22896c9b7d99999ca80cd906626f6587
     symprec=1e-5:
-      rmsd: 0.095 # unitless
-      n_sym_ops_mae: 3.0863 # unitless
-      symmetry_decrease: 0.2241 # fraction
+      rmsd: 0.089 # unitless
+      n_sym_ops_mae: 3.0856 # unitless
+      symmetry_decrease: 0.224 # fraction
       symmetry_match: 0.6062 # fraction
       symmetry_increase: 0.1601 # fraction
-      symmetry_lateral: 0.0096 # fraction
+      symmetry_lateral: 0.0097 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/chgnet/chgnet-0.3.0/2023-12-21-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333632
-        size: 6810713
-        md5: 1f56c50abf193aebe9a183bd2b7cee60
+        name: models/chgnet/chgnet-0.3.0/2023-12-21-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71650852
+        size: 6846356
+        md5: 2815e0833d5af38d07428f9d7b654b1b
     symprec=1e-2:
-      rmsd: 0.095 # unitless
-      n_sym_ops_mae: 2.0181 # unitless
+      rmsd: 0.089 # unitless
+      n_sym_ops_mae: 2.0184 # unitless
       symmetry_decrease: 0.0922 # fraction
       symmetry_match: 0.7921 # fraction
       symmetry_increase: 0.1076 # fraction
       symmetry_lateral: 0.0081 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/chgnet/chgnet-0.3.0/2023-12-21-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333641
-        size: 6775732
-        md5: c4a42e3268ed4031a82fb5048aef7f87
+        name: models/chgnet/chgnet-0.3.0/2023-12-21-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71650870
+        size: 6812667
+        md5: 6beee8be31f7abd529b692438d03f4b0
   md:
     pred_file:
       name: models/chgnet/chgnet-0.3.0/2026-06-28-md-metrics.csv.gz

@@ -206,35 +206,35 @@ metrics:
   geo_opt:
     pred_file:
       name: models/nequix/nequix-mp-1-pft/2026-01-12-geo-opt.jsonl.gz
-      url: https://figshare.com/files/61019686
-      size: 104224729
-      md5: eb6a8f03eee8acf49c8c93b681dd098d
+      url: https://figshare.com/files/71653222
+      size: 147832809
+      md5: 3e7ab761443bb3a62106ac205a8e5da1
     symprec=1e-2:
-      rmsd: 0.0866 # unitless
-      n_sym_ops_mae: 1.7984 # unitless
+      rmsd: 0.0813 # unitless
+      n_sym_ops_mae: 1.7987 # unitless
       symmetry_decrease: 0.054 # fraction
       symmetry_match: 0.8109 # fraction
       symmetry_increase: 0.1276 # fraction
       symmetry_lateral: 0.0075 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/nequix/nequix-mp-1-pft/2026-01-12-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333908
-        size: 7555323
-        md5: 23fac6a2c41d643868127f23eb683cf5
+        name: models/nequix/nequix-mp-1-pft/2026-01-12-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653258
+        size: 7587441
+        md5: db4cf3c85dbdd13e091b0cbdb2a605e7
     symprec=1e-5:
-      rmsd: 0.0866 # unitless
-      n_sym_ops_mae: 2.0577 # unitless
+      rmsd: 0.0813 # unitless
+      n_sym_ops_mae: 2.0578 # unitless
       symmetry_decrease: 0.0602 # fraction
       symmetry_match: 0.6976 # fraction
       symmetry_increase: 0.2362 # fraction
       symmetry_lateral: 0.006 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/nequix/nequix-mp-1-pft/2026-01-12-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333911
-        size: 7528351
-        md5: f6b2975a55aab5f60981972c81d9cf01
+        name: models/nequix/nequix-mp-1-pft/2026-01-12-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653261
+        size: 7560007
+        md5: f3b755eed37bf19cc2990708a191b1b2
   md:
     pred_file:
       name: models/nequix/nequix-mp-1-pft/2026-06-28-md-metrics.csv.gz

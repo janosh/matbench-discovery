@@ -144,11 +144,11 @@ metrics:
   geo_opt:
     pred_file:
       name: models/deepmd/dpa-4.1-max-oam-pft/2026-10-27-geo-opt.jsonl.gz
-      url: https://ndownloader.figshare.com/files/70836387
+      url: https://figshare.com/files/71651365
       size: 104178833
       md5: 163c7c4e45e0b7a3c5ba14963e630c11
     symprec=1e-5:
-      rmsd: 0.0576 # unitless
+      rmsd: 0.054 # unitless
       n_sym_ops_mae: 2.7774 # unitless
       symmetry_decrease: 0.3573 # fraction
       symmetry_match: 0.4287 # fraction
@@ -156,23 +156,23 @@ metrics:
       symmetry_lateral: 0.0526 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/deepmd/dpa-4.1-max-oam-pft/2026-10-27-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://ndownloader.figshare.com/files/70836378
-        size: 6835142
-        md5: 409b56d127d89c371a209dd14e108374
+        name: models/deepmd/dpa-4.1-max-oam-pft/2026-10-27-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71651395
+        size: 6857887
+        md5: 5197ea297826437e7de73e39e12b3217
     symprec=1e-2:
-      rmsd: 0.0576 # unitless
-      n_sym_ops_mae: 1.9422 # unitless
+      rmsd: 0.054 # unitless
+      n_sym_ops_mae: 1.9423 # unitless
       symmetry_decrease: 0.1231 # fraction
       symmetry_match: 0.7489 # fraction
       symmetry_increase: 0.1135 # fraction
       symmetry_lateral: 0.0145 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/deepmd/dpa-4.1-max-oam-pft/2026-10-27-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://ndownloader.figshare.com/files/70836375
-        size: 6944171
-        md5: d7bc80ac9d17fc01d237e335c9e64195
+        name: models/deepmd/dpa-4.1-max-oam-pft/2026-10-27-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71651398
+        size: 6966267
+        md5: 0dc67dd45c77c9d4c68df69a1eade83f
   phonons:
     kappa_103:
       κ_SRME: 0.0806

@@ -101,7 +101,7 @@ def calc_geo_opt_metrics(df_model_analysis: pd.DataFrame) -> dict[str, float]:
 
     Notes:
         - total number of structures is counted based on valid symmetry data
-        - NaN RMSD values are filled with 1.0 (the stol value set in StructureMatcher)
+        - NaN RMSD values are filled with 1.0 (the stol value passed to rms_distances)
         - symmetry metrics are calculated only on structures with valid symmetry data
     """
     spg_diff = df_model_analysis[MbdKey.spg_num_diff]
@@ -113,7 +113,7 @@ def calc_geo_opt_metrics(df_model_analysis: pd.DataFrame) -> dict[str, float]:
     valid_sym_mask = spg_diff.notna()
     n_valid_sym = valid_sym_mask.sum()
 
-    # Fill NaN values with 1.0 (the stol value we set in StructureMatcher)
+    # Fill NaN values with 1.0 (the stol value passed to rms_distances)
     mean_rmsd = pd.to_numeric(rmsd_vals, errors="coerce").fillna(1.0).mean()
 
     sym_ops_mae = n_sym_ops_diff[valid_sym_mask].abs().mean()

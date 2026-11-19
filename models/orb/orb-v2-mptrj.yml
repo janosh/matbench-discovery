@@ -162,7 +162,7 @@ metrics:
       size: 136527936
       md5: 5547198f16832896d271166d716d10fe
     symprec=1e-5:
-      rmsd: 0.1007 # unitless
+      rmsd: 0.096 # unitless
       n_sym_ops_mae: 10.0888 # unitless
       symmetry_decrease: 0.8655 # fraction
       symmetry_match: 0.1335 # fraction
@@ -170,23 +170,23 @@ metrics:
       symmetry_lateral: 0.0001 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/orb/orb-v2-mptrj/2024-10-14-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333920
-        size: 6131208
-        md5: e2cca0d7b4b1cd0af319e4a5f2069c14
+        name: models/orb/orb-v2-mptrj/2024-10-14-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653270
+        size: 6157285
+        md5: aaf0e4625450cd00056401bcc21d11d9
     symprec=1e-2:
-      rmsd: 0.1007 # unitless
-      n_sym_ops_mae: 5.6352 # unitless
-      symmetry_decrease: 0.5213 # fraction
-      symmetry_match: 0.4332 # fraction
+      rmsd: 0.096 # unitless
+      n_sym_ops_mae: 5.634 # unitless
+      symmetry_decrease: 0.5212 # fraction
+      symmetry_match: 0.4333 # fraction
       symmetry_increase: 0.0387 # fraction
-      symmetry_lateral: 0.0067 # fraction
+      symmetry_lateral: 0.0068 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/orb/orb-v2-mptrj/2024-10-14-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333923
-        size: 6828299
-        md5: 46d5efe1299ae503d3bd29671a4ad350
+        name: models/orb/orb-v2-mptrj/2024-10-14-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653276
+        size: 6858179
+        md5: 5114936e23157b36142a718d43e27acc
   md:
     pred_file:
       name: models/orb/orb-v2-mptrj/2026-06-28-md-metrics.csv.gz

@@ -116,24 +116,24 @@ metrics:
   geo_opt:
     pred_file:
       name: models/equflash/equflashv2-45m-oam/2026-06-11-geo-opt.jsonl.gz
-      url: https://figshare.com/files/65434998
-      size: 105066086
-      md5: 2fedd19d900fc0051986dbca987bbfa4
+      url: https://figshare.com/files/71651425
+      size: 104328818
+      md5: e3b213413bf8003f6d7abc276d55d025
     symprec=1e-2:
-      rmsd: 0.0577 # unitless
-      n_sym_ops_mae: 1.6877 # unitless
+      rmsd: 0.0541 # unitless
+      n_sym_ops_mae: 1.6878 # unitless
       symmetry_decrease: 0.0474 # fraction
       symmetry_match: 0.8202 # fraction
       symmetry_increase: 0.1251 # fraction
       symmetry_lateral: 0.0074 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/equflash/equflashv2-45m-oam/2026-06-11-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333668
-        size: 8121774
-        md5: 59c43294a83d4be2ad3f00ad9c9a2c79
+        name: models/equflash/equflashv2-45m-oam/2026-06-11-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71651434
+        size: 8143878
+        md5: fd1997a58e02cd3bad6adbf651efdbbd
     symprec=1e-5:
-      rmsd: 0.0577 # unitless
+      rmsd: 0.0541 # unitless
       n_sym_ops_mae: 2.0782 # unitless
       symmetry_decrease: 0.0507 # fraction
       symmetry_match: 0.7005 # fraction
@@ -141,10 +141,10 @@ metrics:
       symmetry_lateral: 0.0055 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/equflash/equflashv2-45m-oam/2026-06-11-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333671
-        size: 8106194
-        md5: 88efcb52b9b3dd5223867b4b6f7437f5
+        name: models/equflash/equflashv2-45m-oam/2026-06-11-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71651437
+        size: 8128580
+        md5: f31848671ba8537e3b7a9768487c2ea1
   phonons:
     kappa_103:
       pred_file:
