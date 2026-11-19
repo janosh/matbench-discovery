@@ -67,7 +67,7 @@ hyperparams:
     max_force: 0.05
     kappa:
       protocol: phonondb-v1
-      displacement_distance: 0.01 # legacy runs used 0.01 Å; the PhononDB-PBE reference uses 0.03 Å
+      displacement_distance: 0.03 # k_SRME run: its init_phono3py default, not overridden by the script
   architecture:
     graph_construction_radius: 5.0
   upstream_config:

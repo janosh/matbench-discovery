@@ -301,9 +301,11 @@ def test_kappa_settings_validate_and_canonicalize() -> None:
     assert settings.temperatures == (300.0,)
     assert settings.is_plusminus == "auto"
     # default must match the 0.03 Å displacements of the PhononDB-PBE reference force
-    # sets; legacy runs at 0.01 Å pin that value explicitly in their model YAML
+    # sets; legacy runs at 0.01 Å pin that value explicitly in their model YAML, and
+    # k_SRME-era runs like MACE-MP-0 pin the 0.03 Å they actually used
     assert settings.displacement_distance == 0.03
-    assert KappaSettings.from_model("mace_mp_0").displacement_distance == 0.01
+    assert KappaSettings.from_model("hienet").displacement_distance == 0.01
+    assert KappaSettings.from_model("mace_mp_0").displacement_distance == 0.03
     assert settings.digest == KappaSettings.from_mapping(raw_settings).digest
 
     raw_settings.pop("protocol")

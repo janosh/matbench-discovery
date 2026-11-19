@@ -63,7 +63,7 @@ hyperparams:
     cell_filter: FrechetCellFilter
     kappa:
       protocol: phonondb-v1
-      displacement_distance: 0.01 # legacy runs used 0.01 Å; the PhononDB-PBE reference uses 0.03 Å
+      displacement_distance: 0.03 # run by test_sevennet_kappa_with_ray.py with k_srme's init_phono3py default
   architecture:
     n_layers: 5
     graph_construction_radius: 5.0

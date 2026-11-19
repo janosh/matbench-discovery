@@ -70,7 +70,7 @@ hyperparams:
     cell_filter: FrechetCellFilter
     kappa:
       protocol: phonondb-v1
-      displacement_distance: 0.01 # legacy runs used 0.01 Å; the PhononDB-PBE reference uses 0.03 Å
+      displacement_distance: 0.03 # k_SRME run (init_phono3py default); a 0.03 Å rerun reproduces its Γ frequencies, 0.01 Å does not
   architecture:
     graph_construction_radius: 6.0
 
