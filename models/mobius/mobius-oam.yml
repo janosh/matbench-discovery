@@ -55,13 +55,13 @@ hyperparams:
     cell_filter: FrechetCellFilter
     kappa:
       protocol: phonondb-v1
-      displacement_distance: 0.01
+      displacement_distance: 0.03
       temperatures: [300]
       ase_optimizer: FIRE
       ase_filter: FrechetCellFilter
       max_steps: 300
       force_max: 0.0001
-      save_forces: false
+      save_forces: true
   architecture:
     graph_construction_radius: 6.0
 
@@ -74,20 +74,19 @@ notes:
     thermal-conductivity artifacts generated from it. The public model key is
     intentionally kept as mobius-oam.
   benchmark: |
-    Historical run used Matbench Discovery commit 7a7a941, float32 inference,
-    FIRE/FrechetCellFilter, max_force 0.02 eV/Å, and max_steps 500 for discovery
-    and geometry optimization. κ used 0.01 Å, 300 K, force_max 1e-4,
-    max_steps 300, and save_forces=false. This preserves the historical protocol
-    explicitly instead of silently adopting current main's 0.03 Å default.
+    Discovery and geometry optimization artifacts remain from Matbench Discovery
+    commit 7a7a941, float32 inference, FIRE/FrechetCellFilter, max_force 0.02 eV/Å,
+    and max_steps 500. The κ full run uses current main commit
+    6d587c184cdb4a4865dc0b15b04a5e6d77ed464f, 0.03 Å displacement, 300 K,
+    force_max 1e-4, max_steps 300, save_forces=true, and the complete benchmark
+    supercells and q meshes.
   reproducibility: |
     The public model.pt is state-identical to the historical epoch-0001
     checkpoint. The submission pins RUNE to public release commit
     7f2a36c643bb79149b4714c04263002b7aea5f92. RUNE preserves the precision
-    stored in the Möbius checkpoint and this model.pt contains float32 weights;
-    the pinned release does not expose a Möbius dtype override. The historical
-    cost dtype records that actual float32 inference was used. The harmonic
-    sidecar is omitted because it uses schema v2 while current main requires
-    schema v3; save_forces=false means no force-set artifact is required.
+    stored in the Möbius checkpoint and this model.pt contains float32 weights.
+    The current κ rerun stores the required harmonic schema v3 sidecar and HDF5
+    force sidecar. Artifact names, sizes, and MD5 values are recorded below.
   checkpoint_sha256: 9d05e3cbad32ef410ab68d9853de5f0a50877ba807e778e0ab570e67e68d72cd
   inference_weight_sha256: 971e74ddfea4026d5507bd5158c825ec4ad07fb58d287670cd3d6ecd5bff3712
 
@@ -157,19 +156,41 @@ metrics:
   phonons:
     status: complete
     kappa_103:
-      κ_SRME: 0.2996750460734502
-      κ_SRE: 0.19326395751321387
-      κ_SRD: -0.07437707129532087
+      κ_SRME: 0.29688585645623927
+      κ_SRE: 0.19170287982921577
+      κ_SRD: -0.06657768693541793
       κ_failure_rate: 0.009708737864077669
       imaginary_mode_rate: 0.009708737864077669
-      spectrum_w1: 0.2067339805825243
+      spectrum_w1: 0.16562912621359221
       pred_file:
-        name: models/mobius/mobius-oam/2026-10-29-phonons-kappa-103.json.gz
-        url: https://figshare.com/files/71448166
-        size: 15682934
-        md5: d5cc315611fbbbcbc7f736e0e6fba16e
+        name: models/mobius/mobius-oam/2026-11-17-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/71618038
+        size: 15671813
+        md5: 832bf4903cbef68260a0b47f0ec1b00a
       run_info_file:
-        name: models/mobius/mobius-oam/2026-10-29-phonons-kappa-103-run-info.json
-        url: https://figshare.com/files/71448157
-        size: 5614
-        md5: 7aa6a7e5c522242705e09bb709c10510
+        name: models/mobius/mobius-oam/2026-11-17-phonons-kappa-103-run-info.json
+        url: https://figshare.com/files/71618035
+        size: 5322
+        md5: 624752f28c80f7be584a85c6a19c934b
+      phonon_file:
+        name: models/mobius/mobius-oam/2026-11-17-phonons-kappa-103-phonons.json.gz
+        url: https://figshare.com/files/71618032
+        size: 28676364
+        md5: 2c726bd890d09c47ca560ac703276a3a
+      force_file:
+        name: models/mobius/mobius-oam/2026-11-17-phonons-kappa-103-forces.h5
+        url: https://figshare.com/files/71618041
+        size: 48574789
+        md5: ff9e08011c4e7d2d93c661fcdfb93472
+      cost:
+        source: runner
+        hardware: NVIDIA A100-SXM4-80GB
+        device: cuda
+        dtype: float32
+        n_shards: 5
+        n_processes: 5
+        run_time_sec: 19108.74
+        load_time_sec: 3.13
+        max_rss_gb: 1.755
+        max_gpu_mem_gb: 3.115
+        acceleration: []
