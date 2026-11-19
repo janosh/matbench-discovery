@@ -1,18 +1,16 @@
-"""Build a PatchedPhaseDiagram from all MP ComputedStructureEntries for calculating
-DFT-ground truth convex hull energies.
+"""Fetch all MP ComputedStructureEntries and derive the MP elemental reference entries
+used for formation energies. The DFT ground-truth convex hull is built on the fly from
+those entries by matscikit's PhaseDiagram in compile_wbm_test_set.py.
 """
 
 # %%
 import gzip
 import json
 import os
-import pickle
 
 import pandas as pd
 import pymatviz as pmv
-from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram
-from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
-from pymatgen.entries.computed_entries import ComputedEntry, ComputedStructureEntry
+from pymatgen.entries.computed_entries import ComputedEntry
 from pymatgen.ext.matproj import MPRester
 from pymatviz.enums import Key
 from tqdm import tqdm
@@ -48,7 +46,7 @@ df_mp_cse.reset_index().to_json(
 data_path = DataFiles.mp_computed_structure_entries.path
 df_mp_cse = pd.read_json(data_path).set_index(Key.mat_id)
 
-# drop the structure, just load ComputedEntry, makes the PPD faster to build and load
+# drop the structure, just load ComputedEntry (faster to parse)
 mp_computed_entries = [ComputedEntry.from_dict(dct) for dct in tqdm(df_mp_cse.entry)]
 
 print(f"{len(mp_computed_entries)=:,} on {today}")
@@ -56,55 +54,6 @@ assert len(mp_computed_entries) == 154_718
 # len(mp_computed_entries) = 146,323 on 2022-09-16
 # len(mp_computed_entries) = 154,719 on 2023-02-07
 # len(mp_computed_entries) = 154,718 on 2024-08-07
-
-
-# %% build phase diagram with MP entries only
-ppd_mp = PatchedPhaseDiagram(mp_computed_entries, verbose=True)
-print(f"{ppd_mp} on {today}")
-# prints:
-# PatchedPhaseDiagram covering 44805 sub-spaces on 2022-09-16
-# PatchedPhaseDiagram covering 46216 sub-spaces on 2023-02-07
-# PatchedPhaseDiagram covering 26236 sub-spaces on 2024-08-07
-
-# CompRhys fixed the subspace selection algorithm in https://github.com/materialsproject/pymatgen/pull/3900
-# resulting in a 46216->26236 sub-spaces drop, meaning ~20k were redundant.
-# The pickled PatchedPhaseDiagram on figshare was rebuilt with the same
-# 2023-02-07-mp-computed-structure-entries to reflect these changes and to fix
-# AttributeError: 'Composition' object has no attribute '_n_atoms' from changes to
-# pymatgen's Composition class since its original pickling.
-
-# save MP PPD to disk
-with gzip.open(f"{MP_DIR}/{today}-ppd-mp.pkl.gz", mode="wb") as zip_file:
-    pickle.dump(ppd_mp, zip_file)
-
-
-# %% build phase diagram with both MP entries + WBM entries
-wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
-df_wbm = pd.read_json(wbm_cse_path, lines=True).set_index(Key.mat_id)
-
-# using ComputedStructureEntry vs ComputedEntry here is important as CSEs receive
-# more accurate energy corrections that take into account peroxide/superoxide nature
-# of materials (and same for sulfides) based on atomic distances in the structure.
-# Elemental WBM entries are excluded so MP alone defines the terminal references.
-wbm_entries = df_wbm[Key.computed_structure_entry].map(ComputedStructureEntry.from_dict)
-filtered_entries = [entry for entry in wbm_entries if len(entry.composition) > 1]
-wbm_computed_entries = MaterialsProject2020Compatibility().process_entries(
-    filtered_entries, verbose=True, clean=True
-)
-
-n_skipped = len(filtered_entries) - len(wbm_computed_entries)
-assert n_skipped == 0, f"process_entries() unexpectedly filtered {n_skipped} entries"
-print(f"{n_skipped:,} ({n_skipped / len(filtered_entries):.1%}) entries not processed")
-
-
-# %% merge MP and WBM entries into a single PatchedPhaseDiagram
-mp_wbm_ppd = PatchedPhaseDiagram(
-    wbm_computed_entries + mp_computed_entries, verbose=True
-)
-
-# save MP+WBM PPD to disk (was not run)
-with gzip.open(f"{MP_DIR}/{today}-ppd-mp-wbm.pkl.gz", mode="wb") as zip_file:
-    pickle.dump(mp_wbm_ppd, zip_file)
 
 
 # %% compute terminal reference entries across all MP (can be used to compute MP

@@ -4,17 +4,14 @@ https://nature.com/articles/s41524-020-00481-6
 """
 
 # %%
-import gzip
 import os
-import pickle
 from glob import glob
 
 import numpy as np
 import pandas as pd
-from matscikit import protostructure_label
+from matscikit import PhaseDiagram, protostructure_label
 from matscikit.interop import structure_from_pymatgen_dict
 from pandas.core.util.hashing import hash_pandas_object
-from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram
 from pymatgen.core import Composition, Structure
 from pymatgen.entries.compatibility import (
     MaterialsProject2020Compatibility,
@@ -26,7 +23,11 @@ from tqdm import tqdm
 
 from matbench_discovery import WBM_DIR, today
 from matbench_discovery.data import DataFiles, load_datasets
-from matbench_discovery.energy import formation_energies, mp_elemental_ref_energies
+from matbench_discovery.energy import (
+    Entry,
+    formation_energies,
+    mp_elemental_ref_energies,
+)
 from matbench_discovery.enums import MbdKey
 from matbench_discovery.remote.fetch import download_file
 
@@ -532,27 +533,32 @@ avg_energy_corr = df_summary.e_correction_per_atom_mp2020.mean().round(4)
 assert avg_energy_corr == -0.1065, f"{avg_energy_corr=:.4}, expected -0.1065"
 
 
-# %%
-with gzip.open(DataFiles.mp_patched_phase_diagram.path, mode="rb") as zip_file:
-    ppd_mp: PatchedPhaseDiagram = pickle.load(zip_file)  # noqa: S301
+# %% convex hull of all MP entries (MP2020-corrected energies), solved per query as a
+# linear program by matscikit: ~1 s to build and query all ~257k WBM entries vs ~6 min
+# for the pymatgen PatchedPhaseDiagram loop it replaces (plus ~5 min to build the PPD)
+df_mp_entries = pd.read_json(DataFiles.mp_computed_structure_entries.path)
+mp_entries = [Entry.from_dict(dct) for dct in df_mp_entries.entry]
+mp_hull = PhaseDiagram(
+    [entry.composition for entry in mp_entries],
+    [entry.energy_per_atom for entry in mp_entries],
+)
 
 
 # %% calculate e_above_hull for each material
-# this loop needs above warnings.filterwarnings() in __init__.py to not crash Jupyter
-# kernel with logs
-# takes ~20 min at 200 it/s for 250k entries in WBM
 if MbdKey.each_true in df_summary:
     raise KeyError(f"{MbdKey.each_true!s} already in {df_summary.columns=}")
 
-for mat_id, cse in tqdm(
-    df_wbm[Key.computed_structure_entry].items(), total=len(df_wbm)
-):
-    assert mat_id == cse.entry_id, f"{mat_id=} != {cse.entry_id=}"
-    assert cse.entry_id in df_summary.index, f"{cse.entry_id=} not in df_summary"
-
-    e_above_hull = ppd_mp.get_e_above_hull(cse, allow_negative=True)
-
-    df_summary.loc[cse.entry_id, MbdKey.each_true] = e_above_hull
+wbm_cses = df_wbm[Key.computed_structure_entry]
+if mismatched_ids := [
+    mat_id for mat_id, cse in wbm_cses.items() if mat_id != cse.entry_id
+]:
+    raise ValueError(f"entry_id != material_id for {mismatched_ids[:10]=}")
+# the hull spans every WBM composition: a ValueError here means a WBM entry has an
+# element no MP entry has
+wbm_formulas = [cse.composition.formula for cse in wbm_cses]
+df_summary.loc[wbm_cses.index, MbdKey.each_true] = mp_hull.e_above_hull(
+    wbm_formulas, [cse.energy_per_atom for cse in wbm_cses]
+)
 
 
 # %% calculate formation energies from CSEs wrt MP elemental reference energies
@@ -561,22 +567,17 @@ assert sum(df_wbm.index != df_summary.index) == 0
 
 e_forms_raw = formation_energies(
     df_wbm.formula_from_cse,
-    [cse.uncorrected_energy for cse in df_wbm[Key.computed_structure_entry]],
+    [cse.uncorrected_energy for cse in wbm_cses],
     mp_elemental_ref_energies,
 )
-for (mat_id, cse), e_form in tqdm(
-    zip(df_wbm[Key.computed_structure_entry].items(), e_forms_raw, strict=True),
-    total=len(df_wbm),
-    desc="Check formation energies",
-):
-    assert mat_id == cse.entry_id, f"{mat_id=} != {cse.entry_id=}"
-    e_form_ppd = ppd_mp.get_form_energy_per_atom(cse) - cse.correction_per_atom
-
-    # make sure the phase diagram and standalone reference-energy methods of
-    # calculating formation energy agree
-    assert abs(e_form - e_form_ppd) < 1e-4, (
-        f"{mat_id}: {e_form=:.3} != {e_form_ppd=:.3} (diff={e_form - e_form_ppd:.3}))"
-    )
+# make sure the phase diagram and standalone reference-energy methods of calculating
+# formation energy agree
+e_forms_hull = np.asarray(
+    mp_hull.formation_energy(wbm_formulas, [cse.energy_per_atom for cse in wbm_cses])
+) - np.array([cse.correction_per_atom for cse in wbm_cses])
+e_form_diffs = pd.Series(e_forms_raw - e_forms_hull, index=df_wbm.index)
+if (bad_e_forms := e_form_diffs[e_form_diffs.abs() >= 1e-4]).any():
+    raise ValueError(f"formation energies disagree by >= 1e-4 eV/atom: {bad_e_forms}")
 df_summary[MbdKey.e_form_raw] = e_forms_raw
 
 

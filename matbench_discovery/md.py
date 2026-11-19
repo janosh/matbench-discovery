@@ -37,6 +37,7 @@ from matbench_discovery.hpc import (
     check_resume_labels,
     memory_peaks,
     merge_audit_metadata,
+    model_supports_elements,
     reset_gpu_peak_memory,
 )
 from matbench_discovery.metrics import md as md_metrics
@@ -699,8 +700,22 @@ def run_md_benchmark(
     )
     if not system_names:  # clearer than the downstream empty-DataFrame KeyError
         raise ValueError(f"No systems found in reference {ref_file!r} for {systems=}")
-    if dry_run:  # one system, a few steps, capped reference slice
-        system_names = system_names[:1]
+    if dry_run:  # one system the model supports, a few steps, capped reference slice
+        supported_names = (
+            name
+            for name in system_names
+            if model_supports_elements(
+                model_key,
+                read_reference_trajectory(ref_file, name, max_frames=1)[0]
+                .frame_as_structure(0)
+                .symbols,
+            )
+        )
+        if (dry_run_name := next(supported_names, None)) is None:
+            raise ValueError(
+                f"No system in {system_names} has elements {model_key} supports"
+            )
+        system_names = [dry_run_name]
         # enough recorded frames that time-matching keeps >=4 even for the coarsest
         # reference cadence (dt_fs up to 2 fs vs the 2.5 fs prediction cadence)
         n_steps = record_interval * 20

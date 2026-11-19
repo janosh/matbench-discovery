@@ -231,9 +231,6 @@ def _run_to_atomic_output(
                 os.remove(tmp_dest)
 
 
-# Extras the shared runner environments install on top of matbench-discovery's
-# base dependencies (run_kappa.py needs matbench-discovery[symmetry]).
-RUNNER_EXTRAS = ("symmetry",)
 # Installed by every runner's PEP 723 header as the interface to calculator-based
 # models (matbench-discovery itself does not depend on it), so YAML pins are dropped.
 RUNNER_INTERFACE_PACKAGES = ("ase",)
@@ -243,7 +240,7 @@ RUNNER_INTERFACE_PACKAGES = ("ase",)
 def runner_provided_packages() -> frozenset[str]:
     """Canonical names of packages the shared runner environments already install.
 
-    These are matbench-discovery itself plus its base and RUNNER_EXTRAS requirements
+    These are matbench-discovery itself plus its base requirements
     (a superset of every runner's PEP 723 header). Model YAML pins of these packages
     are submission provenance only: the runners need their own (Python 3.14) versions.
     """
@@ -253,10 +250,7 @@ def runner_provided_packages() -> frozenset[str]:
     names = {"matbench-discovery", *RUNNER_INTERFACE_PACKAGES}
     for requirement_str in requires("matbench-discovery") or ():
         requirement = Requirement(requirement_str)
-        marker = requirement.marker
-        if marker is None or any(
-            marker.evaluate({"extra": extra}) for extra in RUNNER_EXTRAS
-        ):
+        if requirement.marker is None:
             names.add(canonicalize_name(requirement.name))
     return frozenset(names)
 
@@ -1387,7 +1381,7 @@ def load_calculator_with_runtime(
     runtime["versions"] = package_versions(
         (
             *("ase", "numpy", "matscikit", "torch", "jax", "tensorflow", "scipy"),
-            *("matbench-discovery", "moyopy", *model_packages),
+            *("matbench-discovery", *model_packages),
         )
     )
     print(

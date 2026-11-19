@@ -489,7 +489,6 @@ class DataFiles(Files):
     mp_computed_structure_entries = auto()
     mp_elemental_ref_entries = auto()
     mp_energies = auto()
-    mp_patched_phase_diagram = auto()
     mp_trj_original = auto()
     mp_trj_extxyz = auto()
     wbm_computed_structure_entries = auto()

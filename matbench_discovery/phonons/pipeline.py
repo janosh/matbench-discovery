@@ -37,6 +37,7 @@ from matbench_discovery.hpc import (
     material_id_hash,
     memory_peaks,
     merge_audit_metadata,
+    model_supports_elements,
     partition_material_ids,
     reset_gpu_peak_memory,
 )
@@ -459,21 +460,19 @@ def kappa_source_digest(adapter: StandardKappaAdapter, model_key: str) -> str:
 def load_phonondb_atoms(
     dataset_path: str | None = None,
     *,
+    model_key: str,
     dry_run: bool = False,
     dry_run_size: int = 1,
 ) -> dict[str, Structure]:
-    """Load the canonical 103 structures and optionally retain a smoke-test subset."""
+    """Load the canonical 103 structures and optionally retain a smoke-test subset of
+    the smallest structures whose elements model_key supports.
+    """
     from matscikit.io import read_extxyz
 
     path = dataset_path or DataFiles.phonondb_pbe_103_structures.path
     atoms_list = [frame.structure for frame in read_extxyz(path)]
     atoms_by_id: dict[str, Structure] = {}
     for atoms in atoms_list:
-        # matscikit keeps ASE's "_JSON "-prefixed info values (supercell matrices,
-        # q-point mesh) as strings
-        for key, value in list(atoms.info.items()):
-            if isinstance(value, str) and value.startswith("_JSON "):
-                atoms.info[key] = json.loads(value.removeprefix("_JSON "))
         material_id = material_id_from_atoms(atoms)
         if material_id in atoms_by_id:
             raise ValueError(f"Duplicate PhononDB material ID {material_id!r}")
@@ -485,14 +484,18 @@ def load_phonondb_atoms(
         )
     if not dry_run:
         return atoms_by_id
-    if not 1 <= dry_run_size <= len(atoms_by_id):
+    candidates = [
+        (material_id, atoms)
+        for material_id, atoms in atoms_by_id.items()
+        if model_supports_elements(model_key, atoms.symbols)
+    ]
+    if not 1 <= dry_run_size <= len(candidates):
         raise ValueError(
-            f"dry_run_size must be in [1, {len(atoms_by_id)}], got {dry_run_size}"
+            f"dry_run_size must be in [1, {len(candidates)}] (PhononDB structures "
+            f"{model_key} supports), got {dry_run_size}"
         )
-    smallest_structures = sorted(
-        atoms_by_id.items(), key=lambda item: (len(item[1]), item[0])
-    )[:dry_run_size]
-    return dict(smallest_structures)
+    candidates.sort(key=lambda item: (len(item[1]), item[0]))
+    return dict(candidates[:dry_run_size])
 
 
 def build_kappa_manifest(

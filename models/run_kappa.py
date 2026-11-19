@@ -12,7 +12,7 @@ Examples:
 # requires-python = ">=3.14"
 # dependencies = [
 #   "ase>=3.29",
-#   "matbench-discovery[symmetry]",
+#   "matbench-discovery",
 # ]
 #
 # [tool.uv.sources]
@@ -303,6 +303,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
         try:
             atoms_by_id = load_phonondb_atoms(
                 dataset_path,
+                model_key=model_key,
                 dry_run=args.dry_run,
                 dry_run_size=args.dry_run_size,
             )
@@ -364,6 +365,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
         n_shards, shard_index = slurm_shard_selection(n_shards_arg, shard_index_arg)
         atoms_by_id = load_phonondb_atoms(
             dataset_path,
+            model_key=model_key,
             dry_run=args.dry_run,
             dry_run_size=args.dry_run_size,
         )

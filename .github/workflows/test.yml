@@ -47,7 +47,7 @@ jobs:
       # Keep coverage on Linux; tracing the same suite again slows Windows down.
       - name: Run tests
         run: >-
-          uv run --no-project --with-editable ".[test,symmetry]" pytest --durations=20
+          uv run --no-project --with-editable ".[test]" pytest --durations=20
           ${{ github.event_name != 'release' && '-m "not network"' || '' }}
           ${{ matrix.os == 'ubuntu-latest' && '--cov=.' || '' }}
 

@@ -640,7 +640,9 @@ def test_calc_md_metrics_all_or_nothing_columns(
     assert metrics["n_systems"] == 2
 
 
-def test_write_metrics_to_yaml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_write_metrics_to_yaml(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     """metrics.md gets units, rounding and the artifact's cost after pred_file."""
     yaml_path = tmp_path / "model.yml"
     yaml_path.write_text("model_name: test\nmetrics: {}\n", encoding="utf-8")
@@ -698,6 +700,14 @@ def test_write_metrics_to_yaml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
         "rdf_error": 3.0,
         "n_systems": 17,
     }
+
+    # an untagged legacy CSV cost with no YAML cost block is skipped, not published
+    legacy_cost = {"hardware": "NVIDIA H100", "run_time_sec": 7.0, "max_rss_gb": 2.4}
+    recomputed = md_metrics.write_metrics_to_yaml(
+        model, {**legacy_cost, "rdf_error": 3.0, "n_systems": 17}
+    )
+    assert "cost" not in recomputed
+    assert "skipping MD cost" in capsys.readouterr().out
 
     # a recompute keeps the reproducibility verdict, registering a new CSV drops it
     repro = {"status": "reproduced", "rel_changes": {"rdf_error": 0.0}}

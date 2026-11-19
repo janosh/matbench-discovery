@@ -24,6 +24,7 @@ from matbench_discovery.hpc import (
     material_id_hash,
     memory_peaks,
     merge_audit_metadata,
+    model_supports_elements,
     reset_gpu_peak_memory,
 )
 from matbench_discovery.relaxation import (
@@ -310,15 +311,11 @@ def load_wbm_structures(
         return {material_id: atoms_by_id[material_id] for material_id in expected_ids}
 
     candidate_ids = [
-        material_id for material_id in expected_ids if material_id in atoms_by_id
+        material_id
+        for material_id in expected_ids
+        if material_id in atoms_by_id
+        and model_supports_elements(model_key, atoms_by_id[material_id].symbols)
     ]
-    if model_key == "emt":
-        emt_elements = {"H", "Al", "Ni", "Cu", "Pd", "Ag", "Pt", "Au"}
-        candidate_ids = [
-            material_id
-            for material_id in candidate_ids
-            if set(atoms_by_id[material_id].symbols) <= emt_elements
-        ]
     selected_ids = candidate_ids[:DEFAULT_DRY_RUN_STRUCTURES]
     if not selected_ids:
         raise ValueError(f"No dry-run-compatible WBM structures found for {model_key}")

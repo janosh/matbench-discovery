@@ -789,8 +789,15 @@ def test_skipped_conductivity_rows_store_regular_grid_spectrum() -> None:
     )
 
 
-def test_load_phonondb_atoms_decodes_ase_json_info(tmp_path: Path) -> None:
-    """ASE's "_JSON "-prefixed extxyz info loads as data the phonon setup accepts."""
+@pytest.mark.parametrize(
+    ("model_key", "expected_id"), [("emt", "mp-1"), ("mace_mp_0", "mp-0")]
+)
+def test_load_phonondb_atoms_decodes_ase_json_info(
+    tmp_path: Path, model_key: str, expected_id: str
+) -> None:
+    """ASE's "_JSON "-prefixed extxyz info loads as data the phonon setup accepts, and
+    the dry run skips structures with elements the model does not support.
+    """
     from matscikit.io import format_extxyz
 
     from matbench_discovery.phonons.pipeline import load_phonondb_atoms
@@ -802,15 +809,20 @@ def test_load_phonondb_atoms_decodes_ase_json_info(tmp_path: Path) -> None:
     }
     structures = [
         Structure(
-            np.eye(3) * 3, ["Cu"], [[0, 0, 0]], info=info | {"material_id": f"mp-{idx}"}
+            np.eye(3) * 3,
+            ["In" if idx == 0 else "Cu"],  # EMT has no In parameters
+            [[0, 0, 0]],
+            info=info | {"material_id": f"mp-{idx}"},
         )
         for idx in range(103)
     ]
     dataset_path = f"{tmp_path}/phonondb.extxyz"
     with open(dataset_path, mode="w", encoding="utf-8") as file:
         file.write(format_extxyz(structures))
-    (atoms,) = load_phonondb_atoms(dataset_path, dry_run=True).values()
-    assert atoms.info["material_id"] == "mp-0"
+    (atoms,) = load_phonondb_atoms(
+        dataset_path, model_key=model_key, dry_run=True
+    ).values()
+    assert atoms.info["material_id"] == expected_id
     assert atoms.info["fc3_supercell"] == np.eye(3, dtype=int).tolist()
     calc = StandardKappaAdapter().init_phonons(atoms, KappaSettings())
     assert calc.mesh == (3, 4, 5)

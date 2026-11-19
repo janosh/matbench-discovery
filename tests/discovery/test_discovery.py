@@ -87,6 +87,40 @@ def run_single_point_shard(
     return run_discovery_shard(**kwargs)
 
 
+@pytest.mark.parametrize(
+    ("model_key", "expected_ids"),
+    [
+        ("emt", ["wbm-2", "wbm-4", "wbm-5"]),
+        ("mace_mp_0", ["wbm-1", "wbm-2", "wbm-3", "wbm-4"]),
+    ],
+)
+def test_load_wbm_structures_dry_run_skips_unsupported_elements(
+    monkeypatch: pytest.MonkeyPatch, model_key: str, expected_ids: list[str]
+) -> None:
+    """Dry runs pick only WBM structures whose elements the model supports."""
+    from matbench_discovery import data
+
+    elements = {
+        "wbm-1": "In",
+        "wbm-2": "Cu",
+        "wbm-3": "Sn",
+        "wbm-4": "Au",
+        "wbm-5": "Cu",
+    }
+    frames = [
+        SimpleNamespace(
+            structure=Structure(
+                3 * np.eye(3), [element], [[0, 0, 0]], info={Key.mat_id: material_id}
+            )
+        )
+        for material_id, element in elements.items()
+    ]
+    monkeypatch.setattr(data, "frames_from_zip", lambda *_args, **_kwargs: frames)
+    monkeypatch.setattr(data, "df_wbm", pd.DataFrame(index=list(elements)))
+    selected = discovery_core.load_wbm_structures(model_key, dry_run=True)
+    assert list(selected) == expected_ids
+
+
 def test_artifacts_match_legacy_mp2020_join_semantics(tmp_path: Path) -> None:
     """MP2020 artifacts retain valid entries and record individual rejections."""
     material_id = "wbm-1"

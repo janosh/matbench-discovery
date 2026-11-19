@@ -52,11 +52,10 @@ PAYLOAD_SCRIPTS = (
     "scripts/evals/geo_opt.py",
 )
 # (label, skipped for energy-only models, fatal on failure, `uv run` args).
-# geo-opt needs the symmetry extra (moyopy)
 EVAL_STEPS = (
     ("Discovery metrics", False, True, "scripts/evals/discovery.py"),
     ("Kappa metrics", True, True, "scripts/evals/kappa.py"),
-    ("Geo-opt analysis", True, True, "--extra symmetry scripts/analyze_geo_opt.py"),
+    ("Geo-opt analysis", True, True, "scripts/analyze_geo_opt.py"),
     ("Diatomic metrics", True, False, "scripts/evals/diatomic_metrics.py"),
 )
 FIG_STEPS = (
@@ -119,19 +118,10 @@ def run_cmd(*cmd: str) -> bool:
 
 
 def uv_run_args(args: str) -> tuple[str, ...]:
-    """Build ``uv run`` args, resolving leading ``--extra NAME`` flags into an
-    editable project requirement (e.g. '--extra symmetry x.py' -> --with-editable
-    .[symmetry] x.py).
+    """Build ``uv run`` args that run a shell-quoted command string against an
+    editable install of the project.
     """
-    tokens = shlex.split(args)
-    extras: list[str] = []
-    while tokens[:1] == ["--extra"]:
-        if len(tokens) < 2 or not tokens[1]:
-            raise ValueError("uv run --extra requires a non-empty value")
-        extras.append(tokens[1])
-        tokens = tokens[2:]
-    project_req = f".[{','.join(extras)}]" if extras else "."
-    return ("uv", "run", "--with-editable", project_req, *tokens)
+    return ("uv", "run", "--with-editable", ".", *shlex.split(args))
 
 
 def check_submission(

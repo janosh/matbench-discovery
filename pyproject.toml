@@ -30,7 +30,7 @@ dependencies = [
   "filelock>=4.2",
   "h5py>=3.16",
   # structures, symmetry, relaxation, MD, MP2020 corrections, phonons and kappa
-  "matscikit>=0.1.0b1",
+  "matscikit>=0.1.0b2",
   "numpy>=2.5,<3",
   "pandas>=3.0.6,<4",
   # strict pin on pymatviz due to https://github.com/janosh/matbench-discovery/issues/209
@@ -49,8 +49,6 @@ Package = "https://pypi.org/project/matbench-discovery"
 [project.optional-dependencies]
 test = ["pytest-cov>=7.1", "pytest>=9.1.1", "jsonschema>=4.26"]
 fetch-wbm-data = ["gdown>=6.4.2"]
-# symmetry-analysis scripts + tests depend on moyopy
-symmetry = ["moyopy>=0.21"]
 
 [build-system]
 requires = ["uv_build>=0.13.1"]

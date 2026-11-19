@@ -50,7 +50,7 @@ class Entry:
 
 
 # contains all MP elemental reference entries to compute formation energies
-# produced by build_phase_diagram.py
+# produced by scripts/data/build_mp_reference_entries.py
 mp_elem_ref_entries = (
     pd.read_json(DataFiles.mp_elemental_ref_entries.path, typ="series")
     .map(Entry.from_dict)

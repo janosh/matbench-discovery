@@ -312,6 +312,21 @@ def slurm_shard_selection(
     return n_shards, shard_index
 
 
+# Element sets of registered models restricted to part of the periodic table (the
+# model registry declares no supported elements); other models count as universal.
+RESTRICTED_MODEL_ELEMENTS: Final = {
+    "emt": frozenset({"H", "Al", "Ni", "Cu", "Pd", "Ag", "Pt", "Au"}),
+}
+
+
+def model_supports_elements(model_key: str, symbols: Iterable[str]) -> bool:
+    """Whether model_key can evaluate a structure with these element symbols, used
+    by the runners' dry runs to pick structures a restricted debug model handles.
+    """
+    elements = RESTRICTED_MODEL_ELEMENTS.get(model_key)
+    return elements is None or set(symbols) <= elements
+
+
 def effective_shard_args(
     n_shards: int | None,
     shard_index: int | None,

@@ -632,7 +632,9 @@ def write_metrics_to_yaml(
 
     The ``cost`` mapping comes atomically from the ``metrics`` cost keys via
     hpc.with_cost_block. ``pred_file_path=None`` recomputes the registered CSV
-    (keeping its file ref), a path registers a new CSV.
+    (keeping its file ref), a path registers a new CSV. A legacy CSV cost without a
+    cost_source that no YAML cost block tags is unattributable, so it is skipped
+    (with a message) rather than published or guessed.
     """
     if pred_file_path is None and pred_file_url is not None:
         raise ValueError("pred_file_url requires pred_file_path")
@@ -654,9 +656,16 @@ def write_metrics_to_yaml(
             )
         elif "pred_file" in existing:
             block["pred_file"] = existing["pred_file"]
+        cost = artifact_cost
+        if cost and cost.get("cost_source") is None and not existing.get("cost"):
+            print(
+                f"\t{model.name}: skipping MD cost {cost}: the artifact records no "
+                "cost_source and the YAML has no cost block to attribute it to"
+            )
+            cost = {}
         block = with_cost_block(
             block | scores,
-            artifact_cost,
+            cost,
             after="pred_file",
             existing=existing,
             same_artifact=pred_file_path is None,

@@ -589,6 +589,36 @@ def test_load_checkpoint_rejects_changed_run_parameters(
         assert os.path.isfile(ckpt_path)
 
 
+def test_run_md_benchmark_dry_run_skips_unsupported_systems(
+    tmp_path: Path, cu_emt_frames: list[Frame]
+) -> None:
+    """EMT dry runs roll out the first reference system with elements EMT supports."""
+    indium_frames = [
+        Frame(
+            Structure(
+                frame.structure.lattice,
+                ["In"] * len(frame.structure),
+                frame.structure.positions,
+            )
+        )
+        for frame in cu_emt_frames
+    ]
+    ref_file = str(tmp_path / "ref.h5")
+    write_reference_h5(
+        ref_file,
+        [
+            ("InP_test", Trajectory.from_frames(indium_frames), 0.25, 300.0),
+            ("bulkCu_300K_test", Trajectory.from_frames(cu_emt_frames), 0.25, 300.0),
+        ],
+    )
+    df_md = _run_tiny_benchmark(ref_file, tmp_path / "out", dry_run=True)
+    assert list(df_md.index) == ["bulkCu_300K_test"]
+    with pytest.raises(ValueError, match=r"No system in \['InP_test'\] has elements"):
+        _run_tiny_benchmark(
+            ref_file, tmp_path / "out", systems=["InP_test"], dry_run=True
+        )
+
+
 @pytest.mark.parametrize("dry_run", [True, False])
 def test_run_md_benchmark(
     tmp_path: Path, cu_emt_frames: list[Frame], *, dry_run: bool
