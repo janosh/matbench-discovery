@@ -51,6 +51,7 @@ type PlotProps = {
     id?: string
     markers: string
     point_style?: { stroke?: string; fill_opacity?: number }
+    line_style?: { color?: string; width?: number; dash?: string }
     point_label?: { text: string }
   }[]
   x_axis: {
@@ -605,6 +606,7 @@ describe(`ModelComparison dialog`, () => {
     const series = plot().series
     const frontier = series.at(-1)
     expect(frontier?.markers).toBe(`line`)
+    expect(frontier?.line_style).toEqual({ color: `gray`, width: 1.5, dash: `5 3` })
     // only models with finite x, y, color and size values get a point
     const model_series = series.slice(0, -1)
     expect(model_series.length).toBeGreaterThan(compared.length)

@@ -133,10 +133,10 @@
 </p>
 <p>
   Δx<sub>κ</sub> is the atomic displacement each model used to compute force constants by
-  finite differences. The PhononDB-PBE reference uses 0.03 Å. Several 2025 submissions were
-  run with 0.01 Å; finite-difference third-order force constants depend on the step size, so
-  their κ<sub>SRME</sub> is not strictly comparable with models run at 0.03 Å. The prescribed
-  value for future model submissions is 0.03 Å.
+  finite differences. The PhononDB-PBE reference uses 0.03 Å. Several 2025 submissions
+  were run with 0.01 Å; finite-difference third-order force constants depend on the step
+  size, so their κ<sub>SRME</sub> is not strictly comparable with models run at 0.03 Å. The
+  prescribed value for future model submissions is 0.03 Å.
 </p>
 <section class="full-bleed">
   <MetricsTable

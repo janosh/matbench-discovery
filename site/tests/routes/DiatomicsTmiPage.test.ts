@@ -14,7 +14,12 @@ const plot_mocks = vi.hoisted(() => ({
 
 vi.mock(`matterviz/plot`, () => ({ ScatterPlot: plot_mocks.ScatterPlot }))
 
-type PlotSeries = { id: string; x: number[]; y: number[] }
+type PlotSeries = {
+  id: string
+  x: number[]
+  y: number[]
+  line_style: { color: string; dash?: string }
+}
 
 const plotted_series = (): PlotSeries[] =>
   (get_scatter_plot_props(plot_mocks.ScatterPlot) as { series: PlotSeries[] }).series
@@ -47,6 +52,13 @@ it(`filters TMI elements and functionals while preserving curve gaps`, async () 
     y_axis: { label_shift: { x: 12 } },
   })
   expect(plotted_series()[0]).toMatchObject({ x: [1, 2], y: [1, Number.NaN] })
+  // atom 2 is dashed so overlapping FM branches stay legible
+  expect(plotted_series().map(({ line_style }) => line_style.dash)).toEqual([
+    undefined,
+    `4 3`,
+    undefined,
+    `4 3`,
+  ])
 
   pbe.click()
   await tick()
