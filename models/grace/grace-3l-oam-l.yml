@@ -93,37 +93,37 @@ metrics:
       missing_elements: []
   discovery:
     pred_file:
-      name: models/grace/grace-3l-oam-l/2026-07-02-discovery.csv.gz
-      url: https://figshare.com/files/66646130
-      size: 2889887
-      md5: a3799dbf73afef4cc709105d78312b13
+      name: models/grace/grace-3l-oam-l/2026-11-19-discovery.csv.gz
+      url: https://figshare.com/files/71653789
+      size: 2882111
+      md5: dc28c5a853e7e55ea384bbfd637f8087
     full_test_set:
       F1: 0.905 # fraction
-      DAF: 5.259 # dimensionless
+      DAF: 5.275 # dimensionless
       Precision: 0.902 # fraction
       Recall: 0.908 # fraction
       Accuracy: 0.967 # fraction
-      TP: 40043 # count
-      FP: 4328 # count
-      TN: 208543 # count
-      FN: 4049 # count
+      TP: 39916 # count
+      FP: 4318 # count
+      TN: 208688 # count
+      FN: 4041 # count
       MAE: 0.018 # eV/atom
       RMSE: 0.065 # eV/atom
       R2: 0.869 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
       F1: 0.925 # fraction
-      DAF: 6.041 # dimensionless
+      DAF: 6.065 # dimensionless
       Precision: 0.923 # fraction
       Recall: 0.926 # fraction
       Accuracy: 0.977 # fraction
-      TP: 30913 # count
-      FP: 2562 # count
-      TN: 179552 # count
-      FN: 2461 # count
+      TP: 30784 # count
+      FP: 2558 # count
+      TN: 179688 # count
+      FN: 2458 # count
       MAE: 0.018 # eV/atom
       RMSE: 0.065 # eV/atom
-      R2: 0.875 # dimensionless
+      R2: 0.876 # dimensionless
       missing_preds: 0 # count
   geo_opt:
     pred_file:

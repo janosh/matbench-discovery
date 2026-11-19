@@ -119,32 +119,32 @@ metrics:
       md5: 31835d3f2892507aa10e5cc46ef22baa
     cost: {source: author_reported, hardware: NVIDIA GB10, run_time_sec: 3066916.97, max_rss_gb: 2.268, max_gpu_mem_gb: 2.329}
     full_test_set:
-      F1: 0.694 # fraction
-      DAF: 3.685 # dimensionless
-      Precision: 0.632 # fraction
-      Recall: 0.768 # fraction
-      Accuracy: 0.884 # fraction
-      TP: 33878 # count
-      FP: 19704 # count
-      TN: 193167 # count
-      FN: 10214 # count
+      F1: 0.697 # fraction
+      DAF: 3.707 # dimensionless
+      Precision: 0.634 # fraction
+      Recall: 0.774 # fraction
+      Accuracy: 0.885 # fraction
+      TP: 34023 # count
+      FP: 19628 # count
+      TN: 193378 # count
+      FN: 9934 # count
       MAE: 0.05 # eV/atom
       RMSE: 0.092 # eV/atom
-      R2: 0.736 # dimensionless
+      R2: 0.741 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.697 # fraction
-      DAF: 4.108 # dimensionless
-      Precision: 0.628 # fraction
-      Recall: 0.783 # fraction
-      Accuracy: 0.895 # fraction
-      TP: 26116 # count
-      FP: 15473 # count
-      TN: 166641 # count
-      FN: 7258 # count
+      F1: 0.7 # fraction
+      DAF: 4.136 # dimensionless
+      Precision: 0.63 # fraction
+      Recall: 0.789 # fraction
+      Accuracy: 0.896 # fraction
+      TP: 26224 # count
+      FP: 15429 # count
+      TN: 166817 # count
+      FN: 7018 # count
       MAE: 0.052 # eV/atom
-      RMSE: 0.095 # eV/atom
-      R2: 0.737 # dimensionless
+      RMSE: 0.094 # eV/atom
+      R2: 0.741 # dimensionless
       missing_preds: 0 # count
   geo_opt:
     pred_file:

@@ -118,37 +118,37 @@ metrics:
       rel_changes: {}
   discovery:
     pred_file:
-      name: models/chgnet/chgnet-0.3.0/2023-12-21-discovery.csv.gz
-      url: https://figshare.com/files/66646268
-      size: 1320974
-      md5: fd7cd3781a24be465aaeadf97663ce58
+      name: models/chgnet/chgnet-0.3.0/2026-11-19-discovery.csv.gz
+      url: https://figshare.com/files/71653801
+      size: 1322638
+      md5: 3944fdbf7d1b041aae6ea811011008cc
     full_test_set:
       F1: 0.612 # fraction
-      DAF: 3.038 # dimensionless
-      Precision: 0.521 # fraction
-      Recall: 0.74 # fraction
-      Accuracy: 0.839 # fraction
-      TP: 32642 # count
-      FP: 29979 # count
-      TN: 182892 # count
-      FN: 11450 # count
+      DAF: 3.051 # dimensionless
+      Precision: 0.522 # fraction
+      Recall: 0.741 # fraction
+      Accuracy: 0.84 # fraction
+      TP: 32559 # count
+      FP: 29816 # count
+      TN: 183190 # count
+      FN: 11398 # count
       MAE: 0.061 # eV/atom
       RMSE: 0.1 # eV/atom
-      R2: 0.69 # dimensionless
+      R2: 0.691 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
       F1: 0.613 # fraction
-      DAF: 3.361 # dimensionless
+      DAF: 3.377 # dimensionless
       Precision: 0.514 # fraction
-      Recall: 0.758 # fraction
-      Accuracy: 0.851 # fraction
-      TP: 25313 # count
-      FP: 23955 # count
-      TN: 158159 # count
-      FN: 8061 # count
+      Recall: 0.759 # fraction
+      Accuracy: 0.852 # fraction
+      TP: 25218 # count
+      FP: 23832 # count
+      TN: 158414 # count
+      FN: 8024 # count
       MAE: 0.063 # eV/atom
       RMSE: 0.103 # eV/atom
-      R2: 0.689 # dimensionless
+      R2: 0.69 # dimensionless
       missing_preds: 0 # count
   geo_opt:
     pred_file:

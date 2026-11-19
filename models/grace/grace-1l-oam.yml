@@ -94,32 +94,32 @@ metrics:
       size: 2763538
       md5: 864e68c60d7561206573b56a6d3c4e1e
     full_test_set:
-      F1: 0.808 # fraction
-      DAF: 4.617 # dimensionless
-      Precision: 0.792 # fraction
-      Recall: 0.824 # fraction
-      Accuracy: 0.933 # fraction
-      TP: 36331 # count
-      FP: 9524 # count
-      TN: 203347 # count
-      FN: 7761 # count
-      MAE: 0.03 # eV/atom
-      RMSE: 0.073 # eV/atom
-      R2: 0.836 # dimensionless
+      F1: 0.812 # fraction
+      DAF: 4.647 # dimensionless
+      Precision: 0.795 # fraction
+      Recall: 0.831 # fraction
+      Accuracy: 0.934 # fraction
+      TP: 36510 # count
+      FP: 9421 # count
+      TN: 203585 # count
+      FN: 7447 # count
+      MAE: 0.029 # eV/atom
+      RMSE: 0.072 # eV/atom
+      R2: 0.841 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.824 # fraction
-      DAF: 5.255 # dimensionless
-      Precision: 0.803 # fraction
-      Recall: 0.846 # fraction
-      Accuracy: 0.944 # fraction
-      TP: 28244 # count
-      FP: 6917 # count
-      TN: 175197 # count
-      FN: 5130 # count
-      MAE: 0.031 # eV/atom
-      RMSE: 0.073 # eV/atom
-      R2: 0.842 # dimensionless
+      F1: 0.829 # fraction
+      DAF: 5.29 # dimensionless
+      Precision: 0.805 # fraction
+      Recall: 0.853 # fraction
+      Accuracy: 0.946 # fraction
+      TP: 28371 # count
+      FP: 6859 # count
+      TN: 175387 # count
+      FN: 4871 # count
+      MAE: 0.03 # eV/atom
+      RMSE: 0.072 # eV/atom
+      R2: 0.846 # dimensionless
       missing_preds: 0 # count
   geo_opt:
     pred_file:

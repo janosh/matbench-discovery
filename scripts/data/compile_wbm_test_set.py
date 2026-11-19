@@ -509,35 +509,40 @@ df_wbm["e_correction_per_atom_mp_legacy"] = [
     cse.correction_per_atom for cse in df_wbm[Key.computed_structure_entry]
 ]
 
-# clean up legacy corrections and apply new corrections
-entries_new_corr = MaterialsProject2020Compatibility(
-    strict_anions="no_check"
-).process_entries(df_wbm[Key.computed_structure_entry], clean=True, verbose=True)
+# clean up legacy corrections and apply current MP2020 corrections with pymatgen's
+# defaults (strict_anions="require_bound" since pymatgen#3803: an anion correction
+# needs oxidation state <= -1), the scheme model predictions are corrected with
+mp2020_compat = MaterialsProject2020Compatibility()
+entries_new_corr = mp2020_compat.process_entries(
+    df_wbm[Key.computed_structure_entry], clean=True, verbose=True
+)
 assert len(entries_new_corr) == len(df_wbm), f"{len(entries_new_corr)=} {len(df_wbm)=}"
 
 n_corrected = sum(
     cse.uncorrected_energy != cse.energy for cse in df_wbm[Key.computed_structure_entry]
 )
-# TODO 2024-08-07 n_corrected used to be 100,930, may have changed as a result of the
-# new strict_anions kwarg added in https://github.com/materialsproject/pymatgen/pull/3803
-# but strict_anions="no_check" which is meant to restore the pre-3803 behavior now
-# results in 99_000 corrected entries, which is closest one to the old number compared
-# to the other strict_anions options "require_exact" and "require_bound"
-assert n_corrected == 99_000, f"{n_corrected=:,}, expected 99k"
+assert n_corrected == 98_711, f"{n_corrected=:,}, expected 98,711"
 
 df_summary["e_correction_per_atom_mp2020"] = [
     cse.correction_per_atom for cse in df_wbm[Key.computed_structure_entry]
 ]
 
 avg_energy_corr = df_summary.e_correction_per_atom_mp2020.mean().round(4)
-assert avg_energy_corr == -0.1065, f"{avg_energy_corr=:.4}, expected -0.1065"
+assert avg_energy_corr == -0.1062, f"{avg_energy_corr=:.4}, expected -0.1062"
 
 
 # %% convex hull of all MP entries (MP2020-corrected energies), solved per query as a
 # linear program by matscikit: ~1 s to build and query all ~257k WBM entries vs ~6 min
 # for the pymatgen PatchedPhaseDiagram loop it replaces (plus ~5 min to build the PPD)
+# MP entries are recorrected with the same scheme as the WBM entries: their stored
+# corrections came from the MP database build and differ for 329 of 154,718 entries
 df_mp_entries = pd.read_json(DataFiles.mp_computed_structure_entries.path)
-mp_entries = [Entry.from_dict(dct) for dct in df_mp_entries.entry]
+mp_cses = mp2020_compat.process_entries(
+    [ComputedStructureEntry.from_dict(dct) for dct in tqdm(df_mp_entries.entry)],
+    clean=True,
+)
+assert len(mp_cses) == len(df_mp_entries), f"{len(mp_cses)=} {len(df_mp_entries)=}"
+mp_entries = [Entry(cse.composition, cse.energy, cse.entry_id) for cse in mp_cses]
 mp_hull = PhaseDiagram(
     [entry.composition for entry in mp_entries],
     [entry.energy_per_atom for entry in mp_entries],

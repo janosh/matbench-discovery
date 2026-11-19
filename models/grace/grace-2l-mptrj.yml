@@ -94,34 +94,34 @@ metrics:
       missing_elements: []
   discovery:
     pred_file:
-      name: models/grace/grace-2l-mptrj/2024-11-11-discovery.csv.gz
-      url: https://figshare.com/files/66646121
-      size: 1321082
-      md5: 9facad7ad912e5292ba43b265ecf4969
+      name: models/grace/grace-2l-mptrj/2026-11-19-discovery.csv.gz
+      url: https://figshare.com/files/71653819
+      size: 1322810
+      md5: 4ac2b8d4f8e73e6132bc03a3e0bbf246
     full_test_set:
       F1: 0.687 # fraction
-      DAF: 3.714 # dimensionless
+      DAF: 3.724 # dimensionless
       Precision: 0.637 # fraction
       Recall: 0.746 # fraction
       Accuracy: 0.884 # fraction
-      TP: 32880 # count
-      FP: 18721 # count
-      TN: 194150 # count
-      FN: 11212 # count
+      TP: 32777 # count
+      FP: 18672 # count
+      TN: 194334 # count
+      FN: 11180 # count
       MAE: 0.05 # eV/atom
       RMSE: 0.092 # eV/atom
       R2: 0.74 # dimensionless
       missing_preds: 128 # count
     unique_prototypes:
       F1: 0.691 # fraction
-      DAF: 4.163 # dimensionless
+      DAF: 4.179 # dimensionless
       Precision: 0.636 # fraction
-      Recall: 0.757 # fraction
-      Accuracy: 0.895 # fraction
-      TP: 25255 # count
-      FP: 14425 # count
-      TN: 167689 # count
-      FN: 8119 # count
+      Recall: 0.756 # fraction
+      Accuracy: 0.896 # fraction
+      TP: 25144 # count
+      FP: 14382 # count
+      TN: 167864 # count
+      FN: 8098 # count
       MAE: 0.052 # eV/atom
       RMSE: 0.094 # eV/atom
       R2: 0.741 # dimensionless

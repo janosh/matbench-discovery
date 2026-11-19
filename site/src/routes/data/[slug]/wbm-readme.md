@@ -32,17 +32,7 @@ The full set of processing steps used to curate the WBM test set from the raw da
 - apply the [`MaterialsProject2020Compatibility`](https://github.com/materialsproject/pymatgen/blob/02a4ca8aa/pymatgen/entries/compatibility.py#L823) energy correction scheme to the formation energies
 - compute energy to the Materials Project convex hull constructed from all MP `ComputedStructureEntries` queried on 2023-02-07 ([database release 2022.10.28](https://docs.materialsproject.org/changes/database-versions#v2022.10.28))
 
-> Provenance note: exact regeneration of the released
-> `e_form_per_atom_mp2020_corrected` and
-> `e_above_hull_mp2020_corrected_ppd_mp` columns depends on the `pymatgen`
-> `MaterialsProject2020Compatibility` implementation used to assign MP2020 anion
-> corrections. The released WBM summary is reproducible with 2023-era `pymatgen`
-> behavior (for example v2023.5.10, matching the data-file registry source
-> links). Newer `pymatgen` versions may assign different corrections for a small
-> number of structures with ambiguous oxidation states, which can change their
-> corrected formation energies and hull distances. See
-> [#358](https://github.com/janosh/matbench-discovery/issues/358) for details and
-> a spot-check quantifying the effect.
+> Correction note: the `e_form_per_atom_mp2020_corrected` and `e_above_hull_mp2020_corrected_ppd_mp` columns track the current `pymatgen` `MaterialsProject2020Compatibility` defaults, applied to both the WBM entries and the MP entries spanning the convex hull, so they match the corrections applied to model predictions. Since the 2026-11-19 summary this includes [pymatgen#3803](https://github.com/materialsproject/pymatgen/pull/3803), which only assigns an anion correction to elements with oxidation state <= -1. That changed the corrections of 3,044 WBM entries (up to 0.49 eV/atom) and 329 MP hull entries relative to the 2023-12-13 summary and flipped the stability label of 605 WBM entries. See [#358](https://github.com/janosh/matbench-discovery/issues/358) for the history.
 
 Invoking the script `uv run --with-editable ".[fetch-wbm-data]" scripts/data/compile_wbm_test_set.py` will auto-download and regenerate the WBM test set files from scratch. If you find
 

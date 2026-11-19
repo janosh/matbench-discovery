@@ -120,32 +120,32 @@ metrics:
       md5: 2696b18477437cfae3cb6fe35ac38c6c
     cost: {source: author_reported, hardware: NVIDIA GeForce RTX 4090, run_time_sec: 146560.24, max_rss_gb: 5.118, max_gpu_mem_gb: 0.262}
     full_test_set:
-      F1: 0.77 # fraction
-      DAF: 4.242 # dimensionless
-      Precision: 0.728 # fraction
-      Recall: 0.817 # fraction
-      Accuracy: 0.916 # fraction
-      TP: 36017 # count
-      FP: 13470 # count
-      TN: 199401 # count
-      FN: 8075 # count
-      MAE: 0.04 # eV/atom
+      F1: 0.773 # fraction
+      DAF: 4.264 # dimensionless
+      Precision: 0.729 # fraction
+      Recall: 0.822 # fraction
+      Accuracy: 0.917 # fraction
+      TP: 36152 # count
+      FP: 13416 # count
+      TN: 199590 # count
+      FN: 7805 # count
+      MAE: 0.039 # eV/atom
       RMSE: 0.081 # eV/atom
-      R2: 0.796 # dimensionless
+      R2: 0.8 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.777 # fraction
-      DAF: 4.794 # dimensionless
-      Precision: 0.733 # fraction
-      Recall: 0.826 # fraction
-      Accuracy: 0.926 # fraction
-      TP: 27554 # count
-      FP: 10040 # count
-      TN: 172074 # count
-      FN: 5820 # count
+      F1: 0.78 # fraction
+      DAF: 4.823 # dimensionless
+      Precision: 0.734 # fraction
+      Recall: 0.832 # fraction
+      Accuracy: 0.928 # fraction
+      TP: 27656 # count
+      FP: 10010 # count
+      TN: 172236 # count
+      FN: 5586 # count
       MAE: 0.041 # eV/atom
-      RMSE: 0.083 # eV/atom
-      R2: 0.799 # dimensionless
+      RMSE: 0.082 # eV/atom
+      R2: 0.803 # dimensionless
       missing_preds: 0 # count
   geo_opt:
     pred_file:

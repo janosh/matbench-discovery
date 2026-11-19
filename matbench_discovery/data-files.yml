@@ -60,10 +60,10 @@ wbm_initial_atoms:
   md5: 2a292211ca6acb30ed8416178d644098
 
 wbm_summary:
-  url: https://figshare.com/files/64706751
-  path: wbm/2023-12-13-wbm-summary.csv.gz
-  description: Computed material properties only, no structures. Available properties are VASP energy, formation energy, energy above the convex hull, volume, band gap, number of sites per unit cell, and more. Exact regeneration of the MP2020-corrected formation energy and hull-distance columns depends on the `pymatgen` `MaterialsProject2020Compatibility` behavior used for anion-correction assignment; the released values are reproducible with v2023.5.10-era behavior (see https://github.com/janosh/matbench-discovery/issues/358).
-  md5: 1555268d3aa59d20262cb9d01ce0994b
+  url: https://figshare.com/files/71653870
+  path: wbm/2026-11-19-wbm-summary.csv.gz
+  description: Computed material properties only, no structures. Available properties are VASP energy, formation energy, energy above the convex hull, volume, band gap, number of sites per unit cell, and more. The MP2020-corrected formation energy and hull-distance columns use the `MaterialsProject2020Compatibility` defaults of current `pymatgen` (anion corrections require an oxidation state <= -1, see https://github.com/materialsproject/pymatgen/pull/3803) for both the WBM entries and the MP entries spanning the convex hull, matching the corrections applied to model predictions.
+  md5: e63906af07b0408ee3eaa7028aa02d27
 
 wbm_dft_geo_opt_symprec_1e_2:
   url: https://figshare.com/files/71649838
@@ -131,11 +131,11 @@ _private_reference_data:
       size: 21332
       md5: 538193efd16a779f83a9efa3ce04319e
       source_files:
-        - site/src/lib/diatomics-dft.readme.md
-        - scripts/evals/build_diatomic_reference.py
-        - matbench_discovery/metrics/diatomics/reference.py
-        - tests/scripts/test_build_diatomic_reference.py
-        - tests/metrics/diatomics/test_diatomics_reference.py
+      - site/src/lib/diatomics-dft.readme.md
+      - scripts/evals/build_diatomic_reference.py
+      - matbench_discovery/metrics/diatomics/reference.py
+      - tests/scripts/test_build_diatomic_reference.py
+      - tests/metrics/diatomics/test_diatomics_reference.py
       description: Provenance note, builder, postprocess implementation, and tests for the bundled ISYM=0 homonuclear PBE/r2SCAN DFT diatomic reference curves (public file 70956786), snapshotted on 2026-11-01 with a manifest of file md5s. The 2026-07-07 bundle (file 66396755, still in the vault) documents the first, ISYM=2 version.
 
 _links: |

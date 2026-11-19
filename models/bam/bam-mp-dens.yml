@@ -174,38 +174,38 @@ metrics:
       rel_changes: {}
   discovery:
     pred_file:
-      name: models/bam/bam-mp-dens/2026-10-12-discovery.csv.gz
-      url: https://figshare.com/files/70285251
-      size: 1438844
-      md5: 6d00bb556e053933477e1f121670eef3
+      name: models/bam/bam-mp-dens/2026-11-19-discovery.csv.gz
+      url: https://figshare.com/files/71653828
+      size: 1440567
+      md5: 9b83f83c17b3e3c9b2a3840e21e7c21c
     cost: {source: author_reported, hardware: NVIDIA A100 40GB, run_time_sec: 467344}
     full_test_set:
       F1: 0.75 # fraction
-      DAF: 4.072 # dimensionless
+      DAF: 4.086 # dimensionless
       Precision: 0.699 # fraction
       Recall: 0.81 # fraction
       Accuracy: 0.908 # fraction
-      TP: 35734 # count
-      FP: 15408 # count
-      TN: 197463 # count
-      FN: 8358 # count
+      TP: 35605 # count
+      FP: 15339 # count
+      TN: 197667 # count
+      FN: 8352 # count
       MAE: 0.041 # eV/atom
       RMSE: 0.082 # eV/atom
       R2: 0.794 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
       F1: 0.761 # fraction
-      DAF: 4.614 # dimensionless
+      DAF: 4.632 # dimensionless
       Precision: 0.705 # fraction
-      Recall: 0.826 # fraction
+      Recall: 0.825 # fraction
       Accuracy: 0.92 # fraction
-      TP: 27570 # count
-      FP: 11518 # count
-      TN: 170596 # count
-      FN: 5804 # count
+      TP: 27440 # count
+      FP: 11470 # count
+      TN: 170776 # count
+      FN: 5802 # count
       MAE: 0.043 # eV/atom
       RMSE: 0.083 # eV/atom
-      R2: 0.797 # dimensionless
+      R2: 0.798 # dimensionless
       missing_preds: 0 # count
   geo_opt:
     pred_file:

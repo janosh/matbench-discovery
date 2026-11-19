@@ -107,6 +107,37 @@ def test_df_wbm() -> None:
         assert col in df_wbm, f"{col=} not in {list(df_wbm)=}"
 
 
+def test_df_wbm_mp2020_corrections_match_current_scheme() -> None:
+    """Stored WBM MP2020 corrections equal current pymatgen's (via matscikit's port)."""
+    import gzip
+    import json
+
+    from matscikit import mp2020_corrections
+    from matscikit.interop import structure_from_pymatgen_dict
+
+    from matbench_discovery.enums import DataFiles
+
+    # wbm-1-50918, wbm-2-6782, wbm-3-10115 changed with pymatgen#3803's
+    # strict_anions="require_bound" default, wbm-1-56 kept its nonzero correction
+    mat_ids = {"wbm-1-56", "wbm-1-50918", "wbm-2-6782", "wbm-3-10115"}
+    entries: dict[str, dict[str, Any]] = {}
+    with gzip.open(DataFiles.wbm_computed_structure_entries.path, "rt") as file:
+        for line in file:
+            if line[16:40].split('"')[0] in mat_ids:  # skip json.loads of other rows
+                record = json.loads(line)
+                entries[record[Key.mat_id]] = record[Key.computed_structure_entry]
+    assert set(entries) == mat_ids
+    cses = [entries[mat_id] for mat_id in sorted(mat_ids)]
+    corrections = mp2020_corrections(
+        cses, [structure_from_pymatgen_dict(cse["structure"]) for cse in cses]
+    )
+    for mat_id, cse, result in zip(sorted(mat_ids), cses, corrections, strict=True):
+        assert result is not None, mat_id
+        n_atoms = sum(cse["composition"].values())
+        stored = df_wbm.loc[mat_id, "e_correction_per_atom_mp2020"]
+        assert result["correction"] / n_atoms == pytest.approx(stored, abs=1e-6)
+
+
 @pytest.mark.parametrize("pattern", ["*df.csv", "*df.json"])
 def test_glob_to_df(
     pattern: str,

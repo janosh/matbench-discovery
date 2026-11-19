@@ -127,37 +127,37 @@ metrics:
       repeat_rel_change: 0.0
   discovery:
     pred_file:
-      name: models/mace/mace-mp-0/2023-12-11-discovery.csv.gz
-      url: https://figshare.com/files/66646193
-      size: 1322814
-      md5: 5e231a2b3a029714b984890a6fbe5002
+      name: models/mace/mace-mp-0/2026-11-19-discovery.csv.gz
+      url: https://figshare.com/files/71653786
+      size: 1324336
+      md5: 3bfe7826a613684a92a7dd28643cac9f
     full_test_set:
       F1: 0.668 # fraction
-      DAF: 3.4 # dimensionless
-      Precision: 0.583 # fraction
-      Recall: 0.781 # fraction
+      DAF: 3.411 # dimensionless
+      Precision: 0.584 # fraction
+      Recall: 0.78 # fraction
       Accuracy: 0.867 # fraction
-      TP: 34420 # count
-      FP: 24576 # count
-      TN: 188295 # count
-      FN: 9672 # count
+      TP: 34290 # count
+      FP: 24469 # count
+      TN: 188537 # count
+      FN: 9667 # count
       MAE: 0.055 # eV/atom
       RMSE: 0.099 # eV/atom
-      R2: 0.698 # dimensionless
+      R2: 0.699 # dimensionless
       missing_preds: 38 # count
     unique_prototypes:
       F1: 0.669 # fraction
-      DAF: 3.777 # dimensionless
+      DAF: 3.793 # dimensionless
       Precision: 0.577 # fraction
       Recall: 0.796 # fraction
-      Accuracy: 0.878 # fraction
-      TP: 26582 # count
-      FP: 19457 # count
-      TN: 162657 # count
-      FN: 6792 # count
+      Accuracy: 0.879 # fraction
+      TP: 26451 # count
+      FP: 19352 # count
+      TN: 162894 # count
+      FN: 6791 # count
       MAE: 0.057 # eV/atom
       RMSE: 0.101 # eV/atom
-      R2: 0.697 # dimensionless
+      R2: 0.698 # dimensionless
       missing_preds: 34 # count
   geo_opt:
     pred_file:
