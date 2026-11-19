@@ -261,9 +261,9 @@ metrics:
           md5: 9b5b48569504b845d039d02ebd05b322
         force_file:
           name: models/bam/bam-mp-dens/harmonic/2026-10-19-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71275414
-          size: 3942688
-          md5: 496a30a148361c1f3fc5ec88889b51ed
+          url: https://figshare.com/files/71630062
+          size: 3692304
+          md5: f52da0103cec60bb1547791991534238
         run_info_file:
           name: models/bam/bam-mp-dens/harmonic/2026-10-19-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334166

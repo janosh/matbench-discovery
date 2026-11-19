@@ -246,9 +246,9 @@ metrics:
           md5: a6c65a1d92efde821bed5fba6bd188bb
         force_file:
           name: models/nequix/nequix-mp-1/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71275519
-          size: 3777790
-          md5: e50c3e7b5e82604b84201f9830a746e6
+          url: https://figshare.com/files/71630188
+          size: 3671342
+          md5: c07544f1374345ba4ef7e73e7790b276
         run_info_file:
           name: models/nequix/nequix-mp-1/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334604

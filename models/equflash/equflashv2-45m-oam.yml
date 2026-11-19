@@ -166,9 +166,9 @@ metrics:
           md5: 0bf74cd0c95323b76c09464bb5b24478
         force_file:
           name: models/equflash/equflashv2-45m-oam/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71275462
-          size: 3902928
-          md5: 227f03fd22db99acce66e24b227fb25e
+          url: https://figshare.com/files/71630116
+          size: 3683464
+          md5: 45b661e8103bb00ffe08bfb2c4664717
         run_info_file:
           name: models/equflash/equflashv2-45m-oam/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334394

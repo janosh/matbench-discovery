@@ -194,9 +194,9 @@ metrics:
         md5: 27daa38eddebb6715a1cf5c0819382b2
       force_file:
         name: models/mace_soyo/mace-soyo-mptrj/phonon/2026-10-19-phonons-kappa-103-forces.h5
-        url: https://figshare.com/files/71275492
-        size: 48740738
-        md5: 1529fb894080de64bd77618d264c5060
+        url: https://figshare.com/files/71630158
+        size: 46686662
+        md5: a36de4e8a06104126e7353566760dcdf
       phonon_file:
         name: models/mace_soyo/mace-soyo-mptrj/phonon/2026-10-19-phonons-kappa-103-phonons.json.gz
         url: https://ndownloader.figshare.com/files/70361055

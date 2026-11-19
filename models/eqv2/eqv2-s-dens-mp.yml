@@ -244,9 +244,9 @@ metrics:
           md5: d96034da81b9f257eed65bf0215a38fc
         force_file:
           name: models/eqv2/eqv2-s-dens-mp/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71275453
-          size: 3926157
-          md5: 7afcd9ae8e0a2398bfd73d6603ec5f7c
+          url: https://figshare.com/files/71630122
+          size: 3720749
+          md5: 881473cdccb4578426809a95fbeccf23
         run_info_file:
           name: models/eqv2/eqv2-s-dens-mp/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334412

@@ -237,9 +237,9 @@ metrics:
           md5: 104ee58a77c25f5e918e0e6438868351
         force_file:
           name: models/eqv2/eqv2-m-omat-salex-mp/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71275450
-          size: 3886764
-          md5: d10105bc40daaa28c3d80e7ecef808e4
+          url: https://figshare.com/files/71630119
+          size: 3711716
+          md5: 8ed8c51affd8f0a2a0edfc90f92c7023
         run_info_file:
           name: models/eqv2/eqv2-m-omat-salex-mp/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334403

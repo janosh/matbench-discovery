@@ -190,9 +190,9 @@ metrics:
           md5: 32f98f39f625029e97f323a0762d3dea
         force_file:
           name: models/grace/grace-1l-oam/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71275465
-          size: 3772509
-          md5: f91f90653e9b02a66716f54c362796a6
+          url: https://figshare.com/files/71630131
+          size: 3538117
+          md5: b4698aa4c6a270444adf0e42ed501aa1
         run_info_file:
           name: models/grace/grace-1l-oam/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334454

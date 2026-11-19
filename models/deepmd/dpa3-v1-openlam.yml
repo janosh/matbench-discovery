@@ -205,9 +205,9 @@ metrics:
           md5: a7539f99ca22176fbdc9fe92624aaa66
         force_file:
           name: models/deepmd/dpa3-v1-openlam/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71275435
-          size: 3873771
-          md5: 571193fee71c5749bf99e47e8ac692ea
+          url: https://figshare.com/files/71630101
+          size: 3661467
+          md5: 973030a6d0f3a5306edfbff24a1f28e5
         run_info_file:
           name: models/deepmd/dpa3-v1-openlam/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334208

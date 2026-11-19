@@ -241,9 +241,9 @@ metrics:
           md5: 6f58f8fce203bf6d72a311163023c6c2
         force_file:
           name: models/nequip/nequip-mp-l-0.1/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71275507
-          size: 3927967
-          md5: fbf88af0266b8593a59eb275d3e9cd51
+          url: https://figshare.com/files/71630176
+          size: 3734255
+          md5: 07c9c3e909c281ebff537f245f1674d2
         run_info_file:
           name: models/nequip/nequip-mp-l-0.1/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334565
