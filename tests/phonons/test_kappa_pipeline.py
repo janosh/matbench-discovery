@@ -305,7 +305,8 @@ def test_kappa_settings_validate_and_canonicalize() -> None:
     # k_SRME-era runs like MACE-MP-0 pin the 0.03 Å they actually used
     assert settings.displacement_distance == 0.03
     assert KappaSettings.from_model("hienet").displacement_distance == 0.01
-    assert KappaSettings.from_model("mace_mp_0").displacement_distance == 0.03
+    for model_key in ("mace_mp_0", "dpa3_v1_mptrj", "dpa3_v1_openlam"):
+        assert KappaSettings.from_model(model_key).displacement_distance == 0.03
     assert settings.digest == KappaSettings.from_mapping(raw_settings).digest
 
     raw_settings.pop("protocol")
