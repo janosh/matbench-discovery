@@ -186,14 +186,10 @@ for model_key in model_keys:
     sampled_rmsds = sorted_rmsds[indices]
     sampled_cumulative = cumulative[indices]
 
-    # calculate AUC only up to x_max
-    auc = (
-        np.trapezoid(
-            sampled_cumulative[sampled_rmsds <= x_max],
-            sampled_rmsds[sampled_rmsds <= x_max],
-        )
-        / x_max
-    )
+    # normalized area under the full empirical CDF on [0, x_max]: the integral of
+    # F(t) over [0, x] equals mean(max(x - rmsd, 0)), so it is exact and independent
+    # of which points the plotted CDF samples
+    auc = np.mean(np.clip(1 - sorted_rmsds / x_max, 0, None))
     rmsd_cdf_models.append(
         {
             **model_identities[model_key],
