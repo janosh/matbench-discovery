@@ -162,34 +162,25 @@ metrics:
   geo_opt:
     pred_file:
       name: models/mace/mace-mp-0/2023-12-11-geo-opt.jsonl.gz
-      url: https://figshare.com/files/70325178
-      size: 112613820
-      md5: a3d7c066ca81de0bc6505370a9072a7a
-    rmsd_auc: 0.6252 # fraction
+    rmsd_auc: 0.6422 # fraction
     symprec=1e-5:
-      n_sym_ops_mae: 1.8381 # unitless
-      symmetry_decrease: 0.0335 # fraction
-      symmetry_match: 0.7385 # fraction
-      symmetry_increase: 0.2239 # fraction
+      n_sym_ops_mae: 1.8427 # unitless
+      symmetry_decrease: 0.034 # fraction
+      symmetry_match: 0.7369 # fraction
+      symmetry_increase: 0.2249 # fraction
       symmetry_lateral: 0.0041 # fraction
-      n_structures: 249254 # count
+      n_structures: 256957 # count
       analysis_file:
         name: models/mace/mace-mp-0/2023-12-11-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
-        url: https://figshare.com/files/71653117
-        size: 6506368
-        md5: f7f4659c1e9dc1b67a2d4b6808489213
     symprec=1e-2:
-      n_sym_ops_mae: 1.8466 # unitless
-      symmetry_decrease: 0.0599 # fraction
-      symmetry_match: 0.8112 # fraction
-      symmetry_increase: 0.122 # fraction
-      symmetry_lateral: 0.0069 # fraction
-      n_structures: 249254 # count
+      n_sym_ops_mae: 1.8498 # unitless
+      symmetry_decrease: 0.0608 # fraction
+      symmetry_match: 0.811 # fraction
+      symmetry_increase: 0.1211 # fraction
+      symmetry_lateral: 0.0071 # fraction
+      n_structures: 256957 # count
       analysis_file:
         name: models/mace/mace-mp-0/2023-12-11-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
-        url: https://figshare.com/files/71653120
-        size: 6532203
-        md5: 22a68eeee434cf8e834cfdc9ffc02b53
   md:
     pred_file:
       name: models/mace/mace-mp-0/2026-06-28-md-metrics.csv.gz

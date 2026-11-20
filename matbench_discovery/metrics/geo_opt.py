@@ -29,11 +29,30 @@ def rmsd_auc(
     is sampled. Every reference structure counts: a missing prediction or a structure
     the matcher could not pair with its DFT counterpart scores 0, the same as one at
     or beyond the cutoff. Predictions for IDs outside ref_ids are not part of the
-    test set and are ignored. 1 means every structure reproduces DFT exactly.
+    test set and are ignored. 1 means every structure's atomic positions match DFT
+    exactly. RMSD is blind to lattice strain the matcher accepts (ltol 0.2, angle_tol
+    5 degrees): such a cell scores as if it matched DFT's.
+
+    Raises:
+        ValueError: On an empty or duplicated test set, duplicate prediction IDs, no
+            overlap between prediction and test-set IDs (e.g. a CSV read without
+            index_col), non-float RMSDs, or negative RMSDs.
     """
     if len(ref_ids) == 0:
         raise ValueError("rmsd_auc needs at least one reference structure")
-    rmsd = pd.to_numeric(rmsds.reindex(ref_ids), errors="raise").to_numpy(float)
+    for label, ids in (("ref_ids", ref_ids), ("rmsds.index", rmsds.index)):
+        if dupes := ids[ids.duplicated()].unique().tolist():
+            raise ValueError(f"duplicate {label} {dupes[:5]}")
+    if not rmsds.index.isin(ref_ids).any():
+        raise ValueError(
+            f"no RMSD index entries are reference IDs: {rmsds.index[:3].tolist()} vs "
+            f"{ref_ids[:3].tolist()}"
+        )
+    if not pd.api.types.is_float_dtype(rmsds.dtype):
+        raise ValueError(f"RMSDs must be floats (NaN = unmatched), got {rmsds.dtype}")
+    rmsd = rmsds.reindex(ref_ids).to_numpy(float)
+    if (rmsd < 0).any():  # NaN compares False
+        raise ValueError(f"negative RMSDs: {rmsd[rmsd < 0][:5].tolist()}")
     scores = np.clip(1 - rmsd / cutoff, 0, None)
     return float(np.nan_to_num(scores, nan=0.0).mean())
 

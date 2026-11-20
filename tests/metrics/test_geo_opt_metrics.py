@@ -132,10 +132,24 @@ def test_rmsd_auc_equals_cdf_integral() -> None:
     assert geo_opt.rmsd_auc(rmsds, ref_ids) == pytest.approx(numeric, abs=2.5e-7)
 
 
-def test_rmsd_auc_rejects_empty_reference() -> None:
-    """An empty test set is an error, not a silent 0 or NaN."""
-    with pytest.raises(ValueError, match="at least one reference"):
-        geo_opt.rmsd_auc(pd.Series([0.0]), pd.Index([]))
+@pytest.mark.parametrize(
+    ("rmsds", "ref_ids", "match"),
+    [
+        (pd.Series([0.0]), [], "at least one reference"),
+        # a CSV read without index_col: integer index never overlaps material IDs
+        (pd.Series([0.0, 0.0]), ["wbm-1", "wbm-2"], "no RMSD index entries"),
+        (pd.Series([0.0], index=["wbm-1"]), ["wbm-1", "wbm-1"], "duplicate ref_ids"),
+        (pd.Series([0.0, 0.1], index=["wbm-1"] * 2), ["wbm-1"], "duplicate rmsds"),
+        (pd.Series([True], index=["wbm-1"]), ["wbm-1"], "must be floats"),
+        (pd.Series([-0.05], index=["wbm-1"]), ["wbm-1"], "negative RMSDs"),
+    ],
+)
+def test_rmsd_auc_rejects_bad_input(
+    rmsds: pd.Series, ref_ids: list[str], match: str
+) -> None:
+    """Malformed inputs raise instead of returning a plausible-looking score."""
+    with pytest.raises(ValueError, match=match):
+        geo_opt.rmsd_auc(rmsds, pd.Index(ref_ids, dtype=object))
 
 
 _GEO_REF_WITH_META = make_file_ref(
