@@ -5,8 +5,8 @@ Output files will have the same name as the input file containing the model's re
 structures, but with the symprec value appended to the filename.
 
 Note: RMSDs come from matscikit.rms_distances with stol=1.0 and no volume scaling.
-RMSD values are normalized (unitless) and NaN values are filled with 1.0 (the stol
-value) to properly account for structures that couldn't be matched.
+RMSD values are normalized (unitless) and NaN where no match was found. They are
+scored by metrics.geo_opt.rmsd_auc, where unmatched and missing structures score 0.
 
 Symmetry runs on matscikit's bundled moyo crate, so file names and the DFT reference
 check use matscikit.MOYO_VERSION (not any installed moyopy).
@@ -167,7 +167,9 @@ def analyze_model_symprec(
         df_ml_geo_analysis.to_csv(geo_opt_csv_path)
         print(f"Completed {model.label} {symprec=}, saved to {geo_opt_csv_path}")
 
-    metrics_dict = geo_opt.calc_geo_opt_metrics(df_ml_geo_analysis)
+    # a debug subset is scored on its own structures, not the full test set
+    ref_ids = df_ml_geo_analysis.index if debug_mode else df_dft_analysis.index
+    metrics_dict = geo_opt.calc_geo_opt_metrics(df_ml_geo_analysis, ref_ids)
     df_metrics = pd.DataFrame([metrics_dict])
     if debug_mode:
         print(

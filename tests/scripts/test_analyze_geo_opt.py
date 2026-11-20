@@ -51,7 +51,7 @@ def fake_analysis(material_ids: list[str]) -> pd.DataFrame:
     """Analysis frame with the columns calc_geo_opt_metrics needs."""
     return pd.DataFrame(
         {
-            MbdKey.structure_rmsd_vs_dft: [0.1] * len(material_ids),
+            MbdKey.structure_rmsd_vs_dft: [0.01] * len(material_ids),
             MbdKey.spg_num_diff: [0] * len(material_ids),
             MbdKey.n_sym_ops_diff: [0] * len(material_ids),
         },
@@ -129,7 +129,7 @@ def test_analyze_model_symprec_metrics_and_debug_paths(
             Model["alignn"],
             SYMPREC,
             MOYO_VERSION,
-            df_dft_analysis=pd.DataFrame(),
+            df_dft_analysis=pd.DataFrame(index=pd.Index(material_ids)),
             dft_structs={},
             debug_mode=debug_mode,
         )
@@ -137,6 +137,8 @@ def test_analyze_model_symprec_metrics_and_debug_paths(
     assert df_metrics is not None
     # metrics are derived from the (cached or fresh) analysis in every mode
     assert df_metrics["n_structures"].iloc[0] == n_analyzed
+    # full runs score the whole test set, debug runs only their subset: 1 - 0.01/0.05
+    assert df_metrics["rmsd_auc"].iloc[0] == pytest.approx(0.8, rel=1e-12)
     assert mock_sym_info.call_count == (0 if cached else 1)
     # a cached analysis must not resolve (download) or parse the multi-GB file
     assert mock_geo_opt_path.call_count == (0 if cached else 1)

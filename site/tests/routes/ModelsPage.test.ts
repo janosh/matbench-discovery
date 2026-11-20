@@ -30,7 +30,7 @@ describe(`Models Page`, () => {
     ])
     expect(
       [...document.querySelectorAll(`ul button`)].map((btn) => btn.textContent?.trim()),
-    ).toStrictEqual([`Model Name`, `CPS`, `F1`, `RMSD`, `κSRME`, `CMDS`, `CDS`])
+    ).toStrictEqual([`Model Name`, `CPS`, `F1`, `RMSD AUC`, `κSRME`, `CMDS`, `CDS`])
     // a <legend> outside a <fieldset> is invalid HTML
     expect(document.querySelector(`legend`)).toBeNull()
     const legend = doc_query(`.legend`)
@@ -83,7 +83,7 @@ describe(`Models Page`, () => {
 
   it.each([
     [ALL_METRICS.F1.key, `desc`],
-    [ALL_METRICS.RMSD.key, `asc`], // lower = better
+    [ALL_METRICS.RMSD.key, `desc`],
   ])(`colors the best %s card blue and the worst red`, async (sort, dir) => {
     await mount_with_url(ModelsPage, `http://localhost/models?sort=${sort}&dir=${dir}`)
     expect(doc_query(`ul li.active button`).id).toBe(sort)
@@ -98,7 +98,7 @@ describe(`Models Page`, () => {
   it.each([
     [`F1`, `metrics.discovery.unique_prototypes.F1`, `desc`],
     [`diatomics_combined_score`, `metrics.diatomics.combined_score`, `desc`],
-    [`rmsd`, `metrics.geo_opt.symprec=1e-2.rmsd`, `asc`],
+    [`rmsd_auc`, `metrics.geo_opt.rmsd_auc`, `desc`],
     [`Model`, `model_name`, `asc`],
   ] as const)(
     `sorts by %s and preserves the model limit`,

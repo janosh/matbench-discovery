@@ -171,8 +171,8 @@ describe(`Geo Opt Task Page`, () => {
     if (!rmsd_header) throw new Error(`RMSD header not found`)
     expect(rmsd_header.innerHTML).not.toContain(`unitless`)
     expect(rmsd_header.innerHTML).not.toContain(`font-weight: 200`)
-    // initial sort is RMSD ascending
-    expect(rmsd_header.getAttribute(`aria-sort`)).toBe(`ascending`)
+    // initial sort is RMSD AUC descending (higher is better)
+    expect(rmsd_header.getAttribute(`aria-sort`)).toBe(`descending`)
 
     // f_max header includes unit
     const f_max_header = header_html.find((html) => html.includes(`f<sub>max</sub>`))

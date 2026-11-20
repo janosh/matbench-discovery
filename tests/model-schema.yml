@@ -265,13 +265,14 @@ definitions:
       reason: *task_reason
       pred_file:
         $ref: '#/definitions/nullable_file_ref'
+      rmsd_auc:
+        type: number
+        minimum: 0
+        maximum: 1
       symprec=1e-5: &symprec_metrics
         type: object
         additionalProperties: false
         properties:
-          rmsd:
-            type: number
-            minimum: 0
           n_sym_ops_mae:
             type: number
           symmetry_decrease:
@@ -287,7 +288,6 @@ definitions:
           analysis_file:
             $ref: '#/definitions/nullable_file_ref'
         required:
-          - rmsd
           - n_sym_ops_mae
           - symmetry_decrease
           - symmetry_match

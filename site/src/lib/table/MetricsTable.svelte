@@ -525,8 +525,10 @@
       CPS combines discovery F1 ({format_num(
         CPS_CONFIG.F1.weight / cps_total_weight,
         `.0%`,
-      )}), geometry RMSD ({format_num(CPS_CONFIG.RMSD.weight / cps_total_weight, `.0%`)}),
-      and phonons κ<sub>SRME</sub> ({format_num(
+      )}), geometry RMSD AUC ({format_num(
+        CPS_CONFIG.RMSD.weight / cps_total_weight,
+        `.0%`,
+      )}), and phonons κ<sub>SRME</sub> ({format_num(
         CPS_CONFIG.κ_SRME.weight / cps_total_weight,
         `.0%`,
       )}). MD and diatomics are excluded. CPS uses unique-prototype discovery scores.

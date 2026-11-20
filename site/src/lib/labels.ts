@@ -13,8 +13,6 @@ import type {
   MetadataLabels,
 } from './schema/label.js'
 
-export const RMSD_BASELINE = 0.15 // Baseline for poor performance given worst performing model at time of writing is M3GNet at 0.1117
-
 // Default CMDS/CDS weights and the CDS element roster size live here (not in
 // combined-scores, which imports this module) so score descriptions can quote them.
 export const DEFAULT_CMDS_WEIGHTS = {
@@ -592,21 +590,22 @@ export const ALL_METRICS: AllMetrics = {
   CPS: {
     key: `CPS`,
     label: `CPS`,
-    description: `Combined Performance Score averages discovery (F1), structure optimization (RMSD), and phonon performance (κ<sub>SRME</sub>) according to user-defined weights. Warning: This is not a stable metric. Further prediction tasks will be added to it in the future with the goal of making it a more holistic measure of overall model utility over time. When referring to it in papers, best include the benchmark version to avoid confusion (e.g. CPS v1 for the first version of CPS introduced in Matbench Discovery v1)`,
+    description: `Combined Performance Score averages discovery (F1), structure optimization (RMSD AUC), and phonon performance (κ<sub>SRME</sub>) according to user-defined weights. Warning: This is not a stable metric. Further prediction tasks will be added to it in the future with the goal of making it a more holistic measure of overall model utility over time. When referring to it in papers, best include the benchmark version to avoid confusion (e.g. CPS v1 for the first version of CPS introduced in Matbench Discovery v1)`,
     range: [0, 1],
     better: `higher`,
     format: `.3f`,
   },
   ...DISCOVERY_METRICS,
   ...PHONON_METRICS,
+  // RMSD is symprec-invariant, so its score sits at task level (not per symprec)
   RMSD: {
-    key: `rmsd`,
-    path: `metrics.geo_opt.symprec=1e-2`,
-    label: `RMSD`,
-    // Unit intentionally hidden for concise table column headers.
-    range: [0, RMSD_BASELINE],
-    better: `lower`,
-    description: `Normalized, unitless structure-matching RMSD (matscikit rms_distances, stol=1) between ML- and DFT-relaxed structures; unmatched structures are assigned 1.0`,
+    key: `rmsd_auc`,
+    path: `metrics.geo_opt`,
+    label: `RMSD AUC`,
+    range: [0, 1],
+    better: `higher`,
+    format: `.3f`,
+    description: `Area under the cumulative distribution of normalized structure-matching RMSD (matscikit rms_distances, stol=1) between ML- and DFT-relaxed structures, up to RMSD 0.05 and divided by 0.05. Equals the mean over all WBM structures of max(1 - RMSD/0.05, 0), so 1 means every structure reproduces DFT exactly. Missing predictions and structures that can't be matched to DFT score 0.`,
     style: `border-left: 1px solid var(--border);`,
   },
   ...GEO_OPT_SYMMETRY_METRICS,
@@ -703,14 +702,9 @@ const PROPERTY_LABELS = Object.fromEntries(
 
 // Format a property path for display in UI components
 export function format_property_path(path: string): string {
-  let parts = path
+  const parts = path
     .split(`.`)
     .filter((part) => ![`metrics`, `kappa_103`].includes(part) && part)
-
-  // Remove symprec value preceding rmsd
-  if (parts.at(-1)?.toUpperCase() === `RMSD`) {
-    parts = parts.filter((part) => !part.includes(`symprec`))
-  }
 
   return parts
     .map((part) => {

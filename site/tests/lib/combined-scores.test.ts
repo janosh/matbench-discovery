@@ -18,7 +18,6 @@ import {
   DEFAULT_CMDS_CONFIG,
   update_models_cmds,
 } from '#lib/combined-scores.svelte.js'
-import { RMSD_BASELINE } from '#lib/labels.js'
 import { apply_weights_param, weights_to_param } from 'matterviz/url-params'
 import { afterEach, beforeEach, describe, expect, it } from 'vite-plus/test'
 
@@ -43,9 +42,9 @@ const observables_only_config = (): CmdsConfig => {
   return config
 }
 const clone_cds_config = (): CdsConfig => structuredClone(DEFAULT_CDS_CONFIG)
-const make_cps_config = (f1: number, rmsd: number, kappa: number): CpsConfig => ({
+const make_cps_config = (f1: number, rmsd_auc: number, kappa: number): CpsConfig => ({
   F1: { ...DEFAULT_CPS_CONFIG.F1, weight: f1 },
-  RMSD: { ...DEFAULT_CPS_CONFIG.RMSD, weight: rmsd },
+  RMSD: { ...DEFAULT_CPS_CONFIG.RMSD, weight: rmsd_auc },
   κ_SRME: { ...DEFAULT_CPS_CONFIG.κ_SRME, weight: kappa },
 })
 
@@ -66,14 +65,14 @@ const baseline_cds_values = cds_values_at(1)
 
 describe(`calculate_cps`, () => {
   it.each([
-    { name: `all perfect`, f1: 1.0, rmsd: 0, kappa: 0, expected: 1 },
-    { name: `all worst`, f1: 0, rmsd: RMSD_BASELINE, kappa: 2, expected: 0 },
-    { name: `mixed`, f1: 0.75, rmsd: RMSD_BASELINE / 2, kappa: 0.5, expected: 0.6667 },
+    { name: `all perfect`, f1: 1.0, rmsd_auc: 1, kappa: 0, expected: 1 },
+    { name: `all worst`, f1: 0, rmsd_auc: 0, kappa: 2, expected: 0 },
+    { name: `mixed`, f1: 0.75, rmsd_auc: 0.5, kappa: 0.5, expected: 0.6667 },
   ])(
     `returns weighted average for $name metrics with equal weights`,
-    ({ f1, rmsd, kappa, expected }) => {
+    ({ f1, rmsd_auc, kappa, expected }) => {
       const config = make_cps_config(1 / 3, 1 / 3, 1 / 3)
-      expect(calculate_cps(f1, rmsd, kappa, config)).toBeCloseTo(expected, 4)
+      expect(calculate_cps(f1, rmsd_auc, kappa, config)).toBeCloseTo(expected, 4)
     },
   )
 
@@ -88,6 +87,7 @@ describe(`calculate_cps`, () => {
     { metric: `F1 (negative)`, f1: -1, rmsd: 0.05, kappa: 0.5 },
     { metric: `F1 (>1)`, f1: 2, rmsd: 0.05, kappa: 0.5 },
     { metric: `RMSD (negative)`, f1: 0.8, rmsd: -1, kappa: 0.5 },
+    { metric: `RMSD (>1)`, f1: 0.8, rmsd: 1.1, kappa: 0.5 },
     { metric: `κ_SRME (negative)`, f1: 0.8, rmsd: 0.05, kappa: -1 },
     { metric: `κ_SRME (>2)`, f1: 0.8, rmsd: 0.05, kappa: 3 },
     { metric: `every metric`, f1: undefined, rmsd: undefined, kappa: undefined },
@@ -97,10 +97,10 @@ describe(`calculate_cps`, () => {
   })
 
   it.each([
-    { case: `missing F1`, weights: [0, 0.5, 0.5], vals: [undefined, 0, 0] },
+    { case: `missing F1`, weights: [0, 0.5, 0.5], vals: [undefined, 1, 0] },
     { case: `missing RMSD`, weights: [0.5, 0, 0.5], vals: [1, undefined, 0] },
-    { case: `missing κ_SRME`, weights: [0.5, 0.5, 0], vals: [1, 0, undefined] },
-    { case: `out-of-range values`, weights: [0, 1, 0], vals: [1.2, 0, 3] },
+    { case: `missing κ_SRME`, weights: [0.5, 0.5, 0], vals: [1, 1, undefined] },
+    { case: `out-of-range values`, weights: [0, 1, 0], vals: [1.2, 1, 3] },
   ])(`ignores zero-weight metrics: $case`, ({ weights, vals }) => {
     const config = make_cps_config(weights[0], weights[1], weights[2])
     expect(calculate_cps(vals[0], vals[1], vals[2], config)).toBeCloseTo(1, 5)
@@ -108,7 +108,7 @@ describe(`calculate_cps`, () => {
 
   it(`normalizes weights that do not sum to 1`, () => {
     const config = make_cps_config(1.0, 0.5, 0.5)
-    expect(calculate_cps(1.0, RMSD_BASELINE, 2, config)).toBeCloseTo(0.5, 4)
+    expect(calculate_cps(1.0, 0, 2, config)).toBeCloseTo(0.5, 4)
   })
 
   // all-zero weights leave the score undefined (null, not worst)
@@ -130,21 +130,10 @@ describe(`calculate_cps`, () => {
   it.each([
     { name: `F1`, value: 0.5, weights: [1, 0, 0], expected: 0.5 },
     { name: `F1 perfect`, value: 1.0, weights: [1, 0, 0], expected: 1.0 },
-    { name: `RMSD perfect`, value: 0, weights: [0, 1, 0], expected: 1.0 },
-    { name: `RMSD worst`, value: RMSD_BASELINE, weights: [0, 1, 0], expected: 0.0 },
-    { name: `RMSD linear`, value: 0.03, weights: [0, 1, 0], expected: 0.8 },
-    {
-      name: `RMSD midpoint`,
-      value: RMSD_BASELINE / 2,
-      weights: [0, 1, 0],
-      expected: 0.5,
-    },
-    {
-      name: `RMSD clamps high`,
-      value: RMSD_BASELINE + 0.1,
-      weights: [0, 1, 0],
-      expected: 0.0,
-    },
+    // RMSD AUC is already a [0, 1] score and enters CPS unchanged
+    { name: `RMSD AUC perfect`, value: 1, weights: [0, 1, 0], expected: 1.0 },
+    { name: `RMSD AUC worst`, value: 0, weights: [0, 1, 0], expected: 0.0 },
+    { name: `RMSD AUC passthrough`, value: 0.83, weights: [0, 1, 0], expected: 0.83 },
     { name: `κ_SRME perfect`, value: 0, weights: [0, 0, 1], expected: 1.0 },
     { name: `κ_SRME worst`, value: 2, weights: [0, 0, 1], expected: 0.0 },
     { name: `κ_SRME linear`, value: 0.4, weights: [0, 0, 1], expected: 0.8 },
@@ -160,7 +149,8 @@ describe(`calculate_cps`, () => {
   })
 
   it(`calculates correct CPS with default weights`, () => {
-    const result = calculate_cps(0.8, RMSD_BASELINE / 2, 0.5, DEFAULT_CPS_CONFIG)
+    // 0.5 * 0.8 + 0.1 * 0.5 + 0.4 * (1 - 0.5 / 2)
+    const result = calculate_cps(0.8, 0.5, 0.5, DEFAULT_CPS_CONFIG)
     expect(result).toBeCloseTo(0.75, 5)
   })
 })

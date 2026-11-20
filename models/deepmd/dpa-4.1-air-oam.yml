@@ -151,8 +151,8 @@ metrics:
       size: 102837541
       md5: c6916d75ccbead1f636cc752dbbfcbbd
       url: https://figshare.com/files/71651341
+    rmsd_auc: 0.8133 # fraction
     symprec=1e-5:
-      rmsd: 0.0564 # unitless
       n_sym_ops_mae: 2.7654 # unitless
       symmetry_decrease: 0.3585 # fraction
       symmetry_match: 0.4273 # fraction
@@ -165,7 +165,6 @@ metrics:
         size: 6850203
         md5: 3f8697dff7a5b6e94a1f9dc2ee5de989
     symprec=1e-2:
-      rmsd: 0.0564 # unitless
       n_sym_ops_mae: 1.9881 # unitless
       symmetry_decrease: 0.1407 # fraction
       symmetry_match: 0.73 # fraction

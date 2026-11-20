@@ -57,7 +57,7 @@ describe(`model_metric_ranks`, () => {
     ).toStrictEqual([
       [`CPS`, `/`],
       [`Discovery F1`, `/benchmarks/discovery`],
-      [`Geo Opt RMSD`, `/benchmarks/geo-opt`],
+      [`Geo Opt RMSD AUC`, `/benchmarks/geo-opt`],
       [`Phonons κ<sub>SRME</sub>`, `/benchmarks/phonons`],
       [`MD CMDS`, `/benchmarks/md`],
       [`Diatomics CDS`, `/benchmarks/diatomics`],

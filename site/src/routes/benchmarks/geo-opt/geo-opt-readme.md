@@ -2,7 +2,7 @@
 
 This task measures how closely machine-learning force-field relaxations reproduce DFT-relaxed crystal structures and retain their symmetry.
 
-Reference data: the [WBM test set](/benchmarks/geo-opt#test-set). The headline metric is normalized structure-matching RMSD (unitless, lower is better).
+Reference data: the [WBM test set](/benchmarks/geo-opt#test-set). The headline metric is RMSD AUC: the area under each model's cumulative RMSD distribution up to 0.05, with missing and unmatched structures scoring 0 (higher is better, 1 is perfect).
 
 <slot name="task_navigation" />
 
@@ -10,7 +10,7 @@ Reference data: the [WBM test set](/benchmarks/geo-opt#test-set). The headline m
 
 Not all models relaxed every structure, but each reported model was evaluated on at least <slot name="min_relaxed_structures" /> relaxations.
 
-> **Symmetry-tolerance caveat:** RMSD is `symprec`-invariant. The leaderboard shows symmetry metrics at both `symprec=1e-2` and `symprec=1e-5`, while Aggregate Diagnostics use `symprec=1e-5`. Compare symmetry values within a single view.
+> **Symmetry-tolerance caveat:** RMSD is `symprec`-invariant, so RMSD AUC is reported once per model. The leaderboard shows symmetry metrics at both `symprec=1e-2` and `symprec=1e-5`, while Aggregate Diagnostics use `symprec=1e-5`. Compare symmetry values within a single view.
 
 <slot name="geo_opt_metrics_table" />
 
@@ -30,7 +30,7 @@ These views use the per-structure `symprec=1e-5` analyses. The model picker appl
 
 <slot name="struct_rmsd_cdf_models" />
 
-> Cumulative distribution of RMSD between ML and DFT-relaxed structures.
+> Cumulative distribution of RMSD between ML- and DFT-relaxed structures, as a fraction of all WBM structures. A curve plateaus below 100% by the share of structures the model failed to relax or that can't be matched to DFT. The AUC in each legend is the model's RMSD AUC: the area under its curve up to 0.05, divided by 0.05.
 
 ### Difference in Number of Symmetry Operations vs DFT
 
@@ -48,7 +48,9 @@ The Sankey diagrams show corresponding spacegroups of DFT-relaxed and MLFF-relax
 
 ## Methodology
 
-**RMSD** measures the normalized, unitless structure-matching RMSD between ML- and DFT-relaxed ground state structures, computed by [`matscikit`](https://github.com/janosh/matscikit)'s `rms_distances` (`stol=1`, no volume scaling) and set to 1 for unmatched pairs. Analyses before November 2026 used `pymatgen`'s `StructureMatcher`, whose RMSD depends on argument order and the reduced basis it picks; `matscikit` searches both orders and equivalent bases, so its RMSD is never higher and it matches some pairs `pymatgen` rejected, lowering model RMSDs slightly. **Optimizer**, **Steps**, **f<sub>max</sub>**, and **Filter** show the ASE optimizer, maximum relaxation steps, force convergence criterion (eV/Å), and cell filter used during structure relaxation.
+**RMSD** is the normalized, unitless structure-matching RMSD between ML- and DFT-relaxed ground-state structures, computed by [`matscikit`](https://github.com/janosh/matscikit)'s `rms_distances` (`stol=1`, no volume scaling). **RMSD AUC** scores each structure as max(1 - RMSD/0.05, 0) and averages over all 256,963 WBM structures. That average equals the area under the cumulative RMSD distribution up to 0.05, divided by 0.05. A missing prediction, or a structure whose lattice moved too far from DFT for the matcher to pair the two, scores 0, the same as an RMSD of 0.05 or more.
+
+RMSD AUC replaced mean RMSD in November 2026. The old mean assigned unmatched structures an RMSD of 1.0, about 100 times a typical matched RMSD. Those penalties made up 72–81% of every model's mean, so the metric mostly counted failures. It also ignored structures a model never predicted, and the old CDF plot dropped unmatched structures altogether. All three now use the same full-test-set definition, and RMSD AUC feeds CPS directly instead of being rescaled against a fixed 0.15 RMSD baseline. Model rankings barely depend on the 0.05 cutoff: Kendall τ between the rankings at cutoffs of 0.03 and 0.10 and the ranking at 0.05 is at least 0.96. About 3.7k structures can't be matched for any of the 49 active models, because DFT relaxation moved them far from their initial structures. They lower every model's score but don't change the ranking. Analyses before November 2026 used `pymatgen`'s `StructureMatcher`, whose RMSD depends on argument order and the reduced basis it picks; `matscikit` searches both orders and equivalent bases, so its RMSD is never higher and it matches some pairs `pymatgen` rejected, lowering model RMSDs slightly. **Optimizer**, **Steps**, **f<sub>max</sub>**, and **Filter** show the ASE optimizer, maximum relaxation steps, force convergence criterion (eV/Å), and cell filter used during structure relaxation.
 
 Symmetry detection uses the [`moyo`](https://github.com/spglib/moyo) crate bundled in `matscikit`, a Rust successor to [`spglib`](https://spglib.readthedocs.io). Σ<sub>=</sub> denotes the fraction of structures with identical ML- and DFT-relaxed spacegroups. Σ<sub>↓</sub> / Σ<sub>↑</sub> denote the fractions whose numbers of symmetry operations decreased / increased during MLFF relaxation. Symmetry metrics depend on the `symprec` tolerance, so results are shown at multiple values. See the [`spglib` docs](https://spglib.readthedocs.io/en/latest/variable.html#symprec) and [paper](https://arxiv.org/html/1808.01590v2) for details.
 

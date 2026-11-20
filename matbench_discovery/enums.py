@@ -111,6 +111,7 @@ class MbdKey(LabelEnum):
     # space group changed but the number of symmetry operations did not
     symmetry_lateral = "symmetry_lateral", "Lateral symmetry change"
     structure_rmsd_vs_dft = "structure_rmsd_vs_dft", "RMSD of structure to DFT"
+    rmsd_auc = "rmsd_auc", "RMSD AUC"
 
     # keep in sync with model-schema.yml
     missing_preds = "missing_preds", "Missing predictions"
