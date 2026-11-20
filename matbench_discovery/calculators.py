@@ -1013,6 +1013,13 @@ def _pet(device: str, checkpoint: str, dtype: str = "float64") -> Calculator:
     return MetatomicCalculator(model, device=device, non_conservative=False)
 
 
+def _pet_r24e(device: str, checkpoint: str, dtype: str = "float32") -> Calculator:
+    """Load the frozen PET-OMat-XS R24E potential."""
+    from matbench_discovery.pet_r24e import load
+
+    return load(device, checkpoint, dtype)
+
+
 def _chgnet(device: str) -> Calculator:
     """Load the CHGNet calculator bundled with the chgnet package."""
     from chgnet.model.dynamics import CHGNetCalculator
@@ -1152,6 +1159,7 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
         "nequix_mp_1_pft": _named_spec(
             _nequix, "nequix_mp_1_pft", checkpoint=True, ext=".nqx"
         ),
+        "pet_omat_xs_r24e": _checkpoint_spec("pet_omat_xs_r24e", _pet_r24e),
         "pet_oam_xl_1_0_0": _checkpoint_spec("pet_oam_xl_1_0_0", _pet),
         "alphanet_v1_mptrj": _checkpoint_spec(
             "alphanet_v1_mptrj",

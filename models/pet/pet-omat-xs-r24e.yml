@@ -1,0 +1,70 @@
+model_name: PET-OMat-XS R24E
+model_key: pet-omat-xs-r24e
+model_version: 1.0.0
+dates:
+  benchmark_added: '2026-11-21'
+  paper_published:
+lifecycle: pending
+authors:
+- name: nk (Enuke)
+  github: https://github.com/nkwork9999
+repo: https://github.com/nkwork9999/matbench-discovery
+doi:
+paper:
+pr_url:
+checkpoint_url: https://huggingface.co/lab-cosmo/upet/resolve/a443c4bf7b0eb2e7c68575431694d3250a1f90a0/models/pet-omat-xs-v1.0.0.ckpt
+license:
+  code: MIT
+  code_url: https://github.com/janosh/matbench-discovery/blob/main/license
+  checkpoint: BSD-3-Clause
+  checkpoint_url: https://github.com/lab-cosmo/upet/blob/main/LICENSE
+environment:
+  dependencies: [upet==0.3.1, torch==2.14.1, metatomic-torch==0.1.19, metatomic-ase==0.1.4, metatensor-torch==0.10.8]
+  python_version: '3.14'
+openness: OSOD
+architecture_types: [transformer]
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+training_sets: [OMat24, MPtrj]
+fine_tune: true
+model_params: 4488082
+test_set_informed: [discovery, geo_opt, phonons, diatomics, md]
+hyperparams:
+  evaluation:
+    dtype: float32
+    max_force: 0.02
+    max_steps: 500
+    ase_optimizer: FIRE
+    cell_filter: FrechetCellFilter
+    kappa:
+      protocol: phonondb-v1
+      displacement_distance: 0.03
+      is_plusminus: auto
+  training:
+    parent: PET-OMat-XS v1.0.0
+    compositions: 438
+    structures: 871
+    ridge: 0.0005
+    huber_threshold_ev_per_atom: 0.1
+    irls_iterations: 6
+notes:
+  description: |
+    A fixed 24-orientation average of one conservative PET-OMat-XS model.
+    A fitted per-atom intercept and elemental energy references are independent
+    of coordinates and strain. The 4,487,962 parent parameters are shared by all
+    orientations. The reference table has 119 slots and one scalar intercept.
+    Parent checkpoint and bundled calibration are SHA-256 checked on load.
+  disclosure: |
+    Diatomics scores and feedback on the preceding proposals influenced the choice
+    of parent and redesign (https://github.com/janosh/matbench-discovery/pull/416
+    and https://github.com/janosh/matbench-discovery/pull/417). Prior WBM relaxations,
+    PhononDB conductivity and DynaMat MD pilots informed this research program.
+    WBM and downstream task identities were consulted in cohort selection. Final
+    R24E coefficients and candidate selection used MPtrj development labels only.
+    Official task subsets were evaluated to decide whether to submit this variant.
+  training: |
+    Parent weights from lab-cosmo/UPET were trained on OMat24. R24E fits its
+    energy references on 871 MPtrj structures in 438 reduced compositions.
+    The classification above records that PET predicts periodic energies, forces
+    and stress; the R24E regression itself fits energies only.

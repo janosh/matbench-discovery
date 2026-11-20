@@ -1,0 +1,904 @@
+{
+  "evaluation_scope": "Fixed pilot materials. Discovery hull distances are eV/atom. Phonon conductivities are W/(m K) at 300 K. The two MD simulations each cover 0.25 ps.",
+  "parent_checkpoint_sha256": "64235c15f9351577db36068a833c36ba2bc0682f77121345926668c58c582299",
+  "r24e_parameter_sha256": "feaf9c6e41c932a56f8ac0e8baa9c993f6a399a10f48188ae9993591a8ad5301",
+  "wbm_sources": {
+    "53161832": {
+      "md5": "655b7a9c368e136dd8747f1ef8002e7a",
+      "url": "https://figshare.com/files/53161832"
+    },
+    "40387775": {
+      "md5": "6e93b6f38d6e27d6c811d3cafb23a070",
+      "url": "https://figshare.com/files/40387775"
+    },
+    "64706751": {
+      "md5": "1555268d3aa59d20262cb9d01ce0994b",
+      "url": "https://figshare.com/files/64706751"
+    },
+    "48169600": {
+      "md5": "2a292211ca6acb30ed8416178d644098",
+      "url": "https://figshare.com/files/48169600"
+    }
+  },
+  "published_orb_v3_sources": [
+    "https://figshare.com/files/66646289",
+    "https://figshare.com/files/66575399"
+  ],
+  "wbm50": {
+    "wbm-1-48908": {
+      "reference": {
+        "formula": "Fe4 S8",
+        "unique": true,
+        "hull_dft": 0.074
+      },
+      "predicted_hull": {
+        "parent": 0.16699999999999993,
+        "reference_offsets_only": 0.10099999999999998,
+        "orientation_only": 0.16599999999999993,
+        "r24e": 0.09999999999999998,
+        "orb_v3": 0.05899999999999994
+      }
+    },
+    "wbm-1-11157": {
+      "reference": {
+        "formula": "Co2 Sn7 Tm3",
+        "unique": true,
+        "hull_dft": 0.058
+      },
+      "predicted_hull": {
+        "parent": 0.183,
+        "reference_offsets_only": 0.03199999999999997,
+        "orientation_only": 0.182,
+        "r24e": 0.03199999999999997,
+        "orb_v3": 0.05199999999999999
+      }
+    },
+    "wbm-1-16974": {
+      "reference": {
+        "formula": "Fe2 Ni1 Ru1",
+        "unique": true,
+        "hull_dft": 0.192
+      },
+      "predicted_hull": {
+        "parent": 0.29800000000000004,
+        "reference_offsets_only": 0.101,
+        "orientation_only": 0.368,
+        "r24e": 0.17200000000000001,
+        "orb_v3": 0.19799999999999998
+      }
+    },
+    "wbm-1-44542": {
+      "reference": {
+        "formula": "O2 P2 Tm2 Zn2",
+        "unique": true,
+        "hull_dft": -0.011
+      },
+      "predicted_hull": {
+        "parent": 0.04599999999999982,
+        "reference_offsets_only": -0.0030000000000001137,
+        "orientation_only": 0.04699999999999971,
+        "r24e": -0.002000000000000224,
+        "orb_v3": -0.008000000000000451
+      }
+    },
+    "wbm-1-3820": {
+      "reference": {
+        "formula": "As4 U4",
+        "unique": true,
+        "hull_dft": 0.114
+      },
+      "predicted_hull": {
+        "parent": 0.16499999999999992,
+        "reference_offsets_only": 0.09099999999999997,
+        "orientation_only": 0.16499999999999992,
+        "r24e": 0.09099999999999997,
+        "orb_v3": 0.10799999999999998
+      }
+    },
+    "wbm-1-26551": {
+      "reference": {
+        "formula": "Li2 Sn2",
+        "unique": true,
+        "hull_dft": 0.147
+      },
+      "predicted_hull": {
+        "parent": 0.173,
+        "reference_offsets_only": 0.08099999999999999,
+        "orientation_only": 0.172,
+        "r24e": 0.08099999999999999,
+        "orb_v3": 0.15
+      }
+    },
+    "wbm-1-33011": {
+      "reference": {
+        "formula": "Ba1 Cd2 Na1",
+        "unique": true,
+        "hull_dft": 0.063
+      },
+      "predicted_hull": {
+        "parent": 0.16799999999999998,
+        "reference_offsets_only": 0.08399999999999999,
+        "orientation_only": 0.16799999999999998,
+        "r24e": 0.08299999999999999,
+        "orb_v3": 0.069
+      }
+    },
+    "wbm-1-61297": {
+      "reference": {
+        "formula": "Ac1 Tl2 Zn1",
+        "unique": true,
+        "hull_dft": -0.021
+      },
+      "predicted_hull": {
+        "parent": 0.10300000000000001,
+        "reference_offsets_only": -0.016999999999999987,
+        "orientation_only": 0.10300000000000001,
+        "r24e": -0.016999999999999987,
+        "orb_v3": -0.014999999999999986
+      }
+    },
+    "wbm-1-41809": {
+      "reference": {
+        "formula": "Er1 Na4 O5",
+        "unique": true,
+        "hull_dft": 0.161
+      },
+      "predicted_hull": {
+        "parent": 0.17300000000000004,
+        "reference_offsets_only": 0.16700000000000004,
+        "orientation_only": 0.17300000000000004,
+        "r24e": 0.16700000000000004,
+        "orb_v3": 0.15900000000000003
+      }
+    },
+    "wbm-1-56787": {
+      "reference": {
+        "formula": "Nd3 Sr1",
+        "unique": true,
+        "hull_dft": 0.142
+      },
+      "predicted_hull": {
+        "parent": 0.209,
+        "reference_offsets_only": 0.154,
+        "orientation_only": 0.209,
+        "r24e": 0.154,
+        "orb_v3": 0.146
+      }
+    },
+    "wbm-2-50077": {
+      "reference": {
+        "formula": "Pb2 Pd4 Ti4",
+        "unique": false,
+        "hull_dft": 0.062
+      },
+      "predicted_hull": {
+        "parent": 0.14500000000000002,
+        "reference_offsets_only": 0.10499999999999998,
+        "orientation_only": 0.14400000000000002,
+        "r24e": 0.10499999999999998,
+        "orb_v3": 0.07
+      }
+    },
+    "wbm-2-26782": {
+      "reference": {
+        "formula": "Mg1 Ru3 Si2",
+        "unique": true,
+        "hull_dft": 0.255
+      },
+      "predicted_hull": {
+        "parent": 0.173,
+        "reference_offsets_only": 0.07500000000000001,
+        "orientation_only": 0.16700000000000004,
+        "r24e": 0.069,
+        "orb_v3": 0.10200000000000004
+      }
+    },
+    "wbm-2-7578": {
+      "reference": {
+        "formula": "C4 Ho3 Os1",
+        "unique": true,
+        "hull_dft": 0.078
+      },
+      "predicted_hull": {
+        "parent": 0.10000000000000003,
+        "reference_offsets_only": 0.05600000000000005,
+        "orientation_only": 0.10200000000000004,
+        "r24e": 0.05700000000000005,
+        "orb_v3": 0.068
+      }
+    },
+    "wbm-2-26272": {
+      "reference": {
+        "formula": "Au3 Lu3 Mg3",
+        "unique": true,
+        "hull_dft": -0.066
+      },
+      "predicted_hull": {
+        "parent": 0.03400000000000003,
+        "reference_offsets_only": -0.04499999999999993,
+        "orientation_only": 0.03400000000000003,
+        "r24e": -0.04499999999999993,
+        "orb_v3": -0.06299999999999994
+      }
+    },
+    "wbm-2-42101": {
+      "reference": {
+        "formula": "K1 Pd3 S2",
+        "unique": true,
+        "hull_dft": 0.147
+      },
+      "predicted_hull": {
+        "parent": 0.09000000000000008,
+        "reference_offsets_only": 0.07800000000000007,
+        "orientation_only": 0.09000000000000008,
+        "r24e": 0.07700000000000007,
+        "orb_v3": 0.12900000000000011
+      }
+    },
+    "wbm-2-6262": {
+      "reference": {
+        "formula": "B2 Mn2 N2 Ni2",
+        "unique": true,
+        "hull_dft": 0.507
+      },
+      "predicted_hull": {
+        "parent": 0.623,
+        "reference_offsets_only": 0.519,
+        "orientation_only": 0.624,
+        "r24e": 0.52,
+        "orb_v3": 0.526
+      }
+    },
+    "wbm-2-36141": {
+      "reference": {
+        "formula": "Ba2 O6 Rh1 Sr1",
+        "unique": true,
+        "hull_dft": -0.035
+      },
+      "predicted_hull": {
+        "parent": -0.039000000000000146,
+        "reference_offsets_only": -0.052999999999999936,
+        "orientation_only": -0.016999999999999904,
+        "r24e": -0.03100000000000014,
+        "orb_v3": -0.03299999999999992
+      }
+    },
+    "wbm-2-49880": {
+      "reference": {
+        "formula": "Sm1 Te2",
+        "unique": true,
+        "hull_dft": 0.278
+      },
+      "predicted_hull": {
+        "parent": 0.29200000000000004,
+        "reference_offsets_only": 0.236,
+        "orientation_only": 0.2929999999999999,
+        "r24e": 0.236,
+        "orb_v3": 0.28400000000000003
+      }
+    },
+    "wbm-2-51600": {
+      "reference": {
+        "formula": "Pr1 Sb2 Zn2",
+        "unique": true,
+        "hull_dft": 0.055
+      },
+      "predicted_hull": {
+        "parent": 0.127,
+        "reference_offsets_only": 0.019999999999999962,
+        "orientation_only": 0.126,
+        "r24e": 0.01899999999999996,
+        "orb_v3": 0.064
+      }
+    },
+    "wbm-2-11967": {
+      "reference": {
+        "formula": "Co3 Er3 Ni3",
+        "unique": true,
+        "hull_dft": 0.145
+      },
+      "predicted_hull": {
+        "parent": 0.297,
+        "reference_offsets_only": 0.126,
+        "orientation_only": 0.298,
+        "r24e": 0.127,
+        "orb_v3": 0.12799999999999997
+      }
+    },
+    "wbm-3-71437": {
+      "reference": {
+        "formula": "Dy2 Ni4 Si2",
+        "unique": true,
+        "hull_dft": 0.074
+      },
+      "predicted_hull": {
+        "parent": 0.22900000000000004,
+        "reference_offsets_only": 0.04299999999999993,
+        "orientation_only": 0.252,
+        "r24e": 0.06599999999999995,
+        "orb_v3": 0.07499999999999996
+      }
+    },
+    "wbm-3-27075": {
+      "reference": {
+        "formula": "Fe2 Sn2 Yb2",
+        "unique": true,
+        "hull_dft": 0.217
+      },
+      "predicted_hull": {
+        "parent": -0.7480000000000001,
+        "reference_offsets_only": -0.4910000000000001,
+        "orientation_only": -0.769,
+        "r24e": -0.512,
+        "orb_v3": 0.237
+      }
+    },
+    "wbm-3-26523": {
+      "reference": {
+        "formula": "Au1 Fe1 La2",
+        "unique": true,
+        "hull_dft": 0.242
+      },
+      "predicted_hull": {
+        "parent": 0.32299999999999995,
+        "reference_offsets_only": 0.21399999999999997,
+        "orientation_only": 0.32299999999999995,
+        "r24e": 0.21499999999999997,
+        "orb_v3": 0.23299999999999998
+      }
+    },
+    "wbm-3-69903": {
+      "reference": {
+        "formula": "Cu4 Dy3 Si4",
+        "unique": true,
+        "hull_dft": 0.008
+      },
+      "predicted_hull": {
+        "parent": 0.15399999999999997,
+        "reference_offsets_only": 0.0030000000000000027,
+        "orientation_only": 0.15499999999999997,
+        "r24e": 0.0030000000000000027,
+        "orb_v3": 0.006000000000000005
+      }
+    },
+    "wbm-3-48825": {
+      "reference": {
+        "formula": "Br6 Cs2 Cu1 Ni1",
+        "unique": true,
+        "hull_dft": 0.049
+      },
+      "predicted_hull": {
+        "parent": 0.09899999999999975,
+        "reference_offsets_only": 0.039999999999999813,
+        "orientation_only": 0.09899999999999975,
+        "r24e": 0.039999999999999813,
+        "orb_v3": 0.04499999999999993
+      }
+    },
+    "wbm-3-19390": {
+      "reference": {
+        "formula": "Cu4 Ge4 Tb2",
+        "unique": false,
+        "hull_dft": 0.031
+      },
+      "predicted_hull": {
+        "parent": 0.22999999999999995,
+        "reference_offsets_only": 0.04799999999999993,
+        "orientation_only": 0.22999999999999995,
+        "r24e": 0.04799999999999993,
+        "orb_v3": 0.03200000000000003
+      }
+    },
+    "wbm-3-74089": {
+      "reference": {
+        "formula": "Hg3 Tb3 Tl3",
+        "unique": true,
+        "hull_dft": 0.094
+      },
+      "predicted_hull": {
+        "parent": 0.163,
+        "reference_offsets_only": 0.092,
+        "orientation_only": 0.199,
+        "r24e": 0.128,
+        "orb_v3": 0.087
+      }
+    },
+    "wbm-3-27124": {
+      "reference": {
+        "formula": "Fe3 Tb6",
+        "unique": true,
+        "hull_dft": 0.15
+      },
+      "predicted_hull": {
+        "parent": 0.28200000000000003,
+        "reference_offsets_only": 0.18,
+        "orientation_only": 0.281,
+        "r24e": 0.179,
+        "orb_v3": 0.16300000000000003
+      }
+    },
+    "wbm-3-16584": {
+      "reference": {
+        "formula": "Co6 Ge3 Pu2",
+        "unique": true,
+        "hull_dft": 0.005
+      },
+      "predicted_hull": {
+        "parent": 0.15300000000000002,
+        "reference_offsets_only": 0.05500000000000002,
+        "orientation_only": 0.15200000000000002,
+        "r24e": 0.05500000000000002,
+        "orb_v3": -0.0009999999999999731
+      }
+    },
+    "wbm-3-18396": {
+      "reference": {
+        "formula": "Cr5 Sn1",
+        "unique": true,
+        "hull_dft": 0.206
+      },
+      "predicted_hull": {
+        "parent": 0.384,
+        "reference_offsets_only": 0.32300000000000006,
+        "orientation_only": 0.384,
+        "r24e": 0.32300000000000006,
+        "orb_v3": 0.23
+      }
+    },
+    "wbm-4-26856": {
+      "reference": {
+        "formula": "Cr1 Mg1 Nd2 O6",
+        "unique": false,
+        "hull_dft": 0.01
+      },
+      "predicted_hull": {
+        "parent": 0.031999999999999584,
+        "reference_offsets_only": 0.020999999999999908,
+        "orientation_only": 0.043999999999999595,
+        "r24e": 0.031999999999999584,
+        "orb_v3": 0.01599999999999957
+      }
+    },
+    "wbm-4-31752": {
+      "reference": {
+        "formula": "Nd2 Ru2 Tl1",
+        "unique": true,
+        "hull_dft": 0.025
+      },
+      "predicted_hull": {
+        "parent": 0.159,
+        "reference_offsets_only": 0.064,
+        "orientation_only": 0.159,
+        "r24e": 0.064,
+        "orb_v3": 0.032
+      }
+    },
+    "wbm-4-27289": {
+      "reference": {
+        "formula": "Ni1 O6 Tm2 W1",
+        "unique": true,
+        "hull_dft": 0.271
+      },
+      "predicted_hull": {
+        "parent": 0.2509999999999999,
+        "reference_offsets_only": 0.22299999999999986,
+        "orientation_only": 0.2570000000000001,
+        "r24e": 0.22999999999999998,
+        "orb_v3": 0.2370000000000001
+      }
+    },
+    "wbm-4-17940": {
+      "reference": {
+        "formula": "Fe2 Li2 Pb2 Sr1",
+        "unique": true,
+        "hull_dft": 0.298
+      },
+      "predicted_hull": {
+        "parent": 0.429,
+        "reference_offsets_only": 0.40399999999999997,
+        "orientation_only": 0.43,
+        "r24e": 0.40399999999999997,
+        "orb_v3": 0.292
+      }
+    },
+    "wbm-4-39622": {
+      "reference": {
+        "formula": "Ge4 Os4 Zn4",
+        "unique": true,
+        "hull_dft": 0.108
+      },
+      "predicted_hull": {
+        "parent": 0.252,
+        "reference_offsets_only": 0.134,
+        "orientation_only": 0.253,
+        "r24e": 0.135,
+        "orb_v3": 0.11499999999999999
+      }
+    },
+    "wbm-4-21542": {
+      "reference": {
+        "formula": "Au1 Mn1 Pd2",
+        "unique": true,
+        "hull_dft": -0.062
+      },
+      "predicted_hull": {
+        "parent": 0.028999999999999998,
+        "reference_offsets_only": -0.0040000000000000036,
+        "orientation_only": 0.028999999999999998,
+        "r24e": -0.0040000000000000036,
+        "orb_v3": -0.057999999999999996
+      }
+    },
+    "wbm-4-5610": {
+      "reference": {
+        "formula": "Ca3 Co2 Pb3",
+        "unique": true,
+        "hull_dft": 0.181
+      },
+      "predicted_hull": {
+        "parent": 0.303,
+        "reference_offsets_only": 0.288,
+        "orientation_only": 0.304,
+        "r24e": 0.288,
+        "orb_v3": 0.178
+      }
+    },
+    "wbm-4-39856": {
+      "reference": {
+        "formula": "Nd1 Rh2 Zn1",
+        "unique": false,
+        "hull_dft": 0.1
+      },
+      "predicted_hull": {
+        "parent": 0.24199999999999997,
+        "reference_offsets_only": 0.08599999999999997,
+        "orientation_only": 0.24199999999999997,
+        "r24e": 0.08599999999999997,
+        "orb_v3": 0.09699999999999998
+      }
+    },
+    "wbm-4-13819": {
+      "reference": {
+        "formula": "Ga1 Np2",
+        "unique": false,
+        "hull_dft": -0.013
+      },
+      "predicted_hull": {
+        "parent": 0.383,
+        "reference_offsets_only": 0.296,
+        "orientation_only": 0.38,
+        "r24e": 0.293,
+        "orb_v3": 0.063
+      }
+    },
+    "wbm-4-8628": {
+      "reference": {
+        "formula": "Cr1 Ga1 Pt2",
+        "unique": false,
+        "hull_dft": 0.032
+      },
+      "predicted_hull": {
+        "parent": 0.12699999999999997,
+        "reference_offsets_only": 0.06099999999999994,
+        "orientation_only": 0.12799999999999997,
+        "r24e": 0.06099999999999994,
+        "orb_v3": 0.06099999999999994
+      }
+    },
+    "wbm-5-16959": {
+      "reference": {
+        "formula": "In1 La2 Pd3",
+        "unique": true,
+        "hull_dft": 0.366
+      },
+      "predicted_hull": {
+        "parent": 0.09600000000000003,
+        "reference_offsets_only": 0.034999999999999976,
+        "orientation_only": 0.09700000000000003,
+        "r24e": 0.034999999999999976,
+        "orb_v3": 0.08200000000000002
+      }
+    },
+    "wbm-5-13131": {
+      "reference": {
+        "formula": "Co5 Mn1",
+        "unique": true,
+        "hull_dft": 0.069
+      },
+      "predicted_hull": {
+        "parent": 0.14900000000000002,
+        "reference_offsets_only": 0.05800000000000001,
+        "orientation_only": 0.14900000000000002,
+        "r24e": 0.05800000000000001,
+        "orb_v3": 0.066
+      }
+    },
+    "wbm-5-22927": {
+      "reference": {
+        "formula": "Ho3 Re2 Zn1",
+        "unique": true,
+        "hull_dft": 0.368
+      },
+      "predicted_hull": {
+        "parent": 0.43299999999999994,
+        "reference_offsets_only": 0.263,
+        "orientation_only": 0.43299999999999994,
+        "r24e": 0.263,
+        "orb_v3": 0.37
+      }
+    },
+    "wbm-5-17259": {
+      "reference": {
+        "formula": "Hg4 Pr2",
+        "unique": false,
+        "hull_dft": -0.014
+      },
+      "predicted_hull": {
+        "parent": 0.09299999999999997,
+        "reference_offsets_only": 0.06,
+        "orientation_only": 0.09399999999999997,
+        "r24e": 0.061,
+        "orb_v3": -0.010000000000000009
+      }
+    },
+    "wbm-5-4751": {
+      "reference": {
+        "formula": "Co2 Ge4 Pa2",
+        "unique": false,
+        "hull_dft": -0.107
+      },
+      "predicted_hull": {
+        "parent": 0.006000000000000005,
+        "reference_offsets_only": -0.09299999999999997,
+        "orientation_only": 0.006000000000000005,
+        "r24e": -0.09299999999999997,
+        "orb_v3": -0.10499999999999998
+      }
+    },
+    "wbm-5-4316": {
+      "reference": {
+        "formula": "Ba2 Co4 Pt2",
+        "unique": false,
+        "hull_dft": 0.323
+      },
+      "predicted_hull": {
+        "parent": 0.352,
+        "reference_offsets_only": 0.293,
+        "orientation_only": 0.34400000000000003,
+        "r24e": 0.28500000000000003,
+        "orb_v3": 0.32
+      }
+    },
+    "wbm-5-10491": {
+      "reference": {
+        "formula": "In1 Nd2 Sn1",
+        "unique": false,
+        "hull_dft": 0.509
+      },
+      "predicted_hull": {
+        "parent": 0.202,
+        "reference_offsets_only": 0.06600000000000006,
+        "orientation_only": 0.202,
+        "r24e": 0.06600000000000006,
+        "orb_v3": 0.10199999999999998
+      }
+    },
+    "wbm-5-22019": {
+      "reference": {
+        "formula": "Re1 Sb2 V6",
+        "unique": false,
+        "hull_dft": 0.309
+      },
+      "predicted_hull": {
+        "parent": 0.432,
+        "reference_offsets_only": 0.28800000000000003,
+        "orientation_only": 0.436,
+        "r24e": 0.292,
+        "orb_v3": 0.303
+      }
+    },
+    "wbm-5-17685": {
+      "reference": {
+        "formula": "Rh2 Sn1 Ta1",
+        "unique": true,
+        "hull_dft": 0.14
+      },
+      "predicted_hull": {
+        "parent": 0.199,
+        "reference_offsets_only": -0.030000000000000027,
+        "orientation_only": 0.199,
+        "r24e": -0.030000000000000027,
+        "orb_v3": 0.08700000000000002
+      }
+    },
+    "wbm-5-16632": {
+      "reference": {
+        "formula": "Lu2 P2 Se2",
+        "unique": true,
+        "hull_dft": 0.061
+      },
+      "predicted_hull": {
+        "parent": 0.07199999999999984,
+        "reference_offsets_only": 0.02299999999999991,
+        "orientation_only": 0.08699999999999997,
+        "r24e": 0.03799999999999981,
+        "orb_v3": 0.02400000000000002
+      }
+    }
+  },
+  "unique_prototype_summary": {
+    "parent": {
+      "n": 39,
+      "finite": 39,
+      "true_stable": 5,
+      "TP": 1,
+      "FN": 4,
+      "FP": 1,
+      "TN": 33,
+      "F1": 0.28571428571428575,
+      "MAE": 0.11374358974358974,
+      "RMSE": 0.18697511146591758
+    },
+    "reference_offsets_only": {
+      "n": 39,
+      "finite": 39,
+      "true_stable": 5,
+      "TP": 5,
+      "FN": 0,
+      "FP": 2,
+      "TN": 32,
+      "F1": 0.8333333333333333,
+      "MAE": 0.06976923076923079,
+      "RMSE": 0.13950323955433383
+    },
+    "orientation_only": {
+      "n": 39,
+      "finite": 39,
+      "true_stable": 5,
+      "TP": 1,
+      "FN": 4,
+      "FP": 1,
+      "TN": 33,
+      "F1": 0.28571428571428575,
+      "MAE": 0.11841025641025639,
+      "RMSE": 0.19214577799160718
+    },
+    "r24e": {
+      "n": 39,
+      "finite": 39,
+      "true_stable": 5,
+      "TP": 5,
+      "FN": 0,
+      "FP": 2,
+      "TN": 32,
+      "F1": 0.8333333333333333,
+      "MAE": 0.06792307692307693,
+      "RMSE": 0.14159376706548518
+    },
+    "orb_v3": {
+      "n": 39,
+      "finite": 39,
+      "true_stable": 5,
+      "TP": 5,
+      "FN": 0,
+      "FP": 1,
+      "TN": 33,
+      "F1": 0.9090909090909091,
+      "MAE": 0.021025641025641015,
+      "RMSE": 0.053720549475014076
+    }
+  },
+  "phonons": {
+    "mp-1000": {
+      "parent": {
+        "kappa_tot_avg": 6.941166994217341,
+        "true_kappa_tot_avg": 8.7759194887,
+        "sre": 0.23347234189705865,
+        "srme": 0.2589777205801585
+      },
+      "candidate": {
+        "kappa_tot_avg": 7.459343764085784,
+        "true_kappa_tot_avg": 8.7759194887,
+        "sre": 0.1621871729598603,
+        "srme": 0.1915314673211572
+      },
+      "published_orb_v3_srme": 0.14972356411465643
+    },
+    "mp-10044": {
+      "parent": {
+        "kappa_tot_avg": 85.44485914146294,
+        "true_kappa_tot_avg": 1257.6942439325,
+        "sre": 1.745536828029471,
+        "srme": 1.7633475620200572
+      },
+      "candidate": {
+        "kappa_tot_avg": 103.2323839881863,
+        "true_kappa_tot_avg": 1257.6942439325,
+        "sre": 1.6965820732131267,
+        "srme": 1.7409215089272878
+      },
+      "published_orb_v3_srme": 0.34470647652743547
+    },
+    "mp-1007652": {
+      "parent": {
+        "kappa_tot_avg": null,
+        "true_kappa_tot_avg": 20.3818542601,
+        "sre": 2.0,
+        "srme": 2.0
+      },
+      "candidate": {
+        "kappa_tot_avg": 11.278472946197864,
+        "true_kappa_tot_avg": 20.3818542601,
+        "sre": 0.5750655231441381,
+        "srme": 0.8103948233651148
+      },
+      "published_orb_v3_srme": 0.24430052840058253
+    }
+  },
+  "md": {
+    "anthracene_293K_Sharma_S": {
+      "parent": {
+        "metrics": {
+          "rdf_error": 10.235759211141236,
+          "adf_error": 0.23524302179095843,
+          "vdos_error": 54.31220405962824,
+          "pressure_mae": null,
+          "pressure_wasserstein": null,
+          "pressure_error": null
+        },
+        "elapsed_seconds": 199.41536562500005,
+        "matched_ps": 0.25,
+        "reference_frames_used": 501,
+        "prediction_frames_used": 101,
+        "trajectory_sha256": "d0c7de04b9c5de90e307a502dadbcb133f679c98eb1dc03847252c1248757f1b"
+      },
+      "candidate": {
+        "metrics": {
+          "rdf_error": 11.102124637099166,
+          "adf_error": 0.2314609835992461,
+          "vdos_error": 54.37441798258328,
+          "pressure_mae": null,
+          "pressure_wasserstein": null,
+          "pressure_error": null
+        },
+        "elapsed_seconds": 2261.830045375,
+        "matched_ps": 0.25,
+        "reference_frames_used": 501,
+        "prediction_frames_used": 101,
+        "trajectory_sha256": "a52362131e6f5cb48fcb2a8e25e4c93900f79120a38cfcd7926757474acd5347"
+      }
+    },
+    "MAPbBr3_300K_Ivor_VASP": {
+      "parent": {
+        "metrics": {
+          "rdf_error": 37.32169672775977,
+          "adf_error": 23.04772753529708,
+          "vdos_error": 32.09017472982681,
+          "pressure_mae": 0.37838106094503243,
+          "pressure_wasserstein": 0.4362561341723591,
+          "pressure_error": 51.295428944092
+        },
+        "elapsed_seconds": 149.61456029199962,
+        "matched_ps": 0.25,
+        "reference_frames_used": 501,
+        "prediction_frames_used": 101,
+        "trajectory_sha256": "b13de89e23d8b43aede1e4f8d368995b7e689182a37d3f089965ec27c8faa568"
+      },
+      "candidate": {
+        "metrics": {
+          "rdf_error": 37.138007343613694,
+          "adf_error": 22.53533833341446,
+          "vdos_error": 31.75662148579847,
+          "pressure_mae": 0.36936731434460346,
+          "pressure_wasserstein": 0.44324562002810386,
+          "pressure_error": 54.809193494199704
+        },
+        "elapsed_seconds": 1961.9185906250004,
+        "matched_ps": 0.25,
+        "reference_frames_used": 501,
+        "prediction_frames_used": 101,
+        "trajectory_sha256": "2697b6177bda8442989e7c2ae9c3f91e6b99d838f6dc77c45637040d32a32e4a"
+      }
+    }
+  }
+}
