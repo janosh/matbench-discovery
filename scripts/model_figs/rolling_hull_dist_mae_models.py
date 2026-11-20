@@ -4,9 +4,12 @@
 import numpy as np
 
 from matbench_discovery import figs, payload_numerics
-from matbench_discovery.cli import cli_args, complete_models
+from matbench_discovery.cli import cli_args, complete_models, is_full_model_run
 from matbench_discovery.data import load_discovery_predictions
 from matbench_discovery.enums import MbdKey, TestSubset
+
+# validate --models/--full-roster before loading predictions, not at the write
+is_full_model_run()
 
 df_preds, df_each_pred, _df_each_err = load_discovery_predictions()
 test_subset = cli_args.test_subset

@@ -6,10 +6,13 @@ data set and separate true/false positives/negatives.
 
 # %%
 from matbench_discovery import STABILITY_THRESHOLD, figs, payload_numerics
-from matbench_discovery.cli import cli_args, complete_models
+from matbench_discovery.cli import cli_args, complete_models, is_full_model_run
 from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey
 from matbench_discovery.metrics import discovery
+
+# validate --models/--full-roster before loading predictions, not at the write
+is_full_model_run()
 
 test_subset = cli_args.test_subset
 models_to_plot = complete_models()

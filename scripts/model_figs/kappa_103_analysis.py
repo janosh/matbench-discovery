@@ -178,6 +178,8 @@ def model_payload(
 
 def main() -> int:
     """Build the kappa-103-analysis payload across all requested models."""
+    # validate --models/--full-roster before loading predictions, not at the write
+    full_roster = is_full_model_run()
     from matscikit.io import read_extxyz
 
     from matbench_discovery.phonons import read_kappa_json
@@ -207,7 +209,7 @@ def main() -> int:
 
     if not models:
         print("No models with kappa_103 predictions found")
-        if is_full_model_run():
+        if full_roster:
             return 1
 
     from matbench_discovery.metrics.phonons import (
