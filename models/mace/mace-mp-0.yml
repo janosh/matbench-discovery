@@ -162,6 +162,9 @@ metrics:
   geo_opt:
     pred_file:
       name: models/mace/mace-mp-0/2023-12-11-geo-opt.jsonl.gz
+      url: https://figshare.com/files/71690662
+      size: 95452273
+      md5: f6c7587f51da193b073c8b033523a25d
     rmsd_auc: 0.6422 # fraction
     symprec=1e-5:
       n_sym_ops_mae: 1.8427 # unitless
@@ -172,6 +175,9 @@ metrics:
       n_structures: 256957 # count
       analysis_file:
         name: models/mace/mace-mp-0/2023-12-11-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71690665
+        size: 6707888
+        md5: d06791018a1c9ae43ddd339e22b9f791
     symprec=1e-2:
       n_sym_ops_mae: 1.8498 # unitless
       symmetry_decrease: 0.0608 # fraction
@@ -181,6 +187,9 @@ metrics:
       n_structures: 256957 # count
       analysis_file:
         name: models/mace/mace-mp-0/2023-12-11-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71690668
+        size: 6734012
+        md5: 4086a2674c480fd932e651e574222aa0
   md:
     pred_file:
       name: models/mace/mace-mp-0/2026-06-28-md-metrics.csv.gz
