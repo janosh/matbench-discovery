@@ -70,7 +70,7 @@ hyperparams:
     cell_filter: FrechetCellFilter
     kappa:
       protocol: phonondb-v1
-      displacement_distance: 0.01 # legacy runs used 0.01 Å; the PhononDB-PBE reference uses 0.03 Å
+      displacement_distance: 0.03 # k_SRME run (init_phono3py default); a 0.03 Å rerun reproduces its Γ frequencies, 0.01 Å does not
   architecture:
     graph_construction_radius: 6.0
 
@@ -127,70 +127,69 @@ metrics:
       repeat_rel_change: 0.0
   discovery:
     pred_file:
-      name: models/mace/mace-mp-0/2023-12-11-discovery.csv.gz
-      url: https://figshare.com/files/66646193
-      size: 1322814
-      md5: 5e231a2b3a029714b984890a6fbe5002
+      name: models/mace/mace-mp-0/2026-11-19-discovery.csv.gz
+      url: https://figshare.com/files/71653786
+      size: 1324336
+      md5: 3bfe7826a613684a92a7dd28643cac9f
     full_test_set:
       F1: 0.668 # fraction
-      DAF: 3.4 # dimensionless
-      Precision: 0.583 # fraction
-      Recall: 0.781 # fraction
+      DAF: 3.411 # dimensionless
+      Precision: 0.584 # fraction
+      Recall: 0.78 # fraction
       Accuracy: 0.867 # fraction
-      TP: 34420 # count
-      FP: 24576 # count
-      TN: 188295 # count
-      FN: 9672 # count
+      TP: 34290 # count
+      FP: 24469 # count
+      TN: 188537 # count
+      FN: 9667 # count
       MAE: 0.055 # eV/atom
       RMSE: 0.099 # eV/atom
-      R2: 0.698 # dimensionless
+      R2: 0.699 # dimensionless
       missing_preds: 38 # count
     unique_prototypes:
       F1: 0.669 # fraction
-      DAF: 3.777 # dimensionless
+      DAF: 3.793 # dimensionless
       Precision: 0.577 # fraction
       Recall: 0.796 # fraction
-      Accuracy: 0.878 # fraction
-      TP: 26582 # count
-      FP: 19457 # count
-      TN: 162657 # count
-      FN: 6792 # count
+      Accuracy: 0.879 # fraction
+      TP: 26451 # count
+      FP: 19352 # count
+      TN: 162894 # count
+      FN: 6791 # count
       MAE: 0.057 # eV/atom
       RMSE: 0.101 # eV/atom
-      R2: 0.697 # dimensionless
+      R2: 0.698 # dimensionless
       missing_preds: 34 # count
   geo_opt:
     pred_file:
       name: models/mace/mace-mp-0/2023-12-11-geo-opt.jsonl.gz
-      url: https://figshare.com/files/70325178
-      size: 112613820
-      md5: a3d7c066ca81de0bc6505370a9072a7a
+      url: https://figshare.com/files/71690662
+      size: 95452273
+      md5: f6c7587f51da193b073c8b033523a25d
+    rmsd_auc: 0.6422 # fraction
     symprec=1e-5:
-      rmsd: 0.0915 # unitless
-      n_sym_ops_mae: 1.838 # unitless
-      symmetry_decrease: 0.0335 # fraction
-      symmetry_match: 0.7385 # fraction
-      symmetry_increase: 0.2239 # fraction
+      n_sym_ops_mae: 1.8427 # unitless
+      symmetry_decrease: 0.034 # fraction
+      symmetry_match: 0.7369 # fraction
+      symmetry_increase: 0.2249 # fraction
       symmetry_lateral: 0.0041 # fraction
-      n_structures: 249254 # count
+      n_structures: 256957 # count
       analysis_file:
-        name: models/mace/mace-mp-0/2023-12-11-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333848
-        size: 6484295
-        md5: 67dd4d3e15f76e0cfb53466e9a3d8b87
+        name: models/mace/mace-mp-0/2023-12-11-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71690665
+        size: 6707888
+        md5: d06791018a1c9ae43ddd339e22b9f791
     symprec=1e-2:
-      rmsd: 0.0915 # unitless
-      n_sym_ops_mae: 1.8464 # unitless
-      symmetry_decrease: 0.0599 # fraction
-      symmetry_match: 0.8112 # fraction
-      symmetry_increase: 0.122 # fraction
-      symmetry_lateral: 0.0069 # fraction
-      n_structures: 249254 # count
+      n_sym_ops_mae: 1.8498 # unitless
+      symmetry_decrease: 0.0608 # fraction
+      symmetry_match: 0.811 # fraction
+      symmetry_increase: 0.1211 # fraction
+      symmetry_lateral: 0.0071 # fraction
+      n_structures: 256957 # count
       analysis_file:
-        name: models/mace/mace-mp-0/2023-12-11-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333851
-        size: 6509794
-        md5: f01b85acc4d685f232835dd237373836
+        name: models/mace/mace-mp-0/2023-12-11-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71690668
+        size: 6734012
+        md5: 4086a2674c480fd932e651e574222aa0
   md:
     pred_file:
       name: models/mace/mace-mp-0/2026-06-28-md-metrics.csv.gz
@@ -228,9 +227,9 @@ metrics:
           md5: 243b42fc775e6956e24b07173162fa38
         force_file:
           name: models/mace/mace-mp-0/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71263195
-          size: 1927178
-          md5: c00c2bd32f79c7f2ba54d4dcb16a5ece
+          url: https://figshare.com/files/71630152
+          size: 3522764
+          md5: 1497f486701014a9f0bb80f803fb1765
         run_info_file:
           name: models/mace/mace-mp-0/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334511

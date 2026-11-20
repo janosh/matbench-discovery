@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Any, Final, TypeIs
 from pymatviz.enums import Key
 
 if TYPE_CHECKING:
-    from ase import Atoms
+    from matscikit import Structure
 
 # === Run-cost provenance ===
 # Where a cost block came from: measured by our current runners and recorded in the
@@ -312,6 +312,21 @@ def slurm_shard_selection(
     return n_shards, shard_index
 
 
+# Element sets of registered models restricted to part of the periodic table (the
+# model registry declares no supported elements); other models count as universal.
+RESTRICTED_MODEL_ELEMENTS: Final = {
+    "emt": frozenset({"H", "Al", "Ni", "Cu", "Pd", "Ag", "Pt", "Au"}),
+}
+
+
+def model_supports_elements(model_key: str, symbols: Iterable[str]) -> bool:
+    """Whether model_key can evaluate a structure with these element symbols, used
+    by the runners' dry runs to pick structures a restricted debug model handles.
+    """
+    elements = RESTRICTED_MODEL_ELEMENTS.get(model_key)
+    return elements is None or set(symbols) <= elements
+
+
 def effective_shard_args(
     n_shards: int | None,
     shard_index: int | None,
@@ -358,11 +373,11 @@ def material_id_hash(material_ids: Sequence[str]) -> str:
     return hashlib.sha256(joined_ids.encode()).hexdigest()
 
 
-def material_id_from_atoms(atoms: Atoms) -> str:
-    """Extract the material ID from an ASE Atoms info mapping."""
+def material_id_from_atoms(atoms: Structure) -> str:
+    """Extract the material ID from a structure's info mapping."""
     material_id = atoms.info.get(str(Key.mat_id))
     if not isinstance(material_id, str) or not material_id:
-        raise ValueError(f"No {Key.mat_id} in Atoms.info keys {sorted(atoms.info)}")
+        raise ValueError(f"No {Key.mat_id} in Structure.info keys {sorted(atoms.info)}")
     return material_id
 
 

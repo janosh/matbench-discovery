@@ -8,6 +8,8 @@ Factories import packages lazily so listing models needs only core deps.
 Registry keys are Model enum names so metrics write to the right YAML.
 """
 
+from __future__ import annotations
+
 import argparse
 import functools
 import hashlib
@@ -23,14 +25,19 @@ import zipfile
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from importlib.metadata import PackageNotFoundError, requires, version
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit
 
-from ase.calculators.calculator import Calculator
 from filelock import FileLock
 
 from matbench_discovery import DEFAULT_CACHE_DIR, file_digest
 
+if TYPE_CHECKING:
+    from ase.calculators.calculator import Calculator
+    from matscikit.model import Model as ForceModel
+
+# model factories return an ASE calculator or a native matscikit model
+CalcFactory = Callable[..., "Calculator | ForceModel"]
 CHECKPOINT_DIR = f"{DEFAULT_CACHE_DIR}/md-checkpoints"
 # runner --dtype default; factories without a dtype parameter only accept this value
 DEFAULT_DTYPE = "float64"
@@ -81,7 +88,7 @@ def download_checkpoint(model_key: str, ext: str | None = None) -> str:
     download_file. Cached after the first call.
 
     Args:
-        model_key: Model enum name whose YAML carries checkpoint_url.
+        model_key: ForceModel enum name whose YAML carries checkpoint_url.
         ext: Force this file extension (e.g. '.pth' for deepmd, whose loader picks
             its backend by suffix). Defaults to the extension parsed from the URL.
     """
@@ -224,29 +231,26 @@ def _run_to_atomic_output(
                 os.remove(tmp_dest)
 
 
-# Extras the shared runner environments install on top of matbench-discovery's
-# base dependencies (run_kappa.py needs matbench-discovery[phonons,symmetry]).
-RUNNER_EXTRAS = ("phonons", "symmetry")
+# Installed by every runner's PEP 723 header as the interface to calculator-based
+# models (matbench-discovery itself does not depend on it), so YAML pins are dropped.
+RUNNER_INTERFACE_PACKAGES = ("ase",)
 
 
 @functools.cache
 def runner_provided_packages() -> frozenset[str]:
     """Canonical names of packages the shared runner environments already install.
 
-    These are matbench-discovery itself plus its base and RUNNER_EXTRAS requirements
+    These are matbench-discovery itself plus its base requirements
     (a superset of every runner's PEP 723 header). Model YAML pins of these packages
     are submission provenance only: the runners need their own (Python 3.14) versions.
     """
     from packaging.requirements import Requirement
     from packaging.utils import canonicalize_name
 
-    names = {"matbench-discovery"}
+    names = {"matbench-discovery", *RUNNER_INTERFACE_PACKAGES}
     for requirement_str in requires("matbench-discovery") or ():
         requirement = Requirement(requirement_str)
-        marker = requirement.marker
-        if marker is None or any(
-            marker.evaluate({"extra": extra}) for extra in RUNNER_EXTRAS
-        ):
+        if requirement.marker is None:
             names.add(canonicalize_name(requirement.name))
     return frozenset(names)
 
@@ -255,7 +259,7 @@ def runner_provided_packages() -> frozenset[str]:
 class CalcSpec:
     """A registered MLIP calculator and its YAML-owned runtime environment."""
 
-    make_calc: Callable[..., Calculator]
+    make_calc: CalcFactory
     deps: tuple[str, ...] = ()  # YAML environment.dependencies (submission provenance)
     find_links: tuple[str, ...] = ()  # uv --find-links (e.g. PyG/dgl wheel pages)
     extra_index_url: tuple[str, ...] = ()  # uv --extra-index-url entries
@@ -268,7 +272,7 @@ class CalcSpec:
         """YAML dependencies minus packages the shared runner env already provides.
 
         Runners pin their own Python (>=3.14 per their PEP 723 headers) plus ase,
-        numpy, pymatgen, etc. via matbench-discovery, so only model-specific
+        numpy, matscikit, etc. via matbench-discovery, so only model-specific
         calculator packages (incl. torch) are layered on with uv --with.
         """
         from packaging.requirements import Requirement
@@ -303,7 +307,7 @@ class CalcSpec:
 
 def _runtime_calc_spec(
     model_key: str,
-    make_calc: Callable[..., Calculator],
+    make_calc: CalcFactory,
     *,
     requires_checkpoint: bool = False,
     auto_checkpoint: bool = False,
@@ -336,7 +340,7 @@ def _runtime_calc_spec(
 
 def _checkpoint_spec(
     model_key: str,
-    make_calc: Callable[..., Calculator],
+    make_calc: CalcFactory,
     *,
     ext: str | None = None,
     requires_checkpoint: bool = False,
@@ -1053,9 +1057,9 @@ def _bam(device: str, checkpoint: str) -> Calculator:
     return RACECalculator(model=checkpoint, device=device)
 
 
-def _emt(device: str) -> Calculator:  # noqa: ARG001 - CPU only, debug model
-    """Load ASE's EMT calculator (debug model, CPU only)."""
-    from ase.calculators.emt import EMT
+def _emt(device: str) -> ForceModel:  # noqa: ARG001 - CPU only, debug model
+    """Load matscikit's EMT model (debug model, CPU only)."""
+    from matscikit import EMT
 
     return EMT()
 
@@ -1080,7 +1084,7 @@ _ALPHANET_PRETRAINED = (
 
 def _deepmd_spec(
     model_key: str,
-    make_calc: Callable[..., Calculator] = _deepmd,
+    make_calc: CalcFactory = _deepmd,
     *,
     ext: str = ".pth",
 ) -> Callable[[], CalcSpec]:
@@ -1269,13 +1273,16 @@ def resolve_cli_calculator(
         parser.error(f"{exc}, see --list-models")
 
 
-def load_calculator(
+def load_model(
     model_key: str,
     device: str | None = None,
     dtype: str = DEFAULT_DTYPE,
     checkpoint: str | None = None,
-) -> Calculator:
-    """Instantiate the ASE calculator for a registered model.
+) -> ForceModel:
+    """Instantiate a registered model behind matscikit's ``compute`` protocol.
+
+    ASE calculators (what most MLIP packages ship) are wrapped in
+    ``matscikit.interop.AseCalculatorModel``; native matscikit models pass through.
 
     Args:
         model_key: Key into CALCULATORS (a Model enum name).
@@ -1288,7 +1295,7 @@ def load_calculator(
         checkpoint: Explicit local model artifact for factories that support one.
 
     Returns:
-        Calculator: The model's ASE calculator.
+        ForceModel: Object with ``compute(structures, properties) -> list[dict]``.
     """
     model_key = resolve_calculator_key(model_key)
     device = resolve_device(model_key, device)
@@ -1310,7 +1317,13 @@ def load_calculator(
                 f"{model_key} does not support an explicit checkpoint override"
             )
         kwargs["checkpoint"] = checkpoint
-    return calc_spec.make_calc(device, **kwargs)
+    calculator = calc_spec.make_calc(device, **kwargs)
+    from matscikit.interop import AseCalculatorModel
+    from matscikit.model import Model
+
+    if isinstance(calculator, Model):  # runtime-checkable protocol: has compute()
+        return calculator
+    return AseCalculatorModel(calculator)
 
 
 def load_calculator_with_runtime(
@@ -1318,8 +1331,8 @@ def load_calculator_with_runtime(
     device: str | None = None,
     dtype: str = DEFAULT_DTYPE,
     checkpoint: str | None = None,
-) -> tuple[Calculator, dict[str, Any]]:
-    """load_calculator() plus the per-process run provenance every task runner
+) -> tuple[ForceModel, dict[str, Any]]:
+    """load_model() plus the per-process run provenance every task runner
     records with its costs: where the model actually runs (hpc.detect_runtime),
     acceleration flags, the factory call's wall time (lazy JIT warm-up stays in the
     tasks' steady-state run time), package versions and host/Slurm identity.
@@ -1335,10 +1348,10 @@ def load_calculator_with_runtime(
     model_key = resolve_calculator_key(model_key)
     device = resolve_device(model_key, device)
     load_start = time.perf_counter()
-    calculator = load_calculator(
-        model_key, device=device, dtype=dtype, checkpoint=checkpoint
-    )
+    model = load_model(model_key, device=device, dtype=dtype, checkpoint=checkpoint)
     load_time_sec = round(time.perf_counter() - load_start, 2)
+    # probe the factory's own object: AseCalculatorModel wraps it as .calculator
+    calculator = getattr(model, "calculator", model)
     runtime: dict[str, Any] = {
         "cost_source": "runner",
         **detect_runtime(calculator, requested_device=device),
@@ -1367,14 +1380,12 @@ def load_calculator_with_runtime(
     model_packages = (Requirement(dep).name for dep in calc_spec.deps)
     runtime["versions"] = package_versions(
         (
-            *("ase", "numpy", "pymatgen", "torch", "jax", "tensorflow", "scipy"),
-            # kappa: seekpath alone fixes the band path, labels and q-point sampling
-            *("matbench-discovery", "phonopy", "phono3py", "seekpath", "spglib"),
-            *("moyopy", *model_packages),
+            *("ase", "numpy", "matscikit", "torch", "jax", "tensorflow", "scipy"),
+            *("matbench-discovery", *model_packages),
         )
     )
     print(
         f"Loaded {model_key} on {runtime['hardware']} ({runtime['device']}, "
         f"{runtime.get('dtype', 'dtype n/a')}) in {load_time_sec} s"
     )
-    return calculator, runtime
+    return model, runtime

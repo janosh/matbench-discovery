@@ -15,10 +15,10 @@ from typing import TYPE_CHECKING, Any, cast
 import numpy as np
 import pandas as pd
 import pytest
-from ase import Atoms
+from matscikit import EMT, AnharmonicPhonons, Structure
 from pymatviz.enums import Key
 
-from matbench_discovery import file_digest
+from matbench_discovery import MATSCIKIT_EXTENSION, file_digest
 from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.phonons import force_sets
 from matbench_discovery.phonons.adapters import (
@@ -51,11 +51,11 @@ from matbench_discovery.phonons.schema import (
     normalize_kappa_result,
     voigt_6_to_full_3x3,
 )
+from matbench_discovery.phonons.thermal_conductivity import KappaCalculation
 from tests.utils import make_harmonic_record, patch_model_metadata
 
 if TYPE_CHECKING:
-    from ase.calculators.calculator import Calculator
-    from phono3py.api_phono3py import Phono3py
+    from matscikit.model import Model as ForceModel
 
     from matbench_discovery.phonons.pipeline import MergedKappaRun
 
@@ -72,22 +72,22 @@ class ComputationStub:
     def __call__(
         self,
         *,
-        atoms: Atoms,
-        calculator: Calculator,
+        atoms: Structure,
+        model: ForceModel,
         settings: KappaSettings,
         adapter: StandardKappaAdapter,
         log_file: str | None = None,
         max_fc3_evaluations: int | None = None,
     ) -> KappaComputation:
         """Return one normalized result and optional force sets."""
-        del calculator, adapter, log_file
+        del model, adapter, log_file
         material_id = str(atoms.info[Key.mat_id])
         self.material_ids.append(material_id)
         self.settings.append(settings)
         self.max_fc3_evaluations.append(max_fc3_evaluations)
         result = {
             str(Key.mat_id): material_id,
-            str(Key.formula): atoms.get_chemical_formula(),
+            str(Key.formula): atoms.composition.formula,
             str(Key.has_imag_ph_modes): False,
             str(MbdKey.kappa_tot_rta): [[1, 2, 3, 4, 5, 6]],
             "errors": [],
@@ -103,48 +103,51 @@ class ComputationStub:
 
 
 def make_force_set(n_atoms: int) -> dict[str, Any]:
-    """Return a valid force set with constant FC2 (2) and FC3 (3) forces."""
+    """Return a force set in ``force_set()`` layout with constant FC2 (2) and FC3 (3)
+    forces.
+    """
+
+    def order(force: float) -> dict[str, Any]:
+        """One displacement of atom 0 and its constant forces."""
+        return {
+            "lattice": np.eye(3),
+            "frac_coords": np.zeros((n_atoms, 3)),
+            "distance": 0.03,
+            "atoms": np.zeros(1, dtype=int),
+            "vectors": np.array([[0.03, 0, 0]]),
+            "forces": np.full((1, n_atoms, 3), force),
+        }
+
     return {
         "unitcell": {
-            "cell": np.eye(3),
-            "scaled_positions": np.zeros((n_atoms, 3)),
+            "lattice": np.eye(3),
+            "frac_coords": np.zeros((n_atoms, 3)),
             "numbers": np.ones(n_atoms, dtype=int),
             "masses": np.ones(n_atoms),
         },
-        "supercell_matrix": np.eye(3),
-        "phonon_supercell_matrix": np.eye(3),
+        "supercell_matrix": np.eye(3, dtype=int),
+        "phonon_supercell_matrix": np.eye(3, dtype=int),
         "primitive_matrix": np.eye(3),
         "symprec": 1e-5,
-        "fc2_dataset": {"natom": n_atoms, "first_atoms": []},
-        "fc2_forces": np.full((1, n_atoms, 3), 2),
-        "fc3_dataset": {"natom": n_atoms, "first_atoms": []},
-        "fc3_forces": np.full((1, n_atoms, 3), 3),
+        "fc2": order(2),
+        "fc3": {
+            **order(3),
+            "pair_parents": np.zeros(0, dtype=int),
+            "pair_atoms": np.zeros(0, dtype=int),
+            "pair_vectors": np.zeros((0, 3)),
+            "pair_forces": np.zeros((0, n_atoms, 3)),
+        },
     }
 
 
-class Phono3pyStub:
-    """Minimal mutable phono3py state used by the orchestration test."""
-
-    def __init__(self) -> None:
-        """Initialize without force constants."""
-        self.forces: np.ndarray | None = None
-        self.unitcell = SimpleNamespace(
-            cell=np.eye(3), scaled_positions=np.zeros((1, 3)), numbers=[1], masses=[1.0]
-        )
-        self.supercell_matrix = self.phonon_supercell_matrix = np.eye(3)
-        self.primitive_matrix = np.eye(3)
-        self.symmetry = SimpleNamespace(tolerance=1e-5)
-        self.phonon_dataset = {
-            "first_atoms": [{"number": 0, "displacement": [0.01, 0, 0]}]
-        }
-        self.dataset = {"first_atoms": []}
-        # one-q-point mesh: the regular grid's only point maps to BZ point 0 (Gamma)
-        self.grid = SimpleNamespace(grg2bzg=np.array([0]))
-
-    def produce_fc3(self, *, symmetrize_fc3r: bool) -> None:
-        """Validate FC3 production after forces are assigned."""
-        assert symmetrize_fc3r is True
-        assert self.forces is not None
+def make_calc_stub() -> KappaCalculation:
+    """Minimal phonon state used by the orchestration test (one H atom in a 2 Å cube,
+    one-q-point mesh).
+    """
+    unitcell = Structure(2 * np.eye(3), ["H"], [[0.0, 0.0, 0.0]])
+    phonons = AnharmonicPhonons(unitcell, np.eye(3, dtype=int))
+    phonons.generate_displacements(distance=0.03)
+    return KappaCalculation(phonons, (1, 1, 1))
 
 
 class PipelineAdapterStub(StandardKappaAdapter):
@@ -152,21 +155,21 @@ class PipelineAdapterStub(StandardKappaAdapter):
 
     def __init__(self, fc2_frequencies: tuple[float, ...]) -> None:
         """Initialize deterministic phono state, FC2 frequencies, and call counters."""
-        self.phono3py = Phono3pyStub()
+        self.calc = make_calc_stub()
         self.fc2_frequencies = fc2_frequencies
         self.n_fc3_calls = 0
         self.n_harmonic_calls = 0
 
     def relax(
         self,
-        atoms: Atoms,
-        calculator: Calculator,
+        atoms: Structure,
+        model: ForceModel,
         settings: KappaSettings,
         *,
         log_file: str | None,
     ) -> RelaxationResult:
         """Return the structure unchanged with stable symmetry."""
-        del calculator, settings, log_file
+        del model, settings, log_file
         return RelaxationResult(
             atoms=atoms,
             initial_spg_num=225,
@@ -176,52 +179,53 @@ class PipelineAdapterStub(StandardKappaAdapter):
             n_steps=0,
         )
 
-    def init_phono3py(self, atoms: Atoms, settings: KappaSettings) -> Phono3py:
-        """Return the deterministic phono state."""
+    def init_phonons(
+        self, atoms: Structure, settings: KappaSettings
+    ) -> KappaCalculation:
+        """Return a fresh deterministic phonon state."""
         del atoms, settings
-        return cast("Phono3py", self.phono3py)
+        self.calc = make_calc_stub()
+        return self.calc
 
     def calculate_fc2(
-        self,
-        phono3py: Phono3py,
-        calculator: Calculator,
-        settings: KappaSettings,
-    ) -> tuple[Phono3py, np.ndarray, np.ndarray]:
-        """Return configured mode frequencies and a deterministic FC2 force set."""
-        del calculator, settings
-        return phono3py, np.ones((1, 1, 3)), np.array([self.fc2_frequencies])
+        self, calc: KappaCalculation, model: ForceModel, settings: KappaSettings
+    ) -> np.ndarray:
+        """Fit FC2 to unit forces and return the configured mode frequencies."""
+        del model, settings
+        n_sets = len(calc.phonons.phonon_displacements)
+        calc.phonons.produce_fc2(np.ones((n_sets, 1, 3)), symmetrize=False)
+        return np.array([self.fc2_frequencies])
 
-    def harmonic_phonons(
-        self, phono3py: Phono3py, settings: KappaSettings
-    ) -> dict[str, Any]:
-        """Return a synthetic harmonic sidecar without running phonopy."""
-        del phono3py, settings
+    def harmonic_phonons(self, calc: object, settings: KappaSettings) -> dict[str, Any]:
+        """Return a synthetic harmonic sidecar without running phonon analyses."""
+        del calc, settings
         self.n_harmonic_calls += 1
         return make_harmonic_record(1)
 
     def calculate_fc3(
         self,
-        phono3py: Phono3py,
-        calculator: Calculator,
+        calc: KappaCalculation,
+        model: ForceModel,
         settings: KappaSettings,
         *,
         max_evaluations: int | None = None,
-    ) -> np.ndarray:
-        """Record, assign and return one deterministic FC3 force set."""
-        del calculator, settings, max_evaluations
+    ) -> None:
+        """Record the call and fit FC3 to forces of 3 eV/Å."""
+        del model, settings, max_evaluations
         self.n_fc3_calls += 1
-        phono3py.forces = np.full((1, 1, 3), 3.0)
-        return phono3py.forces
+        n_sets = len(calc.phonons.displacements)
+        calc.phonons.produce_fc3(np.full((n_sets, 1, 3), 3.0), symmetrize=False)
 
 
-def make_atoms_by_id() -> dict[str, Atoms]:
+def make_atoms_by_id() -> dict[str, Structure]:
     """Build a small insertion-ordered structure mapping with varied costs."""
     atoms_by_id = {}
     for material_idx, n_atoms in enumerate((1, 4, 2, 3)):
-        atoms = Atoms("H" * n_atoms, positions=np.zeros((n_atoms, 3)))
         material_id = f"mp-{material_idx}"
-        atoms.info[Key.mat_id] = material_id
-        atoms_by_id[material_id] = atoms
+        positions = np.arange(n_atoms)[:, None] * np.ones((1, 3))
+        atoms_by_id[material_id] = Structure(
+            10 * np.eye(3), ["H"] * n_atoms, positions, info={Key.mat_id: material_id}
+        )
     return atoms_by_id
 
 
@@ -244,7 +248,7 @@ def shard_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> SimpleNamespac
     computation = ComputationStub()
     monkeypatch.setattr(pipeline, "calculate_kappa_for_structure", computation)
     atoms_by_id = make_atoms_by_id()
-    calculator = cast("Calculator", object())
+    model = cast("ForceModel", object())
     shard_dir = f"{tmp_path}/shards"
 
     def run(
@@ -259,7 +263,7 @@ def shard_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> SimpleNamespac
     ) -> tuple[KappaRecord, ...]:
         """Run one shard with the shared deterministic test environment."""
         return run_kappa_shard(
-            calculator=calculator,
+            model=model,
             model_key="test_model",
             atoms_by_id=atoms_by_id,
             dataset_path=dataset_path,
@@ -278,7 +282,7 @@ def shard_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> SimpleNamespac
         dataset_path=dataset_path,
         atoms_by_id=atoms_by_id,
         computation=computation,
-        calculator=calculator,
+        model=model,
         shard_dir=shard_dir,
         run=run,
     )
@@ -297,21 +301,19 @@ def test_kappa_settings_validate_and_canonicalize() -> None:
     assert settings.temperatures == (300.0,)
     assert settings.is_plusminus == "auto"
     # default must match the 0.03 Å displacements of the PhononDB-PBE reference force
-    # sets; legacy runs at 0.01 Å pin that value explicitly in their model YAML
+    # sets; legacy runs at 0.01 Å pin that value explicitly in their model YAML, and
+    # k_SRME-era runs like MACE-MP-0 pin the 0.03 Å they actually used
     assert settings.displacement_distance == 0.03
-    assert KappaSettings.from_model("mace_mp_0").displacement_distance == 0.01
+    assert KappaSettings.from_model("hienet").displacement_distance == 0.01
+    for model_key in ("mace_mp_0", "dpa3_v1_mptrj", "dpa3_v1_openlam"):
+        assert KappaSettings.from_model(model_key).displacement_distance == 0.03
     assert settings.digest == KappaSettings.from_mapping(raw_settings).digest
 
     raw_settings.pop("protocol")
     with pytest.raises(ValueError, match="protocol must be"):
         KappaSettings.from_mapping(raw_settings)
-    with pytest.raises(ValueError, match="batch_size"):
-        KappaSettings(batch_size=2).validate_for_adapter("standard")
-    KappaSettings(batch_size=2).validate_for_adapter("pet")
     with pytest.raises(ValueError, match="mutually exclusive"):
-        KappaSettings(batch_size=2, max_atoms_per_batch=100).validate_for_adapter(
-            "equflash"
-        )
+        KappaSettings(batch_size=2, max_atoms_per_batch=100)
 
 
 @pytest.mark.parametrize(
@@ -323,7 +325,7 @@ def test_kappa_settings_validate_and_canonicalize() -> None:
         ("max_steps", -1, ValueError, "non-negative integer"),
         ("batch_size", 0, ValueError, "positive integer"),
         ("max_atoms_per_batch", 0, ValueError, "positive integer or null"),
-        ("ase_filter", "invalid", ValueError, "Unknown ASE cell filter"),
+        ("ase_filter", "invalid", ValueError, "Unknown cell filter"),
         ("relaxation_mode", "three-stage", ValueError, "must be one of"),
         ("is_plusminus", "sometimes", TypeError, "boolean or 'auto'"),
     ],
@@ -655,21 +657,17 @@ def test_calculate_kappa_for_structure_runs_shared_physics_flow(
     from matbench_discovery.phonons import thermal_conductivity
 
     def calculate_conductivity_stub(
-        phono3py: Phono3py, temperatures: tuple[float, ...]
-    ) -> tuple[Phono3py, dict[str, Any], object]:
+        calc: object, temperatures: tuple[float, ...]
+    ) -> dict[str, Any]:
         """Return one finite conductivity result without solving the BTE."""
+        del calc
         assert temperatures == (300.0,)
-        return (
-            phono3py,
-            {str(MbdKey.kappa_tot_rta): np.eye(3).tolist()},
-            object(),
-        )
+        return {str(MbdKey.kappa_tot_rta): np.eye(3).tolist()}
 
     monkeypatch.setattr(
         thermal_conductivity, "calculate_conductivity", calculate_conductivity_stub
     )
-    atoms = Atoms("H", cell=np.eye(3), positions=[[0, 0, 0]], pbc=True)
-    atoms.info[Key.mat_id] = "mp-core"
+    atoms = Structure(np.eye(3), ["H"], [[0, 0, 0]], info={Key.mat_id: "mp-core"})
     adapter = PipelineAdapterStub(fc2_frequencies=fc2_frequencies)
     expected_skipped |= harmonic_only
     if harmonic_failure:
@@ -681,7 +679,7 @@ def test_calculate_kappa_for_structure_runs_shared_physics_flow(
         monkeypatch.setattr(adapter, "harmonic_phonons", fail_harmonic)
     computation = calculate_kappa_for_structure(
         atoms=atoms,
-        calculator=cast("Calculator", object()),
+        model=cast("ForceModel", object()),
         settings=KappaSettings(
             relaxation_mode="none",
             max_steps=0,
@@ -700,11 +698,24 @@ def test_calculate_kappa_for_structure_runs_shared_physics_flow(
             computation.result[MbdKey.kappa_tot_rta], np.eye(3)
         )
     assert computation.forces is not None
-    assert computation.forces["fc2_dataset"] == adapter.phono3py.phonon_dataset
-    assert computation.forces["fc2_forces"].shape == (1, 1, 3)
-    fc3_forces = computation.forces["fc3_forces"]
-    assert (0 if fc3_forces is None else fc3_forces.size) == adapter.n_fc3_calls * 3
-    assert (computation.forces["fc3_dataset"] is None) is (fc3_forces is None)
+    phonons = adapter.calc.phonons
+    fc2, fc3 = computation.forces["fc2"], computation.forces["fc3"]
+    np.testing.assert_array_equal(
+        fc2["atoms"], [atom for atom, _vector in phonons.phonon_displacements]
+    )
+    assert fc2["distance"] == 0.03
+    np.testing.assert_array_equal(fc2["forces"], 1.0)
+    assert (fc3 is None) is expected_skipped
+    if fc3 is not None:
+        n_configs = len(fc3["forces"]) + len(fc3["pair_forces"])
+        assert n_configs == len(phonons.displacements)
+        np.testing.assert_array_equal(fc3["forces"], 3.0)
+    # datasets record the matscikit supercell whose atom order the forces follow
+    for order in (fc2, fc3):
+        if order is None:
+            continue
+        np.testing.assert_array_equal(order["frac_coords"], [[0.0, 0.0, 0.0]])
+        np.testing.assert_array_equal(order["lattice"], 2 * np.eye(3))
     # harmonic data is recorded for every material with an FC2, imaginary modes or not
     if harmonic_failure:
         assert computation.phonons is None
@@ -726,14 +737,14 @@ def test_calculate_kappa_for_structure_runs_shared_physics_flow(
         monkeypatch.setattr(adapter, "calculate_fc3", fail_fc3)
         failed = calculate_kappa_for_structure(
             atoms=atoms,
-            calculator=cast("Calculator", object()),
+            model=cast("ForceModel", object()),
             settings=KappaSettings(relaxation_mode="none", save_forces=True),
             adapter=adapter,
         )
         assert failed.error == "ForceConstantError: RuntimeError: fc3 failed"
         assert failed.forces is not None
-        np.testing.assert_array_equal(failed.forces["fc2_forces"], np.ones((1, 1, 3)))
-        assert failed.forces["fc3_forces"] is None
+        np.testing.assert_array_equal(failed.forces["fc2"]["forces"], 1.0)
+        assert failed.forces["fc3"] is None
         assert (failed.phonons is None) is harmonic_failure
 
 
@@ -741,23 +752,25 @@ def test_skipped_conductivity_rows_store_regular_grid_spectrum() -> None:
     """Rows without conductivity store each regular-grid q-point once, so their
     unweighted spectrum matches the weighted irreducible grid of computed rows.
     """
-    from ase.build import bulk
-    from ase.calculators.emt import EMT
-
     from matbench_discovery.metrics.phonons import phonon_spectrum_w1
 
-    atoms = bulk("Cu", "fcc", a=3.615)
+    a = 3.615
     q_point_mesh = (4, 4, 4)  # 64 regular-grid points vs 89 BZ-grid points
-    atoms.info |= {
-        Key.mat_id: "mp-30",
-        "fc2_supercell": 2 * np.eye(3),
-        "fc3_supercell": np.eye(3),
-        "q_point_mesh": q_point_mesh,
-    }
+    atoms = Structure(
+        a / 2 * np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]]),
+        ["Cu"],
+        [[0, 0, 0]],
+        info={
+            Key.mat_id: "mp-30",
+            "fc2_supercell": 2 * np.eye(3),
+            "fc3_supercell": 3 * np.eye(3),
+            "q_point_mesh": q_point_mesh,
+        },
+    )
     rows = {
         harmonic_only: calculate_kappa_for_structure(
             atoms=atoms,
-            calculator=EMT(),
+            model=EMT(),
             settings=KappaSettings(
                 relaxation_mode="none", max_steps=0, harmonic_only=harmonic_only
             ),
@@ -770,10 +783,51 @@ def test_skipped_conductivity_rows_store_regular_grid_spectrum() -> None:
     assert computed["errors"] == []
     assert np.shape(skipped[Key.ph_freqs]) == (np.prod(q_point_mesh), 3)
     assert np.isnan(skipped[Key.mode_weights])
-    # the BZ grid's duplicated surface points biased this by ~0.26 THz
+    # each regular point once matches the weighted irreducible grid (a BZ grid with
+    # duplicated surface points biased this by ~0.26 THz)
     assert phonon_spectrum_w1(pd.Series(skipped), pd.Series(computed)) == (
         pytest.approx(0, abs=1e-12)
     )
+
+
+@pytest.mark.parametrize(
+    ("model_key", "expected_id"), [("emt", "mp-1"), ("mace_mp_0", "mp-0")]
+)
+def test_load_phonondb_atoms_decodes_ase_json_info(
+    tmp_path: Path, model_key: str, expected_id: str
+) -> None:
+    """ASE's "_JSON "-prefixed extxyz info loads as data the phonon setup accepts, and
+    the dry run skips structures with elements the model does not support.
+    """
+    from matscikit.io import format_extxyz
+
+    from matbench_discovery.phonons.pipeline import load_phonondb_atoms
+
+    info = {
+        "fc2_supercell": "_JSON [[2, 0, 0], [0, 2, 0], [0, 0, 2]]",
+        "fc3_supercell": "_JSON [[1, 0, 0], [0, 1, 0], [0, 0, 1]]",
+        "q_point_mesh": "_JSON [3, 4, 5]",
+    }
+    structures = [
+        Structure(
+            np.eye(3) * 3,
+            ["In" if idx == 0 else "Cu"],  # EMT has no In parameters
+            [[0, 0, 0]],
+            info=info | {"material_id": f"mp-{idx}"},
+        )
+        for idx in range(103)
+    ]
+    dataset_path = f"{tmp_path}/phonondb.extxyz"
+    with open(dataset_path, mode="w", encoding="utf-8") as file:
+        file.write(format_extxyz(structures))
+    (atoms,) = load_phonondb_atoms(
+        dataset_path, model_key=model_key, dry_run=True
+    ).values()
+    assert atoms.info["material_id"] == expected_id
+    assert atoms.info["fc3_supercell"] == np.eye(3, dtype=int).tolist()
+    calc = StandardKappaAdapter().init_phonons(atoms, KappaSettings())
+    assert calc.mesh == (3, 4, 5)
+    assert len(calc.phonons.phonon_supercell) == 8
 
 
 def test_normalize_kappa_schema_and_voigt() -> None:
@@ -959,12 +1013,12 @@ def test_resumable_shards_strict_merge_and_artifacts(
     assert force_sets.material_ids(artifacts.force_file_path) == sorted(atoms_by_id)
     for material_id, n_atoms in zip(atoms_by_id, (1, 4, 2, 3), strict=True):
         force_set = force_sets.load_force_set(artifacts.force_file_path, material_id)
-        assert force_set["fc2_forces"].dtype == np.float32
+        assert force_set["fc2"]["forces"].dtype == np.float32
         np.testing.assert_array_equal(
-            force_set["fc2_forces"], np.full((1, n_atoms, 3), 2)
+            force_set["fc2"]["forces"], np.full((1, n_atoms, 3), 2)
         )
         np.testing.assert_array_equal(
-            force_set["fc3_forces"], np.full((1, n_atoms, 3), 3)
+            force_set["fc3"]["forces"], np.full((1, n_atoms, 3), 3)
         )
     # harmonic sidecars are always written and merged in ID order
     assert artifacts.phonon_file_path == f"{stem}-phonons.json.gz"
@@ -1094,4 +1148,29 @@ def test_kappa_source_paths_covers_every_output_defining_module() -> None:
         "schema.py",
         "thermal_conductivity.py",
         "run_kappa.py",
+        os.path.basename(MATSCIKIT_EXTENSION),
     } <= basenames, f"unhashed kappa source modules; got {sorted(basenames)}"
+
+
+def test_kappa_source_digest_ignores_extension_install_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Identical extension bytes hash the same wherever the extension is installed."""
+    from matbench_discovery.phonons import pipeline
+
+    source = tmp_path / "m" / "source.py"
+    source.parent.mkdir()
+    source.write_text("x = 1\n")
+    digests = []
+    for prefix in ("a", "z"):  # sorts before vs after the checkout's sources
+        extension = tmp_path / prefix / "_core.so"
+        extension.parent.mkdir()
+        extension.write_bytes(b"compiled")
+        monkeypatch.setattr(pipeline, "MATSCIKIT_EXTENSION", str(extension))
+        monkeypatch.setattr(
+            pipeline,
+            "kappa_source_paths",
+            lambda *_, ext=str(extension): {str(source), ext},
+        )
+        digests.append(pipeline.kappa_source_digest(StandardKappaAdapter(), "m"))
+    assert digests[0] == digests[1]

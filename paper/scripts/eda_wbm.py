@@ -70,9 +70,9 @@ for df, label, n_expected in (
     stable_rate = n_stable / len(df)
     print(f"{label}: {stable_rate=:.1%} ({n_stable:,} out of {len(df):,})")
 
-# on 2024-04-15: STABILITY_THRESHOLD=0
-# full WBM: stable_rate=16.7% (42,825 out of 256,963)
-# WBM unique prototypes: stable_rate=15.3% (32,942 out of 215,488)
+# on 2026-11-19 (current pymatgen MP2020 corrections): STABILITY_THRESHOLD=0
+# full WBM: stable_rate=16.6% (42,688 out of 256,963)
+# WBM unique prototypes: stable_rate=15.2% (32,805 out of 215,488)
 
 
 # %%

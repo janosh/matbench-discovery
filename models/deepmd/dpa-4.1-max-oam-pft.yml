@@ -114,41 +114,41 @@ metrics:
       size: 1315880
       md5: 5b512c60ef4817efcecdbb90a11bf07a
     full_test_set:
-      F1: 0.914 # fraction
-      DAF: 5.297 # dimensionless
-      Precision: 0.909 # fraction
-      Recall: 0.919 # fraction
-      Accuracy: 0.97 # fraction
-      TP: 40534 # count
-      FP: 4065 # count
-      TN: 208806 # count
-      FN: 3558 # count
-      MAE: 0.017 # eV/atom
-      RMSE: 0.066 # eV/atom
-      R2: 0.865 # dimensionless
+      F1: 0.92 # fraction
+      DAF: 5.333 # dimensionless
+      Precision: 0.912 # fraction
+      Recall: 0.927 # fraction
+      Accuracy: 0.972 # fraction
+      TP: 40759 # count
+      FP: 3917 # count
+      TN: 209089 # count
+      FN: 3198 # count
+      MAE: 0.016 # eV/atom
+      RMSE: 0.065 # eV/atom
+      R2: 0.871 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.935 # fraction
-      DAF: 6.089 # dimensionless
-      Precision: 0.931 # fraction
-      Recall: 0.939 # fraction
-      Accuracy: 0.98 # fraction
-      TP: 31337 # count
-      FP: 2328 # count
-      TN: 179786 # count
-      FN: 2037 # count
-      MAE: 0.017 # eV/atom
-      RMSE: 0.066 # eV/atom
-      R2: 0.872 # dimensionless
+      F1: 0.941 # fraction
+      DAF: 6.134 # dimensionless
+      Precision: 0.934 # fraction
+      Recall: 0.948 # fraction
+      Accuracy: 0.982 # fraction
+      TP: 31499 # count
+      FP: 2234 # count
+      TN: 180012 # count
+      FN: 1743 # count
+      MAE: 0.016 # eV/atom
+      RMSE: 0.065 # eV/atom
+      R2: 0.877 # dimensionless
       missing_preds: 0 # count
   geo_opt:
     pred_file:
       name: models/deepmd/dpa-4.1-max-oam-pft/2026-10-27-geo-opt.jsonl.gz
-      url: https://ndownloader.figshare.com/files/70836387
+      url: https://figshare.com/files/71651365
       size: 104178833
       md5: 163c7c4e45e0b7a3c5ba14963e630c11
+    rmsd_auc: 0.8338 # fraction
     symprec=1e-5:
-      rmsd: 0.0576 # unitless
       n_sym_ops_mae: 2.7774 # unitless
       symmetry_decrease: 0.3573 # fraction
       symmetry_match: 0.4287 # fraction
@@ -156,23 +156,22 @@ metrics:
       symmetry_lateral: 0.0526 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/deepmd/dpa-4.1-max-oam-pft/2026-10-27-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://ndownloader.figshare.com/files/70836378
-        size: 6835142
-        md5: 409b56d127d89c371a209dd14e108374
+        name: models/deepmd/dpa-4.1-max-oam-pft/2026-10-27-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71651395
+        size: 6857887
+        md5: 5197ea297826437e7de73e39e12b3217
     symprec=1e-2:
-      rmsd: 0.0576 # unitless
-      n_sym_ops_mae: 1.9422 # unitless
+      n_sym_ops_mae: 1.9423 # unitless
       symmetry_decrease: 0.1231 # fraction
       symmetry_match: 0.7489 # fraction
       symmetry_increase: 0.1135 # fraction
       symmetry_lateral: 0.0145 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/deepmd/dpa-4.1-max-oam-pft/2026-10-27-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://ndownloader.figshare.com/files/70836375
-        size: 6944171
-        md5: d7bc80ac9d17fc01d237e335c9e64195
+        name: models/deepmd/dpa-4.1-max-oam-pft/2026-10-27-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71651398
+        size: 6966267
+        md5: 0dc67dd45c77c9d4c68df69a1eade83f
   phonons:
     kappa_103:
       κ_SRME: 0.0806
@@ -186,6 +185,11 @@ metrics:
         url: https://ndownloader.figshare.com/files/70836384
         size: 15621739
         md5: 855ad360242599963c5f2c7f32611aa2
+      force_file:
+        name: models/deepmd/dpa-4.1-max-oam-pft/2026-10-27-phonons-kappa-103-forces.h5
+        url: https://figshare.com/files/71630089
+        size: 47300862
+        md5: 9317161f25431e3dc1115adb142fcf79
       run_info_file:
         name: models/deepmd/dpa-4.1-max-oam-pft/2026-10-27-phonons-kappa-103-run-info.json
         url: https://ndownloader.figshare.com/files/70836381

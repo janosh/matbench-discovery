@@ -176,65 +176,64 @@ metrics:
       size: 1511054
       md5: dbcba569bcb0f28b0d69581d79c720b3
     full_test_set:
-      F1: 0.74 # fraction
-      DAF: 3.963 # dimensionless
-      Precision: 0.68 # fraction
-      Recall: 0.811 # fraction
-      Accuracy: 0.902 # fraction
-      TP: 35757 # count
-      FP: 16821 # count
-      TN: 196050 # count
-      FN: 8335 # count
+      F1: 0.743 # fraction
+      DAF: 3.986 # dimensionless
+      Precision: 0.682 # fraction
+      Recall: 0.817 # fraction
+      Accuracy: 0.904 # fraction
+      TP: 35912 # count
+      FP: 16750 # count
+      TN: 196256 # count
+      FN: 8045 # count
       MAE: 0.042 # eV/atom
-      RMSE: 0.084 # eV/atom
-      R2: 0.783 # dimensionless
+      RMSE: 0.083 # eV/atom
+      R2: 0.787 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.748 # fraction
-      DAF: 4.479 # dimensionless
-      Precision: 0.685 # fraction
-      Recall: 0.825 # fraction
-      Accuracy: 0.914 # fraction
-      TP: 27533 # count
-      FP: 12676 # count
-      TN: 169438 # count
-      FN: 5841 # count
-      MAE: 0.044 # eV/atom
+      F1: 0.752 # fraction
+      DAF: 4.509 # dimensionless
+      Precision: 0.686 # fraction
+      Recall: 0.832 # fraction
+      Accuracy: 0.915 # fraction
+      TP: 27648 # count
+      FP: 12633 # count
+      TN: 169613 # count
+      FN: 5594 # count
+      MAE: 0.043 # eV/atom
       RMSE: 0.085 # eV/atom
-      R2: 0.784 # dimensionless
+      R2: 0.789 # dimensionless
       missing_preds: 0 # count
   geo_opt:
     pred_file:
       name: models/nequix/nequix-mp-1-pft/2026-01-12-geo-opt.jsonl.gz
-      url: https://figshare.com/files/61019686
-      size: 104224729
-      md5: eb6a8f03eee8acf49c8c93b681dd098d
+      url: https://figshare.com/files/71653222
+      size: 147832809
+      md5: 3e7ab761443bb3a62106ac205a8e5da1
+    rmsd_auc: 0.6817 # fraction
     symprec=1e-2:
-      rmsd: 0.0866 # unitless
-      n_sym_ops_mae: 1.7984 # unitless
+      n_sym_ops_mae: 1.7987 # unitless
       symmetry_decrease: 0.054 # fraction
       symmetry_match: 0.8109 # fraction
       symmetry_increase: 0.1276 # fraction
       symmetry_lateral: 0.0075 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/nequix/nequix-mp-1-pft/2026-01-12-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333908
-        size: 7555323
-        md5: 23fac6a2c41d643868127f23eb683cf5
+        name: models/nequix/nequix-mp-1-pft/2026-01-12-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653258
+        size: 7587441
+        md5: db4cf3c85dbdd13e091b0cbdb2a605e7
     symprec=1e-5:
-      rmsd: 0.0866 # unitless
-      n_sym_ops_mae: 2.0577 # unitless
+      n_sym_ops_mae: 2.0578 # unitless
       symmetry_decrease: 0.0602 # fraction
       symmetry_match: 0.6976 # fraction
       symmetry_increase: 0.2362 # fraction
       symmetry_lateral: 0.006 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/nequix/nequix-mp-1-pft/2026-01-12-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333911
-        size: 7528351
-        md5: f6b2975a55aab5f60981972c81d9cf01
+        name: models/nequix/nequix-mp-1-pft/2026-01-12-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653261
+        size: 7560007
+        md5: f3b755eed37bf19cc2990708a191b1b2
   md:
     pred_file:
       name: models/nequix/nequix-mp-1-pft/2026-06-28-md-metrics.csv.gz
@@ -272,9 +271,9 @@ metrics:
           md5: c97eea9e136345418f7efda0f69e1292
         force_file:
           name: models/nequix/nequix-mp-1-pft/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71263270
-          size: 2170047
-          md5: eee89c35bc786f0f74c3c2599d20b027
+          url: https://figshare.com/files/71630185
+          size: 3680853
+          md5: 3e88f26c901557ad45ef7ddce80a27a2
         run_info_file:
           name: models/nequix/nequix-mp-1-pft/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334616

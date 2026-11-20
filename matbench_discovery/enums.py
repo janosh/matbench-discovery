@@ -19,6 +19,22 @@ eV_per_atom = (  # noqa: N816
 )
 
 
+# (path, size, mtime_ns, md5) of files whose MD5 already verified in this process
+_VERIFIED_FILES: set[tuple[str, int, int, str]] = set()
+
+
+def _md5_verified(abs_path: str, md5: str) -> bool:
+    """Whether a file's MD5 matches, hashing it once per (path, size, mtime) version."""
+    file_stat = os.stat(abs_path)
+    version = (abs_path, file_stat.st_size, file_stat.st_mtime_ns, md5)
+    if version in _VERIFIED_FILES:
+        return True
+    if file_digest(abs_path, "md5") != md5:
+        return False
+    _VERIFIED_FILES.add(version)
+    return True
+
+
 def resolve_verified_file(
     abs_path: str,
     *,
@@ -28,11 +44,7 @@ def resolve_verified_file(
 ) -> str:
     """Resolve a cached file and reject it unless its declared MD5 verifies."""
     # verified cache hit: return before maybe_auto_download_file hashes the file again
-    if (
-        md5 is not None
-        and os.path.isfile(abs_path)
-        and file_digest(abs_path, "md5") == md5
-    ):
+    if md5 is not None and os.path.isfile(abs_path) and _md5_verified(abs_path, md5):
         return abs_path
     # download_file verifies md5 while streaming, so a fresh download needs no re-hash
     if url is not None and maybe_auto_download_file(
@@ -43,13 +55,11 @@ def resolve_verified_file(
         raise FileNotFoundError(
             f"Failed to resolve {label!r} at {abs_path} with {url=}"
         )
-    if md5 is not None:
-        actual_md5 = file_digest(abs_path, "md5")
-        if actual_md5 != md5:
-            raise ValueError(
-                f"Stale cached file for {label!r} at {abs_path}: "
-                f"expected MD5 {md5}, got {actual_md5}"
-            )
+    if md5 is not None and not _md5_verified(abs_path, md5):
+        raise ValueError(
+            f"Stale cached file for {label!r} at {abs_path}: "
+            f"expected MD5 {md5}, got {file_digest(abs_path, 'md5')}"
+        )
     return abs_path
 
 
@@ -101,6 +111,7 @@ class MbdKey(LabelEnum):
     # space group changed but the number of symmetry operations did not
     symmetry_lateral = "symmetry_lateral", "Lateral symmetry change"
     structure_rmsd_vs_dft = "structure_rmsd_vs_dft", "RMSD of structure to DFT"
+    rmsd_auc = "rmsd_auc", "RMSD AUC"
 
     # keep in sync with model-schema.yml
     missing_preds = "missing_preds", "Missing predictions"
@@ -317,7 +328,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     def metadata(self) -> dict[str, Any]:
         """Metadata associated with the model."""
         with open(self.yaml_path, encoding="utf-8") as file:
-            data = yaml.safe_load(file)
+            data = yaml.load(file, Loader=yaml.CSafeLoader)  # libyaml, ~8x faster
 
         if not isinstance(data, dict):
             raise TypeError(f"{self.yaml_path!r} does not contain valid YAML metadata")
@@ -444,8 +455,10 @@ class Model(Files, base_dir=f"{ROOT}/models"):
             return ref
         if member := cls.__members__.get(ref):
             return member
+        # the YAML stem is the model_key (registry tests enforce it), so matching a
+        # key needs no metadata parse of every model YAML
         for model in cls:
-            if ref == model.key:
+            if ref == os.path.splitext(os.path.basename(model.rel_path))[0]:
                 return model
         if member := cls._missing_(ref):
             return member
@@ -477,7 +490,6 @@ class DataFiles(Files):
     mp_computed_structure_entries = auto()
     mp_elemental_ref_entries = auto()
     mp_energies = auto()
-    mp_patched_phase_diagram = auto()
     mp_trj_original = auto()
     mp_trj_extxyz = auto()
     wbm_computed_structure_entries = auto()

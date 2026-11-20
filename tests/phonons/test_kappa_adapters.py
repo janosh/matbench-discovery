@@ -1,430 +1,336 @@
-"""Focused behavior tests for custom unified kappa adapters."""
+"""Tests for the standard and backend-specific kappa adapters."""
 
 from __future__ import annotations
 
 import sys
+from pathlib import Path
 from types import ModuleType, SimpleNamespace
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any
 
 import numpy as np
 import pytest
-from ase import Atoms
-from ase.calculators.calculator import Calculator
-from pymatviz.enums import Key
+from matscikit import EMT, Structure
 
-from matbench_discovery.phonons.adapters.equflash import EquFlashKappaAdapter
-from matbench_discovery.phonons.adapters.pet import _batched_force_set
+from matbench_discovery.phonons import thermal_conductivity
+from matbench_discovery.phonons.adapters import get_kappa_adapter
+from matbench_discovery.phonons.adapters.equflash import (
+    EquFlashBatchedModel,
+    EquFlashKappaAdapter,
+)
+from matbench_discovery.phonons.adapters.pet import PetBatchedModel, PetKappaAdapter
 from matbench_discovery.phonons.adapters.standard import (
     FairchemKappaAdapter,
     StandardKappaAdapter,
 )
-from matbench_discovery.phonons.pipeline import KappaSettings
-
-if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
-
-    from phono3py.api_phono3py import Phono3py
-    from phonopy.structure.atoms import PhonopyAtoms
+from matbench_discovery.phonons.pipeline import KappaSettings, RelaxationMode
 
 
-class FakePhonopyAtoms:
-    """Minimal displaced-supercell shape consumed by PET batching."""
-
-    def __init__(self, position_value: float) -> None:
-        """Create a two-atom periodic supercell with constant positions."""
-        self.symbols = ["H", "H"]
-        self.cell = np.eye(3)
-        self.positions = np.full((2, 3), position_value)
-
-
-class BatchCalculatorStub:
-    """Echo atom positions as forces and record PET batch sizes."""
-
-    def __init__(self) -> None:
-        """Initialize an empty batch-size log."""
-        self.batch_sizes: list[int] = []
-
-    def compute_energy(
-        self,
-        atoms: list[Atoms],
-        *,
-        compute_forces_and_stresses: bool,
-    ) -> dict[str, Any]:
-        """Return positions as deterministic forces for one requested batch."""
-        assert compute_forces_and_stresses is True
-        self.batch_sizes.append(len(atoms))
-        return {"forces": np.asarray([item.positions for item in atoms])}
-
-
-class GraphConverterStub:
-    """Represent each EquFlash graph by its source atom positions."""
-
-    def __init__(self, *, r_edges: bool) -> None:
-        """Require the same edge option as the production converter."""
-        assert r_edges is False
-
-    def convert(self, atoms: Atoms) -> np.ndarray:
-        """Return positions as a lightweight graph stand-in."""
-        return atoms.positions.copy()
-
-
-class GraphBatchStub:
-    """Minimal torch-geometric batch carrying converted position arrays."""
-
-    def __init__(self, graphs: list[np.ndarray]) -> None:
-        """Store one production-sized graph chunk."""
-        self.graphs = graphs
-
-    @classmethod
-    def from_data_list(cls, graphs: list[np.ndarray]) -> GraphBatchStub:
-        """Build a batch from one list of graph stand-ins."""
-        return cls(graphs)
-
-    def to(self, device: str) -> GraphBatchStub:
-        """Record no device state and return this CPU test batch."""
-        assert device == "cpu"
-        return self
-
-
-class ArrayTensorStub:
-    """Expose the tensor conversion chain used by the EquFlash adapter."""
-
-    def __init__(self, array: np.ndarray) -> None:
-        """Store one force array."""
-        self.array = array
-
-    def detach(self) -> ArrayTensorStub:
-        """Return this immutable test tensor."""
-        return self
-
-    def cpu(self) -> ArrayTensorStub:
-        """Return this already-CPU test tensor."""
-        return self
-
-    def numpy(self) -> np.ndarray:
-        """Return the underlying NumPy force array."""
-        return self.array
-
-
-class EquFlashTrainerStub:
-    """Echo graph positions as forces while recording prediction batch sizes."""
-
-    device: str | None = None
-
-    def __init__(self) -> None:
-        """Initialize an empty prediction log."""
-        self.batch_sizes: list[int] = []
-
-    def predict(
-        self,
-        graph_batch: GraphBatchStub,
-        *,
-        per_image: bool,
-        disable_tqdm: bool,
-    ) -> dict[str, ArrayTensorStub]:
-        """Return concatenated graph positions as deterministic forces."""
-        assert per_image is False
-        assert disable_tqdm is True
-        self.batch_sizes.append(len(graph_batch.graphs))
-        return {"forces": ArrayTensorStub(np.concatenate(graph_batch.graphs, axis=0))}
-
-
-class FixedStressCalculator(Calculator):
-    """ASE calculator returning zero energy and forces and a fixed Voigt stress."""
-
-    implemented_properties = ["energy", "forces", "stress"]  # noqa: RUF012
-
-    def __init__(self, stress: Sequence[float] = (0,) * 6) -> None:
-        """Store the Voigt stress (default zero) returned by every calculation."""
-        super().__init__()
-        self.stress = np.asarray(stress, dtype=float)
-
-    def calculate(
-        self,
-        atoms: Atoms | None = None,
-        properties: Sequence[str] = ("energy", "forces", "stress"),
-        system_changes: Sequence[str] = (),
-    ) -> None:
-        """Populate zero-valued results for relaxation tests."""
-        super().calculate(atoms, properties, system_changes)
-        if atoms is None:
-            raise ValueError("atoms are required")
-        self.results = {
-            "energy": 0.0,
-            "forces": np.zeros((len(atoms), 3)),
-            "stress": self.stress,
-        }
-
-
-class NoOpOptimizer:
-    """ASE optimizer stub that reports one completed step."""
-
-    def __init__(self, atoms: object, logfile: str | None = None) -> None:
-        """Store constructor arguments without changing the structure."""
-        self.atoms = atoms
-        self.logfile = logfile
-        self.n_steps = 0
-
-    def run(self, fmax: float, steps: int) -> None:
-        """Record one step for any non-empty optimization budget."""
-        del fmax
-        self.n_steps = min(steps, 1)
-
-    def get_number_of_steps(self) -> int:
-        """Return the recorded optimizer step count."""
-        return self.n_steps
-
-
-class ConstraintStub:
-    """Copyable placeholder for ASE's symmetry constraint."""
-
-    def __init__(self, atoms: Atoms, *, symprec: float) -> None:
-        """Retain constrained atoms and verify the relaxation tolerance."""
-        self.atoms = atoms
-        assert symprec == 0.01
-
-
-class SpaceGroupSequence:
-    """Return deterministic initial, constrained, and unconstrained groups."""
-
-    def __init__(self) -> None:
-        """Initialize the expected three-call sequence."""
-        self.values = iter((225, 225, 221))
-
-    def __call__(self, atoms: Atoms, symprec: float) -> int:
-        """Return the next test space group."""
-        del atoms, symprec
-        return next(self.values)
-
-
-def resolve_no_filter(name: str | None) -> None:
-    """Return no ASE filter for the two-stage relaxation unit test."""
-    del name
-
-
-def resolve_noop_optimizer(name: str) -> type[NoOpOptimizer]:
-    """Return the no-op optimizer used by the two-stage relaxation test."""
-    del name
-    return NoOpOptimizer
-
-
-def patch_relaxation(
-    monkeypatch: pytest.MonkeyPatch,
-    filter_resolver: Callable[[str | None], object],
-) -> None:
-    """Install deterministic optimizer, symmetry, filter, and constraint stubs."""
-    from matbench_discovery.phonons.adapters import standard
-
-    monkeypatch.setattr(standard, "resolve_cell_filter", filter_resolver)
-    monkeypatch.setattr(standard, "resolve_optimizer", resolve_noop_optimizer)
-    monkeypatch.setattr(standard, "space_group_number", SpaceGroupSequence())
-    monkeypatch.setattr(standard, "FixSymmetry", ConstraintStub)
-
-
-class PositionEchoCalculator(Calculator):
-    """ASE-only calculator echoing atom positions as forces (no batch method)."""
-
-    implemented_properties = ["energy", "forces"]  # noqa: RUF012
-
-    def calculate(
-        self,
-        atoms: Atoms | None = None,
-        properties: Sequence[str] = ("energy", "forces"),
-        system_changes: Sequence[str] = (),
-    ) -> None:
-        """Return the current positions as deterministic per-structure forces."""
-        super().calculate(atoms, properties, system_changes)
-        if atoms is None:
-            raise ValueError("atoms are required")
-        self.results = {"energy": 0.0, "forces": atoms.positions.copy()}
+def cu_cell(strain: float = 0.0, rattle: float = 0.0) -> Structure:
+    """Conventional fcc Cu (4 atoms), optionally strained and rattled."""
+    a = 3.61 * (1 + strain)
+    frac = np.array([[0, 0, 0], [0, 0.5, 0.5], [0.5, 0, 0.5], [0.5, 0.5, 0]], float)
+    frac += rattle * np.random.default_rng(0).standard_normal(frac.shape)
+    return Structure(a * np.eye(3), ["Cu"] * 4, frac, fractional=True)
 
 
 @pytest.mark.parametrize(
-    ("calculator_cls", "batch_size", "max_evaluations", "expected_values"),
+    ("model_key", "adapter_cls"),
     [
-        (BatchCalculatorStub, 1, 1, (1, 0, 0)),
-        (BatchCalculatorStub, 2, None, (1, 0, 3)),
-        # current metatomic SymmetrizedCalculator exposes only the ASE API
-        (PositionEchoCalculator, 1, 1, (1, 0, 0)),
-        (PositionEchoCalculator, 2, None, (1, 0, 3)),
+        ("pet_oam_xl_1_0_0", PetKappaAdapter),
+        ("equflash_29m_oam", EquFlashKappaAdapter),
+        ("eqv2_m_oam_mp_salex", FairchemKappaAdapter),
+        ("mace_mp_0", StandardKappaAdapter),
     ],
-    ids=["batch_capped", "batch", "ase_capped", "ase"],
 )
-def test_pet_batched_force_set(
-    calculator_cls: type[BatchCalculatorStub | PositionEchoCalculator],
-    batch_size: int,
-    max_evaluations: int | None,
-    expected_values: tuple[float, float, float],
-) -> None:
-    """PET evaluates up to the cap through its batch or ASE-only API and zero-fills
-    null and deferred displacements.
-    """
-    calculator = calculator_cls()
-    displacements = cast(
-        "list[PhonopyAtoms | None]",
-        [FakePhonopyAtoms(1), None, FakePhonopyAtoms(3)],
-    )
-    force_set = _batched_force_set(
-        displacements,
-        cast("Calculator", calculator),
-        batch_size=batch_size,
-        n_atoms=2,
-        max_evaluations=max_evaluations,
-    )
-    expected = np.repeat(expected_values, 6).reshape(3, 2, 3).astype(float)
-    np.testing.assert_array_equal(force_set, expected)
-    if isinstance(calculator, BatchCalculatorStub):
-        assert calculator.batch_sizes == [1 if max_evaluations else 2]
-
-
-@pytest.mark.parametrize(
-    ("enforce_relax_symm", "expected_filter_kwargs"),
-    [(True, {"mask": [True, True, True, False, False, False]}), (False, {})],
-)
-def test_standard_relax_only_masks_tilts_with_symmetry_constraint(
-    monkeypatch: pytest.MonkeyPatch,
-    enforce_relax_symm: bool,
-    expected_filter_kwargs: dict[str, object],
-) -> None:
-    """Unconstrained legacy relaxations keep all cell degrees of freedom."""
-    from matbench_discovery.phonons.adapters import standard
-
-    filter_calls: list[dict[str, object]] = []
-
-    def filter_stub(atoms: Atoms, **kwargs: object) -> Atoms:
-        """Capture filter options while exposing the original atoms."""
-        filter_calls.append(kwargs)
-        return atoms
-
-    def resolve_filter_stub(name: str | None) -> Callable[..., Atoms]:
-        """Return the capturing filter regardless of configured name."""
-        del name
-        return filter_stub
-
-    patch_relaxation(monkeypatch, resolve_filter_stub)
-    atoms = Atoms("H", cell=np.eye(3), positions=[[0, 0, 0]], pbc=True)
-
-    result = standard.StandardKappaAdapter().relax(
-        atoms,
-        # compressive stress must report its magnitude, not a signed max of ~0
-        FixedStressCalculator(stress=(-3, -3, -3, 0, 0, 0)),
-        KappaSettings(enforce_relax_symm=enforce_relax_symm, max_steps=1),
-        log_file=None,
-    )
-
-    assert filter_calls == [expected_filter_kwargs]
-    assert result.max_stress is not None
-    np.testing.assert_allclose(result.max_stress, [3, 0], rtol=0, atol=1e-12)
+def test_get_kappa_adapter(model_key: str, adapter_cls: type) -> None:
+    """Model keys dispatch to their backend-specific adapter."""
+    assert type(get_kappa_adapter(model_key)) is adapter_cls
 
 
 def test_fairchem_adapter_disables_training_scaler() -> None:
-    """Fairchem preparation removes checkpoint force scaling exactly once."""
-    calculator = SimpleNamespace(trainer=SimpleNamespace(scaler=object()))
-    prepared = FairchemKappaAdapter().prepare_calculator(
-        cast("Calculator", calculator), KappaSettings()
+    """The wrapped calculator's trainer loses its training-only force scaler."""
+    model = SimpleNamespace(
+        calculator=SimpleNamespace(trainer=SimpleNamespace(scaler=object()))
     )
-    assert prepared is calculator
-    assert calculator.trainer.scaler is None
+    prepared = FairchemKappaAdapter().prepare_model(model, KappaSettings())  # ty: ignore[invalid-argument-type]
+    assert prepared is model
+    assert model.calculator.trainer.scaler is None
 
 
-def test_init_phono3py_forwards_q_point_mesh_and_plusminus(
+def test_init_phonons_forwards_mesh_and_plusminus(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Init forwards q_point_mesh and the displacement policy, rejects legacy q_mesh."""
-    from matbench_discovery.phonons import thermal_conductivity
+    """PhononDB metadata and plus/minus settings reach the phonon setup."""
+    calls: list[dict[str, object]] = []
 
-    initializer_kwargs: dict[str, object] = {}
+    def init_stub(atoms: Structure, **kwargs: object) -> object:
+        """Capture setup arguments."""
+        del atoms
+        calls.append(kwargs)
+        return object()
 
-    def init_phono3py_stub(atoms: Atoms, **kwargs: object) -> Phono3py:
-        """Capture initialization arguments and return an opaque phono3py stub."""
-        assert atoms.info[Key.mat_id] == "mp-orb"
-        initializer_kwargs.update(kwargs)
-        return cast("Phono3py", object())
-
-    monkeypatch.setattr(thermal_conductivity, "init_phono3py", init_phono3py_stub)
-    atoms = Atoms("H", cell=np.eye(3), positions=[[0, 0, 0]], pbc=True)
+    monkeypatch.setattr(thermal_conductivity, "init_phonons", init_stub)
+    atoms = cu_cell()
     atoms.info |= {
-        Key.mat_id: "mp-orb",
-        "fc2_supercell": np.eye(3, dtype=int),
-        "fc3_supercell": np.eye(3, dtype=int),
-        "q_mesh": [4, 5, 6],
+        "fc2_supercell": np.diag([2, 2, 2]),
+        "fc3_supercell": np.eye(3),
+        "q_point_mesh": [3, 4, 5],
     }
-    with pytest.raises(KeyError, match="q_point_mesh"):
-        StandardKappaAdapter().init_phono3py(atoms, KappaSettings())
-    atoms.info["q_point_mesh"] = atoms.info.pop("q_mesh")
-    StandardKappaAdapter().init_phono3py(atoms, KappaSettings(is_plusminus=True))
-    assert initializer_kwargs["q_point_mesh"] == (4, 5, 6)
-    assert initializer_kwargs["is_plusminus"] is True
+    StandardKappaAdapter().init_phonons(atoms, KappaSettings())
+    StandardKappaAdapter().init_phonons(atoms, KappaSettings(is_plusminus=True))
+    assert [call["q_point_mesh"] for call in calls] == [(3, 4, 5)] * 2
+    assert [call["is_plusminus"] for call in calls] == ["auto", True]
 
 
-def test_equflash_fc3_streams_graph_batches_and_preserves_null_entries(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """EquFlash converts at most one prediction batch and zero-fills null cells."""
-    preprocessing_module = ModuleType("fairchem.core.preprocessing")
-    preprocessing_module.__dict__["AtomsToGraphs"] = GraphConverterStub
-    data_module = ModuleType("torch_geometric.data")
-    data_module.__dict__["Batch"] = GraphBatchStub
-    torch_module = ModuleType("torch")
-    torch_module.__dict__["cuda"] = SimpleNamespace(is_available=bool)
-    for module_name, module in (
-        ("fairchem", ModuleType("fairchem")),
-        ("fairchem.core", ModuleType("fairchem.core")),
-        ("fairchem.core.preprocessing", preprocessing_module),
-        ("torch", torch_module),
-        ("torch_geometric", ModuleType("torch_geometric")),
-        ("torch_geometric.data", data_module),
-    ):
-        monkeypatch.setitem(sys.modules, module_name, module)
-
-    trainer = EquFlashTrainerStub()
-    calculator = cast("Calculator", SimpleNamespace(trainer=trainer))
-    phono3py = cast(
-        "Phono3py",
-        SimpleNamespace(
-            supercell=Atoms("HH"),
-            supercells_with_displacements=[
-                FakePhonopyAtoms(1),
-                None,
-                FakePhonopyAtoms(3),
-                FakePhonopyAtoms(4),
-            ],
-            forces=None,
-        ),
+@pytest.mark.parametrize("enforce_relax_symm", [True, False])
+def test_standard_relax_with_emt(enforce_relax_symm: bool) -> None:
+    """Strained, rattled Cu relaxes; the symmetry constraint keeps its space group."""
+    atoms = cu_cell(strain=0.02, rattle=0.0 if enforce_relax_symm else 0.01)
+    settings = KappaSettings(
+        enforce_relax_symm=enforce_relax_symm, force_max=1e-3, max_steps=300
     )
-    force_set = EquFlashKappaAdapter().calculate_fc3(
-        phono3py,
-        calculator,
-        KappaSettings(batch_size=2),
-        max_evaluations=2,
+    result = StandardKappaAdapter().relax(atoms, EMT(), settings, log_file=None)
+    assert result.initial_spg_num == (
+        225 if enforce_relax_symm else result.initial_spg_num
     )
+    if enforce_relax_symm:
+        assert result.final_spg_num == 225
+    assert 0 < result.n_steps < 300
+    assert not result.reached_max_steps
+    assert result.max_stress is not None
+    assert np.abs(result.max_stress).max() < 1e-3
+    assert len(result.atoms) == 4
 
-    assert trainer.batch_sizes == [2]
-    assert np.all(force_set[0] == 1)
-    assert np.all(force_set[1] == 0)
-    assert np.all(force_set[2] == 3)
-    assert np.all(force_set[3] == 0)
-    assert phono3py.forces is force_set
 
-
-def test_equflash_two_stage_relax_redirects_symmetry(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """EquFlash retains constrained geometry when unconstrained symmetry changes."""
-    patch_relaxation(monkeypatch, resolve_no_filter)
-    atoms = Atoms(
-        "HH",
-        cell=np.eye(3),
-        positions=[[0, 0, 0], [0.5, 0.5, 0.5]],
-        pbc=True,
+def test_relax_skips_with_mode_none() -> None:
+    """relaxation_mode='none' returns the input untouched without model calls."""
+    atoms = cu_cell(strain=0.02)
+    result = StandardKappaAdapter().relax(
+        atoms, EMT(), KappaSettings(relaxation_mode="none"), log_file=None
     )
+    assert result.atoms is atoms
+    assert (result.n_steps, result.max_stress) == (0, None)
+
+
+def test_two_stage_relax_writes_log(tmp_path: Path) -> None:
+    """Two-stage relaxation keeps symmetry and logs both stages."""
+    log_file = str(tmp_path / "logs" / "cu.log")
     result = EquFlashKappaAdapter().relax(
-        atoms,
-        FixedStressCalculator(),
-        KappaSettings(relaxation_mode="two-stage"),
-        log_file=None,
+        cu_cell(strain=0.02),
+        EMT(),
+        KappaSettings(relaxation_mode="two-stage", force_max=1e-3),
+        log_file=log_file,
     )
-    assert result.initial_spg_num == 225
     assert result.final_spg_num == 225
+    assert result.redirected_to_symmetry is False
+    with open(log_file) as file:
+        assert [line.split(":")[0] for line in file] == ["stage1", "stage2"]
+
+
+def test_equflash_batched_model(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Forces-only batches run as one trainer call and split back per structure."""
+
+    class GraphConverterStub:
+        """Return each structure's positions as its 'graph'."""
+
+        def __init__(self, *, r_edges: bool) -> None:
+            assert r_edges is False
+
+        def convert(self, atoms: Structure) -> np.ndarray:
+            return atoms.positions
+
+    class BatchStub:
+        """Concatenate graphs; .to(device) is a no-op."""
+
+        @staticmethod
+        def from_data_list(graphs: list[np.ndarray]) -> SimpleNamespace:
+            stacked = np.concatenate(graphs)
+            return SimpleNamespace(to=lambda _device: stacked)
+
+    predictions: list[int] = []
+
+    def predict(batch: np.ndarray, **_kwargs: object) -> dict[str, Any]:
+        predictions.append(len(batch))
+        return {
+            "forces": SimpleNamespace(
+                detach=lambda: SimpleNamespace(
+                    cpu=lambda: SimpleNamespace(numpy=lambda: -batch)
+                )
+            )
+        }
+
+    preprocessing = ModuleType("fairchem.core.preprocessing")
+    preprocessing.__dict__["AtomsToGraphs"] = GraphConverterStub
+    geometric = ModuleType("torch_geometric.data")
+    geometric.__dict__["Batch"] = BatchStub
+    monkeypatch.setitem(sys.modules, "fairchem.core.preprocessing", preprocessing)
+    monkeypatch.setitem(sys.modules, "torch_geometric.data", geometric)
+    pytest.importorskip("ase")  # structure_to_ase backs the graph conversion
+    calculator = SimpleNamespace(trainer=SimpleNamespace(predict=predict, device="cpu"))
+    model = EquFlashKappaAdapter().prepare_model(calculator, KappaSettings())  # ty: ignore[invalid-argument-type]
+    assert isinstance(model, EquFlashBatchedModel)
+    structures = [cu_cell(), cu_cell(strain=0.01)]
+    results = model.compute(structures, ["forces"])
+    assert predictions == [8]
+    for structure, result in zip(structures, results, strict=True):
+        np.testing.assert_allclose(result["forces"], -structure.positions)
+    with pytest.raises(TypeError, match="no trainer"):
+        EquFlashBatchedModel(SimpleNamespace())
+
+
+def test_pet_batched_model_uses_compute_energy() -> None:
+    """compute_energy batches energy+forces (ragged atom counts too)."""
+    pytest.importorskip("ase")
+    calls: list[int] = []
+
+    def compute_energy(
+        atoms_list: list[Any], *, compute_forces_and_stresses: bool
+    ) -> dict:
+        assert compute_forces_and_stresses
+        calls.append(len(atoms_list))
+        return {
+            "energy": np.arange(len(atoms_list), dtype=float),
+            "forces": [atoms.positions for atoms in atoms_list],  # ragged list
+        }
+
+    model = PetBatchedModel(SimpleNamespace(compute_energy=compute_energy))
+    two_atom = Structure(3 * np.eye(3), ["Cu"] * 2, [[0, 0, 0], [0.5, 0.5, 0.5]])
+    structures = [cu_cell(), cu_cell(strain=0.01), two_atom]
+    results = model.compute(structures, ["energy", "forces"])
+    assert calls == [3]
+    assert [result["energy"] for result in results] == [0.0, 1.0, 2.0]
+    for result, structure in zip(results, structures, strict=True):
+        assert isinstance(result["forces"], np.ndarray)
+        np.testing.assert_allclose(result["forces"], structure.positions)
+
+
+def spy_relax_structures(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:
+    """Record relax_structures kwargs per stage and return the input unchanged."""
+    from matbench_discovery.phonons.adapters import standard
+
+    calls: list[dict[str, Any]] = []
+
+    def relax_stub(
+        structures: list[Structure], model: object, **kwargs: object
+    ) -> list[dict[str, Any]]:
+        """Capture options; report a converged zero-stress single step."""
+        del model
+        calls.append(kwargs)
+        return [
+            {"structure": s, "n_steps": 1, "stress": np.zeros((3, 3)), "error": None}
+            for s in structures
+        ]
+
+    monkeypatch.setattr(standard, "relax_structures", relax_stub)
+    return calls
+
+
+@pytest.mark.parametrize(
+    ("mode", "enforce_relax_symm", "expected"),
+    [
+        ("single-stage", True, [(0.01, (True, True, True, False, False, False))]),
+        ("single-stage", False, [(None, None)]),
+        (
+            "two-stage",
+            True,
+            [
+                (0.01, (True, True, True, False, False, False)),
+                (None, (True, True, True, False, False, False)),
+            ],
+        ),
+        ("two-stage", False, [(None, (True, True, True, False, False, False))] * 2),
+    ],
+)
+def test_relax_stages_mask_tilts_and_fix_symmetry(
+    monkeypatch: pytest.MonkeyPatch,
+    mode: RelaxationMode,
+    enforce_relax_symm: bool,
+    expected: list[tuple],
+) -> None:
+    """No-tilt masks and the symmetry constraint reach exactly the intended stages."""
+    calls = spy_relax_structures(monkeypatch)
+    settings = KappaSettings(
+        relaxation_mode=mode, enforce_relax_symm=enforce_relax_symm, relax_symprec=0.01
+    )
+    adapter = (
+        StandardKappaAdapter() if mode == "single-stage" else EquFlashKappaAdapter()
+    )
+    adapter.relax(cu_cell(), EMT(), settings, log_file=None)
+    assert [(call["fix_symmetry"], call["cell_mask"]) for call in calls] == expected
+    assert all(call["stress"] is True for call in calls)
+
+
+def test_two_stage_relax_redirects_to_constrained_symmetry(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """When the free stage changes the space group, the constrained geometry is kept."""
+    from matbench_discovery.phonons.adapters import standard
+
+    spy_relax_structures(monkeypatch)
+    groups = iter([225, 225, 221])  # initial, stage 1, stage 2
+
+    monkeypatch.setattr(standard, "space_group_number", lambda *_args: next(groups))
+    result = EquFlashKappaAdapter().relax(
+        cu_cell(), EMT(), KappaSettings(relaxation_mode="two-stage"), log_file=None
+    )
+    assert (result.initial_spg_num, result.final_spg_num) == (225, 225)
     assert result.redirected_to_symmetry is True
     assert result.n_steps == 2
+
+
+def test_fixed_cell_relax_reports_max_stress() -> None:
+    """Fixed-cell relaxations report the final stress as absolute magnitudes."""
+    result = StandardKappaAdapter().relax(
+        cu_cell(strain=0.02),
+        EMT(),
+        KappaSettings(ase_filter=None, max_steps=5),
+        log_file=None,
+    )
+    assert result.max_stress is not None
+    from matbench_discovery.phonons.adapters.standard import _max_stress
+
+    (expected,) = EMT().compute([result.atoms], ["stress"])
+    np.testing.assert_allclose(
+        result.max_stress, _max_stress(expected["stress"]), rtol=0, atol=1e-12
+    )
+    assert np.abs(result.max_stress).max() > 1e-4  # strained cell is not stress-free
+    # compressive stress must report its magnitude, not a signed max of ~0
+    np.testing.assert_allclose(_max_stress(-3 * np.eye(3)), [3, 0], rtol=0, atol=0)
+
+
+class CountingEMT:
+    """EMT behind the Python model protocol, recording every call's batch size."""
+
+    def __init__(self) -> None:
+        """Start with no recorded calls."""
+        self.batch_sizes: list[int] = []
+
+    def compute(
+        self, structures: list[Structure], properties: list[str]
+    ) -> list[dict[str, Any]]:
+        """Record the batch size, then delegate to matscikit's EMT."""
+        self.batch_sizes.append(len(structures))
+        return EMT().compute(structures, properties)
+
+
+@pytest.mark.parametrize(
+    ("batch_size", "max_atoms", "fc3_batches"),
+    [(4, None, [4] * 7 + [2]), (1, 100, [12, 12, 6]), (1, 7, [1] * 30)],
+)
+def test_batch_limits_reach_matscikit(
+    batch_size: int, max_atoms: int | None, fc3_batches: list[int]
+) -> None:
+    """Batches follow batch_size, or fill max_atoms_per_batch with whole supercells
+    (at least one, also when a supercell alone exceeds it).
+    """
+    from matbench_discovery.phonons.adapters.standard import supercell_batch_size
+
+    settings = KappaSettings(batch_size=batch_size, max_atoms_per_batch=max_atoms)
+    assert supercell_batch_size(settings, 8) == fc3_batches[0]
+    calc = thermal_conductivity.init_phonons(
+        cu_cell(), fc2_supercell=np.eye(3), fc3_supercell=np.diag([2, 1, 1])
+    )
+    model = CountingEMT()
+    StandardKappaAdapter().calculate_fc3(calc, model, settings)  # ty: ignore[invalid-argument-type]
+    assert model.batch_sizes == fc3_batches  # 30 configurations of 8 atoms
+    assert calc.phonons.fc3_forces.shape == (30, 8, 3)

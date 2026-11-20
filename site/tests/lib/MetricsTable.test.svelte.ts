@@ -251,11 +251,11 @@ describe(`MetricsTable`, () => {
     const pending = doc_query(`a[href="/models/equflash-29m-oam"]`).closest(`tr`)
     if (!unsupported || !pending) throw new Error(`Missing model rows`)
     expect(
-      doc_query(`td[data-col="RMSD"] [data-title]`, unsupported).dataset.title,
+      doc_query(`td[data-col="RMSD AUC"] [data-title]`, unsupported).dataset.title,
     ).toContain(`requires forces`)
     const gnome = doc_query(`a[href="/models/gnome"]`).closest(`tr`)
     if (!gnome) throw new Error(`Missing GNoME row`)
-    expect(doc_query(`td[data-col="RMSD"] [data-title]`, gnome).dataset.title).toBe(
+    expect(doc_query(`td[data-col="RMSD AUC"] [data-title]`, gnome).dataset.title).toBe(
       `Geometry Optimization: no results reported. Model weights are not publicly available.`,
     )
     const pending_cell = doc_query(`td[data-col="CMDS"]`, pending)
@@ -714,7 +714,7 @@ describe(`MetricsTable`, () => {
       `κfailed`, // ALL_METRICS (Phonon)
       `Im(ω)`, // ALL_METRICS (Phonon)
       `W1(ω)`, // ALL_METRICS (Phonon)
-      `RMSD`, // ALL_METRICS (Geo Opt)
+      `RMSD AUC`, // ALL_METRICS (Geo Opt)
       `ΔERMSE`, // ALL_METRICS (MD) - textContent doesn't keep subscript
       `FRMSE`, // ALL_METRICS (MD) - textContent doesn't keep subscript
       // ΔRDF is visible:false (hidden from leaderboards, redundant with ΔvDOS/ΔADF)

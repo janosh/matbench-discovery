@@ -4,28 +4,28 @@ individual CSV files (one per symprec value) in a model's directory.
 Output files will have the same name as the input file containing the model's relaxed
 structures, but with the symprec value appended to the filename.
 
-Note: StructureMatcher is configured with stol=1.0 and scale=False for exact matching.
-RMSD values are normalized (unitless) and NaN values are filled with 1.0 (the stol
-value) to properly account for structures that couldn't be matched.
+Note: RMSDs come from matscikit.rms_distances with stol=1.0 and no volume scaling.
+RMSD values are normalized (unitless) and NaN where no match was found. They are
+scored by metrics.geo_opt.rmsd_auc, where unmatched and missing structures score 0.
 
-Example usage (moyopy comes from the symmetry extra):
-    uv run --with-editable '.[symmetry]' scripts/analyze_geo_opt.py \
+Symmetry runs on matscikit's bundled moyo crate, so file names and the DFT reference
+check use matscikit.MOYO_VERSION (not any installed moyopy).
+
+Example usage:
+    uv run --with-editable '.' scripts/analyze_geo_opt.py \
         --models mace_mp_0 m3gnet --symprec 1e-2 1e-5
     # only analyze first 10 structures (CSV goes to a debug/ subdir, no YAML write)
-    uv run --with-editable '.[symmetry]' scripts/analyze_geo_opt.py --debug 10
-    uv run --with-editable '.[symmetry]' scripts/analyze_geo_opt.py --workers 4
+    uv run --with-editable '.' scripts/analyze_geo_opt.py --debug 10
 """
 
 # %%
-import importlib.metadata
 import itertools
-import multiprocessing as mp
 import os
-from concurrent.futures import ProcessPoolExecutor
 from typing import TYPE_CHECKING, Any, Final
 
 import pandas as pd
-from pymatgen.core import Structure
+from matscikit import MOYO_VERSION, Structure
+from matscikit.interop import structure_from_pymatgen_dict
 from pymatviz.enums import Key
 
 from matbench_discovery import ROOT, file_digest, today
@@ -77,7 +77,7 @@ def load_model_structs(model: Model, debug_mode: int) -> dict[str, Structure]:
         df_ml_structs = df_ml_structs.head(debug_mode)
 
     return {
-        mat_id: Structure.from_dict(struct_dict)
+        mat_id: structure_from_pymatgen_dict(struct_dict)
         for mat_id, struct_dict in df_ml_structs["structure"].items()
     }
 
@@ -90,7 +90,6 @@ def analyze_model_symprec(
     dft_structs: dict[str, Structure],
     *,
     debug_mode: int = 0,
-    pbar_pos: int = 0,  # tqdm progress bar position
     overwrite: bool = False,
 ) -> pd.DataFrame | None:
     """Analyze a single model for a single symprec value."""
@@ -156,27 +155,21 @@ def analyze_model_symprec(
         print(f"{action} {model.label} for {symprec=}")
         model_structs = load_model_structs(model, debug_mode)
 
-        pbar_desc = f"Process {pbar_pos}: Analyzing {model.label} for {symprec=}"
         df_model_analysis = symmetry.get_sym_info_from_structs(
-            model_structs,
-            pbar=dict(desc=pbar_desc, position=pbar_pos, leave=True),
-            symprec=symprec,
+            model_structs, symprec=symprec
         )
 
-        pbar_desc = f"Process {pbar_pos}: Comparing DFT vs {model.label} for {symprec=}"
         df_ml_geo_analysis = symmetry.pred_vs_ref_struct_symmetry(
-            df_model_analysis,
-            df_dft_analysis,
-            model_structs,
-            dft_structs,
-            pbar=dict(desc=pbar_desc, position=pbar_pos, leave=True),
+            df_model_analysis, df_dft_analysis, model_structs, dft_structs
         )
 
         os.makedirs(os.path.dirname(geo_opt_csv_path), exist_ok=True)
         df_ml_geo_analysis.to_csv(geo_opt_csv_path)
         print(f"Completed {model.label} {symprec=}, saved to {geo_opt_csv_path}")
 
-    metrics_dict = geo_opt.calc_geo_opt_metrics(df_ml_geo_analysis)
+    # a debug subset is scored on its own structures, not the full test set
+    ref_ids = df_ml_geo_analysis.index if debug_mode else df_dft_analysis.index
+    metrics_dict = geo_opt.calc_geo_opt_metrics(df_ml_geo_analysis, ref_ids)
     df_metrics = pd.DataFrame([metrics_dict])
     if debug_mode:
         print(
@@ -192,7 +185,7 @@ def write_dft_reference(
     dft_structs: dict[str, Structure], symprec: float, moyo_version: str, out_dir: str
 ) -> pd.DataFrame:
     """Recompute the WBM DFT symmetry reference into a new file named by date and
-    moyopy version (never overwriting one) to upload and register in data-files.yml.
+    moyo version (never overwriting one) to upload and register in data-files.yml.
     """
     out_path = (
         f"{out_dir}/wbm/{today}-dft-geo-opt-symprec="
@@ -200,11 +193,7 @@ def write_dft_reference(
     )
     if os.path.isfile(out_path):
         raise FileExistsError(f"Refusing to overwrite DFT reference {out_path}")
-    df_dft_analysis = symmetry.get_sym_info_from_structs(
-        dft_structs,
-        pbar=dict(desc=f"Getting DFT symmetries {symprec=}"),
-        symprec=symprec,
-    )
+    df_dft_analysis = symmetry.get_sym_info_from_structs(dft_structs, symprec=symprec)
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     df_dft_analysis.to_csv(out_path)
     md5 = file_digest(out_path, "md5")
@@ -234,13 +223,10 @@ def main(raw_args: list[str] | None = None) -> int:
     geo_opt_group.add_argument(
         "--write-dft-reference",
         action="store_true",
-        help="Recompute the WBM DFT symmetry reference with the installed moyopy.",
+        help="Recompute the WBM DFT symmetry reference with matscikit's moyo.",
     )
     geo_opt_group.add_argument(
         "--debug", type=int, default=0, help="If > 0, analyze only this many."
-    )
-    geo_opt_group.add_argument(
-        "--workers", type=int, default=max(1, mp.cpu_count() - 1)
     )
     geo_opt_group.add_argument(
         "--overwrite", action="store_true", help="Recompute cached analysis CSVs."
@@ -250,7 +236,28 @@ def main(raw_args: list[str] | None = None) -> int:
     # > 0 activates debug mode, analyzing only that many structures
     debug_mode: Final[int] = args.debug
     symprec_values: Final[Sequence[float]] = args.symprec
-    moyo_version = importlib.metadata.version("moyopy")
+    moyo_version = MOYO_VERSION  # matscikit's moyo crate does the symmetry search
+
+    # %% Check the registered DFT reference for each symprec value before the slow WBM
+    # load. Model analyses are only comparable to a reference from the same moyo
+    # version, so a mismatch fails here instead of silently mixing moyo versions.
+    reference_files: dict[float, DataFiles] = {}
+    for symprec in symprec_values:
+        symprec_str = f"symprec={canonical_scientific_notation(symprec)}"
+        data_file = DFT_REFERENCE_FILES.get(symprec)
+        if data_file is None:
+            raise ValueError(
+                f"No registered DFT reference for {symprec_str}, available: "
+                f"{sorted(DFT_REFERENCE_FILES)}"
+            )
+        ref_suffix = f"-moyo={moyo_version}.csv.gz"
+        if not args.write_dft_reference and not data_file.rel_path.endswith(ref_suffix):
+            raise ValueError(
+                f"matscikit's moyo {moyo_version} does not match the registered DFT "
+                f"reference {data_file.rel_path}. Pass --write-dft-reference and "
+                "register the new file in data-files.yml"
+            )
+        reference_files[symprec] = data_file
 
     # %%
     print("Loading WBM PBE structures...")
@@ -260,61 +267,32 @@ def main(raw_args: list[str] | None = None) -> int:
     ).set_index(Key.mat_id)
 
     dft_structs: dict[str, Structure] = {
-        mat_id: Structure.from_dict(cse[Key.structure])
+        mat_id: structure_from_pymatgen_dict(cse[Key.structure])
         for mat_id, cse in df_wbm_structs[Key.computed_structure_entry].items()
     }
 
-    # %% Load the registered DFT reference for each symprec value. Model analyses are
-    # only comparable to a reference computed with the same moyopy version, so a version
-    # mismatch fails here instead of silently recomputing an unregistered reference.
-    dft_analysis_dict: dict[float, pd.DataFrame] = {}
-    for symprec in symprec_values:
-        symprec_str = f"symprec={canonical_scientific_notation(symprec)}"
-        data_file = DFT_REFERENCE_FILES.get(symprec)
-        if data_file is None:
-            raise ValueError(
-                f"No registered DFT reference for {symprec_str}, available: "
-                f"{sorted(DFT_REFERENCE_FILES)}"
-            )
-        if args.write_dft_reference:
-            dft_analysis_dict[symprec] = write_dft_reference(
-                dft_structs, symprec, moyo_version, DataFiles.base_dir
-            )
-            continue
-        if f"moyo={moyo_version}" not in data_file.rel_path:
-            raise ValueError(
-                f"Installed moyopy {moyo_version} does not match the registered "
-                f"DFT reference {data_file.rel_path}. Install the registered version, "
-                "or pass --write-dft-reference and register the new file in "
-                "data-files.yml"
-            )
-        dft_analysis_dict[symprec] = pd.read_csv(data_file.path).set_index(Key.mat_id)
+    dft_analysis_dict: dict[float, pd.DataFrame] = {
+        symprec: write_dft_reference(
+            dft_structs, symprec, moyo_version, DataFiles.base_dir
+        )
+        if args.write_dft_reference
+        else pd.read_csv(data_file.path).set_index(Key.mat_id)
+        for symprec, data_file in reference_files.items()
+    }
 
+    # sequential: each analysis already uses every core (matscikit's rayon pool), and
+    # worker processes would each hold a copy of the DFT structures
     tasks = list(itertools.product(args.models, symprec_values))
-    n_workers = min(len(tasks), args.workers)
-
-    # %% Process model-symprec combinations in parallel
-    print(
-        f"\nAnalyzing {len(tasks)} model-symprec combos using {n_workers} processes..."
-    )
-
-    with ProcessPoolExecutor(max_workers=n_workers) as executor:
-        futures = [
-            executor.submit(
-                analyze_model_symprec,
-                model=model,
-                symprec=symprec,
-                moyo_version=moyo_version,
-                df_dft_analysis=dft_analysis_dict[symprec],
-                dft_structs=dft_structs,
-                debug_mode=debug_mode,
-                pbar_pos=idx,  # assign unique position to each task's progress bar
-                overwrite=args.overwrite,
-            )
-            for idx, (model, symprec) in enumerate(tasks)
-        ]
-        for future in futures:
-            future.result()  # re-raises any worker exception
+    for model, symprec in tasks:
+        analyze_model_symprec(
+            model=model,
+            symprec=symprec,
+            moyo_version=moyo_version,
+            df_dft_analysis=dft_analysis_dict[symprec],
+            dft_structs=dft_structs,
+            debug_mode=debug_mode,
+            overwrite=args.overwrite,
+        )
 
     print(f"\nAll {len(tasks)} model-symprec combinations processed!")
     return 0

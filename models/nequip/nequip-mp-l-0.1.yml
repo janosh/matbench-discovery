@@ -145,32 +145,32 @@ metrics:
       size: 1661375
       md5: 2afd042f9c986c60cc329f8ff8b5f3b2
     full_test_set:
-      F1: 0.752 # fraction
-      DAF: 4.136 # dimensionless
-      Precision: 0.71 # fraction
-      Recall: 0.8 # fraction
-      Accuracy: 0.909 # fraction
-      TP: 35263 # count
-      FP: 14430 # count
-      TN: 198441 # count
-      FN: 8829 # count
+      F1: 0.756 # fraction
+      DAF: 4.161 # dimensionless
+      Precision: 0.712 # fraction
+      Recall: 0.806 # fraction
+      Accuracy: 0.911 # fraction
+      TP: 35425 # count
+      FP: 14341 # count
+      TN: 198665 # count
+      FN: 8532 # count
       MAE: 0.041 # eV/atom
-      RMSE: 0.083 # eV/atom
-      R2: 0.787 # dimensionless
+      RMSE: 0.082 # eV/atom
+      R2: 0.792 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.761 # fraction
-      DAF: 4.704 # dimensionless
-      Precision: 0.719 # fraction
-      Recall: 0.809 # fraction
-      Accuracy: 0.921 # fraction
-      TP: 27002 # count
-      FP: 10546 # count
-      TN: 171568 # count
-      FN: 6372 # count
-      MAE: 0.043 # eV/atom
-      RMSE: 0.084 # eV/atom
-      R2: 0.791 # dimensionless
+      F1: 0.765 # fraction
+      DAF: 4.736 # dimensionless
+      Precision: 0.721 # fraction
+      Recall: 0.816 # fraction
+      Accuracy: 0.923 # fraction
+      TP: 27117 # count
+      FP: 10494 # count
+      TN: 171752 # count
+      FN: 6125 # count
+      MAE: 0.042 # eV/atom
+      RMSE: 0.083 # eV/atom
+      R2: 0.795 # dimensionless
       missing_preds: 0 # count
   geo_opt:
     pred_file:
@@ -178,21 +178,20 @@ metrics:
       url: https://figshare.com/files/70325307
       size: 105912445
       md5: 177d4fd5c6093641220dab930196e446
+    rmsd_auc: 0.6856 # fraction
     symprec=1e-2:
-      rmsd: 0.0856 # unitless
-      n_sym_ops_mae: 1.8175 # unitless
+      n_sym_ops_mae: 1.8172 # unitless
       symmetry_decrease: 0.0592 # fraction
       symmetry_match: 0.8109 # fraction
       symmetry_increase: 0.1227 # fraction
-      symmetry_lateral: 0.0072 # fraction
+      symmetry_lateral: 0.0071 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/nequip/nequip-mp-l-0.1/2025-08-27-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333878
-        size: 7625127
-        md5: d304d5f97f31dc81d5d90fb06eac43ca
+        name: models/nequip/nequip-mp-l-0.1/2025-08-27-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653186
+        size: 7658726
+        md5: 95e02f7fee1f6dd4fac0ace3d3a2182c
     symprec=1e-5:
-      rmsd: 0.0856 # unitless
       n_sym_ops_mae: 1.9003 # unitless
       symmetry_decrease: 0.0788 # fraction
       symmetry_match: 0.7163 # fraction
@@ -200,10 +199,10 @@ metrics:
       symmetry_lateral: 0.0067 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/nequip/nequip-mp-l-0.1/2025-08-27-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333881
-        size: 7591510
-        md5: d07c76c296ec0f13c57b196c88b0672d
+        name: models/nequip/nequip-mp-l-0.1/2025-08-27-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653189
+        size: 7624833
+        md5: 1a61b3844f7a6ce24c73703508767b2b
   md:
     pred_file:
       name: models/nequip/nequip-mp-l-0.1/2026-06-28-md-metrics.csv.gz
@@ -241,9 +240,9 @@ metrics:
           md5: 6f58f8fce203bf6d72a311163023c6c2
         force_file:
           name: models/nequip/nequip-mp-l-0.1/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71263252
-          size: 2218933
-          md5: b7e2844e12d6c2e142b32a75a4044d6a
+          url: https://figshare.com/files/71630176
+          size: 3734255
+          md5: 07c9c3e909c281ebff537f245f1674d2
         run_info_file:
           name: models/nequip/nequip-mp-l-0.1/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334565

@@ -1,11 +1,9 @@
 """Tests for package-level helpers and import-time configuration."""
 
 import os
-import warnings
 from pathlib import Path
 
 import pytest
-from pymatgen.core import Element
 
 from matbench_discovery import ROOT, atomic_output_path, repo_relative_path
 
@@ -52,11 +50,3 @@ def test_atomic_output_path_keeps_old_file_on_error(tmp_path: Path) -> None:
     with open(target, encoding="utf-8") as file:
         assert file.read() == "old"
     assert os.listdir(tmp_path) == ["out.txt"]
-
-
-def test_pymatgen_electronegativity_warning_filtered() -> None:
-    """Import-time filters silence pymatgen's missing-electronegativity warning."""
-    # call the uncached getter: Element.X caches after its first (warning) access
-    with warnings.catch_warnings(record=True) as caught:
-        type(Element.Ne).X.func(Element.Ne)
-    assert not [warn for warn in caught if "electronegativity" in str(warn.message)]

@@ -10,11 +10,11 @@ from pathlib import Path
 from typing import Any, Self
 from unittest.mock import Mock, patch
 
-import ase.io
 import numpy as np
 import pandas as pd
 import pytest
-from ase import Atoms
+from matscikit import Structure
+from matscikit.io import Frame, format_extxyz
 from pymatviz.enums import Key
 from ruamel.yaml.comments import CommentedMap
 
@@ -22,11 +22,11 @@ from matbench_discovery import TEST_FILES, preds
 from matbench_discovery import data as data_module
 from matbench_discovery.data import (
     artifact_filename,
-    ase_atoms_from_zip,
     canonical_scientific_notation,
     df_wbm,
     file_ref_name,
     file_ref_url,
+    frames_from_zip,
     glob_to_df,
     iter_file_refs,
     load_df_wbm_with_preds,
@@ -40,28 +40,48 @@ from matbench_discovery.data import (
 from matbench_discovery.enums import MbdKey, Model, TestSubset
 from matbench_discovery.preds import elements
 
-atoms1 = Atoms("H2O", positions=[[0, 0, 0], [0, 0, 1], [0, 1, 0]], cell=[5, 5, 5])
-atoms1.info[Key.mat_id] = "structure1"
-atoms1.info["formation_energy"] = 1.23
-atoms1.info["forces"] = np.array([[0, 0, 1], [0, 1, 0], [1, 0, 0]])
-atoms1.info["dict_data"] = {"a": 1, "b": 2}
-atoms1.info["list_data"] = [1, 2, 3]
 
-atoms2 = Atoms("CO2", positions=[[0, 0, 0], [0, 0, 1], [0, 0, -1]], cell=[6, 6, 6])
-atoms2.info[Key.mat_id] = "structure2"
-atoms2.info["bandgap"] = 2.34
-atoms2.info["magmoms"] = np.array([0.1, -0.1, 0.1])
+def make_structure(
+    species: list[str], positions: list[list[float]], box: float, **info: object
+) -> Structure:
+    """Non-periodic molecule in a cubic box with the given info entries."""
+    return Structure(
+        box * np.eye(3), species, positions, pbc=(False, False, False), info=info
+    )
+
+
+atoms1 = make_structure(
+    ["H", "H", "O"],
+    [[0, 0, 0], [0, 0, 1], [0, 1, 0]],
+    5,
+    **{
+        Key.mat_id: "structure1",
+        "formation_energy": 1.23,
+        "forces": np.array([[0, 0, 1], [0, 1, 0], [1, 0, 0]]).ravel(),
+        "list_data": np.array([1, 2, 3]),
+    },
+)
+atoms2 = make_structure(
+    ["C", "O", "O"],
+    [[0, 0, 0], [0, 0, 1], [0, 0, -1]],
+    6,
+    **{
+        Key.mat_id: "structure2",
+        "bandgap": 2.34,
+        "magmoms": np.array([0.1, -0.1, 0.1]),
+    },
+)
 
 dummy_atoms = [atoms1, atoms2]
 
 
-def write_atoms_zip(atoms_list: list[Atoms], zip_path: Path) -> None:
-    """Write each Atoms object to its own extXYZ member named after its material ID."""
+def write_atoms_zip(structures: list[Structure], zip_path: Path) -> None:
+    """Write each structure to its own extXYZ member named after its material ID."""
     with zipfile.ZipFile(zip_path, mode="w") as zip_file:
-        for atoms in atoms_list:
-            buffer = io.StringIO()
-            ase.io.write(buffer, atoms, format="extxyz", write_info=True)
-            zip_file.writestr(f"{atoms.info[Key.mat_id]}.extxyz", buffer.getvalue())
+        for structure in structures:
+            zip_file.writestr(
+                f"{structure.info[Key.mat_id]}.extxyz", format_extxyz([structure])
+            )
 
 
 @pytest.fixture
@@ -85,6 +105,37 @@ def test_df_wbm() -> None:
         MbdKey.protostructure_spglib,
     ):
         assert col in df_wbm, f"{col=} not in {list(df_wbm)=}"
+
+
+def test_df_wbm_mp2020_corrections_match_current_scheme() -> None:
+    """Stored WBM MP2020 corrections equal current pymatgen's (via matscikit's port)."""
+    import gzip
+    import json
+
+    from matscikit import mp2020_corrections
+    from matscikit.interop import structure_from_pymatgen_dict
+
+    from matbench_discovery.enums import DataFiles
+
+    # wbm-1-50918, wbm-2-6782, wbm-3-10115 changed with pymatgen#3803's
+    # strict_anions="require_bound" default, wbm-1-56 kept its nonzero correction
+    mat_ids = {"wbm-1-56", "wbm-1-50918", "wbm-2-6782", "wbm-3-10115"}
+    entries: dict[str, dict[str, Any]] = {}
+    with gzip.open(DataFiles.wbm_computed_structure_entries.path, "rt") as file:
+        for line in file:
+            if line[16:40].split('"')[0] in mat_ids:  # skip json.loads of other rows
+                record = json.loads(line)
+                entries[record[Key.mat_id]] = record[Key.computed_structure_entry]
+    assert set(entries) == mat_ids
+    cses = [entries[mat_id] for mat_id in sorted(mat_ids)]
+    corrections = mp2020_corrections(
+        cses, [structure_from_pymatgen_dict(cse["structure"]) for cse in cses]
+    )
+    for mat_id, cse, result in zip(sorted(mat_ids), cses, corrections, strict=True):
+        assert result is not None, mat_id
+        n_atoms = sum(cse["composition"].values())
+        stored = df_wbm.loc[mat_id, "e_correction_per_atom_mp2020"]
+        assert result["correction"] / n_atoms == pytest.approx(stored, abs=1e-6)
 
 
 @pytest.mark.parametrize("pattern", ["*df.csv", "*df.json"])
@@ -133,14 +184,14 @@ def mock_wbm_preds() -> Iterator[Mock]:
 
 def test_atoms_zip_round_trip(dummy_atoms_zip: Path) -> None:
     """Zipped extXYZ structures load back without Atoms.info drift."""
-    read_atoms = ase_atoms_from_zip(str(dummy_atoms_zip))
+    read_atoms = [frame.structure for frame in frames_from_zip(str(dummy_atoms_zip))]
     assert len(read_atoms) == len(dummy_atoms)
 
     for original, read in zip(dummy_atoms, read_atoms, strict=True):
-        assert original.get_chemical_formula() == read.get_chemical_formula()
-        assert np.allclose(original.get_positions(), read.get_positions())
-        assert np.allclose(original.get_cell(), read.get_cell())
-        assert np.all(original.pbc == read.pbc)
+        assert original.symbols == read.symbols
+        assert np.allclose(original.positions, read.positions)
+        assert np.allclose(original.lattice, read.lattice)
+        assert original.pbc == read.pbc
         assert set(original.info) == set(read.info)
         for key, value in original.info.items():
             read_val = read.info[key]
@@ -150,25 +201,35 @@ def test_atoms_zip_round_trip(dummy_atoms_zip: Path) -> None:
                 assert value == read_val, f"Mismatch in {key}"
 
 
-def test_ase_atoms_from_zip_skips_non_extxyz_members(dummy_atoms_zip: Path) -> None:
-    """Archive members without an .extxyz suffix are ignored."""
+def test_frames_from_zip_skips_non_extxyz_members_keeps_results(
+    dummy_atoms_zip: Path,
+) -> None:
+    """Non-.extxyz members are ignored; stored forces and stress come back too."""
+    forces, stress = np.arange(9.0).reshape(3, 3), np.diag([1.0, 2.0, 3.0])
+    frame = Frame(dummy_atoms[0], energy=-1.5, forces=forces, stress=stress)
     with zipfile.ZipFile(dummy_atoms_zip, mode="a") as zip_file:
         zip_file.writestr("readme.txt", "not a structure")
-    read_atoms = ase_atoms_from_zip(str(dummy_atoms_zip))
-    assert [atoms.get_chemical_formula() for atoms in read_atoms] == ["H2O", "CO2"]
+        zip_file.writestr("with-results.extxyz", format_extxyz([frame]))
+    frames = frames_from_zip(str(dummy_atoms_zip))
+    formulas = [frame.structure.composition.reduced_formula for frame in frames]
+    assert formulas == ["H2O", "CO2", "H2O"]
+    assert frames[0].forces is None
+    assert frames[-1].energy == -1.5
+    np.testing.assert_array_equal(frames[-1].forces, forces)
+    np.testing.assert_array_equal(frames[-1].stress, stress)
 
 
-def test_ase_atoms_from_zip_bad_inputs(tmp_path: Path) -> None:
+def test_frames_from_zip_bad_inputs(tmp_path: Path) -> None:
     """Empty zips return []; corrupt zips raise BadZipFile."""
     empty_zip = tmp_path / "empty.zip"
     with zipfile.ZipFile(empty_zip, mode="w"):
         pass
-    assert ase_atoms_from_zip(str(empty_zip)) == []
+    assert frames_from_zip(str(empty_zip)) == []
 
     invalid_zip = tmp_path / "invalid.zip"
     invalid_zip.write_text("This is not a zip file")
     with pytest.raises(zipfile.BadZipFile):
-        ase_atoms_from_zip(str(invalid_zip))
+        frames_from_zip(str(invalid_zip))
 
 
 @pytest.mark.parametrize(
@@ -186,21 +247,27 @@ def test_ase_atoms_from_zip_bad_inputs(tmp_path: Path) -> None:
         (slice(10, 20), []),
     ],
 )
-def test_ase_atoms_from_zip_with_limit(
+def test_frames_from_zip_with_limit(
     tmp_path: Path, limit: int | slice | None, expected_formulas: list[str]
 ) -> None:
     """Integer and slice limits select zip members by archive order."""
-    bond_lengths = {"H2": 1.0, "N2": 1.1, "O2": 1.2, "F2": 1.4, "Cl2": 2.0}
-    more_atoms = []
-    for idx, (formula, bond_length) in enumerate(bond_lengths.items()):
-        atoms = Atoms(formula, positions=[[0, 0, 0], [0, 0, bond_length]], cell=[5] * 3)
-        atoms.info[Key.mat_id] = f"limit_test_{idx}"
-        more_atoms.append(atoms)
+    bond_lengths = {"H": 1.0, "N": 1.1, "O": 1.2, "F": 1.4, "Cl": 2.0}
+    more_atoms = [
+        make_structure(
+            [elem, elem],
+            [[0, 0, 0], [0, 0, bond_length]],
+            5,
+            **{Key.mat_id: f"limit_test_{idx}"},
+        )
+        for idx, (elem, bond_length) in enumerate(bond_lengths.items())
+    ]
 
     zip_path = tmp_path / "limit_test_structures.zip"
     write_atoms_zip(more_atoms, zip_path)
-    read_atoms = ase_atoms_from_zip(str(zip_path), limit=limit)
-    assert [atoms.get_chemical_formula() for atoms in read_atoms] == expected_formulas
+    frames = frames_from_zip(str(zip_path), limit=limit)
+    assert [
+        frame.structure.composition.reduced_formula for frame in frames
+    ] == expected_formulas
 
 
 @pytest.mark.parametrize(

@@ -1,369 +1,123 @@
-"""Module with code for calculating the thermal conductivity of a material.
+"""Force-constant and lattice thermal-conductivity helpers for the kappa benchmark.
 
-The low-level phono3py force-constant and conductivity helpers are adapted from
-https://github.com/MPA2suite/k_SRME/blob/6ff4c867/k_srme/conductivity.py. All credit to
-Balázs Póta, Paramvir Ahlawat, Gábor Csányi, Michele Simoncelli. See
-https://arxiv.org/abs/2408.00755 for details. They were ported to this repo in
-https://github.com/janosh/matbench-discovery/pull/196 to implement parallelization
-across input structures which allows scaling thermal conductivity metric to larger test
-sets. High-level orchestration lives in ``matbench_discovery.phonons.pipeline``.
+The protocol (finite displacements for fc2 in one supercell and fc3 in another, Wigner
+transport in the relaxation-time approximation with isotope and boundary scattering)
+follows https://github.com/MPA2suite/k_SRME (Póta, Ahlawat, Csányi, Simoncelli,
+https://arxiv.org/abs/2408.00755), ported in
+https://github.com/janosh/matbench-discovery/pull/196. All numerics run in matscikit;
+high-level orchestration lives in ``matbench_discovery.phonons.pipeline``.
 """
 
-import warnings
-from collections.abc import Callable, Sequence
-from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Literal
+from collections.abc import Sequence
+from dataclasses import dataclass
+from typing import Literal
 
 import numpy as np
-from ase import Atoms
-from ase.calculators.calculator import Calculator
-from phono3py.api_phono3py import Phono3py
-from phonopy.structure.atoms import PhonopyAtoms
+from matscikit import AnharmonicPhonons, Structure
 from pymatviz.enums import Key
-from tqdm import tqdm
 
 from matbench_discovery.enums import MbdKey
 
-if TYPE_CHECKING:
-    from phono3py.conductivity.calculators import LBTECalculator, RTACalculator
+PlusMinus = bool | Literal["auto"]
 
 
-def phonopy_atoms_to_ase(supercell: PhonopyAtoms) -> Atoms:
-    """Convert a Phonopy supercell to periodic ASE atoms."""
-    return Atoms(
-        supercell.symbols,
-        cell=supercell.cell,
-        positions=supercell.positions,
-        pbc=True,
-    )
+@dataclass
+class KappaCalculation:
+    """Phonons of one material plus the q-point mesh its conductivity uses."""
+
+    phonons: AnharmonicPhonons
+    mesh: tuple[int, int, int]
 
 
-def _validate_forces(
-    forces: object, expected_shape: tuple[int, ...], context: str
-) -> np.ndarray:
-    """Return finite real numeric forces with exactly the expected shape."""
-    force_array = np.asarray(forces)
-    if (
-        force_array.shape != expected_shape
-        or not np.issubdtype(force_array.dtype, np.number)
-        or np.iscomplexobj(force_array)
-        or np.any(~np.isfinite(force_array))
-    ):
-        raise ValueError(
-            f"Invalid {context} forces: shape={force_array.shape}, "
-            f"dtype={force_array.dtype}, expected_shape={expected_shape}"
-        )
-    return force_array
-
-
-def batched_displacement_forces(
-    displacements: Sequence[PhonopyAtoms | None],
-    evaluate_batch: Callable[[list[Atoms]], np.ndarray],
-    *,
-    batch_size: int,
-    n_atoms: int,
-    max_evaluations: int | None = None,
-) -> np.ndarray:
-    """Evaluate non-null displaced supercells in batches.
-
-    Args:
-        displacements: Sequence of displaced phonon supercells or null placeholders.
-        evaluate_batch: Callable returning forces for one batch of ASE structures.
-        batch_size: Maximum number of displaced structures per evaluation.
-        n_atoms: Number of atoms in each displaced supercell.
-        max_evaluations: Optional cap on evaluated non-null displacements.
-
-    Returns:
-        Force array shaped ``(len(displacements), n_atoms, 3)``. Only non-null entries
-        up to ``max_evaluations`` are evaluated; null and unevaluated slots remain zero.
-    """
-    if batch_size < 1 or n_atoms < 1:
-        raise ValueError("batch_size and n_atoms must be positive")
-    if max_evaluations is not None and max_evaluations < 0:
-        raise ValueError("max_evaluations must be non-negative or None")
-    entries = [
-        (displacement_idx, supercell)
-        for displacement_idx, supercell in enumerate(displacements)
-        if supercell is not None
-    ][:max_evaluations]
-    forces = np.zeros((len(displacements), n_atoms, 3))
-    for batch_start in range(0, len(entries), batch_size):
-        batch = entries[batch_start : batch_start + batch_size]
-        predicted = _validate_forces(
-            evaluate_batch([phonopy_atoms_to_ase(supercell) for _, supercell in batch]),
-            (len(batch), n_atoms, 3),
-            "batched displacement",
-        )
-        forces[[displacement_idx for displacement_idx, _ in batch]] = predicted
-    return forces
-
-
-def calculate_fc2_set(
-    ph3: Phono3py, calculator: Calculator, pbar_kwargs: dict[str, Any] | None = None
-) -> np.ndarray:
-    """Calculate 2nd order force constants. Requires initializing Phono3py with an FC2
-    supercell matrix.
-
-    Args:
-        ph3 (Phono3py): Phono3py object for which to calculate force constants.
-        calculator (Calculator): ASE calculator to compute forces.
-        pbar_kwargs (dict[str, Any] | None): Arguments passed to tqdm progress bar.
-            Defaults to None.
-
-    Returns:
-        np.ndarray: Array of forces for each displacement
-    """
-    print(f"Computing FC2 force set in {ph3.unitcell.formula}.")
-
-    forces: list[np.ndarray] = []
-    n_atoms = len(ph3.phonon_supercell)
-
-    displacements = ph3.phonon_supercells_with_displacements
-    for supercell in tqdm(
-        displacements,
-        desc=f"FC2 calculation: {ph3.unitcell.formula}",
-        **pbar_kwargs or {},
-    ):
-        if supercell is not None:
-            atoms = phonopy_atoms_to_ase(supercell)
-            atoms.calc = calculator
-            force = _validate_forces(
-                atoms.get_forces(), (n_atoms, 3), "FC2 displacement"
-            )
-        else:
-            force = np.zeros((n_atoms, 3))
-        forces += [force]
-
-    force_set = np.array(forces)
-    ph3.phonon_forces = force_set
-    return force_set
-
-
-def calculate_fc3_set(
-    ph3: Phono3py,
-    calculator: Calculator,
-    pbar_kwargs: dict[str, Any] | None = None,
-    *,
-    max_evaluations: int | None = None,
-) -> np.ndarray:
-    """Calculate 3rd order force constants.
-
-    Args:
-        ph3 (Phono3py): Phono3py object for which to calculate force constants.
-        calculator (Calculator): ASE calculator to compute forces.
-        pbar_kwargs (dict[str, Any] | None): Passed to tqdm progress bar.
-            Defaults to None.
-        max_evaluations (int | None): Maximum non-null displaced supercells to
-            evaluate. Remaining entries are zero-filled to preserve the force-set
-            shape. Defaults to None.
-
-    Returns:
-        np.ndarray: Array of forces for each displacement
-    """
-    if max_evaluations is not None and max_evaluations < 0:
-        raise ValueError("max_evaluations must be non-negative or None")
-    forces: list[np.ndarray] = []
-    n_atoms = len(ph3.supercell)
-
-    desc = f"FC3 calculation: {ph3.unitcell.formula}"
-    task_idx = (pbar_kwargs or {}).get("position")
-    if task_idx:
-        desc = f"{task_idx}. {desc}"
-    displacements = ph3.supercells_with_displacements
-    n_evaluated = 0
-    for supercell in tqdm(displacements, desc=desc, **pbar_kwargs or {}):
-        if supercell is None or (
-            max_evaluations is not None and n_evaluated >= max_evaluations
-        ):
-            forces += [np.zeros((n_atoms, 3))]
-        else:
-            atoms = phonopy_atoms_to_ase(supercell)
-            atoms.calc = calculator
-            forces += [
-                _validate_forces(atoms.get_forces(), (n_atoms, 3), "FC3 displacement")
-            ]
-            n_evaluated += 1
-
-    force_set = np.array(forces)
-    ph3.forces = force_set
-    return force_set
-
-
-def init_phono3py(
-    atoms: Atoms,
+def init_phonons(
+    structure: Structure,
     *,
     fc2_supercell: np.ndarray,
     fc3_supercell: np.ndarray,
     q_point_mesh: tuple[int, int, int] = (20, 20, 20),
     displacement_distance: float = 0.03,
     symprec: float = 1e-5,
-    is_plusminus: bool | Literal["auto"] = "auto",
-) -> Phono3py:
-    """Initialize Phono3py object from ASE Atoms.
+    is_plusminus: PlusMinus = "auto",
+) -> KappaCalculation:
+    """Set up fc2/fc3 supercells and their symmetry-reduced displacements.
 
     Args:
-        atoms (Atoms): ASE Atoms object to initialize from.
+        structure (Structure): Unit cell.
         fc2_supercell (np.ndarray): Supercell matrix for 2nd order force constants.
         fc3_supercell (np.ndarray): Supercell matrix for 3rd order force constants.
         q_point_mesh (tuple[int, int, int]): Mesh size for q-point sampling. Defaults
             to (20, 20, 20).
-        displacement_distance (float): Displacement distance for force calculations.
-            Defaults to 0.03, matching the PhononDB-PBE reference force sets.
-        symprec (float): Symmetry precision for finding space group. Defaults to 1e-5.
-        is_plusminus (bool | Literal["auto"]): Whether to generate plus/minus
-            displacements. Defaults to Phono3py's automatic selection.
+        displacement_distance (float): Displacement distance in Å. Defaults to 0.03,
+            matching the PhononDB-PBE reference force sets.
+        symprec (float): Symmetry precision. Defaults to 1e-5.
+        is_plusminus (bool | Literal["auto"]): Whether to add minus displacements
+            (always, never, or when symmetry cannot supply them). Defaults to "auto".
 
     Returns:
-        Phono3py: Initialized Phono3py object
-
-    Raises:
-        ValueError: If required metadata is missing from atoms.info
+        KappaCalculation: Phonons with generated displacements and the mesh.
     """
-    unit_cell = PhonopyAtoms(atoms.symbols, cell=atoms.cell, positions=atoms.positions)
-    ph3 = Phono3py(
-        unitcell=unit_cell,
-        supercell_matrix=fc3_supercell,
-        phonon_supercell_matrix=fc2_supercell,
+
+    def as_int_matrix(matrix: np.ndarray) -> np.ndarray:
+        """Integer supercell matrix (metadata may store whole floats)."""
+        values = np.asarray(matrix, dtype=float)
+        if np.abs(values - np.rint(values)).max() > 1e-8:
+            raise ValueError(f"supercell matrix must be integer, got {values.tolist()}")
+        return np.rint(values).astype(int)
+
+    phonons = AnharmonicPhonons(
+        structure,
+        as_int_matrix(fc3_supercell),
+        phonon_supercell_matrix=as_int_matrix(fc2_supercell),
         primitive_matrix="auto",
         symprec=symprec,
     )
-    ph3.mesh_numbers = q_point_mesh
-
-    ph3.generate_displacements(
-        distance=displacement_distance, is_plusminus=is_plusminus
+    plus_minus = None if is_plusminus == "auto" else bool(is_plusminus)
+    phonons.generate_displacements(
+        distance=displacement_distance, plus_minus=plus_minus
     )
-
-    return ph3
-
-
-def get_fc2_and_freqs(
-    ph3: Phono3py, calculator: Calculator, pbar_kwargs: dict[str, Any] | None = None
-) -> tuple[Phono3py, np.ndarray, np.ndarray]:
-    """Calculate 2nd order force constants and phonon frequencies.
-
-    Args:
-        ph3 (Phono3py): Phono3py object for which to calculate force constants.
-        calculator (Calculator): ASE calculator to compute forces.
-        pbar_kwargs (dict[str, Any] | None): Arguments passed to tqdm progress bar.
-            Defaults to None.
-
-    Returns:
-        tuple[Phono3py, np.ndarray, np.ndarray]: Tuple of (Phono3py object, force
-            constants array, frequencies array [shape: (n_bz_grid, n_bands)])
-
-    Raises:
-        ValueError: If mesh_numbers not set
-    """
-    if ph3.mesh_numbers is None:
-        raise ValueError(
-            "mesh_numbers was not found in phono3py object and was not provided as "
-            "an argument when calculating phonons from phono3py object."
-        )
-
-    pbar_kwargs = {"leave": False} | (pbar_kwargs or {})
-    fc2_set = calculate_fc2_set(ph3, calculator, pbar_kwargs=pbar_kwargs)
-
-    ph3.produce_fc2(symmetrize_fc2=True)
-    ph3.init_phph_interaction(symmetrize_fc3q=False)
-    ph3.run_phonon_solver()
-
-    freqs, _eigvecs, _grid = ph3.get_phonon_data()
-
-    return ph3, fc2_set, freqs
+    mesh_values = np.asarray(q_point_mesh, dtype=float).ravel()
+    if (
+        len(mesh_values) != 3
+        or not np.isfinite(mesh_values).all()
+        or (mesh_values < 1).any()
+        or (mesh_values != np.rint(mesh_values)).any()
+    ):
+        raise ValueError(f"q_point_mesh needs 3 positive integers, got {q_point_mesh}")
+    mesh = tuple(int(n) for n in mesh_values)
+    return KappaCalculation(phonons, mesh)  # ty: ignore[invalid-argument-type]
 
 
 def calculate_conductivity(
-    ph3: Phono3py,
+    calc: KappaCalculation,
     temperatures: Sequence[float],
     boundary_mfp: float = 1e6,
-    mode_kappa_thresh: float = 1e-6,
-) -> tuple[Phono3py, dict[str, np.ndarray], RTACalculator | LBTECalculator]:
-    """Calculate thermal conductivity.
+) -> dict[str, np.ndarray]:
+    """Wigner-RTA lattice thermal conductivity (populations + coherences).
 
     Args:
-        ph3 (Phono3py): Phono3py object for which to calculate conductivity
-        temperatures (list[float]): Temperatures to compute conductivity at in Kelvin.
-        boundary_mfp (float): Mean free path in micrometer to calculate simple boundary
-            scattering contribution to thermal conductivity. Defaults to 1e6.
-        mode_kappa_thresh (float): Threshold for mode kappa consistency check. Defaults
-            to 1e-6.
+        calc (KappaCalculation): Phonons with fc2 and fc3 set.
+        temperatures (list[float]): Temperatures in Kelvin.
+        boundary_mfp (float): Boundary mean free path in micrometer. Defaults to 1e6.
 
     Returns:
-        tuple[Phono3py, dict[str, np.ndarray], RTACalculator]: (Phono3py object,
-            conductivity dict, conductivity object)
+        dict[str, np.ndarray]: kappa tensors (temperature, 6) in W/(m K) and
+            mode-resolved data on the irreducible q-points: mode_kappa_tot_rta
+            (temperature, q-point, band, 6) adds to each mode's populations term its
+            heat-capacity share of the band-pair coherences (k_SRME's split, summing
+            to kappa_tot_rta times the grid size).
     """
-    ph3.init_phph_interaction(symmetrize_fc3q=False)
-
-    ph3.run_thermal_conductivity(
-        temperatures=temperatures,
-        is_isotope=True,
-        # use MS-SMM19 (Wigner transport equation) to include both wave-like
-        # coherence (kappa_c) and particle-like (kappa_p) conductivity contributions
-        transport_type="MS-SMM19",
-        boundary_mfp=boundary_mfp,
+    result = calc.phonons.thermal_conductivity(
+        list(calc.mesh),
+        [float(temperature) for temperature in temperatures],
+        isotope=True,
+        boundary_mfp_um=boundary_mfp,
     )
-
-    if (kappa := ph3.thermal_conductivity) is None:
-        raise RuntimeError(f"thermal conductivity calculation failed for {ph3=}")
-    extra, mode_cv = kappa.get_extra_kappa_output(), kappa.mode_heat_capacities
-    if extra is None or mode_cv is None:
-        raise RuntimeError(f"missing kappa output for {ph3=}")
-
-    kappa_dict: dict[str, np.ndarray] = {
-        MbdKey.kappa_tot_rta: deepcopy(extra["kappa_TOT_RTA"][0]),
-        MbdKey.kappa_p_rta: deepcopy(extra["kappa_P_RTA"][0]),
-        MbdKey.kappa_c: deepcopy(extra["kappa_C"][0]),
-        Key.mode_weights: deepcopy(kappa.grid_weights),
-        Key.q_points: deepcopy(kappa.qpoints),
-        Key.ph_freqs: deepcopy(kappa.frequencies),
+    return {
+        MbdKey.kappa_tot_rta: result["kappa_tot_rta"],
+        MbdKey.kappa_p_rta: result["kappa_p_rta"],
+        MbdKey.kappa_c: result["kappa_c"],
+        MbdKey.mode_kappa_tot_rta: result["mode_kappa_tot_rta"],
+        Key.mode_weights: result["weights"],
+        Key.q_points: result["q_points"],
+        Key.ph_freqs: result["frequencies"],
     }
-    mode_kappa_total = kappa_dict[MbdKey.mode_kappa_tot_rta] = calc_mode_kappa_tot(
-        deepcopy(extra["mode_kappa_P_RTA"][0]),
-        deepcopy(extra["mode_kappa_C"][0]),
-        deepcopy(mode_cv),
-    )
-
-    sum_mode_kappa_tot = mode_kappa_total.sum(
-        axis=tuple(range(1, mode_kappa_total.ndim - 1))
-    ) / np.sum(kappa_dict[Key.mode_weights])
-
-    kappa_tot_rta = kappa_dict[MbdKey.kappa_tot_rta]
-    if np.any(np.abs(sum_mode_kappa_tot - kappa_tot_rta) > mode_kappa_thresh):
-        warnings.warn(
-            f"Total mode kappa does not sum to total kappa. {sum_mode_kappa_tot=}, "
-            f"{kappa_tot_rta=}",
-            stacklevel=2,
-        )
-
-    return ph3, kappa_dict, kappa
-
-
-def calc_mode_kappa_tot(
-    mode_kappa_p_rta: np.ndarray,
-    mode_kappa_coherence: np.ndarray,
-    heat_capacity: np.ndarray,
-) -> np.ndarray:
-    """Calculate total mode kappa from particle-like RTA and coherence terms.
-
-    Args:
-        mode_kappa_p_rta (np.ndarray): Mode kappa from particle-like RTA with shape
-            (T, q-points, bands, xyz)
-        mode_kappa_coherence (np.ndarray): Mode kappa from wave-like coherence with
-            shape (T, q-points, bands, bands, xyz)
-        heat_capacity (np.ndarray): Mode heat capacities with shape
-            (T, q-points, bands)
-
-    Returns:
-        np.ndarray: Total (particle-like + wave-like) thermal conductivity per phonon
-            mode with shape (T, q-points, bands)
-    """
-    # Temporarily silence divide warnings since we handle NaN values below
-    with np.errstate(divide="ignore", invalid="ignore"):
-        mode_kappa_c_per_mode = 2 * (  # None equiv to np.newaxis
-            (mode_kappa_coherence * heat_capacity[:, :, :, None, None])
-            / (heat_capacity[:, :, :, None, None] + heat_capacity[:, :, None, :, None])
-        ).sum(axis=2)
-
-    mode_kappa_c_per_mode[np.isnan(mode_kappa_c_per_mode)] = 0
-
-    return mode_kappa_c_per_mode + mode_kappa_p_rta

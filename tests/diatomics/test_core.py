@@ -1,13 +1,12 @@
 """Tests for diatomic molecule generation and energy/force calculations."""
 
 import copy
+from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 import pytest
-from ase import Atoms
-from ase.calculators.calculator import all_changes
-from ase.calculators.emt import EMT
-from ase.formula import Formula
+from matscikit import EMT, Structure
 
 from matbench_discovery.diatomics import (
     DiatomicResults,
@@ -17,30 +16,27 @@ from matbench_discovery.diatomics import (
 
 
 @pytest.mark.parametrize(
-    "elem1,elem2,distances,expected_formulas",
+    "elem1,elem2,distances",
     [
-        ("H", "H", [1.0], ["H2"]),  # single distance
-        ("O", "O", [1.0, 2.0], ["O2", "O2"]),  # multiple distances
-        ("H", "O", [1.0], ["OH"]),  # hetero-nuclear
-        ("Cu", "O", [1.5, 2.0], ["CuO", "CuO"]),  # metal (Cu supported by EMT)
+        ("H", "H", [1.0]),  # single distance
+        ("O", "O", [1.0, 2.0]),  # multiple distances
+        ("H", "O", [1.0]),  # hetero-nuclear
+        ("Cu", "O", [1.5, 2.0]),  # metal (Cu supported by EMT)
     ],
 )
-def test_generate_diatomics(
-    elem1: str, elem2: str, distances: list[float], expected_formulas: list[str]
-) -> None:
+def test_generate_diatomics(elem1: str, elem2: str, distances: list[float]) -> None:
     """Test diatomic molecule generation with various element pairs and distances."""
     atoms_list = generate_diatomics(elem1, elem2, distances)
 
     assert len(atoms_list) == len(distances)
-    for atoms, dist, formula in zip(
-        atoms_list, distances, expected_formulas, strict=True
-    ):
-        assert isinstance(atoms, Atoms)
-        assert atoms.get_chemical_formula() == Formula(formula).format("hill")
-        assert atoms.get_distance(0, 1) == pytest.approx(dist)
+    for atoms, dist in zip(atoms_list, distances, strict=True):
+        assert isinstance(atoms, Structure)
+        assert atoms.symbols == [elem1, elem2]
+        bond = atoms.positions[1] - atoms.positions[0]
+        assert np.linalg.norm(bond) == pytest.approx(dist)
         # large periodic box so cell-requiring calculators work; images don't interact
         assert all(atoms.pbc)
-        assert atoms.cell.lengths() == pytest.approx([50, 50, 50])
+        assert atoms.lattice_parameters[0] == pytest.approx([50, 50, 50])
 
 
 def test_generate_diatomics_rejects_distance_beyond_half_box() -> None:
@@ -49,28 +45,23 @@ def test_generate_diatomics_rejects_distance_beyond_half_box() -> None:
         generate_diatomics("H", "H", [3.0], box_size=5.0)
 
 
-class CuRangeLimitedEMT(EMT):
-    """EMT raising for Cu pairs beyond cu_max_dist, i.e. a mid-curve failure."""
+class CuRangeLimitedEMT:
+    """EMT model raising for Cu pairs beyond cu_max_dist, i.e. a mid-curve failure."""
 
     def __init__(self, cu_max_dist: float) -> None:
         """Store the Cu separation (Å) above which calculations raise."""
-        super().__init__()
         self.cu_max_dist = cu_max_dist
+        self.emt = EMT()
 
-    def calculate(
-        self,
-        atoms: Atoms | None = None,
-        properties: tuple[str, ...] = ("energy",),
-        system_changes: list[str] = all_changes,
-    ) -> None:
+    def compute(
+        self, structures: Sequence[Structure], properties: Sequence[str]
+    ) -> list[dict[str, Any]]:
         """Raise RuntimeError for long-range Cu pairs, else defer to EMT."""
-        if (
-            atoms is not None
-            and "Cu" in atoms.get_chemical_symbols()
-            and atoms.get_distance(0, 1) > self.cu_max_dist
-        ):
-            raise RuntimeError(f"synthetic failure beyond {self.cu_max_dist} Å")
-        super().calculate(atoms, properties, system_changes)
+        for struct in structures:
+            bond_length = np.linalg.norm(struct.positions[1] - struct.positions[0])
+            if "Cu" in struct.symbols and bond_length > self.cu_max_dist:
+                raise RuntimeError(f"synthetic failure beyond {self.cu_max_dist} Å")
+        return self.emt.compute(structures, properties)
 
 
 STALE_CU_CURVE = {
@@ -99,8 +90,8 @@ def test_calc_diatomic_curve_results(
     expected_cu: str,
 ) -> None:
     """Pairs give full curves, reuse matching caches, replace stale, reset failures."""
-    # mixed symbol/number pair specs, incl. H-H requested in both forms
-    pairs = [(1, 1), ("H", 1), (8, "O"), ("Cu", 29)]
+    # mixed symbol/(numpy) number pair specs, incl. H-H requested in both forms
+    pairs = [(1, 1), ("H", 1), (np.int64(8), "O"), ("Cu", 29)]
     initial_results = copy.deepcopy(initial_results)  # results are updated in-place
     calculator = CuRangeLimitedEMT(cu_max_dist)
     results = calc_diatomic_curve(pairs, calculator, "test", distances, initial_results)

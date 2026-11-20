@@ -145,32 +145,31 @@ metrics:
       url: https://figshare.com/files/70325025
       size: 119486303
       md5: ac7822121712299c884911a937f53082
+    rmsd_auc: 0.6989 # fraction
     symprec=1e-5:
-      rmsd: 0.0801 # unitless
-      n_sym_ops_mae: 1.9808 # unitless
+      n_sym_ops_mae: 1.9806 # unitless
       symmetry_decrease: 0.0584 # fraction
       symmetry_match: 0.728 # fraction
       symmetry_increase: 0.2085 # fraction
       symmetry_lateral: 0.0051 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/deepmd/dpa-3.1-mptrj/2025-06-05-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70334019
-        size: 6772458
-        md5: 3e2ec5879089ebd6b5306f2ef8778e28
+        name: models/deepmd/dpa-3.1-mptrj/2025-06-05-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653393
+        size: 6798820
+        md5: ba0e567a270b653c03b9f27a9b89eb4d
     symprec=1e-2:
-      rmsd: 0.0801 # unitless
-      n_sym_ops_mae: 1.9002 # unitless
+      n_sym_ops_mae: 1.9003 # unitless
       symmetry_decrease: 0.0549 # fraction
       symmetry_match: 0.809 # fraction
       symmetry_increase: 0.1287 # fraction
       symmetry_lateral: 0.0074 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/deepmd/dpa-3.1-mptrj/2025-06-05-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70334022
-        size: 6780101
-        md5: b57e2f35e1fc7c124c9db3eb1a724aa0
+        name: models/deepmd/dpa-3.1-mptrj/2025-06-05-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653399
+        size: 6807173
+        md5: bfedac07978a4b267f7e8ffaaa118146
   phonons:
     kappa_103:
       κ_SRME: 0.6503
@@ -192,9 +191,9 @@ metrics:
           md5: 83fdd5d3c4f7b29197482f3ee83f8457
         force_file:
           name: models/deepmd/dpa-3.1-mptrj/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71263135
-          size: 2157094
-          md5: 4be7e583cae0a2427a0922d9dfd8957e
+          url: https://figshare.com/files/71630071
+          size: 3670286
+          md5: 6b45cf0dcfdd73faab9d185a5c23c8d6
         run_info_file:
           name: models/deepmd/dpa-3.1-mptrj/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334253

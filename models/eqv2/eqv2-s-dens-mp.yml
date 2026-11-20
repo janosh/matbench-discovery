@@ -148,32 +148,32 @@ metrics:
       size: 1326011
       md5: e8da37c6c7f3fa3f7cec666d2d0d8706
     full_test_set:
-      F1: 0.798 # fraction
-      DAF: 4.362 # dimensionless
-      Precision: 0.748 # fraction
-      Recall: 0.855 # fraction
-      Accuracy: 0.926 # fraction
-      TP: 37687 # count
-      FP: 12665 # count
-      TN: 200206 # count
-      FN: 6405 # count
+      F1: 0.802 # fraction
+      DAF: 4.39 # dimensionless
+      Precision: 0.751 # fraction
+      Recall: 0.862 # fraction
+      Accuracy: 0.927 # fraction
+      TP: 37870 # count
+      FP: 12556 # count
+      TN: 200450 # count
+      FN: 6087 # count
       MAE: 0.035 # eV/atom
-      RMSE: 0.084 # eV/atom
-      R2: 0.785 # dimensionless
+      RMSE: 0.083 # eV/atom
+      R2: 0.789 # dimensionless
       missing_preds: 351 # count
     unique_prototypes:
-      F1: 0.815 # fraction
-      DAF: 5.042 # dimensionless
-      Precision: 0.771 # fraction
-      Recall: 0.864 # fraction
-      Accuracy: 0.939 # fraction
-      TP: 28842 # count
-      FP: 8576 # count
-      TN: 173538 # count
-      FN: 4532 # count
+      F1: 0.819 # fraction
+      DAF: 5.078 # dimensionless
+      Precision: 0.773 # fraction
+      Recall: 0.872 # fraction
+      Accuracy: 0.941 # fraction
+      TP: 28972 # count
+      FP: 8508 # count
+      TN: 173738 # count
+      FN: 4270 # count
       MAE: 0.036 # eV/atom
-      RMSE: 0.085 # eV/atom
-      R2: 0.788 # dimensionless
+      RMSE: 0.084 # eV/atom
+      R2: 0.793 # dimensionless
       missing_preds: 309 # count
   geo_opt:
     pred_file:
@@ -181,32 +181,31 @@ metrics:
       url: https://figshare.com/files/70327953
       size: 217166844
       md5: a5fdfd11e44a0617bcc4beb9cd09d137
+    rmsd_auc: 0.7357 # fraction
     symprec=1e-5:
-      rmsd: 0.0757 # unitless
       n_sym_ops_mae: 10.1045 # unitless
       symmetry_decrease: 0.8671 # fraction
-      symmetry_match: 0.1322 # fraction
+      symmetry_match: 0.1321 # fraction
       symmetry_increase: 0.0006 # fraction
       symmetry_lateral: 0.0002 # fraction
       n_structures: 256614 # count
       analysis_file:
-        name: models/eqv2/eqv2-s-dens-mp/2024-10-18-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333692
-        size: 6224438
-        md5: 0df11eaa4355e741a216f0b6810aab8c
+        name: models/eqv2/eqv2-s-dens-mp/2024-10-18-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71652682
+        size: 6245412
+        md5: ed44b5e7da57d582bb0cf72761cbdeb4
     symprec=1e-2:
-      rmsd: 0.0757 # unitless
-      n_sym_ops_mae: 3.7426 # unitless
-      symmetry_decrease: 0.3724 # fraction
-      symmetry_match: 0.5396 # fraction
+      n_sym_ops_mae: 3.7393 # unitless
+      symmetry_decrease: 0.3722 # fraction
+      symmetry_match: 0.5398 # fraction
       symmetry_increase: 0.0653 # fraction
       symmetry_lateral: 0.0228 # fraction
       n_structures: 256614 # count
       analysis_file:
-        name: models/eqv2/eqv2-s-dens-mp/2024-10-18-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333695
-        size: 6971081
-        md5: 7b785d894804b160067db12f7d7f9043
+        name: models/eqv2/eqv2-s-dens-mp/2024-10-18-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71652751
+        size: 6995582
+        md5: cc5d5de9a0c9c23b3e0b77955db9c370
   md:
     pred_file:
       name: models/eqv2/eqv2-s-dens-mp/2026-06-28-md-metrics.csv.gz
@@ -244,9 +243,9 @@ metrics:
           md5: d96034da81b9f257eed65bf0215a38fc
         force_file:
           name: models/eqv2/eqv2-s-dens-mp/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71263159
-          size: 2212656
-          md5: 0788669209678ff18fbf37e8ebc73d0b
+          url: https://figshare.com/files/71630122
+          size: 3720749
+          md5: 881473cdccb4578426809a95fbeccf23
         run_info_file:
           name: models/eqv2/eqv2-s-dens-mp/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334412

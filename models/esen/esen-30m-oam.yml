@@ -119,32 +119,32 @@ metrics:
       size: 1318830
       md5: 9b58f65f581aa6785e48e693d3ee842d
     full_test_set:
-      F1: 0.902 # fraction
-      DAF: 5.281 # dimensionless
-      Precision: 0.906 # fraction
-      Recall: 0.899 # fraction
-      Accuracy: 0.967 # fraction
-      TP: 39628 # count
-      FP: 4100 # count
-      TN: 208771 # count
-      FN: 4464 # count
-      MAE: 0.018 # eV/atom
-      RMSE: 0.067 # eV/atom
-      R2: 0.86 # dimensionless
+      F1: 0.908 # fraction
+      DAF: 5.318 # dimensionless
+      Precision: 0.91 # fraction
+      Recall: 0.907 # fraction
+      Accuracy: 0.969 # fraction
+      TP: 39849 # count
+      FP: 3953 # count
+      TN: 209053 # count
+      FN: 4108 # count
+      MAE: 0.017 # eV/atom
+      RMSE: 0.066 # eV/atom
+      R2: 0.866 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.925 # fraction
-      DAF: 6.069 # dimensionless
-      Precision: 0.928 # fraction
-      Recall: 0.923 # fraction
-      Accuracy: 0.977 # fraction
-      TP: 30809 # count
-      FP: 2397 # count
-      TN: 179717 # count
-      FN: 2565 # count
-      MAE: 0.018 # eV/atom
-      RMSE: 0.067 # eV/atom
-      R2: 0.866 # dimensionless
+      F1: 0.931 # fraction
+      DAF: 6.114 # dimensionless
+      Precision: 0.931 # fraction
+      Recall: 0.932 # fraction
+      Accuracy: 0.979 # fraction
+      TP: 30967 # count
+      FP: 2304 # count
+      TN: 179942 # count
+      FN: 2275 # count
+      MAE: 0.017 # eV/atom
+      RMSE: 0.066 # eV/atom
+      R2: 0.872 # dimensionless
       missing_preds: 0 # count
   geo_opt:
     pred_file:
@@ -152,8 +152,8 @@ metrics:
       url: https://figshare.com/files/70328247
       size: 209503717
       md5: 4c21e6efdc64b5a7000f1d1fff0de3d5
+    rmsd_auc: 0.8159 # fraction
     symprec=1e-2:
-      rmsd: 0.0608 # unitless
       n_sym_ops_mae: 2.1015 # unitless
       symmetry_decrease: 0.1616 # fraction
       symmetry_match: 0.7103 # fraction
@@ -161,23 +161,22 @@ metrics:
       symmetry_lateral: 0.0196 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/esen/esen-30m-oam/2025-03-17-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333707
-        size: 6989286
-        md5: a65a76a4eef5f3a753461e246168dbfe
+        name: models/esen/esen-30m-oam/2025-03-17-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71652922
+        size: 7011569
+        md5: ad465f5fef7025592ea06274d05b2ca3
     symprec=1e-5:
-      rmsd: 0.0608 # unitless
-      n_sym_ops_mae: 4.1632 # unitless
-      symmetry_decrease: 0.474 # fraction
-      symmetry_match: 0.3636 # fraction
-      symmetry_increase: 0.1188 # fraction
+      n_sym_ops_mae: 4.1623 # unitless
+      symmetry_decrease: 0.4739 # fraction
+      symmetry_match: 0.3637 # fraction
+      symmetry_increase: 0.1189 # fraction
       symmetry_lateral: 0.0436 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/esen/esen-30m-oam/2025-03-17-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333710
-        size: 6925912
-        md5: 0889f2dc34dbb628b8aa58caf1688cb4
+        name: models/esen/esen-30m-oam/2025-03-17-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71652952
+        size: 6947149
+        md5: 6795c1dd473bd4344c939791b6d6f797
   md:
     pred_file:
       name: models/esen/esen-30m-oam/2026-06-28-md-metrics.csv.gz
@@ -215,9 +214,9 @@ metrics:
           md5: dcd8a70e5175169639568ad90531b6a6
         force_file:
           name: models/esen/esen-30m-oam/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71263168
-          size: 2236740
-          md5: 097bb265c1cd33d48b40dc53b5b16b29
+          url: https://figshare.com/files/71630128
+          size: 3744256
+          md5: 51c0080be829a84f9a2183fae3e2ca27
         run_info_file:
           name: models/esen/esen-30m-oam/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334442

@@ -104,21 +104,21 @@ metrics:
       size: 221195
       md5: 5064467b273a7d51a1a09cc1dde89e3f
     cost: {source: author_reported, hardware: NVIDIA H200, run_time_sec: 4432.1}
-    pbe_wall_dist_mae: 0.4054
-    pbe_energy_mae: 4.896
-    pbe_bond_length_error: 0.6183
-    pbe_well_depth_error: 0.751
-    pbe_vib_freq_error: 84.4
+    pbe_wall_dist_mae: 0.338
+    pbe_energy_mae: 4.565
+    pbe_bond_length_error: 0.609
+    pbe_well_depth_error: 0.7612
+    pbe_vib_freq_error: 80.63
     tortuosity: 1.202
     energy_diff_flips: 2.736
     energy_jump: 1.197
     force_flips: 2.851
     force_total_variation: 277.2
     force_jump: 33.68
-    pbe_force_mae: 2.676
+    pbe_force_mae: 2.519
     pbe_vib_freq_coverage:
-      n_valid: 70
-      n_eligible: 73
+      n_valid: 78
+      n_eligible: 81
       failed_elements:
       - Cs
       - K
@@ -161,35 +161,34 @@ metrics:
   geo_opt:
     pred_file:
       name: models/tace/tace-oam-rra-preview/2026-06-27-geo-opt.jsonl.gz
-      url: https://figshare.com/files/66036395
-      size: 107212176
-      md5: 5106cf859179b47ec59d0145be2ee9fc
+      url: https://figshare.com/files/71653471
+      size: 107961593
+      md5: e2df81b3a3fddefe1e3035a9607efae6
+    rmsd_auc: 0.827 # fraction
     symprec=1e-2:
-      rmsd: 0.0576 # unitless
       n_sym_ops_mae: 1.7004 # unitless
       symmetry_decrease: 0.0499 # fraction
       symmetry_match: 0.8185 # fraction
-      symmetry_increase: 0.1241 # fraction
+      symmetry_increase: 0.124 # fraction
       symmetry_lateral: 0.0076 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/tace/tace-oam-rra-preview/2026-06-27-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70334070
-        size: 7546584
-        md5: 4488f2846cdc7bee38e1ed249c8e89f0
+        name: models/tace/tace-oam-rra-preview/2026-06-27-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653477
+        size: 7569584
+        md5: 366fdf78d0ea90d67dc04961845575ab
     symprec=1e-5:
-      rmsd: 0.0576 # unitless
-      n_sym_ops_mae: 2.4359 # unitless
-      symmetry_decrease: 0.132 # fraction
+      n_sym_ops_mae: 2.4351 # unitless
+      symmetry_decrease: 0.1319 # fraction
       symmetry_match: 0.6343 # fraction
       symmetry_increase: 0.2213 # fraction
       symmetry_lateral: 0.0124 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/tace/tace-oam-rra-preview/2026-06-27-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70334073
-        size: 7587882
-        md5: c1044b28f255c163c969ed4beb2afc07
+        name: models/tace/tace-oam-rra-preview/2026-06-27-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653480
+        size: 7608924
+        md5: f715045af1946202ac7fd3b085ddcb64
   md:
     pred_file:
       name: models/tace/tace-oam-rra-preview/2026-06-29-md-metrics.csv.gz
@@ -226,9 +225,9 @@ metrics:
           md5: 62387230c1b9891b5abd3c3650743dad
         force_file:
           name: models/tace/tace-oam-rra-preview/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71263306
-          size: 2183028
-          md5: 1e48682b452c51a30fa48a122467ee39
+          url: https://figshare.com/files/71630218
+          size: 3693848
+          md5: 2bf13ea76ae0fa31022aac2662b2aef2
         run_info_file:
           name: models/tace/tace-oam-rra-preview/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334709

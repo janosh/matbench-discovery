@@ -4,9 +4,10 @@ To compute analysis CSVs and write metrics for a new model, first run
 scripts/analyze_geo_opt.py.
 
 RMSD values (structure_rmsd_vs_dft) are normalized by (volume per atom)^1/3 and
-thus unitless, not in Ångström. NaN values from structures that couldn't be
-matched are filled with 1.0 (the stol value from StructureMatcher) for
-metrics calculation.
+thus unitless, not in Ångström. Every model is evaluated on all DFT reference
+structures: missing predictions and structures the matcher couldn't pair with
+their DFT counterpart never enter the CDF, which therefore plateaus at the
+model's match rate, and they score 0 in the AUC (metrics.geo_opt.rmsd_auc).
 """
 
 # %%
@@ -23,6 +24,10 @@ from matbench_discovery.data import (
     file_ref_url,
 )
 from matbench_discovery.enums import DataFiles, MbdKey, resolve_verified_file
+from matbench_discovery.metrics import geo_opt
+
+# validate --models/--full-roster before minutes of loading, not at the first write
+full_roster = is_full_model_run()
 
 symprec = 1e-5
 metric_lvl = "metric"
@@ -64,7 +69,7 @@ for model in cli_args.models:
 
 if not model_data:
     print("No geo-opt analysis data for requested models")
-    if is_full_model_run():
+    if full_roster:
         raise SystemExit(1)
 
 model_keys = tuple(model_data)
@@ -73,7 +78,7 @@ df_all = pd.concat(
     model_data | {Key.dft.label: df_dft_analysis},
     axis="columns",
     names=["model", "metric"],
-)
+).reindex(df_dft_analysis.index)  # the test set: drops IDs outside the DFT reference
 del model_data
 
 
@@ -103,7 +108,7 @@ for model_key in model_keys:
 
 
 def payload_provenance(
-    parameters: dict[str, object], *, uses_payload_numerics: bool = False
+    parameters: dict[str, object], *, source_files: dict[str, str] | None = None
 ) -> dict[str, object]:
     """Build shared provenance for one geo-opt payload."""
     return figs.build_payload_provenance(
@@ -113,11 +118,7 @@ def payload_provenance(
                 DataFiles.wbm_dft_geo_opt_symprec_1e_5.path
             )
         },
-        source_files=(
-            {"payload_numerics": payload_numerics.__file__}
-            if uses_payload_numerics
-            else {}
-        ),
+        source_files=source_files or {},
         parameters={"symprec": symprec} | parameters,
         packages=("numpy", "pandas", "pymatviz"),
     )
@@ -132,7 +133,7 @@ figs.write_site_payload(
                 "coordinate_decimals": payload_numerics.COORD_DECIMALS,
                 "top_spacegroup_pairs": 10,
             },
-            uses_payload_numerics=True,
+            source_files={"payload_numerics": payload_numerics.__file__},
         ),
         "models": spg_sankey_models,
     },
@@ -169,37 +170,24 @@ figs.write_site_payload(
 )
 
 
-# %% Cumulative distribution of RMSD vs DFT
-x_max = 0.05
+# %% Cumulative distribution of RMSD vs DFT over all reference structures
+x_max = geo_opt.RMSD_AUC_CUTOFF
+df_rmsd = df_all.xs(MbdKey.structure_rmsd_vs_dft, level=metric_lvl, axis="columns")
 rmsd_cdf_models: list[dict[str, object]] = []
 for model_key in model_keys:
-    rmsd_vals = df_all.xs(
-        MbdKey.structure_rmsd_vs_dft, level=metric_lvl, axis="columns"
-    )[model_key].dropna()
-
-    # Calculate CDF
-    sorted_rmsds = np.sort(rmsd_vals)
-    cumulative = np.arange(1, len(sorted_rmsds) + 1) / len(sorted_rmsds)
+    rmsds = df_rmsd[model_key]
+    sorted_rmsds = np.sort(rmsds.dropna())
+    # denominator is the full test set, so unmatched/missing structures cap the CDF
+    cumulative = np.arange(1, len(sorted_rmsds) + 1) / len(rmsds)
 
     # Sample at most 200 distinct points evenly across the range
     indices = payload_numerics.evenly_spaced_indices(len(sorted_rmsds), 200)
-    sampled_rmsds = sorted_rmsds[indices]
-    sampled_cumulative = cumulative[indices]
-
-    # calculate AUC only up to x_max
-    auc = (
-        np.trapezoid(
-            sampled_cumulative[sampled_rmsds <= x_max],
-            sampled_rmsds[sampled_rmsds <= x_max],
-        )
-        / x_max
-    )
     rmsd_cdf_models.append(
         {
             **model_identities[model_key],
-            "auc": float(f"{auc:.3g}"),
-            "x": payload_numerics.round_list(sampled_rmsds),
-            "y": payload_numerics.round_list(sampled_cumulative),
+            "auc": float(f"{geo_opt.rmsd_auc(rmsds, df_rmsd.index):.3g}"),
+            "x": payload_numerics.round_list(sorted_rmsds[indices]),
+            "y": payload_numerics.round_list(cumulative[indices]),
         }
     )
 
@@ -213,7 +201,10 @@ figs.write_site_payload(
                 "coordinate_decimals": payload_numerics.COORD_DECIMALS,
                 "x_max": x_max,
             },
-            uses_payload_numerics=True,
+            source_files={
+                "payload_numerics": payload_numerics.__file__,
+                "geo_opt_metrics": geo_opt.__file__,
+            },
         ),
         "models": rmsd_cdf_models,
     },

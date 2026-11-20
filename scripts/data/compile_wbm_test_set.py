@@ -4,15 +4,14 @@ https://nature.com/articles/s41524-020-00481-6
 """
 
 # %%
-import gzip
 import os
-import pickle
 from glob import glob
 
 import numpy as np
 import pandas as pd
+from matscikit import PhaseDiagram, protostructure_label
+from matscikit.interop import structure_from_pymatgen_dict
 from pandas.core.util.hashing import hash_pandas_object
-from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram
 from pymatgen.core import Composition, Structure
 from pymatgen.entries.compatibility import (
     MaterialsProject2020Compatibility,
@@ -24,10 +23,13 @@ from tqdm import tqdm
 
 from matbench_discovery import WBM_DIR, today
 from matbench_discovery.data import DataFiles, load_datasets
-from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
+from matbench_discovery.energy import (
+    Entry,
+    formation_energies,
+    mp_elemental_ref_energies,
+)
 from matbench_discovery.enums import MbdKey
 from matbench_discovery.remote.fetch import download_file
-from matbench_discovery.structure import prototype
 
 try:
     import gdown
@@ -507,74 +509,81 @@ df_wbm["e_correction_per_atom_mp_legacy"] = [
     cse.correction_per_atom for cse in df_wbm[Key.computed_structure_entry]
 ]
 
-# clean up legacy corrections and apply new corrections
-entries_new_corr = MaterialsProject2020Compatibility(
-    strict_anions="no_check"
-).process_entries(df_wbm[Key.computed_structure_entry], clean=True, verbose=True)
+# clean up legacy corrections and apply current MP2020 corrections with pymatgen's
+# defaults (strict_anions="require_bound" since pymatgen#3803: an anion correction
+# needs oxidation state <= -1), the scheme model predictions are corrected with
+mp2020_compat = MaterialsProject2020Compatibility()
+entries_new_corr = mp2020_compat.process_entries(
+    df_wbm[Key.computed_structure_entry], clean=True, verbose=True
+)
 assert len(entries_new_corr) == len(df_wbm), f"{len(entries_new_corr)=} {len(df_wbm)=}"
 
 n_corrected = sum(
     cse.uncorrected_energy != cse.energy for cse in df_wbm[Key.computed_structure_entry]
 )
-# TODO 2024-08-07 n_corrected used to be 100,930, may have changed as a result of the
-# new strict_anions kwarg added in https://github.com/materialsproject/pymatgen/pull/3803
-# but strict_anions="no_check" which is meant to restore the pre-3803 behavior now
-# results in 99_000 corrected entries, which is closest one to the old number compared
-# to the other strict_anions options "require_exact" and "require_bound"
-assert n_corrected == 99_000, f"{n_corrected=:,}, expected 99k"
+assert n_corrected == 98_711, f"{n_corrected=:,}, expected 98,711"
 
 df_summary["e_correction_per_atom_mp2020"] = [
     cse.correction_per_atom for cse in df_wbm[Key.computed_structure_entry]
 ]
 
 avg_energy_corr = df_summary.e_correction_per_atom_mp2020.mean().round(4)
-assert avg_energy_corr == -0.1065, f"{avg_energy_corr=:.4}, expected -0.1065"
+assert avg_energy_corr == -0.1062, f"{avg_energy_corr=:.4}, expected -0.1062"
 
 
-# %%
-with gzip.open(DataFiles.mp_patched_phase_diagram.path, mode="rb") as zip_file:
-    ppd_mp: PatchedPhaseDiagram = pickle.load(zip_file)  # noqa: S301
+# %% convex hull of all MP entries (MP2020-corrected energies), solved per query as a
+# linear program by matscikit: ~1 s to build and query all ~257k WBM entries vs ~6 min
+# for the pymatgen PatchedPhaseDiagram loop it replaces (plus ~5 min to build the PPD)
+# MP entries are recorrected with the same scheme as the WBM entries: their stored
+# corrections came from the MP database build and differ for 329 of 154,718 entries
+df_mp_entries = pd.read_json(DataFiles.mp_computed_structure_entries.path)
+mp_cses = mp2020_compat.process_entries(
+    [ComputedStructureEntry.from_dict(dct) for dct in tqdm(df_mp_entries.entry)],
+    clean=True,
+)
+assert len(mp_cses) == len(df_mp_entries), f"{len(mp_cses)=} {len(df_mp_entries)=}"
+mp_entries = [Entry(cse.composition, cse.energy, cse.entry_id) for cse in mp_cses]
+mp_hull = PhaseDiagram(
+    [entry.composition for entry in mp_entries],
+    [entry.energy_per_atom for entry in mp_entries],
+)
 
 
 # %% calculate e_above_hull for each material
-# this loop needs above warnings.filterwarnings() in __init__.py to not crash Jupyter
-# kernel with logs
-# takes ~20 min at 200 it/s for 250k entries in WBM
 if MbdKey.each_true in df_summary:
     raise KeyError(f"{MbdKey.each_true!s} already in {df_summary.columns=}")
 
-for mat_id, cse in tqdm(
-    df_wbm[Key.computed_structure_entry].items(), total=len(df_wbm)
-):
-    assert mat_id == cse.entry_id, f"{mat_id=} != {cse.entry_id=}"
-    assert cse.entry_id in df_summary.index, f"{cse.entry_id=} not in df_summary"
-
-    e_above_hull = ppd_mp.get_e_above_hull(cse, allow_negative=True)
-
-    df_summary.loc[cse.entry_id, MbdKey.each_true] = e_above_hull
+wbm_cses = df_wbm[Key.computed_structure_entry]
+if mismatched_ids := [
+    mat_id for mat_id, cse in wbm_cses.items() if mat_id != cse.entry_id
+]:
+    raise ValueError(f"entry_id != material_id for {mismatched_ids[:10]=}")
+# the hull spans every WBM composition: a ValueError here means a WBM entry has an
+# element no MP entry has
+wbm_formulas = [cse.composition.formula for cse in wbm_cses]
+df_summary.loc[wbm_cses.index, MbdKey.each_true] = mp_hull.e_above_hull(
+    wbm_formulas, [cse.energy_per_atom for cse in wbm_cses]
+)
 
 
 # %% calculate formation energies from CSEs wrt MP elemental reference energies
 # first make sure source and target dfs have matching indices
 assert sum(df_wbm.index != df_summary.index) == 0
 
-for mat_id, row in tqdm(
-    df_wbm.iterrows(), total=len(df_wbm), desc="ML energies to CSEs"
-):
-    cse, formula = row[Key.computed_structure_entry], row.formula_from_cse
-    assert mat_id == cse.entry_id, f"{mat_id=} != {cse.entry_id=}"
-    assert mat_id in df_summary.index, f"{mat_id=} not in df_summary"
-
-    entry_like = dict(composition=formula, energy=cse.uncorrected_energy)
-    e_form = calc_energy_from_e_refs(entry_like, ref_energies=mp_elemental_ref_energies)
-    e_form_ppd = ppd_mp.get_form_energy_per_atom(cse) - cse.correction_per_atom
-
-    # make sure the phase diagram and standalone reference-energy methods of
-    # calculating formation energy agree
-    assert abs(e_form - e_form_ppd) < 1e-4, (
-        f"{mat_id}: {e_form=:.3} != {e_form_ppd=:.3} (diff={e_form - e_form_ppd:.3}))"
-    )
-    df_summary.loc[cse.entry_id, MbdKey.e_form_raw] = e_form
+e_forms_raw = formation_energies(
+    df_wbm.formula_from_cse,
+    [cse.uncorrected_energy for cse in wbm_cses],
+    mp_elemental_ref_energies,
+)
+# make sure the phase diagram and standalone reference-energy methods of calculating
+# formation energy agree
+e_forms_hull = np.asarray(
+    mp_hull.formation_energy(wbm_formulas, [cse.energy_per_atom for cse in wbm_cses])
+) - np.array([cse.correction_per_atom for cse in wbm_cses])
+e_form_diffs = pd.Series(e_forms_raw - e_forms_hull, index=df_wbm.index)
+if (bad_e_forms := e_form_diffs[e_form_diffs.abs() >= 1e-4]).any():
+    raise ValueError(f"formation energies disagree by >= 1e-4 eV/atom: {bad_e_forms}")
+df_summary[MbdKey.e_form_raw] = e_forms_raw
 
 
 df_summary[MbdKey.e_form_raw.replace("uncorrected", "mp2020_corrected")] = (
@@ -583,34 +592,23 @@ df_summary[MbdKey.e_form_raw.replace("uncorrected", "mp2020_corrected")] = (
 
 
 # %%
-# from initial structures
-for idx in tqdm(df_wbm.index):
-    if not pd.isna(df_summary.loc[idx].get(MbdKey.init_protostructure_spglib)):
-        continue  # Aflow label already computed
-    try:
-        struct = Structure.from_dict(df_wbm.loc[idx, Key.init_struct])
-        df_summary.loc[idx, MbdKey.init_protostructure_spglib] = (
-            prototype.get_protostructure_label(struct)
-        )
-    except (ValueError, KeyError, RuntimeError) as exc:
-        print(f"{idx=} {exc=}")
-
-# from relaxed structures
-for idx in tqdm(df_wbm.index):
-    if not pd.isna(df_summary.loc[idx].get(MbdKey.protostructure_spglib)):
-        continue
-
-    try:
-        cse = df_wbm.loc[idx, Key.computed_structure_entry]
-        struct = Structure.from_dict(cse["structure"])
-        df_summary.loc[idx, MbdKey.protostructure_spglib] = (
-            prototype.get_protostructure_label(struct)
-        )
-    except (ValueError, KeyError, RuntimeError) as exc:
-        print(f"{idx=} {exc=}")
-
-assert df_summary[MbdKey.init_protostructure_spglib].isna().sum() == 0
-assert df_summary[MbdKey.protostructure_spglib].isna().sum() == 0
+# Aflow-style protostructure labels of initial and relaxed structures (None where
+# symmetry detection fails, which raises naming the failed IDs)
+relaxed_structs = df_wbm[Key.computed_structure_entry].map(lambda cse: cse["structure"])
+for label_key, struct_dicts in (
+    (MbdKey.init_protostructure_spglib, df_wbm[Key.init_struct]),
+    (MbdKey.protostructure_spglib, relaxed_structs),
+):
+    if label_key not in df_summary:
+        df_summary[label_key] = None
+    todo = df_wbm.index[df_summary.loc[df_wbm.index, label_key].isna()]
+    structs = [
+        structure_from_pymatgen_dict(struct_dicts[idx])
+        for idx in tqdm(todo, desc=f"Hydrating {label_key}")
+    ]
+    df_summary.loc[todo, label_key] = protostructure_label(structs)
+    if failed_ids := list(df_summary.index[df_summary[label_key].isna()]):
+        raise ValueError(f"no {label_key} for {len(failed_ids):,} IDs: {failed_ids}")
 
 
 # %%

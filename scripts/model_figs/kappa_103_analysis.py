@@ -150,9 +150,10 @@ def model_payload(
         dft_weights = phonon_metrics.mode_weights_for_freqs(*dft_freqs)
         # exact Wasserstein-1 distance (THz) between the ML and DFT frequency
         # spectra as weighted distributions (meshes differ: full vs irreducible, so
-        # frequencies can't be paired pointwise). ML files store phono3py's BZ grid
-        # whose duplicate zone-boundary points are slightly over-weighted under the
-        # uniform-weight fallback -> ~0.02 THz noise floor that isn't model error
+        # frequencies can't be paired pointwise). Older ML files store phono3py's BZ
+        # grid, whose duplicate zone-boundary points are slightly over-weighted under
+        # the uniform-weight fallback -> ~0.02 THz noise floor that isn't model error;
+        # current runs store each regular grid point once
         w1_dist = phonon_metrics.phonon_spectrum_w1(row_ml, row_dft)
         cols["freq_w1"].append(first_scalar(w1_dist))
         for freqs, weights, qq_target in (
@@ -177,7 +178,9 @@ def model_payload(
 
 def main() -> int:
     """Build the kappa-103-analysis payload across all requested models."""
-    import ase.io
+    # validate --models/--full-roster before loading predictions, not at the write
+    full_roster = is_full_model_run()
+    from matscikit.io import read_extxyz
 
     from matbench_discovery.phonons import read_kappa_json
 
@@ -185,8 +188,9 @@ def main() -> int:
     material_ids = [str(mat_id) for mat_id in df_dft.index]
     spg_nums = canonical_spacegroup_numbers(df_dft, material_ids)
     atom_densities = {
-        atoms.info["material_id"]: len(atoms) / atoms.get_volume()
-        for atoms in ase.io.iread(DataFiles.phonondb_pbe_103_structures.path)
+        frame.structure.info["material_id"]: len(frame.structure)
+        / frame.structure.volume
+        for frame in read_extxyz(DataFiles.phonondb_pbe_103_structures.path)
     }
 
     models: list[dict[str, Any]] = []
@@ -205,7 +209,7 @@ def main() -> int:
 
     if not models:
         print("No models with kappa_103 predictions found")
-        if is_full_model_run():
+        if full_roster:
             return 1
 
     from matbench_discovery.metrics.phonons import (
@@ -240,7 +244,7 @@ def main() -> int:
             "kappa_decimals": KAPPA_DECIMALS,
             "qq_levels": payload_numerics.round_list(QQ_LEVELS),
         },
-        packages=("ase", "numpy", "pandas", "pymatviz", "scipy"),
+        packages=("matscikit", "numpy", "pandas", "pymatviz", "scipy"),
     )
     payload = {
         **provenance,

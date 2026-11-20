@@ -58,7 +58,7 @@ hyperparams:
     cell_filter: FrechetCellFilter
     kappa:
       protocol: phonondb-v1
-      displacement_distance: 0.01 # legacy runs used 0.01 Å; the PhononDB-PBE reference uses 0.03 Å
+      displacement_distance: 0.03 # k_SRME run: its init_phono3py default, not overridden by the script
   architecture:
     graph_construction_radius: 6.0
 
@@ -94,32 +94,32 @@ metrics:
       size: 2763931
       md5: fea4f78efa39cfe1076736539ef3ef3f
     full_test_set:
-      F1: 0.861 # fraction
-      DAF: 5.046 # dimensionless
-      Precision: 0.866 # fraction
-      Recall: 0.856 # fraction
-      Accuracy: 0.953 # fraction
-      TP: 37754 # count
-      FP: 5846 # count
-      TN: 207025 # count
-      FN: 6338 # count
-      MAE: 0.023 # eV/atom
-      RMSE: 0.068 # eV/atom
-      R2: 0.856 # dimensionless
+      F1: 0.866 # fraction
+      DAF: 5.08 # dimensionless
+      Precision: 0.869 # fraction
+      Recall: 0.863 # fraction
+      Accuracy: 0.954 # fraction
+      TP: 37951 # count
+      FP: 5718 # count
+      TN: 207288 # count
+      FN: 6006 # count
+      MAE: 0.022 # eV/atom
+      RMSE: 0.067 # eV/atom
+      R2: 0.861 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.88 # fraction
-      DAF: 5.774 # dimensionless
-      Precision: 0.883 # fraction
-      Recall: 0.878 # fraction
-      Accuracy: 0.963 # fraction
-      TP: 29313 # count
-      FP: 3898 # count
-      TN: 178216 # count
-      FN: 4061 # count
+      F1: 0.886 # fraction
+      DAF: 5.815 # dimensionless
+      Precision: 0.885 # fraction
+      Recall: 0.886 # fraction
+      Accuracy: 0.965 # fraction
+      TP: 29457 # count
+      FP: 3817 # count
+      TN: 178429 # count
+      FN: 3785 # count
       MAE: 0.023 # eV/atom
-      RMSE: 0.068 # eV/atom
-      R2: 0.862 # dimensionless
+      RMSE: 0.067 # eV/atom
+      R2: 0.867 # dimensionless
       missing_preds: 0 # count
   geo_opt:
     pred_file:
@@ -127,32 +127,31 @@ metrics:
       url: https://figshare.com/files/66575555
       size: 93343405
       md5: 449451d414a7dda247ae9e3748590fe3
+    rmsd_auc: 0.7685 # fraction
     symprec=1e-5:
-      rmsd: 0.0666 # unitless
       n_sym_ops_mae: 1.8672 # unitless
       symmetry_decrease: 0.0325 # fraction
       symmetry_match: 0.733 # fraction
-      symmetry_increase: 0.2301 # fraction
+      symmetry_increase: 0.2302 # fraction
       symmetry_lateral: 0.0044 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/grace/grace-2l-oam/2025-01-28-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333725
-        size: 6836393
-        md5: b680cfa94adfa5ab5470f89d0c1b21af
+        name: models/grace/grace-2l-oam/2025-01-28-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71652979
+        size: 6855042
+        md5: de18f777b06cc1947fef1d9b4ab9f02f
     symprec=1e-2:
-      rmsd: 0.0666 # unitless
-      n_sym_ops_mae: 1.7962 # unitless
+      n_sym_ops_mae: 1.7963 # unitless
       symmetry_decrease: 0.0563 # fraction
       symmetry_match: 0.8159 # fraction
       symmetry_increase: 0.1209 # fraction
       symmetry_lateral: 0.0069 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/grace/grace-2l-oam/2025-01-28-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333728
-        size: 6849304
-        md5: 7332fcc3d0eb20c6295cfccef6128ef7
+        name: models/grace/grace-2l-oam/2025-01-28-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71652985
+        size: 6868707
+        md5: 6e3f6be07148fe55f98251cd9cfd0290
   md:
     pred_file:
       name: models/grace/grace-2l-oam/2026-06-28-md-metrics.csv.gz
@@ -190,9 +189,9 @@ metrics:
           md5: 7253686bf5c7c75a62c2027d5c0162b4
         force_file:
           name: models/grace/grace-2l-oam/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71263177
-          size: 1905778
-          md5: 6dab590fe0761c886c6be62aa39283c3
+          url: https://figshare.com/files/71630140
+          size: 3508514
+          md5: 1019fa714a9e31c928d6f1259745241b
         run_info_file:
           name: models/grace/grace-2l-oam/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334472

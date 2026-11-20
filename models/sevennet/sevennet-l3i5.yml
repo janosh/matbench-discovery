@@ -63,7 +63,7 @@ hyperparams:
     cell_filter: FrechetCellFilter
     kappa:
       protocol: phonondb-v1
-      displacement_distance: 0.01 # legacy runs used 0.01 Å; the PhononDB-PBE reference uses 0.03 Å
+      displacement_distance: 0.03 # run by test_sevennet_kappa_with_ray.py with k_srme's init_phono3py default
   architecture:
     n_layers: 5
     graph_construction_radius: 5.0
@@ -155,32 +155,32 @@ metrics:
       size: 1657501
       md5: 05b0b77a24264da18c899f5a24d18791
     full_test_set:
-      F1: 0.751 # fraction
-      DAF: 4.112 # dimensionless
-      Precision: 0.706 # fraction
-      Recall: 0.803 # fraction
-      Accuracy: 0.909 # fraction
-      TP: 35385 # count
-      FP: 14764 # count
-      TN: 198107 # count
-      FN: 8707 # count
-      MAE: 0.042 # eV/atom
-      RMSE: 0.086 # eV/atom
-      R2: 0.773 # dimensionless
+      F1: 0.755 # fraction
+      DAF: 4.136 # dimensionless
+      Precision: 0.707 # fraction
+      Recall: 0.809 # fraction
+      Accuracy: 0.91 # fraction
+      TP: 35544 # count
+      FP: 14696 # count
+      TN: 198310 # count
+      FN: 8413 # count
+      MAE: 0.041 # eV/atom
+      RMSE: 0.085 # eV/atom
+      R2: 0.778 # dimensionless
       missing_preds: 3 # count
     unique_prototypes:
-      F1: 0.76 # fraction
-      DAF: 4.629 # dimensionless
-      Precision: 0.708 # fraction
-      Recall: 0.821 # fraction
-      Accuracy: 0.92 # fraction
-      TP: 27404 # count
-      FP: 11322 # count
-      TN: 170792 # count
-      FN: 5970 # count
-      MAE: 0.044 # eV/atom
-      RMSE: 0.087 # eV/atom
-      R2: 0.776 # dimensionless
+      F1: 0.764 # fraction
+      DAF: 4.659 # dimensionless
+      Precision: 0.709 # fraction
+      Recall: 0.828 # fraction
+      Accuracy: 0.921 # fraction
+      TP: 27520 # count
+      FP: 11284 # count
+      TN: 170962 # count
+      FN: 5722 # count
+      MAE: 0.043 # eV/atom
+      RMSE: 0.086 # eV/atom
+      R2: 0.78 # dimensionless
       missing_preds: 1 # count
   geo_opt:
     pred_file:
@@ -188,32 +188,31 @@ metrics:
       url: https://figshare.com/files/70324761
       size: 143322218
       md5: e0595138dada18001796768384a366c2
+    rmsd_auc: 0.6686 # fraction
     symprec=1e-5:
-      rmsd: 0.0848 # unitless
-      n_sym_ops_mae: 2.7178 # unitless
+      n_sym_ops_mae: 2.7175 # unitless
       symmetry_decrease: 0.3667 # fraction
       symmetry_match: 0.4412 # fraction
       symmetry_increase: 0.1451 # fraction
       symmetry_lateral: 0.047 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/sevennet/sevennet-l3i5/2024-12-10-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333944
-        size: 7858059
-        md5: aa73366725750462cfc10f2b22948525
+        name: models/sevennet/sevennet-l3i5/2024-12-10-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653315
+        size: 7885677
+        md5: d6c2480edaef195d925c915a4d09d05b
     symprec=1e-2:
-      rmsd: 0.0848 # unitless
-      n_sym_ops_mae: 1.9379 # unitless
+      n_sym_ops_mae: 1.938 # unitless
       symmetry_decrease: 0.0895 # fraction
       symmetry_match: 0.788 # fraction
       symmetry_increase: 0.1134 # fraction
       symmetry_lateral: 0.0091 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/sevennet/sevennet-l3i5/2024-12-10-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333947
-        size: 8094516
-        md5: 7d1ed179a19d3fb01b08aaa69648a713
+        name: models/sevennet/sevennet-l3i5/2024-12-10-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653318
+        size: 8122100
+        md5: fda87a6b303878793f257c470cacc11f
   md:
     pred_file:
       name: models/sevennet/sevennet-l3i5/2026-06-28-md-metrics.csv.gz
@@ -251,9 +250,9 @@ metrics:
           md5: 759847bc8bd96870ddbbff39f6ca7ad2
         force_file:
           name: models/sevennet/sevennet-l3i5/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71263291
-          size: 2126098
-          md5: 15f334a6916cda5fb6cb532905f0c9a6
+          url: https://figshare.com/files/71630206
+          size: 3637659
+          md5: 513bdef10aa61de2e24ce0830b9bbf31
         run_info_file:
           name: models/sevennet/sevennet-l3i5/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334667

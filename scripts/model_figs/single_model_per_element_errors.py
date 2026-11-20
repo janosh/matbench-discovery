@@ -6,8 +6,11 @@ import json
 import pandas as pd
 
 from matbench_discovery import SITE_DIR, figs, payload_numerics, preds
-from matbench_discovery.cli import cli_args, complete_models
+from matbench_discovery.cli import cli_args, complete_models, is_full_model_run
 from matbench_discovery.preds import elements
+
+# validate --models/--full-roster before loading predictions, not at the write
+is_full_model_run()
 
 models_to_plot = complete_models()
 
@@ -53,7 +56,7 @@ figs.write_site_payload(
                 "analysis": "element_prevalence",
                 "coordinate_decimals": payload_numerics.COORD_DECIMALS,
             },
-            packages=("pymatgen",),
+            packages=("matscikit",),
             hull_dist=False,
         ),
     },
@@ -93,7 +96,7 @@ figs.write_site_payload(
             benchmark_inputs={"mp_element_occurrences": preds.MP_COUNTS_PATH},
             source_files=prediction_error_source,
             parameters={"output_decimals": 4},
-            packages=("pymatgen",),
+            packages=("matscikit",),
             hull_dist=False,
         ),
         "mp_occurrences": json.loads(df_elem_err[preds.TRAIN_COUNT_COL].to_json()),

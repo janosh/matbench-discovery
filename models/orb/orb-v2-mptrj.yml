@@ -58,7 +58,7 @@ hyperparams:
     cell_filter: FrechetCellFilter
     kappa:
       protocol: phonondb-v1
-      displacement_distance: 0.01 # legacy runs used 0.01 Å; the PhononDB-PBE reference uses 0.03 Å
+      displacement_distance: 0.03 # k_SRME run: its init_phono3py default, not overridden by the script
       is_plusminus: true
   architecture:
     n_layers: 15
@@ -128,32 +128,32 @@ metrics:
       size: 1325089
       md5: 7ad5e62654b2b3511b912a939c085d36
     full_test_set:
-      F1: 0.755 # fraction
-      DAF: 4.188 # dimensionless
-      Precision: 0.719 # fraction
-      Recall: 0.795 # fraction
-      Accuracy: 0.911 # fraction
-      TP: 35047 # count
-      FP: 13729 # count
-      TN: 199142 # count
-      FN: 9045 # count
+      F1: 0.759 # fraction
+      DAF: 4.213 # dimensionless
+      Precision: 0.721 # fraction
+      Recall: 0.801 # fraction
+      Accuracy: 0.913 # fraction
+      TP: 35190 # count
+      FP: 13637 # count
+      TN: 199369 # count
+      FN: 8767 # count
       MAE: 0.043 # eV/atom
-      RMSE: 0.09 # eV/atom
-      R2: 0.752 # dimensionless
+      RMSE: 0.089 # eV/atom
+      R2: 0.756 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.765 # fraction
-      DAF: 4.702 # dimensionless
-      Precision: 0.719 # fraction
-      Recall: 0.817 # fraction
-      Accuracy: 0.922 # fraction
-      TP: 27276 # count
-      FP: 10668 # count
-      TN: 171446 # count
-      FN: 6098 # count
-      MAE: 0.045 # eV/atom
-      RMSE: 0.091 # eV/atom
-      R2: 0.756 # dimensionless
+      F1: 0.769 # fraction
+      DAF: 4.734 # dimensionless
+      Precision: 0.721 # fraction
+      Recall: 0.824 # fraction
+      Accuracy: 0.924 # fraction
+      TP: 27379 # count
+      FP: 10611 # count
+      TN: 171635 # count
+      FN: 5863 # count
+      MAE: 0.044 # eV/atom
+      RMSE: 0.09 # eV/atom
+      R2: 0.76 # dimensionless
       missing_preds: 0 # count
   geo_opt:
     pred_file:
@@ -161,8 +161,8 @@ metrics:
       url: https://figshare.com/files/70325424
       size: 136527936
       md5: 5547198f16832896d271166d716d10fe
+    rmsd_auc: 0.6571 # fraction
     symprec=1e-5:
-      rmsd: 0.1007 # unitless
       n_sym_ops_mae: 10.0888 # unitless
       symmetry_decrease: 0.8655 # fraction
       symmetry_match: 0.1335 # fraction
@@ -170,23 +170,22 @@ metrics:
       symmetry_lateral: 0.0001 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/orb/orb-v2-mptrj/2024-10-14-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333920
-        size: 6131208
-        md5: e2cca0d7b4b1cd0af319e4a5f2069c14
+        name: models/orb/orb-v2-mptrj/2024-10-14-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653270
+        size: 6157285
+        md5: aaf0e4625450cd00056401bcc21d11d9
     symprec=1e-2:
-      rmsd: 0.1007 # unitless
-      n_sym_ops_mae: 5.6352 # unitless
-      symmetry_decrease: 0.5213 # fraction
-      symmetry_match: 0.4332 # fraction
+      n_sym_ops_mae: 5.634 # unitless
+      symmetry_decrease: 0.5212 # fraction
+      symmetry_match: 0.4333 # fraction
       symmetry_increase: 0.0387 # fraction
-      symmetry_lateral: 0.0067 # fraction
+      symmetry_lateral: 0.0068 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/orb/orb-v2-mptrj/2024-10-14-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333923
-        size: 6828299
-        md5: 46d5efe1299ae503d3bd29671a4ad350
+        name: models/orb/orb-v2-mptrj/2024-10-14-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653276
+        size: 6858179
+        md5: 5114936e23157b36142a718d43e27acc
   md:
     pred_file:
       name: models/orb/orb-v2-mptrj/2026-06-28-md-metrics.csv.gz
@@ -224,9 +223,9 @@ metrics:
           md5: 0ec88ad933488a4fbfca1d04a65e9b13
         force_file:
           name: models/orb/orb-v2-mptrj/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71263276
-          size: 3149873
-          md5: f025196b67c76e8df3f5a3e003b21602
+          url: https://figshare.com/files/71630191
+          size: 4660481
+          md5: 4c9b335d673aa7c133737da0dbed83b6
         run_info_file:
           name: models/orb/orb-v2-mptrj/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334637

@@ -7,31 +7,30 @@ import subprocess
 import sys
 import tomllib
 import zipfile
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
-from ase.calculators.calculator import Calculator
-from ase.calculators.emt import EMT
+from matscikit import EMT
 from packaging.requirements import Requirement
 from packaging.version import Version
 
 from matbench_discovery import ROOT, calculators, hpc
-from matbench_discovery.calculators import CALCULATORS, load_calculator
+from matbench_discovery.calculators import CALCULATORS, load_model
 from matbench_discovery.enums import Model
 from tests.utils import patch_model_metadata
 
 
-def test_load_calculator(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_load_model(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """EMT loads with no deps, undeclared non-default dtype and unknown keys raise."""
     # emt has no model YAML: must stay an eager CalcSpec, not _runtime_calc_spec.
     assert isinstance(CALCULATORS._data["emt"], calculators.CalcSpec)  # noqa: SLF001
-    assert isinstance(load_calculator("emt"), EMT)
-    assert isinstance(load_calculator("emt", dtype="float64"), EMT)
+    assert isinstance(load_model("emt"), EMT)
+    assert isinstance(load_model("emt", dtype="float64"), EMT)
     with pytest.raises(ValueError, match="emt calculator has no dtype option"):
-        load_calculator("emt", dtype="float32")
+        load_model("emt", dtype="float32")
 
     seen_dtype = ""
     seen_checkpoint: str | None = None
@@ -51,9 +50,7 @@ def test_load_calculator(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Non
     )
     checkpoint_path = str(tmp_path / "model.pt")
     Path(checkpoint_path).write_bytes(b"checkpoint")
-    load_calculator(
-        "mace-mp-0", device="cpu", dtype="float32", checkpoint=checkpoint_path
-    )
+    load_model("mace-mp-0", device="cpu", dtype="float32", checkpoint=checkpoint_path)
     assert seen_dtype == "float32"
     assert seen_checkpoint == os.path.abspath(checkpoint_path)
 
@@ -71,7 +68,7 @@ def test_load_calculator(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Non
             configurable_calc, auto_checkpoint=True, checkpoint_ext=".pt"
         ),
     )
-    load_calculator("mace_mp_0", device="cpu")
+    load_model("mace_mp_0", device="cpu")
     assert seen_checkpoint == checkpoint_path
 
     monkeypatch.setitem(
@@ -80,10 +77,10 @@ def test_load_calculator(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Non
         calculators.CalcSpec(configurable_calc, requires_checkpoint=True),
     )
     with pytest.raises(ValueError, match="requires an explicit checkpoint"):
-        load_calculator("equiformer_v3_mp", device="cpu")
+        load_model("equiformer_v3_mp", device="cpu")
 
     with pytest.raises(ValueError, match="Unknown model"):
-        load_calculator("does-not-exist")
+        load_model("does-not-exist")
 
 
 def test_load_calculator_with_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -95,26 +92,33 @@ def test_load_calculator_with_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
     assert [runtime[key] for key in labels] == ["none", "cpu", cpu, [], 1]
     assert "dtype" not in runtime  # unknown for non-torch calculators w/o dtype arg
     assert runtime["load_time_sec"] >= 0
-    assert "ase" in runtime["versions"]
+    assert "matscikit" in runtime["versions"]
 
     torch = pytest.importorskip("torch")
 
-    class TorchCalc(EMT):
-        """EMT carrying a float32 torch module, like an MLIP calculator."""
+    class TorchModel:
+        """EMT carrying a float32 torch module, like an MLIP model."""
 
         def __init__(self) -> None:
-            super().__init__()
+            """Wrap EMT and attach a float32 torch module for the runtime probe."""
+            self.emt = EMT()
             self.model = torch.nn.Linear(2, 2).to(torch.float32)
 
-    def float64_factory(device: str, dtype: str = "float64") -> EMT:
+        def compute(
+            self, structures: Sequence[object], properties: Sequence[str]
+        ) -> list[dict[str, object]]:
+            """Delegate to EMT so the object satisfies the matscikit model protocol."""
+            return self.emt.compute(structures, properties)
+
+    def float64_factory(device: str, dtype: str = "float64") -> TorchModel:
         """Factory that ignores dtype (weights stay float32)."""
         del device, dtype
-        return TorchCalc()
+        return TorchModel()
 
-    def no_dtype_factory(device: str) -> Calculator:
+    def no_dtype_factory(device: str) -> TorchModel:
         """Factory without a dtype option: the detected dtype is recorded."""
         del device
-        return calculators._with_acceleration(TorchCalc(), "cuequivariance")  # noqa: SLF001
+        return calculators._with_acceleration(TorchModel(), "cuequivariance")  # noqa: SLF001
 
     monkeypatch.setitem(
         calculators.CALCULATORS, "mace_mp_0", calculators.CalcSpec(no_dtype_factory)
@@ -155,7 +159,7 @@ def test_uv_command_layers_model_packages_on_runner_env(
     """--with mode drops YAML Python and runner-provided pins, keeps model packages."""
     environment = {
         "python_version": "3.11",  # provenance only
-        "dependencies": ["ase==3.22.1", "Pymatgen>=2024", "torch==2.0.1", "fake-mlip"],
+        "dependencies": ["ase==3.22.1", "NumPy>=2", "torch==2.0.1", "fake-mlip"],
         "find_links": ["https://data.pyg.org/whl/torch-2.0.1.html"],
         "extra_index_urls": ["https://example.org/simple"],
     }
@@ -170,7 +174,8 @@ def test_uv_command_layers_model_packages_on_runner_env(
         *("models/run_md.py", "--model", "mace_mp_0"),
     ]
     provided = calculators.runner_provided_packages()
-    assert {"ase", "numpy", "pymatgen", "phonopy", "matbench-discovery"} <= provided
+    assert {"ase", "numpy", "matscikit", "matbench-discovery"} <= provided
+    assert not {"pymatgen", "phonopy", "phono3py", "seekpath"} & provided
     assert "torch" not in provided
 
 
@@ -478,7 +483,9 @@ def test_nequip_factory_load_path(
 ) -> None:
     """NequIP/Allegro load AOTI .nequip.pt2s, except eager NequIP-OAM-XL (SIGFPEs)."""
     compile_stub = Mock()
-    compiled_loader, eager_loader = Mock(return_value=EMT()), Mock(return_value=EMT())
+    # real NequIP factories return ASE calculators, which carry a __dict__ for tags
+    compiled_loader = Mock(return_value=SimpleNamespace())
+    eager_loader = Mock(return_value=SimpleNamespace())
     nequip_ase = ModuleType("nequip.ase")
     nequip_ase.NequIPCalculator = SimpleNamespace(  # ty: ignore[unresolved-attribute]
         from_compiled_model=compiled_loader, _from_saved_model=eager_loader

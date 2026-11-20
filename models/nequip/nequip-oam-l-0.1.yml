@@ -151,32 +151,32 @@ metrics:
       size: 1579363
       md5: 5d13ab672ecb7539adb7c01672541134
     full_test_set:
-      F1: 0.87 # fraction
-      DAF: 5.06 # dimensionless
-      Precision: 0.868 # fraction
-      Recall: 0.872 # fraction
-      Accuracy: 0.955 # fraction
-      TP: 38456 # count
-      FP: 5835 # count
-      TN: 207036 # count
-      FN: 5636 # count
-      MAE: 0.022 # eV/atom
-      RMSE: 0.068 # eV/atom
-      R2: 0.858 # dimensionless
+      F1: 0.875 # fraction
+      DAF: 5.094 # dimensionless
+      Precision: 0.871 # fraction
+      Recall: 0.88 # fraction
+      Accuracy: 0.957 # fraction
+      TP: 38664 # count
+      FP: 5705 # count
+      TN: 207301 # count
+      FN: 5293 # count
+      MAE: 0.021 # eV/atom
+      RMSE: 0.067 # eV/atom
+      R2: 0.863 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.893 # fraction
-      DAF: 5.823 # dimensionless
-      Precision: 0.89 # fraction
-      Recall: 0.895 # fraction
-      Accuracy: 0.967 # fraction
-      TP: 29867 # count
-      FP: 3684 # count
-      TN: 178430 # count
-      FN: 3507 # count
-      MAE: 0.022 # eV/atom
-      RMSE: 0.068 # eV/atom
-      R2: 0.865 # dimensionless
+      F1: 0.898 # fraction
+      DAF: 5.865 # dimensionless
+      Precision: 0.893 # fraction
+      Recall: 0.903 # fraction
+      Accuracy: 0.968 # fraction
+      TP: 30015 # count
+      FP: 3601 # count
+      TN: 178645 # count
+      FN: 3227 # count
+      MAE: 0.021 # eV/atom
+      RMSE: 0.066 # eV/atom
+      R2: 0.87 # dimensionless
       missing_preds: 0 # count
   geo_opt:
     pred_file:
@@ -184,32 +184,31 @@ metrics:
       url: https://figshare.com/files/70325328
       size: 107819208
       md5: 0d0c4d92c4ed6b12bd1278dce414ae03
+    rmsd_auc: 0.7819 # fraction
     symprec=1e-5:
-      rmsd: 0.0647 # unitless
-      n_sym_ops_mae: 1.9351 # unitless
+      n_sym_ops_mae: 1.9355 # unitless
       symmetry_decrease: 0.0792 # fraction
       symmetry_match: 0.7125 # fraction
       symmetry_increase: 0.2018 # fraction
       symmetry_lateral: 0.0064 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/nequip/nequip-oam-l-0.1/2025-08-27-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333887
-        size: 8139542
-        md5: da3b664ad26512f3849dd4b5ce3f4f10
+        name: models/nequip/nequip-oam-l-0.1/2025-08-27-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653195
+        size: 8165165
+        md5: 0540544d65ba62e8f539f88d7e9b1318
     symprec=1e-2:
-      rmsd: 0.0647 # unitless
-      n_sym_ops_mae: 1.7483 # unitless
+      n_sym_ops_mae: 1.7485 # unitless
       symmetry_decrease: 0.0543 # fraction
       symmetry_match: 0.816 # fraction
       symmetry_increase: 0.1226 # fraction
       symmetry_lateral: 0.0071 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/nequip/nequip-oam-l-0.1/2025-08-27-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333890
-        size: 8212559
-        md5: 73cecce3bcc055388123640d1afc701a
+        name: models/nequip/nequip-oam-l-0.1/2025-08-27-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653198
+        size: 8237472
+        md5: 33e47c4e6150a88d9bcb2b606076d730
   md:
     pred_file:
       name: models/nequip/nequip-oam-l-0.1/2026-06-28-md-metrics.csv.gz
@@ -247,9 +246,9 @@ metrics:
           md5: 902e5310c31e574613dbd502124964c7
         force_file:
           name: models/nequip/nequip-oam-l-0.1/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71263258
-          size: 2210686
-          md5: 55073d2a0d323597ed357d1559595a19
+          url: https://figshare.com/files/71630179
+          size: 3728213
+          md5: 2f2fa768d975e06b2f4b27d574b4b16a
         run_info_file:
           name: models/nequip/nequip-oam-l-0.1/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334586

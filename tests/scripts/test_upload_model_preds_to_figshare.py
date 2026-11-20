@@ -54,7 +54,7 @@ def test_upload_writes_file_refs_back_to_yaml(
     metrics = {
         "pred_file": {"name": PRED_REL},
         "force_file": {"name": FORCE_REL},
-        "symprec=1e-2": {"analysis_file": {"name": ANALYSIS_REL}, "rmsd": 0.1},
+        "symprec=1e-2": {"analysis_file": {"name": ANALYSIS_REL}, "n_sym_ops_mae": 0.1},
         "reproducibility": {"runs": [{"label": "old", "file": {"name": REPRO_REL}}]},
     }
     yaml_path = f"{tmp_path}/models/arch/model.yml"
@@ -115,7 +115,7 @@ def test_upload_writes_file_refs_back_to_yaml(
     assert published == (
         [] if same_hash else [figshare.ARTICLE_IDS["model_preds_geo_opt"]]
     )
-    assert written["symprec=1e-2"]["rmsd"] == 0.1  # sibling metrics survive
+    assert written["symprec=1e-2"]["n_sym_ops_mae"] == 0.1  # sibling metrics survive
     for idx, rel_path in enumerate(selected, start=1):
         file_id = existing_ids[rel_path] if same_hash else 10 + idx
         assert refs[rel_path] == {

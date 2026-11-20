@@ -2,11 +2,10 @@
 
 from pathlib import Path
 
-import ase.io
 import numpy as np
 import pytest
-from ase.build import bulk
-from ase.calculators.emt import EMT
+from matscikit import EMT, Structure
+from matscikit.io import Frame, write_extxyz
 
 from matbench_discovery.md import (
     list_reference_systems,
@@ -58,10 +57,19 @@ def test_md_convert_load_settings(tmp_path: Path) -> None:
 SYSTEM = "bulkCu_300K-Artrith_VASP"
 
 
-def write_raw_reference(tmp_path: Path, dt_fs: float = 0.25) -> list[ase.Atoms]:
+def write_raw_reference(tmp_path: Path, dt_fs: float = 0.25) -> list[Frame]:
     """Write one short EMT Cu NVT trajectory + settings CSV under tmp_path."""
+    a = 3.61
+    shifts = [[i, j, k] for i in range(2) for j in range(2) for k in range(2)]
+    basis = [[0, 0, 0], [0, 0.5, 0.5], [0.5, 0, 0.5], [0.5, 0.5, 0]]
+    frac = [
+        [(b + s) / 2 for b, s in zip(site, shift, strict=True)]
+        for shift in shifts
+        for site in basis
+    ]
+    cu_supercell = Structure(2 * a * np.eye(3), ["Cu"] * 32, frac, fractional=True)
     frames = run_nvt_md(
-        bulk("Cu", cubic=True) * (2, 2, 2),
+        cu_supercell,
         EMT(),
         temperature_kelvin=300,
         n_steps=8,
@@ -69,7 +77,7 @@ def write_raw_reference(tmp_path: Path, dt_fs: float = 0.25) -> list[ase.Atoms]:
     )
     sys_dir = tmp_path / "raw" / SYSTEM
     sys_dir.mkdir(parents=True)
-    ase.io.write(sys_dir / "traj.extxyz", frames)
+    write_extxyz(str(sys_dir / "traj.extxyz"), frames)
     settings_csv = tmp_path / "settings.csv"
     settings_csv.write_text(f"System,temperature,stride,dt\nbulkCu,300,4,{dt_fs}\n")
     return frames
@@ -97,9 +105,9 @@ def test_md_convert_packs_reference(tmp_path: Path) -> None:
     assert dt_fs == 0.25  # dt = 0.25 fs (stride 4 not folded into saved-frame interval)
     assert temperature == 300.0
     assert traj.n_frames == len(frames)
-    # extxyz round-trips positions to print precision
+    # extxyz round-trips numbers exactly; positions keep ~1 ulp of fractional storage
     np.testing.assert_allclose(
-        traj.positions[0], frames[0].positions, rtol=0, atol=1e-6
+        traj.positions[0], frames[0].structure.positions, rtol=0, atol=1e-14
     )
 
 

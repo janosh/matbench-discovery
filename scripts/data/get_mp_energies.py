@@ -24,14 +24,15 @@ import os
 import pandas as pd
 import plotly.express as px
 import pymatviz as pmv
+from matscikit import protostructure_label
+from matscikit.interop import structure_from_pymatgen_dict
 from mp_api.client import MPRester
-from pymatgen.core import Element, Structure
+from pymatgen.core import Element
 from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import MP_DIR, STABILITY_THRESHOLD, today
 from matbench_discovery.data import DataFiles
-from matbench_discovery.structure import prototype
 
 os.makedirs(MP_DIR, exist_ok=True)
 potcar_spec_key = "potcar_spec"
@@ -76,15 +77,13 @@ df_mp_cse = pd.read_json(DataFiles.mp_computed_structure_entries.path).set_index
     Key.mat_id
 )
 
-df_mp_cse[Key.structure] = [
-    Structure.from_dict(cse[Key.structure])
+mp_structs = [
+    structure_from_pymatgen_dict(cse[Key.structure])
     for cse in tqdm(df_mp_cse.entry, desc="Hydrating structures")
 ]
-# raises if symmetry detection fails for any structure
-df_mp_cse[f"{Key.protostructure}_moyo"] = [
-    prototype.get_protostructure_label(struct)
-    for struct in tqdm(df_mp_cse.structure, desc="Calculating proto-structure labels")
-]
+df_mp_cse[f"{Key.protostructure}_moyo"] = protostructure_label(mp_structs)
+if n_failed := df_mp_cse[f"{Key.protostructure}_moyo"].isna().sum():
+    raise ValueError(f"symmetry detection failed for {n_failed:,} MP structures")
 df_mp[f"{Key.protostructure}_moyo"] = df_mp_cse[f"{Key.protostructure}_moyo"]
 
 spg_nums = df_mp[f"{Key.protostructure}_moyo"].str.split("_").str[2].astype(int)

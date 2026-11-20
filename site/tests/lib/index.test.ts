@@ -204,7 +204,8 @@ describe(`format_date`, () => {
 describe(`valid_query_param`, () => {
   it.each([
     [`F1`, `F1`],
-    [`rmsd`, `rmsd`],
+    [`rmsd_auc`, `rmsd_auc`],
+    [`rmsd`, `CPS`], // retired mean-RMSD axis
     [`model_params`, `model_params`],
     [`constructor`, `CPS`],
     [`__proto__`, `CPS`],

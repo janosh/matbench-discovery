@@ -117,12 +117,10 @@ export const ACTIVE_MODELS = MODELS.slice(0, active_entries.length)
 export function update_models_cps(models: ModelData[], cps_config: CpsConfig) {
   models.forEach((model) => {
     const f1 = model.metrics?.discovery?.unique_prototypes?.F1
-    // use symprec=1e-2 to match the RMSD column path declared in ALL_METRICS.RMSD,
-    // so the displayed RMSD is the same value that feeds into CPS
-    const rmsd = model.metrics?.geo_opt?.[`symprec=1e-2`]?.rmsd
+    const rmsd_auc = model.metrics?.geo_opt?.rmsd_auc
     const kappa = model.metrics?.phonons?.kappa_103?.κ_SRME
 
-    model.CPS = calculate_cps(f1, rmsd, kappa, cps_config) ?? Number.NaN
+    model.CPS = calculate_cps(f1, rmsd_auc, kappa, cps_config) ?? Number.NaN
   })
 }
 

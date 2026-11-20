@@ -7,21 +7,19 @@ https://arxiv.org/abs/2401.00096 (see fig. 56).
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, get_args
+from typing import TYPE_CHECKING
 
 import numpy as np
-from ase import Atoms
-from ase.data import chemical_symbols
+from matscikit import Structure
+from matscikit.elements import CHEMICAL_SYMBOLS
 from tqdm import tqdm
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from ase.calculators.calculator import Calculator
+    from matscikit.model import Model as ForceModel
 
-DiatomicsType = Literal["homo-nuclear", "hetero-nuclear"]
-homo_nuc = get_args(DiatomicsType)[0]
-atom_num_symbol_map = dict(enumerate(chemical_symbols, start=0))
+homo_nuc = "homo-nuclear"  # DiatomicResults section key in prediction files
 # one curve's distances/energies/forces lists, keyed by formula in DiatomicResults
 CurveDict = dict[str, list[float | list[list[float]]]]
 DiatomicResults = dict[str, CurveDict]
@@ -32,7 +30,7 @@ def generate_diatomics(
     elem2: str,
     distances: Sequence[float | int] | np.ndarray,
     box_size: float = 50.0,
-) -> list[Atoms]:
+) -> list[Structure]:
     """Build diatomic molecules centered in a large cubic cell for given distances.
 
     A large periodic box (rather than ``pbc=False`` with no cell) is used so calculators
@@ -48,7 +46,7 @@ def generate_diatomics(
         box_size (float): Cubic cell edge length in Å. Defaults to 50.
 
     Returns:
-        list[Atoms]: Diatomic molecules with elements at given distances.
+        list[Structure]: Diatomic molecules with elements at given distances.
     """
     center = box_size / 2
     if len(distances) and (max_dist := max(distances)) >= center:
@@ -57,11 +55,10 @@ def generate_diatomics(
             "periodic images give a wrong min-image distance; raise box_size"
         )
     return [
-        Atoms(
-            f"{elem1}{elem2}",
-            positions=[[center, center, center], [center + dist, center, center]],
-            cell=[box_size] * 3,
-            pbc=True,
+        Structure(
+            box_size * np.eye(3),
+            [elem1, elem2],
+            [[center, center, center], [center + dist, center, center]],
         )
         for dist in distances
     ]
@@ -69,7 +66,7 @@ def generate_diatomics(
 
 def calc_diatomic_curve(
     pairs: Sequence[tuple[str | int, str | int]],
-    calculator: Calculator,
+    model: ForceModel,
     model_name: str,
     distances: Sequence[float | int] | np.ndarray,
     results: DiatomicResults,
@@ -79,7 +76,8 @@ def calc_diatomic_curve(
     Args:
         pairs (list[tuple[str | int, str | int]]): List of element pairs to calculate.
             Each pair can be specified as element symbols or atomic numbers.
-        calculator (Calculator): ASE calculator instance.
+        model (ForceModel): Model mapping structures to energies and forces (wrap ASE
+            calculators with ``matscikit.interop.AseCalculatorModel``).
         model_name (str): Name of the model for the output file.
         distances (list[float]): Distances to calculate potential energy at.
         results (DiatomicResults): Results dict to collect energies and forces at given
@@ -90,8 +88,10 @@ def calc_diatomic_curve(
     """
     expected_distances = np.asarray(distances)
     for idx, (z1, z2) in (pbar := tqdm(enumerate(pairs, start=1))):
-        elem1 = atom_num_symbol_map.get(z1, z1)
-        elem2 = atom_num_symbol_map.get(z2, z2)
+        elem1, elem2 = (
+            elem if isinstance(elem, str) else CHEMICAL_SYMBOLS[elem]
+            for elem in (z1, z2)
+        )
         formula = f"{elem1}-{elem2}"
         curve_data = results.get(formula, {})
         len_energies = len(curve_data.get("energies", []))
@@ -108,16 +108,14 @@ def calc_diatomic_curve(
             f"{idx}/{len(pairs)} {formula} diatomic curve with {model_name}"
         )
 
-        # reset curve_data in case we had prior results
-        curve_data = results[formula] = {
-            "distances": expected_distances.tolist(),
-            "energies": [],
-            "forces": [],
-        }
+        energies: list[float | list[list[float]]]
+        forces: list[float | list[list[float]]]
         try:
-            for atoms in generate_diatomics(elem1, elem2, distances):
-                curve_data["energies"].append(calculator.get_potential_energy(atoms))
-                curve_data["forces"].append(calculator.get_forces(atoms).tolist())
+            # one batched model call per pair covers the whole distance grid
+            dimers = generate_diatomics(elem1, elem2, distances)
+            outputs = model.compute(dimers, ["energy", "forces"])
+            energies = [float(result["energy"]) for result in outputs]
+            forces = [np.asarray(result["forces"]).tolist() for result in outputs]
         except (
             ValueError,
             RuntimeError,
@@ -129,10 +127,12 @@ def calc_diatomic_curve(
             # asserted element list, ...) raise here; skip that pair's curve rather than
             # aborting the whole sweep
             print(f"{idx}/{len(pairs)} {formula} failed: {exc!r}")
-            results[formula] = {
-                "distances": expected_distances.tolist(),
-                "energies": [],
-                "forces": [],
-            }
+            energies, forces = [], []
+        # replaces any stale cached curve
+        results[formula] = {
+            "distances": expected_distances.tolist(),
+            "energies": energies,
+            "forces": forces,
+        }
 
     return results

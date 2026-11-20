@@ -68,34 +68,34 @@ notes:
 metrics:
   discovery:
     pred_file:
-      name: models/gnome/gnome/2023-11-01-discovery.csv.gz
-      url: https://figshare.com/files/66646214
-      size: 2184112
-      md5: 89abd091bf20aeaf4523b9658c3db2fe
+      name: models/gnome/gnome/2026-11-19-discovery.csv.gz
+      url: https://figshare.com/files/71653834
+      size: 2183969
+      md5: 618e44a30ae88b27ef733a1081249008
     full_test_set:
       F1: 0.81 # fraction
-      DAF: 4.81 # dimensionless
+      DAF: 4.824 # dimensionless
       Precision: 0.825 # fraction
       Recall: 0.796 # fraction
       Accuracy: 0.936 # fraction
-      TP: 35082 # count
-      FP: 7421 # count
-      TN: 205450 # count
-      FN: 9010 # count
+      TP: 34975 # count
+      FP: 7408 # count
+      TN: 205598 # count
+      FN: 8982 # count
       MAE: 0.034 # eV/atom
       RMSE: 0.083 # eV/atom
-      R2: 0.786 # dimensionless
+      R2: 0.787 # dimensionless
       missing_preds: 1744 # count
     unique_prototypes:
       F1: 0.829 # fraction
-      DAF: 5.523 # dimensionless
+      DAF: 5.542 # dimensionless
       Precision: 0.844 # fraction
       Recall: 0.814 # fraction
       Accuracy: 0.948 # fraction
-      TP: 27178 # count
-      FP: 5009 # count
-      TN: 177105 # count
-      FN: 6196 # count
+      TP: 27061 # count
+      FP: 5016 # count
+      TN: 177230 # count
+      FN: 6181 # count
       MAE: 0.035 # eV/atom
       RMSE: 0.085 # eV/atom
       R2: 0.785 # dimensionless

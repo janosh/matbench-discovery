@@ -4,7 +4,6 @@ import {
   DEFAULT_CMDS_WEIGHTS,
   MD_METRICS,
   N_SCORED_DIATOMIC_ELEMENTS,
-  RMSD_BASELINE,
 } from '#lib/labels.js'
 import type { DiatomicsMetrics, MdMetrics } from '#lib/schema/model.js'
 import { untrack } from 'svelte'
@@ -50,20 +49,15 @@ const weighted_mean = (terms: WeightedTerm[]): number | null => {
 // Fixed normalization reference points keep scores stable as new models are added.
 export function calculate_cps(
   f1: number | undefined,
-  rmsd: number | undefined,
+  rmsd_auc: number | undefined,
   kappa: number | undefined,
   cps_config: CpsConfig, // Weights for each metric
 ): number | null {
   const { F1, RMSD, κ_SRME } = cps_config
   return weighted_mean([
-    // F1 is already [0,1]; invert the lower-is-better RMSD and κ_SRME errors.
+    // F1 and RMSD AUC are already [0,1]; invert the lower-is-better κ_SRME error.
     { weight: F1.weight, value: is_valid_score(f1, 1) ? f1 : null },
-    {
-      weight: RMSD.weight,
-      value: is_valid_score(rmsd)
-        ? Math.max(0, Math.min(1, 1 - rmsd / RMSD_BASELINE))
-        : null,
-    },
+    { weight: RMSD.weight, value: is_valid_score(rmsd_auc, 1) ? rmsd_auc : null },
     {
       weight: κ_SRME.weight,
       value: is_valid_score(kappa, 2) ? 1 - kappa / 2 : null,

@@ -32,17 +32,7 @@ The full set of processing steps used to curate the WBM test set from the raw da
 - apply the [`MaterialsProject2020Compatibility`](https://github.com/materialsproject/pymatgen/blob/02a4ca8aa/pymatgen/entries/compatibility.py#L823) energy correction scheme to the formation energies
 - compute energy to the Materials Project convex hull constructed from all MP `ComputedStructureEntries` queried on 2023-02-07 ([database release 2022.10.28](https://docs.materialsproject.org/changes/database-versions#v2022.10.28))
 
-> Provenance note: exact regeneration of the released
-> `e_form_per_atom_mp2020_corrected` and
-> `e_above_hull_mp2020_corrected_ppd_mp` columns depends on the `pymatgen`
-> `MaterialsProject2020Compatibility` implementation used to assign MP2020 anion
-> corrections. The released WBM summary is reproducible with 2023-era `pymatgen`
-> behavior (for example v2023.5.10, matching the data-file registry source
-> links). Newer `pymatgen` versions may assign different corrections for a small
-> number of structures with ambiguous oxidation states, which can change their
-> corrected formation energies and hull distances. See
-> [#358](https://github.com/janosh/matbench-discovery/issues/358) for details and
-> a spot-check quantifying the effect.
+> Correction note: the `e_form_per_atom_mp2020_corrected` and `e_above_hull_mp2020_corrected_ppd_mp` columns track the current `pymatgen` `MaterialsProject2020Compatibility` defaults, applied to both the WBM entries and the MP entries spanning the convex hull, so they match the corrections applied to model predictions. Since the 2026-11-19 summary this includes [pymatgen#3803](https://github.com/materialsproject/pymatgen/pull/3803), which only assigns an anion correction to elements with oxidation state <= -1. That changed the corrections of 3,044 WBM entries (up to 0.49 eV/atom) and 329 MP hull entries relative to the 2023-12-13 summary and flipped the stability label of 605 WBM entries. See [#358](https://github.com/janosh/matbench-discovery/issues/358) for the history.
 
 Invoking the script `uv run --with-editable ".[fetch-wbm-data]" scripts/data/compile_wbm_test_set.py` will auto-download and regenerate the WBM test set files from scratch. If you find
 
@@ -69,7 +59,7 @@ This approach has the downside that it can be quite expensive to compute, especi
 We adopt the procedure of determining the prototype of each crystal by looking at the Wyckoff positions of the different elements.
 This approach is a middle ground between the two approaches mentioned above in terms of cost, number of hyperparameters and ability to distinguish polymorphs.
 
-We used [`get_protostructure_label`] importable from `matbench_discovery.structure.prototype` in [`compile_wbm_test_set.py`] to get prototype labels in a modified Aflow format for each structure.
+We used [`get_protostructure_label`] (then in `matbench_discovery.structure.prototype`, now `matscikit.protostructure_label`, which gives identical labels) in [`compile_wbm_test_set.py`] to get prototype labels in a modified Aflow format for each structure.
 Having determined the prototypes for both the MP and WBM datasets, we first removed any structures in the WBM dataset that had the same prototype as any structure in the MP dataset.
 The next filter was to drop all but the lowest energy structure for each unique prototype label remaining in the WBM dataset.
 The WBM prototypes were determined for the relaxed structures. This choice avoids inflating the metrics due to duplicates arising from different initial prototypes that fall into the same basin of attraction during relaxation.
@@ -157,7 +147,7 @@ These sunburst diagrams show the spacegroup distribution of MP on the left and W
 The `DataFiles` class in `matbench_discovery.data` automatically downloads and locally caches data files needed for different model training and testing tasks. For example the following code snippet shows how to download and access the WBM summary data:
 
 ```py
-from matbench_discovery.data import DataFiles, ase_atoms_from_zip
+from matbench_discovery.data import DataFiles, frames_from_zip
 import pandas as pd
 
 df_wbm = pd.read_csv(DataFiles.wbm_summary.path)
@@ -167,9 +157,11 @@ assert df_wbm.shape == (256_963, 18)
 # WBM initial structures in pymatgen JSON format
 df_init_structs = pd.read_json(DataFiles.wbm_initial_structures.path, lines=True)
 # Columns: material_id, formula_from_cse, initial_structure
-# WBM initial structures as ASE Atoms
-wbm_init_atoms = ase_atoms_from_zip(DataFiles.wbm_initial_atoms.path)
-assert len(wbm_init_atoms) == 256_963
+# WBM initial structures as matscikit Structures
+wbm_init_structs = [
+    frame.structure for frame in frames_from_zip(DataFiles.wbm_initial_atoms.path)
+]
+assert len(wbm_init_structs) == 256_963
 ```
 
 `"wbm-summary"` columns:

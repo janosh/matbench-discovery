@@ -116,32 +116,32 @@ metrics:
       size: 1316973
       md5: 11c30079072c928109cb826be9af3671
     full_test_set:
-      F1: 0.819 # fraction
-      DAF: 4.616 # dimensionless
-      Precision: 0.792 # fraction
-      Recall: 0.849 # fraction
-      Accuracy: 0.936 # fraction
-      TP: 37419 # count
-      FP: 9825 # count
-      TN: 203046 # count
-      FN: 6673 # count
+      F1: 0.824 # fraction
+      DAF: 4.646 # dimensionless
+      Precision: 0.795 # fraction
+      Recall: 0.856 # fraction
+      Accuracy: 0.938 # fraction
+      TP: 37612 # count
+      FP: 9714 # count
+      TN: 203292 # count
+      FN: 6345 # count
       MAE: 0.032 # eV/atom
-      RMSE: 0.077 # eV/atom
-      R2: 0.818 # dimensionless
+      RMSE: 0.076 # eV/atom
+      R2: 0.823 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.831 # fraction
-      DAF: 5.26 # dimensionless
-      Precision: 0.804 # fraction
-      Recall: 0.861 # fraction
-      Accuracy: 0.946 # fraction
-      TP: 28722 # count
-      FP: 7000 # count
-      TN: 175114 # count
-      FN: 4652 # count
+      F1: 0.836 # fraction
+      DAF: 5.297 # dimensionless
+      Precision: 0.806 # fraction
+      Recall: 0.868 # fraction
+      Accuracy: 0.948 # fraction
+      TP: 28860 # count
+      FP: 6928 # count
+      TN: 175318 # count
+      FN: 4382 # count
       MAE: 0.033 # eV/atom
-      RMSE: 0.078 # eV/atom
-      R2: 0.822 # dimensionless
+      RMSE: 0.077 # eV/atom
+      R2: 0.827 # dimensionless
       missing_preds: 0 # count
   geo_opt:
     pred_file:
@@ -149,32 +149,31 @@ metrics:
       url: https://figshare.com/files/70327959
       size: 208111495
       md5: e686253c1813a65456d88d42c0bc0643
+    rmsd_auc: 0.7322 # fraction
     symprec=1e-5:
-      rmsd: 0.0752 # unitless
-      n_sym_ops_mae: 3.3144 # unitless
+      n_sym_ops_mae: 3.3143 # unitless
       symmetry_decrease: 0.4281 # fraction
       symmetry_match: 0.3859 # fraction
       symmetry_increase: 0.1282 # fraction
       symmetry_lateral: 0.0578 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/esen/esen-30m-mp/2025-03-17-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333701
-        size: 6760391
-        md5: 8e30826d21a50a76769d267c6167d155
+        name: models/esen/esen-30m-mp/2025-03-17-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71652805
+        size: 6785791
+        md5: 8c95e5762343aea6dd63f303bc7d697a
     symprec=1e-2:
-      rmsd: 0.0752 # unitless
-      n_sym_ops_mae: 2.521 # unitless
+      n_sym_ops_mae: 2.5209 # unitless
       symmetry_decrease: 0.2604 # fraction
       symmetry_match: 0.6106 # fraction
       symmetry_increase: 0.098 # fraction
-      symmetry_lateral: 0.031 # fraction
+      symmetry_lateral: 0.0311 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/esen/esen-30m-mp/2025-03-17-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333704
-        size: 6888052
-        md5: 604ddc852d4d6ed1debc3637dec94966
+        name: models/esen/esen-30m-mp/2025-03-17-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71652868
+        size: 6913686
+        md5: 8037503ef4ed2cc970e05842b0aacbbf
   md:
     pred_file:
       name: models/esen/esen-30m-mp/2026-06-28-md-metrics.csv.gz
@@ -212,9 +211,9 @@ metrics:
           md5: 686968dc5fa47ab5765112d352e98a7f
         force_file:
           name: models/esen/esen-30m-mp/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71263162
-          size: 2239086
-          md5: 849667872dcce45c1a037785ab871d35
+          url: https://figshare.com/files/71630125
+          size: 3746785
+          md5: 29176fd2b02a4ced398e15f711042a77
         run_info_file:
           name: models/esen/esen-30m-mp/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334433

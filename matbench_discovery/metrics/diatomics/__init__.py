@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from typing import Any, Self, TypedDict
 
 import numpy as np
-from ase.data import atomic_numbers, covalent_radii, vdw_alvarez
+from matscikit.elements import ATOMIC_NUMBERS, COVALENT_RADII, VDW_RADII
 from numpy.typing import ArrayLike
 
 from matbench_discovery import repo_relative_path
@@ -259,11 +259,10 @@ def eval_window(
     Returns:
         tuple[float, float]: (r_min, r_max) in Å.
     """
-    atomic_num = atomic_numbers[elem_symbol.split("-", maxsplit=1)[0]]
-    r_cov = covalent_radii[atomic_num] if atomic_num < len(covalent_radii) else np.nan
+    atomic_num = ATOMIC_NUMBERS[elem_symbol.split("-", maxsplit=1)[0]]
+    r_cov = COVALENT_RADII[atomic_num] if atomic_num < len(COVALENT_RADII) else np.nan
     r_min = r_min_factor * r_cov if np.isfinite(r_cov) else 0.0
-    vdw_radii = vdw_alvarez.vdw_radii
-    r_vdw = vdw_radii[atomic_num] if atomic_num < len(vdw_radii) else np.nan
+    r_vdw = VDW_RADII[atomic_num] if atomic_num < len(VDW_RADII) else np.nan
     r_max = min(3.1 * r_vdw, seps_max) if np.isfinite(r_vdw) else seps_max
     return r_min, r_max
 

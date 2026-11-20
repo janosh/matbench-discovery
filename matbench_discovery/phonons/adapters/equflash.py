@@ -1,69 +1,71 @@
-"""EquFlash two-stage relaxation and batched FC3 evaluation."""
+"""EquFlash two-stage relaxation and batched force evaluation."""
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any
+
+import numpy as np
 
 from matbench_discovery.phonons.adapters.standard import StandardKappaAdapter
-from matbench_discovery.phonons.thermal_conductivity import batched_displacement_forces
 
 if TYPE_CHECKING:
-    import numpy as np
-    from ase import Atoms
-    from ase.calculators.calculator import Calculator
-    from phono3py.api_phono3py import Phono3py
+    from matscikit import Structure
+    from matscikit.model import Model as ForceModel
 
     from matbench_discovery.phonons.pipeline import KappaSettings
 
 
-class EquFlashKappaAdapter(StandardKappaAdapter):
-    """Use the shared two-stage relaxation and EquFlash's batched FC3."""
+class EquFlashBatchedModel:
+    """EquFlash forces for a batch of structures through its trainer's graph API;
+    other property requests go through the wrapped ASE calculator.
+    """
 
-    name = "equflash"
+    def __init__(self, calculator: object) -> None:
+        """Wrap an EquFlash ASE calculator exposing ``trainer``."""
+        trainer = getattr(calculator, "trainer", None)
+        if trainer is None:
+            raise TypeError("EquFlash calculator has no trainer for batched forces")
+        self.calculator = calculator
+        self.trainer = trainer
 
-    def calculate_fc3(
-        self,
-        phono3py: Phono3py,
-        calculator: Calculator,
-        settings: KappaSettings,
-        *,
-        max_evaluations: int | None = None,
-    ) -> np.ndarray:
-        """Evaluate EquFlash FC3 displacement graphs in GPU batches."""
+    def compute(
+        self, structures: Sequence[Structure], properties: Sequence[str]
+    ) -> list[dict[str, Any]]:
+        """Evaluate a batch; forces-only requests run as one GPU graph batch."""
+        from matscikit.interop import AseCalculatorModel, structure_to_ase
+
+        if list(properties) != ["forces"]:
+            return AseCalculatorModel(self.calculator).compute(structures, properties)
         from fairchem.core.preprocessing import AtomsToGraphs
         from torch_geometric.data import Batch
 
-        n_atoms = len(phono3py.supercell)
-        graph_converter = AtomsToGraphs(r_edges=False)
-        batch_size = settings.batch_size
-        if settings.max_atoms_per_batch is not None:
-            batch_size = max(settings.max_atoms_per_batch // n_atoms, 1)
-
-        trainer = getattr(calculator, "trainer", None)
-        if trainer is None:
-            raise TypeError("EquFlash calculator has no trainer for batched FC3")
-        device = getattr(trainer, "device", None)
+        device = getattr(self.trainer, "device", None)
         if device is None:
             import torch
 
             device = "cuda" if torch.cuda.is_available() else "cpu"
+        converter = AtomsToGraphs(r_edges=False)
+        graphs = [converter.convert(structure_to_ase(struct)) for struct in structures]
+        graph_batch = Batch.from_data_list(graphs).to(device)  # ty: ignore[unresolved-attribute]
+        outputs = self.trainer.predict(graph_batch, per_image=False, disable_tqdm=True)
+        forces = outputs["forces"].detach().cpu().numpy()
+        offsets = np.cumsum([0, *(len(struct) for struct in structures)])
+        return [
+            {"forces": forces[offsets[idx] : offsets[idx + 1]]}
+            for idx in range(len(structures))
+        ]
 
-        def evaluate_batch(batch_atoms: list[Atoms]) -> np.ndarray:
-            """Evaluate one EquFlash displacement batch through its trainer."""
-            graphs = [
-                graph_converter.convert(displaced_atoms)
-                for displaced_atoms in batch_atoms
-            ]
-            graph_batch = Batch.from_data_list(graphs).to(device)  # ty: ignore[unresolved-attribute]
-            outputs = trainer.predict(graph_batch, per_image=False, disable_tqdm=True)
-            return outputs["forces"].detach().cpu().numpy().reshape(-1, n_atoms, 3)
 
-        force_set = batched_displacement_forces(
-            phono3py.supercells_with_displacements,
-            evaluate_batch,
-            batch_size=batch_size,
-            n_atoms=n_atoms,
-            max_evaluations=max_evaluations,
-        )
-        phono3py.forces = force_set
-        return force_set
+class EquFlashKappaAdapter(StandardKappaAdapter):
+    """Use the shared two-stage relaxation and EquFlash's batched forces."""
+
+    name = "equflash"
+
+    def prepare_model(
+        self,
+        model: ForceModel,
+        settings: KappaSettings,  # noqa: ARG002
+    ) -> ForceModel:
+        """Route force batches through the EquFlash trainer."""
+        return EquFlashBatchedModel(getattr(model, "calculator", model))

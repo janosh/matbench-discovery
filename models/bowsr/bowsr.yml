@@ -67,28 +67,28 @@ metrics:
       md5: aa6a1ade7404b686cf0bd120ba12c623
     full_test_set:
       F1: 0.437 # fraction
-      DAF: 1.836 # dimensionless
+      DAF: 1.842 # dimensionless
       Precision: 0.315 # fraction
-      Recall: 0.711 # fraction
-      Accuracy: 0.685 # fraction
-      TP: 31347 # count
-      FP: 68139 # count
-      TN: 144732 # count
-      FN: 12745 # count
+      Recall: 0.714 # fraction
+      Accuracy: 0.686 # fraction
+      TP: 31367 # count
+      FP: 68197 # count
+      TN: 144809 # count
+      FN: 12590 # count
       MAE: 0.114 # eV/atom
       RMSE: 0.164 # eV/atom
-      R2: 0.142 # dimensionless
+      R2: 0.143 # dimensionless
       missing_preds: 6185 # count
     unique_prototypes:
-      F1: 0.423 # fraction
-      DAF: 1.964 # dimensionless
+      F1: 0.424 # fraction
+      DAF: 1.971 # dimensionless
       Precision: 0.3 # fraction
-      Recall: 0.718 # fraction
-      Accuracy: 0.697 # fraction
-      TP: 23963 # count
-      FP: 55843 # count
-      TN: 126271 # count
-      FN: 9411 # count
+      Recall: 0.721 # fraction
+      Accuracy: 0.698 # fraction
+      TP: 23969 # count
+      FP: 55904 # count
+      TN: 126342 # count
+      FN: 9273 # count
       MAE: 0.118 # eV/atom
       RMSE: 0.167 # eV/atom
       R2: 0.151 # dimensionless
@@ -99,8 +99,8 @@ metrics:
       url: https://figshare.com/files/70324902
       size: 79130464
       md5: f346a6232770ddcb0de0ef1ea0a96443
+    rmsd_auc: 0.3714 # fraction
     symprec=1e-5:
-      rmsd: 0.195 # unitless
       n_sym_ops_mae: 29.4219 # unitless
       symmetry_decrease: 0.0038 # fraction
       symmetry_match: 0.5299 # fraction
@@ -108,20 +108,19 @@ metrics:
       symmetry_lateral: 0.0021 # fraction
       n_structures: 250779 # count
       analysis_file:
-        name: models/bowsr/bowsr/2023-01-23-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333614
-        size: 6437667
-        md5: 015c59e8571ca9f9515205a0287ac468
+        name: models/bowsr/bowsr/2023-01-23-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71650579
+        size: 6482579
+        md5: 5e661634e41354ec15272a48fc4c75c0
     symprec=1e-2:
-      rmsd: 0.195 # unitless
-      n_sym_ops_mae: 25.4696 # unitless
+      n_sym_ops_mae: 25.4697 # unitless
       symmetry_decrease: 0.0694 # fraction
       symmetry_match: 0.7978 # fraction
       symmetry_increase: 0.1198 # fraction
       symmetry_lateral: 0.013 # fraction
       n_structures: 250779 # count
       analysis_file:
-        name: models/bowsr/bowsr/2023-01-23-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333617
-        size: 6401562
-        md5: a33912fb22de2ab5dbd670e934a1acf7
+        name: models/bowsr/bowsr/2023-01-23-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71650789
+        size: 6446541
+        md5: 6068917d55c6b6a1891c834c2924fd4b

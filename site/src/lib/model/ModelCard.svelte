@@ -112,8 +112,8 @@
   <ul>
     {#each metrics as metric (metric.key)}
       {@const { key, label, unit, description } = metric}
-      <!-- resolve by the label's own data path so any metric works (RMSD lives under
-      metrics.geo_opt.symprec=1e-2, which a hardcoded section merge would miss) -->
+      <!-- resolve by the label's own data path so any metric works (symmetry metrics
+      live under metrics.geo_opt.symprec=..., which a hardcoded section merge would miss) -->
       {@const value = get_nested_number(model, label_data_path(metric))}
       {@const has_value = is_finite_num(value)}
       {@const rank_entry = ranks.find((entry) => entry.metric.key === key)}

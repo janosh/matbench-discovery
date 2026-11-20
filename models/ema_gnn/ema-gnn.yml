@@ -156,35 +156,35 @@ notes:
 metrics:
   discovery:
     pred_file:
-      name: models/ema_gnn/ema-gnn/2026-07-29-discovery.csv.gz
-      url: https://figshare.com/files/67473963
-      size: 3021075
-      md5: b9519003656f1083e1a8dcc7c3915944
+      name: models/ema_gnn/ema-gnn/2026-11-19-discovery.csv.gz
+      url: https://figshare.com/files/71653855
+      size: 3011802
+      md5: 8cc1989be96f0f6d7301dbc1e2429bbc
     full_test_set:
-      F1: 0.566 # fraction
-      DAF: 2.522 # dimensionless
+      F1: 0.567 # fraction
+      DAF: 2.534 # dimensionless
       Precision: 0.433 # fraction
       Recall: 0.818 # fraction
-      Accuracy: 0.785 # fraction
-      TP: 36061 # count
-      FP: 47274 # count
-      TN: 165597 # count
-      FN: 8031 # count
+      Accuracy: 0.786 # fraction
+      TP: 35965 # count
+      FP: 47015 # count
+      TN: 165991 # count
+      FN: 7992 # count
       MAE: 0.084 # eV/atom
       RMSE: 0.141 # eV/atom
-      R2: 0.387 # dimensionless
+      R2: 0.388 # dimensionless
       missing_preds: 26 # count
     unique_prototypes:
       F1: 0.558 # fraction
-      DAF: 2.753 # dimensionless
+      DAF: 2.768 # dimensionless
       Precision: 0.421 # fraction
       Recall: 0.826 # fraction
-      Accuracy: 0.797 # fraction
-      TP: 27563 # count
-      FP: 37921 # count
-      TN: 144193 # count
-      FN: 5811 # count
+      Accuracy: 0.798 # fraction
+      TP: 27468 # count
+      FP: 37724 # count
+      TN: 144522 # count
+      FN: 5774 # count
       MAE: 0.086 # eV/atom
       RMSE: 0.141 # eV/atom
-      R2: 0.412 # dimensionless
+      R2: 0.413 # dimensionless
       missing_preds: 12 # count

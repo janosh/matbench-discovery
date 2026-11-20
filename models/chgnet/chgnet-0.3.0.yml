@@ -67,7 +67,7 @@ hyperparams:
     max_force: 0.05
     kappa:
       protocol: phonondb-v1
-      displacement_distance: 0.01 # legacy runs used 0.01 Å; the PhononDB-PBE reference uses 0.03 Å
+      displacement_distance: 0.03 # k_SRME run: its init_phono3py default, not overridden by the script
   architecture:
     graph_construction_radius: 5.0
   upstream_config:
@@ -118,37 +118,37 @@ metrics:
       rel_changes: {}
   discovery:
     pred_file:
-      name: models/chgnet/chgnet-0.3.0/2023-12-21-discovery.csv.gz
-      url: https://figshare.com/files/66646268
-      size: 1320974
-      md5: fd7cd3781a24be465aaeadf97663ce58
+      name: models/chgnet/chgnet-0.3.0/2026-11-19-discovery.csv.gz
+      url: https://figshare.com/files/71653801
+      size: 1322638
+      md5: 3944fdbf7d1b041aae6ea811011008cc
     full_test_set:
       F1: 0.612 # fraction
-      DAF: 3.038 # dimensionless
-      Precision: 0.521 # fraction
-      Recall: 0.74 # fraction
-      Accuracy: 0.839 # fraction
-      TP: 32642 # count
-      FP: 29979 # count
-      TN: 182892 # count
-      FN: 11450 # count
+      DAF: 3.051 # dimensionless
+      Precision: 0.522 # fraction
+      Recall: 0.741 # fraction
+      Accuracy: 0.84 # fraction
+      TP: 32559 # count
+      FP: 29816 # count
+      TN: 183190 # count
+      FN: 11398 # count
       MAE: 0.061 # eV/atom
       RMSE: 0.1 # eV/atom
-      R2: 0.69 # dimensionless
+      R2: 0.691 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
       F1: 0.613 # fraction
-      DAF: 3.361 # dimensionless
+      DAF: 3.377 # dimensionless
       Precision: 0.514 # fraction
-      Recall: 0.758 # fraction
-      Accuracy: 0.851 # fraction
-      TP: 25313 # count
-      FP: 23955 # count
-      TN: 158159 # count
-      FN: 8061 # count
+      Recall: 0.759 # fraction
+      Accuracy: 0.852 # fraction
+      TP: 25218 # count
+      FP: 23832 # count
+      TN: 158414 # count
+      FN: 8024 # count
       MAE: 0.063 # eV/atom
       RMSE: 0.103 # eV/atom
-      R2: 0.689 # dimensionless
+      R2: 0.69 # dimensionless
       missing_preds: 0 # count
   geo_opt:
     pred_file:
@@ -156,32 +156,31 @@ metrics:
       url: https://figshare.com/files/70324917
       size: 118451301
       md5: 22896c9b7d99999ca80cd906626f6587
+    rmsd_auc: 0.616 # fraction
     symprec=1e-5:
-      rmsd: 0.095 # unitless
-      n_sym_ops_mae: 3.0863 # unitless
-      symmetry_decrease: 0.2241 # fraction
+      n_sym_ops_mae: 3.0856 # unitless
+      symmetry_decrease: 0.224 # fraction
       symmetry_match: 0.6062 # fraction
       symmetry_increase: 0.1601 # fraction
-      symmetry_lateral: 0.0096 # fraction
+      symmetry_lateral: 0.0097 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/chgnet/chgnet-0.3.0/2023-12-21-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333632
-        size: 6810713
-        md5: 1f56c50abf193aebe9a183bd2b7cee60
+        name: models/chgnet/chgnet-0.3.0/2023-12-21-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71650852
+        size: 6846356
+        md5: 2815e0833d5af38d07428f9d7b654b1b
     symprec=1e-2:
-      rmsd: 0.095 # unitless
-      n_sym_ops_mae: 2.0181 # unitless
+      n_sym_ops_mae: 2.0184 # unitless
       symmetry_decrease: 0.0922 # fraction
       symmetry_match: 0.7921 # fraction
       symmetry_increase: 0.1076 # fraction
       symmetry_lateral: 0.0081 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/chgnet/chgnet-0.3.0/2023-12-21-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333641
-        size: 6775732
-        md5: c4a42e3268ed4031a82fb5048aef7f87
+        name: models/chgnet/chgnet-0.3.0/2023-12-21-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71650870
+        size: 6812667
+        md5: 6beee8be31f7abd529b692438d03f4b0
   md:
     pred_file:
       name: models/chgnet/chgnet-0.3.0/2026-06-28-md-metrics.csv.gz
@@ -219,9 +218,9 @@ metrics:
           md5: 216d33d39482212a2e1cb4fc18ec5cf4
         force_file:
           name: models/chgnet/chgnet-0.3.0/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71263114
-          size: 2012721
-          md5: 64ec0208bd113a41e38924534e22c7ce
+          url: https://figshare.com/files/71630065
+          size: 3524291
+          md5: cacd3e898ac2f0c37fdd5c974c37c4a6
         run_info_file:
           name: models/chgnet/chgnet-0.3.0/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334178

@@ -6,11 +6,11 @@ import math
 import os
 from collections import Counter
 
-import ase.io
 import h5py
 import pandas as pd
-from ase.data import chemical_symbols
-from pymatgen.core import Composition
+from matscikit import Composition
+from matscikit.elements import CHEMICAL_SYMBOLS
+from matscikit.io import read_extxyz
 from pymatviz.enums import Key
 
 from matbench_discovery import MP_DIR, ROOT, SITE_FIG_DATA, figs
@@ -35,13 +35,13 @@ def export_benchmark_element_counts() -> None:
     counts = {
         "phonondb": Counter(
             symbol
-            for atoms in ase.io.iread(DataFiles.phonondb_pbe_103_structures.path)
-            for symbol in set(atoms.get_chemical_symbols())
+            for frame in read_extxyz(DataFiles.phonondb_pbe_103_structures.path)
+            for symbol in set(frame.structure.symbols)
         )
     }
     with h5py.File(DataFiles.dynamat_v1_0_md_trajectories.path) as reference:
         counts["dynamat"] = Counter(
-            chemical_symbols[int(number)]
+            CHEMICAL_SYMBOLS[int(number)]
             for system in reference.values()
             for number in set(system["atomic_numbers"][:])
         )
@@ -72,7 +72,7 @@ def export_benchmark_summary() -> None:
         for name, system in reference.items():
             numbers = system["atomic_numbers"][:]
             formula = Composition(
-                Counter(chemical_symbols[int(number)] for number in numbers)
+                Counter(CHEMICAL_SYMBOLS[int(number)] for number in numbers)
             )
             systems.append(
                 {

@@ -106,65 +106,64 @@ metrics:
       size: 1654051
       md5: 3df9f3ce50957dfc349c678fa4926616
     full_test_set:
-      F1: 0.912 # fraction
-      DAF: 5.298 # dimensionless
-      Precision: 0.909 # fraction
-      Recall: 0.916 # fraction
-      Accuracy: 0.97 # fraction
-      TP: 40369 # count
-      FP: 4035 # count
-      TN: 208836 # count
-      FN: 3723 # count
+      F1: 0.918 # fraction
+      DAF: 5.335 # dimensionless
+      Precision: 0.913 # fraction
+      Recall: 0.924 # fraction
+      Accuracy: 0.972 # fraction
+      TP: 40595 # count
+      FP: 3886 # count
+      TN: 209120 # count
+      FN: 3362 # count
       MAE: 0.017 # eV/atom
-      RMSE: 0.067 # eV/atom
-      R2: 0.862 # dimensionless
+      RMSE: 0.066 # eV/atom
+      R2: 0.867 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.931 # fraction
-      DAF: 6.074 # dimensionless
-      Precision: 0.928 # fraction
-      Recall: 0.933 # fraction
-      Accuracy: 0.978 # fraction
-      TP: 31139 # count
-      FP: 2398 # count
-      TN: 179716 # count
-      FN: 2235 # count
-      MAE: 0.018 # eV/atom
-      RMSE: 0.067 # eV/atom
-      R2: 0.868 # dimensionless
+      F1: 0.937 # fraction
+      DAF: 6.119 # dimensionless
+      Precision: 0.931 # fraction
+      Recall: 0.942 # fraction
+      Accuracy: 0.98 # fraction
+      TP: 31302 # count
+      FP: 2302 # count
+      TN: 179944 # count
+      FN: 1940 # count
+      MAE: 0.017 # eV/atom
+      RMSE: 0.065 # eV/atom
+      R2: 0.874 # dimensionless
       missing_preds: 0 # count
   geo_opt:
     pred_file:
       name: models/equiformer_v3/equiformer-v3-oam/2026-04-07-geo-opt.jsonl.gz
-      url: https://figshare.com/files/63518865
-      size: 110210090
-      md5: 84e9c30ff3e15892cf57da5e425ad381
+      url: https://figshare.com/files/71651584
+      size: 156817820
+      md5: 79472e233f7a1e4a4b97fde9db77932e
+    rmsd_auc: 0.8242 # fraction
     symprec=1e-5:
-      rmsd: 0.0595 # unitless
-      n_sym_ops_mae: 4.0648 # unitless
-      symmetry_decrease: 0.4554 # fraction
-      symmetry_match: 0.3711 # fraction
+      n_sym_ops_mae: 4.0639 # unitless
+      symmetry_decrease: 0.4553 # fraction
+      symmetry_match: 0.3712 # fraction
       symmetry_increase: 0.1299 # fraction
       symmetry_lateral: 0.0436 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/equiformer_v3/equiformer-v3-oam/2026-04-07-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333680
-        size: 7801954
-        md5: e6d7191b0185c82e8ad9f2f149a570fd
+        name: models/equiformer_v3/equiformer-v3-oam/2026-04-07-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71652163
+        size: 7822721
+        md5: 23e2151b74716b4e6777ce1abede87d3
     symprec=1e-2:
-      rmsd: 0.0595 # unitless
-      n_sym_ops_mae: 1.9823 # unitless
-      symmetry_decrease: 0.129 # fraction
+      n_sym_ops_mae: 1.9816 # unitless
+      symmetry_decrease: 0.1289 # fraction
       symmetry_match: 0.7424 # fraction
       symmetry_increase: 0.1137 # fraction
       symmetry_lateral: 0.015 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/equiformer_v3/equiformer-v3-oam/2026-04-07-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333683
-        size: 8062013
-        md5: 3ae169f3944b2d6843a1e98b8e58bd05
+        name: models/equiformer_v3/equiformer-v3-oam/2026-04-07-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71652370
+        size: 8082518
+        md5: 095c8d963b47daac9b89caf3d329bcaa
   phonons:
     kappa_103:
       pred_file:

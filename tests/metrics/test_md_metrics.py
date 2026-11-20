@@ -1,25 +1,24 @@
 """Tests for molecular dynamics trajectory metrics."""
 
 import itertools
+import re
+from collections.abc import Sequence
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
 import yaml
-from ase import Atoms, units
-from ase.calculators.calculator import Calculator, all_changes
-from ase.calculators.singlepoint import SinglePointCalculator
-from ase.data import atomic_masses
+from matscikit import FEMTOSECOND, K_B, Structure
+from matscikit.elements import ATOMIC_MASSES
+from matscikit.io import Frame
 
 from matbench_discovery.data import update_yaml_file
 from matbench_discovery.enums import Model
 from matbench_discovery.metrics import md as md_metrics
 from tests.utils import patch_model_metadata
 
-ANISOTROPIC_STRESS_VOIGT = np.array(
-    [-1.0 * units.GPa, -2.0 * units.GPa, -6.0 * units.GPa, 0, 0, 0]
-)
+ANISOTROPIC_STRESS = -np.diag([1.0, 2.0, 6.0]) / md_metrics.EV_PER_A3_TO_GPA
 
 
 @pytest.fixture
@@ -28,52 +27,54 @@ def np_rng() -> np.random.Generator:
     return np.random.default_rng(seed=0)
 
 
-class ConstantCalculator(Calculator):
+def make_frame(
+    formula: str,
+    positions: object = None,
+    *,
+    cell: object,
+    pbc: bool = False,
+    **results: object,
+) -> Frame:
+    """ASE-Atoms-like frame constructor: formula like "CH4", cubic edge list or 3x3
+    cell, scalar pbc, and optional energy/forces/stress results.
+    """
+    symbols = [
+        symbol
+        for symbol, count in re.findall(r"([A-Z][a-z]?)(\d*)", formula)
+        for _ in range(int(count or 1))
+    ]
+    cell_array = np.asarray(cell, dtype=float)
+    lattice = np.diag(cell_array) if cell_array.ndim == 1 else cell_array
+    coords = np.zeros((len(symbols), 3)) if positions is None else positions
+    structure = Structure(lattice, symbols, coords, pbc=(pbc,) * 3)
+    return Frame(structure, **results)  # ty: ignore[invalid-argument-type]
+
+
+class ConstantModel:
     """Predicts a fixed energy and uniform force regardless of geometry."""
 
-    implemented_properties = ("energy", "forces")
-
-    def __init__(self, energy: float = 0, force: float = 0, **kwargs: object) -> None:
+    def __init__(self, energy: float = 0, force: float = 0) -> None:
         """Store the constant energy and per-component force to return."""
-        super().__init__(**kwargs)
         self.energy = energy
         self.force = force
 
-    def calculate(
-        self,
-        atoms: Atoms | None = None,
-        properties: list[str] | None = None,
-        system_changes: list[str] = all_changes,
-    ) -> None:
+    def compute(
+        self, structures: Sequence[Structure], properties: Sequence[str]
+    ) -> list[dict[str, object]]:
         """Return the stored constant energy and a uniform force on every atom."""
-        super().calculate(atoms, properties, system_changes)
-        assert atoms is not None
-        self.results["energy"] = self.energy
-        self.results["forces"] = np.full((len(atoms), 3), self.force)
-
-
-class BrokenStressCalculator(Calculator):
-    """Calculator that raises an unexpected RuntimeError for stress."""
-
-    implemented_properties = ("stress",)
-
-    def calculate(
-        self,
-        atoms: Atoms | None = None,
-        properties: list[str] | None = None,
-        system_changes: list[str] = all_changes,
-    ) -> None:
-        """Raise a backend-like failure when stress is requested."""
-        super().calculate(atoms, properties, system_changes)
-        raise RuntimeError("simulated stress backend failure")
+        del properties
+        return [
+            {"energy": self.energy, "forces": np.full((len(struct), 3), self.force)}
+            for struct in structures
+        ]
 
 
 def make_jiggled_frames(
     n_frames: int, np_rng: np.random.Generator, *, pressure_gpa: float | None = None
-) -> list[Atoms]:
+) -> list[Frame]:
     """Periodic 8-atom cubic-lattice frames with small random displacements. The 2.4 A
-    spacing keeps Si-Si pairs within the covalent-radius bond cutoff so calc_adf finds
-    bonded triplets (real Si-Si bond ~2.35 A; covalent cutoff ~2.78 A).
+    spacing keeps Si-Si pairs within the covalent-radius bond cutoff so matscikit.adf
+    finds bonded triplets (real Si-Si bond ~2.35 A; covalent cutoff ~2.78 A).
     """
     base_positions = 2.4 * np.array(
         list(itertools.product(range(2), repeat=3)), dtype=float
@@ -81,11 +82,14 @@ def make_jiggled_frames(
     frames = []
     for _ in range(n_frames):
         positions = base_positions + np_rng.normal(scale=0.05, size=(8, 3))
-        atoms = Atoms("Si8", positions=positions, cell=[6] * 3, pbc=True)
-        if pressure_gpa is not None:
-            stress = -pressure_gpa * units.GPa * np.eye(3)
-            atoms.calc = SinglePointCalculator(atoms, stress=stress)
-        frames.append(atoms)
+        stress = (
+            None
+            if pressure_gpa is None
+            else -pressure_gpa / md_metrics.EV_PER_A3_TO_GPA * np.eye(3)
+        )
+        frames.append(
+            make_frame("Si8", positions, cell=[6] * 3, pbc=True, stress=stress)
+        )
     return frames
 
 
@@ -95,104 +99,16 @@ def h2_frame(
     *,
     positions: np.ndarray | None = None,
     forces: np.ndarray | None = None,
-) -> Atoms:
+) -> Frame:
     """An H2 reference frame carrying private energy/force labels."""
     if positions is None:
         positions = np_rng.random((2, 3)) * 2
     if forces is None:
         forces = np.zeros((2, 3))
-    atoms = Atoms("H2", positions=positions, cell=[5] * 3)
-    atoms.calc = SinglePointCalculator(atoms, energy=energy, forces=forces)
-    return atoms
+    return make_frame("H2", positions, cell=[5] * 3, energy=energy, forces=forces)
 
 
 # === RDF ===
-
-
-# fixed cell, and alternating very different volumes (probes per-frame densities)
-@pytest.mark.parametrize("box_lens", [(10,), (10, 16)])
-def test_calc_rdf_ideal_gas_is_flat(box_lens: tuple[float, ...]) -> None:
-    """g(r) of uniformly random positions should match paper Eq. 4 normalization."""
-    rng = np.random.default_rng(seed=0)
-    n_atoms = 64
-    frames = [
-        Atoms(
-            "Ar64", positions=rng.random((n_atoms, 3)) * box, cell=[box] * 3, pbc=True
-        )
-        for _ in range(40)
-        for box in box_lens
-    ]
-    radii, g_r = md_metrics.calc_rdf(frames, n_bins=50)
-    # Paper Eq. 4 uses rho*N, so finite-N ideal gas plateaus at (N - 1) / N.
-    np.testing.assert_allclose(
-        g_r[radii > 2].mean(), (n_atoms - 1) / n_atoms, atol=0.01
-    )
-
-
-def test_calc_rdf_peak_position(np_rng: np.random.Generator) -> None:
-    """g(r) of a near-rigid dimer should peak at the bond length."""
-    frames = [
-        Atoms(
-            "Si2", positions=[(0, 0, 0), (2.35 + jitter, 0, 0)], cell=[10] * 3, pbc=True
-        )
-        for jitter in np_rng.normal(scale=0.01, size=20)
-    ]
-    radii, g_r = md_metrics.calc_rdf(frames, n_bins=100)
-    assert radii[np.argmax(g_r)] == pytest.approx(2.35, abs=0.05)
-
-
-def test_calc_rdf_r_max_respects_shrunken_cells() -> None:
-    """Default r_max must come from the smallest cell; larger explicit ones raise."""
-    frames = [
-        Atoms("H2", positions=[(0, 0, 0), (1, 0, 0)], cell=[10] * 3, pbc=True),
-        Atoms("H2", positions=[(0, 0, 0), (1, 0, 0)], cell=[4] * 3, pbc=True),
-    ]
-
-    radii, _g_r = md_metrics.calc_rdf(frames, n_bins=10)
-    assert radii[-1] < 2  # default grid limited by the 4 A cell, not the 10 A one
-
-    with pytest.raises(ValueError, match="minimum-image validity limit"):
-        md_metrics.calc_rdf(frames, r_max=3)
-
-
-def test_min_image_radius_uses_shortest_lattice_vector() -> None:
-    """MIC radius is half the shortest lattice vector (Minkowski), not half the
-    shortest basis vector, so skewed/non-reduced cells aren't over-cut and g(r) stays
-    valid. A cell whose basis vectors are all ~5 A but whose b-a lattice vector is
-    0.5 A must give radius 0.25 A, not 2.5 A.
-    """
-    pbc = np.array([True, True, True])
-    cubic = (np.eye(3) * 5.0)[None]  # (1, 3, 3)
-    assert md_metrics.min_image_radius(cubic, pbc) == pytest.approx(2.5)
-    skewed = np.array([[[5.0, 0, 0], [5.0, 0.5, 0], [0, 0, 5.0]]])
-    assert md_metrics.min_image_radius(skewed, pbc) == pytest.approx(0.25)
-
-    # calc_rdf's default r_max + validation follow the corrected (smaller) limit
-    frames = [
-        Atoms("H2", positions=[[0, 0, 0], [0.05 * idx, 0, 0]], cell=skewed[0], pbc=True)
-        for idx in range(4)
-    ]
-    radii, _ = md_metrics.calc_rdf(frames, n_bins=10)
-    assert radii[-1] < 0.25  # grid capped at the shortest-lattice-vector limit
-    with pytest.raises(ValueError, match="minimum-image validity limit"):
-        md_metrics.calc_rdf(frames, n_bins=10, r_max=2.0)  # old basis-vector limit
-
-
-@pytest.mark.parametrize(
-    ("formulas", "n_bins", "err_msg"),
-    [
-        ([], 50, "zero frames"),
-        (["H"], 50, "n_atoms=1 < 2"),
-        (["H2", "H3"], 50, "Inconsistent atom counts"),
-        # < 2 bins must raise instead of breaking downstream grid math
-        (["H2"], 1, "Need >= 2 RDF bins"),
-    ],
-)
-def test_calc_rdf_invalid_input(formulas: list[str], n_bins: int, err_msg: str) -> None:
-    """RDF should reject bad bin counts and empty/single-atom/varying trajectories."""
-    frames = [Atoms(formula, cell=[5] * 3, pbc=True) for formula in formulas]
-    with pytest.raises(ValueError, match=err_msg):
-        md_metrics.calc_rdf(frames, n_bins=n_bins)
 
 
 @pytest.mark.parametrize(
@@ -232,94 +148,6 @@ def test_calc_rdf_error_invalid_input(
 
 
 # === ADF ===
-
-
-def right_angle_h3_frame(*, cell_len: float = 6, pbc: bool = True) -> Atoms:
-    """Three-atom frame with a 90-degree angle at atom 0."""
-    positions = [(0, 0, 0), (1, 0, 0), (0, 1, 0)]
-    return Atoms("H3", positions=positions, cell=[cell_len] * 3, pbc=pbc)
-
-
-def tetrahedral_ch4_frame() -> Atoms:
-    """Five-atom frame with a tetrahedral angle around atom 0."""
-    neighbor_dirs = [[1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]]
-    positions = np.vstack([[0, 0, 0], neighbor_dirs]) / np.sqrt(3)
-    return Atoms("CH4", positions=positions, cell=[8] * 3, pbc=True)
-
-
-def wrapped_right_angle_h3_frame() -> Atoms:
-    """Three-atom frame whose 90-degree angle crosses periodic boundaries."""
-    positions = [(0.1, 0.1, 0.1), (3.1, 0.1, 0.1), (0.1, 3.1, 0.1)]
-    return Atoms("H3", positions=positions, cell=[4] * 3, pbc=True)
-
-
-@pytest.mark.parametrize(
-    ("frame", "expected_angle", "abs_tol"),
-    [
-        (right_angle_h3_frame(), 90.5, 1e-12),
-        (tetrahedral_ch4_frame(), np.degrees(np.arccos(-1 / 3)), 0.5),
-        (wrapped_right_angle_h3_frame(), 90.5, 1e-12),
-        (right_angle_h3_frame(cell_len=1, pbc=False), 90.5, 1e-12),
-    ],
-    ids=["right", "tetrahedral", "wrapped", "non_pbc_small_cell"],
-)
-def test_calc_adf_peak_position(
-    frame: Atoms, expected_angle: float, abs_tol: float
-) -> None:
-    """ADF should recover known angles, including minimum-image neighbor vectors."""
-    # bond_tolerance=2 so the artificial ~1 A H-H/C-H separations count as bonded
-    angles, adf = md_metrics.calc_adf([frame], n_bins=180, bond_tolerance=2.0)
-    assert angles[np.argmax(adf)] == pytest.approx(expected_angle, abs=abs_tol)
-    np.testing.assert_allclose(
-        np.sum(adf * (angles[1] - angles[0])), 1, rtol=1e-12, atol=1e-12
-    )
-
-
-def test_calc_adf_rigid_transform_invariant() -> None:
-    """ADF should be invariant to rigid rotations and translations."""
-    positions = [
-        [0.0, 0.0, 0.0],
-        [1.0, 0.2, -0.1],
-        [-0.3, 1.1, 0.4],
-        [0.5, -0.7, 1.2],
-        [-1.0, -0.4, 0.6],
-    ]
-    rotation = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
-    frame = Atoms("H5", positions=positions, cell=[50] * 3, pbc=False)
-    transformed = Atoms(
-        "H5", positions=positions @ rotation.T + [7, -3, 2], cell=[50] * 3, pbc=False
-    )
-
-    angles, adf = md_metrics.calc_adf([frame], n_bins=90, bond_tolerance=5.0)
-    transformed_angles, transformed_adf = md_metrics.calc_adf(
-        [transformed], n_bins=90, bond_tolerance=5.0
-    )
-    np.testing.assert_allclose(transformed_angles, angles, rtol=0, atol=0)
-    np.testing.assert_allclose(transformed_adf, adf, rtol=1e-12, atol=1e-12)
-
-
-@pytest.mark.parametrize(
-    ("frames", "n_bins", "bond_tolerance", "err_msg"),
-    [
-        ([], 180, 1.25, "zero frames"),
-        (
-            [Atoms("H2", positions=[(0, 0, 0), (1, 0, 0)], cell=[6] * 3)],
-            180,
-            1.25,
-            "n_atoms=2 < 3",
-        ),
-        ([right_angle_h3_frame()], 1, 1.25, "Need >= 2 ADF bins"),
-        ([right_angle_h3_frame()], 180, 0.0, "must be positive"),
-        # tiny tolerance leaves no covalent bonds -> no angle triplets
-        ([right_angle_h3_frame()], 180, 0.1, "no bonded neighbor angle pairs"),
-    ],
-)
-def test_calc_adf_invalid_input(
-    frames: list[Atoms], n_bins: int, bond_tolerance: float, err_msg: str
-) -> None:
-    """ADF should reject invalid inputs and empty neighborhoods."""
-    with pytest.raises(ValueError, match=err_msg):
-        md_metrics.calc_adf(frames, n_bins=n_bins, bond_tolerance=bond_tolerance)
 
 
 @pytest.mark.parametrize(
@@ -375,37 +203,22 @@ def test_calc_adf_error_invalid_input(
         md_metrics.calc_adf_error(angles, adf_ref, adf_pred)
 
 
-# === velocities and vDOS ===
+# === trajectory observables, velocities and vDOS ===
 
 
-@pytest.mark.parametrize(
-    ("velocity", "time_step_fs", "box_len"),
-    [
-        ((0.02, -0.01, 0.005), 2.0, 100.0),  # slow, -y wraps once at the origin
-        ((0.4, 0.0, 0.0), 1.0, 5.0),  # crosses the periodic boundary repeatedly
-    ],
-    ids=["linear", "pbc_crossings"],
-)
-def test_calc_velocities_constant_motion(
-    velocity: tuple[float, float, float], time_step_fs: float, box_len: float
-) -> None:
-    """Constant-velocity motion gives that exact velocity at every frame, without
-    spikes when positions wrap across periodic boundaries.
-    """
-    n_frames = 20
-    frames = [  # positions wrapped into the box by the % operator
-        Atoms(
-            "H",
-            positions=[np.multiply(velocity, time_step_fs * step) % box_len],
-            cell=[box_len] * 3,
-            pbc=True,
-        )
-        for step in range(n_frames)
-    ]
-    velocities = md_metrics.calc_velocities(frames, time_step_fs=time_step_fs)
-    np.testing.assert_allclose(
-        velocities, np.tile(velocity, (n_frames, 1, 1)), rtol=1e-12, atol=1e-12
+def test_trajectory_observables(np_rng: np.random.Generator) -> None:
+    """Frame lists coerce to the matscikit kernels' arrays on the default r_max grid."""
+    observables = md_metrics.trajectory_observables(
+        make_jiggled_frames(8, np_rng), time_step_fs=2, n_rdf_bins=50
     )
+    assert {key: len(grid) for key, (grid, _) in observables.items()} == {
+        "rdf": 50,
+        "adf": 180,
+        "vdos": 5,
+    }
+    # 8 atoms in a 6 A cube: r_max = 3 A, Si-Si bonds within 2.78 A
+    assert observables["rdf"][0][-1] == pytest.approx(3 - 3 / 100, rel=1e-14)
+    np.testing.assert_allclose(observables["adf"][1].sum(), 1, rtol=1e-12)
 
 
 def test_equipartition_temperature() -> None:
@@ -417,84 +230,20 @@ def test_equipartition_temperature() -> None:
     velocity = rng.normal(scale=0.01, size=(n_atoms, 3))  # A/fs, constant per atom
     base = rng.uniform(0, 10, size=(n_atoms, 3))
     frames = [
-        Atoms("Cu32", positions=base + velocity * (step * dt), cell=[80] * 3, pbc=False)
+        make_frame(
+            "Cu32", positions=base + velocity * (step * dt), cell=[80] * 3, pbc=False
+        )
         for step in range(n_frames)
     ]
     temp = md_metrics.equipartition_temperature(frames, time_step_fs=dt)
     # independent expectation from the same constant velocities (linear motion -> exact)
-    factor = 1e10 * units.J / units.kg  # 1 amu*(A/fs)^2 in eV
-    ke_ev = 0.5 * atomic_masses[29] * (velocity**2).sum() * factor
-    expected = 2 * ke_ev / (3 * n_atoms * units.kB)
+    # 1 amu (A/fs)^2 in eV in matscikit's units (its CODATA, not a hardcoded older one)
+    ke_ev = 0.5 * ATOMIC_MASSES[29] * (velocity**2).sum() * FEMTOSECOND**-2
+    expected = 2 * ke_ev / (3 * n_atoms * K_B)
     assert temp == pytest.approx(expected, rel=1e-9)
     # halving the assumed dt quadruples the inferred temperature
     half_dt = md_metrics.equipartition_temperature(frames, time_step_fs=dt / 2)
     assert half_dt == pytest.approx(4 * temp, rel=1e-9)
-
-
-@pytest.mark.parametrize(
-    ("n_frames", "time_step_fs", "err_msg"),
-    [(1, 1.0, "Need >= 2 frames"), (5, 0, "must be positive")],
-)
-def test_calc_velocities_invalid_input(
-    n_frames: int, time_step_fs: float, err_msg: str
-) -> None:
-    """Velocity estimation should validate frame count and time step."""
-    frames = [Atoms("H", positions=[(0, 0, 0)], cell=[5] * 3, pbc=True)] * n_frames
-    with pytest.raises(ValueError, match=err_msg):
-        md_metrics.calc_velocities(frames, time_step_fs=time_step_fs)
-
-
-def make_cosine_velocities(
-    *freq_amp_pairs: tuple[float, float],
-    n_frames: int = 2000,
-    time_step_fs: float = 2.0,
-) -> np.ndarray:
-    """Velocities of shape (n_frames, n_atoms, 3) where atom i oscillates along x
-    with (frequency in THz, amplitude) = freq_amp_pairs[i].
-    """
-    times_ps = np.arange(n_frames) * time_step_fs * 1e-3
-    velocities = np.zeros((n_frames, len(freq_amp_pairs), 3))
-    for atom_idx, (freq_thz, amplitude) in enumerate(freq_amp_pairs):
-        velocities[:, atom_idx, 0] = amplitude * np.cos(2 * np.pi * freq_thz * times_ps)
-    return velocities
-
-
-def test_calc_vdos_spectrum() -> None:
-    """VDOS peaks at each atom's oscillation frequency and per-DOF (equipartition)
-    normalization gives a quiet atom's peak the same weight as a 10x louder one.
-    """
-    velocities = make_cosine_velocities((5.0, 1.0), (12.5, 0.1))  # loud + quiet atom
-    freqs, vdos = md_metrics.calc_vdos(velocities, time_step_fs=2.0)
-
-    low_band = (freqs > 2.5) & (freqs < 7.5)
-    high_band = (freqs > 10) & (freqs < 15)
-    freq_resolution = freqs[1] - freqs[0]
-    assert freqs[low_band][np.argmax(vdos[low_band])] == pytest.approx(
-        5.0, abs=freq_resolution
-    )
-    assert freqs[high_band][np.argmax(vdos[high_band])] == pytest.approx(
-        12.5, abs=freq_resolution
-    )
-    # a raw (unnormalized) power sum would give a weight ratio of ~100
-    assert vdos[low_band].sum() / vdos[high_band].sum() == pytest.approx(1, rel=0.05)
-
-
-@pytest.mark.parametrize(
-    ("shape", "time_step_fs", "err_msg"),
-    [
-        ((10, 3), 1.0, "Expected shape"),
-        # hanning(n < 4) windows are degenerate (all-zero for n=2), so 3 frames
-        # must be rejected even though velocities only need 2
-        ((3, 2, 3), 1.0, "Need >= 4 frames"),
-        ((10, 2, 3), -1.0, "must be positive"),
-    ],
-)
-def test_calc_vdos_invalid_input(
-    shape: tuple[int, ...], time_step_fs: float, err_msg: str
-) -> None:
-    """VDOS should validate velocity array shape and time step."""
-    with pytest.raises(ValueError, match=err_msg):
-        md_metrics.calc_vdos(np.zeros(shape), time_step_fs=time_step_fs)
 
 
 def test_calc_vdos_error_w1_shift_monotonic() -> None:
@@ -607,9 +356,13 @@ def test_get_trajectory_pressures(np_rng: np.random.Generator) -> None:
         make_jiggled_frames(1, np_rng, pressure_gpa=pressure)[0]
         for pressure in pressures
     ]
-    aniso = Atoms("Si8", positions=np_rng.normal(scale=0.05, size=(8, 3)), cell=[6] * 3)
-    aniso.pbc = True
-    aniso.calc = SinglePointCalculator(aniso, stress=ANISOTROPIC_STRESS_VOIGT)
+    aniso = make_frame(
+        "Si8",
+        np_rng.normal(scale=0.05, size=(8, 3)),
+        cell=[6] * 3,
+        pbc=True,
+        stress=ANISOTROPIC_STRESS,
+    )
     np.testing.assert_allclose(
         md_metrics.get_trajectory_pressures([*frames, aniso]),
         [*pressures, 3.0],
@@ -654,7 +407,7 @@ def test_calc_energy_force_rmse_uses_private_labels(
     ]
 
     metrics = md_metrics.calc_energy_force_rmse(
-        frames, ConstantCalculator(energy=2.0, force=0.0)
+        frames, ConstantModel(energy=2.0, force=0.0)
     )
 
     # predicted energy fluctuations are zero; reference fluctuations are ±0.5 eV/atom
@@ -666,10 +419,10 @@ def test_energy_force_rmse_rejects_missing_private_labels(
     np_rng: np.random.Generator,
 ) -> None:
     """Private diagnostics must fail loudly when the reference lacks labels."""
-    atoms = Atoms("H2", positions=np_rng.random((2, 3)) * 2, cell=[5] * 3)
+    atoms = make_frame("H2", positions=np_rng.random((2, 3)) * 2, cell=[5] * 3)
 
     with pytest.raises(ValueError, match="energy/forces"):
-        md_metrics.calc_energy_force_rmse([atoms], ConstantCalculator())
+        md_metrics.calc_energy_force_rmse([atoms], ConstantModel())
 
 
 @pytest.mark.parametrize(
@@ -716,35 +469,6 @@ def test_pressure_metrics_reject_bad_input(
         getattr(md_metrics, func_name)(p_ref, np.arange(4.0), **kwargs)
 
 
-def test_calc_rdf_matches_direct_ase_histogram(
-    np_rng: np.random.Generator,
-) -> None:
-    """The array-based calc_rdf reproduces a direct Atoms.get_all_distances(mic=True)
-    histogram for a triclinic cell (independent cross-check of the new kernel).
-    """
-    cell = np.array([[6.0, 0, 0], [0.8, 6.0, 0], [0.3, -0.4, 6.0]])  # triclinic
-    frames = [
-        Atoms("Cu8", positions=np_rng.random((8, 3)) * 5, cell=cell, pbc=True)
-        for _ in range(3)
-    ]
-    n_bins = 40
-    radii, g_r = md_metrics.calc_rdf(frames, n_bins=n_bins)
-
-    r_max = float(radii[-1] + (radii[1] - radii[0]) / 2)
-    bin_edges = np.linspace(0, r_max, n_bins + 1)
-    counts = np.zeros(n_bins)
-    inv_volume_sum = 0.0
-    upper_tri = np.triu_indices(8, k=1)
-    for atoms in frames:
-        counts += np.histogram(
-            atoms.get_all_distances(mic=True)[upper_tri], bins=bin_edges
-        )[0]
-        inv_volume_sum += 1 / atoms.get_volume()
-    shell_volumes = 4 / 3 * np.pi * np.diff(bin_edges**3)
-    g_r_direct = counts / (8**2 / 2 * inv_volume_sum * shell_volumes)
-    np.testing.assert_allclose(g_r, g_r_direct, rtol=0, atol=1e-12)
-
-
 # === frame matching and per-system evaluation ===
 
 
@@ -785,24 +509,6 @@ def test_matched_frame_counts_rejects_zero_time_step(
             n_pred_frames=5,
             ref_time_step_fs=ref_dt,
             pred_time_step_fs=pred_dt,
-        )
-
-
-def test_evaluate_md_system_reraises_unexpected_pressure_errors(
-    np_rng: np.random.Generator,
-) -> None:
-    """Unexpected stress backend failures should not become NaN pressure metrics."""
-    ref_traj = make_jiggled_frames(8, np_rng)
-    pred_traj = make_jiggled_frames(8, np_rng)
-    for atoms in (*ref_traj, *pred_traj):
-        atoms.calc = BrokenStressCalculator()
-
-    with pytest.raises(RuntimeError, match="stress backend failure"):
-        md_metrics.evaluate_md_system(
-            ref_traj,
-            pred_traj,
-            ref_time_step_fs=1,
-            pred_time_step_fs=1,
         )
 
 
@@ -934,7 +640,9 @@ def test_calc_md_metrics_all_or_nothing_columns(
     assert metrics["n_systems"] == 2
 
 
-def test_write_metrics_to_yaml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_write_metrics_to_yaml(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     """metrics.md gets units, rounding and the artifact's cost after pred_file."""
     yaml_path = tmp_path / "model.yml"
     yaml_path.write_text("model_name: test\nmetrics: {}\n", encoding="utf-8")
@@ -992,6 +700,14 @@ def test_write_metrics_to_yaml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
         "rdf_error": 3.0,
         "n_systems": 17,
     }
+
+    # an untagged legacy CSV cost with no YAML cost block is skipped, not published
+    legacy_cost = {"hardware": "NVIDIA H100", "run_time_sec": 7.0, "max_rss_gb": 2.4}
+    recomputed = md_metrics.write_metrics_to_yaml(
+        model, {**legacy_cost, "rdf_error": 3.0, "n_systems": 17}
+    )
+    assert "cost" not in recomputed
+    assert "skipping MD cost" in capsys.readouterr().out
 
     # a recompute keeps the reproducibility verdict, registering a new CSV drops it
     repro = {"status": "reproduced", "rel_changes": {"rdf_error": 0.0}}

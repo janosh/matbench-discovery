@@ -4,12 +4,13 @@ import gzip
 import json
 from pathlib import Path
 
-import ase.io
 import h5py
+import numpy as np
 import pandas as pd
 import pymatviz as pmv
 import pytest
-from pymatgen.core import Composition
+from matscikit import Composition, Structure
+from matscikit.io import write_extxyz
 from pymatviz.enums import Key
 
 from matbench_discovery import ROOT
@@ -38,10 +39,12 @@ def test_export_benchmark_element_counts(
         DataFiles, "path", property(lambda file: str(tmp_path / file.name))
     )
     monkeypatch.setattr(exporter, "ROUTE_DATA_DIR", str(tmp_path))
-    ase.io.write(
+    write_extxyz(
         DataFiles.phonondb_pbe_103_structures.path,
-        [ase.Atoms("H2O"), ase.Atoms("H2")],
-        format="extxyz",
+        [
+            Structure(5 * np.eye(3), ["H", "H", "O"], np.eye(3)),
+            Structure(5 * np.eye(3), ["H", "H"], np.eye(3)[:2]),
+        ],
     )
     with h5py.File(DataFiles.dynamat_v1_0_md_trajectories.path, "w") as file:
         for name, numbers in {"water": [1, 1, 8], "hydrogen": [1, 1]}.items():

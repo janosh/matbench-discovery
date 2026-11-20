@@ -81,7 +81,7 @@ describe(`format_property_path`, () => {
       `Hyperparams > upstream config > custom param`,
     ],
     // Geo-opt metrics
-    [`geo_opt.symprec=1e-5.rmsd`, `Geometry Optimization > RMSD`],
+    [`geo_opt.rmsd_auc`, `Geometry Optimization > RMSD AUC`],
     // Phonon metrics
     [`phonons.kappa_103.κ_SRME`, `Phonons > κ<sub>SRME</sub>`],
     [`phonons.other.property`, `Phonons > other > property`],

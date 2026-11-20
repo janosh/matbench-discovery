@@ -2,51 +2,51 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
 from matbench_discovery.phonons.adapters.standard import StandardKappaAdapter
-from matbench_discovery.phonons.thermal_conductivity import batched_displacement_forces
 
 if TYPE_CHECKING:
-    from ase import Atoms
-    from ase.calculators.calculator import Calculator
-    from phono3py.api_phono3py import Phono3py
-    from phonopy.structure.atoms import PhonopyAtoms
+    from matscikit import Structure
+    from matscikit.model import Model as ForceModel
 
     from matbench_discovery.phonons.pipeline import KappaSettings
 
 
-def _batched_force_set(
-    displacements: list[PhonopyAtoms | None],
-    calculator: Calculator,
-    *,
-    batch_size: int,
-    n_atoms: int,
-    max_evaluations: int | None = None,
-) -> np.ndarray:
-    """Evaluate displaced supercells in batches while retaining null entries."""
+class PetBatchedModel:
+    """PET behind the matscikit model protocol, batching through ``compute_energy``.
 
-    def evaluate_batch(batch_atoms: list[Atoms]) -> np.ndarray:
-        """Evaluate one PET displacement batch through its available API."""
-        compute_energy = getattr(calculator, "compute_energy", None)
-        if callable(compute_energy):
-            outputs = compute_energy(batch_atoms, compute_forces_and_stresses=True)
-            return np.asarray(outputs["forces"])
-        # Current metatomic SymmetrizedCalculator exposes only ASE's single-system
-        # API; each call still batches its internal rotational quadrature.
-        for displaced_atoms in batch_atoms:
-            displaced_atoms.calc = calculator
-        return np.asarray([atoms.get_forces() for atoms in batch_atoms])
+    Current metatomic SymmetrizedCalculator versions without ``compute_energy`` fall
+    back to the single-structure ASE API; each call still batches its internal
+    rotational quadrature.
+    """
 
-    return batched_displacement_forces(
-        displacements,
-        evaluate_batch,
-        batch_size=batch_size,
-        n_atoms=n_atoms,
-        max_evaluations=max_evaluations,
-    )
+    def __init__(self, calculator: object) -> None:
+        """Wrap a (symmetrized) metatomic ASE calculator."""
+        self.calculator = calculator
+
+    def compute(
+        self, structures: Sequence[Structure], properties: Sequence[str]
+    ) -> list[dict[str, Any]]:
+        """Evaluate a batch of structures."""
+        from matscikit.interop import AseCalculatorModel, structure_to_ase
+
+        compute_energy = getattr(self.calculator, "compute_energy", None)
+        if not callable(compute_energy) or set(properties) - {"energy", "forces"}:
+            return AseCalculatorModel(self.calculator).compute(structures, properties)
+        outputs = compute_energy(
+            [structure_to_ase(structure) for structure in structures],
+            compute_forces_and_stresses=True,
+        )
+        # forces stay per structure: batches may mix atom counts (ragged arrays)
+        energies, forces = np.asarray(outputs["energy"]), outputs["forces"]
+        return [
+            {"energy": float(energies[idx]), "forces": np.asarray(forces[idx])}
+            for idx in range(len(structures))
+        ]
 
 
 class PetKappaAdapter(StandardKappaAdapter):
@@ -54,54 +54,13 @@ class PetKappaAdapter(StandardKappaAdapter):
 
     name = "pet"
 
-    def prepare_calculator(
-        self, calculator: Calculator, settings: KappaSettings
-    ) -> Calculator:
-        """Wrap a metatomic calculator in its rotational symmetrizer."""
+    def prepare_model(self, model: ForceModel, settings: KappaSettings) -> ForceModel:
+        """Wrap the metatomic calculator in its rotational symmetrizer."""
         from metatomic_ase import SymmetrizedCalculator
 
-        if isinstance(calculator, SymmetrizedCalculator):
-            return calculator
-        # SymmetrizedCalculator subclasses ase Calculator, so no cast is needed
-        return SymmetrizedCalculator(
-            calculator, batch_size=settings.batch_size, include_inversion=False
-        )
-
-    def calculate_fc2(
-        self,
-        phono3py: Phono3py,
-        calculator: Calculator,
-        settings: KappaSettings,
-    ) -> tuple[Phono3py, np.ndarray, np.ndarray]:
-        """Calculate PET FC2 and frequencies with batched force calls."""
-        force_set = _batched_force_set(
-            list(phono3py.phonon_supercells_with_displacements),
-            calculator,
-            batch_size=settings.batch_size,
-            n_atoms=len(phono3py.phonon_supercell),
-        )
-        phono3py.phonon_forces = force_set
-        phono3py.produce_fc2(symmetrize_fc2=True)
-        phono3py.init_phph_interaction(symmetrize_fc3q=False)
-        phono3py.run_phonon_solver()
-        frequencies, _eigenvectors, _grid = phono3py.get_phonon_data()
-        return phono3py, force_set, frequencies
-
-    def calculate_fc3(
-        self,
-        phono3py: Phono3py,
-        calculator: Calculator,
-        settings: KappaSettings,
-        *,
-        max_evaluations: int | None = None,
-    ) -> np.ndarray:
-        """Calculate PET FC3 with batched force calls."""
-        force_set = _batched_force_set(
-            list(phono3py.supercells_with_displacements),
-            calculator,
-            batch_size=settings.batch_size,
-            n_atoms=len(phono3py.supercell),
-            max_evaluations=max_evaluations,
-        )
-        phono3py.forces = force_set
-        return force_set
+        calculator = getattr(model, "calculator", model)
+        if not isinstance(calculator, SymmetrizedCalculator):
+            calculator = SymmetrizedCalculator(
+                calculator, batch_size=settings.batch_size, include_inversion=False
+            )
+        return PetBatchedModel(calculator)

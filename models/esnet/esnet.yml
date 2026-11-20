@@ -71,35 +71,35 @@ notes:
 metrics:
   discovery:
     pred_file:
-      name: models/esnet/esnet/2025-06-20-discovery.csv.gz
-      url: https://figshare.com/files/66646337
-      size: 1333389
-      md5: a26c63d6e63c9007fc1e4e88a14a79bf
+      name: models/esnet/esnet/2026-11-19-discovery.csv.gz
+      url: https://figshare.com/files/71653861
+      size: 1334973
+      md5: 9a963a5b846f6efb3463f61817db7b95
     full_test_set:
       F1: 0.568 # fraction
-      DAF: 3.151 # dimensionless
+      DAF: 3.164 # dimensionless
       Precision: 0.541 # fraction
-      Recall: 0.597 # fraction
-      Accuracy: 0.844 # fraction
-      TP: 26327 # count
-      FP: 22360 # count
-      TN: 190511 # count
-      FN: 17765 # count
+      Recall: 0.598 # fraction
+      Accuracy: 0.845 # fraction
+      TP: 26298 # count
+      FP: 22286 # count
+      TN: 190720 # count
+      FN: 17659 # count
       MAE: 0.107 # eV/atom
       RMSE: 0.193 # eV/atom
-      R2: -0.148 # dimensionless
+      R2: -0.145 # dimensionless
       missing_preds: 1 # count
     unique_prototypes:
       F1: 0.572 # fraction
-      DAF: 3.498 # dimensionless
+      DAF: 3.513 # dimensionless
       Precision: 0.535 # fraction
-      Recall: 0.614 # fraction
-      Accuracy: 0.857 # fraction
-      TP: 20485 # count
-      FP: 17823 # count
-      TN: 164291 # count
-      FN: 12889 # count
+      Recall: 0.615 # fraction
+      Accuracy: 0.858 # fraction
+      TP: 20435 # count
+      FP: 17772 # count
+      TN: 164474 # count
+      FN: 12807 # count
       MAE: 0.109 # eV/atom
       RMSE: 0.194 # eV/atom
-      R2: -0.114 # dimensionless
+      R2: -0.113 # dimensionless
       missing_preds: 0 # count

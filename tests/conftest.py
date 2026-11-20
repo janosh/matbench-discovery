@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import requests
-from pymatgen.core import Lattice, Structure
+from matscikit import Structure
 from requests.adapters import HTTPAdapter, Retry
 
 from matbench_discovery import cli
@@ -45,34 +45,48 @@ def url_session() -> Iterator[requests.Session]:
         yield session
 
 
+def _monoclinic_lattice(a: float, b: float, c: float, beta_deg: float) -> np.ndarray:
+    """Monoclinic lattice rows with b along y and beta between a and c."""
+    beta = np.radians(beta_deg)
+    return np.array([[a, 0, 0], [0, b, 0], [c * np.cos(beta), 0, c * np.sin(beta)]])
+
+
 @pytest.fixture
 def dummy_struct() -> Structure:
+    """Cubic FeO (CsCl-like) test structure."""
     coords = ((0, 0, 0), (0.5, 0.5, 0.5))
-    return Structure(lattice=Lattice.cubic(4.2), species=("Fe", "O"), coords=coords)
+    return Structure(4.2 * np.eye(3), ("Fe", "O"), coords, fractional=True)
 
 
 @pytest.fixture
 def cubic_struct() -> Structure:
-    lattice = Lattice.cubic(4.2)
-    return Structure(lattice, ["Si", "Si"], [[0, 0, 0], [0.5, 0.5, 0.5]])
+    """Cubic Si2 test structure."""
+    return Structure(
+        4.2 * np.eye(3), ["Si", "Si"], [[0, 0, 0], [0.5, 0.5, 0.5]], fractional=True
+    )
 
 
 @pytest.fixture
 def tetragonal_struct() -> Structure:
-    lattice = Lattice.tetragonal(a=4, c=6)
+    """Tetragonal TiO2-like test structure."""
     coords = [[0, 0, 0], [0.5, 0.5, 0], [0, 0.5, 0.5]]
-    return Structure(lattice, ["Ti", "O", "O"], coords)
+    return Structure(
+        np.diag([4.0, 4.0, 6.0]), ["Ti", "O", "O"], coords, fractional=True
+    )
 
 
 @pytest.fixture
 def monoclinic_struct() -> Structure:
-    lattice = Lattice.monoclinic(a=5, b=4, c=6, beta=100)
+    """Monoclinic PO4-like test structure."""
     x1 = [0, 0, 0]
     x2 = [0.25, 0.25, 0.25]
     x3 = [0.75, 0.75, 0.25]
     x4 = [0.25, 0.75, 0.75]
     x5 = [0.75, 0.25, 0.75]
-    return Structure(lattice, ["P", "O", "O", "O", "O"], [x1, x2, x3, x4, x5])
+    lattice = _monoclinic_lattice(5, 4, 6, 100)
+    return Structure(
+        lattice, ["P", "O", "O", "O", "O"], [x1, x2, x3, x4, x5], fractional=True
+    )
 
 
 @pytest.fixture

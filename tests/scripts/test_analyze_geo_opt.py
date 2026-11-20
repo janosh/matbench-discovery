@@ -7,9 +7,11 @@ from pathlib import Path
 from types import ModuleType
 from unittest.mock import PropertyMock, patch
 
+import numpy as np
 import pandas as pd
 import pytest
-from pymatgen.core import Lattice, Structure
+from matscikit import Structure
+from matscikit.interop import structure_to_pymatgen_dict
 
 from matbench_discovery.enums import MbdKey, Model
 from tests.utils import import_repo_script
@@ -26,13 +28,20 @@ def analyze_geo_opt_fixture() -> ModuleType:
 
 def write_geo_opt_file(model_dir: Path, material_ids: list[str]) -> Path:
     """Write a canonical geo-opt JSONL artifact with one cubic structure per ID."""
-    struct = Structure(Lattice.cubic(3.0), ["Na", "Cl"], [[0] * 3, [0.5] * 3])
+    struct = Structure(
+        3.0 * np.eye(3), ["Na", "Cl"], [[0] * 3, [0.5] * 3], fractional=True
+    )
     geo_opt_path = model_dir / "2026-07-01-geo-opt.jsonl.gz"
     model_dir.mkdir(parents=True, exist_ok=True)
     with gzip.open(geo_opt_path, mode="wt") as file:
         for mat_id in material_ids:
             file.write(
-                json.dumps({"material_id": mat_id, "structure": struct.as_dict()})
+                json.dumps(
+                    {
+                        "material_id": mat_id,
+                        "structure": structure_to_pymatgen_dict(struct),
+                    }
+                )
             )
             file.write("\n")
     return geo_opt_path
@@ -42,7 +51,7 @@ def fake_analysis(material_ids: list[str]) -> pd.DataFrame:
     """Analysis frame with the columns calc_geo_opt_metrics needs."""
     return pd.DataFrame(
         {
-            MbdKey.structure_rmsd_vs_dft: [0.1] * len(material_ids),
+            MbdKey.structure_rmsd_vs_dft: [0.01] * len(material_ids),
             MbdKey.spg_num_diff: [0] * len(material_ids),
             MbdKey.n_sym_ops_diff: [0] * len(material_ids),
         },
@@ -120,7 +129,7 @@ def test_analyze_model_symprec_metrics_and_debug_paths(
             Model["alignn"],
             SYMPREC,
             MOYO_VERSION,
-            df_dft_analysis=pd.DataFrame(),
+            df_dft_analysis=pd.DataFrame(index=pd.Index(material_ids)),
             dft_structs={},
             debug_mode=debug_mode,
         )
@@ -128,6 +137,8 @@ def test_analyze_model_symprec_metrics_and_debug_paths(
     assert df_metrics is not None
     # metrics are derived from the (cached or fresh) analysis in every mode
     assert df_metrics["n_structures"].iloc[0] == n_analyzed
+    # full runs score the whole test set, debug runs only their subset: 1 - 0.01/0.05
+    assert df_metrics["rmsd_auc"].iloc[0] == pytest.approx(0.8, rel=1e-12)
     assert mock_sym_info.call_count == (0 if cached else 1)
     # a cached analysis must not resolve (download) or parse the multi-GB file
     assert mock_geo_opt_path.call_count == (0 if cached else 1)
@@ -163,3 +174,42 @@ def test_write_dft_reference_never_overwrites(
     pd.testing.assert_frame_equal(
         pd.read_csv(out_path, index_col="material_id"), df_sym
     )
+
+
+@pytest.mark.parametrize(
+    ("engine_version", "write_reference", "error"),
+    [
+        ("0.21.0", False, "WBM load reached"),
+        # moyopy's version is irrelevant: only matscikit's bundled moyo names files
+        ("0.22.0", False, "matscikit's moyo 0.22.0 does not match the registered"),
+        # substring matches must not pass (0.2 is not 0.21.0)
+        ("0.2", False, "matscikit's moyo 0.2 does not match the registered"),
+        ("0.22.0", True, "WBM load reached"),
+    ],
+)
+def test_main_checks_dft_reference_against_matscikit_moyo(
+    engine_version: str,
+    write_reference: bool,
+    error: str,
+    analyze_geo_opt: ModuleType,
+) -> None:
+    """main() compares registered DFT references to matscikit's moyo before WBM load."""
+    raw_args = ["--models", "alignn", "--symprec", "1e-2"]
+    raw_args += ["--write-dft-reference"] * write_reference
+    with (
+        patch.object(analyze_geo_opt, "MOYO_VERSION", engine_version),
+        patch.object(
+            analyze_geo_opt.DataFiles,
+            "path",
+            new_callable=PropertyMock,
+            side_effect=RuntimeError("WBM load reached"),
+        ),
+        patch.object(
+            analyze_geo_opt.DataFiles,
+            "rel_path",
+            new_callable=PropertyMock,
+            return_value="wbm/dft-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz",
+        ),
+        pytest.raises((ValueError, RuntimeError), match=error),
+    ):
+        analyze_geo_opt.main(raw_args)

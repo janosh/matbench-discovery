@@ -128,9 +128,9 @@ metrics:
         md5: 296690b28b4d8b29654602de716e3e31
       force_file:
         name: models/mace_soyo/mace-soyo-oam/phonon-oam/2026-10-22-phonons-kappa-103-forces.h5
-        url: https://figshare.com/files/71263225
-        size: 48287373
-        md5: 252f2489fb88d21a4afa3637aa2890eb
+        url: https://figshare.com/files/71630161
+        size: 46412649
+        md5: a4bcad28aafb1d7aeff0f52682aee58b
       phonon_file:
         name: models/mace_soyo/mace-soyo-oam/phonon-oam/2026-10-22-phonons-kappa-103-phonons.json.gz
         url: https://ndownloader.figshare.com/files/70547589
@@ -188,62 +188,61 @@ metrics:
       md5: f59c1e871c168031c5c303b412b2280b
     cost: {source: author_reported, hardware: NVIDIA GeForce RTX 4090, run_time_sec: 132009.47, max_rss_gb: 5.398, max_gpu_mem_gb: 0.263}
     full_test_set:
-      F1: 0.883 # fraction
-      DAF: 5.175 # dimensionless
-      Precision: 0.888 # fraction
-      Recall: 0.878 # fraction
-      Accuracy: 0.96 # fraction
-      TP: 38731 # count
-      FP: 4890 # count
-      TN: 207981 # count
-      FN: 5361 # count
-      MAE: 0.02 # eV/atom
-      RMSE: 0.067 # eV/atom
-      R2: 0.861 # dimensionless
+      F1: 0.889 # fraction
+      DAF: 5.21 # dimensionless
+      Precision: 0.891 # fraction
+      Recall: 0.886 # fraction
+      Accuracy: 0.962 # fraction
+      TP: 38944 # count
+      FP: 4754 # count
+      TN: 208252 # count
+      FN: 5013 # count
+      MAE: 0.019 # eV/atom
+      RMSE: 0.066 # eV/atom
+      R2: 0.866 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.903 # fraction
-      DAF: 5.922 # dimensionless
-      Precision: 0.905 # fraction
-      Recall: 0.901 # fraction
-      Accuracy: 0.97 # fraction
-      TP: 30058 # count
-      FP: 3143 # count
-      TN: 178971 # count
-      FN: 3316 # count
-      MAE: 0.02 # eV/atom
-      RMSE: 0.067 # eV/atom
-      R2: 0.868 # dimensionless
+      F1: 0.909 # fraction
+      DAF: 5.965 # dimensionless
+      Precision: 0.908 # fraction
+      Recall: 0.909 # fraction
+      Accuracy: 0.972 # fraction
+      TP: 30213 # count
+      FP: 3056 # count
+      TN: 179190 # count
+      FN: 3029 # count
+      MAE: 0.019 # eV/atom
+      RMSE: 0.066 # eV/atom
+      R2: 0.873 # dimensionless
       missing_preds: 0 # count
   geo_opt:
     pred_file:
       name: models/mace_soyo/mace-soyo-oam/2026-10-22-geo-opt.jsonl.gz
-      url: https://ndownloader.figshare.com/files/70537101
+      url: https://figshare.com/files/71653144
       size: 104347504
       md5: 8711762af4b8aa69e4b4d2e58e92bdf8
+    rmsd_auc: 0.7967 # fraction
     symprec=1e-5:
-      rmsd: 0.0619 # unitless
-      n_sym_ops_mae: 2.1821 # unitless
-      symmetry_decrease: 0.0678 # fraction
+      n_sym_ops_mae: 2.1816 # unitless
+      symmetry_decrease: 0.0677 # fraction
       symmetry_match: 0.6863 # fraction
       symmetry_increase: 0.2397 # fraction
       symmetry_lateral: 0.0063 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/mace_soyo/mace-soyo-oam/2026-10-22-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://ndownloader.figshare.com/files/70537089
-        size: 6899869
-        md5: cc3dc2651704b0dee33bc3d28820081b
+        name: models/mace_soyo/mace-soyo-oam/2026-10-22-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653147
+        size: 6922679
+        md5: c3108b2bd0d1f2ef37a195cdee24208a
     symprec=1e-2:
-      rmsd: 0.0619 # unitless
-      n_sym_ops_mae: 1.711 # unitless
+      n_sym_ops_mae: 1.7109 # unitless
       symmetry_decrease: 0.0475 # fraction
       symmetry_match: 0.8178 # fraction
       symmetry_increase: 0.1273 # fraction
       symmetry_lateral: 0.0074 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/mace_soyo/mace-soyo-oam/2026-10-22-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://ndownloader.figshare.com/files/70537086
-        size: 6861114
-        md5: 8c5ecb42cd977722183a91d0f40cbee4
+        name: models/mace_soyo/mace-soyo-oam/2026-10-22-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653162
+        size: 6885330
+        md5: 3c14a26abcc513b64a585361efd9796c

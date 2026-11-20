@@ -1,4 +1,4 @@
-"""Standard ASE implementation of the shared phonon/kappa adapter hooks."""
+"""Standard implementation of the shared phonon/kappa adapter hooks."""
 
 from __future__ import annotations
 
@@ -7,26 +7,25 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
-from ase.constraints import FixSymmetry
+from matscikit import Structure, symmetry_dataset
+from matscikit.model import matrix_to_voigt
 
-from matbench_discovery.ase_relax import resolve_cell_filter, resolve_optimizer
+from matbench_discovery.relaxation import relax_structures
 
 if TYPE_CHECKING:
-    from ase import Atoms
-    from ase.calculators.calculator import Calculator
-    from ase.filters import Filter
-    from phono3py.api_phono3py import Phono3py
+    from matscikit.model import Model as ForceModel
 
     from matbench_discovery.phonons.pipeline import KappaSettings
+    from matbench_discovery.phonons.thermal_conductivity import KappaCalculation
 
-NO_TILT_MASK = [True, True, True, False, False, False]
+NO_TILT_MASK = (True, True, True, False, False, False)
 
 
 @dataclass(frozen=True)
 class RelaxationResult:
     """A relaxed structure and its symmetry/convergence metadata."""
 
-    atoms: Atoms
+    atoms: Structure
     initial_spg_num: int
     final_spg_num: int
     max_stress: np.ndarray | None
@@ -35,44 +34,92 @@ class RelaxationResult:
     redirected_to_symmetry: bool = False
 
 
-def max_abs_stress(atoms: Atoms) -> np.ndarray:
-    """Largest absolute normal and shear Voigt stress components (eV/Å³).
+def space_group_number(structure: Structure, symprec: float) -> int:
+    """Detect a structure's space-group number with moyo."""
+    return int(symmetry_dataset(structure, symprec=symprec)["number"])
+
+
+def supercell_batch_size(settings: KappaSettings, n_atoms: int) -> int:
+    """Supercells per model call: ``batch_size``, or as many ``n_atoms``-atom cells as
+    fit in ``max_atoms_per_batch`` (at least one: every kappa-103 FC2 supercell has 300
+    or 512 atoms, beyond EquFlash's 128).
+    """
+    if settings.max_atoms_per_batch is None:
+        return settings.batch_size
+    return max(settings.max_atoms_per_batch // n_atoms, 1)
+
+
+def _max_stress(stress: np.ndarray) -> np.ndarray:
+    """Largest absolute normal and shear Voigt stress components (eV/Å³) of a 3x3
+    stress tensor (xx, yy, zz | yz, xz, xy).
 
     Absolute values so a large compressive (negative) stress isn't reported as ~0.
     """
-    return np.abs(atoms.get_stress()).reshape((2, 3), order="C").max(axis=1)
+    return np.abs(matrix_to_voigt(stress)).reshape((2, 3), order="C").max(axis=1)
 
 
-def space_group_number(atoms: Atoms, symprec: float) -> int:
-    """Detect an ASE structure's space-group number with Moyo."""
-    from moyopy import MoyoDataset
-    from moyopy.interface import MoyoAdapter
-
-    return int(MoyoDataset(MoyoAdapter.from_atoms(atoms), symprec=symprec).number)
+def _write_relax_log(log_file: str | None, stage: str, result: dict[str, Any]) -> None:
+    """Append one line summarizing a relaxation stage."""
+    if not log_file:
+        return
+    if log_parent := os.path.dirname(log_file):
+        os.makedirs(log_parent, exist_ok=True)
+    with open(log_file, mode="a", encoding="utf-8") as file:
+        file.write(
+            f"{stage}: n_steps={result['n_steps']} converged={result['converged']} "
+            f"energy={result['energy']:.10f} eV\n"
+        )
 
 
 class StandardKappaAdapter:
-    """Run the common ASE relaxation and serial phono3py force evaluation."""
+    """Run the common relaxation and batched displacement force evaluation."""
 
     name = "standard"
 
-    def prepare_calculator(
+    def prepare_model(
         self,
-        calculator: Calculator,
+        model: ForceModel,
         settings: KappaSettings,  # noqa: ARG002
-    ) -> Calculator:
-        """Return a standard calculator unchanged."""
-        return calculator
+    ) -> ForceModel:
+        """Return a standard model unchanged."""
+        return model
+
+    def _relax_stage(
+        self,
+        structure: Structure,
+        model: ForceModel,
+        settings: KappaSettings,
+        *,
+        fix_symmetry: bool,
+        no_tilt: bool,
+    ) -> dict[str, Any]:
+        """One relaxation with the configured optimizer, filter and symmetry (always
+        reporting the final, symmetrized stress for ``max_stress``).
+        """
+        (result,) = relax_structures(
+            [structure],
+            model,
+            optimizer=settings.ase_optimizer,
+            cell_filter=settings.ase_filter,
+            max_force=settings.force_max,
+            max_steps=settings.max_steps,
+            fix_symmetry=settings.relax_symprec if fix_symmetry else None,
+            cell_mask=NO_TILT_MASK if no_tilt else None,
+            stress=True,
+        )
+        if result["error"] is not None:
+            raise RuntimeError(f"relaxation failed: {result['error']}")
+        return result
 
     def relax(
         self,
-        atoms: Atoms,
-        calculator: Calculator,
+        atoms: Structure,
+        model: ForceModel,
         settings: KappaSettings,
         *,
         log_file: str | None,
     ) -> RelaxationResult:
-        """Relax atoms once with the configured ASE optimizer and filter."""
+        """Relax a structure once with the configured optimizer and filter."""
         initial_spg_num = space_group_number(atoms, settings.symprec)
         if settings.relaxation_mode == "none" or settings.max_steps == 0:
             return RelaxationResult(
@@ -83,122 +130,84 @@ class StandardKappaAdapter:
                 reached_max_steps=False,
                 n_steps=0,
             )
-        initial_info = dict(atoms.info)
         if settings.relaxation_mode == "two-stage":
             return self._relax_two_stage(
                 atoms,
-                calculator,
+                model,
                 settings,
                 initial_spg_num=initial_spg_num,
-                initial_info=initial_info,
                 log_file=log_file,
             )
 
-        atoms.calc = calculator
-        filter_class = resolve_cell_filter(settings.ase_filter)
-        if settings.enforce_relax_symm:
-            atoms.set_constraint(FixSymmetry(atoms, symprec=settings.relax_symprec))
-        if filter_class is None:
-            relax_target: Atoms | Filter = atoms
-        elif settings.enforce_relax_symm:
-            relax_target = filter_class(atoms, mask=NO_TILT_MASK)
-        else:
-            relax_target = filter_class(atoms)
-
-        optimizer_class = resolve_optimizer(settings.ase_optimizer)
-        if log_file and (log_parent := os.path.dirname(log_file)):
-            os.makedirs(log_parent, exist_ok=True)
-        optimizer = optimizer_class(relax_target, logfile=log_file)  # ty: ignore[invalid-argument-type]
-        optimizer.run(fmax=settings.force_max, steps=settings.max_steps)
-        n_steps = int(optimizer.get_number_of_steps())
-        max_stress = max_abs_stress(atoms)
-
-        atoms.calc = None
-        atoms.constraints = None
-        atoms.info = initial_info | atoms.info
-        final_spg_num = space_group_number(atoms, settings.symprec)
+        result = self._relax_stage(
+            atoms,
+            model,
+            settings,
+            fix_symmetry=settings.enforce_relax_symm,
+            no_tilt=settings.enforce_relax_symm,
+        )
+        _write_relax_log(log_file, "relax", result)
+        relaxed = result["structure"]
+        n_steps = int(result["n_steps"])
         return RelaxationResult(
-            atoms=atoms,
+            atoms=relaxed,
             initial_spg_num=initial_spg_num,
-            final_spg_num=final_spg_num,
-            max_stress=np.asarray(max_stress),
+            final_spg_num=space_group_number(relaxed, settings.symprec),
+            max_stress=np.asarray(_max_stress(result["stress"])),
             reached_max_steps=n_steps >= settings.max_steps,
             n_steps=n_steps,
         )
 
     def _relax_two_stage(
         self,
-        atoms: Atoms,
-        calculator: Calculator,
+        atoms: Structure,
+        model: ForceModel,
         settings: KappaSettings,
         *,
         initial_spg_num: int,
-        initial_info: dict[str, Any],
         log_file: str | None,
     ) -> RelaxationResult:
         """Run constrained relaxation, then test unconstrained symmetry stability."""
-        filter_class = resolve_cell_filter(settings.ase_filter)
-        optimizer_class = resolve_optimizer(settings.ase_optimizer)
-        if log_file and (log_parent := os.path.dirname(log_file)):
-            os.makedirs(log_parent, exist_ok=True)
-        log_stem, log_suffix = os.path.splitext(log_file or "")
-
-        atoms.calc = calculator
-        if settings.enforce_relax_symm:
-            atoms.set_constraint(FixSymmetry(atoms, symprec=settings.relax_symprec))
-        stage1_target: Atoms | Filter = (
-            atoms if filter_class is None else filter_class(atoms, mask=NO_TILT_MASK)
+        stage1 = self._relax_stage(
+            atoms,
+            model,
+            settings,
+            fix_symmetry=settings.enforce_relax_symm,
+            no_tilt=True,
         )
-        # ASE annotates Optimizer(atoms: Atoms) although it accepts any Filter
-        stage1_optimizer = optimizer_class(
-            stage1_target,  # ty: ignore[invalid-argument-type]
-            logfile=f"{log_stem}-stage1{log_suffix}" if log_file else None,
+        _write_relax_log(log_file, "stage1", stage1)
+        stage1_structure = stage1["structure"]
+        stage1_spg_num = space_group_number(stage1_structure, settings.symprec)
+        stage2 = self._relax_stage(
+            stage1_structure, model, settings, fix_symmetry=False, no_tilt=True
         )
-        stage1_optimizer.run(fmax=settings.force_max, steps=settings.max_steps)
-        stage1_steps = int(stage1_optimizer.get_number_of_steps())
-        stage1_spg_num = space_group_number(atoms, settings.symprec)
-        stage1_stress = max_abs_stress(atoms)
-        stage1_atoms = atoms.copy()
-
-        atoms.constraints = None
-        stage2_target: Atoms | Filter = (
-            atoms if filter_class is None else filter_class(atoms, mask=NO_TILT_MASK)
-        )
-        stage2_optimizer = optimizer_class(
-            stage2_target,  # ty: ignore[invalid-argument-type]
-            logfile=f"{log_stem}-stage2{log_suffix}" if log_file else None,
-        )
-        stage2_optimizer.run(fmax=settings.force_max, steps=settings.max_steps)
-        stage2_steps = int(stage2_optimizer.get_number_of_steps())
-        stage2_spg_num = space_group_number(atoms, settings.symprec)
-        stage2_stress = max_abs_stress(atoms)
+        _write_relax_log(log_file, "stage2", stage2)
+        stage2_spg_num = space_group_number(stage2["structure"], settings.symprec)
 
         redirected = settings.enforce_relax_symm and stage1_spg_num != stage2_spg_num
-        relaxed_atoms = stage1_atoms if redirected else atoms
-        relaxed_atoms.calc = None
-        relaxed_atoms.constraints = None
-        relaxed_atoms.info = initial_info | relaxed_atoms.info
+        chosen = stage1 if redirected else stage2
+        n_steps = (int(stage1["n_steps"]), int(stage2["n_steps"]))
         return RelaxationResult(
-            atoms=relaxed_atoms,
+            atoms=chosen["structure"],
             initial_spg_num=initial_spg_num,
             final_spg_num=stage1_spg_num if redirected else stage2_spg_num,
-            max_stress=np.asarray(stage1_stress if redirected else stage2_stress),
-            reached_max_steps=(
-                stage1_steps >= settings.max_steps or stage2_steps >= settings.max_steps
-            ),
-            n_steps=stage1_steps + stage2_steps,
+            max_stress=np.asarray(_max_stress(chosen["stress"])),
+            reached_max_steps=max(n_steps) >= settings.max_steps,
+            n_steps=sum(n_steps),
             redirected_to_symmetry=redirected,
         )
 
-    def init_phono3py(self, atoms: Atoms, settings: KappaSettings) -> Phono3py:
-        """Initialize phono3py from canonical PhononDB metadata keys."""
+    def init_phonons(
+        self, atoms: Structure, settings: KappaSettings
+    ) -> KappaCalculation:
+        """Set up fc2/fc3 displacements from canonical PhononDB metadata keys."""
         from matbench_discovery.phonons import thermal_conductivity as ltc
 
-        return ltc.init_phono3py(
+        return ltc.init_phonons(
             atoms,
             fc2_supercell=np.asarray(atoms.info["fc2_supercell"]),
             fc3_supercell=np.asarray(atoms.info["fc3_supercell"]),
-            q_point_mesh=tuple(atoms.info["q_point_mesh"]),
+            q_point_mesh=tuple(np.asarray(atoms.info["q_point_mesh"]).ravel()),
             displacement_distance=settings.displacement_distance,
             symprec=settings.symprec,
             is_plusminus=settings.is_plusminus,
@@ -206,20 +215,25 @@ class StandardKappaAdapter:
 
     def calculate_fc2(
         self,
-        phono3py: Phono3py,
-        calculator: Calculator,
-        settings: KappaSettings,  # noqa: ARG002
-    ) -> tuple[Phono3py, np.ndarray, np.ndarray]:
-        """Calculate FC2 and frequencies with serial ASE force calls."""
-        from matbench_discovery.phonons import thermal_conductivity as ltc
-
-        return ltc.get_fc2_and_freqs(
-            phono3py, calculator, pbar_kwargs={"disable": True}
+        calc: KappaCalculation,
+        model: ForceModel,
+        settings: KappaSettings,
+    ) -> np.ndarray:
+        """Fit symmetrized FC2 to the model's displacement forces (kept as
+        ``fc2_forces``) in batches of ``supercell_batch_size`` supercells and return
+        the frequencies (n_grid, n_bands) in THz on each regular grid point once
+        (Gamma first), the uniform-weight counterpart of the weighted irreducible mesh.
+        """
+        batch_size = supercell_batch_size(settings, len(calc.phonons.phonon_supercell))
+        calc.phonons.produce_fc2(
+            model, symmetrize=True, batch={"structures": batch_size}
         )
+        mesh = calc.phonons.harmonic.mesh(list(calc.mesh))
+        return mesh["frequencies"][mesh["ir_of_grid"]]
 
     def harmonic_phonons(
         self,
-        phono3py: Phono3py,
+        calc: KappaCalculation,
         settings: KappaSettings,  # noqa: ARG002
     ) -> dict[str, Any]:
         """Derive band path, eigenvectors, DOS and thermal properties from FC2.
@@ -227,44 +241,44 @@ class StandardKappaAdapter:
         Runs after calculate_fc2 for every material, so it must not depend on FC3 or
         the conductivity solver.
         """
-        from matbench_discovery.phonons.harmonic import harmonic_data_from_phono3py
+        from matbench_discovery.phonons.harmonic import harmonic_phonon_data
 
-        return harmonic_data_from_phono3py(phono3py)
+        return harmonic_phonon_data(calc.phonons.harmonic, mesh=calc.mesh)
 
     def calculate_fc3(
         self,
-        phono3py: Phono3py,
-        calculator: Calculator,
-        settings: KappaSettings,  # noqa: ARG002
+        calc: KappaCalculation,
+        model: ForceModel,
+        settings: KappaSettings,
         *,
         max_evaluations: int | None = None,
-    ) -> np.ndarray:
-        """Calculate FC3 with serial ASE force calls.
-
-        Every adapter's calculate_fc3 must assign the returned force set to
-        ``phono3py.forces``: the pipeline calls ``produce_fc3`` right after.
+    ) -> None:
+        """Fit FC3 (with sum rules and permutation symmetry) to the model's
+        displacement forces (kept as ``fc3_forces``), batched as ``calculate_fc2``.
+        ``max_evaluations`` caps the evaluated supercells, the rest taking zero forces
+        (dry runs).
         """
-        from matbench_discovery.phonons import thermal_conductivity as ltc
-
-        return ltc.calculate_fc3_set(
-            phono3py,
-            calculator,
-            pbar_kwargs={"disable": True},
+        batch_size = supercell_batch_size(settings, len(calc.phonons.supercell))
+        calc.phonons.produce_fc3(
+            model,
+            symmetrize=True,
+            batch={"structures": batch_size},
             max_evaluations=max_evaluations,
         )
 
 
 class FairchemKappaAdapter(StandardKappaAdapter):
-    """Disable training-only force scaling before standard ASE evaluation."""
+    """Disable training-only force scaling before standard evaluation."""
 
     name = "fairchem"
 
-    def prepare_calculator(
+    def prepare_model(
         self,
-        calculator: Calculator,
+        model: ForceModel,
         settings: KappaSettings,  # noqa: ARG002
-    ) -> Calculator:
-        """Remove a checkpoint trainer's scaler when the API exposes it."""
+    ) -> ForceModel:
+        """Remove a checkpoint trainer's scaler when the wrapped calculator has one."""
+        calculator = getattr(model, "calculator", None)
         if hasattr(trainer := getattr(calculator, "trainer", None), "scaler"):
             trainer.scaler = None
-        return calculator
+        return model

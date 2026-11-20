@@ -360,7 +360,7 @@ ERROR_ROLES = PREDICTION_ROLES | {"prediction_error_loader"}
 HULL_DIST_ROLES = PREDICTION_ROLES | {"stability_metrics"}
 RECIPE_ROLES = dict.fromkeys(DISCOVERY_PAYLOADS, HULL_DIST_ROLES) | {
     "spg-sankeys": {"generator", "payload_numerics"},
-    "struct-rmsd-cdf": {"generator", "payload_numerics"},
+    "struct-rmsd-cdf": {"generator", "payload_numerics", "geo_opt_metrics"},
     "sym-ops-diff-bar": {"generator"},
     "element-prevalence-vs-error": ERROR_ROLES | {"element_error_analysis"},
     "per-element-each-errors": {"generator", "prediction_error_loader"},
@@ -403,7 +403,7 @@ def test_multi_model_payload_provenance_matches_computation() -> None:
             benchmark_roles = {item["role"] for item in identity["benchmark_inputs"]}
             expected_benchmarks = {"wbm_summary", "mp_element_occurrences"}
             assert benchmark_roles == expected_benchmarks, name
-            assert "pymatgen" in audit["runtime"]["packages"]
+            assert "matscikit" in audit["runtime"]["packages"]
 
 
 def has_discovery_metrics(model: Model) -> bool:
@@ -457,3 +457,13 @@ def test_payload_covers_active_models(
         f"{name} roster drift: missing={expected - keys}, extra={keys - expected}. "
         f"{hint}"
     )
+
+
+def test_struct_rmsd_cdf_matches_yaml_rmsd_auc() -> None:
+    """The CDF legend AUC and the YAML RMSD AUC are one score on one test set."""
+    for record in load_payload("struct-rmsd-cdf")["models"]:
+        yaml_auc = Model.from_ref(record["model_key"]).metrics["geo_opt"]["rmsd_auc"]
+        # payload keeps 3 significant digits, YAML 4 decimals
+        assert record["auc"] == pytest.approx(yaml_auc, abs=6e-4), record["model_key"]
+        # the CDF counts every test structure, so failures keep it below 100%
+        assert record["y"][-1] < 1, record["model_key"]

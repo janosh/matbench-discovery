@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import yaml
-from ase.data import atomic_numbers, covalent_radii, vdw_alvarez
+from matscikit.elements import ATOMIC_NUMBERS, COVALENT_RADII, VDW_RADII
 
 from matbench_discovery import ROOT
 from matbench_discovery.data import file_ref_url, make_file_ref, update_yaml_file
@@ -515,21 +515,21 @@ def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
 
 def test_eval_window(monkeypatch: pytest.MonkeyPatch) -> None:
     """eval_window returns element-specific bounds and handles missing radius data."""
-    atomic_num_h = atomic_numbers["H"]
+    atomic_num_h = ATOMIC_NUMBERS["H"]
     r_min, r_max = eval_window("H-H", 6.0)
-    assert r_min == pytest.approx(0.9 * covalent_radii[atomic_num_h])
-    assert r_max == pytest.approx(min(3.1 * vdw_alvarez.vdw_radii[atomic_num_h], 6.0))
+    assert r_min == pytest.approx(0.9 * COVALENT_RADII[atomic_num_h])
+    assert r_max == pytest.approx(min(3.1 * VDW_RADII[atomic_num_h], 6.0))
     # seps_max caps r_max (3.1 * vdW(Cu) > 6)
     assert eval_window("Cu-Cu", 6.0)[1] == pytest.approx(6.0)
     assert eval_window("H-H", 2.5)[1] == pytest.approx(2.5)  # capped by seps_max
 
-    atomic_num_og = atomic_numbers["Og"]
+    atomic_num_og = ATOMIC_NUMBERS["Og"]
     r_min, r_max = eval_window("Og-Og", 6.0)
-    assert r_min == pytest.approx(0.9 * covalent_radii[atomic_num_og])
+    assert r_min == pytest.approx(0.9 * COVALENT_RADII[atomic_num_og])
     assert r_max == pytest.approx(6.0)
 
-    monkeypatch.setattr(diatomics, "covalent_radii", np.ones(10))
-    monkeypatch.setattr(diatomics.vdw_alvarez, "vdw_radii", np.ones(10))
+    monkeypatch.setattr(diatomics, "COVALENT_RADII", np.ones(10))
+    monkeypatch.setattr(diatomics, "VDW_RADII", np.ones(10))
     assert eval_window("Og-Og", 6.0) == (0.0, 6.0)
 
 
@@ -546,7 +546,7 @@ def test_general_window_excludes_deeper_overlap() -> None:
 
 def test_wall_metric_uses_full_dft_range() -> None:
     """Wall scoring reaches 0.8*r_cov without extending general energy MAE."""
-    radius_h = covalent_radii[atomic_numbers["H"]]
+    radius_h = COVALENT_RADII[ATOMIC_NUMBERS["H"]]
     distances = np.array(
         [0.8 * radius_h, 0.85 * radius_h, 0.9 * radius_h, 0.35, 0.5, 0.74, 1.2, 2, 3]
     )

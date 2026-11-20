@@ -144,32 +144,31 @@ metrics:
       url: https://figshare.com/files/70325508
       size: 93310742
       md5: 3789201a6fecebd62d2c683043d834b4
+    rmsd_auc: 0.7781 # fraction
     symprec=1e-2:
-      rmsd: 0.0639 # unitless
-      n_sym_ops_mae: 1.7053 # unitless
+      n_sym_ops_mae: 1.7054 # unitless
       symmetry_decrease: 0.0467 # fraction
       symmetry_match: 0.8181 # fraction
-      symmetry_increase: 0.128 # fraction
+      symmetry_increase: 0.1279 # fraction
       symmetry_lateral: 0.0073 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/sevennet/sevennet-mf-ompa/2025-03-11-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70334055
-        size: 6894333
-        md5: bfa6f46c859633a1f0f46f0035ea6e3e
+        name: models/sevennet/sevennet-mf-ompa/2025-03-11-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653465
+        size: 6917720
+        md5: 9c831b43bb31d172adf0d72154411f6f
     symprec=1e-5:
-      rmsd: 0.0639 # unitless
-      n_sym_ops_mae: 2.0326 # unitless
+      n_sym_ops_mae: 2.0327 # unitless
       symmetry_decrease: 0.0439 # fraction
       symmetry_match: 0.7057 # fraction
       symmetry_increase: 0.2453 # fraction
       symmetry_lateral: 0.005 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/sevennet/sevennet-mf-ompa/2025-03-11-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70334064
-        size: 6908027
-        md5: 8a83d6150c8b313991d6bbea5af0ac5f
+        name: models/sevennet/sevennet-mf-ompa/2025-03-11-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653468
+        size: 6930495
+        md5: a8d7577b184f451a46f4ad82ee5809c6
   phonons:
     kappa_103:
       κ_SRME: 0.3171
@@ -191,9 +190,9 @@ metrics:
           md5: dd70042e2257b0d0d4b8d463492da14f
         force_file:
           name: models/sevennet/sevennet-mf-ompa/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71263294
-          size: 2131540
-          md5: 1ff14c42bcf6aae2650aac3cfd305924
+          url: https://figshare.com/files/71630209
+          size: 3653854
+          md5: b473e6a585b14e3ef076e3a7f85522c3
         run_info_file:
           name: models/sevennet/sevennet-mf-ompa/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334676

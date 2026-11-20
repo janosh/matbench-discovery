@@ -16,15 +16,11 @@ from __future__ import annotations
 
 import argparse
 import gzip
-import io
 import json
-import math
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final
 
-import ase.io
 import numpy as np
-from ase import Atoms
 from asset_helpers import (
     PARITY_MANIFEST_SCHEMA_VERSION,
     clean_float,
@@ -36,13 +32,17 @@ from asset_helpers import (
     write_json_gz,
     write_manifest,
 )
-from pymatgen.core import Structure
-from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+from matscikit import Structure, symmetry_dataset
+from matscikit.io import format_extxyz, read_extxyz
 from pymatviz.enums import Key
 
 from matbench_discovery import ROOT
 from matbench_discovery.enums import DataFiles, MbdKey
-from matbench_discovery.metrics.phonons import calculate_kappa_avg
+from matbench_discovery.metrics.phonons import (
+    calculate_kappa_avg,
+    mode_weights_for_freqs,
+    phonon_spectrum_data,
+)
 from matbench_discovery.phonons import read_kappa_json
 
 if TYPE_CHECKING:
@@ -67,7 +67,6 @@ MODES_DECIMALS: Final = 4
 Q_POINT_DECIMALS: Final = 10
 
 KAPPA_TOT_AVG: Final = str(MbdKey.kappa_tot_avg)
-PH_FREQS: Final = str(Key.ph_freqs)
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
@@ -116,29 +115,24 @@ def row_scalar_kappa(row: pd.Series) -> float | None:
     return scalar_from_rta(rta) if rta is not None else None
 
 
-def phonon_dos(
-    freqs: npt.ArrayLike, weights: npt.ArrayLike | None
-) -> dict[str, list[float]] | None:
-    """Histogram mesh phonon frequencies (THz) into a small normalized DOS.
+def phonon_dos(row: pd.Series) -> dict[str, list[float]] | None:
+    """Histogram a kappa row's mesh phonon frequencies (THz) into a small DOS.
 
-    Frequencies are weighted by ``weights`` only when their lengths match the
-    q-point axis (irreducible mesh); otherwise a uniform full mesh is assumed.
-    Densities are normalized to a peak of 1 so DFT and ML curves overlay sensibly.
+    Frequencies carry their q-point weights on an irreducible mesh (see
+    ``phonon_spectrum_data``). Densities are normalized to a peak of 1 so DFT and ML
+    curves overlay sensibly.
     """
-    freq_arr = np.asarray(freqs, dtype=float)
-    if freq_arr.ndim != 2 or freq_arr.size == 0:
+    if (spectrum := phonon_spectrum_data(row)) is None:
         return None
-    flat = freq_arr.ravel()
-    weight_arr = None if weights is None else np.asarray(weights, dtype=float)
-    if weight_arr is not None and weight_arr.shape == (freq_arr.shape[0],):
-        flat_weights = np.repeat(weight_arr, freq_arr.shape[1])
-    else:
-        flat_weights = None
-    low, high = float(flat.min()), float(flat.max())
-    if not (math.isfinite(low) and math.isfinite(high)) or high <= low:
+    freqs, q_weights = spectrum
+    low, high = float(freqs.min()), float(freqs.max())
+    if high <= low:
         return None
     hist, edges = np.histogram(
-        flat, bins=DOS_BINS, range=(low, high), weights=flat_weights
+        freqs.ravel(),
+        bins=DOS_BINS,
+        range=(low, high),
+        weights=mode_weights_for_freqs(freqs, q_weights),
     )
     centers = (edges[:-1] + edges[1:]) / 2
     peak = hist.max()
@@ -147,16 +141,6 @@ def phonon_dos(
         "frequencies": [round(float(freq), DOS_FREQ_DECIMALS) for freq in centers],
         "densities": [round(float(den), DOS_DENSITY_DECIMALS) for den in densities],
     }
-
-
-def dos_from_row(row: pd.Series) -> dict[str, list[float]] | None:
-    """Compute a phonon DOS from a kappa dataframe row if frequencies are present."""
-    if PH_FREQS not in row or row[PH_FREQS] is None:
-        return None
-    weights = row.get("weights")
-    if weights is None:
-        weights = row.get(str(Key.mode_weights))
-    return phonon_dos(row[PH_FREQS], weights)
 
 
 def round_nested(values: npt.ArrayLike) -> list:
@@ -293,24 +277,25 @@ def load_reference() -> tuple[
 
     structures: dict[str, str] = {}
     meta: dict[str, dict[str, str | int]] = {}
-    for atoms in ase.io.read(DataFiles.phonondb_pbe_103_structures.path, index=":"):
-        mat_id = atoms.info["material_id"]
+    for frame in read_extxyz(DataFiles.phonondb_pbe_103_structures.path):
+        struct = frame.structure
+        mat_id = struct.info["material_id"]
         # keep only geometry + id; drop bulky phonon-calc metadata (fc2/q-mesh/...)
-        clean = Atoms(
-            symbols=atoms.get_chemical_symbols(),
-            positions=atoms.positions,
-            cell=atoms.cell,
-            pbc=atoms.pbc,
+        clean = Structure(
+            struct.lattice,
+            struct.symbols,
+            struct.positions,
+            pbc=struct.pbc,
+            info={"material_id": mat_id},
         )
-        clean.info["material_id"] = mat_id
-        buffer = io.StringIO()
-        ase.io.write(buffer, clean, format="extxyz")
-        structures[mat_id] = compact_extxyz(buffer.getvalue(), STRUCTURE_DECIMALS)
-        struct = Structure.from_ase_atoms(atoms)
+        structures[mat_id] = compact_extxyz(format_extxyz([clean]), STRUCTURE_DECIMALS)
         meta[mat_id] = {
-            "formula": struct.formula,
+            "formula": struct.composition.formula,
             "n_sites": len(struct),
-            "spacegroup": SpacegroupAnalyzer(struct).get_space_group_number(),
+            # pymatgen SpacegroupAnalyzer defaults: symprec 0.01, angle_tolerance 5 deg
+            "spacegroup": symmetry_dataset(
+                struct, symprec=0.01, angle_tolerance=np.radians(5)
+            )["number"],
         }
     return df_dft, structures, meta
 
@@ -336,7 +321,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         "dft_dos": {
             mid: dos
             for mid in material_ids
-            if (dos := dos_from_row(df_dft.loc[mid])) is not None
+            if (dos := phonon_dos(df_dft.loc[mid])) is not None
         },
     }
 
@@ -371,7 +356,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 mid: dos
                 for mid in material_ids
                 if mid in df_ml.index
-                and (dos := dos_from_row(df_ml.loc[mid])) is not None
+                and (dos := phonon_dos(df_ml.loc[mid])) is not None
             },
         }
         asset_name = f"{args.asset_prefix}-model-{model.key}.json.gz"

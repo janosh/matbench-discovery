@@ -116,21 +116,21 @@ metrics:
       size: 258540
       md5: a734c48d725aa8e43c54f4989bfc9ad1
     cost: {source: salvaged, hardware: NVIDIA H100 80GB HBM3, run_time_sec: 671.31}
-    pbe_wall_dist_mae: 0.2616
-    pbe_energy_mae: 1.123
-    pbe_bond_length_error: 0.1828
-    pbe_well_depth_error: 0.3979
-    pbe_vib_freq_error: 51.64
+    pbe_wall_dist_mae: 0.2551
+    pbe_energy_mae: 1.119
+    pbe_bond_length_error: 0.2571
+    pbe_well_depth_error: 0.4967
+    pbe_vib_freq_error: 50.73
     tortuosity: 1.77
     energy_diff_flips: 2.471
     energy_jump: 2.099
     force_flips: 2.839
     force_total_variation: 306.5
     force_jump: 269.7
-    pbe_force_mae: 2.369
+    pbe_force_mae: 2.23
     pbe_vib_freq_coverage:
-      n_valid: 73
-      n_eligible: 73
+      n_valid: 81
+      n_eligible: 81
       failed_elements: []
       missing_elements: []
     reproducibility:
@@ -198,8 +198,8 @@ metrics:
       url: https://figshare.com/files/70325010
       size: 119699831
       md5: f1faf08c388652d8a006e48ef9262f50
+    rmsd_auc: 0.7471 # fraction
     symprec=1e-5:
-      rmsd: 0.0693 # unitless
       n_sym_ops_mae: 2.0174 # unitless
       symmetry_decrease: 0.0539 # fraction
       symmetry_match: 0.7274 # fraction
@@ -207,23 +207,22 @@ metrics:
       symmetry_lateral: 0.0048 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/deepmd/dpa-3.1-3m-ft/2025-06-05-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333644
-        size: 6808157
-        md5: 93248cbbf593627aeaabf8d26c7a2c3c
+        name: models/deepmd/dpa-3.1-3m-ft/2025-06-05-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653387
+        size: 6833129
+        md5: 5199703530e79fea9efd2be290a168ee
     symprec=1e-2:
-      rmsd: 0.0693 # unitless
-      n_sym_ops_mae: 1.881 # unitless
+      n_sym_ops_mae: 1.8811 # unitless
       symmetry_decrease: 0.0502 # fraction
       symmetry_match: 0.8109 # fraction
       symmetry_increase: 0.1317 # fraction
       symmetry_lateral: 0.0072 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/deepmd/dpa-3.1-3m-ft/2025-06-05-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333647
-        size: 6811656
-        md5: 51ad375aed87d7e5194864ee714baaff
+        name: models/deepmd/dpa-3.1-3m-ft/2025-06-05-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653390
+        size: 6836790
+        md5: e0bf4aacd7a1d7c459876bc96f0d5c05
   md:
     pred_file:
       name: models/deepmd/dpa-3.1-3m-ft/2026-06-28-md-metrics.csv.gz
@@ -261,9 +260,9 @@ metrics:
           md5: 52c3d18a01d6983ffda6f8e43db50bfa
         force_file:
           name: models/deepmd/dpa-3.1-3m-ft/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71263132
-          size: 2154302
-          md5: 4a6837b81b3e0087b4e4f3868e89f871
+          url: https://figshare.com/files/71630068
+          size: 3669115
+          md5: 8177a76c3af5449871085ba190f4469e
         run_info_file:
           name: models/deepmd/dpa-3.1-3m-ft/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334244

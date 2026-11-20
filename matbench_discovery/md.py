@@ -7,33 +7,38 @@ frames recorded every 10 steps for 20 ps.
 
 import contextlib
 import dataclasses
+import functools
+import io
 import json
 import os
 import time
 import zipfile
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, cast
 
-import ase
-import ase.io
 import h5py
 import numpy as np
 import pandas as pd
-from ase import Atoms, units
-from ase.calculators.calculator import Calculator, PropertyNotImplementedError
-from ase.calculators.singlepoint import SinglePointCalculator
-from ase.md.nose_hoover_chain import NoseHooverChainNVT
-from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
+from matscikit import NoseHooverChainNVT, Structure
+from matscikit.io import Frame, read_extxyz, write_extxyz
+from matscikit.md import maxwell_boltzmann_momenta
+from matscikit.model import Model as ForceModel
 from tqdm import tqdm
 
-from matbench_discovery import atomic_output_path, today
+from matbench_discovery import (
+    MATSCIKIT_EXTENSION,
+    atomic_output_path,
+    file_digest,
+    today,
+)
 from matbench_discovery.hpc import (
     LOAD_CHARGED,
     check_resume_labels,
     memory_peaks,
     merge_audit_metadata,
+    model_supports_elements,
     reset_gpu_peak_memory,
 )
 from matbench_discovery.metrics import md as md_metrics
@@ -109,17 +114,9 @@ def read_reference_trajectory(
     return trajectory, dt_fs, temperature_kelvin
 
 
-def read_trajectory(file_path: str, *, index: str = ":") -> list[Atoms]:
-    """Frames of an ASE-readable (optionally compressed) trajectory file. ``index``
-    is an ASE slice string, e.g. ':' for all frames or ':64' for the first 64.
-    """
-    frames = ase.io.read(file_path, index=index)
-    return [frames] if isinstance(frames, Atoms) else list(frames)
-
-
 def run_nvt_md(
-    atoms: Atoms,
-    calculator: Calculator,
+    atoms: Structure,
+    model: ForceModel,
     *,
     temperature_kelvin: float,
     n_steps: int = 80_000,
@@ -129,17 +126,17 @@ def run_nvt_md(
     seed: int = 0,
     progress_interval: int = 1_000,
     progress_label: str = "MD rollout",
-) -> list[Atoms]:
+) -> list[Frame]:
     """Run one NVT MD simulation and return recorded frames.
 
     Velocities are initialized from a Maxwell-Boltzmann distribution. Each recorded
-    frame carries energy, forces and (when the calculator supports it) stress via an
-    attached SinglePointCalculator, plus velocities, so trajectories written to
-    extxyz retain everything needed for RDF/vDOS/pressure evaluation.
+    frame carries energy, forces and (when the model supports it) stress plus momenta,
+    so trajectories written to extxyz retain everything needed for RDF/vDOS/pressure
+    evaluation.
 
     Args:
         atoms: Initial structure (not modified).
-        calculator: ASE calculator providing energies, forces and ideally stress.
+        model: ForceModel providing energies, forces and ideally stress.
         temperature_kelvin: Target temperature in Kelvin.
         n_steps: Number of MD steps. Default 80,000 = 20 ps at 0.25 fs.
         time_step_fs: Integration time step in femtoseconds.
@@ -151,114 +148,118 @@ def run_nvt_md(
         progress_label: Description shown beside the progress bar.
 
     Returns:
-        list[Atoms]: Recorded frames including the initial one, i.e.
+        list[Frame]: Recorded frames including the initial one, i.e.
             n_steps // record_interval + 1 frames.
     """
-    atoms, dynamics = _thermalized_nvt_dynamics(
+    dynamics = _thermalized_nvt_dynamics(
         atoms,
-        calculator,
+        model,
         temperature_kelvin=temperature_kelvin,
         time_step_fs=time_step_fs,
         thermostat_time_scale_fs=thermostat_time_scale_fs,
         seed=seed,
     )
-
-    frames: list[Atoms] = []
-    # ASE calls observers at step 0 and every record_interval steps thereafter
-    dynamics.attach(
-        lambda: frames.append(_snapshot_frame(atoms, dynamics.nsteps)),
-        interval=record_interval,
-    )
+    frames: list[Frame] = [_snapshot_frame(dynamics.frame(0))]
     _run_dynamics_with_progress(
         dynamics,
+        model,
         n_steps=n_steps,
+        record_interval=record_interval,
+        on_frame=lambda frame: frames.append(_snapshot_frame(frame)),
         interval=progress_interval,
         label=progress_label,
     )
-
     return frames
 
 
-def _init_nvt_dynamics(
-    atoms: Atoms,
-    *,
-    temperature_kelvin: float,
-    time_step_fs: float,
-    thermostat_time_scale_fs: float,
-) -> NoseHooverChainNVT:
-    """Construct the Nose-Hoover chain NVT integrator (velocities set by caller)."""
-    return NoseHooverChainNVT(
-        atoms,
-        timestep=time_step_fs * units.fs,
-        temperature_K=temperature_kelvin,
-        tdamp=thermostat_time_scale_fs * units.fs,
-    )
+def _supports_stress(model: ForceModel, structure: Structure) -> bool:
+    """Whether ``model`` returns stress (probed once on the initial structure).
+
+    Only NotImplementedError (ASE's PropertyNotImplementedError subclasses it) means
+    "no stress head"; any other failure is a real model error and propagates.
+    """
+    try:
+        (result,) = model.compute([structure], ["energy", "forces", "stress"])
+    except NotImplementedError:
+        return False
+    return result.get("stress") is not None
 
 
 def _thermalized_nvt_dynamics(
-    atoms: Atoms,
-    calculator: Calculator,
+    atoms: Structure,
+    model: ForceModel,
     *,
     temperature_kelvin: float,
     time_step_fs: float,
     thermostat_time_scale_fs: float,
     seed: int,
-) -> tuple[Atoms, NoseHooverChainNVT]:
-    """Copy ``atoms``, attach the calculator, seed Maxwell-Boltzmann velocities and
-    build the NVT integrator. Single deterministic setup shared by the in-memory and
+) -> NoseHooverChainNVT:
+    """Seed Maxwell-Boltzmann momenta and build the Nose-Hoover chain integrator
+    (evaluated at step 0). Single deterministic setup shared by the in-memory and
     resumable rollouts so both thermalize identically for a given seed.
     """
-    atoms = atoms.copy()
-    atoms.calc = calculator
-    MaxwellBoltzmannDistribution(
-        atoms, temperature_K=temperature_kelvin, rng=np.random.default_rng(seed)
+    momenta = maxwell_boltzmann_momenta(
+        atoms.masses, temperature_kelvin, np.random.default_rng(seed)
     )
-    dynamics = _init_nvt_dynamics(
-        atoms,
-        temperature_kelvin=temperature_kelvin,
+    dynamics = NoseHooverChainNVT(
+        [atoms],
+        [momenta],
+        temperature_k=temperature_kelvin,
         time_step_fs=time_step_fs,
-        thermostat_time_scale_fs=thermostat_time_scale_fs,
+        damping_fs=thermostat_time_scale_fs,
+        stress=_supports_stress(model, atoms),
     )
-    return atoms, dynamics
+    dynamics.run(model, 0)  # evaluate the initial state
+    return dynamics
 
 
-def _snapshot_frame(atoms: Atoms, md_step: int) -> Atoms:
-    """Copy of the current state with energy/forces/(stress) + velocities attached."""
-    results = {"energy": atoms.get_potential_energy(), "forces": atoms.get_forces()}
-    with contextlib.suppress(PropertyNotImplementedError):
-        results["stress"] = atoms.get_stress(voigt=True)
-    frame = atoms.copy()
-    frame.info["md_step"] = md_step
-    frame.calc = SinglePointCalculator(frame, **results)
-    return frame
+def _snapshot_frame(state: dict[str, Any]) -> Frame:
+    """Frame of an integrator state dict with energy/forces/(stress) and momenta."""
+    structure = state["structure"].copy()
+    structure.info["md_step"] = int(state["step"])
+    return Frame(
+        structure,
+        arrays={"momenta": np.asarray(state["momenta"])},
+        energy=float(state["energy"]),
+        forces=np.asarray(state["forces"]),
+        stress=None if state.get("stress") is None else np.asarray(state["stress"]),
+    )
 
 
 def _run_dynamics_with_progress(
-    dynamics: NoseHooverChainNVT, *, n_steps: int, interval: int, label: str
+    dynamics: NoseHooverChainNVT,
+    model: ForceModel,
+    *,
+    n_steps: int,
+    record_interval: int,
+    on_frame: Callable[[dict[str, Any]], None],
+    interval: int,
+    label: str,
 ) -> None:
-    """Run remaining MD steps with a tqdm progress bar (0 interval disables it)."""
-    remaining_steps = n_steps - dynamics.nsteps
-    if interval <= 0:
-        dynamics.run(remaining_steps)
+    """Advance to ``n_steps`` total steps, calling ``on_frame`` every
+    ``record_interval`` steps, with a tqdm progress bar (0 interval disables it).
+    """
+    done = int(dynamics.get_state(0)["n_steps"])
+    remaining_steps = n_steps - done
+    if remaining_steps <= 0:
         return
 
+    def callback(_idx: int, state: dict[str, Any]) -> None:
+        on_frame(state)
+
+    if interval <= 0:
+        dynamics.run(
+            model, remaining_steps, callback=callback, interval=record_interval
+        )
+        return
     with tqdm(
-        total=n_steps,
-        initial=dynamics.nsteps,
-        desc=label,
-        unit="step",
-        mininterval=5,
-        leave=True,
+        total=n_steps, initial=done, desc=label, unit="step", mininterval=5, leave=True
     ) as pbar:
-
-        def update_progress() -> None:
-            """Advance the progress bar to the dynamics' current step count."""
-            if (step_delta := dynamics.nsteps - pbar.n) > 0:
-                pbar.update(step_delta)
-
-        dynamics.attach(update_progress, interval=interval)
-        dynamics.run(remaining_steps)
-        update_progress()
+        while remaining_steps > 0:
+            chunk = min(interval, remaining_steps)
+            dynamics.run(model, chunk, callback=callback, interval=record_interval)
+            pbar.update(chunk)
+            remaining_steps -= chunk
 
 
 @dataclass(frozen=True)
@@ -278,12 +279,25 @@ class NvtParams:
 
 # === crash-safe checkpointing for resumable rollouts ===
 # NoseHooverChainNVT is deterministic after the seeded velocity init (no per-step RNG),
-# so its full state is these five fields; restoring them reproduces an uninterrupted
-# run to ~1e-14. Schema-tagged + ASE-version-gated so a renamed attr or upgrade fails
-# closed (recompute) rather than silently corrupting trajectories.
+# so its full state is positions, momenta, thermostat (eta, p_eta) and the step count;
+# restoring them reproduces an uninterrupted run to ~1e-14 (positions pass through
+# fractional storage, ~1 ulp, which grows only mildly over a rollout). Schema-tagged and
+# matscikit-version-gated so an integrator change fails closed (recompute) rather than
+# silently corrupting trajectories.
 # Schema 3: the cost units of the sessions so far (runtime + steady-state run time +
-# memory peaks), whose run labels a resume must match (never mixing GPUs).
-CHECKPOINT_SCHEMA = 3
+# memory peaks), whose run labels a resume must match (never mixing GPUs); schema 4
+# moved the integrator from ASE to matscikit.
+CHECKPOINT_SCHEMA = 4
+
+
+@functools.cache
+def matscikit_build_digest() -> str:
+    """SHA-256 of the compiled matscikit extension, so a checkpoint written by other
+    numerics (``matscikit.__version__`` is unchanged across rebuilds) is never resumed.
+    """
+    return file_digest(MATSCIKIT_EXTENSION)
+
+
 NpzValue = np.ndarray | np.generic | str | int | float | bool
 
 
@@ -336,27 +350,12 @@ def _atomic_savez(path: str, **arrays: NpzValue) -> None:
         np.savez(file, **cast("dict[str, Any]", arrays))
 
 
-def _nvt_state_attrs(
-    dynamics: NoseHooverChainNVT,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """The integrator's mutable state arrays; raises if ASE renamed the attributes."""
-    try:
-        thermostat = dynamics._thermostat  # noqa: SLF001
-        state = dynamics._q, dynamics._p, thermostat._eta, thermostat._p_eta  # noqa: SLF001
-    except AttributeError as exc:
-        raise RuntimeError(
-            f"ASE {ase.__version__} NoseHooverChainNVT state attributes changed "
-            f"({exc}); MD checkpoint/resume needs updating"
-        ) from exc
-    return state
-
-
 def _load_checkpoint(
-    ckpt_path: str, *, atoms: Atoms, params: NvtParams, n_steps: int
+    ckpt_path: str, *, atoms: Structure, params: NvtParams, n_steps: int
 ) -> tuple[dict[str, np.ndarray], list[dict[str, Any]]] | None:
     """Load a checkpoint with its sessions' cost units if present,
-    readable and schema/ASE/parameter-matched; else None (so the caller recomputes
-    from scratch rather than resuming a stale/foreign state).
+    readable and schema/matscikit-build/parameter-matched; else None (so the caller
+    recomputes from scratch rather than resuming a stale/foreign state).
     """
     if not os.path.isfile(ckpt_path):
         return None
@@ -370,12 +369,12 @@ def _load_checkpoint(
     target_frames = n_steps // params.record_interval + 1
     try:
         schema = int(ckpt["schema"])
-        ase_version = str(ckpt["ase_version"])
+        engine_build = str(ckpt["matscikit_build"])
     except KeyError, TypeError, ValueError:
         print(f"  ignoring checkpoint {ckpt_path}: missing/corrupt schema metadata")
         return None
-    if schema != CHECKPOINT_SCHEMA or ase_version != ase.__version__:
-        print(f"  ignoring checkpoint {ckpt_path}: schema/version mismatch")
+    if schema != CHECKPOINT_SCHEMA or engine_build != matscikit_build_digest():
+        print(f"  ignoring checkpoint {ckpt_path}: schema/matscikit build mismatch")
         return None
 
     try:
@@ -396,8 +395,8 @@ def _load_checkpoint(
             and isinstance(sessions, list)
             and all(isinstance(session, dict) for session in sessions)
             and nsteps == (n_frames - 1) * params.record_interval
-            and list(ckpt["symbols"]) == atoms.get_chemical_symbols()
-            and np.allclose(ckpt["cell"], atoms.cell.array)
+            and list(ckpt["symbols"]) == atoms.symbols
+            and np.allclose(ckpt["cell"], atoms.lattice)
             and np.array_equal(ckpt["pbc"], atoms.pbc)
         )
     except KeyError, TypeError, ValueError:  # JSONDecodeError is a ValueError
@@ -411,20 +410,39 @@ def _load_checkpoint(
 def _restore_nvt_state(
     dynamics: NoseHooverChainNVT, ckpt: dict[str, np.ndarray]
 ) -> None:
-    """Restore integrator + thermostat + atoms state from a loaded checkpoint."""
-    _nvt_state_attrs(dynamics)  # validate the attributes exist before assigning
-    dynamics._q = ckpt["q"]  # noqa: SLF001
-    dynamics._p = ckpt["p"]  # noqa: SLF001
-    dynamics._thermostat._eta = ckpt["eta"]  # noqa: SLF001
-    dynamics._thermostat._p_eta = ckpt["p_eta"]  # noqa: SLF001
-    dynamics.nsteps = int(ckpt["nsteps"])
-    dynamics.atoms.set_positions(ckpt["q"])
-    dynamics.atoms.set_momenta(ckpt["p"])
+    """Restore integrator + thermostat state from a loaded checkpoint."""
+    dynamics.set_state(
+        0,
+        ckpt["q"],
+        ckpt["p"],
+        int(ckpt["nsteps"]),
+        eta=ckpt["eta"].tolist(),
+        p_eta=ckpt["p_eta"].tolist(),
+    )
+
+
+def _extxyz_prefix(path: str, n_frames: int) -> str:
+    """Text of the first ``n_frames`` extxyz frames, ignoring anything after them.
+
+    Lets a resume skip a tail cut off mid-frame by an interrupted write, which a
+    whole-file parse would reject. Returns fewer frames when the file holds fewer.
+    """
+    lines: list[str] = []
+    with open(path, encoding="utf-8") as file:
+        for _ in range(n_frames):
+            header = file.readline()
+            if not header.strip().isdigit():
+                break
+            frame = [header] + [file.readline() for _ in range(int(header) + 1)]
+            if not frame[-1].endswith("\n"):  # truncated mid-frame
+                break
+            lines += frame
+    return "".join(lines)
 
 
 def run_nvt_md_resumable(
-    atoms: Atoms,
-    calculator: Calculator,
+    atoms: Structure,
+    model: ForceModel,
     *,
     out_path: str,
     temperature_kelvin: float,
@@ -437,7 +455,7 @@ def run_nvt_md_resumable(
     progress_label: str = "MD rollout",
     checkpoint_every_n_frames: int = 200,
     runtime: Mapping[str, Any],
-) -> list[Atoms]:
+) -> list[Frame]:
     """Run an NVT rollout that survives interruption (timeouts/preemption).
 
     Frames stream to ``{out_path}.part`` and the integrator state is checkpointed to
@@ -454,7 +472,7 @@ def run_nvt_md_resumable(
     Raises:
         ValueError: If a checkpoint written under other run labels would be resumed.
     """
-    # .part.extxyz (not .part) so ASE infers the extxyz format on read/write/append
+    # .part.extxyz (not .part) so the partial file is still recognizably extxyz
     part_path = f"{out_path.removesuffix('.extxyz')}.part.extxyz"
     ckpt_path = f"{out_path}.ckpt.npz"
     target_frames = n_steps // record_interval + 1
@@ -463,9 +481,14 @@ def run_nvt_md_resumable(
             f"{checkpoint_every_n_frames=} must be positive for MD checkpointing"
         )
 
-    atoms, dynamics = _thermalized_nvt_dynamics(
+    # attribute peak VRAM to this rollout even when one process runs several systems
+    reset_gpu_peak_memory(runtime)
+    # the step-zero stress probe and evaluation (incl. lazy compilation) are rollout
+    # cost: the model loader's timer has already stopped
+    session_start = time.perf_counter()
+    dynamics = _thermalized_nvt_dynamics(
         atoms,
-        calculator,
+        model,
         temperature_kelvin=temperature_kelvin,
         time_step_fs=time_step_fs,
         thermostat_time_scale_fs=thermostat_time_scale_fs,
@@ -482,15 +505,13 @@ def run_nvt_md_resumable(
     loaded = _load_checkpoint(ckpt_path, atoms=atoms, params=params, n_steps=n_steps)
     frames_written = 0
     sessions: list[dict[str, Any]] = []  # cost units of earlier (timed-out) sessions
-    # attribute peak VRAM to this rollout even when one process runs several systems
-    reset_gpu_peak_memory(runtime)
     if loaded is not None and os.path.isfile(part_path):
         ckpt, stored_sessions = loaded
         n_ckpt = int(ckpt["n_frames"])
         # keep only checkpointed frames; a kill may have appended an un-checkpointed
-        # (possibly malformed) tail, so read just the first n_ckpt and rewrite cleanly
+        # (possibly truncated) tail, so parse just the first n_ckpt and rewrite cleanly
         try:
-            kept = read_trajectory(part_path, index=f":{n_ckpt}")
+            kept = read_extxyz(io.StringIO(_extxyz_prefix(part_path, n_ckpt)))
         except (OSError, ValueError, IndexError) as exc:
             print(f"  resume failed reading {part_path} ({exc}); recomputing")
             kept = []
@@ -498,10 +519,10 @@ def run_nvt_md_resumable(
             check_resume_labels(stored_sessions[-1], runtime, ckpt_path)
             sessions = stored_sessions
             _restore_nvt_state(dynamics, ckpt)
-            ase.io.write(part_path, kept)  # truncate to the checkpointed frames
+            dynamics.run(model, 0)  # re-evaluate the restored state
+            write_extxyz(part_path, kept)  # truncate to the checkpointed frames
             frames_written = n_ckpt
             print(f"  resuming {out_path} from frame {frames_written}/{target_frames}")
-    session_start = time.perf_counter()
 
     def session_unit() -> dict[str, Any]:
         """This session's cost unit so far (after MD steps ran)."""
@@ -515,45 +536,49 @@ def run_nvt_md_resumable(
             with contextlib.suppress(FileNotFoundError):
                 os.remove(stale)
 
-    def record_and_checkpoint() -> None:
+    def record_and_checkpoint(state: dict[str, Any]) -> None:
         """Append the current frame and periodically checkpoint the NVT state."""
         nonlocal frames_written
-        ase.io.write(part_path, _snapshot_frame(atoms, dynamics.nsteps), append=True)
+        write_extxyz(part_path, _snapshot_frame(state), append=True)
         frames_written += 1
         if frames_written % checkpoint_every_n_frames == 0:
-            pos, mom, eta, p_eta = _nvt_state_attrs(dynamics)
+            # full integrator state: positions, momenta, thermostat and step count
             _atomic_savez(
                 ckpt_path,
                 schema=CHECKPOINT_SCHEMA,
-                ase_version=ase.__version__,
-                nsteps=dynamics.nsteps,
+                matscikit_build=matscikit_build_digest(),
+                nsteps=int(state["step"]),
                 n_steps=n_steps,
                 n_frames=frames_written,
-                q=pos,
-                p=mom,
-                eta=eta,
-                p_eta=p_eta,
+                q=np.asarray(state["structure"].positions),
+                p=np.asarray(state["momenta"]),
+                eta=np.asarray(state["eta"]),
+                p_eta=np.asarray(state["p_eta"]),
                 record_interval=params.record_interval,
                 time_step_fs=params.time_step_fs,
                 temperature_kelvin=params.temperature_kelvin,
                 thermostat_time_scale_fs=params.thermostat_time_scale_fs,
                 seed=params.seed,
-                symbols=np.array(dynamics.atoms.get_chemical_symbols()),
-                cell=dynamics.atoms.cell.array,
-                pbc=dynamics.atoms.pbc,
+                symbols=np.array(atoms.symbols),
+                cell=atoms.lattice,
+                pbc=np.array(atoms.pbc),
                 # so a killed session's cost still counts after resume
                 sessions=json.dumps([*sessions, session_unit()]),
             )
 
-    dynamics.attach(record_and_checkpoint, interval=record_interval)
+    if frames_written == 0:  # record the initial state (step 0)
+        record_and_checkpoint(dynamics.frame(0))
     _run_dynamics_with_progress(
         dynamics,
+        model,
         n_steps=n_steps,
+        record_interval=record_interval,
+        on_frame=record_and_checkpoint,
         interval=progress_interval,
         label=progress_label,
     )
 
-    frames = read_trajectory(part_path)
+    frames = read_extxyz(part_path)
     if len(frames) != target_frames:
         raise RuntimeError(
             f"{out_path} rollout produced {len(frames)} frames != {target_frames}"
@@ -578,8 +603,8 @@ def run_nvt_md_resumable(
 
 
 def validate_pred_trajectory(
-    path: str, *, expected_frames: int, ref_atoms: Atoms, params: NvtParams
-) -> list[Atoms] | None:
+    path: str, *, expected_frames: int, ref_atoms: Structure, params: NvtParams
+) -> list[Frame] | None:
     """Read and validate a cached predicted rollout, returning its frames if sound or
     None if it should be recomputed.
 
@@ -597,7 +622,7 @@ def validate_pred_trajectory(
         return None
     record_interval = params.record_interval
     try:
-        frames = read_trajectory(path)
+        frames = read_extxyz(path)
     except (OSError, ValueError, IndexError, StopIteration) as exc:
         print(f"  recomputing {path}: unreadable ({exc})")
         return None
@@ -606,20 +631,24 @@ def validate_pred_trajectory(
         print(f"  recomputing {path}: {n_frames} frames != expected {expected_frames}")
         return None
 
-    ref_symbols = ref_atoms.get_chemical_symbols()
+    ref_symbols = ref_atoms.symbols
     for idx, frame in enumerate(frames):
-        velocities = frame.get_velocities()
+        structure = frame.structure
+        momenta = frame.arrays.get("momenta")
         reason = None
-        if int(frame.info.get("md_step", -1)) != idx * record_interval:
-            reason = f"md_step {frame.info.get('md_step')} != {idx * record_interval}"
-        elif frame.get_chemical_symbols() != ref_symbols:
+        if int(structure.info.get("md_step", -1)) != idx * record_interval:
+            reason = (
+                f"md_step {structure.info.get('md_step')} != {idx * record_interval}"
+            )
+        elif structure.symbols != ref_symbols:
             reason = "chemical symbols differ from reference"
-        elif not np.allclose(frame.cell.array, ref_atoms.cell.array) or np.any(
-            frame.pbc != ref_atoms.pbc
+        elif (
+            not np.allclose(structure.lattice, ref_atoms.lattice)
+            or structure.pbc != ref_atoms.pbc
         ):
             reason = "cell or pbc differ from reference"
-        elif not np.isfinite(frame.positions).all() or (
-            velocities is not None and not np.isfinite(velocities).all()
+        elif not np.isfinite(structure.positions).all() or (
+            momenta is not None and not np.isfinite(momenta).all()
         ):
             reason = "non-finite positions or velocities"
         if reason:
@@ -631,7 +660,7 @@ def validate_pred_trajectory(
 
 def run_md_benchmark(
     *,
-    calculator: Calculator,
+    model: ForceModel,
     model_key: str,
     out_dir: str,
     ref_file: str | None = None,
@@ -656,8 +685,8 @@ def run_md_benchmark(
     which survives metric-recompute jobs that reuse cached rollouts.
 
     Args:
-        calculator: ASE calculator for the model under test.
-        model_key: Model enum name/key, used in output filenames.
+        model: ForceModel under test (matscikit ``compute`` protocol).
+        model_key: ForceModel enum name/key, used in output filenames.
         out_dir: Directory for rollout trajectories and the metrics CSV.
         ref_file: Reference HDF5 (one group per system, each carrying dt_fs and
             temperature_kelvin attrs). Defaults to the auto-downloaded DynaMat v1.0 set.
@@ -693,8 +722,22 @@ def run_md_benchmark(
     )
     if not system_names:  # clearer than the downstream empty-DataFrame KeyError
         raise ValueError(f"No systems found in reference {ref_file!r} for {systems=}")
-    if dry_run:  # one system, a few steps, capped reference slice
-        system_names = system_names[:1]
+    if dry_run:  # one system the model supports, a few steps, capped reference slice
+        supported_names = (
+            name
+            for name in system_names
+            if model_supports_elements(
+                model_key,
+                read_reference_trajectory(ref_file, name, max_frames=1)[0]
+                .frame_as_structure(0)
+                .symbols,
+            )
+        )
+        if (dry_run_name := next(supported_names, None)) is None:
+            raise ValueError(
+                f"No system in {system_names} has elements {model_key} supports"
+            )
+        system_names = [dry_run_name]
         # enough recorded frames that time-matching keeps >=4 even for the coarsest
         # reference cadence (dt_fs up to 2 fs vs the 2.5 fs prediction cadence)
         n_steps = record_interval * 20
@@ -719,14 +762,14 @@ def run_md_benchmark(
             temperature_kelvin=temperature_kelvin,
             label=f"reference {system_name!r} in {ref_file!r}",
         )
-        initial_atoms = ref_trajectory.frame_as_atoms(0)
+        initial_atoms = ref_trajectory.frame_as_structure(0)
 
         pred_traj_path = f"{out_dir}/{system_name}-nvt-{model_key}.extxyz"
         target_frames = n_steps // record_interval + 1
         if dry_run:  # in-memory run, no checkpoint/output files
             pred_frames = run_nvt_md(
                 initial_atoms,
-                calculator,
+                model,
                 temperature_kelvin=temperature_kelvin,
                 n_steps=n_steps,
                 time_step_fs=time_step_fs,
@@ -754,7 +797,7 @@ def run_md_benchmark(
             if pred_frames is None:  # crash-safe resumable rollout to pred_traj_path
                 pred_frames = run_nvt_md_resumable(
                     initial_atoms,
-                    calculator,
+                    model,
                     out_path=pred_traj_path,
                     temperature_kelvin=temperature_kelvin,
                     n_steps=n_steps,
@@ -768,7 +811,7 @@ def run_md_benchmark(
 
         system_metrics = md_metrics.evaluate_md_system(
             ref_trajectory,
-            pred_frames,  # evaluate_md_system coerces the Atoms list to a Trajectory
+            pred_frames,  # evaluate_md_system coerces the frame list to a Trajectory
             ref_time_step_fs=ref_time_step_fs,
             pred_time_step_fs=pred_time_step_fs,
             progress_label=progress_label,
@@ -790,7 +833,7 @@ def run_md_benchmark(
                     f"{ref_trajectory.n_atoms}); stale {private_ref_file=}?"
                 )
             system_metrics |= md_metrics.calc_energy_force_rmse(
-                private_ref_trajectory, calculator
+                private_ref_trajectory, model
             )
         row: dict[str, float | int | str] = {
             "system": system_name,

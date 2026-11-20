@@ -44,35 +44,35 @@ notes:
 metrics:
   discovery:
     pred_file:
-      name: models/alchembert/alchembert/2024-12-25-discovery.csv.gz
-      url: https://figshare.com/files/66646304
-      size: 2985758
-      md5: e2fc28e434b06ba80298d364e5328913
+      name: models/alchembert/alchembert/2026-11-19-discovery.csv.gz
+      url: https://figshare.com/files/71653843
+      size: 2977004
+      md5: 9f7092084e36dbb44d6e02f5885bef85
     full_test_set:
       F1: 0.436 # fraction
-      DAF: 1.9 # dimensionless
+      DAF: 1.907 # dimensionless
       Precision: 0.326 # fraction
       Recall: 0.656 # fraction
-      Accuracy: 0.708 # fraction
-      TP: 28937 # count
-      FP: 59830 # count
-      TN: 153041 # count
-      FN: 15155 # count
+      Accuracy: 0.709 # fraction
+      TP: 28846 # count
+      FP: 59578 # count
+      TN: 153428 # count
+      FN: 15111 # count
       MAE: 0.111 # eV/atom
       RMSE: 0.171 # eV/atom
-      R2: 0.102 # dimensionless
+      R2: 0.104 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
       F1: 0.421 # fraction
-      DAF: 2.001 # dimensionless
+      DAF: 2.009 # dimensionless
       Precision: 0.306 # fraction
       Recall: 0.673 # fraction
-      Accuracy: 0.713 # fraction
-      TP: 22473 # count
-      FP: 50988 # count
-      TN: 131126 # count
-      FN: 10901 # count
+      Accuracy: 0.714 # fraction
+      TP: 22374 # count
+      FP: 50780 # count
+      TN: 131466 # count
+      FN: 10868 # count
       MAE: 0.117 # eV/atom
       RMSE: 0.175 # eV/atom
-      R2: 0.096 # dimensionless
+      R2: 0.097 # dimensionless
       missing_preds: 0 # count

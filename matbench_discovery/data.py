@@ -21,11 +21,10 @@ from decimal import Decimal, InvalidOperation
 from glob import glob
 from typing import Any, Final, NotRequired, TypedDict
 
-import ase.io
 import pandas as pd
 import yaml
-from ase import Atoms
 from filelock import FileLock
+from matscikit.io import Frame, parse_extxyz
 from pymatviz.enums import Key
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
@@ -345,10 +344,11 @@ def glob_to_df(
     return pd.concat(reader(file, **kwargs) for file in tqdm(files, disable=not pbar))
 
 
-def ase_atoms_from_zip(
+def frames_from_zip(
     zip_filename: str, *, limit: int | slice | None = None
-) -> list[Atoms]:
-    """Read ASE Atoms objects from the .extxyz members of a ZIP file.
+) -> list[Frame]:
+    """Read extxyz frames (structure plus any stored energy, forces, stress and
+    per-atom arrays) from the .extxyz members of a ZIP file.
 
     Args:
         zip_filename (str): Path to the ZIP file.
@@ -357,11 +357,11 @@ def ase_atoms_from_zip(
             Use a small number to speed up debugging runs.
 
     Returns:
-        list[Atoms]: ASE Atoms objects.
+        list[Frame]: Frames with their metadata in ``frame.structure.info``.
     """
-    atoms_list = []
+    frames: list[Frame] = []
     with zipfile.ZipFile(zip_filename) as zip_file:
-        desc = f"Reading ASE Atoms from {zip_filename=}"
+        desc = f"Reading structures from {zip_filename=}"
         filenames = zip_file.namelist()
         if limit is not None:
             slice_lim = slice(limit) if isinstance(limit, int) else limit
@@ -372,13 +372,9 @@ def ase_atoms_from_zip(
                 continue
             with zip_file.open(filename) as file:
                 content = io.TextIOWrapper(file, encoding="utf-8").read()
-                atoms = ase.io.read(
-                    io.StringIO(content), format="extxyz", index=slice(None)
-                )  # reads multiple Atoms objects as frames if file contains trajectory
-                if isinstance(atoms, Atoms):
-                    atoms = [atoms]
-                atoms_list.extend(atoms)
-    return atoms_list
+            # a file holding a trajectory yields one frame per step
+            frames.extend(parse_extxyz(content))
+    return frames
 
 
 # str() around Key.mat_id added for https://github.com/janosh/matbench-discovery/issues/81

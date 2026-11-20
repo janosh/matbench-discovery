@@ -1,4 +1,4 @@
-"""Unified dependency-isolated WBM discovery runner for ASE calculators.
+"""Unified dependency-isolated WBM discovery runner for force-field models.
 
 Examples:
     uv run models/run_discovery.py --list-models
@@ -13,13 +13,13 @@ Examples:
 #   "ase>=3.29",
 #   "numpy",
 #   "pandas",
-#   "pymatgen>=2026.9.24",
 #   "tqdm",
 #   "matbench-discovery",
 # ]
 #
 # [tool.uv.sources]
 # matbench-discovery = { path = "../", editable = true }
+# matscikit = { path = "../../matscikit", editable = true }
 # ///
 
 from __future__ import annotations
@@ -51,7 +51,7 @@ from matbench_discovery.discovery import (
     DiscoveryArtifacts,
     RelaxationSettings,
     dry_run_settings,
-    load_wbm_atoms,
+    load_wbm_structures,
     merge_discovery_shards,
     run_discovery_shard,
     write_discovery_artifacts,
@@ -271,7 +271,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
         shard_suffix = f"{args.n_shards:03d}" if args.n_shards is not None else "*"
         shard_paths = sorted(glob.glob(f"{shard_dir}/shard-*-of-{shard_suffix}.jsonl"))
         if args.dry_run:
-            expected_material_ids = list(load_wbm_atoms(model_key, dry_run=True))
+            expected_material_ids = list(load_wbm_structures(model_key, dry_run=True))
         else:
             from matbench_discovery.data import df_wbm
 
@@ -334,7 +334,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
             print("Skipping redundant dry run outside the first Slurm array task")
             return 0
         n_shards, shard_index = slurm_shard_selection(n_shards_arg, shard_index_arg)
-        atoms_by_id = load_wbm_atoms(model_key, dry_run=args.dry_run)
+        atoms_by_id = load_wbm_structures(model_key, dry_run=args.dry_run)
         shard_assignments = partition_material_ids(atoms_by_id, n_shards)
     except ValueError as exc:
         parser.error(str(exc))
@@ -344,14 +344,14 @@ def main(raw_args: Sequence[str] | None = None) -> int:
         material_id: atoms_by_id[material_id] for material_id in assigned_material_ids
     }
     shard_path = f"{shard_dir}/shard-{shard_index:03d}-of-{n_shards:03d}.jsonl"
-    calculator, runtime = load_calculator_with_runtime(
+    force_model, runtime = load_calculator_with_runtime(
         model_key, device=args.device, dtype=args.dtype
     )
     shard = run_discovery_shard(
-        calculator=calculator,
+        model=force_model,
         runtime=runtime,
         model_key=model_key,
-        atoms_by_id=atoms_by_id,
+        structures_by_id=atoms_by_id,
         assigned_material_ids=assigned_material_ids,
         shard_path=shard_path,
         shard_index=shard_index,

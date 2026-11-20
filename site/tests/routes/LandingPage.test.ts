@@ -94,7 +94,7 @@ describe(`Landing Page`, () => {
       `MAE`,
       `R2`,
       `κSRME`,
-      `RMSD`,
+      `RMSD AUC`,
       `CMDS`,
       `CDS`,
       `Params`,
@@ -397,7 +397,7 @@ describe(`Landing Page URL state`, () => {
 
   it.each([
     [`Discovery`, `CPS`, null, `descending`],
-    [`Geo Opt`, `RMSD`, `rmsd`, `ascending`],
+    [`Geo Opt`, `RMSD AUC`, `rmsd_auc`, `descending`],
     [`Phonons`, `κSRME`, `κ_SRME`, `ascending`],
     [`MD`, `CMDS`, `combined_score`, `descending`],
     [`Diatomics`, `CDS`, `diatomics_combined_score`, `descending`],

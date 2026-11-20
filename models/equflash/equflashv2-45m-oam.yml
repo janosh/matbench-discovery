@@ -86,54 +86,53 @@ metrics:
       size: 2576423
       md5: 7e498aabe04e32112b632219333aac44
     full_test_set:
-      F1: 0.91 # fraction
-      DAF: 5.291 # dimensionless
-      Precision: 0.908 # fraction
-      Recall: 0.913 # fraction
-      Accuracy: 0.969 # fraction
-      TP: 40235 # count
-      FP: 4086 # count
-      TN: 208785 # count
-      FN: 3857 # count
-      MAE: 0.018 # eV/atom
-      RMSE: 0.066 # eV/atom
-      R2: 0.866 # dimensionless
+      F1: 0.916 # fraction
+      DAF: 5.326 # dimensionless
+      Precision: 0.911 # fraction
+      Recall: 0.92 # fraction
+      Accuracy: 0.971 # fraction
+      TP: 40461 # count
+      FP: 3946 # count
+      TN: 209060 # count
+      FN: 3496 # count
+      MAE: 0.017 # eV/atom
+      RMSE: 0.065 # eV/atom
+      R2: 0.871 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.929 # fraction
-      DAF: 6.069 # dimensionless
-      Precision: 0.928 # fraction
-      Recall: 0.93 # fraction
-      Accuracy: 0.978 # fraction
-      TP: 31031 # count
-      FP: 2413 # count
-      TN: 179701 # count
-      FN: 2343 # count
-      MAE: 0.018 # eV/atom
-      RMSE: 0.066 # eV/atom
-      R2: 0.873 # dimensionless
+      F1: 0.935 # fraction
+      DAF: 6.114 # dimensionless
+      Precision: 0.931 # fraction
+      Recall: 0.938 # fraction
+      Accuracy: 0.98 # fraction
+      TP: 31195 # count
+      FP: 2323 # count
+      TN: 179923 # count
+      FN: 2047 # count
+      MAE: 0.017 # eV/atom
+      RMSE: 0.064 # eV/atom
+      R2: 0.878 # dimensionless
       missing_preds: 0 # count
   geo_opt:
     pred_file:
       name: models/equflash/equflashv2-45m-oam/2026-06-11-geo-opt.jsonl.gz
-      url: https://figshare.com/files/65434998
-      size: 105066086
-      md5: 2fedd19d900fc0051986dbca987bbfa4
+      url: https://figshare.com/files/71651425
+      size: 104328818
+      md5: e3b213413bf8003f6d7abc276d55d025
+    rmsd_auc: 0.8249 # fraction
     symprec=1e-2:
-      rmsd: 0.0577 # unitless
-      n_sym_ops_mae: 1.6877 # unitless
+      n_sym_ops_mae: 1.6878 # unitless
       symmetry_decrease: 0.0474 # fraction
       symmetry_match: 0.8202 # fraction
       symmetry_increase: 0.1251 # fraction
       symmetry_lateral: 0.0074 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/equflash/equflashv2-45m-oam/2026-06-11-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333668
-        size: 8121774
-        md5: 59c43294a83d4be2ad3f00ad9c9a2c79
+        name: models/equflash/equflashv2-45m-oam/2026-06-11-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71651434
+        size: 8143878
+        md5: fd1997a58e02cd3bad6adbf651efdbbd
     symprec=1e-5:
-      rmsd: 0.0577 # unitless
       n_sym_ops_mae: 2.0782 # unitless
       symmetry_decrease: 0.0507 # fraction
       symmetry_match: 0.7005 # fraction
@@ -141,10 +140,10 @@ metrics:
       symmetry_lateral: 0.0055 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/equflash/equflashv2-45m-oam/2026-06-11-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333671
-        size: 8106194
-        md5: 88efcb52b9b3dd5223867b4b6f7437f5
+        name: models/equflash/equflashv2-45m-oam/2026-06-11-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71651437
+        size: 8128580
+        md5: f31848671ba8537e3b7a9768487c2ea1
   phonons:
     kappa_103:
       pred_file:
@@ -166,9 +165,9 @@ metrics:
           md5: 0bf74cd0c95323b76c09464bb5b24478
         force_file:
           name: models/equflash/equflashv2-45m-oam/harmonic/2026-09-05-phonons-kappa-103-forces.h5
-          url: https://figshare.com/files/71263153
-          size: 2171673
-          md5: 0d9f6d9dbf9dbc2efe1ad55a99ec4e79
+          url: https://figshare.com/files/71630116
+          size: 3683464
+          md5: 45b661e8103bb00ffe08bfb2c4664717
         run_info_file:
           name: models/equflash/equflashv2-45m-oam/harmonic/2026-09-05-phonons-kappa-103-run-info.json
           url: https://figshare.com/files/70334394

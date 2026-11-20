@@ -48,7 +48,7 @@ describe(`DiatomicCurve`, () => {
           ],
           markers: `line+points`,
           point_style: { fill: `#123456`, radius: 2.5, stroke_width: 0 },
-          line_style: { stroke: `#123456` },
+          line_style: { color: `#123456` },
         },
       ],
       x_axis: {

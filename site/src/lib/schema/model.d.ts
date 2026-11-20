@@ -198,8 +198,8 @@ export type GeoOptMetrics = {
   status?: 'complete' | 'partial' | 'not_available' | 'not_applicable' | 'pending'
   reason?: string | null
   pred_file?: NullableFileRef
+  rmsd_auc?: number
   'symprec=1e-5'?: {
-    rmsd: number
     n_sym_ops_mae: number
     symmetry_decrease: number
     symmetry_match: number
@@ -209,7 +209,6 @@ export type GeoOptMetrics = {
     analysis_file?: NullableFileRef
   }
   'symprec=1e-2'?: {
-    rmsd: number
     n_sym_ops_mae: number
     symmetry_decrease: number
     symmetry_match: number

@@ -1,84 +1,59 @@
-"""Functions to compute formation and elemental reference energies from
-pymatgen EntryLikes.
-"""
+"""Formation and elemental reference energies from composition-energy entries."""
 
-import itertools
-from collections.abc import Sequence
-from typing import Any, cast
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+from typing import Any
 
+import numpy as np
 import pandas as pd
-from pymatgen.analysis.phase_diagram import Entry, PDEntry
-from pymatgen.core import Composition, Structure
-from pymatgen.entries.computed_entries import ComputedEntry
-from pymatgen.util.typing import EntryLike
-from tqdm import tqdm
+from matscikit import Composition, PhaseDiagram
 
 from matbench_discovery.enums import DataFiles
 
 
-def get_elemental_ref_entries(
-    entries: Sequence[EntryLike | dict[str, Any]], *, verbose: bool = True
-) -> dict[str, Entry]:
-    """Get the lowest energy pymatgen Entry for each element in a list of entries.
+@dataclass(frozen=True, init=False)
+class Entry:
+    """A composition with its total (corrected) energy in eV."""
 
-    Args:
-        entries (Sequence[Entry]): pymatgen Entries (PDEntry, ComputedEntry or
-            ComputedStructureEntry) to find elemental reference entries of.
-        verbose (bool, optional): Whether to show a progress bar. Defaults to True.
+    composition: Composition
+    energy: float
+    entry_id: str | None
 
-    Raises:
-        ValueError: If some elements are missing terminal reference entries.
+    def __init__(
+        self,
+        composition: Composition | str | Mapping[str, float],
+        energy: float,
+        entry_id: str | None = None,
+    ) -> None:
+        """Coerce a formula string or element->amount mapping to a Composition."""
+        if not isinstance(composition, Composition):
+            composition = Composition(composition)
+        object.__setattr__(self, "composition", composition)
+        object.__setattr__(self, "energy", float(energy))
+        object.__setattr__(self, "entry_id", entry_id)
 
-    Returns:
-        dict[str, Entry]: Map from element symbol to its lowest energy entry.
-    """
-    normalized_entries: list[Entry] = [
-        PDEntry.from_dict(entry) if isinstance(entry, dict) else cast("Entry", entry)
-        for entry in entries
-    ]
-    elements = {
-        element
-        for entry in normalized_entries
-        for element in entry.composition.elements
-    }
-    dim = len(elements)
+    @property
+    def energy_per_atom(self) -> float:
+        """Total energy divided by the number of atoms."""
+        return self.energy / self.composition.num_atoms
 
-    if verbose:
-        print(
-            f"Sorting {len(normalized_entries)} entries with {dim} dimensions...",
-            flush=True,
-        )
+    @classmethod
+    def from_dict(cls, dct: Mapping[str, Any]) -> Entry:
+        """Build from a serialized entry (pymatgen PDEntry/ComputedEntry layout).
 
-    sorted_entries = sorted(
-        normalized_entries, key=lambda entry: entry.composition.reduced_composition
-    )
-
-    elemental_ref_entries = {}
-    for composition, entry_group in tqdm(
-        itertools.groupby(
-            sorted_entries, key=lambda entry: entry.composition.reduced_composition
-        ),
-        disable=not verbose,
-        desc="Finding elemental reference entries",
-    ):
-        min_entry = min(entry_group, key=lambda entry: entry.energy_per_atom)
-        if composition.is_element:
-            elem_symb = str(composition.elements[0])
-            elemental_ref_entries[elem_symb] = min_entry
-
-    element_symbols = set(map(str, elements))
-    if len(elemental_ref_entries) < dim:
-        missing = element_symbols - set(elemental_ref_entries)
-        raise ValueError(f"Missing terminal entries: {missing}")
-
-    return elemental_ref_entries
+        ComputedEntry dicts store the uncorrected energy plus the total ``correction``
+        (the sum of their energy_adjustments), so the corrected energy is
+        ``energy + correction`` exactly as pymatgen's ``ComputedEntry.energy``.
+        """
+        energy = float(dct["energy"]) + float(dct.get("correction", 0.0))
+        return cls(dct["composition"], energy, dct.get("entry_id"))
 
 
 # contains all MP elemental reference entries to compute formation energies
-# produced by get_elemental_ref_entries() in build_phase_diagram.py
+# produced by scripts/data/build_mp_reference_entries.py
 mp_elem_ref_entries = (
     pd.read_json(DataFiles.mp_elemental_ref_entries.path, typ="series")
-    .map(ComputedEntry.from_dict)
+    .map(Entry.from_dict)
     .to_dict()
 )
 
@@ -89,66 +64,33 @@ mp_elemental_ref_energies = {
 }
 
 
-def calc_energy_from_e_refs(
-    struct_or_entry: EntryLike | dict[str, Any] | Structure | Composition | str,
-    ref_energies: dict[str, float],
-    total_energy: float | None = None,
-) -> float:
-    """Calculate energy per atom relative to reference states (e.g., for formation or
-    cohesive energy calculations).
+def formation_energies(
+    compositions: Sequence[str | Composition | Mapping[str, float]],
+    total_energies: Sequence[float] | np.ndarray,
+    ref_energies: Mapping[str, float],
+) -> np.ndarray:
+    """Energies per atom (eV/atom) relative to elemental reference energies per atom.
+
+    With elemental ground-state references (e.g. mp_elemental_ref_energies) these
+    are formation energies, with isolated-atom references cohesive energies.
 
     Args:
-        struct_or_entry (EntryLike | Structure | Composition | str): Either:
-            - A pymatgen Entry (PDEntry, ComputedEntry, etc.) or entry dict containing
-              'energy' and 'composition' keys
-            - A Structure or Composition object or formula string (must also provide
-              total_energy)
-        ref_energies (dict[str, float]): Dictionary of reference energies per atom.
-            For formation energy: elemental reference energies (e.g.
-            mp_elemental_ref_energies).
-            For cohesive energy: isolated atom reference energies
-        total_energy (float | None): Total energy of the structure/composition. Required
-            if struct_or_entry is not an Entry or entry dict. Ignored otherwise.
-
-    Returns:
-        float: Energy per atom relative to references (e.g., formation or cohesive
-        energy) in the same units as input energies.
+        compositions (Sequence[str | Composition | Mapping[str, float]]): Formula
+            strings, Compositions or element->amount mappings.
+        total_energies (Sequence[float] | np.ndarray): Total energies (eV), one per
+            composition.
+        ref_energies (Mapping[str, float]): Reference energy per atom of each element.
 
     Raises:
-        TypeError: If input types are invalid
-        ValueError: If missing reference energies for some elements
+        ValueError: If a composition has an element without a reference energy.
+
+    Returns:
+        np.ndarray: Energy per atom relative to the references, one per composition.
     """
-    if isinstance(struct_or_entry, dict):
-        if missing_keys := {"composition", "energy"} - struct_or_entry.keys():
-            raise ValueError(
-                f"Entry dict missing required keys: {sorted(missing_keys)}"
-            )
-        energy: float = struct_or_entry["energy"]
-        comp = Composition(struct_or_entry["composition"])
-    elif isinstance(struct_or_entry, Entry):
-        energy = struct_or_entry.energy
-        comp = struct_or_entry.composition
-    else:
-        if total_energy is None:
-            raise ValueError("total_energy can't be None when 1st arg is not an Entry")
-        energy = total_energy
-
-        if isinstance(struct_or_entry, str):
-            comp = Composition(struct_or_entry)
-        elif isinstance(struct_or_entry, Structure):
-            comp = struct_or_entry.composition
-        elif isinstance(struct_or_entry, Composition):
-            comp = struct_or_entry
-        else:
-            cls_name = type(struct_or_entry).__name__
-            raise TypeError(
-                "Expected Entry, Structure, Composition or formula string, "
-                f"got {cls_name}"
-            )
-
-    if missing_refs := set(map(str, comp)) - set(ref_energies):
-        raise ValueError(f"Missing reference energies for elements: {missing_refs}")
-
-    e_ref = sum(ref_energies[str(el)] * amt for el, amt in comp.items())
-
-    return (energy - e_ref) / comp.num_atoms
+    n_atoms = [Composition(composition).num_atoms for composition in compositions]
+    elemental_refs = PhaseDiagram(list(ref_energies), list(ref_energies.values()))
+    return np.asarray(
+        elemental_refs.formation_energy(
+            list(compositions), np.divide(total_energies, n_atoms).tolist()
+        )
+    )
