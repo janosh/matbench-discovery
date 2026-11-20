@@ -448,7 +448,13 @@ def kappa_source_paths(adapter: StandardKappaAdapter, model_key: str) -> set[str
 def kappa_source_digest(adapter: StandardKappaAdapter, model_key: str) -> str:
     """Hash shared runner, pipeline, calculator, schema, and adapter source files."""
     source_hasher = hashlib.sha256()
-    for source_path in sorted(kappa_source_paths(adapter, model_key)):
+    extension = os.path.realpath(MATSCIKIT_EXTENSION)
+    # extension last: its install path must not move it among the checkout's sources,
+    # else workers sharing a checkout but not a venv disagree on the digest
+    for source_path in sorted(
+        kappa_source_paths(adapter, model_key),
+        key=lambda path: (path == extension, path),
+    ):
         if not os.path.isfile(source_path):
             raise FileNotFoundError(f"Kappa source file not found: {source_path}")
         source_hasher.update(os.path.basename(source_path).encode())

@@ -1150,3 +1150,27 @@ def test_kappa_source_paths_covers_every_output_defining_module() -> None:
         "run_kappa.py",
         os.path.basename(MATSCIKIT_EXTENSION),
     } <= basenames, f"unhashed kappa source modules; got {sorted(basenames)}"
+
+
+def test_kappa_source_digest_ignores_extension_install_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Identical extension bytes hash the same wherever the extension is installed."""
+    from matbench_discovery.phonons import pipeline
+
+    source = tmp_path / "m" / "source.py"
+    source.parent.mkdir()
+    source.write_text("x = 1\n")
+    digests = []
+    for prefix in ("a", "z"):  # sorts before vs after the checkout's sources
+        extension = tmp_path / prefix / "_core.so"
+        extension.parent.mkdir()
+        extension.write_bytes(b"compiled")
+        monkeypatch.setattr(pipeline, "MATSCIKIT_EXTENSION", str(extension))
+        monkeypatch.setattr(
+            pipeline,
+            "kappa_source_paths",
+            lambda *_, ext=str(extension): {str(source), ext},
+        )
+        digests.append(pipeline.kappa_source_digest(StandardKappaAdapter(), "m"))
+    assert digests[0] == digests[1]

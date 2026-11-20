@@ -179,7 +179,7 @@ def test_equflash_batched_model(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_pet_batched_model_uses_compute_energy() -> None:
-    """compute_energy batches energy+forces; other properties use the ASE path."""
+    """compute_energy batches energy+forces (ragged atom counts too)."""
     pytest.importorskip("ase")
     calls: list[int] = []
 
@@ -190,15 +190,18 @@ def test_pet_batched_model_uses_compute_energy() -> None:
         calls.append(len(atoms_list))
         return {
             "energy": np.arange(len(atoms_list), dtype=float),
-            "forces": np.array([atoms.positions for atoms in atoms_list]),
+            "forces": [atoms.positions for atoms in atoms_list],  # ragged list
         }
 
     model = PetBatchedModel(SimpleNamespace(compute_energy=compute_energy))
-    structures = [cu_cell(), cu_cell(strain=0.01), cu_cell(strain=0.02)]
+    two_atom = Structure(3 * np.eye(3), ["Cu"] * 2, [[0, 0, 0], [0.5, 0.5, 0.5]])
+    structures = [cu_cell(), cu_cell(strain=0.01), two_atom]
     results = model.compute(structures, ["energy", "forces"])
     assert calls == [3]
     assert [result["energy"] for result in results] == [0.0, 1.0, 2.0]
-    np.testing.assert_allclose(results[2]["forces"], structures[2].positions)
+    for result, structure in zip(results, structures, strict=True):
+        assert isinstance(result["forces"], np.ndarray)
+        np.testing.assert_allclose(result["forces"], structure.positions)
 
 
 def spy_relax_structures(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:

@@ -41,9 +41,10 @@ class PetBatchedModel:
             [structure_to_ase(structure) for structure in structures],
             compute_forces_and_stresses=True,
         )
-        energies, forces = np.asarray(outputs["energy"]), np.asarray(outputs["forces"])
+        # forces stay per structure: batches may mix atom counts (ragged arrays)
+        energies, forces = np.asarray(outputs["energy"]), outputs["forces"]
         return [
-            {"energy": float(energies[idx]), "forces": forces[idx]}
+            {"energy": float(energies[idx]), "forces": np.asarray(forces[idx])}
             for idx in range(len(structures))
         ]
 

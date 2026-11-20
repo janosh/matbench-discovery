@@ -65,13 +65,21 @@ def test_init_phonons(cu_calc: ltc.KappaCalculation) -> None:
     )
     _, fc2_displacement = default_calc.phonons.phonon_displacements[0]
     assert np.linalg.norm(fc2_displacement) == pytest.approx(0.03, abs=1e-12)
-    with pytest.raises(ValueError, match="3 entries"):
-        ltc.init_phonons(
-            cu_calc.phonons.unitcell,
-            fc2_supercell=np.eye(3),
-            fc3_supercell=np.eye(3),
-            q_point_mesh=(2, 2),  # ty: ignore[invalid-argument-type]
-        )
+    whole_floats = ltc.init_phonons(
+        cu_calc.phonons.unitcell,
+        fc2_supercell=np.eye(3),
+        fc3_supercell=np.eye(3),
+        q_point_mesh=(4.0, 4, 4),  # ty: ignore[invalid-argument-type]
+    )
+    assert whole_floats.mesh == (4, 4, 4)
+    for bad_mesh in [(2, 2), (4.9, 4, 4), (0, 4, 4), (np.nan, 4, 4)]:
+        with pytest.raises(ValueError, match="3 positive integers"):
+            ltc.init_phonons(
+                cu_calc.phonons.unitcell,
+                fc2_supercell=np.eye(3),
+                fc3_supercell=np.eye(3),
+                q_point_mesh=bad_mesh,  # ty: ignore[invalid-argument-type]
+            )
 
 
 class CountingModel:

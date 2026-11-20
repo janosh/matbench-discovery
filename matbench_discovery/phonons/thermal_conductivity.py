@@ -75,9 +75,15 @@ def init_phonons(
     phonons.generate_displacements(
         distance=displacement_distance, plus_minus=plus_minus
     )
-    mesh = tuple(int(n) for n in np.asarray(q_point_mesh).ravel())
-    if len(mesh) != 3:
-        raise ValueError(f"q_point_mesh needs 3 entries, got {q_point_mesh}")
+    mesh_values = np.asarray(q_point_mesh, dtype=float).ravel()
+    if (
+        len(mesh_values) != 3
+        or not np.isfinite(mesh_values).all()
+        or (mesh_values < 1).any()
+        or (mesh_values != np.rint(mesh_values)).any()
+    ):
+        raise ValueError(f"q_point_mesh needs 3 positive integers, got {q_point_mesh}")
+    mesh = tuple(int(n) for n in mesh_values)
     return KappaCalculation(phonons, mesh)  # ty: ignore[invalid-argument-type]
 
 
