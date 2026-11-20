@@ -513,6 +513,26 @@ def test_run_nvt_md_resumable_ignores_other_matscikit_build(
     assert len(frames) == 7  # recomputed from step 0
 
 
+def test_run_nvt_md_resumable_skips_truncated_tail(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+) -> None:
+    """A tail cut off mid-frame after the checkpoint still resumes the prefix."""
+    atoms = bulk("Cu", cubic=True).make_supercell([2, 2, 2])
+    reference = _run_short_resumable(atoms, str(tmp_path / "ref.extxyz"))
+    out_path = str(tmp_path / "out.extxyz")
+    _fail_save_checkpoint_after(monkeypatch, kills=1)
+    with pytest.raises(RuntimeError, match="simulated timeout"):
+        _run_short_resumable(atoms, out_path)
+    part = tmp_path / "out.part.extxyz"
+    part.write_text(part.read_text() + "32\nLattice='7 0 0 0 7 0 0 0 7'\nCu 0.0 0")
+
+    frames = _run_short_resumable(atoms, out_path)
+    assert "resuming" in capsys.readouterr().out
+    assert [frame.structure.info["md_step"] for frame in frames] == [
+        frame.structure.info["md_step"] for frame in reference
+    ]
+
+
 def test_run_nvt_md_resumable_ignores_corrupt_checkpoint(tmp_path: Path) -> None:
     """Corrupt checkpoints fail closed and trigger a clean rollout."""
     atoms = bulk("Cu", cubic=True).make_supercell([2, 2, 2])

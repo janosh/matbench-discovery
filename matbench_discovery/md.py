@@ -8,6 +8,7 @@ frames recorded every 10 steps for 20 ps.
 import contextlib
 import dataclasses
 import functools
+import io
 import json
 import os
 import time
@@ -420,6 +421,25 @@ def _restore_nvt_state(
     )
 
 
+def _extxyz_prefix(path: str, n_frames: int) -> str:
+    """Text of the first ``n_frames`` extxyz frames, ignoring anything after them.
+
+    Lets a resume skip a tail cut off mid-frame by an interrupted write, which a
+    whole-file parse would reject. Returns fewer frames when the file holds fewer.
+    """
+    lines: list[str] = []
+    with open(path, encoding="utf-8") as file:
+        for _ in range(n_frames):
+            header = file.readline()
+            if not header.strip().isdigit():
+                break
+            frame = [header] + [file.readline() for _ in range(int(header) + 1)]
+            if not frame[-1].endswith("\n"):  # truncated mid-frame
+                break
+            lines += frame
+    return "".join(lines)
+
+
 def run_nvt_md_resumable(
     atoms: Structure,
     model: ForceModel,
@@ -461,6 +481,11 @@ def run_nvt_md_resumable(
             f"{checkpoint_every_n_frames=} must be positive for MD checkpointing"
         )
 
+    # attribute peak VRAM to this rollout even when one process runs several systems
+    reset_gpu_peak_memory(runtime)
+    # the step-zero stress probe and evaluation (incl. lazy compilation) are rollout
+    # cost: the model loader's timer has already stopped
+    session_start = time.perf_counter()
     dynamics = _thermalized_nvt_dynamics(
         atoms,
         model,
@@ -480,15 +505,13 @@ def run_nvt_md_resumable(
     loaded = _load_checkpoint(ckpt_path, atoms=atoms, params=params, n_steps=n_steps)
     frames_written = 0
     sessions: list[dict[str, Any]] = []  # cost units of earlier (timed-out) sessions
-    # attribute peak VRAM to this rollout even when one process runs several systems
-    reset_gpu_peak_memory(runtime)
     if loaded is not None and os.path.isfile(part_path):
         ckpt, stored_sessions = loaded
         n_ckpt = int(ckpt["n_frames"])
         # keep only checkpointed frames; a kill may have appended an un-checkpointed
-        # (possibly malformed) tail, so read just the first n_ckpt and rewrite cleanly
+        # (possibly truncated) tail, so parse just the first n_ckpt and rewrite cleanly
         try:
-            kept = read_extxyz(part_path, index=slice(None, n_ckpt))
+            kept = read_extxyz(io.StringIO(_extxyz_prefix(part_path, n_ckpt)))
         except (OSError, ValueError, IndexError) as exc:
             print(f"  resume failed reading {part_path} ({exc}); recomputing")
             kept = []
@@ -500,7 +523,6 @@ def run_nvt_md_resumable(
             write_extxyz(part_path, kept)  # truncate to the checkpointed frames
             frames_written = n_ckpt
             print(f"  resuming {out_path} from frame {frames_written}/{target_frames}")
-    session_start = time.perf_counter()
 
     def session_unit() -> dict[str, Any]:
         """This session's cost unit so far (after MD steps ran)."""
