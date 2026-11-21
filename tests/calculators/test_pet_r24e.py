@@ -36,7 +36,7 @@ class Anisotropic(Calculator):
 @pytest.mark.parametrize("periodic", [False, True])
 def test_orientation_and_element_reference(periodic: bool) -> None:
     atoms = Atoms(
-        "HSi",
+        ["H", "Si"],
         positions=[[0.2, 0.1, 0.4], [1.3, 0.5, 0.8]],
         cell=np.eye(3) * 5 if periodic else None,
         pbc=periodic,
