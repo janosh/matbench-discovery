@@ -55,6 +55,8 @@ The first four complete WBM shards contained 984 matched structures. Of these, 8
 
 On the first five PhononDB materials in an evaluation order fixed independently of prediction errors, mean κ-SRME decreased from 1.700 to 1.328. The error decreased for MgTe, AgI, CdS and CuH and increased from 1.010 to 1.035 for CdO. Two parent predictions encountered imaginary modes. All five R24E spectra passed that check. These materials are additional to the three pilot compounds above. The results cover a subset of each task and do not establish a leaderboard position. [Results and input hashes](pilot-results.json)
 
+Two additional DynaMat systems ran for 4,000 steps (1 ps, 401 predicted frames) in the same CPU environment with seed 0 and 0.25 fs steps. The following are the cloud evaluator's reported values. On picene at 295 K, RDF, ADF and vDOS errors decreased from 8.2124%, 0.1813%, and 12.2606% to 7.9564%, 0.0982%, and 11.8502%. On CsSnI₃ at 500 K, ADF and vDOS errors decreased from 2.5610% and 5.9332% to 2.3648% and 5.8056%. RDF error rose from 7.0676% to 7.2676%. Mean-pressure error rose from 0.1033 to 0.1055 GPa and pressure Wasserstein distance from 0.1049 to 0.1070 GPa, while pressure histogram error decreased from 40.62% to 37.59%. At 1,000 steps on the same Xeon CPU, R24E took 4,387 vs 162 seconds for picene and 6,513 vs 293 seconds for CsSnI₃. The official 17-system, 20 ps MD aggregate remains pending.
+
 ## Data license
 
 MPtrj records are attributed to Bowen Deng, 2023, Materials Project Trajectory Dataset v2. The following MIT grant applies to the redistributed structure and DFT-energy records.
