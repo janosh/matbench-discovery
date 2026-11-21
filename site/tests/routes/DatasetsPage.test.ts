@@ -67,10 +67,10 @@ describe(`Datasets Page`, () => {
         `Models`,
       ])
     }
-    expect(plot.series?.flatMap(({ x }) => x)).toHaveLength(
+    expect(plot.series?.flatMap(({ x }) => [...x])).toHaveLength(
       Object.values(DATASETS).filter(({ n_structures }) => n_structures !== null).length,
     )
-    expect(plot.series?.every(({ y }) => y.every(Number.isFinite))).toBe(true)
+    expect(plot.series?.every(({ y }) => [...y].every(Number.isFinite))).toBe(true)
     expect(plot).toMatchObject({
       color_bar: { title: `Models`, selected_property_key: `n_models` },
       color_scale: { type: { type: `arcsinh`, threshold: 0.25 } },
@@ -182,7 +182,7 @@ describe(`Datasets Page`, () => {
     )
     plot_props().on_axis_change?.(`y`, `n_models`)
     await tick()
-    expect(plot_props().series?.flatMap(({ y }) => y)).toEqual([0])
+    expect(plot_props().series?.flatMap(({ y }) => [...y])).toEqual([0])
   })
 
   it(`syncs controls and sort, handles empty results, and resets only filters`, async () => {
@@ -394,7 +394,7 @@ describe(`Datasets Page`, () => {
         dataset.n_materials != null && (dim === `color` || dataset.n_structures !== null),
     )
     expect(series.map(({ id }) => id)).toEqual(entries.map(([key]) => key))
-    expect(series.flatMap((entry) => entry[series_key])).toEqual(
+    expect(series.flatMap((entry) => [...(entry[series_key] ?? [])])).toEqual(
       entries.map(([, dataset]) => dataset.n_materials),
     )
     if (dim === `color`) expect(plot_props().color_bar?.categories).toBeUndefined()

@@ -61,9 +61,9 @@
             ...(atom_idx === 1 ? { fill_opacity: 0.5 } : {}),
           },
           line_style: {
-            stroke: DFT_REF_COLORS[functional] ?? `gray`,
+            color: DFT_REF_COLORS[functional] ?? `gray`,
             // atom 2 dashed so overlapping FM branches (m1 == m2) stay legible
-            ...(atom_idx === 1 ? { line_dash: `4 3` } : {}),
+            ...(atom_idx === 1 ? { dash: `4 3` } : {}),
           },
         })),
       )

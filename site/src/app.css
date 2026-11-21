@@ -425,8 +425,8 @@ kbd {
   --btn-group-btn-active-bg: var(--strong-tint);
   --btn-group-btn-active-border-color: var(--category-color);
 }
-/* In-plot metric annotation, bottom-right corner (energy/kappa parity plots) */
-.plot-annotation {
+/* Style the metric inside the placement wrapper, leaving positioning to the plot. */
+:where(foreignObject, .plot-annotation) > .plot-annotation {
   position: absolute;
   inset: auto 2em 5em auto;
   padding: 1pt 4pt;

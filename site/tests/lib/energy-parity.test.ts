@@ -78,7 +78,9 @@ it(`renders parity statistics through the plot's automatic annotation placement`
   )
   expect(doc_query(`details`).textContent).toContain(`HTTP 503: parity asset`)
   doc_query<HTMLButtonElement>(`.plot-state button`).click()
-  const badge = await vi.waitFor(() => doc_query(`.annotation .plot-annotation`))
+  const badge = await vi.waitFor(() =>
+    doc_query(`[data-decoration-location] > .plot-annotation`),
+  )
   expect(document.querySelector(`[role="alert"]`)).toBeNull()
   expect(badge.textContent).toContain(`MAE = 150`)
   expect(badge.textContent).toContain(`R2`)
