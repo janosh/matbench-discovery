@@ -2,7 +2,7 @@
 
 R24E shares the conservative PET-OMat-XS v1.0.0 weights across 24 orientations. It averages the energy over the proper tetrahedral group and its spatial inverses. The atomic forces and bulk stress are derivatives of this energy. The fitted energy correction adds one scalar per atom and one reference for its element. It has zero derivative with respect to coordinates and strain. The parent checkpoint is pinned in the model YAML. The elemental references and their training-data hashes are in [frozen-model.json](frozen-model.json).
 
-UPET 0.3.1 already offers rotational averaging with `rotational_average_order` and a configurable batch size on a Lebedev–Laikov grid. R24E specifies a fixed 24-member group and adds composition references fitted on MPtrj. The comparison below uses the same checkpoint in its unaveraged conservative mode as the parent. Performance relative to the native UPET grid has not been measured. [UPET calculator](https://github.com/lab-cosmo/upet)
+UPET 0.3.1 offers rotational averaging with `rotational_average_order` and a configurable batch size on a Lebedev–Laikov grid. R24E uses a fixed 24-member group and adds composition references fitted on MPtrj. On 24 development compositions, the unaveraged parent, the fixed group without offsets, and the native order-1 grid (36 transforms including inversions) had force MAEs of 0.05163, 0.04607 and 0.04608 eV/Å. Their stress MAEs were 0.002430, 0.002377 and 0.002376 eV/Å³. Median CPU times over 48 timed calls per method were 0.0346, 0.381 and 0.634 seconds. Both averages had similar errors on this sample, with the fixed group taking 60% of the native grid's median time. The remaining parent comparisons below use unaveraged conservative PET. [UPET calculator](https://github.com/lab-cosmo/upet)
 
 ## Reproduce the fit
 
@@ -41,9 +41,19 @@ On a fixed 50-structure WBM pilot, both models converged on all structures. Of 3
 | Raw 24-orientation average | 0.2857 | 0.11841 | 0.19215 |
 | R24E | 0.8333 | 0.06792 | 0.14159 |
 
+An earlier, historically exposed WBM diagnostic contained 110 structures and 94 unique prototypes. Element offsets alone changed F1 from 0.462 to 0.500 and MAE from 0.14666 to 0.08454 eV/atom, with false positives rising from 9 to 16. This historical cohort is separate from the 50-structure pilot.
+
+Published ORB-v3 predictions scored 0.9091 F1, 0.02103 eV/atom MAE and 0.05372 eV/atom RMSE on the same 39 prototypes. On the same three phonon materials, published ORB-v3 mean κ-SRME was 0.24624 and R24E's was 0.91428; the runs used different plus/minus displacement conventions. These paired results refer to the published ORB-v3 parent discussed in #417. [ORB-v3 WBM artifact](https://figshare.com/files/66646289) · [ORB-v3 phonon artifact](https://figshare.com/files/66575399) · [Paired results and provenance](pilot-results.json)
+
 On BaTe, BAs and InAs, mean κ-SRME decreased from 1.341 to 0.914. Both models substantially underestimated BAs conductivity. InAs had imaginary modes with the parent and a mode-resolved κ-SRME of 0.810 with R24E.
 
 Two 0.25 ps NVT trajectories gave mixed observable changes. For anthracene the radial-distribution error increased from 10.236 to 11.102 and the angular-distribution error decreased from 0.235 to 0.231. For MAPbBr₃ the mean-pressure error decreased from 0.378 to 0.369 GPa, while the pressure-distribution Wasserstein distance increased from 0.436 to 0.443 GPa. R24E took 12.7 and 15.4 times the parent CPU runtime for these two systems. The full task calls for 17 trajectories of 20 ps. The official model metadata is pending.
+
+## Partial results from the standard evaluations
+
+The first four complete WBM shards contained 984 matched structures. Of these, 806 were unique prototypes and 119 were DFT-stable. Both models converged on 980 of the 984 structures, and all 984 yielded scorable predictions. On the 806 prototypes, PET found 39 stable materials with 29 false positives. R24E found 79 with 71 false positives. Their F1 scores were 0.417 and 0.587. Hull-distance MAE decreased from 0.1230 to 0.0676 eV/atom and RMSE from 0.2200 to 0.1617 eV/atom. The elemental offsets alone gave F1 0.579 and MAE 0.0731 eV/atom. One of the 984 materials also appeared in a historical pilot. Omitting it leaves both F1 scores unchanged.
+
+On the first five PhononDB materials in an evaluation order fixed independently of prediction errors, mean κ-SRME decreased from 1.700 to 1.328. The error decreased for MgTe, AgI, CdS and CuH and increased from 1.010 to 1.035 for CdO. Two parent predictions encountered imaginary modes. All five R24E spectra passed that check. These materials are additional to the three pilot compounds above. The results cover a subset of each task and do not establish a leaderboard position. [Results and input hashes](pilot-results.json)
 
 ## Data license
 

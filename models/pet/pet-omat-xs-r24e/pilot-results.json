@@ -788,6 +788,147 @@
       "RMSE": 0.053720549475014076
     }
   },
+  "historical110": {
+    "scope": "Historical diagnostics on previously examined WBM materials. These are parent relaxations with the composition-only term, distinct from R24E predictions.",
+    "material_ids": [
+      "wbm-1-8121",
+      "wbm-1-19415",
+      "wbm-2-37450",
+      "wbm-2-18431",
+      "wbm-3-12540",
+      "wbm-3-35954",
+      "wbm-4-4614",
+      "wbm-4-20735",
+      "wbm-5-22294",
+      "wbm-5-6797",
+      "wbm-1-46509",
+      "wbm-1-56883",
+      "wbm-1-2244",
+      "wbm-1-45575",
+      "wbm-1-43534",
+      "wbm-1-2598",
+      "wbm-1-8642",
+      "wbm-1-43778",
+      "wbm-1-40936",
+      "wbm-1-44668",
+      "wbm-1-59602",
+      "wbm-1-486",
+      "wbm-1-57046",
+      "wbm-1-42208",
+      "wbm-1-35341",
+      "wbm-1-45872",
+      "wbm-1-1327",
+      "wbm-1-28239",
+      "wbm-1-56349",
+      "wbm-1-13721",
+      "wbm-2-26314",
+      "wbm-2-20824",
+      "wbm-2-8902",
+      "wbm-2-14054",
+      "wbm-2-39280",
+      "wbm-2-40493",
+      "wbm-2-29871",
+      "wbm-2-26363",
+      "wbm-2-32242",
+      "wbm-2-12831",
+      "wbm-2-12700",
+      "wbm-2-2644",
+      "wbm-2-41776",
+      "wbm-2-3685",
+      "wbm-2-7127",
+      "wbm-2-19710",
+      "wbm-2-37669",
+      "wbm-2-28064",
+      "wbm-2-5754",
+      "wbm-2-40657",
+      "wbm-3-46225",
+      "wbm-3-65979",
+      "wbm-3-8833",
+      "wbm-3-37122",
+      "wbm-3-11645",
+      "wbm-3-41903",
+      "wbm-3-18338",
+      "wbm-3-35801",
+      "wbm-3-62480",
+      "wbm-3-16288",
+      "wbm-3-5098",
+      "wbm-3-19118",
+      "wbm-3-74460",
+      "wbm-3-23355",
+      "wbm-3-54652",
+      "wbm-3-30172",
+      "wbm-3-12791",
+      "wbm-3-65370",
+      "wbm-3-65700",
+      "wbm-3-28486",
+      "wbm-4-4300",
+      "wbm-4-24477",
+      "wbm-4-18868",
+      "wbm-4-26994",
+      "wbm-4-1825",
+      "wbm-4-24695",
+      "wbm-4-30477",
+      "wbm-4-2992",
+      "wbm-4-14452",
+      "wbm-4-35793",
+      "wbm-4-23630",
+      "wbm-4-7367",
+      "wbm-4-4201",
+      "wbm-4-9287",
+      "wbm-4-25562",
+      "wbm-4-11926",
+      "wbm-4-11366",
+      "wbm-4-28714",
+      "wbm-4-39873",
+      "wbm-4-35653",
+      "wbm-5-5374",
+      "wbm-5-6924",
+      "wbm-5-11913",
+      "wbm-5-4573",
+      "wbm-5-21536",
+      "wbm-5-19569",
+      "wbm-5-23060",
+      "wbm-5-8838",
+      "wbm-5-21684",
+      "wbm-5-18822",
+      "wbm-5-18034",
+      "wbm-5-9679",
+      "wbm-5-17769",
+      "wbm-5-3420",
+      "wbm-5-12117",
+      "wbm-5-22545",
+      "wbm-5-12958",
+      "wbm-5-14588",
+      "wbm-5-19940",
+      "wbm-5-3186"
+    ],
+    "unique_prototypes": {
+      "parent": {
+        "n": 94,
+        "finite": 94,
+        "true_stable": 11,
+        "TP": 6,
+        "FN": 5,
+        "FP": 9,
+        "TN": 74,
+        "F1": 0.4615384615384615,
+        "MAE": 0.1466595744680851,
+        "RMSE": 0.29108549595857025
+      },
+      "reference_offsets_only": {
+        "n": 94,
+        "finite": 94,
+        "true_stable": 11,
+        "TP": 9,
+        "FN": 2,
+        "FP": 16,
+        "TN": 67,
+        "F1": 0.5,
+        "MAE": 0.08454255319148937,
+        "RMSE": 0.18248914278400938
+      }
+    }
+  },
   "phonons": {
     "mp-1000": {
       "parent": {
@@ -898,6 +1039,373 @@
         "reference_frames_used": 501,
         "prediction_frames_used": 101,
         "trajectory_sha256": "2697b6177bda8442989e7c2ae9c3f91e6b99d838f6dc77c45637040d32a32e4a"
+      }
+    }
+  },
+  "partial_production": {
+    "discovery": {
+      "scope": "Prefix of complete WBM shards. No model tuning or official leaderboard score.",
+      "n_shards": 4,
+      "n_ids": 984,
+      "overlap_with_prior_pilot_ids": [
+        "wbm-2-51600"
+      ],
+      "sources": {
+        "parent": {
+          "shard-0000-of-1024.jsonl": "ff8d106dc6e83b66230dbd73dc00e6fdc32d6d8706cd6996b6224372fbe941cf",
+          "shard-0001-of-1024.jsonl": "4b0f99264a862f6b8fe11671c6fe432b019db88b576bb2c3883b5067b1bbd97a",
+          "shard-0002-of-1024.jsonl": "6f05bead7d73869a605ababd64175ea9829e69b3e7b1bcf93c6edf84ddd1dd2d",
+          "shard-0003-of-1024.jsonl": "20eb260dc9b79f2bbb874a984f4b750e7176597e0b64dbe695d9caa6997237e0"
+        },
+        "r24e": {
+          "shard-0000-of-1024.jsonl": "1e88d9c6bc24eb4998ff2474f885a09be29ee0620f7c91a5952e1a481d9fcea0",
+          "shard-0001-of-1024.jsonl": "b7fee6ed9ddac01a747dedfc5c4b32acadaad117ce882fc662d6c3f6b8c32ad6",
+          "shard-0002-of-1024.jsonl": "6bd9dcd95f08d3bf56d5e8740a38ec31f0c3e597083d2df78770cfa44f1f7531",
+          "shard-0003-of-1024.jsonl": "2c07fd7f3f92563d44a8d924aa61b30a65719a33ad759ceab762cb43620db67f"
+        }
+      },
+      "summary": {
+        "parent": {
+          "all": {
+            "n": 984,
+            "finite": 984,
+            "true_stable": 173,
+            "TP": 63,
+            "FN": 110,
+            "FP": 39,
+            "TN": 772,
+            "F1": 0.4581818181818182,
+            "MAE": 0.1256910569105691,
+            "RMSE": 0.22983439159746222
+          },
+          "unique": {
+            "n": 806,
+            "finite": 806,
+            "true_stable": 119,
+            "TP": 39,
+            "FN": 80,
+            "FP": 29,
+            "TN": 658,
+            "F1": 0.41711229946524064,
+            "MAE": 0.12302853598014889,
+            "RMSE": 0.22003098980922392
+          },
+          "unique_excluding_prior_pilot_ids": {
+            "n": 805,
+            "finite": 805,
+            "true_stable": 119,
+            "TP": 39,
+            "FN": 80,
+            "FP": 29,
+            "TN": 657,
+            "F1": 0.41711229946524064,
+            "MAE": 0.12309192546583851,
+            "RMSE": 0.2201529874614441
+          },
+          "converged": 980,
+          "compatibility_failed": 0
+        },
+        "r24e": {
+          "all": {
+            "n": 984,
+            "finite": 984,
+            "true_stable": 173,
+            "TP": 121,
+            "FN": 52,
+            "FP": 102,
+            "TN": 709,
+            "F1": 0.6111111111111112,
+            "MAE": 0.06817073170731708,
+            "RMSE": 0.16421971203585217
+          },
+          "unique": {
+            "n": 806,
+            "finite": 806,
+            "true_stable": 119,
+            "TP": 79,
+            "FN": 40,
+            "FP": 71,
+            "TN": 616,
+            "F1": 0.5873605947955389,
+            "MAE": 0.06757444168734492,
+            "RMSE": 0.16174111977571667
+          },
+          "unique_excluding_prior_pilot_ids": {
+            "n": 805,
+            "finite": 805,
+            "true_stable": 119,
+            "TP": 79,
+            "FN": 40,
+            "FP": 71,
+            "TN": 615,
+            "F1": 0.5873605947955389,
+            "MAE": 0.0676136645962733,
+            "RMSE": 0.16183657503368495
+          },
+          "converged": 980,
+          "compatibility_failed": 0
+        },
+        "offsets_only": {
+          "all": {
+            "n": 984,
+            "finite": 984,
+            "true_stable": 173,
+            "TP": 121,
+            "FN": 52,
+            "FP": 108,
+            "TN": 703,
+            "F1": 0.6019900497512438,
+            "MAE": 0.07278861788617885,
+            "RMSE": 0.16985016711293718
+          },
+          "unique": {
+            "n": 806,
+            "finite": 806,
+            "true_stable": 119,
+            "TP": 79,
+            "FN": 40,
+            "FP": 75,
+            "TN": 612,
+            "F1": 0.5787545787545787,
+            "MAE": 0.07310049627791565,
+            "RMSE": 0.16866985460098263
+          },
+          "unique_excluding_prior_pilot_ids": {
+            "n": 805,
+            "finite": 805,
+            "true_stable": 119,
+            "TP": 79,
+            "FN": 40,
+            "FP": 75,
+            "TN": 611,
+            "F1": 0.5787545787545787,
+            "MAE": 0.07314782608695652,
+            "RMSE": 0.16877007771057873
+          },
+          "converged": 980,
+          "compatibility_failed": 0
+        },
+        "rotations_only": {
+          "all": {
+            "n": 984,
+            "finite": 984,
+            "true_stable": 173,
+            "TP": 63,
+            "FN": 110,
+            "FP": 38,
+            "TN": 773,
+            "F1": 0.45985401459854014,
+            "MAE": 0.12420731707317073,
+            "RMSE": 0.22801044317118888
+          },
+          "unique": {
+            "n": 806,
+            "finite": 806,
+            "true_stable": 119,
+            "TP": 39,
+            "FN": 80,
+            "FP": 28,
+            "TN": 659,
+            "F1": 0.4193548387096774,
+            "MAE": 0.12081637717121588,
+            "RMSE": 0.21743113338882583
+          },
+          "unique_excluding_prior_pilot_ids": {
+            "n": 805,
+            "finite": 805,
+            "true_stable": 119,
+            "TP": 39,
+            "FN": 80,
+            "FP": 28,
+            "TN": 658,
+            "F1": 0.4193548387096774,
+            "MAE": 0.1208782608695652,
+            "RMSE": 0.21755175010823352
+          },
+          "converged": 980,
+          "compatibility_failed": 0
+        }
+      }
+    },
+    "phonon_prefix": {
+      "scope": "First five completed matched materials in the frozen production order, distinct from the three pilot compounds.",
+      "rows": {
+        "mp-1039": {
+          "parent": {
+            "metrics": {
+              "srme": 2.0,
+              "sre": 2.0,
+              "kappa_tot_avg": null,
+              "true_kappa_tot_avg": 12.9729630656
+            },
+            "censored": true,
+            "imaginary": true,
+            "sha256": "438440db5c903e9c8e71ee57cc0dbe20a94e35d9b60f24ba3f857b94a0ac1aac",
+            "sidecar_sha256": {
+              "phonons": "457c0cb481dc781125e21d3be4636c8a2f087bf7a85c9176ddfde0989643791d",
+              "forces": "3733bd27c33d48843335c187dcc5f3eb6f770d52b345c8de9f0c738771bcba73"
+            }
+          },
+          "r24e": {
+            "metrics": {
+              "srme": 1.6265993077507477,
+              "sre": 1.6157210713414702,
+              "kappa_tot_avg": 1.378766848994208,
+              "true_kappa_tot_avg": 12.9729630656
+            },
+            "censored": false,
+            "imaginary": false,
+            "sha256": "1abe9d27b1b3e6e508dba0dcfd2c5b2e79ca496b20609a37a2708f6a01d8dae7",
+            "sidecar_sha256": {
+              "phonons": "706af522548c15cb6dcbf9952971e7aae03eeff7128a270b4f5e2e044512559b",
+              "forces": "947afee285608eb2055c80af6218ebfa61693f21af51bb40f385947a53f75379"
+            }
+          }
+        },
+        "mp-22925": {
+          "parent": {
+            "metrics": {
+              "srme": 1.6296149887162716,
+              "sre": 1.6119119170331333,
+              "kappa_tot_avg": 0.25290262710189254,
+              "true_kappa_tot_avg": 2.3537491945
+            },
+            "censored": false,
+            "imaginary": false,
+            "sha256": "93e98acbed18e92784a4672468c65fc8beaca93f4edd38e7f6761851d1440cdc",
+            "sidecar_sha256": {
+              "phonons": "3ee0fc163742a4d7c26b9c3fe3abefcef2f9178deaad0796a8a03d4d9717091b",
+              "forces": "9b0e223ae7d605345a088d94077c9ef79aee0e3c348b9e4b6e29c78763bcb26b"
+            }
+          },
+          "r24e": {
+            "metrics": {
+              "srme": 1.214221761282062,
+              "sre": 1.1337935890469972,
+              "kappa_tot_avg": 0.6505957026580635,
+              "true_kappa_tot_avg": 2.3537491945
+            },
+            "censored": false,
+            "imaginary": false,
+            "sha256": "03fae27252e0260e9957bd6c618fee1246b1e653e8d2d77aa5b7092668ba8612",
+            "sidecar_sha256": {
+              "phonons": "7d9d7e0545199eafccec5f09289b43daea013ec14048b8d0a9f4ab772eaba339",
+              "forces": "70af3c9cae801be784b7a353bcd84605202d55f430a9330bcc7f802fc23dee70"
+            }
+          }
+        },
+        "mp-1132": {
+          "parent": {
+            "metrics": {
+              "srme": 1.0096380504727815,
+              "sre": 0.964344857839367,
+              "kappa_tot_avg": 2.766855082178772,
+              "true_kappa_tot_avg": 7.9195402999999995
+            },
+            "censored": false,
+            "imaginary": false,
+            "sha256": "26c15b0b11788ef81ce35976961a6d0cbd7e45e5ff008f49a6cef4af62f2639b",
+            "sidecar_sha256": {
+              "phonons": "5dc2d8627b790cc979fdf8434bb65fb71baf45d6ce32b93fd809589355fe7eaa",
+              "forces": "5e63419bdabc9d4a87b98610c8f906c8893fe8ea12971ef72c5ad6d4aa2ac56e"
+            }
+          },
+          "r24e": {
+            "metrics": {
+              "srme": 1.035545299088558,
+              "sre": 0.9949634436279983,
+              "kappa_tot_avg": 2.6576042282237364,
+              "true_kappa_tot_avg": 7.9195402999999995
+            },
+            "censored": false,
+            "imaginary": false,
+            "sha256": "0579946553a4b9dd8cc6223ec2c015864b2adce79214675bbc9b68632bc43af5",
+            "sidecar_sha256": {
+              "phonons": "f3556089812ba61abe271941beac9b06cba834672a0bac8714dc20825cc0915f",
+              "forces": "dec612f8fa04489d6f6ebd0383b5203e41fd4b0ce380f7120e2d694e1ff31559"
+            }
+          }
+        },
+        "mp-672": {
+          "parent": {
+            "metrics": {
+              "srme": 2.0,
+              "sre": 2.0,
+              "kappa_tot_avg": null,
+              "true_kappa_tot_avg": 19.4747065905
+            },
+            "censored": true,
+            "imaginary": true,
+            "sha256": "bc44f449b1487661cfe32a4c2fd256c8ffbaf8be2e8682b178b2e8ab5fea8b75",
+            "sidecar_sha256": {
+              "phonons": "f2cc6bb67e67ad7c797c4331d873d70557b9b502e6ea3029a2f2841d6481e3d9",
+              "forces": "0002312c1d6eb16f1948d1bd61199c2a114ef4af8f21d6e7cfc26c353b072bcb"
+            }
+          },
+          "r24e": {
+            "metrics": {
+              "srme": 1.093050011717366,
+              "sre": 1.08381918091419,
+              "kappa_tot_avg": 5.78579728213857,
+              "true_kappa_tot_avg": 19.4747065905
+            },
+            "censored": false,
+            "imaginary": false,
+            "sha256": "3218aa544419a2d6785addbf6c7e739544aaaad12756c4a7d0ede129c5e4bc66",
+            "sidecar_sha256": {
+              "phonons": "c3e2de118d511121292fbac6ddd411b253764255113d77e713538345e6f8c32b",
+              "forces": "d83d2a2fbc8e879629f29396694900d9f63c52129039af8cb3d9a5f469f9d2fe"
+            }
+          }
+        },
+        "no-mp-2": {
+          "parent": {
+            "metrics": {
+              "srme": 1.861110842030257,
+              "sre": 1.8454906011756995,
+              "kappa_tot_avg": 0.5953036701404099,
+              "true_kappa_tot_avg": 14.8161515467
+            },
+            "censored": false,
+            "imaginary": false,
+            "sha256": "bcc8c576f58d935cfab251c339666824fe5b9e52ed753cc15c025942a949716b",
+            "sidecar_sha256": {
+              "phonons": "9a385c1fd3d921693ab533fffe9d5efe24e97c01e50f9d70469623e1ae1e7ee4",
+              "forces": "21b5fd4ab0012617b0569aebebc9846e5f9943277d8d1c75892f238daad46e99"
+            }
+          },
+          "r24e": {
+            "metrics": {
+              "srme": 1.6723941904221769,
+              "sre": 1.4471244471106564,
+              "kappa_tot_avg": 2.3763249931229167,
+              "true_kappa_tot_avg": 14.8161515467
+            },
+            "censored": false,
+            "imaginary": false,
+            "sha256": "8712a683bda8e163777055f71cbabcafffa16b6d0ac299118bbc579da2717f30",
+            "sidecar_sha256": {
+              "phonons": "74d62dcd82e79874a4fe99b6e4bf505adf0c0266dd30d2e125dccf4a993eb500",
+              "forces": "b94097656d4fc8952250dfc590681386ad564e5311268f10a9cddf9bf5634412"
+            }
+          }
+        }
+      },
+      "summary": {
+        "parent": {
+          "mean_srme": 1.7000727762438619,
+          "n": 5,
+          "censored": 2,
+          "imaginary": 2,
+          "runner_errors": 0
+        },
+        "r24e": {
+          "mean_srme": 1.328362114052182,
+          "n": 5,
+          "censored": 0,
+          "imaginary": 0,
+          "runner_errors": 0
+        }
       }
     }
   }
