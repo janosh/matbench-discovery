@@ -1,0 +1,533 @@
+{
+  "generated_utc": "2026-11-20T22:33:06.105357+00:00",
+  "scope": "Two independently selected DynaMat systems. No 17-system aggregate or ranking.",
+  "reference": {
+    "url": "https://figshare.com/files/66309926",
+    "md5": "09d32104888b9639599a15d3ecb124cb"
+  },
+  "protocol": {
+    "ensemble": "ASE NoseHooverChainNVT",
+    "seed": 0,
+    "time_step_fs": 0.25,
+    "record_interval": 10,
+    "conservative": true,
+    "device": "cpu",
+    "dtype": "float32"
+  },
+  "runs": [
+    {
+      "architecture": "x86_64",
+      "checkpoint_sha256": "5f71703db5b8eff42fe7ba1fb0498351b609dbc2a2ee0c413fc88edc0571af4c",
+      "commit": "18bae3d0b7d26a0e3254cb5e3242a0f83072b282",
+      "evaluated_prediction_frames": 101,
+      "evaluated_prediction_fs": 250.0,
+      "evaluated_reference_frames": 251,
+      "evaluated_reference_fs": 250.0,
+      "finish_unix": 1795192898.8011618,
+      "frames": 101,
+      "model": "parent",
+      "n_atoms": 135,
+      "official_metrics": {
+        "adf_error": 3.4696947686880537,
+        "pressure_error": 63.863358447398525,
+        "pressure_mae": 0.1166011189065641,
+        "pressure_wasserstein": 0.12215774798067207,
+        "rdf_error": 9.882406237128883,
+        "vdos_error": 5.2637168817156095
+      },
+      "reference_dt_fs": 1.0,
+      "run_info": {
+        "acceleration": [],
+        "completed_at": "2026-11-20T16:41:18.510683+00:00",
+        "cost_source": "runner",
+        "device": "cpu",
+        "dtype": "float32",
+        "hardware": "INTEL(R) XEON(R) PLATINUM 8573C",
+        "load_time_sec": 0.87,
+        "max_rss_gb": 1.331,
+        "n_processes": 1,
+        "nvt_params": {
+          "record_interval": 10,
+          "seed": 0,
+          "temperature_kelvin": 500.0,
+          "thermostat_time_scale_fs": 25.0,
+          "time_step_fs": 0.25
+        },
+        "run_time_sec": 293.23,
+        "versions": {
+          "ase": "3.29.0",
+          "metatomic-ase": "0.1.4",
+          "numpy": "2.5.5",
+          "scipy": "1.18.1",
+          "torch": "2.14.1+cpu",
+          "upet": "0.3.1"
+        }
+      },
+      "seed": 0,
+      "start_unix": 1795192583.8627167,
+      "step_fs": 0.25,
+      "steps": 1000,
+      "stride": 10,
+      "system": "CsSnI3_500K_Ivor_VASP",
+      "temperature_K": 500.0,
+      "torch_threads": 2,
+      "trajectory_sha256": "7421a124f84812ac9338c58bf9991190790f8cc97cb813ffaccaf2a84f5e0a9a",
+      "weights_sha256": "64235c15f9351577db36068a833c36ba2bc0682f77121345926668c58c582299"
+    },
+    {
+      "architecture": "x86_64",
+      "checkpoint_sha256": "be539a9a1453ce770aeaa1a988c26b0754d9651b3f5d87bdc70525a448c42bc8",
+      "commit": "18bae3d0b7d26a0e3254cb5e3242a0f83072b282",
+      "evaluated_prediction_frames": 401,
+      "evaluated_prediction_fs": 1000.0,
+      "evaluated_reference_frames": 1001,
+      "evaluated_reference_fs": 1000.0,
+      "finish_unix": 1795199959.9167988,
+      "frames": 401,
+      "model": "parent",
+      "n_atoms": 135,
+      "official_metrics": {
+        "adf_error": 2.5609548556017367,
+        "pressure_error": 40.621473289802466,
+        "pressure_mae": 0.10332376961169731,
+        "pressure_wasserstein": 0.1048606995460788,
+        "rdf_error": 7.06755565965204,
+        "vdos_error": 5.93321829063405
+      },
+      "reference_dt_fs": 1.0,
+      "run_info": {
+        "acceleration": [],
+        "completed_at": "2026-11-20T18:38:16.831627+00:00",
+        "cost_source": "runner",
+        "device": "cpu",
+        "dtype": "float32",
+        "hardware": "INTEL(R) XEON(R) PLATINUM 8573C",
+        "load_time_sec": 3.0,
+        "max_rss_gb": 1.331,
+        "n_processes": 2,
+        "nvt_params": {
+          "record_interval": 10,
+          "seed": 0,
+          "temperature_kelvin": 500.0,
+          "thermostat_time_scale_fs": 25.0,
+          "time_step_fs": 0.25
+        },
+        "run_time_sec": 959.02,
+        "versions": {
+          "ase": "3.29.0",
+          "metatomic-ase": "0.1.4",
+          "numpy": "2.5.5",
+          "scipy": "1.18.1",
+          "torch": "2.14.1+cpu",
+          "upet": "0.3.1"
+        }
+      },
+      "seed": 0,
+      "start_unix": 1795199227.3218017,
+      "step_fs": 0.25,
+      "steps": 4000,
+      "stride": 10,
+      "system": "CsSnI3_500K_Ivor_VASP",
+      "temperature_K": 500.0,
+      "torch_threads": 1,
+      "trajectory_sha256": "71c87066307c7d83292ade65d71be936fa949d0c6c94379a12f7973aa64af755",
+      "weights_sha256": "64235c15f9351577db36068a833c36ba2bc0682f77121345926668c58c582299"
+    },
+    {
+      "architecture": "x86_64",
+      "checkpoint_sha256": "dabb85942c9f6cb19b67dc4d0a0269342e2eea489d6e3d8593327f3a39cf8ad6",
+      "commit": "18bae3d0b7d26a0e3254cb5e3242a0f83072b282",
+      "evaluated_prediction_frames": 101,
+      "evaluated_prediction_fs": 250.0,
+      "evaluated_reference_frames": 251,
+      "evaluated_reference_fs": 250.0,
+      "finish_unix": 1795199197.4002306,
+      "frames": 101,
+      "model": "r24e",
+      "n_atoms": 135,
+      "official_metrics": {
+        "adf_error": 3.4118587390135304,
+        "pressure_error": 64.4668849355055,
+        "pressure_mae": 0.11452307819772689,
+        "pressure_wasserstein": 0.12033487174578168,
+        "rdf_error": 10.274663247129402,
+        "vdos_error": 5.07333664388808
+      },
+      "reference_dt_fs": 1.0,
+      "run_info": {
+        "acceleration": [],
+        "completed_at": "2026-11-20T18:26:25.109915+00:00",
+        "cost_source": "runner",
+        "device": "cpu",
+        "dtype": "float32",
+        "hardware": "INTEL(R) XEON(R) PLATINUM 8573C",
+        "load_time_sec": 10.61,
+        "max_rss_gb": 1.446,
+        "n_processes": 2,
+        "nvt_params": {
+          "record_interval": 10,
+          "seed": 0,
+          "temperature_kelvin": 500.0,
+          "thermostat_time_scale_fs": 25.0,
+          "time_step_fs": 0.25
+        },
+        "run_time_sec": 6512.88,
+        "versions": {
+          "ase": "3.29.0",
+          "metatomic-ase": "0.1.4",
+          "numpy": "2.5.5",
+          "scipy": "1.18.1",
+          "torch": "2.14.1+cpu",
+          "upet": "0.3.1"
+        }
+      },
+      "seed": 0,
+      "start_unix": 1795193322.2731862,
+      "step_fs": 0.25,
+      "steps": 1000,
+      "stride": 10,
+      "system": "CsSnI3_500K_Ivor_VASP",
+      "temperature_K": 500.0,
+      "torch_threads": 1,
+      "trajectory_sha256": "65255c6d1e2338e7b79d5ba90bcdaa3ec4f9bb796632aeff5e9c958ad981eaba",
+      "weights_sha256": "64235c15f9351577db36068a833c36ba2bc0682f77121345926668c58c582299"
+    },
+    {
+      "architecture": "x86_64",
+      "checkpoint_sha256": "29f9e987da02543751439a5bfd8bcc8a41cc5fae45f48e34256896205182195a",
+      "commit": "18bae3d0b7d26a0e3254cb5e3242a0f83072b282",
+      "evaluated_prediction_frames": 401,
+      "evaluated_prediction_fs": 1000.0,
+      "evaluated_reference_frames": 1001,
+      "evaluated_reference_fs": 1000.0,
+      "finish_unix": 1795213781.525178,
+      "frames": 401,
+      "model": "r24e",
+      "n_atoms": 135,
+      "official_metrics": {
+        "adf_error": 2.3647827855818884,
+        "pressure_error": 37.5935784913341,
+        "pressure_mae": 0.10549373337651469,
+        "pressure_wasserstein": 0.10698126976891957,
+        "rdf_error": 7.2676051236971535,
+        "vdos_error": 5.805572221548228
+      },
+      "reference_dt_fs": 1.0,
+      "run_info": {
+        "acceleration": [],
+        "completed_at": "2026-11-20T22:28:59.914672+00:00",
+        "cost_source": "runner",
+        "device": "cpu",
+        "dtype": "float32",
+        "hardware": "INTEL(R) XEON(R) PLATINUM 8573C",
+        "load_time_sec": 12.81,
+        "max_rss_gb": 1.446,
+        "n_processes": 3,
+        "nvt_params": {
+          "record_interval": 10,
+          "seed": 0,
+          "temperature_kelvin": 500.0,
+          "thermostat_time_scale_fs": 25.0,
+          "time_step_fs": 0.25
+        },
+        "run_time_sec": 21023.33,
+        "versions": {
+          "ase": "3.29.0",
+          "metatomic-ase": "0.1.4",
+          "numpy": "2.5.5",
+          "scipy": "1.18.1",
+          "torch": "2.14.1+cpu",
+          "upet": "0.3.1"
+        }
+      },
+      "seed": 0,
+      "start_unix": 1795199225.4534953,
+      "step_fs": 0.25,
+      "steps": 4000,
+      "stride": 10,
+      "system": "CsSnI3_500K_Ivor_VASP",
+      "temperature_K": 500.0,
+      "torch_threads": 1,
+      "trajectory_sha256": "c2b70ace13dfbee99239096eb13eaa166ca7c50459a6d8300e301e9fd343813c",
+      "weights_sha256": "64235c15f9351577db36068a833c36ba2bc0682f77121345926668c58c582299"
+    },
+    {
+      "architecture": "x86_64",
+      "checkpoint_sha256": "f42aa52dcc6d1c866a48fd7d767edc4535a065ee5dfa16edd78c41b0eeabf0da",
+      "commit": "18bae3d0b7d26a0e3254cb5e3242a0f83072b282",
+      "evaluated_prediction_frames": 101,
+      "evaluated_prediction_fs": 250.0,
+      "evaluated_reference_frames": 501,
+      "evaluated_reference_fs": 250.0,
+      "finish_unix": 1795192562.3071353,
+      "frames": 101,
+      "model": "parent",
+      "n_atoms": 72,
+      "official_metrics": {
+        "adf_error": 0.15457257466868232,
+        "pressure_error": null,
+        "pressure_mae": null,
+        "pressure_wasserstein": null,
+        "rdf_error": 11.212735235938569,
+        "vdos_error": 9.762799012446209
+      },
+      "reference_dt_fs": 0.5,
+      "run_info": {
+        "acceleration": [],
+        "completed_at": "2026-11-20T16:35:56.753116+00:00",
+        "cost_source": "runner",
+        "device": "cpu",
+        "dtype": "float32",
+        "hardware": "INTEL(R) XEON(R) PLATINUM 8573C",
+        "load_time_sec": 1.3,
+        "max_rss_gb": 1.298,
+        "n_processes": 1,
+        "nvt_params": {
+          "record_interval": 10,
+          "seed": 0,
+          "temperature_kelvin": 295.0,
+          "thermostat_time_scale_fs": 25.0,
+          "time_step_fs": 0.25
+        },
+        "run_time_sec": 161.51,
+        "versions": {
+          "ase": "3.29.0",
+          "metatomic-ase": "0.1.4",
+          "numpy": "2.5.5",
+          "scipy": "1.18.1",
+          "torch": "2.14.1+cpu",
+          "upet": "0.3.1"
+        }
+      },
+      "seed": 0,
+      "start_unix": 1795192393.6444414,
+      "step_fs": 0.25,
+      "steps": 1000,
+      "stride": 10,
+      "system": "picene_295K_Sharma_S",
+      "temperature_K": 295.0,
+      "torch_threads": 2,
+      "trajectory_sha256": "af5b601423a635c5f634e672f525775ec443dd53e297cb89e67f056666d523e3",
+      "weights_sha256": "64235c15f9351577db36068a833c36ba2bc0682f77121345926668c58c582299"
+    },
+    {
+      "architecture": "x86_64",
+      "checkpoint_sha256": "65da74a0fb878aa0f74d8a2a7fc1ae5fe7833ee1a86a58d794b66825f34b491e",
+      "commit": "18bae3d0b7d26a0e3254cb5e3242a0f83072b282",
+      "evaluated_prediction_frames": 401,
+      "evaluated_prediction_fs": 1000.0,
+      "evaluated_reference_frames": 2001,
+      "evaluated_reference_fs": 1000.0,
+      "finish_unix": 1795198125.2535667,
+      "frames": 401,
+      "model": "parent",
+      "n_atoms": 72,
+      "official_metrics": {
+        "adf_error": 0.1813052237753883,
+        "pressure_error": null,
+        "pressure_mae": null,
+        "pressure_wasserstein": null,
+        "rdf_error": 8.212435280620577,
+        "vdos_error": 12.260574715429788
+      },
+      "reference_dt_fs": 0.5,
+      "run_info": {
+        "acceleration": [],
+        "completed_at": "2026-11-20T18:08:22.175995+00:00",
+        "cost_source": "runner",
+        "device": "cpu",
+        "dtype": "float32",
+        "hardware": "INTEL(R) XEON(R) PLATINUM 8573C",
+        "load_time_sec": 2.97,
+        "max_rss_gb": 1.298,
+        "n_processes": 2,
+        "nvt_params": {
+          "record_interval": 10,
+          "seed": 0,
+          "temperature_kelvin": 295.0,
+          "thermostat_time_scale_fs": 25.0,
+          "time_step_fs": 0.25
+        },
+        "run_time_sec": 874.95,
+        "versions": {
+          "ase": "3.29.0",
+          "metatomic-ase": "0.1.4",
+          "numpy": "2.5.5",
+          "scipy": "1.18.1",
+          "torch": "2.14.1+cpu",
+          "upet": "0.3.1"
+        }
+      },
+      "seed": 0,
+      "start_unix": 1795197386.602058,
+      "step_fs": 0.25,
+      "steps": 4000,
+      "stride": 10,
+      "system": "picene_295K_Sharma_S",
+      "temperature_K": 295.0,
+      "torch_threads": 1,
+      "trajectory_sha256": "d36d857de0a2e631e4e4666ad3ebc503d1703e5e6eaaeb9d92dfbccd2ae0f05e",
+      "weights_sha256": "64235c15f9351577db36068a833c36ba2bc0682f77121345926668c58c582299"
+    },
+    {
+      "architecture": "x86_64",
+      "checkpoint_sha256": "e13ce699354e14e25f85ba5084c5429fa7046919f35ac776f1a17d2cd439c479",
+      "commit": "18bae3d0b7d26a0e3254cb5e3242a0f83072b282",
+      "evaluated_prediction_frames": 101,
+      "evaluated_prediction_fs": 250.0,
+      "evaluated_reference_frames": 501,
+      "evaluated_reference_fs": 250.0,
+      "finish_unix": 1795197310.5387053,
+      "frames": 101,
+      "model": "r24e",
+      "n_atoms": 72,
+      "official_metrics": {
+        "adf_error": 0.12995909741434172,
+        "pressure_error": null,
+        "pressure_mae": null,
+        "pressure_wasserstein": null,
+        "rdf_error": 11.641916427730727,
+        "vdos_error": 9.83611526986177
+      },
+      "reference_dt_fs": 0.5,
+      "run_info": {
+        "acceleration": [],
+        "completed_at": "2026-11-20T17:55:04.597133+00:00",
+        "cost_source": "runner",
+        "device": "cpu",
+        "dtype": "float32",
+        "hardware": "INTEL(R) XEON(R) PLATINUM 8573C",
+        "load_time_sec": 3.24,
+        "max_rss_gb": 1.673,
+        "n_processes": 3,
+        "nvt_params": {
+          "record_interval": 10,
+          "seed": 0,
+          "temperature_kelvin": 295.0,
+          "thermostat_time_scale_fs": 25.0,
+          "time_step_fs": 0.25
+        },
+        "run_time_sec": 4386.69,
+        "versions": {
+          "ase": "3.29.0",
+          "metatomic-ase": "0.1.4",
+          "numpy": "2.5.5",
+          "scipy": "1.18.1",
+          "torch": "2.14.1+cpu",
+          "upet": "0.3.1"
+        }
+      },
+      "seed": 0,
+      "start_unix": 1795197137.1142776,
+      "step_fs": 0.25,
+      "steps": 1000,
+      "stride": 10,
+      "system": "picene_295K_Sharma_S",
+      "temperature_K": 295.0,
+      "torch_threads": 1,
+      "trajectory_sha256": "da804c3d03e4c51bd1595793599d75d429729b7567065930206ed6f15eec520c",
+      "weights_sha256": "64235c15f9351577db36068a833c36ba2bc0682f77121345926668c58c582299"
+    },
+    {
+      "architecture": "x86_64",
+      "checkpoint_sha256": "08dafa48ff2090cb3a83c38507012e2671506d8fcac078179ff9b6bd995bcf52",
+      "commit": "18bae3d0b7d26a0e3254cb5e3242a0f83072b282",
+      "evaluated_prediction_frames": 401,
+      "evaluated_prediction_fs": 1000.0,
+      "evaluated_reference_frames": 2001,
+      "evaluated_reference_fs": 1000.0,
+      "finish_unix": 1795208342.944475,
+      "frames": 401,
+      "model": "r24e",
+      "n_atoms": 72,
+      "official_metrics": {
+        "adf_error": 0.09816854955345383,
+        "pressure_error": null,
+        "pressure_mae": null,
+        "pressure_wasserstein": null,
+        "rdf_error": 7.956434817333159,
+        "vdos_error": 11.85022039692693
+      },
+      "reference_dt_fs": 0.5,
+      "run_info": {
+        "acceleration": [],
+        "completed_at": "2026-11-20T20:58:35.751559+00:00",
+        "cost_source": "runner",
+        "device": "cpu",
+        "dtype": "float32",
+        "hardware": "INTEL(R) XEON(R) PLATINUM 8573C",
+        "load_time_sec": 4.22,
+        "max_rss_gb": 1.673,
+        "n_processes": 4,
+        "nvt_params": {
+          "record_interval": 10,
+          "seed": 0,
+          "temperature_kelvin": 295.0,
+          "thermostat_time_scale_fs": 25.0,
+          "time_step_fs": 0.25
+        },
+        "run_time_sec": 15315.62,
+        "versions": {
+          "ase": "3.29.0",
+          "metatomic-ase": "0.1.4",
+          "numpy": "2.5.5",
+          "scipy": "1.18.1",
+          "torch": "2.14.1+cpu",
+          "upet": "0.3.1"
+        }
+      },
+      "seed": 0,
+      "start_unix": 1795197385.3455493,
+      "step_fs": 0.25,
+      "steps": 4000,
+      "stride": 10,
+      "system": "picene_295K_Sharma_S",
+      "temperature_K": 295.0,
+      "torch_threads": 1,
+      "trajectory_sha256": "ea35bff5736a09ced8a77a68a6c03e4e13b87d36ebfa3edbe12f2547aaa1afdc",
+      "weights_sha256": "64235c15f9351577db36068a833c36ba2bc0682f77121345926668c58c582299"
+    }
+  ],
+  "progress": [
+    {
+      "system": "CsSnI3_500K_Ivor_VASP",
+      "model": "parent",
+      "checkpoint_step": 4000,
+      "target_step": 4000,
+      "checkpoint_frames": 401
+    },
+    {
+      "system": "CsSnI3_500K_Ivor_VASP",
+      "model": "r24e",
+      "checkpoint_step": 4000,
+      "target_step": 4000,
+      "checkpoint_frames": 401
+    },
+    {
+      "system": "picene_295K_Sharma_S",
+      "model": "parent",
+      "checkpoint_step": 4000,
+      "target_step": 4000,
+      "checkpoint_frames": 401
+    },
+    {
+      "system": "picene_295K_Sharma_S",
+      "model": "r24e",
+      "checkpoint_step": 4000,
+      "target_step": 4000,
+      "checkpoint_frames": 401
+    }
+  ],
+  "diatomics": {
+    "parent": {
+      "attempted_elements": 92,
+      "official_sweep_elements": 92,
+      "scores_available": true
+    },
+    "r24e": {
+      "attempted_elements": 92,
+      "official_sweep_elements": 92,
+      "scores_available": true
+    }
+  }
+}
