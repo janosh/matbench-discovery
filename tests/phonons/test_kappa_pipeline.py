@@ -18,7 +18,7 @@ import pytest
 from matscikit import EMT, AnharmonicPhonons, Structure
 from pymatviz.enums import Key
 
-from matbench_discovery import MATSCIKIT_EXTENSION, file_digest
+from matbench_discovery import file_digest
 from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.phonons import force_sets
 from matbench_discovery.phonons.adapters import (
@@ -190,10 +190,12 @@ class PipelineAdapterStub(StandardKappaAdapter):
     def calculate_fc2(
         self, calc: KappaCalculation, model: ForceModel, settings: KappaSettings
     ) -> np.ndarray:
-        """Fit FC2 to unit forces and return the configured mode frequencies."""
+        """Fit FC2 to harmonic restoring forces (matscikit rejects forces that break
+        the site symmetry of a displacement) and return the configured frequencies.
+        """
         del model, settings
-        n_sets = len(calc.phonons.phonon_displacements)
-        calc.phonons.produce_fc2(np.ones((n_sets, 1, 3)), symmetrize=False)
+        forces = [[-np.asarray(vec)] for _, vec in calc.phonons.phonon_displacements]
+        calc.phonons.produce_fc2(np.asarray(forces), symmetrize=False)
         return np.array([self.fc2_frequencies])
 
     def harmonic_phonons(self, calc: object, settings: KappaSettings) -> dict[str, Any]:
@@ -704,7 +706,13 @@ def test_calculate_kappa_for_structure_runs_shared_physics_flow(
         fc2["atoms"], [atom for atom, _vector in phonons.phonon_displacements]
     )
     assert fc2["distance"] == 0.03
-    np.testing.assert_array_equal(fc2["forces"], 1.0)
+    # stored as float32: half an ulp (6e-8 relative) from the float64 stub forces
+    np.testing.assert_allclose(
+        fc2["forces"],
+        [[-np.asarray(vector)] for _atom, vector in phonons.phonon_displacements],
+        rtol=1e-7,
+        atol=0,
+    )
     assert (fc3 is None) is expected_skipped
     if fc3 is not None:
         n_configs = len(fc3["forces"]) + len(fc3["pair_forces"])
@@ -743,7 +751,7 @@ def test_calculate_kappa_for_structure_runs_shared_physics_flow(
         )
         assert failed.error == "ForceConstantError: RuntimeError: fc3 failed"
         assert failed.forces is not None
-        np.testing.assert_array_equal(failed.forces["fc2"]["forces"], 1.0)
+        np.testing.assert_array_equal(failed.forces["fc2"]["forces"], fc2["forces"])
         assert failed.forces["fc3"] is None
         assert (failed.phonons is None) is harmonic_failure
 
@@ -1148,29 +1156,21 @@ def test_kappa_source_paths_covers_every_output_defining_module() -> None:
         "schema.py",
         "thermal_conductivity.py",
         "run_kappa.py",
-        os.path.basename(MATSCIKIT_EXTENSION),
     } <= basenames, f"unhashed kappa source modules; got {sorted(basenames)}"
 
 
-def test_kappa_source_digest_ignores_extension_install_path(
+def test_kappa_source_digest_tracks_matscikit_build(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Identical extension bytes hash the same wherever the extension is installed."""
+    """A different matscikit build (source, features or profile) moves the digest."""
     from matbench_discovery.phonons import pipeline
 
-    source = tmp_path / "m" / "source.py"
-    source.parent.mkdir()
+    source = tmp_path / "source.py"
     source.write_text("x = 1\n")
+    monkeypatch.setattr(pipeline, "kappa_source_paths", lambda *_: {str(source)})
     digests = []
-    for prefix in ("a", "z"):  # sorts before vs after the checkout's sources
-        extension = tmp_path / prefix / "_core.so"
-        extension.parent.mkdir()
-        extension.write_bytes(b"compiled")
-        monkeypatch.setattr(pipeline, "MATSCIKIT_EXTENSION", str(extension))
-        monkeypatch.setattr(
-            pipeline,
-            "kappa_source_paths",
-            lambda *_, ext=str(extension): {str(source), ext},
-        )
+    for build_id in ("0.1.0-beta.5+aaaa.bbbb", "0.1.0-beta.5+aaaa.cccc"):
+        monkeypatch.setattr(pipeline, "BUILD_ID", build_id)
         digests.append(pipeline.kappa_source_digest(StandardKappaAdapter(), "m"))
-    assert digests[0] == digests[1]
+    assert digests[0] != digests[1]
+    assert digests[1] == pipeline.kappa_source_digest(StandardKappaAdapter(), "m")

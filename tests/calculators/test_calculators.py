@@ -7,13 +7,14 @@ import subprocess
 import sys
 import tomllib
 import zipfile
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
-from matscikit import EMT
+from matscikit import EMT, Structure
 from packaging.requirements import Requirement
 from packaging.version import Version
 
@@ -105,8 +106,8 @@ def test_load_calculator_with_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
             self.model = torch.nn.Linear(2, 2).to(torch.float32)
 
         def compute(
-            self, structures: Sequence[object], properties: Sequence[str]
-        ) -> list[dict[str, object]]:
+            self, structures: list[Structure], properties: list[str]
+        ) -> list[dict[str, Any]]:
             """Delegate to EMT so the object satisfies the matscikit model protocol."""
             return self.emt.compute(structures, properties)
 

@@ -295,7 +295,7 @@ def load_reference() -> tuple[
             # pymatgen SpacegroupAnalyzer defaults: symprec 0.01, angle_tolerance 5 deg
             "spacegroup": symmetry_dataset(
                 struct, symprec=0.01, angle_tolerance=np.radians(5)
-            )["number"],
+            ).number,
         }
     return df_dft, structures, meta
 

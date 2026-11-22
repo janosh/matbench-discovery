@@ -41,6 +41,8 @@ from matbench_discovery.phonons import IMAGINARY_FREQ_THRESHOLD
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from matscikit import MeshResult
+
 # v4: compact FC2 (primitive-atom rows) in matscikit's recorded supercell atom order,
 # v3: full FC2 in that order, v2: full FC2 in phonopy's order
 HARMONIC_SCHEMA_VERSION = 4
@@ -66,8 +68,8 @@ def harmonic_band_data(phonons: Phonons) -> dict[str, Any]:
         symprec=phonons.symprec,
         reference_distance=BAND_PATH_REFERENCE_DISTANCE,
     )
-    labels = path["labels"]
-    modes = phonons.modes(path["q_points"], with_group_velocities=True)
+    labels = path.labels
+    modes = phonons.modes(path.q_points, with_group_velocities=True)
     eigenvectors = modes["eigenvectors"]
     n_atoms = len(primitive)
     n_q = len(labels)
@@ -99,11 +101,11 @@ def harmonic_band_data(phonons: Phonons) -> dict[str, Any]:
                 "start_label": labels[start],
                 "end_label": labels[end - 1],
             }
-            for start, end in path["segments"]
+            for start, end in path.segments
         ],
-        "q_points": np.asarray(path["q_points"]),
+        "q_points": path.q_points,
         # 1/A with 2 pi (HPKOT convention; phonopy's band.yaml omits the 2 pi)
-        "distances": np.asarray(path["distances"]),
+        "distances": path.distances,
         "frequencies": modes["frequencies"],
         "eigenvectors": np.round(eigenvector_array, EIGENVECTOR_DECIMALS),
         # THz * Angstrom
@@ -111,7 +113,7 @@ def harmonic_band_data(phonons: Phonons) -> dict[str, Any]:
     }
 
 
-def harmonic_thermal_data(mesh_result: Mapping[str, Any]) -> dict[str, Any]:
+def harmonic_thermal_data(mesh_result: MeshResult) -> dict[str, Any]:
     """Thermal curves of a ``Phonons.mesh(..., temperatures_k=...)`` result, with the
     count of imaginary modes excluded.
 
@@ -122,17 +124,21 @@ def harmonic_thermal_data(mesh_result: Mapping[str, Any]) -> dict[str, Any]:
     against the same threshold as check_imaginary_freqs: modes from the -0.01..0 THz
     noise band are physically zero and would flag stable materials.
     """
-    mesh_frequencies = np.asarray(mesh_result["frequencies"])
+    if mesh_result.temperatures_k is None:
+        raise ValueError(
+            "harmonic_thermal_data needs a mesh result computed with temperatures_k"
+        )
+    mesh_frequencies = mesh_result.frequencies
     return {
         # modes excluded from every series below (0 = all modes contribute)
         "n_imaginary_modes_excluded": int(
             (mesh_frequencies < IMAGINARY_FREQ_THRESHOLD).sum()
         ),
         "n_mesh_modes": int(mesh_frequencies.size),
-        "temperatures": mesh_result["temperatures_k"],
-        "free_energy": mesh_result["free_energy_kj_per_mol"],
-        "entropy": mesh_result["entropy_j_per_k_mol"],
-        "heat_capacity": mesh_result["heat_capacity_j_per_k_mol"],
+        "temperatures": mesh_result.temperatures_k,
+        "free_energy": mesh_result.free_energy_kj_per_mol,
+        "entropy": mesh_result.entropy_j_per_k_mol,
+        "heat_capacity": mesh_result.heat_capacity_j_per_k_mol,
     }
 
 
@@ -234,14 +240,14 @@ def harmonic_mesh_data(phonons: Phonons, mesh: Sequence[int]) -> dict[str, Any]:
     return {
         "mesh": {
             "numbers": list(mesh),
-            "q_points": result["q_points"],
-            "weights": result["weights"],
-            "frequencies": result["frequencies"],
+            "q_points": result.q_points,
+            "weights": result.weights,
+            "frequencies": result.frequencies,
         },
         "dos": {
             "mesh": list(mesh),
-            "frequencies": result["frequency_points"],
-            "densities": result["total_dos"],
+            "frequencies": result.frequency_points,
+            "densities": result.total_dos,
         },
         "thermal_properties": harmonic_thermal_data(result),
     }

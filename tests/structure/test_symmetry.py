@@ -111,6 +111,25 @@ def test_pred_vs_ref_struct_symmetry(tetragonal_struct: Structure) -> None:
     }
 
 
+def test_geo_opt_relaxed_boundary_cell() -> None:
+    """A relaxed WBM lattice on a Niggli boundary must not terminate the RMSD batch."""
+    lattice = [
+        [3.5162634007, 1.7628e-6, -1.02026e-5],
+        [-5.28446e-5, 8.4037724935, 4.8518887469],
+        [-2.1294e-6, 3.8997e-6, 9.7038417713],
+    ]
+    structures = {
+        "boundary": Structure(
+            lattice, ["Si", "O"], [[0, 0, 0], [0.25, 0.26, 0.2]], fractional=True
+        )
+    }
+    summary = symmetry.get_sym_info_from_structs(structures)
+    result = symmetry.pred_vs_ref_struct_symmetry(
+        summary, summary, structures, structures
+    )
+    assert result.loc["boundary", MbdKey.structure_rmsd_vs_dft] == 0.0
+
+
 @pytest.mark.parametrize("cell", ["supercell", "primitive"])
 def test_analyze_symmetry_is_cell_choice_invariant(
     cubic_struct: Structure, cell: str
@@ -126,11 +145,11 @@ def test_analyze_symmetry_is_cell_choice_invariant(
         )
     else:
         sym = symmetry_dataset(cubic_struct)
-        symbols = ["Si"] * len(sym["prim_std_numbers"])
+        symbols = ["Si"] * len(sym.prim_std_numbers)
         other_struct = Structure(
-            sym["prim_std_lattice"],
+            sym.prim_std_lattice,
             symbols,
-            sym["prim_std_frac_coords"],
+            sym.prim_std_frac_coords,
             fractional=True,
         )
     df_conventional = symmetry.get_sym_info_from_structs({"conventional": cubic_struct})
@@ -185,8 +204,8 @@ def test_analyze_symmetry_accepts_structure_dicts(cubic_struct: Structure) -> No
         {"struct": structure_to_pymatgen_dict(cubic_struct)}
     )
     pd.testing.assert_frame_equal(df_struct, df_dict)
-    with pytest.raises(TypeError, match="Expected Structure or structure dict"):
-        symmetry.get_sym_info_from_structs({"bad": 42})
+    with pytest.raises(TypeError, match=r"got builtins.int for .bad."):
+        symmetry.get_sym_info_from_structs({"bad": 42})  # ty: ignore[invalid-argument-type]
 
 
 def test_analyze_symmetry_failures(cubic_struct: Structure) -> None:
@@ -208,3 +227,5 @@ def test_analyze_symmetry_failures(cubic_struct: Structure) -> None:
     with pytest.raises(ValueError, match="structure 1: ") as exc_info:
         symmetry.get_sym_info_from_structs({"ok": cubic_struct, "empty": empty})
     assert exc_info.value.__notes__ == [f"{Key.mat_id}='empty'"]
+    with pytest.raises(ValueError, match="symprec"):
+        symmetry.get_sym_info_from_structs({}, symprec=-1)

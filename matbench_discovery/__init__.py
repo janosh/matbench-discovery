@@ -1,7 +1,6 @@
 """Global variables used all across the matbench_discovery package."""
 
 import hashlib
-import importlib.util
 import os
 import tempfile
 import warnings
@@ -44,8 +43,8 @@ def file_digest(path: str, algorithm: str = "sha256") -> str:
 
 
 @contextmanager
-def atomic_output_path(path: str) -> Generator[str]:
-    """Yield a temp sibling of path, renamed over path on success, removed on error."""
+def atomic_output_path(path: str, *, overwrite: bool = True) -> Generator[str]:
+    """Publish a temp sibling atomically, optionally requiring a new destination."""
     parent = os.path.dirname(path) or "."
     os.makedirs(parent, exist_ok=True)
     file_descriptor, temporary_path = tempfile.mkstemp(
@@ -54,20 +53,15 @@ def atomic_output_path(path: str) -> Generator[str]:
     os.close(file_descriptor)
     try:
         yield temporary_path
-        os.replace(temporary_path, path)
+        if overwrite:
+            os.replace(temporary_path, path)
+        else:
+            os.link(temporary_path, path)
     finally:
         if os.path.isfile(temporary_path):
             os.remove(temporary_path)
 
 
-# compiled matscikit numerics: resumes hash this file because
-# matscikit.__version__ stays put across rebuilds of the extension
-_matscikit_core = importlib.util.find_spec("matscikit._core")
-if _matscikit_core is None or _matscikit_core.origin is None:
-    raise ImportError(
-        "matscikit._core extension not found: build or install matscikit first"
-    )
-MATSCIKIT_EXTENSION: str = _matscikit_core.origin
 TEST_FILES = f"{ROOT}/tests/files"  # directory to store test data
 # directory for data-only figure payloads (gzipped JSON written by
 # matbench_discovery.figs, imported by Svelte pages and rendered with matterviz)

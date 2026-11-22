@@ -7,7 +7,7 @@ https://arxiv.org/abs/2401.00096 (see fig. 56).
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, SupportsIndex
 
 import numpy as np
 from matscikit import Structure
@@ -65,7 +65,7 @@ def generate_diatomics(
 
 
 def calc_diatomic_curve(
-    pairs: Sequence[tuple[str | int, str | int]],
+    pairs: Sequence[tuple[str | SupportsIndex, str | SupportsIndex]],
     model: ForceModel,
     model_name: str,
     distances: Sequence[float | int] | np.ndarray,
@@ -74,7 +74,7 @@ def calc_diatomic_curve(
     """Generate potential energy and forces data for diatomic molecules.
 
     Args:
-        pairs (list[tuple[str | int, str | int]]): List of element pairs to calculate.
+        pairs (list[tuple[str | int, str | int]]): Element pairs to calculate.
             Each pair can be specified as element symbols or atomic numbers.
         model (ForceModel): Model mapping structures to energies and forces (wrap ASE
             calculators with ``matscikit.interop.AseCalculatorModel``).

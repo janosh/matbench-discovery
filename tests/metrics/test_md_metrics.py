@@ -415,6 +415,27 @@ def test_calc_energy_force_rmse_uses_private_labels(
     assert metrics["force_rmse"] == pytest.approx(np.sqrt(0.5))
 
 
+@pytest.mark.parametrize(
+    ("results", "message"), [(1, "2 model results"), (2, "forces of shape")]
+)
+def test_energy_force_rmse_rejects_short_batch(
+    results: int,
+    message: str,
+    np_rng: np.random.Generator,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Missing frames or atom forces cannot broadcast into a valid RMSE."""
+    frames = [h2_frame(1.0, np_rng)] * 2
+    model = ConstantModel()
+    monkeypatch.setattr(
+        model,
+        "compute",
+        lambda *_: [{"energy": 1.0, "forces": np.zeros((1, 3))}] * results,
+    )
+    with pytest.raises(ValueError, match=message):
+        md_metrics.calc_energy_force_rmse(frames, model)
+
+
 def test_energy_force_rmse_rejects_missing_private_labels(
     np_rng: np.random.Generator,
 ) -> None:

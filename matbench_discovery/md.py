@@ -7,7 +7,6 @@ frames recorded every 10 steps for 20 ps.
 
 import contextlib
 import dataclasses
-import functools
 import io
 import json
 import os
@@ -21,18 +20,13 @@ from typing import Any, cast
 import h5py
 import numpy as np
 import pandas as pd
-from matscikit import NoseHooverChainNVT, Structure
+from matscikit import BUILD_ID, NoseHooverChainNVT, Structure
 from matscikit.io import Frame, read_extxyz, write_extxyz
 from matscikit.md import maxwell_boltzmann_momenta
 from matscikit.model import Model as ForceModel
 from tqdm import tqdm
 
-from matbench_discovery import (
-    MATSCIKIT_EXTENSION,
-    atomic_output_path,
-    file_digest,
-    today,
-)
+from matbench_discovery import atomic_output_path, today
 from matbench_discovery.hpc import (
     LOAD_CHARGED,
     check_resume_labels,
@@ -215,11 +209,13 @@ def _thermalized_nvt_dynamics(
 
 def _snapshot_frame(state: dict[str, Any]) -> Frame:
     """Frame of an integrator state dict with energy/forces/(stress) and momenta."""
-    structure = state["structure"].copy()
+    structure = state["structure"]
+    structure = structure.replace(
+        site_data={**structure.site_data, "momenta": np.asarray(state["momenta"])}
+    )
     structure.info["md_step"] = int(state["step"])
     return Frame(
         structure,
-        arrays={"momenta": np.asarray(state["momenta"])},
         energy=float(state["energy"]),
         forces=np.asarray(state["forces"]),
         stress=None if state.get("stress") is None else np.asarray(state["stress"]),
@@ -288,14 +284,6 @@ class NvtParams:
 # memory peaks), whose run labels a resume must match (never mixing GPUs); schema 4
 # moved the integrator from ASE to matscikit.
 CHECKPOINT_SCHEMA = 4
-
-
-@functools.cache
-def matscikit_build_digest() -> str:
-    """SHA-256 of the compiled matscikit extension, so a checkpoint written by other
-    numerics (``matscikit.__version__`` is unchanged across rebuilds) is never resumed.
-    """
-    return file_digest(MATSCIKIT_EXTENSION)
 
 
 NpzValue = np.ndarray | np.generic | str | int | float | bool
@@ -373,7 +361,7 @@ def _load_checkpoint(
     except KeyError, TypeError, ValueError:
         print(f"  ignoring checkpoint {ckpt_path}: missing/corrupt schema metadata")
         return None
-    if schema != CHECKPOINT_SCHEMA or engine_build != matscikit_build_digest():
+    if schema != CHECKPOINT_SCHEMA or engine_build != BUILD_ID:
         print(f"  ignoring checkpoint {ckpt_path}: schema/matscikit build mismatch")
         return None
 
@@ -546,7 +534,7 @@ def run_nvt_md_resumable(
             _atomic_savez(
                 ckpt_path,
                 schema=CHECKPOINT_SCHEMA,
-                matscikit_build=matscikit_build_digest(),
+                matscikit_build=BUILD_ID,
                 nsteps=int(state["step"]),
                 n_steps=n_steps,
                 n_frames=frames_written,
@@ -634,7 +622,7 @@ def validate_pred_trajectory(
     ref_symbols = ref_atoms.symbols
     for idx, frame in enumerate(frames):
         structure = frame.structure
-        momenta = frame.arrays.get("momenta")
+        momenta = structure.site_data.get("momenta")
         reason = None
         if int(structure.info.get("md_step", -1)) != idx * record_interval:
             reason = (

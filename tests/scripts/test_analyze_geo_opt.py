@@ -3,7 +3,9 @@
 import gzip
 import json
 import os
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from threading import Barrier
 from types import ModuleType
 from unittest.mock import PropertyMock, patch
 
@@ -18,6 +20,7 @@ from tests.utils import import_repo_script
 
 MOYO_VERSION = "0.4.2"
 SYMPREC = 1e-2
+LEGACY_CSV = f"2026-07-01-geo-opt-symprec=1e-2-moyo={MOYO_VERSION}.csv.gz"
 
 
 @pytest.fixture(scope="module", name="analyze_geo_opt")
@@ -65,10 +68,21 @@ def fake_analysis(material_ids: list[str]) -> pd.DataFrame:
         (0, True, {}),
         # a null symprec entry in the model YAML reads as no published analysis
         (0, True, {"symprec=1e-2": None}),
+        (
+            0,
+            False,
+            {"symprec=1e-2": {"analysis_file": {"name": f"model/{LEGACY_CSV}"}}},
+        ),
         (3, False, {}),
         (3, True, {}),
     ],
-    ids=["cached-full", "cached-full-null-yaml", "debug-fresh", "debug-cached"],
+    ids=[
+        "cached-full",
+        "cached-full-null-yaml",
+        "stale-matcher",
+        "debug-fresh",
+        "debug-cached",
+    ],
 )
 def test_analyze_model_symprec_metrics_and_debug_paths(
     debug_mode: int,
@@ -80,7 +94,11 @@ def test_analyze_model_symprec_metrics_and_debug_paths(
     """Cached CSVs skip the relaxed-structure file; debug runs spare real outputs."""
     material_ids = [f"wbm-1-{idx}" for idx in range(5)]
     geo_opt_path = write_geo_opt_file(tmp_path / "model", material_ids)
-    analysis_name = f"2026-07-01-geo-opt-symprec=1e-2-moyo={MOYO_VERSION}.csv.gz"
+    prefix = LEGACY_CSV.removesuffix(".csv.gz")
+    analysis_name = f"{prefix}-matscikit={analyze_geo_opt.MATSCIKIT_SOURCE_ID}.csv.gz"
+    old_path = tmp_path / "model" / LEGACY_CSV
+    fake_analysis(material_ids[:1]).to_csv(old_path)
+    historical_bytes = old_path.read_bytes()
     full_csv_path = tmp_path / "model" / analysis_name
     debug_csv_path = tmp_path / "model" / "debug" / str(debug_mode) / analysis_name
     expected_csv_path = debug_csv_path if debug_mode else full_csv_path
@@ -135,6 +153,7 @@ def test_analyze_model_symprec_metrics_and_debug_paths(
         )
 
     assert df_metrics is not None
+    assert old_path.read_bytes() == historical_bytes
     # metrics are derived from the (cached or fresh) analysis in every mode
     assert df_metrics["n_structures"].iloc[0] == n_analyzed
     # full runs score the whole test set, debug runs only their subset: 1 - 0.01/0.05
@@ -149,6 +168,7 @@ def test_analyze_model_symprec_metrics_and_debug_paths(
         mock_write.assert_not_called()
     else:
         mock_write.assert_called_once()
+        assert mock_write.call_args.kwargs["regenerated"] is not cached
         # script joins with "/", so normalize before comparing (Windows uses "\")
         written_csv_path = os.path.normpath(mock_write.call_args.args[3])
         assert written_csv_path == os.path.normpath(full_csv_path)
@@ -161,10 +181,32 @@ def test_write_dft_reference_never_overwrites(
     df_sym = pd.DataFrame(
         {"spg_num": [225]}, index=pd.Index(["wbm-1-1"], name="material_id")
     )
-    with patch.object(
-        analyze_geo_opt.symmetry, "get_sym_info_from_structs", return_value=df_sym
+    barrier = Barrier(2)
+
+    def simultaneous(*_args: object, **_kwargs: object) -> pd.DataFrame:
+        """Let both workers pass the existing-file check before publication."""
+        barrier.wait(timeout=10)
+        return df_sym
+
+    with (
+        patch.object(
+            analyze_geo_opt.symmetry, "get_sym_info_from_structs", simultaneous
+        ),
+        ThreadPoolExecutor(max_workers=2) as pool,
     ):
-        analyze_geo_opt.write_dft_reference({}, 1e-2, MOYO_VERSION, str(tmp_path))
+        jobs = [
+            pool.submit(
+                analyze_geo_opt.write_dft_reference,
+                {},
+                1e-2,
+                MOYO_VERSION,
+                str(tmp_path),
+            )
+            for _ in range(2)
+        ]
+        errors = [job.exception() for job in jobs]
+        assert sum(error is None for error in errors) == 1
+        assert sum(isinstance(error, FileExistsError) for error in errors) == 1
         with pytest.raises(FileExistsError, match="Refusing to overwrite"):
             analyze_geo_opt.write_dft_reference({}, 1e-2, MOYO_VERSION, str(tmp_path))
     (out_path,) = (tmp_path / "wbm").iterdir()

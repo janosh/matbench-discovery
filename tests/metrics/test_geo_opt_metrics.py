@@ -175,13 +175,20 @@ _FULL_BLOCK = {
 
 
 @pytest.mark.parametrize(
-    ("metrics_data", "expected_block", "analysis_file_path", "existing_ref"),
+    (
+        "metrics_data",
+        "expected_block",
+        "analysis_file_path",
+        "existing_ref",
+        "regenerated",
+    ),
     [
         (
             _FULL_METRICS,
             {**_FULL_BLOCK, "analysis_file": make_file_ref(_GEO)},
             _GEO,
             None,
+            True,
         ),
         (
             {
@@ -205,6 +212,7 @@ _FULL_BLOCK = {
             },
             _GEO_NAN,
             _GEO_REF_WITH_META,
+            False,
         ),
         # same file name (metrics re-derived from a cached CSV) keeps its Figshare ref
         (
@@ -212,15 +220,24 @@ _FULL_BLOCK = {
             {**_FULL_BLOCK, "analysis_file": _GEO_REF_WITH_META},
             _GEO,
             _GEO_REF_WITH_META,
+            False,
+        ),
+        (
+            _FULL_METRICS,
+            {**_FULL_BLOCK, "analysis_file": make_file_ref(_GEO)},
+            _GEO,
+            _GEO_REF_WITH_META,
+            True,
         ),
     ],
-    ids=["fresh", "nan-renamed-file", "cached-keeps-ref"],
+    ids=["fresh", "nan-renamed-file", "cached-keeps-ref", "overwritten-clears-ref"],
 )
 def test_write_geo_opt_metrics_to_yaml(
     metrics_data: dict[MbdKey | Key, float],
     expected_block: dict[MbdKey | Key | str, float | str | None],
     analysis_file_path: str,
     existing_ref: dict[str, object] | None,
+    regenerated: bool,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -235,12 +252,22 @@ def test_write_geo_opt_metrics_to_yaml(
     with yaml_path.open("w", encoding="utf-8") as file:
         round_trip_yaml.dump({"metrics": {"geo_opt": {symprec_key: prior_block}}}, file)
     patch_model_metadata(monkeypatch, Model["alignn"], yaml_path=str(yaml_path))
+    model = Model["alignn"]
+    assert model.metrics["geo_opt"][symprec_key] == prior_block
 
     geo_opt.write_metrics_to_yaml(
-        pd.DataFrame([metrics_data]), Model["alignn"], symprec, analysis_file_path
+        pd.DataFrame([metrics_data]),
+        Model["alignn"],
+        symprec,
+        analysis_file_path,
+        regenerated=regenerated,
     )
     with yaml_path.open(encoding="utf-8") as file:
         actual_block = round_trip_yaml.load(file)["metrics"]["geo_opt"][symprec_key]
+    assert (
+        model.metrics["geo_opt"][symprec_key]["analysis_file"]
+        == actual_block["analysis_file"]
+    )
     assert set(actual_block) == set(expected_block)
     for key, expected_val in expected_block.items():
         value = actual_block[key]

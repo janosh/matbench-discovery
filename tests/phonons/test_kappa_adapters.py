@@ -212,12 +212,14 @@ def spy_relax_structures(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]
 
     def relax_stub(
         structures: list[Structure], model: object, **kwargs: object
-    ) -> list[dict[str, Any]]:
-        """Capture options; report a converged zero-stress single step."""
+    ) -> list[SimpleNamespace]:
+        """Capture options; report a converged zero-stress single step (duck-typed
+        matscikit.RelaxResult, which has no Python constructor).
+        """
         del model
         calls.append(kwargs)
         return [
-            {"structure": s, "n_steps": 1, "stress": np.zeros((3, 3)), "error": None}
+            SimpleNamespace(structure=s, n_steps=1, stress=np.zeros((3, 3)), error=None)
             for s in structures
         ]
 
@@ -331,6 +333,7 @@ def test_batch_limits_reach_matscikit(
         cu_cell(), fc2_supercell=np.eye(3), fc3_supercell=np.diag([2, 1, 1])
     )
     model = CountingEMT()
-    StandardKappaAdapter().calculate_fc3(calc, model, settings)  # ty: ignore[invalid-argument-type]
+    StandardKappaAdapter().calculate_fc3(calc, model, settings)
     assert model.batch_sizes == fc3_batches  # 30 configurations of 8 atoms
+    assert calc.phonons.fc3_forces is not None
     assert calc.phonons.fc3_forces.shape == (30, 8, 3)

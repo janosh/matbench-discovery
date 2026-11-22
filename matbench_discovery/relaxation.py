@@ -7,18 +7,22 @@ geometry-identical trajectories.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any
+from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from matscikit import Structure
+    from matscikit import RelaxResult, Structure
     from matscikit.model import Model as ForceModel
+    from matscikit.options import BatchLimits, CellFilter, OnModelError, RelaxOptimizer
 
 # canonical YAML name -> matscikit.relax(optimizer=...)
-OPTIMIZERS: dict[str, str] = {"FIRE": "FIRE", "GOQN": "GOQN"}
+OPTIMIZERS: dict[str, RelaxOptimizer] = {"FIRE": "FIRE", "GOQN": "GOQN"}
 OPTIMIZER_ALIASES = {"GoodOldQuasiNewton": "GOQN"}
 # canonical YAML name -> matscikit.relax(cell_filter=...)
-CELL_FILTERS: dict[str, str] = {"FrechetCellFilter": "frechet", "ExpCellFilter": "exp"}
+CELL_FILTERS: dict[str, CellFilter] = {
+    "FrechetCellFilter": "frechet",
+    "ExpCellFilter": "exp",
+}
 CELL_FILTER_ALIASES = {"frechet": "FrechetCellFilter", "exp": "ExpCellFilter"}
 OPTIMIZER_LOOKUP = {key.casefold(): key for key in OPTIMIZERS} | {
     alias.casefold(): name for alias, name in OPTIMIZER_ALIASES.items()
@@ -61,10 +65,10 @@ def relax_structures(
     fix_symmetry: float | None = None,
     cell_mask: Sequence[bool] | None = None,
     stress: bool = False,
-    batch: Mapping[str, int | None] | None = None,
-    on_model_error: str = "raise",
-    on_result: Callable[[int, dict[str, Any]], None] | None = None,
-) -> list[dict[str, Any]]:
+    batch: BatchLimits | None = None,
+    on_model_error: OnModelError = "raise",
+    on_result: Callable[[int, RelaxResult], None] | None = None,
+) -> list[RelaxResult]:
     """Relax structures in lock step (one batched model call per step).
 
     ``batch``, ``on_model_error`` and ``on_result`` pass through to ``matscikit.relax``
@@ -74,10 +78,10 @@ def relax_structures(
     ``fix_symmetry`` the start is idealized and forces/stress are symmetrized, like
     ASE's FixSymmetry.
 
-    Returns per structure: relaxed ``structure``, ``converged``, ``n_steps`` and
-    ``error`` (None, or why that structure failed, e.g. non-finite model output: it
-    then lacks results), plus ``energy``, ``forces`` and ``stress`` (when the cell
-    moves or ``stress=True``).
+    Returns one ``matscikit.RelaxResult`` per structure: relaxed ``structure``,
+    ``converged``, ``n_steps`` and ``error`` (None, or why that structure failed, e.g.
+    non-finite model output: its ``energy``/``forces``/``stress`` are then None), plus
+    ``stress`` when the cell moves or ``stress=True``.
     """
     import matscikit
 

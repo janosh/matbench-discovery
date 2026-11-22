@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from typing import Any, cast
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 import pytest
 from numpy.testing import assert_allclose
@@ -526,7 +527,19 @@ def test_diffuson_kappa_min_classical_limit(atom_density: float) -> None:
 
 def test_diffuson_kappa_min_weights_and_soft_modes() -> None:
     """q-point weights equal repeated q-points; imaginary modes carry no heat."""
-    kappa_min = partial(phonon_metrics.diffuson_kappa_min, atom_density=0.05)
+
+    def kappa_min(
+        freqs: list[list[int]],
+        weights: list[int] | None,
+        temperature: float = phonon_metrics.KAPPA_TEMPERATURE,
+    ) -> float:
+        return phonon_metrics.diffuson_kappa_min(
+            np.array(freqs),
+            None if weights is None else np.array(weights),
+            atom_density=0.05,
+            temperature=temperature,
+        )
+
     weighted = kappa_min([[1, 2, 3], [4, 5, 6]], [3, 1])
     repeated = kappa_min([[1, 2, 3]] * 3 + [[4, 5, 6]], None)
     assert_allclose(weighted, repeated, rtol=1e-12)
@@ -545,11 +558,11 @@ def test_diffuson_kappa_min_weights_and_soft_modes() -> None:
     ],
 )
 def test_diffuson_kappa_min_rejects_bad_input(
-    freqs: list[object], atom_density: float, match: str
+    freqs: npt.ArrayLike, atom_density: float, match: str
 ) -> None:
     """Malformed spectra or non-positive densities raise."""
     with pytest.raises(ValueError, match=match):
-        phonon_metrics.diffuson_kappa_min(freqs, None, atom_density)
+        phonon_metrics.diffuson_kappa_min(np.array(freqs), None, atom_density)
 
 
 @pytest.mark.parametrize(
@@ -596,9 +609,16 @@ def test_kappa_analysis_uses_shared_spectrum_helpers(
     ]
 
     expected_w1 = [
-        phonon_metrics.phonon_spectrum_w1(df_pred.loc[mat_id], df_true.loc[mat_id])
+        w1
         for mat_id in material_ids
+        if (
+            w1 := phonon_metrics.phonon_spectrum_w1(
+                df_pred.loc[mat_id], df_true.loc[mat_id]
+            )
+        )
+        is not None
     ]
+    assert len(expected_w1) == len(material_ids)
     assert expected_w1 == pytest.approx([0, 0.5 / 3])  # one of 3 modes shifted 0.5
     assert payload["srme_censored"] == [False, False]
     assert payload["freq_w1"] == pytest.approx(expected_w1, abs=5e-5)

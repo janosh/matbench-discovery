@@ -93,7 +93,7 @@ def test_unregistered_discovery_model_validation(
 ) -> None:
     """Trusted artifact validation does not require PR calculator code."""
     monkeypatch.delitem(
-        ingest.CALCULATORS,  # ty: ignore[invalid-argument-type]
+        ingest.CALCULATORS,
         Model["mace_mpa_0"].name,
     )
     checks = ingest.Checklist()

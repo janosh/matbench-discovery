@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
-from matscikit import Structure, symmetry_dataset
+from matscikit import RelaxResult, Structure, symmetry_dataset
 from matscikit.model import matrix_to_voigt
 
 from matbench_discovery.relaxation import relax_structures
@@ -36,7 +36,7 @@ class RelaxationResult:
 
 def space_group_number(structure: Structure, symprec: float) -> int:
     """Detect a structure's space-group number with moyo."""
-    return int(symmetry_dataset(structure, symprec=symprec)["number"])
+    return symmetry_dataset(structure, symprec=symprec).number
 
 
 def supercell_batch_size(settings: KappaSettings, n_atoms: int) -> int:
@@ -49,16 +49,18 @@ def supercell_batch_size(settings: KappaSettings, n_atoms: int) -> int:
     return max(settings.max_atoms_per_batch // n_atoms, 1)
 
 
-def _max_stress(stress: np.ndarray) -> np.ndarray:
+def _max_stress(stress: np.ndarray | None) -> np.ndarray:
     """Largest absolute normal and shear Voigt stress components (eV/Å³) of a 3x3
     stress tensor (xx, yy, zz | yz, xz, xy).
 
     Absolute values so a large compressive (negative) stress isn't reported as ~0.
     """
+    if stress is None:
+        raise RuntimeError("relaxation reported no stress although stress=True")
     return np.abs(matrix_to_voigt(stress)).reshape((2, 3), order="C").max(axis=1)
 
 
-def _write_relax_log(log_file: str | None, stage: str, result: dict[str, Any]) -> None:
+def _write_relax_log(log_file: str | None, stage: str, result: RelaxResult) -> None:
     """Append one line summarizing a relaxation stage."""
     if not log_file:
         return
@@ -66,8 +68,8 @@ def _write_relax_log(log_file: str | None, stage: str, result: dict[str, Any]) -
         os.makedirs(log_parent, exist_ok=True)
     with open(log_file, mode="a", encoding="utf-8") as file:
         file.write(
-            f"{stage}: n_steps={result['n_steps']} converged={result['converged']} "
-            f"energy={result['energy']:.10f} eV\n"
+            f"{stage}: n_steps={result.n_steps} converged={result.converged} "
+            f"energy={result.energy:.10f} eV\n"
         )
 
 
@@ -92,7 +94,7 @@ class StandardKappaAdapter:
         *,
         fix_symmetry: bool,
         no_tilt: bool,
-    ) -> dict[str, Any]:
+    ) -> RelaxResult:
         """One relaxation with the configured optimizer, filter and symmetry (always
         reporting the final, symmetrized stress for ``max_stress``).
         """
@@ -107,8 +109,8 @@ class StandardKappaAdapter:
             cell_mask=NO_TILT_MASK if no_tilt else None,
             stress=True,
         )
-        if result["error"] is not None:
-            raise RuntimeError(f"relaxation failed: {result['error']}")
+        if result.error is not None:
+            raise RuntimeError(f"relaxation failed: {result.error}")
         return result
 
     def relax(
@@ -147,13 +149,13 @@ class StandardKappaAdapter:
             no_tilt=settings.enforce_relax_symm,
         )
         _write_relax_log(log_file, "relax", result)
-        relaxed = result["structure"]
-        n_steps = int(result["n_steps"])
+        relaxed = result.structure
+        n_steps = result.n_steps
         return RelaxationResult(
             atoms=relaxed,
             initial_spg_num=initial_spg_num,
             final_spg_num=space_group_number(relaxed, settings.symprec),
-            max_stress=np.asarray(_max_stress(result["stress"])),
+            max_stress=np.asarray(_max_stress(result.stress)),
             reached_max_steps=n_steps >= settings.max_steps,
             n_steps=n_steps,
         )
@@ -176,22 +178,22 @@ class StandardKappaAdapter:
             no_tilt=True,
         )
         _write_relax_log(log_file, "stage1", stage1)
-        stage1_structure = stage1["structure"]
+        stage1_structure = stage1.structure
         stage1_spg_num = space_group_number(stage1_structure, settings.symprec)
         stage2 = self._relax_stage(
             stage1_structure, model, settings, fix_symmetry=False, no_tilt=True
         )
         _write_relax_log(log_file, "stage2", stage2)
-        stage2_spg_num = space_group_number(stage2["structure"], settings.symprec)
+        stage2_spg_num = space_group_number(stage2.structure, settings.symprec)
 
         redirected = settings.enforce_relax_symm and stage1_spg_num != stage2_spg_num
         chosen = stage1 if redirected else stage2
-        n_steps = (int(stage1["n_steps"]), int(stage2["n_steps"]))
+        n_steps = (stage1.n_steps, stage2.n_steps)
         return RelaxationResult(
-            atoms=chosen["structure"],
+            atoms=chosen.structure,
             initial_spg_num=initial_spg_num,
             final_spg_num=stage1_spg_num if redirected else stage2_spg_num,
-            max_stress=np.asarray(_max_stress(chosen["stress"])),
+            max_stress=np.asarray(_max_stress(chosen.stress)),
             reached_max_steps=max(n_steps) >= settings.max_steps,
             n_steps=sum(n_steps),
             redirected_to_symmetry=redirected,
@@ -229,7 +231,7 @@ class StandardKappaAdapter:
             model, symmetrize=True, batch={"structures": batch_size}
         )
         mesh = calc.phonons.harmonic.mesh(list(calc.mesh))
-        return mesh["frequencies"][mesh["ir_of_grid"]]
+        return mesh.frequencies[mesh.ir_of_grid]
 
     def harmonic_phonons(
         self,

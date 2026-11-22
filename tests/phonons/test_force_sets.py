@@ -175,6 +175,7 @@ def write_schema_2(path: str, phonons: AnharmonicPhonons) -> None:
             group.attrs[f"{order}_dataset"] = json.dumps(
                 {"supercell": geometry, "displacements": displacements}
             )
+            assert forces is not None
             group.create_dataset(f"{order}_forces", data=forces.astype(np.float32))
 
 

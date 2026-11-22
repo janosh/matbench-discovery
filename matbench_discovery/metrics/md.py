@@ -407,7 +407,8 @@ def calc_pressure_histogram_error(
     Eq. 9's denominator is identically 2 (each density integrates to 1), so this is
     ``50 * sum |density_ref - density_pred| * bin_width``.
     """
-    pressures_ref, pressures_pred = map(np.asarray, (pressures_ref, pressures_pred))
+    pressures_ref = np.asarray(pressures_ref, dtype=np.float64)
+    pressures_pred = np.asarray(pressures_pred, dtype=np.float64)
     if n_bins < 2:
         raise ValueError(f"Need >= 2 pressure histogram bins, got {n_bins=}")
     if len(pressures_ref) == 0 or len(pressures_pred) == 0:
@@ -441,24 +442,34 @@ def calc_energy_force_rmse(
     if traj.energy is None or traj.forces is None:
         raise ValueError("trajectory lacks private reference energy/forces for RMSE")
 
-    structures = [frame.structure for frame in traj.to_frames()]
-    # chunked model calls bound memory for long trajectories
-    chunk = 64
-    results = [
-        result
-        for start in range(0, len(structures), chunk)
-        for result in model.compute(
-            structures[start : start + chunk], ["energy", "forces"]
-        )
-    ]
-    energy_pred = np.array([float(result["energy"]) for result in results])
-    forces_pred = np.array([result["forces"] for result in results], dtype=float)
+    energy_pred = np.empty(traj.n_frames)
+    force_sq_error = 0.0
+    for start in range(0, traj.n_frames, 64):
+        batch = traj[start : start + 64]
+        structures = [frame.structure for frame in batch.to_frames()]
+        results = model.compute(structures, ["energy", "forces"])
+        if len(results) != len(batch):
+            raise ValueError(
+                f"Expected {len(batch)} model results at frame {start}, "
+                f"got {len(results)}"
+            )
+        forces = np.asarray([result["forces"] for result in results], dtype=float)
+        reference = traj.forces[start : start + len(batch)]
+        if forces.shape != reference.shape:
+            raise ValueError(
+                f"Expected forces of shape {reference.shape} at frame {start}, "
+                f"got {forces.shape}"
+            )
+        energy_pred[start : start + len(batch)] = [
+            float(result["energy"]) for result in results
+        ]
+        force_sq_error += np.sum((forces - reference) ** 2)
 
     pred_dev = (energy_pred - energy_pred.mean()) / traj.n_atoms
     ref_dev = (traj.energy - traj.energy.mean()) / traj.n_atoms
     return {
         "energy_rmse": float(np.sqrt(np.mean((pred_dev - ref_dev) ** 2))),
-        "force_rmse": float(np.sqrt(np.mean((forces_pred - traj.forces) ** 2))),
+        "force_rmse": float(np.sqrt(force_sq_error / traj.forces.size)),
     }
 
 

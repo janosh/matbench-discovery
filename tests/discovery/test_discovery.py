@@ -39,6 +39,7 @@ from matbench_discovery.hpc import (
     partition_material_ids,
     slurm_shard_selection,
 )
+from matbench_discovery.relaxation import relax_structures
 from tests.utils import patch_model_metadata
 
 if TYPE_CHECKING:
@@ -85,6 +86,23 @@ def run_single_point_shard(
     }
     kwargs |= overrides
     return run_discovery_shard(**kwargs)
+
+
+def test_relax_with_batch_limits() -> None:
+    """Pass batch limits with a fractional edge cutoff through to the optimizer."""
+    copper = Structure(np.eye(3) * 3, ["Cu"], [[0, 0, 0]])
+    result = relax_structures(
+        [copper],
+        EMT(),
+        optimizer="FIRE",
+        cell_filter=None,
+        max_force=0.01,
+        max_steps=0,
+        batch={"structures": 1, "edges": 100, "edge_cutoff": 3.2},
+    )
+    assert len(result) == 1
+    assert result[0].energy is not None
+    assert np.isfinite(result[0].energy)
 
 
 @pytest.mark.parametrize(

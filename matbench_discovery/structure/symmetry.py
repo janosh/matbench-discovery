@@ -4,20 +4,11 @@ from collections.abc import Mapping
 from typing import Any
 
 import pandas as pd
-from matscikit import Structure, rms_distances, symmetry_summary
-from matscikit.interop import structure_from_pymatgen_dict
+from matscikit import ItemError, Structure, rms_distances, symmetry_summary
+from matscikit.interop import to_structure
 from pymatviz.enums import Key
 
 from matbench_discovery.enums import MbdKey
-
-
-def as_structure(struct: Structure | Mapping[str, Any]) -> Structure:
-    """Accept a matscikit Structure or a pymatgen-style structure dict."""
-    if isinstance(struct, Structure):
-        return struct
-    if isinstance(struct, Mapping):
-        return structure_from_pymatgen_dict(struct)
-    raise TypeError(f"Expected Structure or structure dict, got {type(struct)}")
 
 
 def get_sym_info_from_structs(
@@ -44,33 +35,32 @@ def get_sym_info_from_structs(
     structs = []
     for mat_id, struct in structures.items():
         try:
-            structs.append(as_structure(struct))
+            structs.append(to_structure(struct))
         except TypeError as exc:
             raise TypeError(f"{exc} for {mat_id!r}") from None
     try:
         summary = symmetry_summary(
             structs, symprec=symprec, angle_tolerance=angle_tolerance
         )
-    except ValueError as exc:  # e.g. a structure without sites
-        failed_id = mat_ids[exc.index]  # ty: ignore[unresolved-attribute]
-        exc.add_note(f"{Key.mat_id}={failed_id!r}")
+    except ItemError as exc:  # e.g. a structure without sites
+        exc.add_note(f"{Key.mat_id}={mat_ids[exc.index]!r}")
         raise
     # nullable integers: a failed search leaves NA, not a float column (225.0 in CSVs)
     numbers, hall_numbers, n_ops = (
-        pd.array(summary[key], dtype="Int64")
-        for key in ("number", "hall_number", "n_operations")
+        pd.array(column, dtype="Int64")
+        for column in (summary.number, summary.hall_number, summary.n_operations)
     )
     return pd.DataFrame(
         {
             Key.spg_num: numbers,
             Key.hall_num: hall_numbers,
-            MbdKey.international_spg_name: summary["hm_short"],
-            Key.wyckoff_symbols: summary["wyckoffs"],
+            MbdKey.international_spg_name: summary.hm_short,
+            Key.wyckoff_symbols: summary.wyckoffs,
             Key.n_sym_ops: n_ops,
             # every operation pairs one rotation with one translation
             Key.n_rot_syms: n_ops,
             Key.n_trans_syms: n_ops,
-            Key.hall_symbol: summary["hall_symbol"],
+            Key.hall_symbol: summary.hall_symbol,
             Key.symprec: symprec,
             Key.angle_tolerance: angle_tolerance,
         },
@@ -120,13 +110,11 @@ def pred_vs_ref_struct_symmetry(
         raise ValueError(f"No shared IDs between:\n{pred_ids=}\n{ref_ids=}")
 
     pairs = [
-        (as_structure(pred_structs[mat_id]), as_structure(ref_structs[mat_id]))
+        (to_structure(pred_structs[mat_id]), to_structure(ref_structs[mat_id]))
         for mat_id in shared_ids
     ]
     # one parallel call returning normalized RMS and max displacement (NaN for no
-    # match). Unlike StructureMatcher(stol=1, scale=False).get_rms_dist, it searches
-    # both argument orders and equivalent reduced bases, so its RMSD is never higher
-    # than pymatgen's, and it can match pairs pymatgen rejects
+    # match). Individual values can differ from pymatgen StructureMatcher.
     nan_pair = (float("nan"), float("nan"))
     df_rms = pd.DataFrame(
         [match or nan_pair for match in rms_distances(pairs, stol=1.0)],

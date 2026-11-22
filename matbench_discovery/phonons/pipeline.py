@@ -20,15 +20,11 @@ from urllib.parse import quote
 import numpy as np
 import pandas as pd
 from filelock import FileLock
+from matscikit import BUILD_ID
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery import (
-    MATSCIKIT_EXTENSION,
-    ROOT,
-    atomic_output_path,
-    file_digest,
-)
+from matbench_discovery import ROOT, atomic_output_path, file_digest
 from matbench_discovery.enums import DataFiles, Model
 from matbench_discovery.hpc import (
     LOAD_CHARGED,
@@ -432,8 +428,6 @@ def kappa_source_paths(adapter: StandardKappaAdapter, model_key: str) -> set[str
         os.path.realpath(schema.__file__),
         os.path.realpath(thermal_conductivity.__file__),
         os.path.realpath(f"{ROOT}/models/run_kappa.py"),
-        # the compiled numerics: matscikit.__version__ stays put across rebuilds
-        os.path.realpath(MATSCIKIT_EXTENSION),
     }
     if (calc_spec := calculators.CALCULATORS.get(model_key)) and calc_spec.project:
         source_paths.add(os.path.realpath(f"{ROOT}/{calc_spec.project}/pyproject.toml"))
@@ -446,15 +440,11 @@ def kappa_source_paths(adapter: StandardKappaAdapter, model_key: str) -> set[str
 
 
 def kappa_source_digest(adapter: StandardKappaAdapter, model_key: str) -> str:
-    """Hash shared runner, pipeline, calculator, schema, and adapter source files."""
-    source_hasher = hashlib.sha256()
-    extension = os.path.realpath(MATSCIKIT_EXTENSION)
-    # extension last: its install path must not move it among the checkout's sources,
-    # else workers sharing a checkout but not a venv disagree on the digest
-    for source_path in sorted(
-        kappa_source_paths(adapter, model_key),
-        key=lambda path: (path == extension, path),
-    ):
+    """Hash shared runner, pipeline, calculator, schema, and adapter source files plus
+    the matscikit build (its source, cargo features and profile).
+    """
+    source_hasher = hashlib.sha256(BUILD_ID.encode())
+    for source_path in sorted(kappa_source_paths(adapter, model_key)):
         if not os.path.isfile(source_path):
             raise FileNotFoundError(f"Kappa source file not found: {source_path}")
         source_hasher.update(os.path.basename(source_path).encode())
@@ -1132,7 +1122,7 @@ def json_ready(value: object) -> object:
     if isinstance(value, Mapping):
         return {str(key): json_ready(item) for key, item in value.items()}
     if isinstance(value, np.ndarray):
-        return json_ready(value.tolist())  # ty: ignore[no-matching-overload]
+        return json_ready(value.tolist())
     if isinstance(value, np.generic):
         return json_ready(value.item())
     if isinstance(value, tuple | list):

@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 import pandas as pd
 from filelock import FileLock
-from matscikit import Structure, mp2020_corrections
+from matscikit import RelaxResult, Structure, mp2020_corrections
 from matscikit.interop import structure_from_pymatgen_dict, structure_to_pymatgen_dict
 from pymatviz.enums import Key
 from tqdm import tqdm
@@ -323,22 +323,26 @@ def load_wbm_structures(
 
 
 def relaxation_record(
-    material_id: str, result: Mapping[str, Any], settings: RelaxationSettings
+    material_id: str, result: RelaxResult, settings: RelaxationSettings
 ) -> RelaxationRecord:
     """Serializable record of one ``matscikit.relax`` result (failure if it failed)."""
-    if result["error"] is not None:
-        return RelaxationRecord(material_id, error=result["error"])
-    relaxed = result["structure"]
+    if result.error is not None:
+        return RelaxationRecord(material_id, error=result.error)
+    if result.energy is None:
+        raise RuntimeError(
+            f"{material_id}: matscikit.relax gave neither energy nor error"
+        )
+    relaxed = result.structure
     structure_dict = structure_to_pymatgen_dict(relaxed)
     # structure info (incl. arrays a model attached) travels as structure properties
     structure_dict["properties"] = dict(relaxed.info)
     return RelaxationRecord(
         material_id=material_id,
         structure=structure_dict,
-        energy=float(result["energy"]),
+        energy=result.energy,
         # a zero-step budget evaluates the start geometry without optimizing it
-        converged=bool(result["converged"]) and settings.max_steps > 0,
-        n_steps=int(result["n_steps"]),
+        converged=result.converged and settings.max_steps > 0,
+        n_steps=result.n_steps,
     )
 
 
@@ -351,7 +355,7 @@ def _json_default(value: object) -> object:
     if isinstance(value, np.generic):
         return value.item()
     if isinstance(value, np.ndarray):
-        return value.tolist()  # ty: ignore[no-matching-overload]  # shape is unknown
+        return value.tolist()
     raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
 
 
@@ -554,14 +558,14 @@ def run_discovery_shard(
         ) as progress:
             last_time = time.perf_counter()
 
-            def append_record(index: int, result: dict[str, Any]) -> None:
+            def append_record(index: int, result: RelaxResult) -> None:
                 """Durably append the record of the structure that just finished."""
                 nonlocal last_time
                 material_id, now = pending_ids[index], time.perf_counter()
                 cost = {
                     "run_time_sec": round(now - last_time, 3),
                     # failures may legitimately never reach the GPU
-                    **memory_peaks(runtime, succeeded=result["error"] is None),
+                    **memory_peaks(runtime, succeeded=result.error is None),
                 }
                 last_time = now
                 try:
@@ -714,7 +718,7 @@ def _load_wbm_cse_frame(material_ids: Sequence[str] | None = None) -> pd.DataFra
         DataFiles.wbm_computed_structure_entries.path, lines=True
     ).set_index(Key.mat_id)
     if material_ids is not None:
-        df_wbm_cse = df_wbm_cse.loc[df_wbm_cse.index.isin(material_ids)]
+        df_wbm_cse = df_wbm_cse.loc[df_wbm_cse.index.isin(list(material_ids))]
     return df_wbm_cse
 
 
@@ -792,7 +796,7 @@ def write_discovery_artifacts(
         if record.material_id not in df_summary.index:
             raise ValueError(f"No WBM summary row for {record.material_id}")
         formula = str(df_summary.loc[record.material_id, Key.formula])
-        row["corrected_energy"] = float(processed["corrected_energy"])
+        row["corrected_energy"] = processed.corrected_energy
         to_reference.append((record.material_id, formula, row["corrected_energy"]))
         geo_opt_rows.append(
             {

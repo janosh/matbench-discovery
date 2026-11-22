@@ -52,10 +52,8 @@ df_mp_trj = pd.DataFrame(
             Key.forces: frame.forces,
             # 3x3 Cauchy stress (eV/A^3), not the Voigt 6-vector of earlier caches
             Key.stress: frame.stress,
-            # (n_atoms, 1) column -> (n_atoms,) like ASE's get_magnetic_moments()
-            Key.magmoms: None
-            if (magmoms := frame.arrays.get("magmoms")) is None
-            else np.ravel(magmoms),
+            # (n_atoms,) collinear moments like ASE's get_magnetic_moments()
+            Key.magmoms: frame.structure.site_data.get("magmoms"),
             Key.formula: frame.structure.composition.formula,
             Key.atom_nums: frame.structure.symbols,
         }

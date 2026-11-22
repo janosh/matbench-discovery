@@ -3,6 +3,7 @@ positive/negative and compute performance metrics.
 """
 
 from collections.abc import Mapping, Sequence
+from typing import overload
 
 import numpy as np
 import pandas as pd
@@ -13,9 +14,17 @@ from matbench_discovery.data import MAX_E_FORM_ERROR_THRESHOLD
 from matbench_discovery.enums import MbdKey, Model, TestSubset
 
 
-def pred_hull_dist[T: (pd.Series, pd.DataFrame)](
-    e_form_pred: T, each_true: pd.Series, e_form_dft: pd.Series
-) -> T:
+@overload
+def pred_hull_dist(
+    e_form_pred: pd.Series, each_true: pd.Series, e_form_dft: pd.Series
+) -> pd.Series: ...
+@overload
+def pred_hull_dist(
+    e_form_pred: pd.DataFrame, each_true: pd.Series, e_form_dft: pd.Series
+) -> pd.DataFrame: ...
+def pred_hull_dist(
+    e_form_pred: pd.Series | pd.DataFrame, each_true: pd.Series, e_form_dft: pd.Series
+) -> pd.Series | pd.DataFrame:
     """Predicted hull distance (eV/atom) each_true + e_form_pred - e_form_dft for
     one model (Series) or one column per model (DataFrame). With 3-decimal inputs,
     hundreds of prototypes land exactly on the stability threshold where this float

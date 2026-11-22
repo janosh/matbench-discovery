@@ -246,7 +246,10 @@
 <p>
   The <a href={phonon_url}>PhononDB PBE test set</a> contains 103 Materials Project crystals.
   After one simultaneous cell-and-site relaxation, finite-displacement forces yield second-
-  and third-order force constants and each material's conductivity.
+  and third-order force constants and each material's conductivity. The displacement listed
+  in the table belongs to the conductivity run. Separate harmonic calculations can use another
+  displacement. Their force files store the distance and displacement vectors used for each
+  material.
 </p>
 <p>
   κ<sub>SRME</sub> compares mode contributions before summation, while κ<sub>SRE</sub>

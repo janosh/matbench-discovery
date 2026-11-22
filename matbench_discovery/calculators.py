@@ -22,10 +22,10 @@ import subprocess
 import sys
 import time
 import zipfile
-from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, MutableMapping, Sequence
 from dataclasses import dataclass
 from importlib.metadata import PackageNotFoundError, requires, version
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Protocol
 from urllib.parse import urlsplit
 
 from filelock import FileLock
@@ -33,8 +33,15 @@ from filelock import FileLock
 from matbench_discovery import DEFAULT_CACHE_DIR, file_digest
 
 if TYPE_CHECKING:
-    from ase.calculators.calculator import Calculator
     from matscikit.model import Model as ForceModel
+
+
+class Calculator(Protocol):
+    """An ASE-style calculator, as `matscikit.interop.AseCalculatorModel` wraps it."""
+
+    def get_property(self, name: str, atoms: object = None) -> object:
+        """Return property `name` of `atoms`, computing it if needed."""
+
 
 # model factories return an ASE calculator or a native matscikit model
 CalcFactory = Callable[..., "Calculator | ForceModel"]
@@ -47,7 +54,7 @@ DERIVED_ARTIFACT_TIMEOUT_SEC = 30 * 60
 ACCELERATION_ATTR = "mbd_acceleration"
 
 
-def _with_acceleration(calculator: Calculator, *flags: str) -> Calculator:
+def _with_acceleration[C: Calculator | ForceModel](calculator: C, *flags: str) -> C:
     """Record a factory's enabled acceleration paths for the cost labels."""
     vars(calculator)[ACCELERATION_ATTR] = tuple(flags)
     return calculator
@@ -374,7 +381,7 @@ def _named_spec(
     return _runtime_calc_spec(model_key, factory(model_key))
 
 
-class _CalcRegistry:
+class _CalcRegistry(MutableMapping[str, CalcSpec]):
     """Resolve lazy CalcSpec builders on first [] / .get / iteration."""
 
     def __init__(self, mapping: dict[str, CalcSpec | Callable[[], CalcSpec]]) -> None:
@@ -404,15 +411,9 @@ class _CalcRegistry:
         """Iterate over registered keys without building their specs."""
         return iter(self._data)
 
-    def get(self, key: str, default: CalcSpec | None = None) -> CalcSpec | None:
-        """Return a resolved CalcSpec, or default when the key is missing."""
-        if key not in self._data:
-            return default
-        return self[key]
-
-    def items(self) -> Iterator[tuple[str, CalcSpec]]:
-        """Yield (key, resolved CalcSpec) pairs, building lazy entries as needed."""
-        return ((key, self[key]) for key in self._data)
+    def __len__(self) -> int:
+        """Return the number of registered calculator keys."""
+        return len(self._data)
 
 
 def resolve_checkpoint(model_key: str, checkpoint: str | None = None) -> str | None:
@@ -456,7 +457,7 @@ def _mace(checkpoint: str, head: str | None = None) -> Callable[[str, str], Calc
         """Load the MACE model on device in the requested dtype."""
         from mace.calculators import mace_mp
 
-        kwargs = {"head": head} if head else {}
+        kwargs: dict[str, Any] = {"head": head} if head else {}
         enable_cueq = device == "cuda"
         calc = mace_mp(
             model=checkpoint,
@@ -477,8 +478,8 @@ def _mace_soyo(head: str) -> Callable[..., Calculator]:
         """Export (once per GPU arch) and load the MACE-SOYO AOTI package."""
         import mace_soyo
         import torch
-        from ase.build import bulk
-        from ase.io import write
+        from matscikit import Structure
+        from matscikit.io import write_extxyz
 
         if torch.device(device).type != "cuda":
             raise ValueError(f"MACE-SOYO requires CUDA, got {device=}")
@@ -489,8 +490,16 @@ def _mace_soyo(head: str) -> Callable[..., Calculator]:
             example = f"{CHECKPOINT_DIR}/mace-soyo-export-si-v1.extxyz"
             with FileLock(f"{example}.lock"):
                 if not _is_non_empty_file(example):
-                    silicon = bulk("Si", "diamond", a=5.43, cubic=True)
-                    write(f"{example}.tmp", silicon, format="extxyz")
+                    # conventional 8-atom diamond Si, a = 5.43 Å
+                    basis = [[0, 0, 0], [0, 0.5, 0.5], [0.5, 0, 0.5], [0.5, 0.5, 0]]
+                    coords = [*basis, *([x + 0.25 for x in site] for site in basis)]
+                    silicon = Structure(
+                        [[5.43, 0, 0], [0, 5.43, 0], [0, 0, 5.43]],
+                        ["Si"] * 8,
+                        coords,
+                        fractional=True,
+                    )
+                    write_extxyz(f"{example}.tmp", silicon)
                     os.replace(f"{example}.tmp", example)
             arch = "".join(map(str, torch.cuda.get_device_capability(device)))
             digest, _state = _stable_file_sha256(checkpoint)

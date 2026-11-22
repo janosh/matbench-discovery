@@ -62,18 +62,20 @@ def write_metrics_to_yaml(
     model: Model,
     symprec: float,
     analysis_file_path: str,
+    *,
+    regenerated: bool = False,
 ) -> dict[str, object]:
     """Write geometric optimization metrics to model's YAML file.
 
-    The analysis_file ref keeps its Figshare url/size/md5 while the file name is
-    unchanged (e.g. metrics re-derived from a cached CSV); a renamed analysis file
-    (new date or moyo version) drops them until the next upload.
+    A cached file retains its registered URL and checksum. A renamed or regenerated
+    CSV gets a fresh file reference until its bytes are published.
 
     Args:
         df_geo_opt (pd.DataFrame): Geometric optimization metrics
         model (Model): Model to write metrics for
         symprec (float): Symmetry precision used for analysis
         analysis_file_path (str): Path to analysis file
+        regenerated (bool): Whether this run wrote new analysis bytes.
 
     Returns:
         dict[str, object]: Geometric optimization metrics for this model and
@@ -117,13 +119,14 @@ def write_metrics_to_yaml(
     def merge_block(previous: dict[str, Any]) -> dict[str, Any]:
         """Merge new metrics over the prior block under update_yaml_file's lock."""
         metrics_for_symprec["analysis_file"] = merge_file_ref(
-            previous.get("analysis_file"), analysis_file_path
+            previous.get("analysis_file"), analysis_file_path, replace=regenerated
         )
         for key, val in previous.items():  # keep prior keys not emitted here
             metrics_for_symprec.setdefault(key, val)
         return metrics_for_symprec
 
     update_yaml_file(model.yaml_path, f"metrics.geo_opt.{symprec_key}", merge_block)
+    model.__dict__.pop("metadata", None)
     return metrics_for_symprec
 
 

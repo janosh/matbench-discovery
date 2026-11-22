@@ -230,7 +230,7 @@ def test_run_nvt_md() -> None:
             frame.structure.lattice, atoms.lattice, rtol=0, atol=0
         )
     # momenta should be thermalized, i.e. non-zero
-    assert np.abs(frames[0].arrays["momenta"]).max() > 0
+    assert np.abs(frames[0].structure.site_data["momenta"]).max() > 0
     # atoms should have moved between frames
     displacement = frames[-1].structure.positions - frames[0].structure.positions
     assert np.abs(displacement).max() > 1e-3
@@ -264,7 +264,7 @@ def test_run_nvt_md_stress_probe(error: Exception) -> None:
         """Two NVT steps with the stress-failing model."""
         return run_nvt_md(
             atoms,
-            StressFailingEMT(error),  # ty: ignore[invalid-argument-type]
+            StressFailingEMT(error),
             temperature_kelvin=300,
             n_steps=2,
             record_interval=1,
@@ -365,7 +365,7 @@ def test_validate_pred_trajectory(tmp_path: Path, cu_emt_frames: list[Frame]) ->
 
     def validate(
         path: Path, *, expected: int = 5, ref: Structure = atoms
-    ) -> list[Structure] | None:
+    ) -> list[Frame] | None:
         """Validate a rollout against the expected frame and atom metadata."""
         return validate_pred_trajectory(
             str(path), expected_frames=expected, ref_atoms=ref, params=params
@@ -402,9 +402,13 @@ def test_validate_pred_trajectory(tmp_path: Path, cu_emt_frames: list[Frame]) ->
     )  # symbols
 
     def with_nan(frame: Frame) -> Frame:
-        momenta = frame.arrays["momenta"].copy()
+        structure = frame.structure
+        momenta = np.array(structure.site_data["momenta"], dtype=float)
         momenta[0, 0] = np.nan
-        return dataclasses.replace(frame, arrays={"momenta": momenta})
+        site_data = {**structure.site_data, "momenta": momenta}
+        return dataclasses.replace(
+            frame, structure=structure.replace(site_data=site_data)
+        )
 
     def with_bad_step(frame: Frame) -> Frame:
         structure = frame.structure.copy()
@@ -476,7 +480,10 @@ def test_run_nvt_md_resume_reproduces(
             frame.structure.positions, ref_frame.structure.positions, rtol=0, atol=1e-12
         )
         np.testing.assert_allclose(
-            frame.arrays["momenta"], ref_frame.arrays["momenta"], rtol=0, atol=1e-12
+            np.asarray(frame.structure.site_data["momenta"], dtype=float),
+            np.asarray(ref_frame.structure.site_data["momenta"], dtype=float),
+            rtol=0,
+            atol=1e-12,
         )
     # staged artifacts cleaned up on completion
     assert not os.path.isfile(f"{tmp_path}/out.part.extxyz")
@@ -507,7 +514,7 @@ def test_run_nvt_md_resumable_ignores_other_matscikit_build(
         _run_short_resumable(atoms, out_path)
     assert os.path.isfile(f"{out_path}.ckpt.npz")
 
-    monkeypatch.setattr(md_mod, "matscikit_build_digest", lambda: "rebuilt-extension")
+    monkeypatch.setattr(md_mod, "BUILD_ID", "0.1.0-beta.5+rebuilt")
     frames = _run_short_resumable(atoms, out_path)
     assert "schema/matscikit build mismatch" in capsys.readouterr().out
     assert len(frames) == 7  # recomputed from step 0

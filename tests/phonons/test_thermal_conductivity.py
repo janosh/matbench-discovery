@@ -104,6 +104,7 @@ def test_fc3_forces_batch_and_cap(cu_calc: ltc.KappaCalculation) -> None:
     model = CountingModel()
     ADAPTER.calculate_fc3(cu_calc, model, KappaSettings(batch_size=3))
     forces = cu_calc.phonons.fc3_forces
+    assert forces is not None
     assert forces.shape == (len(cu_calc.phonons.displacements), 27, 3)
     assert model.batch_sizes[:-1] == [3] * (len(model.batch_sizes) - 1)
     assert sum(model.batch_sizes) == len(forces)
@@ -112,6 +113,7 @@ def test_fc3_forces_batch_and_cap(cu_calc: ltc.KappaCalculation) -> None:
     np.testing.assert_array_equal(cu_calc.phonons.fc3_forces, forces)
     ADAPTER.calculate_fc3(cu_calc, EMT(), SETTINGS, max_evaluations=2)
     capped = cu_calc.phonons.fc3_forces
+    assert capped is not None
     np.testing.assert_array_equal(capped[:2], forces[:2])
     assert not capped[2:].any()
     with pytest.raises(ValueError, match="supercell 0 are not finite"):
@@ -121,6 +123,7 @@ def test_fc3_forces_batch_and_cap(cu_calc: ltc.KappaCalculation) -> None:
 def test_calculate_conductivity(cu_calc: ltc.KappaCalculation) -> None:
     """End-to-end EMT Cu kappa: finite, isotropic and consistent with mode sums."""
     freqs = ADAPTER.calculate_fc2(cu_calc, EMT(), SETTINGS)
+    assert cu_calc.phonons.fc2_forces is not None
     assert cu_calc.phonons.fc2_forces.shape == (1, 8, 3)
     assert freqs.shape == (64, 3)  # every point of the 4x4x4 grid, 3 bands
     np.testing.assert_allclose(freqs[0], 0, atol=1e-5)  # acoustic modes at Gamma
@@ -136,6 +139,7 @@ def test_calculate_conductivity(cu_calc: ltc.KappaCalculation) -> None:
         freqs[1], [2.42804731, 2.42804731, 5.45674688], rtol=1e-8
     )
     ADAPTER.calculate_fc3(cu_calc, EMT(), SETTINGS)
+    assert cu_calc.phonons.fc3_forces is not None
     assert cu_calc.phonons.fc3_forces.shape == (
         len(cu_calc.phonons.displacements),
         27,

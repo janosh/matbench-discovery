@@ -113,11 +113,11 @@ def calculate_conductivity(
         boundary_mfp_um=boundary_mfp,
     )
     return {
-        MbdKey.kappa_tot_rta: result["kappa_tot_rta"],
-        MbdKey.kappa_p_rta: result["kappa_p_rta"],
-        MbdKey.kappa_c: result["kappa_c"],
-        MbdKey.mode_kappa_tot_rta: result["mode_kappa_tot_rta"],
-        Key.mode_weights: result["weights"],
-        Key.q_points: result["q_points"],
-        Key.ph_freqs: result["frequencies"],
+        MbdKey.kappa_tot_rta: result.kappa_tot_rta,
+        MbdKey.kappa_p_rta: result.kappa_p_rta,
+        MbdKey.kappa_c: result.kappa_c,
+        MbdKey.mode_kappa_tot_rta: result.mode_kappa_tot_rta,
+        Key.mode_weights: result.weights,
+        Key.q_points: result.q_points,
+        Key.ph_freqs: result.frequencies,
     }

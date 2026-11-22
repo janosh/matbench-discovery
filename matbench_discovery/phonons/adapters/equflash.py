@@ -47,7 +47,7 @@ class EquFlashBatchedModel:
             device = "cuda" if torch.cuda.is_available() else "cpu"
         converter = AtomsToGraphs(r_edges=False)
         graphs = [converter.convert(structure_to_ase(struct)) for struct in structures]
-        graph_batch = Batch.from_data_list(graphs).to(device)  # ty: ignore[unresolved-attribute]
+        graph_batch = Batch.from_data_list(graphs).to(device)
         outputs = self.trainer.predict(graph_batch, per_image=False, disable_tqdm=True)
         forces = outputs["forces"].detach().cpu().numpy()
         offsets = np.cumsum([0, *(len(struct) for struct in structures)])
