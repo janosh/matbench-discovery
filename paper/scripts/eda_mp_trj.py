@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import pymatviz as pmv
-from matscikit import Composition
+from kemio import Composition
 from pymatviz.enums import ElemCountMode, Key
 
 from matbench_discovery import MP_DIR, PDF_FIGS

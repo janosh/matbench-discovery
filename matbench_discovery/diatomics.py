@@ -10,14 +10,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, SupportsIndex
 
 import numpy as np
-from matscikit import Structure
-from matscikit.elements import CHEMICAL_SYMBOLS
+from kemio import Structure
+from kemio.elements import CHEMICAL_SYMBOLS
 from tqdm import tqdm
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from matscikit.model import Model as ForceModel
+    from kemio.model import Model as ForceModel
 
 homo_nuc = "homo-nuclear"  # DiatomicResults section key in prediction files
 # one curve's distances/energies/forces lists, keyed by formula in DiatomicResults
@@ -77,7 +77,7 @@ def calc_diatomic_curve(
         pairs (list[tuple[str | int, str | int]]): Element pairs to calculate.
             Each pair can be specified as element symbols or atomic numbers.
         model (ForceModel): Model mapping structures to energies and forces (wrap ASE
-            calculators with ``matscikit.interop.AseCalculatorModel``).
+            calculators with ``kemio.interop.AseCalculatorModel``).
         model_name (str): Name of the model for the output file.
         distances (list[float]): Distances to calculate potential energy at.
         results (DiatomicResults): Results dict to collect energies and forces at given

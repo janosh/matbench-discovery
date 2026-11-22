@@ -4,12 +4,12 @@ individual CSV files (one per symprec value) in a model's directory.
 Output files will have the same name as the input file containing the model's relaxed
 structures, with the symmetry tolerance and both solver versions in the filename.
 
-Note: RMSDs come from matscikit.rms_distances with stol=1.0 and no volume scaling.
+Note: RMSDs come from kemio.rms_distances with stol=1.0 and no volume scaling.
 RMSD values are normalized (unitless) and NaN where no match was found. They are
 scored by metrics.geo_opt.rmsd_auc, where unmatched and missing structures score 0.
 
-Symmetry runs on matscikit's bundled moyo crate, so file names and the DFT reference
-check use matscikit.MOYO_VERSION (not any installed moyopy).
+Symmetry runs on kemio's bundled moyo crate, so file names and the DFT reference
+check use kemio.MOYO_VERSION (not any installed moyopy).
 
 Example usage:
     uv run --with-editable '.' scripts/analyze_geo_opt.py \
@@ -24,8 +24,8 @@ import os
 from typing import TYPE_CHECKING, Any, Final
 
 import pandas as pd
-from matscikit import BUILD_ID, MOYO_VERSION, Structure
-from matscikit.interop import structure_from_pymatgen_dict
+from kemio import BUILD_ID, MOYO_VERSION, Structure
+from kemio.interop import structure_from_pymatgen_dict
 from pymatviz.enums import Key
 
 from matbench_discovery import ROOT, atomic_output_path, file_digest, today
@@ -46,7 +46,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 # Exclude the build profile and enabled features so identical source shares its cache.
-MATSCIKIT_SOURCE_ID: Final = BUILD_ID.rsplit(".", 1)[0]
+KEMIO_SOURCE_ID: Final = BUILD_ID.rsplit(".", 1)[0]
 
 DFT_REFERENCE_FILES: Final[dict[float, DataFiles]] = {
     1e-2: DataFiles.wbm_dft_geo_opt_symprec_1e_2,
@@ -117,7 +117,7 @@ def analyze_model_symprec(
             "geo_opt_analysis",
             symprec=symprec,
             moyo_version=moyo_version,
-            matscikit_source_id=MATSCIKIT_SOURCE_ID,
+            kemio_source_id=KEMIO_SOURCE_ID,
         )
         geo_opt_dir = os.path.dirname(geo_opt_path)
         if debug_mode:
@@ -228,7 +228,7 @@ def main(raw_args: list[str] | None = None) -> int:
     geo_opt_group.add_argument(
         "--write-dft-reference",
         action="store_true",
-        help="Recompute the WBM DFT symmetry reference with matscikit's moyo.",
+        help="Recompute the WBM DFT symmetry reference with kemio's moyo.",
     )
     geo_opt_group.add_argument(
         "--debug", type=int, default=0, help="If > 0, analyze only this many."
@@ -241,7 +241,7 @@ def main(raw_args: list[str] | None = None) -> int:
     # > 0 activates debug mode, analyzing only that many structures
     debug_mode: Final[int] = args.debug
     symprec_values: Final[Sequence[float]] = args.symprec
-    moyo_version = MOYO_VERSION  # matscikit's moyo crate does the symmetry search
+    moyo_version = MOYO_VERSION  # kemio's moyo crate does the symmetry search
 
     # %% Check the registered DFT reference for each symprec value before the slow WBM
     # load. Model analyses are only comparable to a reference from the same moyo
@@ -258,7 +258,7 @@ def main(raw_args: list[str] | None = None) -> int:
         ref_suffix = f"-moyo={moyo_version}.csv.gz"
         if not args.write_dft_reference and not data_file.rel_path.endswith(ref_suffix):
             raise ValueError(
-                f"matscikit's moyo {moyo_version} does not match the registered DFT "
+                f"kemio's moyo {moyo_version} does not match the registered DFT "
                 f"reference {data_file.rel_path}. Pass --write-dft-reference and "
                 "register the new file in data-files.yml"
             )
@@ -285,7 +285,7 @@ def main(raw_args: list[str] | None = None) -> int:
         for symprec, data_file in reference_files.items()
     }
 
-    # sequential: each analysis already uses every core (matscikit's rayon pool), and
+    # sequential: each analysis already uses every core (kemio's rayon pool), and
     # worker processes would each hold a copy of the DFT structures
     tasks = list(itertools.product(args.models, symprec_values))
     for model, symprec in tasks:

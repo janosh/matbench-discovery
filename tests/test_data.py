@@ -13,8 +13,8 @@ from unittest.mock import Mock, patch
 import numpy as np
 import pandas as pd
 import pytest
-from matscikit import Structure
-from matscikit.io import Frame, format_extxyz
+from kemio import Structure
+from kemio.io import Frame, format_extxyz
 from pymatviz.enums import Key
 from ruamel.yaml.comments import CommentedMap
 
@@ -689,7 +689,7 @@ def test_artifact_filename_static_roles(role: str, expected_suffix: str) -> None
     assert parse_artifact_filename(f"2026-07-01-{expected_suffix}") == role
 
 
-@pytest.mark.parametrize("version", [None, "0.1.0-beta.5+0123456789abcdef"])
+@pytest.mark.parametrize("version", [None, "0.1.0+0123456789abcdef"])
 def test_artifact_filename_geo_opt_analysis_round_trip(version: str | None) -> None:
     """Geo-opt analysis filenames round-trip; invalid calendar dates are rejected."""
     filename = artifact_filename(
@@ -697,9 +697,9 @@ def test_artifact_filename_geo_opt_analysis_round_trip(version: str | None) -> N
         "geo_opt_analysis",
         symprec=1e-5,
         moyo_version="0.4.2",
-        matscikit_source_id=version,
+        kemio_source_id=version,
     )
-    suffix = f"-matscikit={version}" if version else ""
+    suffix = f"-kemio={version}" if version else ""
     assert filename == f"2026-07-01-geo-opt-symprec=1e-5-moyo=0.4.2{suffix}.csv.gz"
     assert parse_artifact_filename(filename) == "geo_opt_analysis"
     with pytest.raises(ValueError, match="Invalid ISO date"):

@@ -1,6 +1,6 @@
 """Fetch all MP ComputedStructureEntries and derive the MP elemental reference entries
 used for formation energies. The DFT ground-truth convex hull is built on the fly from
-those entries by matscikit's PhaseDiagram in compile_wbm_test_set.py.
+those entries by kemio's PhaseDiagram in compile_wbm_test_set.py.
 """
 
 # %%

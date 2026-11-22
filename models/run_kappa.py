@@ -17,7 +17,7 @@ Examples:
 #
 # [tool.uv.sources]
 # matbench-discovery = { path = "../", editable = true }
-# matscikit = { path = "../../matscikit", editable = true }
+# kemio = { path = "../../kemio", editable = true }
 # ///
 
 from __future__ import annotations

@@ -13,7 +13,7 @@ They are kept at every path q-point, not just the labeled ones the site animates
 later be tracked through crossings by eigenvector overlap.
 
 For a new metric, load a record from ``*-phonons.json.gz`` and reconstruct it with
-``phonons_from_harmonic_data(record)`` (a ``matscikit.Phonons``). Evaluate the required
+``phonons_from_harmonic_data(record)`` (a ``kemio.Phonons``). Evaluate the required
 q-points or mesh on that object, then keep scoring functions in
 ``metrics/phonons.py``. Existing mesh spectra already carry q-point multiplicities;
 band samples are not a Brillouin-zone measure. Use the FC2 input for
@@ -34,16 +34,16 @@ from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
-from matscikit import Phonons, Structure, band_path
+from kemio import Phonons, Structure, band_path
 
 from matbench_discovery.phonons import IMAGINARY_FREQ_THRESHOLD
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from matscikit import MeshResult
+    from kemio import MeshResult
 
-# v4: compact FC2 (primitive-atom rows) in matscikit's recorded supercell atom order,
+# v4: compact FC2 (primitive-atom rows) in kemio's recorded supercell atom order,
 # v3: full FC2 in that order, v2: full FC2 in phonopy's order
 HARMONIC_SCHEMA_VERSION = 4
 # HPKOT q-point spacing along the path in 1/A (2 pi convention): the FCC Cu

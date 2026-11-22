@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any, cast
 import numpy as np
 import pandas as pd
 import pytest
-from matscikit import EMT, AnharmonicPhonons, Structure
+from kemio import EMT, AnharmonicPhonons, Structure
 from pymatviz.enums import Key
 
 from matbench_discovery import file_digest
@@ -55,7 +55,7 @@ from matbench_discovery.phonons.thermal_conductivity import KappaCalculation
 from tests.utils import make_harmonic_record, patch_model_metadata
 
 if TYPE_CHECKING:
-    from matscikit.model import Model as ForceModel
+    from kemio.model import Model as ForceModel
 
     from matbench_discovery.phonons.pipeline import MergedKappaRun
 
@@ -190,7 +190,7 @@ class PipelineAdapterStub(StandardKappaAdapter):
     def calculate_fc2(
         self, calc: KappaCalculation, model: ForceModel, settings: KappaSettings
     ) -> np.ndarray:
-        """Fit FC2 to harmonic restoring forces (matscikit rejects forces that break
+        """Fit FC2 to harmonic restoring forces (kemio rejects forces that break
         the site symmetry of a displacement) and return the configured frequencies.
         """
         del model, settings
@@ -718,7 +718,7 @@ def test_calculate_kappa_for_structure_runs_shared_physics_flow(
         n_configs = len(fc3["forces"]) + len(fc3["pair_forces"])
         assert n_configs == len(phonons.displacements)
         np.testing.assert_array_equal(fc3["forces"], 3.0)
-    # datasets record the matscikit supercell whose atom order the forces follow
+    # datasets record the kemio supercell whose atom order the forces follow
     for order in (fc2, fc3):
         if order is None:
             continue
@@ -807,7 +807,7 @@ def test_load_phonondb_atoms_decodes_ase_json_info(
     """ASE's "_JSON "-prefixed extxyz info loads as data the phonon setup accepts, and
     the dry run skips structures with elements the model does not support.
     """
-    from matscikit.io import format_extxyz
+    from kemio.io import format_extxyz
 
     from matbench_discovery.phonons.pipeline import load_phonondb_atoms
 
@@ -1159,17 +1159,17 @@ def test_kappa_source_paths_covers_every_output_defining_module() -> None:
     } <= basenames, f"unhashed kappa source modules; got {sorted(basenames)}"
 
 
-def test_kappa_source_digest_tracks_matscikit_build(
+def test_kappa_source_digest_tracks_kemio_build(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """A different matscikit build (source, features or profile) moves the digest."""
+    """A different kemio build (source, features or profile) moves the digest."""
     from matbench_discovery.phonons import pipeline
 
     source = tmp_path / "source.py"
     source.write_text("x = 1\n")
     monkeypatch.setattr(pipeline, "kappa_source_paths", lambda *_: {str(source)})
     digests = []
-    for build_id in ("0.1.0-beta.5+aaaa.bbbb", "0.1.0-beta.5+aaaa.cccc"):
+    for build_id in ("0.1.0+aaaa.bbbb", "0.1.0+aaaa.cccc"):
         monkeypatch.setattr(pipeline, "BUILD_ID", build_id)
         digests.append(pipeline.kappa_source_digest(StandardKappaAdapter(), "m"))
     assert digests[0] != digests[1]

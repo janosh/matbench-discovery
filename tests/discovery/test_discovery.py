@@ -12,8 +12,8 @@ import numpy as np
 import pandas as pd
 import pytest
 import yaml
-from matscikit import EMT, Structure
-from matscikit.interop import structure_to_pymatgen_dict
+from kemio import EMT, Structure
+from kemio.interop import structure_to_pymatgen_dict
 from pymatviz.enums import Key
 
 import matbench_discovery.discovery as discovery_core
@@ -635,7 +635,7 @@ def test_shard_records_relaxations_and_isolated_failures(
         settings=settings,
     )
     monkeypatch.undo()
-    # the batch limit reaches matscikit.relax (all 4 would share one call without it)
+    # the batch limit reaches kemio.relax (all 4 would share one call without it)
     assert max(model.call_sizes) == settings.max_batch_structures
     records = {record.material_id: record for record in shard.records}
     assert set(records) == set(atoms_by_id)

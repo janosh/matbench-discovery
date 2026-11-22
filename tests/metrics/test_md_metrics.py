@@ -9,9 +9,9 @@ import numpy as np
 import pandas as pd
 import pytest
 import yaml
-from matscikit import FEMTOSECOND, K_B, Structure
-from matscikit.elements import ATOMIC_MASSES
-from matscikit.io import Frame
+from kemio import FEMTOSECOND, K_B, Structure
+from kemio.elements import ATOMIC_MASSES
+from kemio.io import Frame
 
 from matbench_discovery.data import update_yaml_file
 from matbench_discovery.enums import Model
@@ -73,7 +73,7 @@ def make_jiggled_frames(
     n_frames: int, np_rng: np.random.Generator, *, pressure_gpa: float | None = None
 ) -> list[Frame]:
     """Periodic 8-atom cubic-lattice frames with small random displacements. The 2.4 A
-    spacing keeps Si-Si pairs within the covalent-radius bond cutoff so matscikit.adf
+    spacing keeps Si-Si pairs within the covalent-radius bond cutoff so kemio.adf
     finds bonded triplets (real Si-Si bond ~2.35 A; covalent cutoff ~2.78 A).
     """
     base_positions = 2.4 * np.array(
@@ -207,7 +207,7 @@ def test_calc_adf_error_invalid_input(
 
 
 def test_trajectory_observables(np_rng: np.random.Generator) -> None:
-    """Frame lists coerce to the matscikit kernels' arrays on the default r_max grid."""
+    """Frame lists coerce to the kemio kernels' arrays on the default r_max grid."""
     observables = md_metrics.trajectory_observables(
         make_jiggled_frames(8, np_rng), time_step_fs=2, n_rdf_bins=50
     )
@@ -237,7 +237,7 @@ def test_equipartition_temperature() -> None:
     ]
     temp = md_metrics.equipartition_temperature(frames, time_step_fs=dt)
     # independent expectation from the same constant velocities (linear motion -> exact)
-    # 1 amu (A/fs)^2 in eV in matscikit's units (its CODATA, not a hardcoded older one)
+    # 1 amu (A/fs)^2 in eV in kemio's units (its CODATA, not a hardcoded older one)
     ke_ev = 0.5 * ATOMIC_MASSES[29] * (velocity**2).sum() * FEMTOSECOND**-2
     expected = 2 * ke_ev / (3 * n_atoms * K_B)
     assert temp == pytest.approx(expected, rel=1e-9)

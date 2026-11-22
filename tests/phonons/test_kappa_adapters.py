@@ -9,7 +9,7 @@ from typing import Any
 
 import numpy as np
 import pytest
-from matscikit import EMT, Structure
+from kemio import EMT, Structure
 
 from matbench_discovery.phonons import thermal_conductivity
 from matbench_discovery.phonons.adapters import get_kappa_adapter
@@ -214,7 +214,7 @@ def spy_relax_structures(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]
         structures: list[Structure], model: object, **kwargs: object
     ) -> list[SimpleNamespace]:
         """Capture options; report a converged zero-stress single step (duck-typed
-        matscikit.RelaxResult, which has no Python constructor).
+        kemio.RelaxResult, which has no Python constructor).
         """
         del model
         calls.append(kwargs)
@@ -310,7 +310,7 @@ class CountingEMT:
     def compute(
         self, structures: list[Structure], properties: list[str]
     ) -> list[dict[str, Any]]:
-        """Record the batch size, then delegate to matscikit's EMT."""
+        """Record the batch size, then delegate to kemio's EMT."""
         self.batch_sizes.append(len(structures))
         return EMT().compute(structures, properties)
 
@@ -319,7 +319,7 @@ class CountingEMT:
     ("batch_size", "max_atoms", "fc3_batches"),
     [(4, None, [4] * 7 + [2]), (1, 100, [12, 12, 6]), (1, 7, [1] * 30)],
 )
-def test_batch_limits_reach_matscikit(
+def test_batch_limits_reach_kemio(
     batch_size: int, max_atoms: int | None, fc3_batches: list[int]
 ) -> None:
     """Batches follow batch_size, or fill max_atoms_per_batch with whole supercells

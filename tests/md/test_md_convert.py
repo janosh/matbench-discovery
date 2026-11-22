@@ -4,8 +4,8 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from matscikit import EMT, Structure
-from matscikit.io import Frame, write_extxyz
+from kemio import EMT, Structure
+from kemio.io import Frame, write_extxyz
 
 from matbench_discovery.md import (
     list_reference_systems,

@@ -180,7 +180,7 @@ def main() -> int:
     """Build the kappa-103-analysis payload across all requested models."""
     # validate --models/--full-roster before loading predictions, not at the write
     full_roster = is_full_model_run()
-    from matscikit.io import read_extxyz
+    from kemio.io import read_extxyz
 
     from matbench_discovery.phonons import read_kappa_json
 
@@ -244,7 +244,7 @@ def main() -> int:
             "kappa_decimals": KAPPA_DECIMALS,
             "qq_levels": payload_numerics.round_list(QQ_LEVELS),
         },
-        packages=("matscikit", "numpy", "pandas", "pymatviz", "scipy"),
+        packages=("kemio", "numpy", "pandas", "pymatviz", "scipy"),
     )
     payload = {
         **provenance,

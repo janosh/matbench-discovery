@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING, Any, cast
 import numpy as np
 import pandas as pd
 import pymatviz as pmv
-from matscikit import Composition
-from matscikit.elements import ATOMIC_NUMBERS
+from kemio import Composition
+from kemio.elements import ATOMIC_NUMBERS
 from pymatviz.enums import ElemCountMode, Key
 from pymatviz.utils import spg_to_crystal_sys
 

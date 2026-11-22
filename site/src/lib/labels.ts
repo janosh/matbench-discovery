@@ -605,7 +605,7 @@ export const ALL_METRICS: AllMetrics = {
     range: [0, 1],
     better: `higher`,
     format: `.3f`,
-    description: `Area under the cumulative distribution of normalized structure-matching RMSD (matscikit rms_distances, stol=1) between ML- and DFT-relaxed structures, up to RMSD 0.05 and divided by 0.05. Equals the mean over all WBM structures of max(1 - RMSD/0.05, 0), so 1 means every structure's atomic positions match DFT exactly. RMSD ignores lattice strain within the matcher's tolerances (ltol 0.2, angle_tol 5°). Missing predictions and structures that can't be matched to DFT score 0.`,
+    description: `Area under the cumulative distribution of normalized structure-matching RMSD (kemio rms_distances, stol=1) between ML- and DFT-relaxed structures, up to RMSD 0.05 and divided by 0.05. Equals the mean over all WBM structures of max(1 - RMSD/0.05, 0), so 1 means every structure's atomic positions match DFT exactly. RMSD ignores lattice strain within the matcher's tolerances (ltol 0.2, angle_tol 5°). Missing predictions and structures that can't be matched to DFT score 0.`,
     style: `border-left: 1px solid var(--border);`,
   },
   ...GEO_OPT_SYMMETRY_METRICS,

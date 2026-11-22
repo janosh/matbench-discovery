@@ -7,7 +7,7 @@ from collections import defaultdict
 
 import numpy as np
 import pandas as pd
-from matscikit.io import Frame
+from kemio.io import Frame
 from pymatviz.enums import Key
 from tqdm import tqdm
 

@@ -4,7 +4,7 @@ The protocol (finite displacements for fc2 in one supercell and fc3 in another, 
 transport in the relaxation-time approximation with isotope and boundary scattering)
 follows https://github.com/MPA2suite/k_SRME (Póta, Ahlawat, Csányi, Simoncelli,
 https://arxiv.org/abs/2408.00755), ported in
-https://github.com/janosh/matbench-discovery/pull/196. All numerics run in matscikit;
+https://github.com/janosh/matbench-discovery/pull/196. All numerics run in kemio;
 high-level orchestration lives in ``matbench_discovery.phonons.pipeline``.
 """
 
@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 import numpy as np
-from matscikit import AnharmonicPhonons, Structure
+from kemio import AnharmonicPhonons, Structure
 from pymatviz.enums import Key
 
 from matbench_discovery.enums import MbdKey

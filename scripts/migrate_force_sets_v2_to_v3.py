@@ -1,11 +1,11 @@
 """Convert schema-2 kappa force-set files to schema 3 without any model call.
 
-Schema 2 stored matscikit-order (atom, vector) datasets as JSON attributes; schema 3 is
-``matscikit.AnharmonicPhonons.force_set()`` written group by group (FC3 pairs columnar).
+Schema 2 stored kemio-order (atom, vector) datasets as JSON attributes; schema 3 is
+``kemio.AnharmonicPhonons.force_set()`` written group by group (FC3 pairs columnar).
 The float32 forces are copied bit for bit, so a migrated file refits exactly the force
 constants the schema-2 loader fitted: symmetrized, recording each order's measured
 ``symmetrization`` (which ``from_force_set`` replays). Every material is reloaded with
-``force_sets.load_phonons`` before the output is kept, so matscikit's geometry,
+``force_sets.load_phonons`` before the output is kept, so kemio's geometry,
 displacement-length and mass checks pass on all of them.
 
     uv run --with-editable . scripts/migrate_force_sets_v2_to_v3.py \
@@ -18,7 +18,7 @@ from typing import Any
 
 import h5py
 import numpy as np
-from matscikit import AnharmonicPhonons
+from kemio import AnharmonicPhonons
 
 from matbench_discovery import atomic_output_path
 from matbench_discovery.phonons import force_sets

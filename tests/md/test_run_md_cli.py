@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
-from matscikit import EMT
+from kemio import EMT
 
 from matbench_discovery.calculators import CALCULATORS
 from matbench_discovery.enums import Model

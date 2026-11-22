@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from typing import Any, Self, TypedDict
 
 import numpy as np
-from matscikit.elements import ATOMIC_NUMBERS, COVALENT_RADII, VDW_RADII
+from kemio.elements import ATOMIC_NUMBERS, COVALENT_RADII, VDW_RADII
 from numpy.typing import ArrayLike
 
 from matbench_discovery import repo_relative_path

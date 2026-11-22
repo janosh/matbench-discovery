@@ -5,8 +5,8 @@ from pathlib import Path
 import h5py
 import numpy as np
 import pytest
-from matscikit import Structure
-from matscikit.io import Frame, write_extxyz
+from kemio import Structure
+from kemio.io import Frame, write_extxyz
 
 from matbench_discovery.trajectory import TRAJECTORY_SCHEMA, Trajectory
 
@@ -159,10 +159,10 @@ def test_from_frames_missing_results() -> None:
 @pytest.mark.parametrize(
     ("frames", "match"),
     [
-        ([], "zero frames"),
-        ([make_atoms("Cu2"), make_atoms("Cu3")], "Inconsistent atom counts"),
-        ([make_atoms("Cu2"), make_atoms("He2")], "species differ"),
-        ([make_atoms("Cu2"), make_atoms("Cu2", pbc=False)], "pbc differs"),
+        ([], "no frames"),
+        ([make_atoms("Cu2"), make_atoms("Cu3")], "frame 1 has atomic numbers"),
+        ([make_atoms("Cu2"), make_atoms("He2")], "frame 1 has atomic numbers"),
+        ([make_atoms("Cu2"), make_atoms("Cu2", pbc=False)], "frame 1 has pbc"),
     ],
     ids=["empty", "ragged_count", "species", "pbc"],
 )
@@ -174,13 +174,13 @@ def test_from_frames_rejects_bad_input(frames: list[Frame], match: str) -> None:
 
 def test_from_frames_rejects_mixed_property_availability() -> None:
     """A property present on some frames but not others fails loud (not silent None)."""
-    with pytest.raises(ValueError, match="missing a property"):
+    with pytest.raises(ValueError, match="only some frames carry"):
         Trajectory.from_frames([make_atoms(energy=-1.0), make_atoms()])
 
     # md_step on some frames but not others must also fail loud (not silently drop it)
     with_step = make_atoms()
     with_step.structure.info["md_step"] = 0
-    with pytest.raises(ValueError, match="missing a property"):
+    with pytest.raises(ValueError, match="only some frames carry"):
         Trajectory.from_frames([with_step, make_atoms()])
 
 
@@ -197,7 +197,7 @@ def test_extxyz_roundtrip(tmp_path: Path, suffix: str) -> None:
 
     back = Trajectory.from_extxyz(path)
     np.testing.assert_array_equal(back.atomic_numbers, traj.atomic_numbers)
-    assert back.atomic_numbers.dtype == np.int64  # not matscikit's uint8
+    assert back.atomic_numbers.dtype == np.int64  # not kemio's uint8
     np.testing.assert_array_equal(back.pbc, traj.pbc)
     # to_frames stores positions as fractions (~1 ulp); the file keeps those exactly
     written = np.array([frame.structure.positions for frame in traj.to_frames()])

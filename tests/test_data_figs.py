@@ -9,8 +9,8 @@ import numpy as np
 import pandas as pd
 import pymatviz as pmv
 import pytest
-from matscikit import Composition, Structure
-from matscikit.io import write_extxyz
+from kemio import Composition, Structure
+from kemio.io import write_extxyz
 from pymatviz.enums import Key
 
 from matbench_discovery import ROOT

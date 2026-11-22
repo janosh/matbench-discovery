@@ -4,8 +4,8 @@ from collections.abc import Mapping
 from typing import Any
 
 import pandas as pd
-from matscikit import ItemError, Structure, rms_distances, symmetry_summary
-from matscikit.interop import to_structure
+from kemio import ItemError, Structure, rms_distances, symmetry_summary
+from kemio.interop import to_structure
 from pymatviz.enums import Key
 
 from matbench_discovery.enums import MbdKey
@@ -18,7 +18,7 @@ def get_sym_info_from_structs(
     angle_tolerance: float | None = None,
 ) -> pd.DataFrame:
     """Compile DataFrame of high-level symmetry information for a dictionary of
-    structures, searching their symmetry in parallel (matscikit.symmetry_summary). Rows
+    structures, searching their symmetry in parallel (kemio.symmetry_summary). Rows
     whose symmetry search fails are NaN/None (calc_geo_opt_metrics skips them).
 
     Args:

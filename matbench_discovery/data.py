@@ -27,7 +27,7 @@ from typing import Any, Final, NotRequired, TypedDict
 import pandas as pd
 import yaml
 from filelock import BaseFileLock, FileLock
-from matscikit.io import Frame, parse_extxyz
+from kemio.io import Frame, parse_extxyz
 from pymatviz.enums import Key
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
@@ -50,7 +50,7 @@ MOYO_VERSION_PATTERN: Final = re.compile(
     r"^[0-9]+(?:\.[0-9]+)*(?:[-+][0-9A-Za-z.-]+)?$"
 )
 _GEO_OPT_ANALYSIS_SUFFIX: Final = re.compile(
-    r"^geo-opt-symprec=([^=]+)-moyo=([^=]+?)(?:-matscikit=([^=]+))?\.csv\.gz$"
+    r"^geo-opt-symprec=([^=]+)-moyo=([^=]+?)(?:-kemio=([^=]+))?\.csv\.gz$"
 )
 
 # role -> suffix after ``YYYY-MM-DD-``
@@ -240,7 +240,7 @@ def artifact_filename(
     *,
     symprec: float | str | Decimal | None = None,
     moyo_version: str | None = None,
-    matscikit_source_id: str | None = None,
+    kemio_source_id: str | None = None,
 ) -> str:
     """Return a canonical dated artifact basename for ``role``."""
     iso_date = _iso_date(artifact_date)
@@ -255,20 +255,18 @@ def artifact_filename(
             f"geo-opt-symprec={canonical_scientific_notation(symprec)}"
             f"-moyo={moyo_version}"
         )
-        if matscikit_source_id is not None:
-            release, sep, source = matscikit_source_id.rpartition("+")
+        if kemio_source_id is not None:
+            release, sep, source = kemio_source_id.rpartition("+")
             if (
                 not sep
                 or not MOYO_VERSION_PATTERN.fullmatch(release)
                 or not re.fullmatch(r"[0-9a-f]{16}", source)
             ):
-                raise ValueError(f"Invalid matscikit source ID {matscikit_source_id!r}")
-            suffix += f"-matscikit={matscikit_source_id}"
+                raise ValueError(f"Invalid kemio source ID {kemio_source_id!r}")
+            suffix += f"-kemio={kemio_source_id}"
         suffix += ".csv.gz"
     else:
-        if any(
-            value is not None for value in (symprec, moyo_version, matscikit_source_id)
-        ):
+        if any(value is not None for value in (symprec, moyo_version, kemio_source_id)):
             raise ValueError(
                 "symprec and solver versions are only for geo_opt_analysis"
             )
@@ -297,14 +295,14 @@ def parse_artifact_filename(filename: str) -> str:
         if suffix == expected_suffix:
             return role
     if match := _GEO_OPT_ANALYSIS_SUFFIX.fullmatch(suffix):
-        symprec, moyo_version, matscikit_source_id = match.groups()
+        symprec, moyo_version, kemio_source_id = match.groups()
         if (
             artifact_filename(
                 artifact_date,
                 "geo_opt_analysis",
                 symprec=symprec,
                 moyo_version=moyo_version,
-                matscikit_source_id=matscikit_source_id,
+                kemio_source_id=kemio_source_id,
             )
             == basename
         ):

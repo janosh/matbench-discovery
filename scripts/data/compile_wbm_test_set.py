@@ -9,8 +9,8 @@ from glob import glob
 
 import numpy as np
 import pandas as pd
-from matscikit import Composition, PhaseDiagram, group_structures
-from matscikit.interop import structure_from_pymatgen_dict
+from kemio import Composition, PhaseDiagram, group_structures
+from kemio.interop import structure_from_pymatgen_dict
 from pandas.core.util.hashing import hash_pandas_object
 from pymatviz.enums import Key
 from tqdm import tqdm
@@ -520,7 +520,7 @@ del df_wbm, wbm_cses, df_wbm_corr
 
 
 # %% convex hull of all MP entries (MP2020-corrected energies), solved per query as a
-# linear program by matscikit: ~1 s to build and query all ~257k WBM entries vs ~6 min
+# linear program by kemio: ~1 s to build and query all ~257k WBM entries vs ~6 min
 # for the pymatgen PatchedPhaseDiagram loop it replaces (plus ~5 min to build the PPD)
 # MP entries are recorrected with the same scheme as the WBM entries: their stored
 # corrections came from the MP database build and differ for 329 of 154,718 entries

@@ -16,9 +16,9 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
-from matscikit import FEMTOSECOND, K_B, adf, finite_difference_velocities, rdf, vdos
-from matscikit.elements import ATOMIC_MASSES
-from matscikit.io import Frame
+from kemio import FEMTOSECOND, K_B, adf, finite_difference_velocities, rdf, vdos
+from kemio.elements import ATOMIC_MASSES
+from kemio.io import Frame
 from scipy.stats import wasserstein_distance
 
 from matbench_discovery import repo_relative_path
@@ -31,12 +31,12 @@ from matbench_discovery.hpc import COST_KEYS, merge_audit_metadata, with_cost_bl
 from matbench_discovery.trajectory import Trajectory
 
 if TYPE_CHECKING:
-    from matscikit.model import Model as ForceModel
+    from kemio.model import Model as ForceModel
 
     from matbench_discovery.enums import Model
 
 TrajectoryLike = Trajectory | Sequence[Frame]
-# 1 amu (Å/fs)^2 in eV: velocities in Å/fs are 1/FEMTOSECOND in matscikit units
+# 1 amu (Å/fs)^2 in eV: velocities in Å/fs are 1/FEMTOSECOND in kemio units
 AMU_A2_PER_FS2_IN_EV = FEMTOSECOND**-2
 # eV/Å³ to GPa: the elementary charge (C, exact) times 1e30 Å³/m³ over 1e9 Pa/GPa
 EV_PER_A3_TO_GPA = 1.602176634e-19 * 1e30 / 1e9
@@ -88,7 +88,7 @@ MD_COST_COLS = tuple(
 
 
 def _frame_arrays(traj: Trajectory) -> tuple[np.ndarray, np.ndarray, tuple[bool, ...]]:
-    """(positions, cells, pbc) arguments of the matscikit trajectory kernels."""
+    """(positions, cells, pbc) arguments of the kemio trajectory kernels."""
     return traj.positions, traj.cell, tuple(bool(flag) for flag in traj.pbc)
 
 
@@ -106,8 +106,8 @@ def trajectory_observables(
 ) -> Observables:
     """Time-averaged g(r) (paper Eq. 4 normalization, per-frame densities), the
     covalent-radius bond-angle distribution and the vDOS (centre-of-mass drift removed)
-    of a trajectory saved every ``time_step_fs``, from matscikit's frame-parallel
-    kernels (``matscikit.rdf``, ``matscikit.adf``, ``matscikit.vdos``). ``r_max``
+    of a trajectory saved every ``time_step_fs``, from kemio's frame-parallel
+    kernels (``kemio.rdf``, ``kemio.adf``, ``kemio.vdos``). ``r_max``
     defaults to the minimum-image radius (half the shortest lattice vector over
     frames).
     """

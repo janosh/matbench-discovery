@@ -74,13 +74,13 @@ wbm_summary:
 wbm_dft_geo_opt_symprec_1e_2:
   url: https://figshare.com/files/71649838
   path: wbm/2026-11-19-dft-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
-  description: WBM DFT-relaxed crystal symmetries as determined by moyo 0.22.0 (bundled in matscikit, Hall numbers in spglib's smallest-number setting) with symprec=1e-2.
+  description: WBM DFT-relaxed crystal symmetries as determined by moyo 0.22.0 (bundled in kemio, Hall numbers in spglib's smallest-number setting) with symprec=1e-2.
   md5: ff3eefb5af9b64c8a85e1989ed598cf3
 
 wbm_dft_geo_opt_symprec_1e_5:
   url: https://figshare.com/files/71649844
   path: wbm/2026-11-19-dft-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
-  description: WBM DFT-relaxed crystal symmetries as determined by moyo 0.22.0 (bundled in matscikit, Hall numbers in spglib's smallest-number setting) with symprec=1e-5.
+  description: WBM DFT-relaxed crystal symmetries as determined by moyo 0.22.0 (bundled in kemio, Hall numbers in spglib's smallest-number setting) with symprec=1e-5.
   md5: 5631925d91ffeef3462ab18aa82b88ed
 
 phonondb_pbe_103_structures:

@@ -6,7 +6,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from matscikit import Composition, PhaseDiagram
+from kemio import Composition, PhaseDiagram
 
 from matbench_discovery.enums import DataFiles
 

@@ -5,7 +5,7 @@ HDF5 file orders of magnitude faster than parsing extxyz into one object per fra
 (measured ~4000x on a 625-frame reference with ASE's reader). A full read still returns
 the arrays in memory; strided/partial reads only touch the requested chunks. The metric
 functions consume this columnar representation directly; per-frame
-``matscikit.io.Frame`` objects are only built for MD rollouts and interop
+``kemio.io.Frame`` objects are only built for MD rollouts and interop
 (``to_frames`` / ``from_frames``).
 """
 
@@ -16,10 +16,10 @@ import h5py
 import numpy as np
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Sequence
 
-    from matscikit import Structure
-    from matscikit.io import Frame
+    from kemio import Structure
+    from kemio.io import Frame
 
 # bump when the on-disk layout changes incompatibly; readers fail closed on mismatch
 TRAJECTORY_SCHEMA = 1
@@ -105,18 +105,18 @@ class Trajectory:
         return Trajectory(atomic_numbers=self.atomic_numbers, pbc=self.pbc, **sliced)
 
     def frame_as_structure(self, idx: int) -> Structure:
-        """The idx-th frame as a ``matscikit.Structure`` (md_step in ``info``)."""
+        """The idx-th frame as a ``kemio.Structure`` (md_step in ``info``)."""
         return self[idx].to_frames()[0].structure
 
     def to_frames(self) -> list[Frame]:
-        """Convert all frames to ``matscikit.io.Frame`` objects carrying
+        """Convert all frames to ``kemio.io.Frame`` objects carrying
         energy/forces/stress when available. Used for interop and to feed models
         (energy/force RMSE); not on the hot read path.
         """
-        from matscikit import Structure
-        from matscikit.elements import CHEMICAL_SYMBOLS
-        from matscikit.io import Frame
-        from matscikit.model import voigt_to_matrix
+        from kemio import Structure
+        from kemio.elements import CHEMICAL_SYMBOLS
+        from kemio.io import Frame
+        from kemio.model import voigt_to_matrix
 
         symbols = [CHEMICAL_SYMBOLS[number] for number in self.atomic_numbers]
         out: list[Frame] = []
@@ -143,75 +143,57 @@ class Trajectory:
 
     @classmethod
     def from_frames(cls, frames: Sequence[Frame]) -> Trajectory:
-        """Build a Trajectory from frames, extracting energy/forces/stress/md_step
-        where present (e.g. from MD rollouts; files go through ``from_extxyz``).
+        """Build a Trajectory from frames (e.g. MD rollouts; files go through
+        ``from_extxyz``) with ``kemio.interop.trajectory_arrays``, which raises
+        ``NotStackableError`` (a ValueError) for no frames or frames that differ in
+        atoms or pbc. Energy, forces, stress or md_step on only some frames raise
+        ValueError.
         """
-        from matscikit.model import matrix_to_voigt
+        from kemio.interop import trajectory_arrays
+        from kemio.model import matrix_to_voigt
 
-        if len(frames) == 0:
-            raise ValueError("Cannot build a Trajectory from zero frames")
-        first = frames[0].structure
-        n_atoms = len(first)
-        for idx, frame in enumerate(frames):
-            structure = frame.structure
-            if len(structure) != n_atoms:
-                raise ValueError(
-                    f"Inconsistent atom counts: frame {idx} has {len(structure)}, "
-                    f"expected {n_atoms}"
-                )
-            if not np.array_equal(structure.numbers, first.numbers):
-                raise ValueError(f"frame {idx} chemical species differ from frame 0")
-            if structure.pbc != first.pbc:
-                raise ValueError(f"frame {idx} pbc differs from frame 0")
-        positions = np.array([frame.structure.positions for frame in frames])
-        cell = np.array([frame.structure.lattice for frame in frames])
-
-        def stack(getter: Callable[[Frame], object]) -> np.ndarray | None:
-            """Stack a per-frame quantity. Returns None if no frame has it; raises on
-            mixed availability (so a partially-labeled trajectory fails loud instead
-            of silently dropping the field).
-            """
-            values = [getter(frame) for frame in frames]
-            present = [value is not None for value in values]
-            if not any(present):
-                return None
-            if not all(present):
-                raise ValueError(
-                    f"frame {present.index(False)} missing a property "
-                    "that other frames provide"
-                )
-            return np.array(values)
-
+        arrays = trajectory_arrays(list(frames))
+        md_step = arrays.info.get("md_step")
+        fields = {
+            "energy": arrays.energy,
+            "forces": arrays.forces,
+            "stress": arrays.stress,
+            "md_step": md_step,
+        }
+        # trajectory_arrays fills a quantity missing in some frames with NaN
+        if partial := [
+            name
+            for name, values in fields.items()
+            if values is not None and np.isnan(values).any()
+        ]:
+            raise ValueError(f"only some frames carry {partial}")
         return cls(
-            atomic_numbers=np.asarray(first.numbers, dtype=int),
-            positions=positions,
-            cell=cell,
-            pbc=np.asarray(first.pbc, dtype=bool),
-            energy=stack(lambda frame: frame.energy),
-            forces=stack(lambda frame: frame.forces),
-            stress=stack(
-                lambda frame: (
-                    None if frame.stress is None else matrix_to_voigt(frame.stress)
-                )
-            ),
-            md_step=stack(lambda frame: frame.structure.info.get("md_step")),
+            atomic_numbers=np.asarray(arrays.numbers, dtype=int),
+            positions=arrays.positions,
+            # the frames' lattices also for pbc=False (arrays.cells is None then)
+            cell=np.array([frame.structure.lattice for frame in frames]),
+            pbc=np.asarray(arrays.pbc, dtype=bool),
+            energy=arrays.energy,
+            forces=arrays.forces,
+            stress=None if arrays.stress is None else matrix_to_voigt(arrays.stress),
+            md_step=md_step,
         )
 
     @classmethod
     def from_extxyz(cls, path: str) -> Trajectory:
         """Read a (optionally .gz/.xz/.bz2) one-system extxyz trajectory with
-        matscikit's parallel Rust reader straight into stacked arrays (positions exactly
+        kemio's parallel Rust reader straight into stacked arrays (positions exactly
         as written). Frames that differ in atoms, pbc or columns, or that only partly
         carry energy, forces, stress or md_step, raise ValueError.
         """
-        from matscikit.io import read_extxyz_arrays
-        from matscikit.model import matrix_to_voigt
+        from kemio.io import read_extxyz_arrays
+        from kemio.model import matrix_to_voigt
 
         arrays = read_extxyz_arrays(path)
         stress = arrays["stress"]
         fields = ("pbc", "positions", "cell", "energy", "forces")
         return cls(
-            # matscikit reads uint8 atomic numbers; keep the int64 of the other readers
+            # kemio reads uint8 atomic numbers; keep the int64 of the other readers
             atomic_numbers=np.asarray(arrays["atomic_numbers"], dtype=int),
             **{name: arrays[name] for name in fields},
             md_step=arrays["md_step"],

@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Any, Final, TypeIs
 from pymatviz.enums import Key
 
 if TYPE_CHECKING:
-    from matscikit import Structure
+    from kemio import Structure
 
 # === Run-cost provenance ===
 # Where a cost block came from: measured by our current runners and recorded in the

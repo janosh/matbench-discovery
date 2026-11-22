@@ -7,13 +7,13 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
-from matscikit import RelaxResult, Structure, symmetry_dataset
-from matscikit.model import matrix_to_voigt
+from kemio import RelaxResult, Structure, symmetry_dataset
+from kemio.model import matrix_to_voigt
 
 from matbench_discovery.relaxation import relax_structures
 
 if TYPE_CHECKING:
-    from matscikit.model import Model as ForceModel
+    from kemio.model import Model as ForceModel
 
     from matbench_discovery.phonons.pipeline import KappaSettings
     from matbench_discovery.phonons.thermal_conductivity import KappaCalculation

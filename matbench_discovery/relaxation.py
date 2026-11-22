@@ -1,6 +1,6 @@
-"""Geometry-relaxation settings: optimizer and cell-filter names resolved to matscikit.
+"""Geometry-relaxation settings: optimizer and cell-filter names resolved to kemio.
 
-Names follow ASE's class names so model YAMLs stay readable and stable; matscikit
+Names follow ASE's class names so model YAMLs stay readable and stable; kemio
 implements the same algorithms (FIRE, GOQN; Frechet and Exp cell filters) with
 geometry-identical trajectories.
 """
@@ -11,14 +11,14 @@ from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from matscikit import RelaxResult, Structure
-    from matscikit.model import Model as ForceModel
-    from matscikit.options import BatchLimits, CellFilter, OnModelError, RelaxOptimizer
+    from kemio import RelaxResult, Structure
+    from kemio.model import Model as ForceModel
+    from kemio.options import BatchLimits, CellFilter, OnModelError, RelaxOptimizer
 
-# canonical YAML name -> matscikit.relax(optimizer=...)
+# canonical YAML name -> kemio.relax(optimizer=...)
 OPTIMIZERS: dict[str, RelaxOptimizer] = {"FIRE": "FIRE", "GOQN": "GOQN"}
 OPTIMIZER_ALIASES = {"GoodOldQuasiNewton": "GOQN"}
-# canonical YAML name -> matscikit.relax(cell_filter=...)
+# canonical YAML name -> kemio.relax(cell_filter=...)
 CELL_FILTERS: dict[str, CellFilter] = {
     "FrechetCellFilter": "frechet",
     "ExpCellFilter": "exp",
@@ -71,22 +71,22 @@ def relax_structures(
 ) -> list[RelaxResult]:
     """Relax structures in lock step (one batched model call per step).
 
-    ``batch``, ``on_model_error`` and ``on_result`` pass through to ``matscikit.relax``
+    ``batch``, ``on_model_error`` and ``on_result`` pass through to ``kemio.relax``
     (per-call structure/atom caps, isolating failing structures, streaming results).
     ``cell_mask`` (Voigt xx, yy, zz, yz, xz, xy) freezes masked cell strains, and
     ``stress=True`` reports the final stress of fixed-cell relaxations too. With
     ``fix_symmetry`` the start is idealized and forces/stress are symmetrized, like
     ASE's FixSymmetry.
 
-    Returns one ``matscikit.RelaxResult`` per structure: relaxed ``structure``,
+    Returns one ``kemio.RelaxResult`` per structure: relaxed ``structure``,
     ``converged``, ``n_steps`` and ``error`` (None, or why that structure failed, e.g.
     non-finite model output: its ``energy``/``forces``/``stress`` are then None), plus
     ``stress`` when the cell moves or ``stress=True``.
     """
-    import matscikit
+    import kemio
 
     filter_name = canonical_filter_name(cell_filter)
-    return matscikit.relax(
+    return kemio.relax(
         list(structures),
         model,
         f_max=max_force,

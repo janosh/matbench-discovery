@@ -43,7 +43,7 @@ override-dependencies = [
 
 [tool.uv.sources]
 matbench-discovery = { path = "../../..", editable = true }
-matscikit = { path = "../../../../matscikit", editable = true }
+kemio = { path = "../../../../kemio", editable = true }
 torch = { index = "pytorch-cu126" }
 
 [[tool.uv.index]]

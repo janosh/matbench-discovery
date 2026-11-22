@@ -10,8 +10,8 @@ import numpy as np
 from matbench_discovery.phonons.adapters.standard import StandardKappaAdapter
 
 if TYPE_CHECKING:
-    from matscikit import Structure
-    from matscikit.model import Model as ForceModel
+    from kemio import Structure
+    from kemio.model import Model as ForceModel
 
     from matbench_discovery.phonons.pipeline import KappaSettings
 
@@ -33,7 +33,7 @@ class EquFlashBatchedModel:
         self, structures: Sequence[Structure], properties: Sequence[str]
     ) -> list[dict[str, Any]]:
         """Evaluate a batch; forces-only requests run as one GPU graph batch."""
-        from matscikit.interop import AseCalculatorModel, structure_to_ase
+        from kemio.interop import AseCalculatorModel, structure_to_ase
 
         if list(properties) != ["forces"]:
             return AseCalculatorModel(self.calculator).compute(structures, properties)

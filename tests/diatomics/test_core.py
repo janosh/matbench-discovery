@@ -6,7 +6,7 @@ from typing import Any
 
 import numpy as np
 import pytest
-from matscikit import EMT, Structure
+from kemio import EMT, Structure
 
 from matbench_discovery.diatomics import (
     DiatomicResults,

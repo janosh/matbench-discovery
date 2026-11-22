@@ -20,7 +20,7 @@ from urllib.parse import quote
 import numpy as np
 import pandas as pd
 from filelock import FileLock
-from matscikit import BUILD_ID
+from kemio import BUILD_ID
 from pymatviz.enums import Key
 from tqdm import tqdm
 
@@ -46,8 +46,8 @@ from matbench_discovery.relaxation import (
 )
 
 if TYPE_CHECKING:
-    from matscikit import Structure
-    from matscikit.model import Model as ForceModel
+    from kemio import Structure
+    from kemio.model import Model as ForceModel
 
 
 # v3: harmonic analysis failures are separate from conductivity failures
@@ -441,7 +441,7 @@ def kappa_source_paths(adapter: StandardKappaAdapter, model_key: str) -> set[str
 
 def kappa_source_digest(adapter: StandardKappaAdapter, model_key: str) -> str:
     """Hash shared runner, pipeline, calculator, schema, and adapter source files plus
-    the matscikit build (its source, cargo features and profile).
+    the kemio build (its source, cargo features and profile).
     """
     source_hasher = hashlib.sha256(BUILD_ID.encode())
     for source_path in sorted(kappa_source_paths(adapter, model_key)):
@@ -463,7 +463,7 @@ def load_phonondb_atoms(
     """Load the canonical 103 structures and optionally retain a smoke-test subset of
     the smallest structures whose elements model_key supports.
     """
-    from matscikit.io import read_extxyz
+    from kemio.io import read_extxyz
 
     path = dataset_path or DataFiles.phonondb_pbe_103_structures.path
     atoms_list = [frame.structure for frame in read_extxyz(path)]

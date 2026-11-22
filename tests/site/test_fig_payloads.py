@@ -403,7 +403,7 @@ def test_multi_model_payload_provenance_matches_computation() -> None:
             benchmark_roles = {item["role"] for item in identity["benchmark_inputs"]}
             expected_benchmarks = {"wbm_summary", "mp_element_occurrences"}
             assert benchmark_roles == expected_benchmarks, name
-            assert "matscikit" in audit["runtime"]["packages"]
+            assert "kemio" in audit["runtime"]["packages"]
 
 
 def has_discovery_metrics(model: Model) -> bool:

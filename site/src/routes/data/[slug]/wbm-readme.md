@@ -32,7 +32,7 @@ The full set of processing steps used to curate the WBM test set from the raw da
 - apply the [`MaterialsProject2020Compatibility`](https://github.com/materialsproject/pymatgen/blob/02a4ca8aa/pymatgen/entries/compatibility.py#L823) energy correction scheme to the formation energies
 - compute energy to the Materials Project convex hull constructed from all MP `ComputedStructureEntries` queried on 2023-02-07 ([database release 2022.10.28](https://docs.materialsproject.org/changes/database-versions#v2022.10.28))
 
-> Correction note: the `e_form_per_atom_mp2020_corrected` and `e_above_hull_mp2020_corrected_ppd_mp` columns track the current `pymatgen` `MaterialsProject2020Compatibility` defaults, applied (through matscikit's port of the scheme) to both the WBM entries and the MP entries spanning the convex hull, so they match the corrections applied to model predictions. Since the 2026-11-19 summary this includes [pymatgen#3803](https://github.com/materialsproject/pymatgen/pull/3803), which only assigns an anion correction to elements with oxidation state <= -1. That changed the corrections of 3,044 WBM entries (up to 0.49 eV/atom) and 329 MP hull entries relative to the 2023-12-13 summary and flipped the stability label of 605 WBM entries. See [#358](https://github.com/janosh/matbench-discovery/issues/358) for the history.
+> Correction note: the `e_form_per_atom_mp2020_corrected` and `e_above_hull_mp2020_corrected_ppd_mp` columns track the current `pymatgen` `MaterialsProject2020Compatibility` defaults, applied (through kemio's port of the scheme) to both the WBM entries and the MP entries spanning the convex hull, so they match the corrections applied to model predictions. Since the 2026-11-19 summary this includes [pymatgen#3803](https://github.com/materialsproject/pymatgen/pull/3803), which only assigns an anion correction to elements with oxidation state <= -1. That changed the corrections of 3,044 WBM entries (up to 0.49 eV/atom) and 329 MP hull entries relative to the 2023-12-13 summary and flipped the stability label of 605 WBM entries. See [#358](https://github.com/janosh/matbench-discovery/issues/358) for the history.
 
 Run `uv run --with-editable . scripts/data/compile_wbm_test_set.py` to download the raw WBM structures and rebuild the summary. The compiler recomputes the energy corrections, formation energies, MP hull distances and unique-prototype membership. For formation energies it uses the original four-decimal elemental energies. It uses the two spglib labels and Matminer fingerprint distance from the 2023 release and verifies the resulting cohort against every published material ID. [2023 WBM reference](https://figshare.com/files/64706751). If you find
 
@@ -59,7 +59,7 @@ This approach has the downside that it can be quite expensive to compute, especi
 We adopt the procedure of determining the prototype of each crystal by looking at the Wyckoff positions of the different elements.
 This approach is a middle ground between the two approaches mentioned above in terms of cost, number of hyperparameters and ability to distinguish polymorphs.
 
-The published cohort uses AFLOW-style labels computed with Aviary and spglib. The compiler reads those historical labels when rebuilding the benchmark. The current moyo-based `matscikit.protostructure_label` can assign different space groups and Wyckoff orbits to distorted structures. [Original implementation][original-prototypes].
+The published cohort uses AFLOW-style labels computed with Aviary and spglib. The compiler reads those historical labels when rebuilding the benchmark. The current moyo-based `kemio.protostructure_label` can assign different space groups and Wyckoff orbits to distorted structures. [Original implementation][original-prototypes].
 Having determined the prototypes for both the MP and WBM datasets, we first removed any structures in the WBM dataset that had the same prototype as any structure in the MP dataset.
 The next filter was to drop all but the lowest energy structure for each unique prototype label remaining in the WBM dataset.
 The WBM prototypes were determined for the relaxed structures. This choice avoids inflating the metrics due to duplicates arising from different initial prototypes that fall into the same basin of attraction during relaxation.
@@ -156,7 +156,7 @@ assert df_wbm.shape == (256_963, 18)
 # WBM initial structures in pymatgen JSON format
 df_init_structs = pd.read_json(DataFiles.wbm_initial_structures.path, lines=True)
 # Columns: material_id, formula_from_cse, initial_structure
-# WBM initial structures as matscikit Structures
+# WBM initial structures as kemio Structures
 wbm_init_structs = [
     frame.structure for frame in frames_from_zip(DataFiles.wbm_initial_atoms.path)
 ]

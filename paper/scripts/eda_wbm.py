@@ -11,10 +11,10 @@ import pandas as pd
 import plotly.express as px
 import pymatviz as pmv
 from IPython.display import display
-from matscikit import Composition
-from matscikit.elements import ATOMIC_NUMBERS, ELEMENT_NAMES
-from matscikit.interop import structure_from_pymatgen_dict
-from matscikit.io import write_cif
+from kemio import Composition
+from kemio.elements import ATOMIC_NUMBERS, ELEMENT_NAMES
+from kemio.interop import structure_from_pymatgen_dict
+from kemio.io import write_cif
 from pymatviz.enums import ElemCountMode, Key
 from pymatviz.utils import si_fmt_int
 

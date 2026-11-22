@@ -33,17 +33,17 @@ from filelock import FileLock
 from matbench_discovery import DEFAULT_CACHE_DIR, file_digest
 
 if TYPE_CHECKING:
-    from matscikit.model import Model as ForceModel
+    from kemio.model import Model as ForceModel
 
 
 class Calculator(Protocol):
-    """An ASE-style calculator, as `matscikit.interop.AseCalculatorModel` wraps it."""
+    """An ASE-style calculator, as `kemio.interop.AseCalculatorModel` wraps it."""
 
     def get_property(self, name: str, atoms: object = None) -> object:
         """Return property `name` of `atoms`, computing it if needed."""
 
 
-# model factories return an ASE calculator or a native matscikit model
+# model factories return an ASE calculator or a native kemio model
 CalcFactory = Callable[..., "Calculator | ForceModel"]
 CHECKPOINT_DIR = f"{DEFAULT_CACHE_DIR}/md-checkpoints"
 # runner --dtype default; factories without a dtype parameter only accept this value
@@ -279,7 +279,7 @@ class CalcSpec:
         """YAML dependencies minus packages the shared runner env already provides.
 
         Runners pin their own Python (>=3.14 per their PEP 723 headers) plus ase,
-        numpy, matscikit, etc. via matbench-discovery, so only model-specific
+        numpy, kemio, etc. via matbench-discovery, so only model-specific
         calculator packages (incl. torch) are layered on with uv --with.
         """
         from packaging.requirements import Requirement
@@ -478,8 +478,8 @@ def _mace_soyo(head: str) -> Callable[..., Calculator]:
         """Export (once per GPU arch) and load the MACE-SOYO AOTI package."""
         import mace_soyo
         import torch
-        from matscikit import Structure
-        from matscikit.io import write_extxyz
+        from kemio import Structure
+        from kemio.io import write_extxyz
 
         if torch.device(device).type != "cuda":
             raise ValueError(f"MACE-SOYO requires CUDA, got {device=}")
@@ -1067,8 +1067,8 @@ def _bam(device: str, checkpoint: str) -> Calculator:
 
 
 def _emt(device: str) -> ForceModel:  # noqa: ARG001 - CPU only, debug model
-    """Load matscikit's EMT model (debug model, CPU only)."""
-    from matscikit import EMT
+    """Load kemio's EMT model (debug model, CPU only)."""
+    from kemio import EMT
 
     return EMT()
 
@@ -1288,10 +1288,10 @@ def load_model(
     dtype: str = DEFAULT_DTYPE,
     checkpoint: str | None = None,
 ) -> ForceModel:
-    """Instantiate a registered model behind matscikit's ``compute`` protocol.
+    """Instantiate a registered model behind kemio's ``compute`` protocol.
 
     ASE calculators (what most MLIP packages ship) are wrapped in
-    ``matscikit.interop.AseCalculatorModel``; native matscikit models pass through.
+    ``kemio.interop.AseCalculatorModel``; native kemio models pass through.
 
     Args:
         model_key: Key into CALCULATORS (a Model enum name).
@@ -1327,8 +1327,8 @@ def load_model(
             )
         kwargs["checkpoint"] = checkpoint
     calculator = calc_spec.make_calc(device, **kwargs)
-    from matscikit.interop import AseCalculatorModel
-    from matscikit.model import Model
+    from kemio.interop import AseCalculatorModel
+    from kemio.model import Model
 
     if isinstance(calculator, Model):  # runtime-checkable protocol: has compute()
         return calculator
@@ -1389,7 +1389,7 @@ def load_calculator_with_runtime(
     model_packages = (Requirement(dep).name for dep in calc_spec.deps)
     runtime["versions"] = package_versions(
         (
-            *("ase", "numpy", "matscikit", "torch", "jax", "tensorflow", "scipy"),
+            *("ase", "numpy", "kemio", "torch", "jax", "tensorflow", "scipy"),
             *("matbench-discovery", *model_packages),
         )
     )

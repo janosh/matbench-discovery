@@ -32,8 +32,8 @@ from asset_helpers import (
     write_json_gz,
     write_manifest,
 )
-from matscikit import Structure, symmetry_dataset
-from matscikit.io import format_extxyz, read_extxyz
+from kemio import Structure, symmetry_dataset
+from kemio.io import format_extxyz, read_extxyz
 from pymatviz.enums import Key
 
 from matbench_discovery import ROOT

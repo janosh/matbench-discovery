@@ -14,7 +14,7 @@ from typing import Any
 from unittest.mock import Mock
 
 import pytest
-from matscikit import EMT, Structure
+from kemio import EMT, Structure
 from packaging.requirements import Requirement
 from packaging.version import Version
 
@@ -93,7 +93,7 @@ def test_load_calculator_with_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
     assert [runtime[key] for key in labels] == ["none", "cpu", cpu, [], 1]
     assert "dtype" not in runtime  # unknown for non-torch calculators w/o dtype arg
     assert runtime["load_time_sec"] >= 0
-    assert "matscikit" in runtime["versions"]
+    assert "kemio" in runtime["versions"]
 
     torch = pytest.importorskip("torch")
 
@@ -108,7 +108,7 @@ def test_load_calculator_with_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
         def compute(
             self, structures: list[Structure], properties: list[str]
         ) -> list[dict[str, Any]]:
-            """Delegate to EMT so the object satisfies the matscikit model protocol."""
+            """Delegate to EMT so the object satisfies the kemio model protocol."""
             return self.emt.compute(structures, properties)
 
     def float64_factory(device: str, dtype: str = "float64") -> TorchModel:
@@ -175,7 +175,7 @@ def test_uv_command_layers_model_packages_on_runner_env(
         *("models/run_md.py", "--model", "mace_mp_0"),
     ]
     provided = calculators.runner_provided_packages()
-    assert {"ase", "numpy", "matscikit", "matbench-discovery"} <= provided
+    assert {"ase", "numpy", "kemio", "matbench-discovery"} <= provided
     assert not {"pymatgen", "phonopy", "phono3py", "seekpath"} & provided
     assert "torch" not in provided
 

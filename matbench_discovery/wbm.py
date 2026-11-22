@@ -5,8 +5,8 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from matscikit import mp2020_corrections
-from matscikit.interop import structure_from_pymatgen_dict
+from kemio import mp2020_corrections
+from kemio.interop import structure_from_pymatgen_dict
 from pymatviz.enums import Key
 
 from matbench_discovery.energy import mp_elemental_ref_energies
@@ -23,7 +23,7 @@ def mp2020_corrected(entries: Sequence[dict[str, Any]]) -> pd.DataFrame:
     """Apply the current MP2020 corrections to ComputedStructureEntry dicts.
 
     Matches pymatgen's MaterialsProject2020Compatibility().process_entries(clean=True)
-    (default strict_anions="require_bound") through matscikit's port: corrections
+    (default strict_anions="require_bound") through kemio's port: corrections
     already stored on the entries are discarded.
 
     Args:

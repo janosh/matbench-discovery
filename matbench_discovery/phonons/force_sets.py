@@ -1,6 +1,6 @@
 """Raw FC2/FC3 finite-displacement force sets of kappa runs, stored as HDF5.
 
-Each material is one HDF5 group holding ``matscikit.AnharmonicPhonons.force_set()``
+Each material is one HDF5 group holding ``kemio.AnharmonicPhonons.force_set()``
 verbatim: the relaxed unit cell, the FC2/FC3 supercell and primitive matrices,
 symprec and per order (``fc2``, plus ``fc3`` for materials whose FC3 stage ran) the
 supercell geometry the atom indices refer to, the displacement distance, the
@@ -16,7 +16,7 @@ orders of magnitude below model errors.
 
 Rebuild a material's fitted force constants with::
 
-    phonons = load_phonons(path, material_id)  # matscikit.AnharmonicPhonons
+    phonons = load_phonons(path, material_id)  # kemio.AnharmonicPhonons
     phonons.fc2, phonons.fc3_dense  # FC3 only for materials whose FC3 stage ran
 """
 
@@ -27,13 +27,13 @@ from typing import Any
 from urllib.parse import quote, unquote
 
 import h5py
-import matscikit
+import kemio
 import numpy as np
-from matscikit import AnharmonicPhonons
+from kemio import AnharmonicPhonons
 
 from matbench_discovery import atomic_output_path
 
-# 3: matscikit.AnharmonicPhonons.force_set() layout, checked by from_force_set
+# 3: kemio.AnharmonicPhonons.force_set() layout, checked by from_force_set
 # (scripts/migrate_force_sets_v2_to_v3.py converts schema-2 files)
 FORCE_SET_SCHEMA_VERSION = 3
 FORCE_DTYPE = np.float32
@@ -72,7 +72,7 @@ def write_force_set(
     group: h5py.Group,
     force_set: Mapping[str, Any],
     *,
-    displacement_source: str = f"matscikit {matscikit.__version__}",
+    displacement_source: str = f"kemio {kemio.__version__}",
 ) -> None:
     """Write a ``force_set()`` dict into an empty HDF5 group, recording the code that
     chose its displacements.
@@ -163,7 +163,7 @@ def load_phonons(path: str, material_id: str) -> AnharmonicPhonons:
     """Rebuild a material's phonons and refit FC2 (and FC3 when stored) from forces.
 
     The stored displacement datasets are replayed verbatim, so the forces are fitted
-    to the exact supercells they were computed on; matscikit rejects geometry,
+    to the exact supercells they were computed on; kemio rejects geometry,
     displacement-length and mass mismatches. FC3 data is absent for materials whose
     conductivity stage was gated off.
     """

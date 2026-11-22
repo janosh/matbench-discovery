@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import yaml
-from matscikit.elements import ATOMIC_NUMBERS, COVALENT_RADII, VDW_RADII
+from kemio.elements import ATOMIC_NUMBERS, COVALENT_RADII, VDW_RADII
 
 from matbench_discovery import ROOT
 from matbench_discovery.data import file_ref_url, make_file_ref, update_yaml_file

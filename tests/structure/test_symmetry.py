@@ -3,8 +3,8 @@
 import numpy as np
 import pandas as pd
 import pytest
-from matscikit import Structure, symmetry_dataset
-from matscikit.interop import structure_to_pymatgen_dict
+from kemio import Structure, symmetry_dataset
+from kemio.interop import structure_to_pymatgen_dict
 from pymatviz.enums import Key
 
 from matbench_discovery.enums import MbdKey

@@ -5,7 +5,7 @@ from collections.abc import Sequence
 
 import numpy as np
 import pytest
-from matscikit import EMT, Structure
+from kemio import EMT, Structure
 from pymatviz.enums import Key
 
 from matbench_discovery.enums import MbdKey
@@ -108,7 +108,7 @@ def test_fc3_forces_batch_and_cap(cu_calc: ltc.KappaCalculation) -> None:
     assert forces.shape == (len(cu_calc.phonons.displacements), 27, 3)
     assert model.batch_sizes[:-1] == [3] * (len(model.batch_sizes) - 1)
     assert sum(model.batch_sizes) == len(forces)
-    # matscikit's native EMT gives the same forces bit for bit, batched or not
+    # kemio's native EMT gives the same forces bit for bit, batched or not
     ADAPTER.calculate_fc3(cu_calc, EMT(), SETTINGS)
     np.testing.assert_array_equal(cu_calc.phonons.fc3_forces, forces)
     ADAPTER.calculate_fc3(cu_calc, EMT(), SETTINGS, max_evaluations=2)
@@ -132,7 +132,7 @@ def test_calculate_conductivity(cu_calc: ltc.KappaCalculation) -> None:
     address = np.indices(cu_calc.mesh[::-1]).reshape(3, -1).T[:, ::-1]
     direct = cu_calc.phonons.harmonic.frequencies(address / np.asarray(cu_calc.mesh))
     np.testing.assert_allclose(freqs, direct, rtol=0, atol=1e-12)
-    # golden values pin matscikit numerics (fc2 fit, dynamical matrix, fc3, Wigner RTA);
+    # golden values pin kemio numerics (fc2 fit, dynamical matrix, fc3, Wigner RTA);
     # EMT and the algorithms are deterministic, so 1e-9 leaves only summation-order
     # round-off: an intentional numerics change must update these
     np.testing.assert_allclose(
@@ -148,7 +148,7 @@ def test_calculate_conductivity(cu_calc: ltc.KappaCalculation) -> None:
     kappa = ltc.calculate_conductivity(cu_calc, [300])
     kappa_tot = kappa[MbdKey.kappa_tot_rta]
     assert kappa_tot.shape == (1, 6)
-    # matscikit 61a0f69 (bit-identical on 1, 2, 4 and 14 rayon threads)
+    # kemio 61a0f69 (bit-identical on 1, 2, 4 and 14 rayon threads)
     np.testing.assert_allclose(kappa_tot[0, :3], 22.107493045885906, rtol=1e-9)
     np.testing.assert_allclose(kappa_tot[0, 3:], 0, atol=1e-12)
     np.testing.assert_allclose(
@@ -160,7 +160,7 @@ def test_calculate_conductivity(cu_calc: ltc.KappaCalculation) -> None:
     assert kappa[Key.ph_freqs].shape == (len(weights), 3)
     mode_kappa = kappa[MbdKey.mode_kappa_tot_rta]
     assert mode_kappa.shape == (1, len(weights), 3, 6)
-    # matscikit sums its per-mode split exactly (measured relative gap 3.2e-16)
+    # kemio sums its per-mode split exactly (measured relative gap 3.2e-16)
     np.testing.assert_allclose(
         mode_kappa.sum(axis=(1, 2)) / weights.sum(), kappa_tot, rtol=1e-13, atol=1e-14
     )
@@ -316,7 +316,7 @@ def test_harmonic_analysis_failures_are_independent(
 
 def test_harmonic_eigenvectors_solve_gamma_dynamical_matrix() -> None:
     """Stored [band][atom][xyz] eigenvectors solve an independent D(Γ) e = w² e."""
-    from matscikit import Phonons
+    from kemio import Phonons
 
     cell = Structure(
         3.0 * np.eye(3), ["Cu", "Au"], [[0, 0, 0], [0.5, 0.5, 0.5]], fractional=True
@@ -349,7 +349,7 @@ def test_harmonic_eigenvectors_solve_gamma_dynamical_matrix() -> None:
     stored = band_path["eigenvectors"][0]
     eig_vecs = (stored[..., 0] + 1j * stored[..., 1]).reshape(3 * n_prim, 3 * n_prim)
     freqs = band_path["frequencies"][0]
-    # THz per sqrt(eV/A^2/amu) with matscikit's CODATA 2014 constants
+    # THz per sqrt(eV/A^2/amu) with kemio's CODATA 2014 constants
     factor = np.sqrt(1.6021766208e-19 / (1e-20 * 1.660539040e-27)) / (2 * np.pi * 1e12)
     eig_vals = np.sign(freqs) * (freqs / factor) ** 2
     for band_idx, eig_vec in enumerate(eig_vecs):
@@ -360,7 +360,7 @@ def test_harmonic_eigenvectors_solve_gamma_dynamical_matrix() -> None:
 
 def test_harmonic_thermal_properties_report_excluded_imaginary_modes() -> None:
     """Thermal properties count modes excluded below the imaginary threshold."""
-    from matscikit import Phonons
+    from kemio import Phonons
 
     cell = Structure(
         4.0 * np.eye(3), ["Na", "Cl"], [[0, 0, 0], [0.5, 0.5, 0.5]], fractional=True

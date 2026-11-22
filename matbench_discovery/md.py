@@ -20,10 +20,10 @@ from typing import Any, cast
 import h5py
 import numpy as np
 import pandas as pd
-from matscikit import BUILD_ID, NoseHooverChainNVT, Structure
-from matscikit.io import Frame, read_extxyz, write_extxyz
-from matscikit.md import maxwell_boltzmann_momenta
-from matscikit.model import Model as ForceModel
+from kemio import BUILD_ID, NoseHooverChainNVT, Structure
+from kemio.io import Frame, read_extxyz, write_extxyz
+from kemio.md import maxwell_boltzmann_momenta
+from kemio.model import Model as ForceModel
 from tqdm import tqdm
 
 from matbench_discovery import atomic_output_path, today
@@ -278,11 +278,11 @@ class NvtParams:
 # so its full state is positions, momenta, thermostat (eta, p_eta) and the step count;
 # restoring them reproduces an uninterrupted run to ~1e-14 (positions pass through
 # fractional storage, ~1 ulp, which grows only mildly over a rollout). Schema-tagged and
-# matscikit-version-gated so an integrator change fails closed (recompute) rather than
+# kemio-version-gated so an integrator change fails closed (recompute) rather than
 # silently corrupting trajectories.
 # Schema 3: the cost units of the sessions so far (runtime + steady-state run time +
 # memory peaks), whose run labels a resume must match (never mixing GPUs); schema 4
-# moved the integrator from ASE to matscikit.
+# moved the integrator from ASE to kemio.
 CHECKPOINT_SCHEMA = 4
 
 
@@ -342,7 +342,7 @@ def _load_checkpoint(
     ckpt_path: str, *, atoms: Structure, params: NvtParams, n_steps: int
 ) -> tuple[dict[str, np.ndarray], list[dict[str, Any]]] | None:
     """Load a checkpoint with its sessions' cost units if present,
-    readable and schema/matscikit-build/parameter-matched; else None (so the caller
+    readable and schema/kemio-build/parameter-matched; else None (so the caller
     recomputes from scratch rather than resuming a stale/foreign state).
     """
     if not os.path.isfile(ckpt_path):
@@ -357,12 +357,12 @@ def _load_checkpoint(
     target_frames = n_steps // params.record_interval + 1
     try:
         schema = int(ckpt["schema"])
-        engine_build = str(ckpt["matscikit_build"])
+        engine_build = str(ckpt["kemio_build"])
     except KeyError, TypeError, ValueError:
         print(f"  ignoring checkpoint {ckpt_path}: missing/corrupt schema metadata")
         return None
     if schema != CHECKPOINT_SCHEMA or engine_build != BUILD_ID:
-        print(f"  ignoring checkpoint {ckpt_path}: schema/matscikit build mismatch")
+        print(f"  ignoring checkpoint {ckpt_path}: schema/kemio build mismatch")
         return None
 
     try:
@@ -534,7 +534,7 @@ def run_nvt_md_resumable(
             _atomic_savez(
                 ckpt_path,
                 schema=CHECKPOINT_SCHEMA,
-                matscikit_build=BUILD_ID,
+                kemio_build=BUILD_ID,
                 nsteps=int(state["step"]),
                 n_steps=n_steps,
                 n_frames=frames_written,
@@ -673,7 +673,7 @@ def run_md_benchmark(
     which survives metric-recompute jobs that reuse cached rollouts.
 
     Args:
-        model: ForceModel under test (matscikit ``compute`` protocol).
+        model: ForceModel under test (kemio ``compute`` protocol).
         model_key: ForceModel enum name/key, used in output filenames.
         out_dir: Directory for rollout trajectories and the metrics CSV.
         ref_file: Reference HDF5 (one group per system, each carrying dt_fs and

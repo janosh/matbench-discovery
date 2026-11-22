@@ -10,14 +10,14 @@ import numpy as np
 from matbench_discovery.phonons.adapters.standard import StandardKappaAdapter
 
 if TYPE_CHECKING:
-    from matscikit import Structure
-    from matscikit.model import Model as ForceModel
+    from kemio import Structure
+    from kemio.model import Model as ForceModel
 
     from matbench_discovery.phonons.pipeline import KappaSettings
 
 
 class PetBatchedModel:
-    """PET behind the matscikit model protocol, batching through ``compute_energy``.
+    """PET behind the kemio model protocol, batching through ``compute_energy``.
 
     Current metatomic SymmetrizedCalculator versions without ``compute_energy`` fall
     back to the single-structure ASE API; each call still batches its internal
@@ -32,7 +32,7 @@ class PetBatchedModel:
         self, structures: Sequence[Structure], properties: Sequence[str]
     ) -> list[dict[str, Any]]:
         """Evaluate a batch of structures."""
-        from matscikit.interop import AseCalculatorModel, structure_to_ase
+        from kemio.interop import AseCalculatorModel, structure_to_ase
 
         compute_energy = getattr(self.calculator, "compute_energy", None)
         if not callable(compute_energy) or set(properties) - {"energy", "forces"}:

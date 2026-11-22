@@ -28,7 +28,7 @@ Typical cluster usage:
 #
 # [tool.uv.sources]
 # matbench-discovery = { path = "../", editable = true }
-# matscikit = { path = "../../matscikit", editable = true }
+# kemio = { path = "../../kemio", editable = true }
 # ///
 
 import argparse
@@ -42,8 +42,8 @@ from datetime import UTC, datetime
 from glob import glob
 
 import numpy as np
-from matscikit.elements import CHEMICAL_SYMBOLS
-from matscikit.model import Model as ForceModel
+from kemio.elements import CHEMICAL_SYMBOLS
+from kemio.model import Model as ForceModel
 
 from matbench_discovery import ROOT, today
 from matbench_discovery.calculators import (

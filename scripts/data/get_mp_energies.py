@@ -23,9 +23,9 @@ import os
 import pandas as pd
 import plotly.express as px
 import pymatviz as pmv
-from matscikit import protostructure_labels
-from matscikit.elements import ATOMIC_NUMBERS
-from matscikit.interop import structure_from_pymatgen_dict
+from kemio import protostructure_labels
+from kemio.elements import ATOMIC_NUMBERS
+from kemio.interop import structure_from_pymatgen_dict
 from pymatviz.enums import Key
 from tqdm import tqdm
 

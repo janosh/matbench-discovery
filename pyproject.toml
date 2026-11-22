@@ -30,7 +30,7 @@ dependencies = [
   "filelock>=4.2",
   "h5py>=3.16",
   # structures, symmetry, relaxation, MD, MP2020 corrections, phonons and kappa
-  "matscikit>=0.1.0b5",
+  "kemio>=0.1.0",
   "numpy>=2.5,<3",
   "pandas>=3.0.6,<4",
   # strict pin on pymatviz due to https://github.com/janosh/matbench-discovery/issues/209

@@ -8,9 +8,9 @@ from collections import Counter
 
 import h5py
 import pandas as pd
-from matscikit import Composition
-from matscikit.elements import CHEMICAL_SYMBOLS
-from matscikit.io import read_extxyz
+from kemio import Composition
+from kemio.elements import CHEMICAL_SYMBOLS
+from kemio.io import read_extxyz
 from pymatviz.enums import Key
 
 from matbench_discovery import MP_DIR, ROOT, SITE_FIG_DATA, figs

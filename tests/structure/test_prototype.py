@@ -1,14 +1,14 @@
 """Regression test for the Aflow-style protostructure labels behind WBM's uniq-proto
-filter, now computed by matscikit.protostructure_label.
+filter, now computed by kemio.protostructure_label.
 """
 
 from collections.abc import Sequence
 
 import numpy as np
 import pytest
-from matscikit import Structure, lattice_from_parameters, protostructure_label
-from matscikit.interop import structure_from_pymatgen_dict, structure_to_pymatgen_dict
-from matscikit.io import read_poscar
+from kemio import Structure, lattice_from_parameters, protostructure_label
+from kemio.interop import structure_from_pymatgen_dict, structure_to_pymatgen_dict
+from kemio.io import read_poscar
 
 from matbench_discovery import TEST_FILES
 

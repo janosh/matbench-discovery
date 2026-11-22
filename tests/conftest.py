@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import requests
-from matscikit import Structure
+from kemio import Structure
 from requests.adapters import HTTPAdapter, Retry
 
 from matbench_discovery import cli

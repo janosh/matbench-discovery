@@ -12,8 +12,8 @@ from unittest.mock import PropertyMock, patch
 import numpy as np
 import pandas as pd
 import pytest
-from matscikit import Structure
-from matscikit.interop import structure_to_pymatgen_dict
+from kemio import Structure
+from kemio.interop import structure_to_pymatgen_dict
 
 from matbench_discovery.enums import MbdKey, Model
 from tests.utils import import_repo_script
@@ -95,7 +95,7 @@ def test_analyze_model_symprec_metrics_and_debug_paths(
     material_ids = [f"wbm-1-{idx}" for idx in range(5)]
     geo_opt_path = write_geo_opt_file(tmp_path / "model", material_ids)
     prefix = LEGACY_CSV.removesuffix(".csv.gz")
-    analysis_name = f"{prefix}-matscikit={analyze_geo_opt.MATSCIKIT_SOURCE_ID}.csv.gz"
+    analysis_name = f"{prefix}-kemio={analyze_geo_opt.KEMIO_SOURCE_ID}.csv.gz"
     old_path = tmp_path / "model" / LEGACY_CSV
     fake_analysis(material_ids[:1]).to_csv(old_path)
     historical_bytes = old_path.read_bytes()
@@ -222,20 +222,20 @@ def test_write_dft_reference_never_overwrites(
     ("engine_version", "write_reference", "error"),
     [
         ("0.21.0", False, "WBM load reached"),
-        # moyopy's version is irrelevant: only matscikit's bundled moyo names files
-        ("0.22.0", False, "matscikit's moyo 0.22.0 does not match the registered"),
+        # moyopy's version is irrelevant: only kemio's bundled moyo names files
+        ("0.22.0", False, "kemio's moyo 0.22.0 does not match the registered"),
         # substring matches must not pass (0.2 is not 0.21.0)
-        ("0.2", False, "matscikit's moyo 0.2 does not match the registered"),
+        ("0.2", False, "kemio's moyo 0.2 does not match the registered"),
         ("0.22.0", True, "WBM load reached"),
     ],
 )
-def test_main_checks_dft_reference_against_matscikit_moyo(
+def test_main_checks_dft_reference_against_kemio_moyo(
     engine_version: str,
     write_reference: bool,
     error: str,
     analyze_geo_opt: ModuleType,
 ) -> None:
-    """main() compares registered DFT references to matscikit's moyo before WBM load."""
+    """main() compares registered DFT references to kemio's moyo before WBM load."""
     raw_args = ["--models", "alignn", "--symprec", "1e-2"]
     raw_args += ["--write-dft-reference"] * write_reference
     with (

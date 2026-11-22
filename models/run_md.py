@@ -26,7 +26,7 @@ Model dependency trees conflict, so each model resolves its own environment via
 #
 # [tool.uv.sources]
 # matbench-discovery = { path = "../", editable = true }
-# matscikit = { path = "../../matscikit", editable = true }
+# kemio = { path = "../../kemio", editable = true }
 # ///
 
 import argparse

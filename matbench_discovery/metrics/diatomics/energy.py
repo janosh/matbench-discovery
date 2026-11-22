@@ -1,7 +1,7 @@
 """Energy-based metrics for diatomic curves."""
 
 import numpy as np
-from matscikit.elements import ATOMIC_MASSES, ATOMIC_NUMBERS
+from kemio.elements import ATOMIC_MASSES, ATOMIC_NUMBERS
 from numpy.typing import ArrayLike
 
 PBE_WALL_ENERGY_THRESHOLDS_EV: tuple[float, ...] = (1, 5, 10, 20, 50, 100)

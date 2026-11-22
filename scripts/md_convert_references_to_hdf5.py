@@ -11,7 +11,7 @@ as a supervised validation set.
         --out ~/.cache/matbench-discovery/md/\
 2026-06-29-dynamat-v1.0-reference-trajectories.h5
 
-Parsing uses ``Trajectory.from_extxyz`` (matscikit's parallel Rust reader), which
+Parsing uses ``Trajectory.from_extxyz`` (kemio's parallel Rust reader), which
 converts
 even the largest 20k-70k-frame references in seconds rather than the hours ASE's
 per-frame extxyz parser needs, so a single process handles all systems sequentially.

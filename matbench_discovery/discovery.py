@@ -11,8 +11,8 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 import pandas as pd
 from filelock import FileLock
-from matscikit import RelaxResult, Structure, mp2020_corrections
-from matscikit.interop import structure_from_pymatgen_dict, structure_to_pymatgen_dict
+from kemio import RelaxResult, Structure, mp2020_corrections
+from kemio.interop import structure_from_pymatgen_dict, structure_to_pymatgen_dict
 from pymatviz.enums import Key
 from tqdm import tqdm
 
@@ -36,7 +36,7 @@ from matbench_discovery.relaxation import (
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
 
-    from matscikit.model import Model as ForceModel
+    from kemio.model import Model as ForceModel
 
 # schema 2: segment_start events (process runtime), records with run time + memory
 # schema 3: batch limits in the relaxation settings (float32 results depend on them)
@@ -325,13 +325,11 @@ def load_wbm_structures(
 def relaxation_record(
     material_id: str, result: RelaxResult, settings: RelaxationSettings
 ) -> RelaxationRecord:
-    """Serializable record of one ``matscikit.relax`` result (failure if it failed)."""
+    """Serializable record of one ``kemio.relax`` result (failure if it failed)."""
     if result.error is not None:
         return RelaxationRecord(material_id, error=result.error)
     if result.energy is None:
-        raise RuntimeError(
-            f"{material_id}: matscikit.relax gave neither energy nor error"
-        )
+        raise RuntimeError(f"{material_id}: kemio.relax gave neither energy nor error")
     relaxed = result.structure
     structure_dict = structure_to_pymatgen_dict(relaxed)
     # structure info (incl. arrays a model attached) travels as structure properties
@@ -492,7 +490,7 @@ def run_discovery_shard(
 ) -> LoadedShard:
     """Run or resume one shard, appending a durable record as each structure finishes.
 
-    All pending structures stream through one batched ``matscikit.relax`` call; a
+    All pending structures stream through one batched ``kemio.relax`` call; a
     structure whose model call or relaxation fails (or that is too large for one
     call) gets a failure record while the others carry on.
 

@@ -8,7 +8,7 @@ from types import ModuleType
 
 import numpy as np
 import pytest
-from matscikit.elements import ATOMIC_NUMBERS, COVALENT_RADII
+from kemio.elements import ATOMIC_NUMBERS, COVALENT_RADII
 
 from matbench_discovery.enums import Model
 from matbench_discovery.metrics.diatomics.exclusions import drop_metric_exclusions

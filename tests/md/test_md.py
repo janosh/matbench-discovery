@@ -15,8 +15,8 @@ import h5py
 import numpy as np
 import pandas as pd
 import pytest
-from matscikit import EMT, Structure
-from matscikit.io import Frame, read_extxyz, write_extxyz
+from kemio import EMT, Structure
+from kemio.io import Frame, read_extxyz, write_extxyz
 
 from matbench_discovery import today
 from matbench_discovery.calculators import load_calculator_with_runtime
@@ -501,10 +501,10 @@ def test_run_nvt_md_resume_reproduces(
     assert run_info["run_time_sec"] == ref_info["run_time_sec"] == 4
 
 
-def test_run_nvt_md_resumable_ignores_other_matscikit_build(
+def test_run_nvt_md_resumable_ignores_other_kemio_build(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
 ) -> None:
-    """A checkpoint written by a different matscikit build is discarded, not resumed."""
+    """A checkpoint written by a different kemio build is discarded, not resumed."""
     import matbench_discovery.md as md_mod
 
     atoms = bulk("Cu", cubic=True).make_supercell([2, 2, 2])
@@ -514,9 +514,9 @@ def test_run_nvt_md_resumable_ignores_other_matscikit_build(
         _run_short_resumable(atoms, out_path)
     assert os.path.isfile(f"{out_path}.ckpt.npz")
 
-    monkeypatch.setattr(md_mod, "BUILD_ID", "0.1.0-beta.5+rebuilt")
+    monkeypatch.setattr(md_mod, "BUILD_ID", "0.1.0+rebuilt")
     frames = _run_short_resumable(atoms, out_path)
-    assert "schema/matscikit build mismatch" in capsys.readouterr().out
+    assert "schema/kemio build mismatch" in capsys.readouterr().out
     assert len(frames) == 7  # recomputed from step 0
 
 

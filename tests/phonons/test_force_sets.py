@@ -10,7 +10,7 @@ from typing import Any
 import h5py
 import numpy as np
 import pytest
-from matscikit import EMT, AnharmonicPhonons, Structure
+from kemio import EMT, AnharmonicPhonons, Structure
 
 from matbench_discovery.phonons import force_sets
 from matbench_discovery.phonons import thermal_conductivity as ltc
@@ -61,7 +61,7 @@ def test_force_set_roundtrip_refits_force_constants(
     stored = force_sets.load_force_set(merged_path, "mp-30/x")
     assert stored["fc2"]["forces"].dtype == np.float32
     assert stored["fc2"]["distance"] == 0.03
-    assert stored["displacement_source"].startswith("matscikit ")
+    assert stored["displacement_source"].startswith("kemio ")
     assert (stored["fc3"] is None) is not with_fc3
 
     phonons = force_sets.load_phonons(merged_path, "mp-30/x")
@@ -98,7 +98,7 @@ def test_force_set_roundtrip_refits_force_constants(
             ),
             "fc3 supercell frac_coords differ",
         ),
-        # matscikit assigns standard masses only, so other masses would change kappa
+        # kemio assigns standard masses only, so other masses would change kappa
         (
             lambda fs: fs["unitcell"].update(masses=fs["unitcell"]["masses"] + 1),
             "differs from the standard",
@@ -157,7 +157,7 @@ def write_schema_2(path: str, phonons: AnharmonicPhonons) -> None:
             symprec=1e-5,
             displacement_distance=0.03,
             plus_minus="null",
-            displacement_source="matscikit 0.1",
+            displacement_source="kemio 0.1",
         )
         for order, supercell, displacements, forces in [
             (
@@ -208,7 +208,7 @@ def test_migrate_force_sets_v2_to_v3(
     migrate(old_path, new_path)
     with h5py.File(old_path) as old, h5py.File(new_path) as new:
         assert new.attrs["schema_version"] == force_sets.FORCE_SET_SCHEMA_VERSION
-        assert new["mp-1"].attrs["displacement_source"] == "matscikit 0.1"
+        assert new["mp-1"].attrs["displacement_source"] == "kemio 0.1"
         fc3 = new["mp-1/fc3"]
         np.testing.assert_array_equal(
             np.concatenate([fc3["forces"][()], fc3["pair_forces"][()]]),

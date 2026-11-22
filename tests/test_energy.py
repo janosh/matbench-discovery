@@ -2,7 +2,7 @@
 
 import numpy as np
 import pytest
-from matscikit import Composition
+from kemio import Composition
 
 from matbench_discovery.energy import Entry, formation_energies
 
