@@ -107,15 +107,33 @@ def test_df_wbm() -> None:
         assert col in df_wbm, f"{col=} not in {list(df_wbm)=}"
 
 
+def test_wbm_reference_and_unique_prototypes() -> None:
+    """Rounded WBM reference energies; lowest-energy novel relaxed prototypes."""
+    from matbench_discovery.wbm import WBM_ELEMENTAL_REF_ENERGIES, unique_wbm_prototypes
+
+    assert WBM_ELEMENTAL_REF_ENERGIES["Fe"] == -8.4700
+    rows = ["less stable", "more stable", "known", "same energy"]
+    summary = pd.DataFrame(
+        {
+            MbdKey.init_protostructure_spglib: ["A", "B", "C", "D"],
+            MbdKey.protostructure_spglib: ["A", "A", "C", "A"],
+            MbdKey.each_wbm: [0.5, 0.1, -0.3, 0.1],
+        },
+        index=rows,
+    )
+    mask = unique_wbm_prototypes(summary, pd.Series(["C"]))
+    assert mask.to_dict() == dict(zip(rows, [False, True, False, False], strict=True))
+
+
 def test_df_wbm_mp2020_corrections_match_current_scheme() -> None:
-    """Stored WBM MP2020 corrections equal current pymatgen's (via matscikit's port)."""
+    """mp2020_corrected reproduces the stored WBM MP2020 corrections (pymatgen's
+    current scheme) and rejects entries the scheme can't correct.
+    """
     import gzip
     import json
 
-    from matscikit import mp2020_corrections
-    from matscikit.interop import structure_from_pymatgen_dict
-
     from matbench_discovery.enums import DataFiles
+    from matbench_discovery.wbm import mp2020_corrected
 
     # wbm-1-50918, wbm-2-6782, wbm-3-10115 changed with pymatgen#3803's
     # strict_anions="require_bound" default, wbm-1-56 kept its nonzero correction
@@ -128,14 +146,23 @@ def test_df_wbm_mp2020_corrections_match_current_scheme() -> None:
                 entries[record[Key.mat_id]] = record[Key.computed_structure_entry]
     assert set(entries) == mat_ids
     cses = [entries[mat_id] for mat_id in sorted(mat_ids)]
-    corrections = mp2020_corrections(
-        cses, [structure_from_pymatgen_dict(cse["structure"]) for cse in cses]
-    )
-    for mat_id, cse, result in zip(sorted(mat_ids), cses, corrections, strict=True):
-        assert result is not None, mat_id
+    df_corr = mp2020_corrected(cses)
+    assert list(df_corr.index) == sorted(mat_ids)
+    stored = df_wbm.loc[sorted(mat_ids), "e_correction_per_atom_mp2020"]
+    np.testing.assert_allclose(df_corr.correction_per_atom, stored, rtol=0, atol=1e-6)
+    for (mat_id, row), cse in zip(df_corr.iterrows(), cses, strict=True):
         n_atoms = sum(cse["composition"].values())
-        stored = df_wbm.loc[mat_id, "e_correction_per_atom_mp2020"]
-        assert result["correction"] / n_atoms == pytest.approx(stored, abs=1e-6)
+        assert row.composition == cse["composition"], mat_id
+        assert row.uncorrected_energy == cse["energy"], mat_id
+        assert row.energy_per_atom == pytest.approx(
+            cse["energy"] / n_atoms + row.correction_per_atom, rel=0, abs=1e-12
+        )
+
+    incompatible = cses[0] | {
+        "parameters": cses[0]["parameters"] | {"run_type": "r2SCAN"}
+    }
+    with pytest.raises(ValueError, match="1 entries incompatible with MP2020"):
+        mp2020_corrected([incompatible])
 
 
 @pytest.mark.parametrize("pattern", ["*df.csv", "*df.json"])
@@ -662,15 +689,18 @@ def test_artifact_filename_static_roles(role: str, expected_suffix: str) -> None
     assert parse_artifact_filename(f"2026-07-01-{expected_suffix}") == role
 
 
-def test_artifact_filename_geo_opt_analysis_round_trip() -> None:
+@pytest.mark.parametrize("version", [None, "0.1.0-beta.5+0123456789abcdef"])
+def test_artifact_filename_geo_opt_analysis_round_trip(version: str | None) -> None:
     """Geo-opt analysis filenames round-trip; invalid calendar dates are rejected."""
     filename = artifact_filename(
         date(2026, 7, 1),
         "geo_opt_analysis",
         symprec=1e-5,
         moyo_version="0.4.2",
+        matscikit_source_id=version,
     )
-    assert filename == "2026-07-01-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz"
+    suffix = f"-matscikit={version}" if version else ""
+    assert filename == f"2026-07-01-geo-opt-symprec=1e-5-moyo=0.4.2{suffix}.csv.gz"
     assert parse_artifact_filename(filename) == "geo_opt_analysis"
     with pytest.raises(ValueError, match="Invalid ISO date"):
         parse_artifact_filename("2026-02-30-discovery.csv.gz")
@@ -779,3 +809,42 @@ def test_task_coverage_derivation(
     """Coverage is derived from metrics, targets, lifecycle, or explicit status."""
     status, _reason = task_coverage(metadata, task)  # type: ignore[arg-type]
     assert status == expected_status
+
+
+def test_query_mp_api_pages_until_total(monkeypatch: pytest.MonkeyPatch) -> None:
+    """query_mp_api pages with _skip/_limit, sends the key and stops at total_doc."""
+    import json
+    import urllib.parse
+    import urllib.request
+
+    docs = [{"material_id": f"mp-{idx}"} for idx in range(5)]
+    requests: list[urllib.request.Request] = []
+
+    def fake_urlopen(request: urllib.request.Request, timeout: float) -> io.BytesIO:  # noqa: ARG001
+        """Serve one page of docs from the request's _skip and _limit."""
+        requests.append(request)
+        query = urllib.parse.parse_qs(urllib.parse.urlsplit(request.full_url).query)
+        skip, limit = int(query["_skip"][0]), int(query["_limit"][0])
+        page = {"data": docs[skip : skip + limit], "meta": {"total_doc": len(docs)}}
+        return io.BytesIO(json.dumps(page).encode())
+
+    monkeypatch.setattr(data_module.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.delenv("MP_API_KEY", raising=False)
+    with pytest.raises(KeyError, match="MP_API_KEY"):
+        data_module.query_mp_api("materials/thermo", ["material_id"])
+
+    monkeypatch.setenv("MP_API_KEY", "test-key")
+    out = data_module.query_mp_api(
+        "/materials/thermo/", ["material_id", "chemsys"], page_size=2, nelements=1
+    )
+    assert out == docs
+    assert len(requests) == 3
+    first = urllib.parse.urlsplit(requests[0].full_url)
+    assert first.path == "/materials/thermo/"
+    assert urllib.parse.parse_qs(first.query) == {
+        "nelements": ["1"],
+        "_fields": ["material_id,chemsys"],
+        "_limit": ["2"],
+        "_skip": ["0"],
+    }
+    assert requests[0].get_header("X-api-key") == "test-key"

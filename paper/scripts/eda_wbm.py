@@ -3,13 +3,18 @@ Start with comparing MP and WBM elemental prevalence.
 """
 
 # %%
+import json
 import os
 
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import pymatviz as pmv
-from pymatgen.core import Composition, Structure
+from IPython.display import display
+from matscikit import Composition
+from matscikit.elements import ATOMIC_NUMBERS, ELEMENT_NAMES
+from matscikit.interop import structure_from_pymatgen_dict
+from matscikit.io import write_cif
 from pymatviz.enums import ElemCountMode, Key
 from pymatviz.utils import si_fmt_int
 
@@ -208,9 +213,9 @@ mp_ref_data = [
     {
         "Element": key,
         e_col: entry.energy_per_atom,
-        atom_num_col: entry.composition.elements[0].number,
+        atom_num_col: ATOMIC_NUMBERS[key],
         n_atoms_col: entry.composition.num_atoms,
-        "Name": entry.composition.elements[0].long_name,
+        "Name": ELEMENT_NAMES[ATOMIC_NUMBERS[key]],
         "Material ID": entry.entry_id.replace("-GGA", ""),
     }
     for key, entry in mp_elem_ref_entries.items()
@@ -315,25 +320,24 @@ df_wbm_final_structs = df_wbm_final_structs.set_index(Key.mat_id)
 
 # %%
 for wbm_id in df_sym_change.index:
-    init_struct = Structure.from_dict(df_wbm_init_structs.loc[wbm_id][Key.init_struct])
-    final_struct = Structure.from_dict(
-        df_wbm_final_structs.loc[wbm_id][Key.computed_structure_entry]["structure"]
-    )
-    init_struct.properties[Key.mat_id] = f"{wbm_id}-init"
-    final_struct.properties[Key.mat_id] = f"{wbm_id}-final"
-
-    pmv.structure_2d([init_struct, final_struct])
+    init_dict = df_wbm_init_structs.loc[wbm_id][Key.init_struct]
+    final_dict = df_wbm_final_structs.loc[wbm_id][Key.computed_structure_entry][
+        "structure"
+    ]
+    print(f"{wbm_id}: initial vs relaxed")
+    display(pmv.StructureWidget(structure=init_dict))
+    display(pmv.StructureWidget(structure=final_dict))
 
 
 # %% export initial and final structures with symmetry change to CIF
 wbm_id = df_sym_change.index[0]
 
-struct = Structure.from_dict(
-    df_wbm_final_structs.loc[wbm_id][Key.computed_structure_entry]["structure"]
-)
-struct.to(f"{WBM_DIR}/{wbm_id}.cif")
-struct.to(f"{WBM_DIR}/{wbm_id}.json")
-
-struct = Structure.from_dict(df_wbm_init_structs.loc[wbm_id][Key.init_struct])
-struct.to(f"{WBM_DIR}/{wbm_id}-init.cif")
-struct.to(f"{WBM_DIR}/{wbm_id}-init.json")
+for suffix, struct_dict in (
+    ("", df_wbm_final_structs.loc[wbm_id][Key.computed_structure_entry]["structure"]),
+    ("-init", df_wbm_init_structs.loc[wbm_id][Key.init_struct]),
+):
+    write_cif(
+        f"{WBM_DIR}/{wbm_id}{suffix}.cif", structure_from_pymatgen_dict(struct_dict)
+    )
+    with open(f"{WBM_DIR}/{wbm_id}{suffix}.json", mode="w") as file:
+        json.dump(struct_dict, file)

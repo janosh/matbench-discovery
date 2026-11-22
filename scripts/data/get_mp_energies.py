@@ -12,7 +12,6 @@ https://github.com/janosh/pymatviz/blob/-/examples/mp_bimodal_e_form.ipynb
 # requires-python = ">=3.14"
 # dependencies = [
 #   "matbench-discovery",
-#   "mp-api==0.46.5",
 # ]
 #
 # [tool.uv.sources]
@@ -24,15 +23,14 @@ import os
 import pandas as pd
 import plotly.express as px
 import pymatviz as pmv
-from matscikit import protostructure_label
+from matscikit import protostructure_labels
+from matscikit.elements import ATOMIC_NUMBERS
 from matscikit.interop import structure_from_pymatgen_dict
-from mp_api.client import MPRester
-from pymatgen.core import Element
 from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import MP_DIR, STABILITY_THRESHOLD, today
-from matbench_discovery.data import DataFiles
+from matbench_discovery.data import DataFiles, query_mp_api
 
 os.makedirs(MP_DIR, exist_ok=True)
 potcar_spec_key = "potcar_spec"
@@ -51,8 +49,7 @@ fields = {
 
 
 # %%
-with MPRester(use_document_model=False) as mpr:
-    docs = mpr.materials.thermo.search(fields=fields, thermo_types=["GGA_GGA+U"])
+docs = query_mp_api("materials/thermo", sorted(fields), thermo_types="GGA_GGA+U")
 
 assert fields == set(docs[0]), f"missing fields: {fields - set(docs[0])}"
 print(f"{today}: {len(docs)=:,}")
@@ -81,7 +78,7 @@ mp_structs = [
     structure_from_pymatgen_dict(cse[Key.structure])
     for cse in tqdm(df_mp_cse.entry, desc="Hydrating structures")
 ]
-df_mp_cse[f"{Key.protostructure}_moyo"] = protostructure_label(mp_structs)
+df_mp_cse[f"{Key.protostructure}_moyo"] = protostructure_labels(mp_structs)
 if n_failed := df_mp_cse[f"{Key.protostructure}_moyo"].isna().sum():
     raise ValueError(f"symmetry detection failed for {n_failed:,} MP structures")
 df_mp[f"{Key.protostructure}_moyo"] = df_mp_cse[f"{Key.protostructure}_moyo"]
@@ -135,17 +132,18 @@ fig.show()
 
 # %% pull all single-element entries and filter for lowest energy per atom system for
 # each thermo type to use as elemental reference energies
-with MPRester(use_document_model=False) as mpr:
-    docs = mpr.materials.thermo.search(num_elements=1)
+elem_ref_fields = [Key.mat_id, "chemsys", "formula_pretty", e_per_atom_key]
+elem_ref_fields += ["energy_above_hull", thermo_type_key, "entries"]
+docs = query_mp_api("materials/thermo", elem_ref_fields, nelements=1)
 
 
 # %%
 df_elem_refs = pd.DataFrame(docs).set_index(Key.mat_id, drop=False)
-df_elem_refs[Key.atomic_number] = [Element(el).Z for el in df_elem_refs["chemsys"]]
+df_elem_refs[Key.atomic_number] = df_elem_refs["chemsys"].map(ATOMIC_NUMBERS)
 df_elem_refs[potcar_spec_key] = [
     ", ".join(
         potcar["titel"]  # VASP's own (misspelled) POTCAR field name
-        for potcar in next(iter(entry.values())).parameters["potcar_spec"]
+        for potcar in next(iter(entry.values()))["parameters"]["potcar_spec"]
     )
     for entry in df_elem_refs["entries"]
 ]

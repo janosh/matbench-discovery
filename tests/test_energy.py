@@ -63,3 +63,10 @@ def test_formation_energies_errors(ref_energies: dict[str, float]) -> None:
     with pytest.raises(ValueError, match="no elemental entry for N"):
         formation_energies(["FeN"], [-5.0], ref_energies)
     assert formation_energies([], [], ref_energies).shape == (0,)
+
+
+@pytest.mark.parametrize("energies", [[-2.0], [[-2.0], [-3.0]], [-2.0, -3.0, -4.0]])
+def test_formation_energy_shape(energies: list, ref_energies: dict[str, float]) -> None:
+    """Reject a missing, nested or surplus energy before NumPy can broadcast it."""
+    with pytest.raises(ValueError, match="one total energy for each of 2 compositions"):
+        formation_energies(["Fe", "O"], np.asarray(energies), ref_energies)

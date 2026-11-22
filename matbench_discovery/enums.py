@@ -497,6 +497,7 @@ class DataFiles(Files):
     wbm_initial_structures = auto()
     wbm_initial_atoms = auto()
     wbm_summary = auto()
+    wbm_summary_2023 = auto()
     phonondb_pbe_103_structures = auto()
     phonondb_pbe_103_kappa_no_nac = auto()
     wbm_dft_geo_opt_symprec_1e_2 = auto()

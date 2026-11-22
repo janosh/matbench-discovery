@@ -87,10 +87,13 @@ def formation_energies(
     Returns:
         np.ndarray: Energy per atom relative to the references, one per composition.
     """
-    n_atoms = [Composition(composition).num_atoms for composition in compositions]
-    elemental_refs = PhaseDiagram(list(ref_energies), list(ref_energies.values()))
-    return np.asarray(
-        elemental_refs.formation_energy(
-            list(compositions), np.divide(total_energies, n_atoms).tolist()
+    energies = np.asarray(total_energies, dtype=float)
+    if energies.shape != (len(compositions),):
+        raise ValueError(
+            f"Expected one total energy for each of {len(compositions)} compositions, "
+            f"got shape {energies.shape}"
         )
-    )
+    compositions = [Composition(comp) for comp in compositions]
+    n_atoms = [comp.num_atoms for comp in compositions]
+    elemental_refs = PhaseDiagram(list(ref_energies), list(ref_energies.values()))
+    return np.asarray(elemental_refs.formation_energy(compositions, energies / n_atoms))

@@ -59,6 +59,12 @@ wbm_initial_atoms:
   description: Unrelaxed WBM structures as `ase` Atoms in extended XYZ format
   md5: 2a292211ca6acb30ed8416178d644098
 
+wbm_summary_2023:
+  url: https://figshare.com/files/64706751
+  path: wbm/2023-12-13-wbm-summary.csv.gz
+  description: Original WBM material IDs, spglib prototype labels and Matminer fingerprint distances used to define the published benchmark.
+  md5: 1555268d3aa59d20262cb9d01ce0994b
+
 wbm_summary:
   url: https://figshare.com/files/71653870
   path: wbm/2026-11-19-wbm-summary.csv.gz

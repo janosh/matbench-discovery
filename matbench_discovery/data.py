@@ -10,10 +10,13 @@ Environment Variables:
 import functools
 import hashlib
 import io
+import json
 import os
 import posixpath
 import re
 import stat
+import urllib.parse
+import urllib.request
 import zipfile
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from datetime import date
@@ -23,7 +26,7 @@ from typing import Any, Final, NotRequired, TypedDict
 
 import pandas as pd
 import yaml
-from filelock import FileLock
+from filelock import BaseFileLock, FileLock
 from matscikit.io import Frame, parse_extxyz
 from pymatviz.enums import Key
 from ruamel.yaml import YAML
@@ -47,7 +50,7 @@ MOYO_VERSION_PATTERN: Final = re.compile(
     r"^[0-9]+(?:\.[0-9]+)*(?:[-+][0-9A-Za-z.-]+)?$"
 )
 _GEO_OPT_ANALYSIS_SUFFIX: Final = re.compile(
-    r"^geo-opt-symprec=([^=]+)-moyo=([^=]+)\.csv\.gz$"
+    r"^geo-opt-symprec=([^=]+)-moyo=([^=]+?)(?:-matscikit=([^=]+))?\.csv\.gz$"
 )
 
 # role -> suffix after ``YYYY-MM-DD-``
@@ -237,6 +240,7 @@ def artifact_filename(
     *,
     symprec: float | str | Decimal | None = None,
     moyo_version: str | None = None,
+    matscikit_source_id: str | None = None,
 ) -> str:
     """Return a canonical dated artifact basename for ``role``."""
     iso_date = _iso_date(artifact_date)
@@ -249,11 +253,25 @@ def artifact_filename(
             raise ValueError(f"Invalid moyo version {moyo_version!r}")
         suffix = (
             f"geo-opt-symprec={canonical_scientific_notation(symprec)}"
-            f"-moyo={moyo_version}.csv.gz"
+            f"-moyo={moyo_version}"
         )
+        if matscikit_source_id is not None:
+            release, sep, source = matscikit_source_id.rpartition("+")
+            if (
+                not sep
+                or not MOYO_VERSION_PATTERN.fullmatch(release)
+                or not re.fullmatch(r"[0-9a-f]{16}", source)
+            ):
+                raise ValueError(f"Invalid matscikit source ID {matscikit_source_id!r}")
+            suffix += f"-matscikit={matscikit_source_id}"
+        suffix += ".csv.gz"
     else:
-        if symprec is not None or moyo_version is not None:
-            raise ValueError("symprec and moyo_version are only for geo_opt_analysis")
+        if any(
+            value is not None for value in (symprec, moyo_version, matscikit_source_id)
+        ):
+            raise ValueError(
+                "symprec and solver versions are only for geo_opt_analysis"
+            )
         if (suffix := ARTIFACT_SUFFIXES.get(role)) is None:
             raise ValueError(f"Unknown artifact role {role!r}")
     return f"{iso_date}-{suffix}"
@@ -279,13 +297,14 @@ def parse_artifact_filename(filename: str) -> str:
         if suffix == expected_suffix:
             return role
     if match := _GEO_OPT_ANALYSIS_SUFFIX.fullmatch(suffix):
-        symprec, moyo_version = match.groups()
+        symprec, moyo_version, matscikit_source_id = match.groups()
         if (
             artifact_filename(
                 artifact_date,
                 "geo_opt_analysis",
                 symprec=symprec,
                 moyo_version=moyo_version,
+                matscikit_source_id=matscikit_source_id,
             )
             == basename
         ):
@@ -491,6 +510,13 @@ def load_discovery_predictions() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFra
     return df_preds, df_each_pred, df_each_err
 
 
+def file_lock(path: str) -> BaseFileLock:
+    """Share a lock across workers with different temporary directories."""
+    os.makedirs(YAML_LOCK_DIR, exist_ok=True)
+    lock_digest = hashlib.sha256(os.path.realpath(path).encode()).hexdigest()[:16]
+    return FileLock(f"{YAML_LOCK_DIR}/{lock_digest}.lock")
+
+
 def update_yaml_file(
     file_path: str,
     dotted_path: str,
@@ -527,14 +553,7 @@ def update_yaml_file(
         raise ValueError(f"Invalid {dotted_path=}")
     file_path = os.path.realpath(file_path)
 
-    # Lock outside the repo, since filelock never removes its lock file and locking a
-    # tracked YAML in place litters the repo with .yml.lock. Not tempfile.gettempdir():
-    # Slurm sets TMPDIR per job and macOS per user, so concurrent writers would take
-    # different locks and interleave their read-modify-write into a corrupt file.
-    # realpath so two spellings of one file (symlink, relative) share a lock.
-    os.makedirs(YAML_LOCK_DIR, exist_ok=True)
-    lock_digest = hashlib.sha256(file_path.encode()).hexdigest()[:16]
-    with FileLock(f"{YAML_LOCK_DIR}/{lock_digest}.lock"):
+    with file_lock(file_path):
         with open(file_path, encoding="utf-8") as file:
             yaml_data = round_trip_yaml.load(file)
 
@@ -575,3 +594,36 @@ def update_yaml_file(
             os.chmod(temporary_path, stat.S_IMODE(os.stat(file_path).st_mode))
 
         return yaml_data
+
+
+MP_API_URL: Final = "https://api.materialsproject.org"
+
+
+def query_mp_api(
+    endpoint: str, fields: Sequence[str], *, page_size: int = 1000, **params: str | int
+) -> list[dict[str, Any]]:
+    """Fetch every document of a Materials Project API endpoint as plain dicts.
+
+    Args:
+        endpoint (str): API path such as "materials/thermo".
+        fields (Sequence[str]): Document fields to return.
+        page_size (int): Documents per request (the API allows at most 1000).
+        **params: Query filters, e.g. thermo_types="GGA_GGA+U" or nelements=1.
+
+    Returns:
+        list[dict[str, Any]]: All matching documents, in API order.
+    """
+    if not (api_key := os.environ.get("MP_API_KEY")):
+        raise KeyError("set MP_API_KEY to a Materials Project API key")
+    docs: list[dict[str, Any]] = []
+    while True:
+        query = {**params, "_fields": ",".join(fields), "_limit": page_size}
+        query["_skip"] = len(docs)
+        url = f"{MP_API_URL}/{endpoint.strip('/')}/?{urllib.parse.urlencode(query)}"
+        # fixed https host, so urllib's file:/custom-scheme risk (S310) cannot apply
+        request = urllib.request.Request(url, headers={"X-API-KEY": api_key})  # noqa: S310
+        with urllib.request.urlopen(request, timeout=120) as response:  # noqa: S310
+            page = json.load(response)
+        docs += page["data"]
+        if not page["data"] or len(docs) >= page["meta"]["total_doc"]:
+            return docs
