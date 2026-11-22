@@ -330,13 +330,10 @@ def relaxation_record(
         return RelaxationRecord(material_id, error=result.error)
     if result.energy is None:
         raise RuntimeError(f"{material_id}: kemio.relax gave neither energy nor error")
-    relaxed = result.structure
-    structure_dict = structure_to_pymatgen_dict(relaxed)
-    # structure info (incl. arrays a model attached) travels as structure properties
-    structure_dict["properties"] = dict(relaxed.info)
     return RelaxationRecord(
         material_id=material_id,
-        structure=structure_dict,
+        # structure info (incl. arrays a model attached) travels as structure properties
+        structure=structure_to_pymatgen_dict(result.structure),
         energy=result.energy,
         # a zero-step budget evaluates the start geometry without optimizing it
         converged=result.converged and settings.max_steps > 0,
