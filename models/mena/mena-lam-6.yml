@@ -7,13 +7,11 @@ dates:
 lifecycle: pending
 authors:
 - name: Francesco Viola
-  affiliation: Independent Researcher
   email: frankviola99@gmail.com
   github: https://github.com/iatecoding
   corresponding: true
 trained_by:
 - name: Francesco Viola
-  affiliation: Independent Researcher
   email: frankviola99@gmail.com
   github: https://github.com/iatecoding
   corresponding: true
@@ -122,12 +120,12 @@ metrics:
   discovery:
     pred_file:
       name: models/mena/mena-lam-6/2026-11-22-discovery.csv.gz
-      url: https://zenodo.org/records/24461178/files/2026-11-22-discovery.csv.gz?download=1
+      url: https://huggingface.co/datasets/iatecoding/mena-lam-6-matbench-discovery/resolve/main/2026-11-22-discovery.csv.gz
       size: 1315755
       md5: ad391f212db9e22a785b324bd28c9080
     run_info_file:
       name: models/mena/mena-lam-6/2026-11-22-discovery-run-info.json
-      url: https://zenodo.org/records/24461178/files/2026-11-22-discovery-run-info.json?download=1
+      url: https://huggingface.co/datasets/iatecoding/mena-lam-6-matbench-discovery/resolve/main/2026-11-22-discovery-run-info.json
       size: 434
       md5: 2c357b5bdf1b796a25780855fac19b0f
     cost: {source: author_reported, hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 278.23, load_time_sec: 1.76, max_rss_gb: 2.935, max_gpu_mem_gb: 2.256}
@@ -162,7 +160,7 @@ metrics:
   geo_opt:
     pred_file:
       name: models/mena/mena-lam-6/2026-11-22-geo-opt.jsonl.gz
-      url: https://zenodo.org/records/24461178/files/2026-11-22-geo-opt.jsonl.gz?download=1
+      url: https://huggingface.co/datasets/iatecoding/mena-lam-6-matbench-discovery/resolve/main/2026-11-22-geo-opt.jsonl.gz
       size: 102325885
       md5: 37ad43d4dd2689be719dd5302daf3abe
     symprec=1e-2:
@@ -175,7 +173,7 @@ metrics:
       n_structures: 256963 # count
       analysis_file:
         name: models/mena/mena-lam-6/2026-11-22-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://zenodo.org/records/24461178/files/2026-11-22-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz?download=1
+        url: https://huggingface.co/datasets/iatecoding/mena-lam-6-matbench-discovery/resolve/main/2026-11-22-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
         size: 6864836
         md5: d2040d9112f6e07cd4ad729966f6025b
     symprec=1e-5:
@@ -188,29 +186,29 @@ metrics:
       n_structures: 256963
       analysis_file:
         name: models/mena/mena-lam-6/2026-11-22-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://zenodo.org/records/24461178/files/2026-11-22-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz?download=1
+        url: https://huggingface.co/datasets/iatecoding/mena-lam-6-matbench-discovery/resolve/main/2026-11-22-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
         size: 6903846
         md5: a62cba33d4fa5688cbefa85b5284c1b8
   phonons:
     kappa_103:
       pred_file:
         name: models/mena/mena-lam-6/2026-11-20-phonons-kappa-103.json.gz
-        url: https://zenodo.org/records/24461178/files/2026-11-20-phonons-kappa-103.json.gz?download=1
+        url: https://huggingface.co/datasets/iatecoding/mena-lam-6-matbench-discovery/resolve/main/2026-11-20-phonons-kappa-103.json.gz
         size: 15661870
         md5: a3af0db023411fb7b7fc27ac30b23c15
       force_file:
         name: models/mena/mena-lam-6/2026-11-20-phonons-kappa-103-forces.h5
-        url: https://zenodo.org/records/24461178/files/2026-11-20-phonons-kappa-103-forces.h5?download=1
+        url: https://huggingface.co/datasets/iatecoding/mena-lam-6-matbench-discovery/resolve/main/2026-11-20-phonons-kappa-103-forces.h5
         size: 48970996
         md5: 20f7fe59388def2fe36c2311763cc07c
       phonon_file:
         name: models/mena/mena-lam-6/2026-11-20-phonons-kappa-103-phonons.json.gz
-        url: https://zenodo.org/records/24461178/files/2026-11-20-phonons-kappa-103-phonons.json.gz?download=1
+        url: https://huggingface.co/datasets/iatecoding/mena-lam-6-matbench-discovery/resolve/main/2026-11-20-phonons-kappa-103-phonons.json.gz
         size: 23617010
         md5: 4f1e802c4eb3d0302fec5aaf101c26c5
       run_info_file:
         name: models/mena/mena-lam-6/2026-11-20-phonons-kappa-103-run-info.json
-        url: https://zenodo.org/records/24461178/files/2026-11-20-phonons-kappa-103-run-info.json?download=1
+        url: https://huggingface.co/datasets/iatecoding/mena-lam-6-matbench-discovery/resolve/main/2026-11-20-phonons-kappa-103-run-info.json
         size: 495
         md5: d94a0ac179a31dc6ccd85162790c8bda
       cost: {source: author_reported, hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 1523.0, load_time_sec: 2.1}
@@ -223,7 +221,7 @@ metrics:
   md:
     pred_file:
       name: models/mena/mena-lam-6/2026-11-22-md-metrics.csv.gz
-      url: https://zenodo.org/records/24461178/files/2026-11-22-md-metrics.csv.gz?download=1
+      url: https://huggingface.co/datasets/iatecoding/mena-lam-6-matbench-discovery/resolve/main/2026-11-22-md-metrics.csv.gz
       size: 1616
       md5: 5b3674b3550142041ea3844639477089
     cost: {source: author_reported, hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition, device: cuda, dtype: float32, acceleration: [], n_processes: 1, run_time_sec: 2613.88, load_time_sec: 1.59, max_rss_gb: 3.18, max_gpu_mem_gb: 0.456}
@@ -237,7 +235,7 @@ metrics:
   diatomics:
     pred_file:
       name: models/mena/mena-lam-6/2026-11-22-diatomics.json.gz
-      url: https://zenodo.org/records/24461178/files/2026-11-22-diatomics.json.gz?download=1
+      url: https://huggingface.co/datasets/iatecoding/mena-lam-6-matbench-discovery/resolve/main/2026-11-22-diatomics.json.gz
       size: 279394
       md5: f5d3cf946bd67048b0c47588f52661fb
     cost: {source: author_reported, hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 21.11, load_time_sec: 1.34, max_rss_gb: 2.26, max_gpu_mem_gb: 0.199}
