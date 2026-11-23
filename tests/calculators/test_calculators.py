@@ -13,6 +13,7 @@ from types import ModuleType, SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
+from ase import Atoms
 from ase.calculators.calculator import Calculator
 from ase.calculators.emt import EMT
 from packaging.requirements import Requirement
@@ -726,7 +727,9 @@ def test_mena_lam6_factory_honors_requested_device_and_mp_routing(
     device: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Mena-LAM-6 loads from checkpoint on the requested device with MP2020 routing."""
-    from_checkpoint = Mock()
+    inner_calc = Mock(spec=Calculator)
+    inner_calc.results = {"energy": -1.25}
+    from_checkpoint = Mock(return_value=inner_calc)
     lam4_calc_module = ModuleType("lam4.calc")
     lam4_calc_module.__dict__["MenaCalculator"] = SimpleNamespace(
         from_checkpoint=from_checkpoint
@@ -749,4 +752,74 @@ def test_mena_lam6_factory_honors_requested_device_and_mp_routing(
         add_dispersion=False,
         compile=False,
     )
-    assert calc is from_checkpoint.return_value
+    assert isinstance(calc, calculators._MenaMP2020Calculator)  # noqa: SLF001
+    assert calc._inner is inner_calc  # noqa: SLF001
+
+
+@pytest.mark.parametrize(
+    ("atoms", "expected_u_flag"),
+    [
+        # Periodic FeO stretched to 5 A in a 20 A box has no first-shell neighbors,
+        # yet MP2020 composition routing must still select +U (u_flag=1).
+        (
+            Atoms("FeO", positions=[[0, 0, 0], [5, 0, 0]], cell=[20, 20, 20], pbc=True),
+            1,
+        ),
+        (
+            Atoms("VF3", positions=[[0, 0, 0], [5, 0, 0], [0, 5, 0], [0, 0, 5]]),
+            1,
+        ),
+        (
+            Atoms("Si2", positions=[[0, 0, 0], [2.35, 0, 0]], cell=[5, 5, 5], pbc=True),
+            0,
+        ),
+        (
+            Atoms("Fe2", positions=[[0, 0, 0], [2.5, 0, 0]], cell=[5, 5, 5], pbc=True),
+            0,
+        ),
+        (
+            Atoms("MgO", positions=[[0, 0, 0], [2.1, 0, 0]], cell=[5, 5, 5], pbc=True),
+            0,
+        ),
+    ],
+)
+def test_mena_lam6_routes_mp2020_u_flag_by_composition(
+    atoms: Atoms, expected_u_flag: int, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Wrapper sets u_flag strictly from MP2020 composition without mutating atoms."""
+    seen_u_flags: list[int | None] = []
+
+    class _FakeMenaCalc(Calculator):
+        implemented_properties: list[str] = [  # noqa: RUF012
+            "energy",
+            "free_energy",
+            "forces",
+            "stress",
+        ]
+
+        def calculate(
+            self,
+            atoms: Atoms | None = None,
+            properties: list[str] | None = None,
+            system_changes: list[str] | None = None,
+        ) -> None:
+            del properties, system_changes
+            assert atoms is not None
+            seen_u_flags.append(atoms.info.get("u_flag"))
+            self.results = {"energy": -3.5, "free_energy": -3.5}
+
+    lam4_calc_module = ModuleType("lam4.calc")
+    lam4_calc_module.__dict__["MenaCalculator"] = SimpleNamespace(
+        from_checkpoint=Mock(return_value=_FakeMenaCalc())
+    )
+    for module_name, module in {
+        "lam4": ModuleType("lam4"),
+        "lam4.calc": lam4_calc_module,
+    }.items():
+        monkeypatch.setitem(sys.modules, module_name, module)
+
+    calc = CALCULATORS["mena_lam_6"].make_calc("cpu", checkpoint="mena-lam6-v1.pt")
+    atoms.calc = calc
+    assert atoms.get_potential_energy() == -3.5
+    assert seen_u_flags == [expected_u_flag]
+    assert "u_flag" not in atoms.info

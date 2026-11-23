@@ -26,7 +26,8 @@ from importlib.metadata import PackageNotFoundError, requires, version
 from typing import Any
 from urllib.parse import urlsplit
 
-from ase.calculators.calculator import Calculator
+from ase import Atoms
+from ase.calculators.calculator import Calculator, all_changes
 from filelock import FileLock
 
 from matbench_discovery import DEFAULT_CACHE_DIR, file_digest
@@ -1039,11 +1040,53 @@ def _bam(device: str, checkpoint: str) -> Calculator:
     return RACECalculator(model=checkpoint, device=device)
 
 
+_MP2020_HUBBARD_METALS = frozenset({23, 24, 25, 26, 27, 28, 42, 74})  # V..Ni, Mo, W
+_MP2020_HUBBARD_ANIONS = frozenset({8, 9})  # O, F
+
+
+def _mp2020_u_flag(atoms: Atoms) -> int:
+    """Return 1 iff atoms matches the MP2020 composition +U rule, else 0."""
+    atomic_nums = set(atoms.get_atomic_numbers().tolist())
+    return int(
+        bool(atomic_nums & _MP2020_HUBBARD_ANIONS)
+        and bool(atomic_nums & _MP2020_HUBBARD_METALS)
+    )
+
+
+class _MenaMP2020Calculator(Calculator):
+    """Wrap MenaCalculator with MP2020 composition-based +U routing per structure."""
+
+    implemented_properties: list[str] = ["energy", "free_energy", "forces", "stress"]  # noqa: RUF012
+
+    def __init__(self, inner: Calculator) -> None:
+        super().__init__()
+        self._inner = inner
+
+    def calculate(
+        self,
+        atoms: Atoms | None = None,
+        properties: Sequence[str] = ("energy",),
+        system_changes: Sequence[str] = tuple(all_changes),
+    ) -> None:
+        super().calculate(atoms, list(properties), list(system_changes))
+        if self.atoms is None:
+            raise ValueError("atoms must be provided for MenaCalculator evaluation")
+        atoms_copy = self.atoms.copy()
+        atoms_copy.calc = None
+        # MenaCalculator(lot="mp") honors per-structure atoms.info["u_flag"], bypassing
+        # its coordination-based heuristic so stretched oxides still route to mp_pbeU.
+        atoms_copy.info["u_flag"] = _mp2020_u_flag(atoms_copy)
+        self._inner.calculate(
+            atoms_copy, properties=list(properties), system_changes=list(all_changes)
+        )
+        self.results = dict(self._inner.results)
+
+
 def _mena_lam6(device: str, checkpoint: str) -> Calculator:
-    """Load Mena-LAM-6's ASE calculator with MP2020 PBE/PBE+U routing."""
+    """Load Mena-LAM-6's ASE calculator with MP2020 composition PBE/PBE+U routing."""
     from lam4.calc import MenaCalculator
 
-    return MenaCalculator.from_checkpoint(
+    inner = MenaCalculator.from_checkpoint(
         checkpoint,
         device=device,
         lot="mp",
@@ -1053,6 +1096,7 @@ def _mena_lam6(device: str, checkpoint: str) -> Calculator:
         add_dispersion=False,
         compile=False,
     )
+    return _MenaMP2020Calculator(inner)
 
 
 def _emt(device: str) -> Calculator:  # noqa: ARG001 - CPU only, debug model
