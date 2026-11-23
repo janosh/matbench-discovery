@@ -328,6 +328,9 @@ it(`reads shallow edits on late mount but the original router query on navigatio
       )
     }),
   )
+  // Late mounts read at init, before the first render: a read from an effect wrote state
+  // mid-flush, leaving DataTable sort headers with a stale {#if} (Svelte >= 5.58.1).
+  expect(reads).toEqual([`Model,CPS`])
   flushSync()
   expect(reads).toEqual([`Model,CPS`])
 
