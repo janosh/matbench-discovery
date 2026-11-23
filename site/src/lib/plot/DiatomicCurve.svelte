@@ -84,9 +84,9 @@
         markers: `line+points` as const,
         point_style: { fill: curve.color, radius: 2.5, stroke_width: 0 },
         line_style: {
-          stroke: curve.color,
+          color: curve.color,
           // DFT references (line_width set) get a thicker line to stand out
-          ...(curve.line_width ? { stroke_width: curve.line_width } : {}),
+          ...(curve.line_width ? { width: curve.line_width } : {}),
         },
       }
     }),

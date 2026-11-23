@@ -137,65 +137,64 @@ metrics:
       size: 1315508
       md5: 0e7d1c2f73118eadd33dc777ab48eb0a
     full_test_set:
-      F1: 0.904 # fraction
-      DAF: 5.312 # dimensionless
-      Precision: 0.912 # fraction
-      Recall: 0.897 # fraction
-      Accuracy: 0.967 # fraction
-      TP: 39542 # count
-      FP: 3839 # count
-      TN: 209032 # count
-      FN: 4550 # count
-      MAE: 0.018 # eV/atom
-      RMSE: 0.068 # eV/atom
-      R2: 0.859 # dimensionless
+      F1: 0.91 # fraction
+      DAF: 5.349 # dimensionless
+      Precision: 0.915 # fraction
+      Recall: 0.905 # fraction
+      Accuracy: 0.969 # fraction
+      TP: 39762 # count
+      FP: 3693 # count
+      TN: 209313 # count
+      FN: 4195 # count
+      MAE: 0.017 # eV/atom
+      RMSE: 0.066 # eV/atom
+      R2: 0.864 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.924 # fraction
-      DAF: 6.075 # dimensionless
-      Precision: 0.929 # fraction
-      Recall: 0.92 # fraction
-      Accuracy: 0.977 # fraction
-      TP: 30700 # count
-      FP: 2359 # count
-      TN: 179755 # count
-      FN: 2674 # count
-      MAE: 0.019 # eV/atom
-      RMSE: 0.068 # eV/atom
-      R2: 0.864 # dimensionless
+      F1: 0.93 # fraction
+      DAF: 6.12 # dimensionless
+      Precision: 0.932 # fraction
+      Recall: 0.928 # fraction
+      Accuracy: 0.978 # fraction
+      TP: 30859 # count
+      FP: 2265 # count
+      TN: 179981 # count
+      FN: 2383 # count
+      MAE: 0.018 # eV/atom
+      RMSE: 0.067 # eV/atom
+      R2: 0.869 # dimensionless
       missing_preds: 0 # count
   geo_opt:
     pred_file:
       name: models/pet/pet-oam-xl-1.0.0/2026-01-10-geo-opt.jsonl.gz
-      url: https://figshare.com/files/60934831
-      size: 109142457
-      md5: 0493739bfd5f7446cb88b5f1225b6453
+      url: https://figshare.com/files/71653285
+      size: 150776969
+      md5: cb0c4625fb3eae452472fee76a49854b
+    rmsd_auc: 0.8261 # fraction
     symprec=1e-2:
-      rmsd: 0.0595 # unitless
-      n_sym_ops_mae: 1.8237 # unitless
+      n_sym_ops_mae: 1.8236 # unitless
       symmetry_decrease: 0.0667 # fraction
       symmetry_match: 0.807 # fraction
-      symmetry_increase: 0.1185 # fraction
+      symmetry_increase: 0.1184 # fraction
       symmetry_lateral: 0.0079 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/pet/pet-oam-xl-1.0.0/2026-01-10-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333932
-        size: 6884413
-        md5: add1d35e7aaf326c4dd21f0c70f9ed2e
+        name: models/pet/pet-oam-xl-1.0.0/2026-01-10-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653303
+        size: 6906193
+        md5: 4ea8d9d7be3af1ab180f8fab886f2974
     symprec=1e-5:
-      rmsd: 0.0595 # unitless
-      n_sym_ops_mae: 10.1236 # unitless
+      n_sym_ops_mae: 10.1235 # unitless
       symmetry_decrease: 0.8668 # fraction
       symmetry_match: 0.1308 # fraction
       symmetry_increase: 0.0009 # fraction
       symmetry_lateral: 0.0015 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/pet/pet-oam-xl-1.0.0/2026-01-10-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333935
-        size: 6339580
-        md5: 3e9e0440a3f97bfd716dbae59d8296b8
+        name: models/pet/pet-oam-xl-1.0.0/2026-01-10-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653306
+        size: 6357436
+        md5: 22f505a4c60b016fbf868b86c961c214
   md:
     pred_file:
       name: models/pet/pet-oam-xl-1.0.0/2026-06-28-md-metrics.csv.gz

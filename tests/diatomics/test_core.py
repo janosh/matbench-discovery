@@ -99,8 +99,8 @@ def test_calc_diatomic_curve_results(
     expected_cu: str,
 ) -> None:
     """Pairs give full curves, reuse matching caches, replace stale, reset failures."""
-    # mixed symbol/number pair specs, incl. H-H requested in both forms
-    pairs = [(1, 1), ("H", 1), (8, "O"), ("Cu", 29)]
+    # mixed symbol/(numpy) number pair specs, incl. H-H requested in both forms
+    pairs = [(1, 1), ("H", 1), (np.int64(8), "O"), ("Cu", 29)]
     initial_results = copy.deepcopy(initial_results)  # results are updated in-place
     calculator = CuRangeLimitedEMT(cu_max_dist)
     results = calc_diatomic_curve(pairs, calculator, "test", distances, initial_results)

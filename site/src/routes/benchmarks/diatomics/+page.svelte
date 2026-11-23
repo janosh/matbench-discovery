@@ -21,12 +21,13 @@
   import ScoreWeights from '#lib/ScoreWeights.svelte'
   import { UrlModelSelection } from '#lib/model-selection.svelte.js'
   import DiatomicsNote from './diatomics-note.md'
-  import { element_data, element_groups } from 'matterviz/element'
+  import { element_data } from 'matterviz/element'
   import { SvelteSet } from 'svelte/reactivity'
   import type { PageData } from './$types'
   import {
     DFT_REF_COLORS,
     DiatomicCurveCache,
+    ELEMENT_GROUPS,
     ElementGroupParam,
     make_plot_observer,
     MODEL_COLORS,
@@ -118,7 +119,7 @@
   let diatomics_to_render = $derived(
     // Only render diatomics where at least one model has data
     element_data
-      .filter(element_group.group.includes)
+      .filter(element_group.includes)
       .map(({ symbol }) => `${symbol}-${symbol}`)
       .filter((formula) =>
         selected_model_keys.some(
@@ -236,7 +237,7 @@
     label="Element group filter"
     class="element-group-filter"
     {@attach tint_element_groups}
-    options={element_groups}
+    options={ELEMENT_GROUPS}
     bind:value={element_group.key}
   />
 

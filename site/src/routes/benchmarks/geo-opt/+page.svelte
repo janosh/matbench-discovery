@@ -129,7 +129,7 @@
         model_filter={has_geo_opt_metrics}
         column_labels={columns}
         show_row_numbers={false}
-        default_sort={[{ column: ALL_METRICS.RMSD.key, dir: `asc` }]}
+        default_sort={[{ column: ALL_METRICS.RMSD.key, dir: `desc` }]}
       />
     </section>
   {/snippet}
@@ -141,9 +141,9 @@
       {@html scatter_axis_label(plot.y)} vs {@html scatter_axis_label(plot.x)}
     </h3>
     <p>
-      The default view compares structure-matching RMSD (lower is better) with the
-      fraction of matching spacegroups at <code>symprec=1e-2</code> (higher is better). Marker
-      size defaults to model parameters and color to training-set size.
+      The default view compares RMSD AUC (higher is better) with the fraction of matching
+      spacegroups at <code>symprec=1e-2</code> (higher is better). Marker size defaults to model
+      parameters and color to training-set size.
     </p>
     <DynamicScatter
       models={ACTIVE_MODELS}
@@ -177,7 +177,11 @@
             markers: `line` as const,
           }))}
           x_axis={{ label: `RMSD (unitless)`, range: [0, 0.05] }}
-          y_axis={{ label: `Cumulative`, format: `.0%`, range: [0, 1] }}
+          y_axis={{
+            label: `Fraction of all WBM structures`,
+            format: `.0%`,
+            range: [0, 1],
+          }}
           style="height: 420px"
         />
       </div>

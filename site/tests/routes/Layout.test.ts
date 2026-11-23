@@ -153,8 +153,10 @@ it.each([`/api`, `/data`, `/benchmarks/diatomics`])(
     ).toEqual(
       route === `/api` ? [`Overview`, `First`, `Second`] : [`First`, `Second`, `Third`],
     )
-    expect(doc_query(`.toc nav`).style.fontSize).toBe(`7pt`)
-    expect(doc_query(`.toc-title`).style.margin).toBe(`3pt`)
+    // jsdom renders the mobile TOC: no title margin, nav raised above page content
+    const { fontSize, zIndex } = doc_query(`.toc nav`).style
+    expect([fontSize, zIndex]).toEqual([`7pt`, `10`])
+    expect(doc_query(`.toc-title`).style.margin).toBe(``)
   },
 )
 

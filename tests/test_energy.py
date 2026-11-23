@@ -43,9 +43,7 @@ def test_get_elemental_ref_entries(
     )
     expected = {"Fe": expected_type(comp1, energy1), "O": expected_type(comp2, energy2)}
     assert elemental_ref_entries == expected
-    stdout, stderr = capsys.readouterr()
-    assert ("Sorting 5 entries with 2 dimensions" in stdout) is verbose
-    assert ("Finding elemental reference entries" in stderr) is verbose
+    assert ("Finding elemental reference entries" in capsys.readouterr().err) is verbose
 
 
 def test_get_elemental_ref_entries_missing_terminal_entries() -> None:

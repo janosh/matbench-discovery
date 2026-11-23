@@ -73,12 +73,11 @@ if Key.formula not in df_mp_trj:
 # this is the unrelaxed (but MP2020 corrected) formation energy per atom of the actual
 # relaxation step
 df_mp_trj[MbdKey.e_form_dft] = [
-    calc_energy_from_e_refs(
-        {"composition": row[Key.formula], "energy": row["mp2020_corrected_energy"]},
-        mp_elemental_ref_energies,
-    )
-    for _idx, row in tqdm(
-        df_mp_trj.iterrows(), total=len(df_mp_trj), desc="Compute formation energies"
+    calc_energy_from_e_refs(formula, mp_elemental_ref_energies, total_energy=energy)
+    for formula, energy in tqdm(
+        zip(df_mp_trj[Key.formula], df_mp_trj["mp2020_corrected_energy"], strict=True),
+        total=len(df_mp_trj),
+        desc="Compute formation energies",
     )
 ]
 df_mp_trj[Key.stress_trace] = [

@@ -209,17 +209,16 @@
         : `z-index: 1;`,
     }}
     nav_props={{
-      style: toc_desktop
-        ? `font-size: 7pt;`
-        : `font-size: 7pt; z-index: 10; padding: 1em;`,
+      style: toc_desktop ? `font-size: 7pt;` : `font-size: 7pt; z-index: 10;`,
     }}
-    title_props={{ style: `margin: 3pt` }}
+    title_props={{ style: toc_desktop ? `margin: 3pt` : undefined }}
     --toc-title-font-weight="600"
     --toc-li-color="var(--text-color)"
     --toc-active-color="var(--link-color)"
     --toc-padding="1em 1em 0 1.5em"
     --toc-max-height="calc(100vh - 10rem)"
     --toc-mobile-width="min(80vw, 30em)"
+    --toc-mobile-bg="var(--page-bg)"
     --toc-mobile-border="1px solid var(--border)"
     --toc-mobile-shadow="0 0 20px var(--shadow)"
   />

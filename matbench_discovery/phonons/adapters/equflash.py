@@ -50,11 +50,8 @@ class EquFlashKappaAdapter(StandardKappaAdapter):
 
         def evaluate_batch(batch_atoms: list[Atoms]) -> np.ndarray:
             """Evaluate one EquFlash displacement batch through its trainer."""
-            graphs = [
-                graph_converter.convert(displaced_atoms)
-                for displaced_atoms in batch_atoms
-            ]
-            graph_batch = Batch.from_data_list(graphs).to(device)  # ty: ignore[unresolved-attribute]
+            graphs = [graph_converter.convert(atoms) for atoms in batch_atoms]
+            graph_batch = Batch.from_data_list(graphs).to(device)  # ty: ignore[missing-attribute]
             outputs = trainer.predict(graph_batch, per_image=False, disable_tqdm=True)
             return outputs["forces"].detach().cpu().numpy().reshape(-1, n_atoms, 3)
 

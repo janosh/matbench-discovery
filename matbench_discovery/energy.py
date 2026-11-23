@@ -2,9 +2,8 @@
 pymatgen EntryLikes.
 """
 
-import itertools
 from collections.abc import Sequence
-from typing import Any, cast
+from typing import Any
 
 import pandas as pd
 from pymatgen.analysis.phase_diagram import Entry, PDEntry
@@ -32,50 +31,32 @@ def get_elemental_ref_entries(
     Returns:
         dict[str, Entry]: Map from element symbol to its lowest energy entry.
     """
-    normalized_entries: list[Entry] = [
-        PDEntry.from_dict(entry) if isinstance(entry, dict) else cast("Entry", entry)
-        for entry in entries
-    ]
-    elements = {
-        element
-        for entry in normalized_entries
-        for element in entry.composition.elements
-    }
-    dim = len(elements)
-
-    if verbose:
-        print(
-            f"Sorting {len(normalized_entries)} entries with {dim} dimensions...",
-            flush=True,
-        )
-
-    sorted_entries = sorted(
-        normalized_entries, key=lambda entry: entry.composition.reduced_composition
-    )
-
-    elemental_ref_entries = {}
-    for composition, entry_group in tqdm(
-        itertools.groupby(
-            sorted_entries, key=lambda entry: entry.composition.reduced_composition
-        ),
-        disable=not verbose,
-        desc="Finding elemental reference entries",
+    elemental_ref_entries: dict[str, Entry] = {}
+    elements: set[str] = set()
+    for entry_like in tqdm(
+        entries, disable=not verbose, desc="Finding elemental reference entries"
     ):
-        min_entry = min(entry_group, key=lambda entry: entry.energy_per_atom)
-        if composition.is_element:
-            elem_symb = str(composition.elements[0])
-            elemental_ref_entries[elem_symb] = min_entry
+        entry = (
+            PDEntry.from_dict(entry_like)
+            if isinstance(entry_like, dict)
+            else entry_like
+        )
+        comp = entry.composition
+        elements.update(map(str, comp))
+        if comp.is_element:
+            symbol = str(comp.elements[0])
+            ref_entry = elemental_ref_entries.get(symbol)
+            if ref_entry is None or entry.energy_per_atom < ref_entry.energy_per_atom:
+                elemental_ref_entries[symbol] = entry
 
-    element_symbols = set(map(str, elements))
-    if len(elemental_ref_entries) < dim:
-        missing = element_symbols - set(elemental_ref_entries)
+    if missing := elements - set(elemental_ref_entries):
         raise ValueError(f"Missing terminal entries: {missing}")
 
     return elemental_ref_entries
 
 
 # contains all MP elemental reference entries to compute formation energies
-# produced by get_elemental_ref_entries() in build_phase_diagram.py
+# produced by get_elemental_ref_entries() in build_mp_reference_entries.py
 mp_elem_ref_entries = (
     pd.read_json(DataFiles.mp_elemental_ref_entries.path, typ="series")
     .map(ComputedEntry.from_dict)
@@ -133,12 +114,10 @@ def calc_energy_from_e_refs(
             raise ValueError("total_energy can't be None when 1st arg is not an Entry")
         energy = total_energy
 
-        if isinstance(struct_or_entry, str):
-            comp = Composition(struct_or_entry)
-        elif isinstance(struct_or_entry, Structure):
+        if isinstance(struct_or_entry, Structure):
             comp = struct_or_entry.composition
-        elif isinstance(struct_or_entry, Composition):
-            comp = struct_or_entry
+        elif isinstance(struct_or_entry, str | Composition):
+            comp = Composition(struct_or_entry)
         else:
             cls_name = type(struct_or_entry).__name__
             raise TypeError(

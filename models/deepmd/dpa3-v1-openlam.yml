@@ -65,7 +65,7 @@ hyperparams:
     cell_filter: ExpCellFilter
     kappa:
       protocol: phonondb-v1
-      displacement_distance: 0.01 # legacy runs used 0.01 Å; the PhononDB-PBE reference uses 0.03 Å
+      displacement_distance: 0.03 # a 0.03 Å rerun reproduces the stored Γ frequencies to 8e-5 THz, 0.01 Å is off by up to 7e-2
   architecture:
     n_layers: 6
     graph_construction_radius: 6.0
@@ -158,32 +158,31 @@ metrics:
       url: https://figshare.com/files/70324968
       size: 119966336
       md5: 54e0408ea6ffe9ef1656d0379e29dd6b
+    rmsd_auc: 0.7525 # fraction
     symprec=1e-5:
-      rmsd: 0.0686 # unitless
-      n_sym_ops_mae: 2.1477 # unitless
+      n_sym_ops_mae: 2.1478 # unitless
       symmetry_decrease: 0.0657 # fraction
       symmetry_match: 0.7188 # fraction
       symmetry_increase: 0.2094 # fraction
       symmetry_lateral: 0.0061 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/deepmd/dpa3-v1-openlam/2025-01-10-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70334001
-        size: 6821946
-        md5: 611fd89bc863893d11605ed5b00924ec
+        name: models/deepmd/dpa3-v1-openlam/2025-01-10-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653426
+        size: 6846764
+        md5: 8dfdcf4b4d03da032ab6f7c43ad09cc0
     symprec=1e-2:
-      rmsd: 0.0686 # unitless
-      n_sym_ops_mae: 1.8912 # unitless
+      n_sym_ops_mae: 1.8913 # unitless
       symmetry_decrease: 0.0515 # fraction
       symmetry_match: 0.8097 # fraction
       symmetry_increase: 0.1314 # fraction
       symmetry_lateral: 0.0073 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/deepmd/dpa3-v1-openlam/2025-01-10-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70334004
-        size: 6817820
-        md5: 8c4b4a87e5be9efb584340be5fd0d761
+        name: models/deepmd/dpa3-v1-openlam/2025-01-10-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653429
+        size: 6843880
+        md5: 7932fbfb41ff7d59f6aad3a1f8119128
   phonons:
     kappa_103:
       κ_SRME: 0.7407

@@ -109,21 +109,21 @@ metrics:
       size: 250321
       md5: 42d9c254b72e99802d3a34acdc66eb61
     cost: {source: salvaged, hardware: NVIDIA H200, run_time_sec: 196.1}
-    pbe_wall_dist_mae: 0.2832
-    pbe_energy_mae: 8.571
-    pbe_bond_length_error: 0.5899
-    pbe_well_depth_error: 8.938
-    pbe_vib_freq_error: 453.2
+    pbe_wall_dist_mae: 0.4524
+    pbe_energy_mae: 8.115
+    pbe_bond_length_error: 0.5881
+    pbe_well_depth_error: 8.505
+    pbe_vib_freq_error: 415.0
     tortuosity: 2.491
     energy_diff_flips: 6.909
     energy_jump: 64.18
     force_flips: 6.318
     force_total_variation: 16610.0
     force_jump: 23140.0
-    pbe_force_mae: 44.32
+    pbe_force_mae: 40.8
     pbe_vib_freq_coverage:
-      n_valid: 69
-      n_eligible: 73
+      n_valid: 77
+      n_eligible: 81
       failed_elements:
       - Ac
       - F
@@ -170,32 +170,31 @@ metrics:
       url: https://figshare.com/files/70324845
       size: 156034776
       md5: a5c28803cae991c3db09187d697ff385
+    rmsd_auc: 0.6085 # fraction
     symprec=1e-5:
-      rmsd: 0.1067 # unitless
       n_sym_ops_mae: 10.1098 # unitless
-      symmetry_decrease: 0.8597 # fraction
+      symmetry_decrease: 0.8598 # fraction
       symmetry_match: 0.1376 # fraction
       symmetry_increase: 0.0024 # fraction
       symmetry_lateral: 0.0002 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/alphanet/alphanet-v1-mptrj/2025-03-04-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333983
-        size: 6042801
-        md5: bd4f08a495f8fe924a7a6a4d9fe1f604
+        name: models/alphanet/alphanet-v1-mptrj/2025-03-04-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653366
+        size: 6068665
+        md5: 8363a1514be4efbe9f26319e4f539d4d
     symprec=1e-2:
-      rmsd: 0.1067 # unitless
-      n_sym_ops_mae: 8.1732 # unitless
-      symmetry_decrease: 0.5768 # fraction
-      symmetry_match: 0.3712 # fraction
+      n_sym_ops_mae: 8.1697 # unitless
+      symmetry_decrease: 0.5766 # fraction
+      symmetry_match: 0.3713 # fraction
       symmetry_increase: 0.0419 # fraction
       symmetry_lateral: 0.0101 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/alphanet/alphanet-v1-mptrj/2025-03-04-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333986
-        size: 6831150
-        md5: f713bb517da436e28e0ed257b657acee
+        name: models/alphanet/alphanet-v1-mptrj/2025-03-04-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653378
+        size: 6860447
+        md5: 52fb86b40d6bd9babde7b6aa742cfb58
   phonons:
     kappa_103:
       κ_SRME: 1.3046

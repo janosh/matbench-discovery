@@ -84,6 +84,33 @@ def run_single_point_shard(
     return run_discovery_shard(**kwargs)
 
 
+@pytest.mark.parametrize(
+    ("model_key", "expected_ids"),
+    [
+        ("emt", ["wbm-2", "wbm-4", "wbm-5"]),
+        ("mace_mp_0", ["wbm-1", "wbm-2", "wbm-3", "wbm-4"]),
+    ],
+)
+def test_load_wbm_atoms_dry_run_skips_unsupported_elements(
+    monkeypatch: pytest.MonkeyPatch, model_key: str, expected_ids: list[str]
+) -> None:
+    """Dry runs pick only WBM structures whose elements the model supports."""
+    from matbench_discovery import data
+
+    elements = {
+        "wbm-1": "In",
+        "wbm-2": "Cu",
+        "wbm-3": "Sn",
+        "wbm-4": "Au",
+        "wbm-5": "Cu",
+    }
+    atoms_list = [bulk_atoms(mat_id, element) for mat_id, element in elements.items()]
+    monkeypatch.setattr(data, "ase_atoms_from_zip", lambda *_args, **_kw: atoms_list)
+    monkeypatch.setattr(data, "df_wbm", pd.DataFrame(index=list(elements)))
+    selected = discovery_core.load_wbm_atoms(model_key, dry_run=True)
+    assert list(selected) == expected_ids
+
+
 def test_artifacts_match_legacy_mp2020_join_semantics(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -246,17 +273,8 @@ def test_write_yaml_results_masks_outliers_and_updates_yaml(
         ),
         "cost": {"source": "runner", "hardware": "NVIDIA A100", "max_gpu_mem_gb": 4},
     }
-    yaml_path.write_text(
-        yaml.safe_dump(
-            {
-                "metrics": {
-                    "discovery": old_discovery,
-                    "geo_opt": {},
-                }
-            }
-        ),
-        encoding="utf-8",
-    )
+    yaml_metrics = {"discovery": old_discovery, "geo_opt": {}}
+    yaml_path.write_text(yaml.safe_dump({"metrics": yaml_metrics}), encoding="utf-8")
     mock_model = cast(
         "Model", SimpleNamespace(yaml_path=str(yaml_path), name="mock_model")
     )
@@ -414,12 +432,8 @@ def test_dependency_isolated_print_cmd(
     capsys: pytest.CaptureFixture[str], model_key: str, extra_args: list[str]
 ) -> None:
     """Print commands include model dependencies and forwarded run options."""
-    assert (
-        discovery_runner.main(
-            ["--model", model_key, "--print-cmd", "--dry-run", *extra_args]
-        )
-        == 0
-    )
+    cli_args = ["--model", model_key, "--print-cmd", "--dry-run", *extra_args]
+    assert discovery_runner.main(cli_args) == 0
     command = capsys.readouterr().out
     assert "uv run --no-project" in command
     runner_deps = CALCULATORS[model_key].runner_deps()
@@ -478,20 +492,8 @@ def test_cli_returns_failure_when_any_relaxation_fails(
     monkeypatch.setattr(
         discovery_runner, "load_wbm_atoms", load_partially_failing_atoms
     )
-    assert (
-        discovery_runner.main(
-            [
-                "--model",
-                "emt",
-                "--dry-run",
-                "--max-steps",
-                "0",
-                "--out-dir",
-                str(tmp_path),
-            ]
-        )
-        == 1
-    )
+    cli_args = ["--model", "emt", "--dry-run", "--max-steps", "0"]
+    assert discovery_runner.main([*cli_args, "--out-dir", str(tmp_path)]) == 1
 
 
 def test_relaxation_settings_load_yaml_and_overrides(
@@ -517,7 +519,7 @@ def test_relaxation_settings_load_yaml_and_overrides(
         cell_filter="FrechetCellFilter",
     )
     assert overridden == RelaxationSettings(0.01, 7, "GOQN", "FrechetCellFilter")
-    assert RelaxationSettings(cell_filter="NONE") == RelaxationSettings(
+    assert RelaxationSettings(cell_filter="none") == RelaxationSettings(
         cell_filter=None
     )
     # only the EMT debug calculator may lack a model YAML
@@ -557,7 +559,7 @@ def test_emt_relaxation_smoke() -> None:
     assert record.material_id == "wbm-cu"
     assert record.error is None
     assert record.structure is not None
-    assert np.isfinite(record.energy)
+    assert np.isfinite(record.energy or np.nan)
     assert (record.converged, record.n_steps) == (False, 2)
     single_point_record = relax_atoms(
         bulk_atoms("wbm-cu-single-point"),
@@ -653,6 +655,31 @@ def test_slurm_shard_selection(
         assert slurm_shard_selection(n_shards, None) == expected
 
 
+def test_shard_record_write_failure_propagates(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A failed record write raises instead of appending a duplicate failure record,
+    so the shard still reads and resumes.
+    """
+    atoms_by_id = {"wbm-cu": bulk_atoms("wbm-cu"), "wbm-ag": bulk_atoms("wbm-ag")}
+    shard_path = f"{tmp_path}/shard-000-of-001.jsonl"
+    real_fsync = os.fsync
+
+    def failing_fsync(fd: int) -> None:
+        """Fail the first fsync after a record line was written."""
+        with open(shard_path) as file:
+            if '"type": "record"' in file.read():
+                monkeypatch.setattr(os, "fsync", real_fsync)
+                raise OSError("disk full")
+        real_fsync(fd)
+
+    monkeypatch.setattr(os, "fsync", failing_fsync)
+    with pytest.raises(OSError, match="disk full"):
+        run_single_point_shard(atoms_by_id, shard_path)
+    resumed = run_single_point_shard(atoms_by_id, shard_path)
+    assert [record.material_id for record in resumed.records] == ["wbm-cu", "wbm-ag"]
+
+
 def test_shard_resume_preserves_success_and_failure_records(tmp_path: Path) -> None:
     """Completed and failed attempts are both durable and skipped on resume."""
     atoms_by_id = {
@@ -661,10 +688,7 @@ def test_shard_resume_preserves_success_and_failure_records(tmp_path: Path) -> N
     }
     shard_path = tmp_path / "shard-000-of-001.jsonl"
     first_run = run_single_point_shard(atoms_by_id, str(shard_path))
-    assert [record.material_id for record in first_run.records] == [
-        "wbm-cu",
-        "wbm-si",
-    ]
+    assert [record.material_id for record in first_run.records] == list(atoms_by_id)
     assert first_run.records[0].energy is not None
     assert first_run.records[1].error is not None
 

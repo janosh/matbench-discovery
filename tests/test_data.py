@@ -1,8 +1,12 @@
 """Tests for data loading and IO helpers."""
 
+import gzip
 import io
+import json
 import os
 import tempfile
+import urllib.parse
+import urllib.request
 import zipfile
 from collections.abc import Iterator
 from datetime import date
@@ -37,8 +41,13 @@ from matbench_discovery.data import (
     task_coverage,
     update_yaml_file,
 )
-from matbench_discovery.enums import MbdKey, Model, TestSubset
+from matbench_discovery.enums import DataFiles, MbdKey, Model, TestSubset
 from matbench_discovery.preds import elements
+from matbench_discovery.wbm import (
+    WBM_ELEMENTAL_REF_ENERGIES,
+    mp2020_corrected,
+    unique_wbm_prototypes,
+)
 
 atoms1 = Atoms("H2O", positions=[[0, 0, 0], [0, 0, 1], [0, 1, 0]], cell=[5, 5, 5])
 atoms1.info[Key.mat_id] = "structure1"
@@ -85,6 +94,56 @@ def test_df_wbm() -> None:
         MbdKey.protostructure_spglib,
     ):
         assert col in df_wbm, f"{col=} not in {list(df_wbm)=}"
+
+
+def test_wbm_reference_and_unique_prototypes() -> None:
+    """Rounded WBM reference energies; lowest-energy novel relaxed prototypes."""
+    assert WBM_ELEMENTAL_REF_ENERGIES["Fe"] == -8.4700
+    rows = ["less stable", "more stable", "known", "same energy"]
+    summary = pd.DataFrame(
+        {
+            MbdKey.init_protostructure_spglib: ["A", "B", "C", "D"],
+            MbdKey.protostructure_spglib: ["A", "A", "C", "A"],
+            MbdKey.each_wbm: [0.5, 0.1, -0.3, 0.1],
+        },
+        index=rows,
+    )
+    mask = unique_wbm_prototypes(summary, pd.Series(["C"]))
+    assert mask.to_dict() == dict(zip(rows, [False, True, False, False], strict=True))
+
+
+def test_df_wbm_mp2020_corrections_match_current_scheme() -> None:
+    """mp2020_corrected reproduces the stored WBM MP2020 corrections (pymatgen's
+    current scheme) and rejects entries the scheme can't correct.
+    """
+    # wbm-1-50918, wbm-2-6782, wbm-3-10115 changed with pymatgen#3803's
+    # strict_anions="require_bound" default, wbm-1-56 kept its nonzero correction
+    mat_ids = {"wbm-1-56", "wbm-1-50918", "wbm-2-6782", "wbm-3-10115"}
+    entries: dict[str, dict[str, Any]] = {}
+    with gzip.open(DataFiles.wbm_computed_structure_entries.path, "rt") as file:
+        for line in file:
+            if line[16:40].split('"')[0] in mat_ids:  # skip json.loads of other rows
+                record = json.loads(line)
+                entries[record[Key.mat_id]] = record[Key.computed_structure_entry]
+    assert set(entries) == mat_ids
+    cses = [entries[mat_id] for mat_id in sorted(mat_ids)]
+    df_corr = mp2020_corrected(cses)
+    assert list(df_corr.index) == sorted(mat_ids)
+    stored = df_wbm.loc[sorted(mat_ids), "e_correction_per_atom_mp2020"]
+    np.testing.assert_allclose(df_corr.correction_per_atom, stored, rtol=0, atol=1e-6)
+    for (mat_id, row), cse in zip(df_corr.iterrows(), cses, strict=True):
+        n_atoms = sum(cse["composition"].values())
+        assert row.composition == cse["composition"], mat_id
+        assert row.uncorrected_energy == cse["energy"], mat_id
+        assert row.energy_per_atom == pytest.approx(
+            cse["energy"] / n_atoms + row.correction_per_atom, rel=0, abs=1e-12
+        )
+
+    incompatible = cses[0] | {
+        "parameters": cses[0]["parameters"] | {"run_type": "r2SCAN"}
+    }
+    with pytest.raises(ValueError, match="1 entries incompatible with MP2020"):
+        mp2020_corrected([incompatible])
 
 
 @pytest.mark.parametrize("pattern", ["*df.csv", "*df.json"])
@@ -712,3 +771,38 @@ def test_task_coverage_derivation(
     """Coverage is derived from metrics, targets, lifecycle, or explicit status."""
     status, _reason = task_coverage(metadata, task)  # type: ignore[arg-type]
     assert status == expected_status
+
+
+def test_query_mp_api_pages_until_total(monkeypatch: pytest.MonkeyPatch) -> None:
+    """query_mp_api pages with _skip/_limit, sends the key and stops at total_doc."""
+    docs = [{"material_id": f"mp-{idx}"} for idx in range(5)]
+    requests: list[urllib.request.Request] = []
+
+    def fake_urlopen(request: urllib.request.Request, timeout: float) -> io.BytesIO:  # noqa: ARG001
+        """Serve one page of docs from the request's _skip and _limit."""
+        requests.append(request)
+        query = urllib.parse.parse_qs(urllib.parse.urlsplit(request.full_url).query)
+        skip, limit = int(query["_skip"][0]), int(query["_limit"][0])
+        page = {"data": docs[skip : skip + limit], "meta": {"total_doc": len(docs)}}
+        return io.BytesIO(json.dumps(page).encode())
+
+    monkeypatch.setattr(data_module.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.delenv("MP_API_KEY", raising=False)
+    with pytest.raises(KeyError, match="MP_API_KEY"):
+        data_module.query_mp_api("materials/thermo", ["material_id"])
+
+    monkeypatch.setenv("MP_API_KEY", "test-key")
+    out = data_module.query_mp_api(
+        "/materials/thermo/", ["material_id", "chemsys"], page_size=2, nelements=1
+    )
+    assert out == docs
+    assert len(requests) == 3
+    first = urllib.parse.urlsplit(requests[0].full_url)
+    assert first.path == "/materials/thermo/"
+    assert urllib.parse.parse_qs(first.query) == {
+        "nelements": ["1"],
+        "_fields": ["material_id,chemsys"],
+        "_limit": ["2"],
+        "_skip": ["0"],
+    }
+    assert requests[0].get_header("X-api-key") == "test-key"

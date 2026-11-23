@@ -61,7 +61,7 @@ describe(`MD Task Page`, () => {
   it(`restores URL state for scatter axes, table sort and filters`, async () => {
     await mount_with_url(
       MdPage,
-      `http://localhost/benchmarks/md?x=combined_score&y=force_rmse&sort=vdos_error&dir=asc&train=-OMat24&heatmap=0`,
+      `http://localhost/benchmarks/md?x=combined_score&y=force_rmse&sort=vdos_error&train=-OMat24&heatmap=0`,
     )
 
     expect(heading_texts(`#model-comparison`)).toEqual([`FRMSE vs CMDS`])

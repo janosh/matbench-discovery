@@ -114,41 +114,41 @@ metrics:
       md5: c44c675c5d14ae3f9b11da3ea1359caa
       url: https://ndownloader.figshare.com/files/70537422
     full_test_set:
-      F1: 0.913 # fraction
-      DAF: 5.407 # dimensionless
-      Precision: 0.928 # fraction
-      Recall: 0.898 # fraction
-      Accuracy: 0.97 # fraction
-      TP: 39589 # count
-      FP: 3085 # count
-      TN: 209786 # count
-      FN: 4503 # count
-      MAE: 0.017 # eV/atom
-      RMSE: 0.066 # eV/atom
-      R2: 0.866 # dimensionless
+      F1: 0.918 # fraction
+      DAF: 5.444 # dimensionless
+      Precision: 0.931 # fraction
+      Recall: 0.906 # fraction
+      Accuracy: 0.972 # fraction
+      TP: 39813 # count
+      FP: 2939 # count
+      TN: 210067 # count
+      FN: 4144 # count
+      MAE: 0.016 # eV/atom
+      RMSE: 0.065 # eV/atom
+      R2: 0.871 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.933 # fraction
-      DAF: 6.16 # dimensionless
-      Precision: 0.942 # fraction
-      Recall: 0.925 # fraction
-      Accuracy: 0.979 # fraction
-      TP: 30862 # count
-      FP: 1913 # count
-      TN: 180201 # count
-      FN: 2512 # count
-      MAE: 0.017 # eV/atom
-      RMSE: 0.066 # eV/atom
-      R2: 0.872 # dimensionless
+      F1: 0.939 # fraction
+      DAF: 6.205 # dimensionless
+      Precision: 0.945 # fraction
+      Recall: 0.933 # fraction
+      Accuracy: 0.981 # fraction
+      TP: 31023 # count
+      FP: 1819 # count
+      TN: 180427 # count
+      FN: 2219 # count
+      MAE: 0.016 # eV/atom
+      RMSE: 0.064 # eV/atom
+      R2: 0.878 # dimensionless
       missing_preds: 0 # count
   geo_opt:
     pred_file:
       name: models/deepmd/dpa-4.1-max-oam/2026-10-21-geo-opt.jsonl.gz
       size: 102453766
       md5: 6c52292224fb176946e1cb5f9b857f84
-      url: https://ndownloader.figshare.com/files/70537431
+      url: https://figshare.com/files/71651356
+    rmsd_auc: 0.8348 # fraction
     symprec=1e-5:
-      rmsd: 0.0573 # unitless
       n_sym_ops_mae: 2.7805 # unitless
       symmetry_decrease: 0.3576 # fraction
       symmetry_match: 0.4281 # fraction
@@ -156,23 +156,22 @@ metrics:
       symmetry_lateral: 0.0528 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/deepmd/dpa-4.1-max-oam/2026-10-21-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://ndownloader.figshare.com/files/70537443
-        size: 1323918
-        md5: e8af3f4306a79bce4c6e2a9df05e0bd3
+        name: models/deepmd/dpa-4.1-max-oam/2026-10-21-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71651359
+        size: 6862473
+        md5: e2d15cc7202cb58d1e8089b60a3cfa71
     symprec=1e-2:
-      rmsd: 0.0573 # unitless
-      n_sym_ops_mae: 1.9517 # unitless
-      symmetry_decrease: 0.1248 # fraction
-      symmetry_match: 0.7473 # fraction
+      n_sym_ops_mae: 1.9512 # unitless
+      symmetry_decrease: 0.1247 # fraction
+      symmetry_match: 0.7474 # fraction
       symmetry_increase: 0.1133 # fraction
       symmetry_lateral: 0.0146 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/deepmd/dpa-4.1-max-oam/2026-10-21-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://ndownloader.figshare.com/files/70537446
-        size: 1330345
-        md5: e4a5caf517b10ae5f8050a66e2e9ca42
+        name: models/deepmd/dpa-4.1-max-oam/2026-10-21-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71651362
+        size: 6970913
+        md5: a0fcb33ead2477e04aafa0df04d3e690
   phonons:
     kappa_103:
       κ_SRME: 0.09032226144779087

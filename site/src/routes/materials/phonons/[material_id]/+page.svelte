@@ -15,8 +15,8 @@
   } from '#lib/parity/kappa-modes.js'
   import { labeled_vline } from '#lib/fig-helpers.js'
   import ModelSelect from '#lib/ModelSelect.svelte'
+  import { compact_formula, FormulaText } from 'matterviz/composition'
   import { ScatterPlot, type DataSeries } from 'matterviz/plot'
-  import { sanitize_compact_formula } from 'matterviz/sanitize'
   import type { PhononDos } from 'matterviz/spectral'
   import { spacegroup_to_crystal_sys } from 'matterviz/symmetry'
   import { HeatmapTable, type Column } from 'matterviz/table'
@@ -27,7 +27,6 @@
   let { data }: { data: PageData } = $props()
   let material = $derived(data.material)
   let { material_id, formula, spg_num, kappa_dft } = $derived(material)
-  let formula_html = $derived(sanitize_compact_formula(formula))
   let spg_label = $derived(
     `${spacegroup_html(spg_num)}, ${spacegroup_to_crystal_sys(spg_num) ?? `unknown system`}`,
   )
@@ -184,7 +183,7 @@
   <title>{material_id} {formula} • Phonon materials • Matbench Discovery</title>
 </svelte:head>
 
-<h1>{@html formula_html} <small>{material_id}</small></h1>
+<h1><FormulaText text={compact_formula(formula)} /> <small>{material_id}</small></h1>
 
 <dl class="facts">
   <div>

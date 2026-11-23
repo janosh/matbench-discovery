@@ -55,7 +55,7 @@ hyperparams:
     max_force: 0.05
     kappa:
       protocol: phonondb-v1
-      displacement_distance: 0.01 # legacy runs used 0.01 Å; the PhononDB-PBE reference uses 0.03 Å
+      displacement_distance: 0.03 # k_SRME run: its init_phono3py default, not overridden by the script
   architecture:
     graph_construction_radius: 5.0
   training:
@@ -77,34 +77,34 @@ notes:
 metrics:
   discovery:
     pred_file:
-      name: models/m3gnet/m3gnet/2023-12-28-discovery.csv.gz
-      url: https://figshare.com/files/66646262
-      size: 1320744
-      md5: 76f83ffd2f281e2f8b660cffdb96a172
+      name: models/m3gnet/m3gnet/2026-11-19-discovery.csv.gz
+      url: https://figshare.com/files/71653831
+      size: 1322251
+      md5: b9bcef0e065876de910516b9a1f7a777
     full_test_set:
-      F1: 0.576 # fraction
-      DAF: 2.647 # dimensionless
-      Precision: 0.454 # fraction
-      Recall: 0.788 # fraction
-      Accuracy: 0.801 # fraction
-      TP: 34731 # count
-      FP: 41738 # count
-      TN: 171133 # count
-      FN: 9361 # count
+      F1: 0.577 # fraction
+      DAF: 2.659 # dimensionless
+      Precision: 0.455 # fraction
+      Recall: 0.787 # fraction
+      Accuracy: 0.802 # fraction
+      TP: 34591 # count
+      FP: 41452 # count
+      TN: 171554 # count
+      FN: 9366 # count
       MAE: 0.072 # eV/atom
       RMSE: 0.115 # eV/atom
-      R2: 0.588 # dimensionless
+      R2: 0.589 # dimensionless
       missing_preds: 355 # count
     unique_prototypes:
       F1: 0.569 # fraction
-      DAF: 2.882 # dimensionless
+      DAF: 2.897 # dimensionless
       Precision: 0.441 # fraction
-      Recall: 0.803 # fraction
-      Accuracy: 0.812 # fraction
-      TP: 26797 # count
-      FP: 34034 # count
-      TN: 148080 # count
-      FN: 6577 # count
+      Recall: 0.802 # fraction
+      Accuracy: 0.813 # fraction
+      TP: 26650 # count
+      FP: 33778 # count
+      TN: 148468 # count
+      FN: 6592 # count
       MAE: 0.075 # eV/atom
       RMSE: 0.118 # eV/atom
       R2: 0.585 # dimensionless
@@ -115,32 +115,31 @@ metrics:
       url: https://figshare.com/files/70325163
       size: 119057902
       md5: 48afeae1de05f2d3a143999fcbefb67d
+    rmsd_auc: 0.6017 # fraction
     symprec=1e-5:
-      rmsd: 0.1117 # unitless
-      n_sym_ops_mae: 1.8691 # unitless
+      n_sym_ops_mae: 1.8692 # unitless
       symmetry_decrease: 0.0671 # fraction
       symmetry_match: 0.7408 # fraction
       symmetry_increase: 0.1869 # fraction
       symmetry_lateral: 0.0052 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/m3gnet/m3gnet/2023-06-01-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333755
-        size: 6624733
-        md5: c26a85d623f15c6949bc2945bed8e96a
+        name: models/m3gnet/m3gnet/2023-06-01-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653111
+        size: 6661981
+        md5: 09973352b97e876f3bb07f516d21f2d0
     symprec=1e-2:
-      rmsd: 0.1117 # unitless
-      n_sym_ops_mae: 1.9848 # unitless
+      n_sym_ops_mae: 1.9847 # unitless
       symmetry_decrease: 0.0681 # fraction
       symmetry_match: 0.8031 # fraction
       symmetry_increase: 0.1217 # fraction
       symmetry_lateral: 0.0071 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/m3gnet/m3gnet/2023-06-01-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333839
-        size: 6649397
-        md5: f79ec645ab0c1a90f51bd70e7c58e37f
+        name: models/m3gnet/m3gnet/2023-06-01-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653114
+        size: 6687388
+        md5: e2c06894b79b689633627c3bedea0b7a
   phonons:
     kappa_103:
       κ_SRME: 1.4094

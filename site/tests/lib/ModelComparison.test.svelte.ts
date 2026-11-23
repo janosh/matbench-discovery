@@ -51,6 +51,7 @@ type PlotProps = {
     id?: string
     markers: string
     point_style?: { stroke?: string; fill_opacity?: number }
+    line_style?: { color?: string; width?: number; dash?: string }
     point_label?: { text: string }
   }[]
   x_axis: {
@@ -327,6 +328,9 @@ it(`reads shallow edits on late mount but the original router query on navigatio
       )
     }),
   )
+  // Late mounts read at init, before the first render: a read from an effect wrote state
+  // mid-flush, leaving DataTable sort headers with a stale {#if} (Svelte >= 5.58.1).
+  expect(reads).toEqual([`Model,CPS`])
   flushSync()
   expect(reads).toEqual([`Model,CPS`])
 
@@ -605,6 +609,7 @@ describe(`ModelComparison dialog`, () => {
     const series = plot().series
     const frontier = series.at(-1)
     expect(frontier?.markers).toBe(`line`)
+    expect(frontier?.line_style).toEqual({ color: `gray`, width: 1.5, dash: `5 3` })
     // only models with finite x, y, color and size values get a point
     const model_series = series.slice(0, -1)
     expect(model_series.length).toBeGreaterThan(compared.length)

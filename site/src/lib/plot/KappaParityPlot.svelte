@@ -27,7 +27,8 @@
   import { parity_diagonal } from '#lib/fig-helpers.js'
   import { get_nested_number, is_finite_num } from '#lib/metrics.js'
   import type { ModelData } from '#lib/types.js'
-  import { sanitize_compact_formula, sanitize_html } from 'matterviz/sanitize'
+  import { compact_formula, FormulaText } from 'matterviz/composition'
+  import { sanitize_html } from 'matterviz/sanitize'
   import { ScatterPlot } from 'matterviz/plot'
   import type { DataSeries, RefLine } from 'matterviz/plot'
   import { type CrystalSystem, spacegroup_to_crystal_sys } from 'matterviz/symmetry'
@@ -61,13 +62,6 @@
   // crystal system (derived from space group) shown in the tooltip for context
   const crystal_sys = (point: KappaParityPoint): CrystalSystem | null =>
     point.spacegroup == null ? null : spacegroup_to_crystal_sys(point.spacegroup)
-  // shared, multiplicatively-padded range so both axes match and the y=x
-  // diagonal runs exactly corner to corner (padding is a factor on a log scale)
-  let extent = $derived.by((): [number, number] => {
-    if (!parity?.points.length) return [0.1, 100]
-    const values = [...parity.x, ...parity.y]
-    return [Math.min(...values) / 1.3, Math.max(...values) * 1.3]
-  })
   // SRE comes from the parity points themselves, SRME from the kappa-103 analysis
   // payload, so only SRE is guaranteed present for every material
   const color_metric_labels = { srme: `κ<sub>SRME</sub>`, sre: `κ<sub>SRE</sub>` }
@@ -212,14 +206,16 @@
         label: `PBE κ<sub>L</sub> (W/mK)`,
         scale_type: `log`,
         format: `~s`,
-        range: extent,
+        nice: false,
       }}
       y_axis={{
         label: `${model.model_name} κ<sub>L</sub> (W/mK)`,
         scale_type: `log`,
         format: `~s`,
-        range: extent,
+        nice: false,
       }}
+      shared_xy_range
+      range_padding={0.03}
       size_scale={{ type: `linear`, radius_range: [4, 7] }}
       color_scale={{ value_range: color_range }}
       color_bar={{
@@ -240,7 +236,7 @@
           {@const spacegroup =
             point.spacegroup == null ? `` : ` (SG ${point.spacegroup})`}
           <strong>{point.material_id}</strong>
-          {@html sanitize_compact_formula(point.formula)}<br />
+          <FormulaText text={compact_formula(point.formula)} /><br />
           PBE κ: {format_num(point.kappa_dft, `.3~`)} <small>W/mK</small><br />
           {model.model_name} κ: {format_num(point.kappa_ml, `.3~`)} <small>W/mK</small><br
           />
@@ -258,7 +254,7 @@
         {#if kappa_srme != null || kappa_sre != null}
           {@const style = 'pointer-events: none; overflow: visible'}
           <foreignObject x="0" y="0" {width} {height} {style}>
-            <div class="plot-annotation">
+            <div class="metric-annotation">
               {#if kappa_srme != null}
                 κ<sub>SRME</sub> = {format_num(kappa_srme, `.3~`)}<br />
               {/if}
@@ -282,9 +278,9 @@
                   title="Compare all models on this material">{selected.material_id}</a
                 ></strong
               >
-              {#if selected.formula}({@html sanitize_compact_formula(
-                  selected.formula,
-                )}){/if}
+              {#if selected.formula}(<FormulaText
+                  text={compact_formula(selected.formula)}
+                />){/if}
               &mdash; PBE κ {format_num(selected.kappa_dft, `.3~`)},
               {model.model_name} κ {format_num(selected.kappa_ml, `.3~`)}
               <small>W/mK</small>, κ<sub>SRE</sub>
@@ -428,7 +424,7 @@
   .plot-note {
     margin: 0.4em 0 0;
     text-align: center;
-    color: var(--text-muted);
+    color: var(--text-color-muted);
   }
   .detail-panel {
     display: grid;
@@ -471,6 +467,6 @@
     margin: 0.6em 0 0;
     text-align: center;
     font-weight: normal;
-    color: var(--text-muted);
+    color: var(--text-color-muted);
   }
 </style>

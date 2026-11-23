@@ -182,10 +182,7 @@ class PipelineAdapterStub(StandardKappaAdapter):
         return cast("Phono3py", self.phono3py)
 
     def calculate_fc2(
-        self,
-        phono3py: Phono3py,
-        calculator: Calculator,
-        settings: KappaSettings,
+        self, phono3py: Phono3py, calculator: Calculator, settings: KappaSettings
     ) -> tuple[Phono3py, np.ndarray, np.ndarray]:
         """Return configured mode frequencies and a deterministic FC2 force set."""
         del calculator, settings
@@ -285,21 +282,25 @@ def shard_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> SimpleNamespac
 
 
 def test_kappa_settings_validate_and_canonicalize() -> None:
-    """Sparse versioned settings use defaults and canonicalize ASE aliases."""
+    """Sparse versioned settings use defaults and keep exact ASE names."""
     raw_settings = {
         "protocol": KAPPA_PROTOCOL,
-        "ase_optimizer": "goqn",
-        "ase_filter": "exp",
+        "ase_optimizer": "GOQN",
+        "ase_filter": "ExpCellFilter",
     }
     settings = KappaSettings.from_mapping(raw_settings)
     assert settings.ase_optimizer == "GOQN"
     assert settings.ase_filter == "ExpCellFilter"
     assert settings.temperatures == (300.0,)
     assert settings.is_plusminus == "auto"
+    assert settings.save_forces is True  # raw force sets unless a model opts out
     # default must match the 0.03 Å displacements of the PhononDB-PBE reference force
-    # sets; legacy runs at 0.01 Å pin that value explicitly in their model YAML
+    # sets; legacy runs at 0.01 Å pin that value explicitly in their model YAML, and
+    # k_SRME-era runs like MACE-MP-0 pin the 0.03 Å they actually used
     assert settings.displacement_distance == 0.03
-    assert KappaSettings.from_model("mace_mp_0").displacement_distance == 0.01
+    assert KappaSettings.from_model("hienet").displacement_distance == 0.01
+    for model_key in ("mace_mp_0", "dpa3_v1_mptrj", "dpa3_v1_openlam"):
+        assert KappaSettings.from_model(model_key).displacement_distance == 0.03
     assert settings.digest == KappaSettings.from_mapping(raw_settings).digest
 
     raw_settings.pop("protocol")
@@ -324,6 +325,14 @@ def test_kappa_settings_validate_and_canonicalize() -> None:
         ("batch_size", 0, ValueError, "positive integer"),
         ("max_atoms_per_batch", 0, ValueError, "positive integer or null"),
         ("ase_filter", "invalid", ValueError, "Unknown ASE cell filter"),
+        # real ASE classes outside the validated registry are rejected too
+        ("ase_filter", "UnitCellFilter", ValueError, "Unknown ASE cell filter"),
+        ("ase_optimizer", "BFGS", ValueError, "Unknown ASE optimizer"),
+        # names are exact: former case and short aliases are rejected
+        ("ase_optimizer", "goqn", ValueError, "Unknown ASE optimizer"),
+        ("ase_optimizer", "GoodOldQuasiNewton", ValueError, "Unknown ASE optimizer"),
+        ("ase_filter", "exp", ValueError, "Unknown ASE cell filter"),
+        ("ase_filter", "NONE", ValueError, "Unknown ASE cell filter"),
         ("relaxation_mode", "three-stage", ValueError, "must be one of"),
         ("is_plusminus", "sometimes", TypeError, "boolean or 'auto'"),
     ],
@@ -421,9 +430,7 @@ def test_kappa_output_paths_reuse_exactly_one_prior_shard_tree(tmp_path: Path) -
     first_shard_dir = f"{out_dir}/2026-07-08-phonondb-kappa-103-shards"
     os.makedirs(first_shard_dir)
     paths = run_kappa.resolve_output_paths(
-        out_dir=out_dir,
-        dry_run=False,
-        shard_dir=None,
+        out_dir=out_dir, dry_run=False, shard_dir=None
     )
     assert tuple(map(os.path.normpath, paths)) == (
         os.path.normpath(first_shard_dir),
@@ -445,11 +452,7 @@ def test_kappa_output_paths_reuse_exactly_one_prior_shard_tree(tmp_path: Path) -
 
     os.makedirs(f"{out_dir}/2026-07-09-phonondb-kappa-103-shards")
     with pytest.raises(ValueError, match="Multiple kappa shard directories"):
-        run_kappa.resolve_output_paths(
-            out_dir=out_dir,
-            dry_run=False,
-            shard_dir=None,
-        )
+        run_kappa.resolve_output_paths(out_dir=out_dir, dry_run=False, shard_dir=None)
 
 
 @pytest.mark.parametrize(
@@ -572,11 +575,7 @@ def test_yaml_write_requires_verified_settings_and_dataset(
 
 def test_dry_run_uses_and_merges_capped_protocol(shard_env: SimpleNamespace) -> None:
     """Dry runs execute and record the capped smoke-test protocol."""
-    settings = KappaSettings(
-        max_steps=300,
-        relaxation_mode="none",
-        save_forces=True,
-    )
+    settings = KappaSettings(max_steps=300, relaxation_mode="none", save_forces=True)
     shard_env.run(settings=settings, dry_run=True)
     computation_stub = shard_env.computation
     assert computation_stub.settings
@@ -776,6 +775,56 @@ def test_skipped_conductivity_rows_store_regular_grid_spectrum() -> None:
     )
 
 
+@pytest.mark.parametrize(
+    ("model_key", "expected_id", "n_supported"),
+    [("emt", "mp-1", 102), ("mace_mp_0", "mp-0", 103)],
+)
+def test_load_phonondb_atoms_dry_run_filters_supported_elements(
+    tmp_path: Path, model_key: str, expected_id: str, n_supported: int
+) -> None:
+    """Extxyz phonon metadata loads as data the phono3py setup accepts, and the dry
+    run skips structures with elements the model does not support.
+    """
+    import ase.io
+
+    from matbench_discovery.phonons.pipeline import load_phonondb_atoms
+
+    # cubic cell: phono3py rejects symmetry-breaking meshes like (3, 4, 5)
+    info = {
+        "fc2_supercell": np.diag([2, 2, 2]),
+        "fc3_supercell": np.eye(3, dtype=int),
+        "q_point_mesh": [3, 3, 3],
+    }
+    structures = [
+        Atoms(
+            ["In" if idx == 0 else "Cu"],  # EMT has no In parameters
+            positions=[[0, 0, 0]],
+            cell=np.eye(3) * 3,
+            pbc=True,
+            info=info | {"material_id": f"mp-{idx}"},
+        )
+        for idx in range(103)
+    ]
+    dataset_path = f"{tmp_path}/phonondb.extxyz"
+    ase.io.write(dataset_path, structures, format="extxyz")
+    (atoms,) = load_phonondb_atoms(
+        dataset_path, model_key=model_key, dry_run=True
+    ).values()
+    assert atoms.info["material_id"] == expected_id
+    assert np.asarray(atoms.info["fc3_supercell"]).tolist() == np.eye(3).tolist()
+    ph3 = StandardKappaAdapter().init_phono3py(atoms, KappaSettings())
+    assert ph3.mesh_numbers is not None
+    assert tuple(ph3.mesh_numbers) == (3, 3, 3)
+    assert len(ph3.phonon_supercell) == 8
+    with pytest.raises(ValueError, match=rf"must be in \[1, {n_supported}\]"):
+        load_phonondb_atoms(
+            dataset_path,
+            model_key=model_key,
+            dry_run=True,
+            dry_run_size=n_supported + 1,
+        )
+
+
 def test_normalize_kappa_schema_and_voigt() -> None:
     """Canonical records normalize tensors and retain failure/symmetry semantics."""
     result = normalize_kappa_result(
@@ -906,11 +955,7 @@ def test_resumable_shards_strict_merge_and_artifacts(
     with pytest.raises(ValueError, match="cannot resume under different run labels"):
         shard_env.run(settings=settings, n_shards=2, retry_failures=True)
     atomic_write_json(failed_record_path, asdict(failed_record))
-    shard_env.run(
-        n_shards=2,
-        settings=settings,
-        retry_failures=True,
-    )
+    shard_env.run(n_shards=2, settings=settings, retry_failures=True)
     assert len(computation_stub.material_ids) == first_call_count + 1
     retried_record = read_kappa_record(failed_record_path)
     assert retried_record.run_metadata["retry_count"] == 1
@@ -921,11 +966,7 @@ def test_resumable_shards_strict_merge_and_artifacts(
 
     with pytest.raises(ValueError, match="missing="):
         merge_kappa_shards(shard_dir, model_key="test_model")
-    shard_env.run(
-        shard_index=1,
-        n_shards=2,
-        settings=settings,
-    )
+    shard_env.run(shard_index=1, n_shards=2, settings=settings)
     mixed_record_path = record_path(shard_dir, first_records[0].material_id)
     original_record = read_kappa_record(mixed_record_path)
     mixed_metadata = dict(original_record.run_metadata)
@@ -1018,8 +1059,7 @@ def test_resumable_shards_strict_merge_and_artifacts(
     merge_kappa_shards(shard_dir, model_key="test_model")
     with pytest.raises(ValueError, match="inside shard directory"):
         write_kappa_artifacts(
-            merged_run,
-            pred_file_path=f"{shard_dir}/records/final.json.gz",
+            merged_run, pred_file_path=f"{shard_dir}/records/final.json.gz"
         )
 
     atomic_write_json(f"{shard_dir}/records/extra.json.gz", {})

@@ -4,8 +4,13 @@ import DiatomicsPage from '#routes/benchmarks/diatomics/+page.svelte'
 import { tick } from 'svelte'
 import {
   DiatomicCurveCache,
+  ELEMENT_GROUPS,
+  ElementGroupParam,
   MODEL_COLORS,
+  tint_element_groups,
 } from '#routes/benchmarks/diatomics/diatomics.svelte.js'
+import { element_data } from 'matterviz/element'
+import { DEFAULT_CATEGORY_COLORS } from 'matterviz/colors'
 import { describe, expect, it, vi } from 'vite-plus/test'
 import {
   button_for,
@@ -181,7 +186,7 @@ describe(`Diatomics Page URL state`, () => {
   })
 
   it(`restores metrics-table sort and filters and syncs filter changes`, async () => {
-    await mount_page(`?sort=pbe_force_mae&dir=desc&train=MPtrj&heatmap=0&selected_only=1`)
+    await mount_page(`?sort=-pbe_force_mae&train=MPtrj&heatmap=0&selected_only=1`)
 
     const heatmap = await expect_table_url_state(`FMAE`, `descending`)
     const training_filter = doc_query<HTMLInputElement>(
@@ -200,12 +205,12 @@ describe(`Diatomics Page URL state`, () => {
     const params = new URL(location.href).searchParams
     for (const key of [`train`, `heatmap`, `selected_only`])
       expect(params.has(key)).toBe(false)
-    expect(params.get(`sort`)).toBe(`pbe_force_mae`)
+    expect(params.get(`sort`)).toBe(`-pbe_force_mae`)
     expect(document.querySelectorAll(`tbody tr`).length).toBeGreaterThan(0)
   })
 
   it(`preserves metrics-table sort params when other controls update the URL`, async () => {
-    await mount_page(`?models=${key_b}&sort=pbe_force_mae&dir=asc`)
+    await mount_page(`?models=${key_b}&sort=pbe_force_mae`)
 
     button_for(`Nonmetals`).click()
     await tick()
@@ -214,7 +219,52 @@ describe(`Diatomics Page URL state`, () => {
     expect(params.get(`models`)).toBe(key_b)
     expect(params.get(`elements`)).toBe(`nonmetal`)
     expect(params.get(`sort`)).toBe(`pbe_force_mae`)
-    // asc is non-default (default sort is CDS desc), so dir must survive in the URL
-    expect(params.get(`dir`)).toBe(`asc`)
+  })
+})
+
+// Each filter's member count and one member, from matterviz's periodic-table categories
+describe(`element group filters`, () => {
+  // count, one member, and the category whose color tints the button (null: untinted)
+  it.each([
+    [`all`, 118, `Og`, null],
+    [`alkali`, 6, `Na`, `alkali metal`],
+    [`alkaline_earth`, 6, `Mg`, `alkaline earth metal`],
+    [`transition`, 38, `Fe`, `transition metal`],
+    [`post_transition`, 12, `Al`, `post-transition metal`],
+    [`metalloid`, 8, `Si`, `metalloid`],
+    [`nonmetal`, 11, `C`, `polyatomic nonmetal`],
+    [`halogen`, 6, `Ts`, `diatomic nonmetal`], // column 17 minus f-block Lu, Lr
+    [`noble_gas`, 7, `Ar`, `noble gas`],
+    [`lanthanide`, 15, `Lu`, `lanthanide`],
+    [`actinide`, 15, `Lr`, `actinide`],
+  ] as const)(`%s holds %i elements including %s`, (key, count, member, tint) => {
+    const param = new ElementGroupParam()
+    param.key = key
+    const members = element_data.filter(param.includes).map(({ symbol }) => symbol)
+    expect(members).toHaveLength(count)
+    expect(members).toContain(member)
+    const group = document.createElement(`div`)
+    group.innerHTML = `<button data-value="${key}"></button>`
+    tint_element_groups(group)
+    const color = group
+      .querySelector(`button`)
+      ?.style.getPropertyValue(`--category-color`)
+    expect(color).toBe(tint ? DEFAULT_CATEGORY_COLORS[tint] : ``) // `` when unset
+  })
+
+  it(`lists every group once, in picker order`, () => {
+    expect(ELEMENT_GROUPS.map(({ value }) => value)).toEqual([
+      `all`,
+      `alkali`,
+      `alkaline_earth`,
+      `transition`,
+      `post_transition`,
+      `metalloid`,
+      `nonmetal`,
+      `halogen`,
+      `noble_gas`,
+      `lanthanide`,
+      `actinide`,
+    ])
   })
 })

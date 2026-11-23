@@ -184,7 +184,7 @@ def test_download_file_keeps_completed_part_file_on_replace_error(
     assert repr(str(part_paths[0])) in " ".join(error.value.__notes__)
 
 
-def broken_stream(*chunks: bytes) -> MagicMock:
+def broken_stream(*chunks: bytes) -> requests.Response:
     """Mock response whose stream yields chunks, then drops the connection."""
     response = make_mock_response(b"")
 
@@ -192,7 +192,7 @@ def broken_stream(*chunks: bytes) -> MagicMock:
         yield from chunks
         raise requests.ConnectionError("stream failed")
 
-    response.iter_content = broken_iter_content
+    vars(response)["iter_content"] = broken_iter_content
     return response
 
 
@@ -264,7 +264,7 @@ def test_overlapping_downloads_use_independent_temporary_files(tmp_path: Path) -
         assert destination.read_bytes() == b"second download"
         yield b"download"
 
-    response.iter_content = interleaved_content  # ty: ignore[invalid-assignment]
+    vars(response)["iter_content"] = interleaved_content
     with patch(
         "requests.get", side_effect=[response, make_mock_response(b"second download")]
     ):

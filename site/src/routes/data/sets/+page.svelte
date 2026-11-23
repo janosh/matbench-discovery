@@ -1,14 +1,17 @@
 <script lang="ts">
   import type { CellSnippetArgs, TableSort } from 'svelte-widgets/table'
   import { format_num } from 'svelte-widgets/format'
-  import { middle_ellipsis_parts } from 'svelte-widgets/table'
+  import {
+    middle_ellipsis_parts,
+    sort_from_param,
+    sort_url_entry,
+  } from 'svelte-widgets/table'
   import DATASETS from '$pkg/datasets.yml'
   import { arr_to_str } from '#lib'
   import { title_case } from '#lib/labels.js'
   import { ACTIVE_MODELS } from '#lib/models.svelte.js'
   import DynamicScatter from '#lib/plot/DynamicScatter.svelte'
   import { bind_url_params } from '#lib/url-state.svelte.js'
-  import { sort_from_query, sort_url_entries } from 'matterviz/url-params'
   import pkg from '#site/package.json'
   import type { Column } from 'matterviz/table'
   import { HeatmapTable } from 'matterviz/table'
@@ -143,8 +146,8 @@
   const sortable_columns = new Set(
     columns.filter((col) => col.sortable !== false).map(({ id }) => id),
   )
-  const default_sort = { column: `Models`, dir: `desc` as const }
-  let sort = $state<TableSort[]>([{ ...default_sort }])
+  const default_sort: TableSort[] = [{ column: `Models`, dir: `desc` }]
+  let sort = $state([...default_sort])
   const default_filters = { q: ``, access: ``, role: ``, method: `` }
   let filters = $state({ ...default_filters })
   const plot_options = (
@@ -170,17 +173,12 @@
     for (const [key, options] of filter_options) {
       filters[key] = valid_query_param(params, key, ``, options)
     }
-    // `sort=none` keeps a cleared sort (the data's order) across reloads
-    sort =
-      params.get(`sort`) === `none`
-        ? []
-        : [sort_from_query(params, default_sort, sortable_columns)]
+    // `sort=` keeps a cleared sort (the data's order) across reloads
+    sort = sort_from_param(params, default_sort, { valid_columns: sortable_columns })
   }
   bind_url_params(read_url, () => [
     ...Object.entries(filters),
-    ...(sort.length
-      ? sort_url_entries(sort[0], default_sort)
-      : [[`sort`, `none`, default_sort.column] as const]),
+    sort_url_entry(sort, default_sort),
   ])
   const search_words = $derived(filters.q.toLowerCase().trim().split(/\s+/))
   const filtered = $derived(

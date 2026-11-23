@@ -20,7 +20,7 @@ import subprocess
 import sys
 import time
 import zipfile
-from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, MutableMapping, Sequence
 from dataclasses import dataclass
 from importlib.metadata import PackageNotFoundError, requires, version
 from typing import Any
@@ -224,16 +224,11 @@ def _run_to_atomic_output(
                 os.remove(tmp_dest)
 
 
-# Extras the shared runner environments install on top of matbench-discovery's
-# base dependencies (run_kappa.py needs matbench-discovery[phonons,symmetry]).
-RUNNER_EXTRAS = ("phonons", "symmetry")
-
-
 @functools.cache
 def runner_provided_packages() -> frozenset[str]:
     """Canonical names of packages the shared runner environments already install.
 
-    These are matbench-discovery itself plus its base and RUNNER_EXTRAS requirements
+    These are matbench-discovery itself plus its base requirements
     (a superset of every runner's PEP 723 header). Model YAML pins of these packages
     are submission provenance only: the runners need their own (Python 3.14) versions.
     """
@@ -243,10 +238,7 @@ def runner_provided_packages() -> frozenset[str]:
     names = {"matbench-discovery"}
     for requirement_str in requires("matbench-discovery") or ():
         requirement = Requirement(requirement_str)
-        marker = requirement.marker
-        if marker is None or any(
-            marker.evaluate({"extra": extra}) for extra in RUNNER_EXTRAS
-        ):
+        if requirement.marker is None:
             names.add(canonicalize_name(requirement.name))
     return frozenset(names)
 
@@ -370,7 +362,7 @@ def _named_spec(
     return _runtime_calc_spec(model_key, factory(model_key))
 
 
-class _CalcRegistry:
+class _CalcRegistry(MutableMapping[str, CalcSpec]):
     """Resolve lazy CalcSpec builders on first [] / .get / iteration."""
 
     def __init__(self, mapping: dict[str, CalcSpec | Callable[[], CalcSpec]]) -> None:
@@ -400,15 +392,9 @@ class _CalcRegistry:
         """Iterate over registered keys without building their specs."""
         return iter(self._data)
 
-    def get(self, key: str, default: CalcSpec | None = None) -> CalcSpec | None:
-        """Return a resolved CalcSpec, or default when the key is missing."""
-        if key not in self._data:
-            return default
-        return self[key]
-
-    def items(self) -> Iterator[tuple[str, CalcSpec]]:
-        """Yield (key, resolved CalcSpec) pairs, building lazy entries as needed."""
-        return ((key, self[key]) for key in self._data)
+    def __len__(self) -> int:
+        """Return the number of registered calculator keys."""
+        return len(self._data)
 
 
 def resolve_checkpoint(model_key: str, checkpoint: str | None = None) -> str | None:
@@ -452,7 +438,7 @@ def _mace(checkpoint: str, head: str | None = None) -> Callable[[str, str], Calc
         """Load the MACE model on device in the requested dtype."""
         from mace.calculators import mace_mp
 
-        kwargs = {"head": head} if head else {}
+        kwargs: dict[str, Any] = {"head": head} if head else {}
         enable_cueq = device == "cuda"
         calc = mace_mp(
             model=checkpoint,

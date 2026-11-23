@@ -51,6 +51,26 @@ def space_group_number(atoms: Atoms, symprec: float) -> int:
     return int(MoyoDataset(MoyoAdapter.from_atoms(atoms), symprec=symprec).number)
 
 
+def run_optimizer(
+    atoms: Atoms, settings: KappaSettings, *, no_tilt: bool, log_file: str | None
+) -> int:
+    """Run the configured ASE optimizer on atoms (in the configured cell filter, tilts
+    masked if no_tilt) and return its step count.
+    """
+    filter_class = resolve_cell_filter(settings.ase_filter)
+    target: Atoms | Filter = (
+        atoms
+        if filter_class is None
+        else filter_class(atoms, mask=NO_TILT_MASK if no_tilt else None)
+    )
+    if log_file and (log_parent := os.path.dirname(log_file)):
+        os.makedirs(log_parent, exist_ok=True)
+    # ASE annotates Optimizer(atoms: Atoms) although it accepts any Filter
+    optimizer = resolve_optimizer(settings.ase_optimizer)(target, logfile=log_file)  # ty: ignore[invalid-argument-type]
+    optimizer.run(fmax=settings.force_max, steps=settings.max_steps)
+    return int(optimizer.get_number_of_steps())
+
+
 class StandardKappaAdapter:
     """Run the common ASE relaxation and serial phono3py force evaluation."""
 
@@ -72,7 +92,9 @@ class StandardKappaAdapter:
         *,
         log_file: str | None,
     ) -> RelaxationResult:
-        """Relax atoms once with the configured ASE optimizer and filter."""
+        """Relax atoms with the configured ASE optimizer and filter, in one stage or
+        two (see _relax_two_stage).
+        """
         initial_spg_num = space_group_number(atoms, settings.symprec)
         if settings.relaxation_mode == "none" or settings.max_steps == 0:
             return RelaxationResult(
@@ -84,44 +106,30 @@ class StandardKappaAdapter:
                 n_steps=0,
             )
         initial_info = dict(atoms.info)
+        atoms.calc = calculator
+        if settings.enforce_relax_symm:
+            atoms.set_constraint(FixSymmetry(atoms, symprec=settings.relax_symprec))
         if settings.relaxation_mode == "two-stage":
             return self._relax_two_stage(
                 atoms,
-                calculator,
                 settings,
                 initial_spg_num=initial_spg_num,
                 initial_info=initial_info,
                 log_file=log_file,
             )
 
-        atoms.calc = calculator
-        filter_class = resolve_cell_filter(settings.ase_filter)
-        if settings.enforce_relax_symm:
-            atoms.set_constraint(FixSymmetry(atoms, symprec=settings.relax_symprec))
-        if filter_class is None:
-            relax_target: Atoms | Filter = atoms
-        elif settings.enforce_relax_symm:
-            relax_target = filter_class(atoms, mask=NO_TILT_MASK)
-        else:
-            relax_target = filter_class(atoms)
-
-        optimizer_class = resolve_optimizer(settings.ase_optimizer)
-        if log_file and (log_parent := os.path.dirname(log_file)):
-            os.makedirs(log_parent, exist_ok=True)
-        optimizer = optimizer_class(relax_target, logfile=log_file)  # ty: ignore[invalid-argument-type]
-        optimizer.run(fmax=settings.force_max, steps=settings.max_steps)
-        n_steps = int(optimizer.get_number_of_steps())
+        n_steps = run_optimizer(
+            atoms, settings, no_tilt=settings.enforce_relax_symm, log_file=log_file
+        )
         max_stress = max_abs_stress(atoms)
-
         atoms.calc = None
         atoms.constraints = None
         atoms.info = initial_info | atoms.info
-        final_spg_num = space_group_number(atoms, settings.symprec)
         return RelaxationResult(
             atoms=atoms,
             initial_spg_num=initial_spg_num,
-            final_spg_num=final_spg_num,
-            max_stress=np.asarray(max_stress),
+            final_spg_num=space_group_number(atoms, settings.symprec),
+            max_stress=max_stress,
             reached_max_steps=n_steps >= settings.max_steps,
             n_steps=n_steps,
         )
@@ -129,47 +137,33 @@ class StandardKappaAdapter:
     def _relax_two_stage(
         self,
         atoms: Atoms,
-        calculator: Calculator,
         settings: KappaSettings,
         *,
         initial_spg_num: int,
         initial_info: dict[str, Any],
         log_file: str | None,
     ) -> RelaxationResult:
-        """Run constrained relaxation, then test unconstrained symmetry stability."""
-        filter_class = resolve_cell_filter(settings.ase_filter)
-        optimizer_class = resolve_optimizer(settings.ase_optimizer)
-        if log_file and (log_parent := os.path.dirname(log_file)):
-            os.makedirs(log_parent, exist_ok=True)
+        """Run the (symmetry-constrained) relaxation without cell tilts, then again
+        unconstrained, keeping the stage-1 geometry if stage 2 changes the symmetry.
+        """
         log_stem, log_suffix = os.path.splitext(log_file or "")
-
-        atoms.calc = calculator
-        if settings.enforce_relax_symm:
-            atoms.set_constraint(FixSymmetry(atoms, symprec=settings.relax_symprec))
-        stage1_target: Atoms | Filter = (
-            atoms if filter_class is None else filter_class(atoms, mask=NO_TILT_MASK)
+        stage1_steps = run_optimizer(
+            atoms,
+            settings,
+            no_tilt=True,
+            log_file=f"{log_stem}-stage1{log_suffix}" if log_file else None,
         )
-        # ASE annotates Optimizer(atoms: Atoms) although it accepts any Filter
-        stage1_optimizer = optimizer_class(
-            stage1_target,  # ty: ignore[invalid-argument-type]
-            logfile=f"{log_stem}-stage1{log_suffix}" if log_file else None,
-        )
-        stage1_optimizer.run(fmax=settings.force_max, steps=settings.max_steps)
-        stage1_steps = int(stage1_optimizer.get_number_of_steps())
         stage1_spg_num = space_group_number(atoms, settings.symprec)
         stage1_stress = max_abs_stress(atoms)
         stage1_atoms = atoms.copy()
 
         atoms.constraints = None
-        stage2_target: Atoms | Filter = (
-            atoms if filter_class is None else filter_class(atoms, mask=NO_TILT_MASK)
+        stage2_steps = run_optimizer(
+            atoms,
+            settings,
+            no_tilt=True,
+            log_file=f"{log_stem}-stage2{log_suffix}" if log_file else None,
         )
-        stage2_optimizer = optimizer_class(
-            stage2_target,  # ty: ignore[invalid-argument-type]
-            logfile=f"{log_stem}-stage2{log_suffix}" if log_file else None,
-        )
-        stage2_optimizer.run(fmax=settings.force_max, steps=settings.max_steps)
-        stage2_steps = int(stage2_optimizer.get_number_of_steps())
         stage2_spg_num = space_group_number(atoms, settings.symprec)
         stage2_stress = max_abs_stress(atoms)
 
@@ -182,10 +176,8 @@ class StandardKappaAdapter:
             atoms=relaxed_atoms,
             initial_spg_num=initial_spg_num,
             final_spg_num=stage1_spg_num if redirected else stage2_spg_num,
-            max_stress=np.asarray(stage1_stress if redirected else stage2_stress),
-            reached_max_steps=(
-                stage1_steps >= settings.max_steps or stage2_steps >= settings.max_steps
-            ),
+            max_stress=stage1_stress if redirected else stage2_stress,
+            reached_max_steps=max(stage1_steps, stage2_steps) >= settings.max_steps,
             n_steps=stage1_steps + stage2_steps,
             redirected_to_symmetry=redirected,
         )
@@ -213,9 +205,7 @@ class StandardKappaAdapter:
         """Calculate FC2 and frequencies with serial ASE force calls."""
         from matbench_discovery.phonons import thermal_conductivity as ltc
 
-        return ltc.get_fc2_and_freqs(
-            phono3py, calculator, pbar_kwargs={"disable": True}
-        )
+        return ltc.get_fc2_and_freqs(phono3py, calculator)
 
     def harmonic_phonons(
         self,
@@ -247,10 +237,7 @@ class StandardKappaAdapter:
         from matbench_discovery.phonons import thermal_conductivity as ltc
 
         return ltc.calculate_fc3_set(
-            phono3py,
-            calculator,
-            pbar_kwargs={"disable": True},
-            max_evaluations=max_evaluations,
+            phono3py, calculator, max_evaluations=max_evaluations
         )
 
 

@@ -2,6 +2,7 @@
 
 import hashlib
 import os
+from collections.abc import Iterator
 from enum import auto
 from pathlib import Path
 from typing import Any
@@ -192,6 +193,14 @@ def test_resolve_verified_file_rechecks_stale_cache(
         )
 
     if repair_succeeds:
+        assert resolve() == abs_path
+        assert Path(abs_path).read_bytes() == b"fresh"
+        # a verified file version is hashed once per process ...
+        with patch.object(enums_mod, "file_digest") as digest:
+            assert resolve() == abs_path
+        digest.assert_not_called()
+        # ... but a changed file (size/mtime) is verified again, so gets repaired
+        Path(abs_path).write_bytes(b"stale!")
         assert resolve() == abs_path
         assert Path(abs_path).read_bytes() == b"fresh"
     else:
@@ -408,13 +417,74 @@ def check_url(session: requests.Session, url: str) -> None:
     assert status in VALID_URL_STATUSES, f"unexpected {status=} for {url}"
 
 
+def checked_models() -> list[Model]:
+    """Active models and pending submissions, whose hosted files CI checks."""
+    return [m for m in Model if m.metadata["lifecycle"] in ("active", "pending")]
+
+
+def hosted_file_refs(value: object, key_path: str = "") -> Iterator[tuple[str, dict]]:
+    """Dotted key paths and FileRefs with a Figshare download URL under ``value``."""
+    if isinstance(value, list):
+        for idx, item in enumerate(value):
+            yield from hosted_file_refs(item, f"{key_path}.{idx}")
+    elif isinstance(value, dict):
+        if f"{figshare.DOWNLOAD_URL_PREFIX}/" in str(value.get("url")):
+            yield key_path, value
+        for key, nested in value.items():
+            yield from hosted_file_refs(
+                nested, f"{key_path}.{key}" if key_path else key
+            )
+
+
+@pytest.mark.network
+def test_model_file_refs_match_figshare(url_session: requests.Session) -> None:
+    """Every FileRef's declared size and md5 equals what Figshare hosts under its URL,
+    for active models and pending submissions, from the public file listings of the
+    model-prediction articles (no downloads). Files outside those articles can't be
+    listed and are not checked.
+    """
+    hosted: dict[str, dict] = {}
+    for task, article_id in figshare.ARTICLE_IDS.items():
+        if not task.startswith("model_preds_") or article_id is None:
+            continue
+        for page in range(1, 100):
+            response = url_session.get(
+                f"https://api.figshare.com/v2/articles/{article_id}/files",
+                params={"page_size": 1000, "page": page},
+                timeout=TIMEOUT,
+            )
+            response.raise_for_status()
+            files = response.json()
+            hosted |= {str(file["id"]): file for file in files}
+            if len(files) < 1000:
+                break
+    problems, n_checked = [], 0
+    for model in checked_models():
+        for key_path, ref in hosted_file_refs(model.metrics):
+            file_id = ref["url"].rsplit("/", maxsplit=1)[-1]
+            if (file := hosted.get(file_id)) is None:
+                continue
+            n_checked += 1
+            declared = (ref.get("size"), ref.get("md5"))
+            if declared != (file["size"], file["computed_md5"]):
+                problems.append(
+                    f"{model.name}.{key_path}: declared (size, md5) {declared}, "
+                    f"Figshare file {file_id} has "
+                    f"({file['size']}, {file['computed_md5']})"
+                )
+    assert n_checked > 0, "no FileRef URL found in the model-prediction articles"
+    assert not problems, f"{len(problems)}/{n_checked} FileRefs differ:\n" + "\n".join(
+        problems
+    )
+
+
 @pytest.mark.network
 def test_model_prediction_urls(url_session: requests.Session) -> None:
-    """Test that all model prediction file URLs are valid."""
+    """All prediction file URLs of active models and pending submissions resolve."""
     import concurrent.futures
 
     tasks: dict[str, str] = {}
-    for model in Model.active():
+    for model in checked_models():
         tasks[model.metadata["pr_url"]] = model.name
         metrics = model.metrics
         if not metrics:

@@ -100,7 +100,7 @@ describe(`Phonons Task Page`, () => {
       target: document.body,
       props: { entry, base: kappa_103_analysis },
     })
-    const annotation = await vi.waitFor(() => doc_query(`.plot-annotation`))
+    const annotation = await vi.waitFor(() => doc_query(`.metric-annotation`))
     const annotation_frame = annotation.closest(`foreignObject`)
     const plot_area = doc_query(`clipPath rect`, annotation.closest(`svg`))
     // Keep the metric inside the data area when the legend reserves bottom padding.
@@ -245,7 +245,7 @@ describe(`Phonons Task Page`, () => {
   it.each([`name`, `constructor`])(
     `restores URL state with model_sort=%s`,
     async (mode) => {
-      const url = `http://localhost/benchmarks/phonons?model=mace-mp-0&model_sort=${mode}&x=F1&y=κ_SRE&sort=κ_SRE&dir=asc&openness=OSOD&heatmap=0`
+      const url = `http://localhost/benchmarks/phonons?model=mace-mp-0&model_sort=${mode}&x=F1&y=κ_SRE&sort=κ_SRE&openness=OSOD&heatmap=0`
       await mount_with_url(PhononsPage, url)
 
       expect(kappa_sort_select().value).toBe(mode === `name` ? `name` : `kappa`)

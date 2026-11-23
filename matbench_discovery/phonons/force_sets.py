@@ -58,26 +58,13 @@ def _strip_forces(dataset: object) -> object:
 
 
 def force_set_from_phono3py(ph3: Phono3py, fc2_forces: np.ndarray) -> dict[str, Any]:
-    """Collect one material's FC2 force set and the cell it was computed on.
-
-    Args:
-        ph3: Phono3py object whose FC2 displacements were evaluated.
-        fc2_forces: (n_fc2_displacements, n_fc2_supercell_atoms, 3) forces (eV/Å).
-
-    Returns:
-        dict[str, Any]: force-set data; add_fc3_forces extends it with FC3 forces.
+    """Collect one material's FC2 displacement dataset, its (n_displacements,
+    n_supercell_atoms, 3) forces (eV/Å) and the cell they were computed on (FC3 data
+    is added by add_fc3_forces).
     """
-    unitcell = ph3.unitcell
     return {
-        "unitcell": {
-            "cell": np.asarray(unitcell.cell),
-            "scaled_positions": np.asarray(unitcell.scaled_positions),
-            "numbers": np.asarray(unitcell.numbers),
-            "masses": np.asarray(unitcell.masses),
-        },
-        "supercell_matrix": np.asarray(ph3.supercell_matrix),
-        "phonon_supercell_matrix": np.asarray(ph3.phonon_supercell_matrix),
-        "primitive_matrix": np.asarray(ph3.primitive_matrix),
+        "unitcell": {key: np.asarray(getattr(ph3.unitcell, key)) for key in _CELL_KEYS},
+        **{key: np.asarray(getattr(ph3, key)) for key in _MATRIX_KEYS},
         "symprec": float(ph3.symmetry.tolerance),
         "fc2_dataset": _strip_forces(ph3.phonon_dataset),
         "fc2_forces": np.asarray(fc2_forces),
@@ -229,14 +216,8 @@ def load_phono3py(path: str, material_id: str) -> Phono3py:
     from phonopy.structure.atoms import PhonopyAtoms
 
     force_set = load_force_set(path, material_id)
-    cell = force_set["unitcell"]
     ph3 = Phono3py(
-        PhonopyAtoms(
-            cell=cell["cell"],
-            scaled_positions=cell["scaled_positions"],
-            numbers=cell["numbers"],
-            masses=cell["masses"],
-        ),
+        PhonopyAtoms(**force_set["unitcell"]),
         supercell_matrix=force_set["supercell_matrix"],
         phonon_supercell_matrix=force_set["phonon_supercell_matrix"],
         primitive_matrix=force_set["primitive_matrix"],

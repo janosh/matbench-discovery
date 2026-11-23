@@ -7,45 +7,33 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from matbench_discovery.phonons.adapters.standard import StandardKappaAdapter
-from matbench_discovery.phonons.thermal_conductivity import batched_displacement_forces
+from matbench_discovery.phonons.thermal_conductivity import (
+    ase_batch_forces,
+    batched_displacement_forces,
+    fc2_frequencies,
+)
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from ase import Atoms
     from ase.calculators.calculator import Calculator
     from phono3py.api_phono3py import Phono3py
-    from phonopy.structure.atoms import PhonopyAtoms
 
     from matbench_discovery.phonons.pipeline import KappaSettings
 
 
-def _batched_force_set(
-    displacements: list[PhonopyAtoms | None],
-    calculator: Calculator,
-    *,
-    batch_size: int,
-    n_atoms: int,
-    max_evaluations: int | None = None,
-) -> np.ndarray:
-    """Evaluate displaced supercells in batches while retaining null entries."""
-
-    def evaluate_batch(batch_atoms: list[Atoms]) -> np.ndarray:
-        """Evaluate one PET displacement batch through its available API."""
-        compute_energy = getattr(calculator, "compute_energy", None)
-        if callable(compute_energy):
-            outputs = compute_energy(batch_atoms, compute_forces_and_stresses=True)
-            return np.asarray(outputs["forces"])
-        # Current metatomic SymmetrizedCalculator exposes only ASE's single-system
-        # API; each call still batches its internal rotational quadrature.
-        for displaced_atoms in batch_atoms:
-            displaced_atoms.calc = calculator
-        return np.asarray([atoms.get_forces() for atoms in batch_atoms])
-
-    return batched_displacement_forces(
-        displacements,
-        evaluate_batch,
-        batch_size=batch_size,
-        n_atoms=n_atoms,
-        max_evaluations=max_evaluations,
+def pet_batch_forces(calculator: Calculator) -> Callable[[list[Atoms]], np.ndarray]:
+    """Return a batch evaluator using the calculator's batched ``compute_energy`` API
+    if it has one, else one ASE call per structure (current metatomic
+    SymmetrizedCalculator versions, whose calls still batch their internal rotational
+    quadrature).
+    """
+    compute_energy = getattr(calculator, "compute_energy", None)
+    if not callable(compute_energy):
+        return ase_batch_forces(calculator)
+    return lambda batch_atoms: np.asarray(
+        compute_energy(batch_atoms, compute_forces_and_stresses=True)["forces"]
     )
 
 
@@ -74,18 +62,13 @@ class PetKappaAdapter(StandardKappaAdapter):
         settings: KappaSettings,
     ) -> tuple[Phono3py, np.ndarray, np.ndarray]:
         """Calculate PET FC2 and frequencies with batched force calls."""
-        force_set = _batched_force_set(
-            list(phono3py.phonon_supercells_with_displacements),
-            calculator,
+        force_set = batched_displacement_forces(
+            phono3py.phonon_supercells_with_displacements,
+            pet_batch_forces(calculator),
             batch_size=settings.batch_size,
             n_atoms=len(phono3py.phonon_supercell),
         )
-        phono3py.phonon_forces = force_set
-        phono3py.produce_fc2(symmetrize_fc2=True)
-        phono3py.init_phph_interaction(symmetrize_fc3q=False)
-        phono3py.run_phonon_solver()
-        frequencies, _eigenvectors, _grid = phono3py.get_phonon_data()
-        return phono3py, force_set, frequencies
+        return phono3py, force_set, fc2_frequencies(phono3py, force_set)
 
     def calculate_fc3(
         self,
@@ -96,9 +79,9 @@ class PetKappaAdapter(StandardKappaAdapter):
         max_evaluations: int | None = None,
     ) -> np.ndarray:
         """Calculate PET FC3 with batched force calls."""
-        force_set = _batched_force_set(
-            list(phono3py.supercells_with_displacements),
-            calculator,
+        force_set = batched_displacement_forces(
+            phono3py.supercells_with_displacements,
+            pet_batch_forces(calculator),
             batch_size=settings.batch_size,
             n_atoms=len(phono3py.supercell),
             max_evaluations=max_evaluations,

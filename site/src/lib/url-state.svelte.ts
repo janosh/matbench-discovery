@@ -316,13 +316,17 @@ export function bind_url_params(
     read_url(navigation)
   })
 
-  $effect(() => {
+  // Normal navigations read the router's original query, before any URL writes.
+  // Late mounts read shallow edits (which shallow goto() omits from page.url) here at
+  // init, before the first render. Read from an effect instead, the writes land mid-flush,
+  // which since Svelte 5.58.1 can re-run a keyed each item's {@const} before its {#if}
+  // branch updates (DataTable sort headers read `rank` of null).
+  if (last_navigation) {
     const navigation = last_navigation
-    // Normal navigations read the router's original query, before any URL writes.
-    // Late mounts read shallow edits, which shallow goto() omits from page.url.
-    if (!url_ready && navigation) {
-      untrack(() => read_url(navigation, new URLSearchParams(location.search)))
-    }
+    untrack(() => read_url(navigation, new URLSearchParams(location.search)))
+  }
+
+  $effect(() => {
     if (!url_ready) return
     sync_url_params(entries(), page.state)
   })

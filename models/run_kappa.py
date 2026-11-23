@@ -11,7 +11,7 @@ Examples:
 # /// script
 # requires-python = ">=3.14"
 # dependencies = [
-#   "matbench-discovery[phonons,symmetry]",
+#   "matbench-discovery",
 # ]
 #
 # [tool.uv.sources]
@@ -301,6 +301,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
         try:
             atoms_by_id = load_phonondb_atoms(
                 dataset_path,
+                model_key=model_key,
                 dry_run=args.dry_run,
                 dry_run_size=args.dry_run_size,
             )
@@ -328,10 +329,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
                     raise ValueError(
                         "Current checkpoint does not match the run manifest"
                     )
-            artifacts = write_kappa_artifacts(
-                merged_run,
-                pred_file_path=pred_file_path,
-            )
+            artifacts = write_kappa_artifacts(merged_run, pred_file_path=pred_file_path)
         except (OSError, TypeError, ValueError) as exc:
             parser.error(str(exc))
         print(
@@ -362,6 +360,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
         n_shards, shard_index = slurm_shard_selection(n_shards_arg, shard_index_arg)
         atoms_by_id = load_phonondb_atoms(
             dataset_path,
+            model_key=model_key,
             dry_run=args.dry_run,
             dry_run_size=args.dry_run_size,
         )

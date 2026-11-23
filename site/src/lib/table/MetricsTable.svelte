@@ -5,12 +5,17 @@
     RowData,
     TableSort,
   } from 'svelte-widgets/table'
-  import { cell_text, is_invalid, table_to_text } from 'svelte-widgets/table'
+  import {
+    cell_text,
+    is_invalid,
+    sort_from_param,
+    sort_url_entry,
+    table_to_text,
+  } from 'svelte-widgets/table'
   import { format_num } from 'svelte-widgets/format'
   import { goto } from '$app/navigation'
   import data_files from '$pkg/data-files.yml'
   import { bind_url_params, type UrlTableFilters } from '#lib/url-state.svelte.js'
-  import { sort_from_query, sort_url_entries } from 'matterviz/url-params'
   import { MediaQuery } from 'svelte/reactivity'
   import { onMount, untrack } from 'svelte'
   import { CPS_CONFIG } from '#lib/combined-scores.svelte.js'
@@ -206,25 +211,11 @@
   }
   bind_url_params(
     (params) => {
-      // one key rides the `sort`/`dir` params, several the `multi_sort` list, none `sort=none`
-      const criteria =
-        params
-          .get(`multi_sort`)
-          ?.split(`,`)
-          .filter(Boolean)
-          .map((key): TableSort => ({
-            column: key.startsWith(`-`) ? key.slice(1) : key,
-            dir: key.startsWith(`-`) ? `desc` : `asc`,
-          })) ?? []
-      const sortable = criteria.every(({ column }) =>
-        column_defaults.some((col) => col.id === column && col.sortable !== false),
+      // `?sort=-CPS,F1` lists keys in priority order (`-` for descending), `?sort=` none
+      const sortable = new Set(
+        column_defaults.filter((col) => col.sortable !== false).map((col) => col.id),
       )
-      sort =
-        sortable && criteria.length
-          ? criteria
-          : params.get(`sort`) === `none`
-            ? []
-            : [sort_from_query(params, default_sort[0])]
+      sort = sort_from_param(params, default_sort, { valid_columns: sortable })
       custom_visible = read_ids(params, `columns`)
       column_order = [
         ...new Set([
@@ -234,12 +225,7 @@
       ]
     },
     () => [
-      ...(sort.length === 0
-        ? [[`sort`, `none`, default_sort[0].column] as const]
-        : sort_url_entries(
-            sort.length === 1 ? sort[0] : default_sort[0],
-            default_sort[0],
-          )),
+      sort_url_entry(sort, default_sort),
       // Persist mobile defaults as well, so a shared view has the same columns on desktop.
       [
         `columns`,
@@ -250,14 +236,6 @@
             : ``,
       ],
       [`column_order`, column_order.join(`,`), default_column_order.join(`,`)],
-      [
-        `multi_sort`,
-        sort.length > 1
-          ? sort
-              .map(({ column, dir }) => `${dir === `asc` ? `` : `-`}${column}`)
-              .join(`,`)
-          : ``,
-      ],
     ],
   )
   const set_columns = (updated: Column[]): void => {
@@ -525,8 +503,10 @@
       CPS combines discovery F1 ({format_num(
         CPS_CONFIG.F1.weight / cps_total_weight,
         `.0%`,
-      )}), geometry RMSD ({format_num(CPS_CONFIG.RMSD.weight / cps_total_weight, `.0%`)}),
-      and phonons κ<sub>SRME</sub> ({format_num(
+      )}), geometry RMSD AUC ({format_num(
+        CPS_CONFIG.RMSD.weight / cps_total_weight,
+        `.0%`,
+      )}), and phonons κ<sub>SRME</sub> ({format_num(
         CPS_CONFIG.κ_SRME.weight / cps_total_weight,
         `.0%`,
       )}). MD and diatomics are excluded. CPS uses unique-prototype discovery scores.

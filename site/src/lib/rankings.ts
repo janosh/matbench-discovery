@@ -10,7 +10,7 @@ import type { Label, ModelData } from '#lib/types.js'
 export const RANKED_METRICS: (Label & { rank_href: string })[] = [
   { ...ALL_METRICS.CPS, rank_href: `/` },
   { ...ALL_METRICS.F1, label: `Discovery F1`, rank_href: `/benchmarks/discovery` },
-  { ...ALL_METRICS.RMSD, label: `Geo Opt RMSD`, rank_href: `/benchmarks/geo-opt` },
+  { ...ALL_METRICS.RMSD, label: `Geo Opt RMSD AUC`, rank_href: `/benchmarks/geo-opt` },
   {
     ...ALL_METRICS.κ_SRME,
     label: `Phonons κ<sub>SRME</sub>`,

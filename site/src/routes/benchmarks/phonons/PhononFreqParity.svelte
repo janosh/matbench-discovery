@@ -3,7 +3,7 @@
   import { format_num } from 'svelte-widgets/format'
   import type kappa_data from '#figs/kappa-103-analysis.jsonl'
   import { parity_diagonal } from '#lib/fig-helpers.js'
-  import { sanitize_compact_formula } from 'matterviz/sanitize'
+  import { compact_formula, FormulaText } from 'matterviz/composition'
   import { DEFAULT_SERIES_SYMBOLS, ScatterPlot, type DataSeries } from 'matterviz/plot'
   import { spacegroup_to_crystal_sys } from 'matterviz/symmetry'
   import type { HTMLAttributes } from 'svelte/elements'
@@ -30,14 +30,6 @@
   } = $props()
 
   let pairs = $derived(entry.freq_pairs)
-  // Shared range keeps the y=x diagonal corner-to-corner.
-  let extent = $derived.by((): [number, number] => {
-    if (!pairs.dft.length) return [0, 1]
-    const values = [...pairs.dft, ...pairs.ml]
-    const [min, max] = [Math.min(...values), Math.max(...values)]
-    const pad = (max - min) * 0.05
-    return [Math.min(min - pad, 0), max + pad]
-  })
   let series = $derived.by((): DataSeries<FreqParityPoint>[] => {
     const series_bins = quantile_bin_labels.map((label, quantile_bin_idx) => ({
       x: Array<number>(),
@@ -93,8 +85,9 @@
   <ScatterPlot
     {series}
     ref_lines={[parity_diagonal]}
-    x_axis={{ label: `PBE phonon freq. (THz)`, range: extent, format: `.3~` }}
-    y_axis={{ label: `${entry.label} phonon freq. (THz)`, range: extent, format: `.3~` }}
+    x_axis={{ label: `PBE phonon freq. (THz)`, format: `.3~` }}
+    y_axis={{ label: `${entry.label} phonon freq. (THz)`, format: `.3~` }}
+    shared_xy_range
     color_bar={{ title: `W₁(ω) (THz)`, tick_format: `.3~` }}
     legend={{ layout: `horizontal`, layout_tracks: 2 }}
     {...rest}
@@ -103,7 +96,7 @@
       {#if metadata}
         {@const point = metadata as FreqParityPoint}
         <strong>{point.material_id}</strong>
-        {@html sanitize_compact_formula(point.formula)} ({point.crystal_system}, SG
+        <FormulaText text={compact_formula(point.formula)} /> ({point.crystal_system}, SG
         {point.spg_num})<br />
         quantile: {format_num(point.quantile, `.0%`)}<br />
         W₁(ω): {format_num(point.freq_w1, `.3~`)} <small>THz</small><br />
@@ -121,7 +114,7 @@
           height={Math.max(1, height - pad.t - pad.b)}
           style="pointer-events: none; overflow: visible"
         >
-          <div class="plot-annotation" style="inset: auto 0.5em 0.5em auto">
+          <div class="metric-annotation" style="inset: auto 0.5em 0.5em auto">
             W₁(ω) = {format_num(entry.freq_w1_mean, `.3~`)} <small>THz</small>
           </div>
         </foreignObject>

@@ -6,6 +6,7 @@ import gzip
 import itertools
 import math
 import os
+import re
 import string
 
 import ase
@@ -36,14 +37,13 @@ def get_prototype_formula(composition: Composition, amt_tol: float = 1e-8) -> st
     """
     reduced = composition.element_composition
     if all(elem_amount == int(elem_amount) for elem_amount in composition.values()):
-        gcd = math.gcd(*map(int, composition.values()))
-        reduced /= gcd
+        reduced /= math.gcd(*map(int, composition.values()))
 
     return "".join(
         f"{elem}{int(amt) if abs(amt % 1) < amt_tol else amt}" if amt != 1 else elem
         for elem, amt in zip(
             string.ascii_uppercase,
-            [reduced[str(key)] for key in sorted(reduced, key=str)],
+            [reduced[key] for key in sorted(reduced, key=str)],
             strict=False,
         )
     )
@@ -55,42 +55,35 @@ def canonicalize_wyckoffs(element_wyckoffs: str, spg_num: int) -> str:
 
     Args:
         element_wyckoffs (str): wyckoff substring section from aflow_label with the
-            wyckoff letters for different elements separated by underscores.
+            wyckoff letters for different elements separated by underscores, each
+            letter preceded by its count (e.g. "1a2c_4b").
         spg_num (int | str): International space group number.
 
     Returns:
         str: element_wyckoff string with canonical ordering of the wyckoff letters.
     """
-    scored_wyckoffs: list[tuple[str, int]] = []
+    scored_wyckoffs: list[tuple[int, str]] = []  # (score, relabeled wyckoffs)
 
     for trans in wyckoff_relabelings[spg_num]:
-        wyckoffs = element_wyckoffs.translate(str.maketrans(trans))
-        score: int = 0
+        score = 0
         sorted_wyckoffs: list[str] = []
-
-        for el_wyckoff_letter in wyckoffs.split("_"):
-            # Split into alpha and numeric groups
-            groups = [
-                "".join(grp)
-                for _, grp in itertools.groupby(el_wyckoff_letter, str.isalpha)
-            ]
-            letters = [char for char in groups if char.isalpha()]
-            counts = [char for char in groups if char.isnumeric()]
-
-            sorted_pairs = sorted(
-                zip(counts, letters, strict=False), key=lambda pair: pair[1]
-            )
+        for el_wyckoffs in element_wyckoffs.translate(trans).split("_"):
+            count_letter_pairs = re.findall(r"(\d+)([a-zA-Z])", el_wyckoffs)
             sorted_wyckoffs.append(
                 "".join(
                     f"{count}{letter}" if count != "1" else letter
-                    for count, letter in sorted_pairs
+                    for count, letter in sorted(
+                        count_letter_pairs, key=lambda pair: pair[1]
+                    )
                 )
             )
-            score += sum(0 if letter == "A" else ord(letter) - 96 for letter in letters)
+            score += sum(
+                0 if letter == "A" else ord(letter) - 96
+                for _, letter in count_letter_pairs
+            )
+        scored_wyckoffs.append((score, "_".join(sorted_wyckoffs)))
 
-        scored_wyckoffs += [("_".join(sorted_wyckoffs), score)]
-
-    return min(scored_wyckoffs, key=lambda wyk_score: (wyk_score[1], wyk_score[0]))[0]
+    return min(scored_wyckoffs)[1]
 
 
 def get_protostructure_label(struct: AnyStructure, *, symprec: float = 0.1) -> str:
@@ -109,64 +102,42 @@ def get_protostructure_label(struct: AnyStructure, *, symprec: float = 0.1) -> s
     """
     import moyopy.interface
     from pymatgen.core import Structure
+    from pymatgen.io.ase import AseAtomsAdaptor
 
-    pmg_struct: Structure
-    if isinstance(struct, ase.Atoms):
-        from pymatgen.io.ase import AseAtomsAdaptor
-
-        converted = AseAtomsAdaptor.get_structure(struct)
-        if not isinstance(converted, Structure):
-            raise TypeError(f"Expected Structure, got {type(converted)}")
-        pmg_struct = converted
-    elif isinstance(struct, Structure):
-        pmg_struct = struct
-    else:
+    pmg_struct = (
+        AseAtomsAdaptor.get_structure(struct)
+        if isinstance(struct, ase.Atoms)
+        else struct
+    )
+    if not isinstance(pmg_struct, Structure):
         raise TypeError(f"Expected Structure or Atoms, got {type(struct)}")
 
     moyo_cell = moyopy.interface.MoyoAdapter.from_py_obj(pmg_struct)
     symmetry_data = moyopy.MoyoDataset(moyo_cell, symprec=symprec)
     spg_num = symmetry_data.number
 
-    orbit_groups: dict[int, list[int]] = {}
-
-    for idx, orbit_id in enumerate(symmetry_data.orbits):
-        if orbit_id not in orbit_groups:
-            orbit_groups[orbit_id] = []
-        orbit_groups[orbit_id].append(idx)
-
+    # one (element, Wyckoff letter) per orbit, sorted: all its sites share both
+    site_per_orbit = {orbit: idx for idx, orbit in enumerate(symmetry_data.orbits)}
+    orbit_labels = sorted(
+        (
+            pmg_struct.species[idx].symbol,
+            symmetry_data.wyckoffs[idx].lstrip(string.digits),
+        )
+        for idx in site_per_orbit.values()
+    )
     element_dict: dict[str, int] = {}
     element_wyckoffs: list[str] = []
-
-    equivalent_wyckoff_labels: list[tuple[str, int, str]] = [
-        (
-            pmg_struct.species[orbit[0]].symbol,
-            len(orbit),
-            symmetry_data.wyckoffs[orbit[0]].translate(
-                str.maketrans("", "", string.digits)
-            ),
-        )
-        for orbit in orbit_groups.values()
-    ]
-    equivalent_wyckoff_labels = sorted(
-        equivalent_wyckoff_labels, key=lambda label: (label[0], label[2])
-    )
-
-    for element, group in itertools.groupby(
-        equivalent_wyckoff_labels, key=lambda label: label[0]
-    ):
-        # NOTE create a list from the iterator so that we can use it without exhausting
-        label_group = list(group)
+    for element, group in itertools.groupby(orbit_labels, key=lambda label: label[0]):
+        letters = [letter for _, letter in group]
         element_dict[element] = sum(
-            wyckoff_multiplicity_dict[spg_num][label[2]] for label in label_group
+            wyckoff_multiplicity_dict[spg_num][letter] for letter in letters
         )
-        wyckoff_counts_str = "".join(
-            f"{len(list(occurrences))}{wyk_letter}"
-            for wyk_letter, occurrences in itertools.groupby(
-                label_group, key=lambda label: label[2]
+        element_wyckoffs.append(
+            "".join(
+                f"{len(list(same))}{letter}"
+                for letter, same in itertools.groupby(letters)
             )
         )
-
-        element_wyckoffs += [wyckoff_counts_str]
 
     all_wyckoffs = canonicalize_wyckoffs("_".join(element_wyckoffs), spg_num)
 

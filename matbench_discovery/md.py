@@ -34,6 +34,7 @@ from matbench_discovery.hpc import (
     check_resume_labels,
     memory_peaks,
     merge_audit_metadata,
+    model_supports_elements,
     reset_gpu_peak_memory,
 )
 from matbench_discovery.metrics import md as md_metrics
@@ -72,10 +73,8 @@ def write_reference_h5(
             group = file.create_group(system_name)
             # strip supervised labels so the public artifact can't double as a
             # validation set; dataclasses.replace keeps any future fields intact
-            public_trajectory = dataclasses.replace(
-                trajectory, energy=None, forces=None
-            )
-            public_trajectory.write_to_h5_group(group)
+            public = dataclasses.replace(trajectory, energy=None, forces=None)
+            public.write_to_h5_group(group)
             group.attrs["dt_fs"] = float(dt_fs)
             group.attrs["temperature_kelvin"] = float(temperature_kelvin)
             n_written += 1
@@ -179,22 +178,6 @@ def run_nvt_md(
     return frames
 
 
-def _init_nvt_dynamics(
-    atoms: Atoms,
-    *,
-    temperature_kelvin: float,
-    time_step_fs: float,
-    thermostat_time_scale_fs: float,
-) -> NoseHooverChainNVT:
-    """Construct the Nose-Hoover chain NVT integrator (velocities set by caller)."""
-    return NoseHooverChainNVT(
-        atoms,
-        timestep=time_step_fs * units.fs,
-        temperature_K=temperature_kelvin,
-        tdamp=thermostat_time_scale_fs * units.fs,
-    )
-
-
 def _thermalized_nvt_dynamics(
     atoms: Atoms,
     calculator: Calculator,
@@ -213,11 +196,11 @@ def _thermalized_nvt_dynamics(
     MaxwellBoltzmannDistribution(
         atoms, temperature_K=temperature_kelvin, rng=np.random.default_rng(seed)
     )
-    dynamics = _init_nvt_dynamics(
+    dynamics = NoseHooverChainNVT(
         atoms,
-        temperature_kelvin=temperature_kelvin,
-        time_step_fs=time_step_fs,
-        thermostat_time_scale_fs=thermostat_time_scale_fs,
+        timestep=time_step_fs * units.fs,
+        temperature_K=temperature_kelvin,
+        tdamp=thermostat_time_scale_fs * units.fs,
     )
     return atoms, dynamics
 
@@ -381,11 +364,10 @@ def _load_checkpoint(
     try:
         sessions = json.loads(str(ckpt["sessions"]))
         stored = NvtParams(
-            temperature_kelvin=float(ckpt["temperature_kelvin"]),
-            time_step_fs=float(ckpt["time_step_fs"]),
-            record_interval=int(ckpt["record_interval"]),
-            thermostat_time_scale_fs=float(ckpt["thermostat_time_scale_fs"]),
-            seed=int(ckpt["seed"]),
+            **{
+                field.name: ckpt[field.name].item()
+                for field in dataclasses.fields(params)
+            }
         )
         nsteps = int(ckpt["nsteps"])
         n_frames = int(ckpt["n_frames"])
@@ -463,6 +445,11 @@ def run_nvt_md_resumable(
             f"{checkpoint_every_n_frames=} must be positive for MD checkpointing"
         )
 
+    # attribute peak VRAM to this rollout even when one process runs several systems
+    reset_gpu_peak_memory(runtime)
+    # thermalized setup, the step-zero evaluation (incl. lazy compilation) and a
+    # resume's checkpoint read are rollout cost: the model loader's timer has stopped
+    session_start = time.perf_counter()
     atoms, dynamics = _thermalized_nvt_dynamics(
         atoms,
         calculator,
@@ -482,8 +469,6 @@ def run_nvt_md_resumable(
     loaded = _load_checkpoint(ckpt_path, atoms=atoms, params=params, n_steps=n_steps)
     frames_written = 0
     sessions: list[dict[str, Any]] = []  # cost units of earlier (timed-out) sessions
-    # attribute peak VRAM to this rollout even when one process runs several systems
-    reset_gpu_peak_memory(runtime)
     if loaded is not None and os.path.isfile(part_path):
         ckpt, stored_sessions = loaded
         n_ckpt = int(ckpt["n_frames"])
@@ -501,7 +486,6 @@ def run_nvt_md_resumable(
             ase.io.write(part_path, kept)  # truncate to the checkpointed frames
             frames_written = n_ckpt
             print(f"  resuming {out_path} from frame {frames_written}/{target_frames}")
-    session_start = time.perf_counter()
 
     def session_unit() -> dict[str, Any]:
         """This session's cost unit so far (after MD steps ran)."""
@@ -533,11 +517,7 @@ def run_nvt_md_resumable(
                 p=mom,
                 eta=eta,
                 p_eta=p_eta,
-                record_interval=params.record_interval,
-                time_step_fs=params.time_step_fs,
-                temperature_kelvin=params.temperature_kelvin,
-                thermostat_time_scale_fs=params.thermostat_time_scale_fs,
-                seed=params.seed,
+                **dataclasses.asdict(params),
                 symbols=np.array(dynamics.atoms.get_chemical_symbols()),
                 cell=dynamics.atoms.cell.array,
                 pbc=dynamics.atoms.pbc,
@@ -693,8 +673,22 @@ def run_md_benchmark(
     )
     if not system_names:  # clearer than the downstream empty-DataFrame KeyError
         raise ValueError(f"No systems found in reference {ref_file!r} for {systems=}")
-    if dry_run:  # one system, a few steps, capped reference slice
-        system_names = system_names[:1]
+    if dry_run:  # one system the model supports, a few steps, capped reference slice
+        supported_names = (
+            name
+            for name in system_names
+            if model_supports_elements(
+                model_key,
+                read_reference_trajectory(ref_file, name, max_frames=1)[0]
+                .frame_as_atoms(0)
+                .get_chemical_symbols(),
+            )
+        )
+        if (dry_run_name := next(supported_names, None)) is None:
+            raise ValueError(
+                f"No system in {system_names} has elements {model_key} supports"
+            )
+        system_names = [dry_run_name]
         # enough recorded frames that time-matching keeps >=4 even for the coarsest
         # reference cadence (dt_fs up to 2 fs vs the 2.5 fs prediction cadence)
         n_steps = record_interval * 20

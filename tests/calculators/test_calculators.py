@@ -480,7 +480,7 @@ def test_nequip_factory_load_path(
     compile_stub = Mock()
     compiled_loader, eager_loader = Mock(return_value=EMT()), Mock(return_value=EMT())
     nequip_ase = ModuleType("nequip.ase")
-    nequip_ase.NequIPCalculator = SimpleNamespace(  # ty: ignore[unresolved-attribute]
+    nequip_ase.NequIPCalculator = SimpleNamespace(  # ty: ignore[missing-attribute]
         from_compiled_model=compiled_loader, _from_saved_model=eager_loader
     )
     monkeypatch.setitem(sys.modules, "nequip", ModuleType("nequip"))
@@ -512,7 +512,7 @@ def test_nequip_factory_load_path(
 def test_dpa_4_0_1_loads_eager_checkpoint(monkeypatch: pytest.MonkeyPatch) -> None:
     """DPA-4.0.1 loads its .pt eagerly (the frozen .pt2 breaks on isolated dimers)."""
     deepmd_calculator = ModuleType("deepmd.calculator")
-    deepmd_calculator.DP = Mock(return_value=EMT())  # ty: ignore[unresolved-attribute]
+    deepmd_calculator.DP = Mock(return_value=EMT())  # ty: ignore[missing-attribute]
     monkeypatch.setitem(sys.modules, "deepmd", ModuleType("deepmd"))
     monkeypatch.setitem(sys.modules, "deepmd.calculator", deepmd_calculator)
 

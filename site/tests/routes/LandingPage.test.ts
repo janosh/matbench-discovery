@@ -94,7 +94,7 @@ describe(`Landing Page`, () => {
       `MAE`,
       `R2`,
       `κSRME`,
-      `RMSD`,
+      `RMSD AUC`,
       `CMDS`,
       `CDS`,
       `Params`,
@@ -383,8 +383,8 @@ describe(`Landing Page URL state`, () => {
   })
 
   it.each([
-    [`http://localhost/?preset=MD&sort=F1`, `F1`, `descending`],
-    [`http://localhost/?preset=MD&sort=combined_score&dir=asc`, `CMDS`, `ascending`],
+    [`http://localhost/?preset=MD&sort=-F1`, `F1`, `descending`],
+    [`http://localhost/?preset=MD&sort=combined_score`, `CMDS`, `ascending`],
   ] as const)(
     `preserves URL sort when restoring a column preset`,
     async (url, sorted_column, aria_sort) => {
@@ -397,17 +397,14 @@ describe(`Landing Page URL state`, () => {
 
   it.each([
     [`Discovery`, `CPS`, null, `descending`],
-    [`Geo Opt`, `RMSD`, `rmsd`, `ascending`],
+    [`Geo Opt`, `RMSD AUC`, `rmsd_auc`, `descending`],
     [`Phonons`, `κSRME`, `κ_SRME`, `ascending`],
     [`MD`, `CMDS`, `combined_score`, `descending`],
     [`Diatomics`, `CDS`, `diatomics_combined_score`, `descending`],
   ] as const)(
     `canonicalizes %s URLs and preserves sorting after customizing columns`,
     async (preset, sorted_column, _sort_key, direction) => {
-      await mount_with_url(
-        Page,
-        `http://localhost/?preset=MD&sort=combined_score&dir=desc`,
-      )
+      await mount_with_url(Page, `http://localhost/?preset=MD&sort=-combined_score`)
 
       expect(location.search).toBe(`?preset=MD`)
       expect_sort(`CMDS`, `descending`)
@@ -424,7 +421,6 @@ describe(`Landing Page URL state`, () => {
       expect(query_param(`preset`)).toBe(preset === `Discovery` ? null : preset)
       expect(query_param(`columns`)).not.toBeNull()
       expect(query_param(`sort`)).toBeNull()
-      expect(query_param(`dir`)).toBeNull()
 
       doc_query<HTMLButtonElement>(
         `button[aria-label="Reset all columns to defaults"]`,
@@ -432,7 +428,6 @@ describe(`Landing Page URL state`, () => {
       await tick()
       expect(query_param(`preset`)).toBe(preset === `Discovery` ? null : preset)
       expect(query_param(`sort`)).toBeNull()
-      expect(query_param(`dir`)).toBeNull()
 
       await navigate(custom_query)
       expect(pressed_toggle(`Discovery`)).toBe(preset)
@@ -444,15 +439,16 @@ describe(`Landing Page URL state`, () => {
     },
   )
 
-  it(`renders unknown URL sort labels as text`, async () => {
+  it(`drops unknown URL sort columns instead of rendering them`, async () => {
     const unknown_metric = `<b>unknown metric</b>`
     await mount_with_url(
       Page,
       `http://localhost/?sort=${encodeURIComponent(unknown_metric)}&columns=Model,F1`,
     )
     const context = doc_query(`.ranking-context`)
-    expect(context.textContent).toContain(unknown_metric)
+    expect(context.textContent).not.toContain(`unknown metric`)
     expect(context.querySelector(`b`)).toBeNull()
+    expect(query_param(`sort`)).toBeNull()
   })
 
   it(`restores columns, filters, heatmap, and scores on initial and later navigation`, async () => {

@@ -15,7 +15,6 @@ from phonopy.structure.atoms import PhonopyAtoms
 
 from matbench_discovery.phonons import force_sets
 from matbench_discovery.phonons import thermal_conductivity as ltc
-from matbench_discovery.phonons.pipeline import KappaSettings
 
 
 @pytest.fixture(scope="module")
@@ -34,9 +33,9 @@ def al_force_set() -> tuple[Phono3py, dict[str, Any]]:
     )
     ph3.generate_displacements(distance=0.03)
     ph3.generate_fc2_displacements(distance=0.03)
-    fc2_forces = ltc.calculate_fc2_set(ph3, EMT(), pbar_kwargs={"disable": True})
+    fc2_forces = ltc.calculate_fc2_set(ph3, EMT())
     force_set = force_sets.force_set_from_phono3py(ph3, fc2_forces)
-    fc3_forces = ltc.calculate_fc3_set(ph3, EMT(), pbar_kwargs={"disable": True})
+    fc3_forces = ltc.calculate_fc3_set(ph3, EMT())
     force_set = force_sets.add_fc3_forces(force_set, ph3, fc3_forces)
     ph3.produce_fc2(symmetrize_fc2=True)
     ph3.produce_fc3(symmetrize_fc3r=True)
@@ -96,8 +95,3 @@ def test_force_set_without_fc3_and_validation(
         h5_file.attrs["schema_version"] = 0
     with pytest.raises(ValueError, match="force-set schema 0"):
         force_sets.material_ids(merged_path)
-
-
-def test_kappa_runs_save_forces_by_default() -> None:
-    """New kappa runs record raw force sets unless a model opts out."""
-    assert KappaSettings().save_forces is True

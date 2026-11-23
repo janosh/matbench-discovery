@@ -88,12 +88,11 @@ def packer_argv(tmp_path: Path, *extra: str) -> list[str]:
 def test_md_convert_packs_reference(tmp_path: Path) -> None:
     """The packer turns raw per-system extxyz + settings CSV into reference HDF5."""
     frames = write_raw_reference(tmp_path)
-    system = SYSTEM
     out_h5 = str(tmp_path / "ref.h5")
     assert PACKER.main(packer_argv(tmp_path)) == 0
 
-    assert list_reference_systems(out_h5) == [system]
-    traj, dt_fs, temperature = read_reference_trajectory(out_h5, system)
+    assert list_reference_systems(out_h5) == [SYSTEM]
+    traj, dt_fs, temperature = read_reference_trajectory(out_h5, SYSTEM)
     assert dt_fs == 0.25  # dt = 0.25 fs (stride 4 not folded into saved-frame interval)
     assert temperature == 300.0
     assert traj.n_frames == len(frames)

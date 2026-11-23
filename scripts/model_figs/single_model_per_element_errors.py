@@ -6,8 +6,10 @@ import json
 import pandas as pd
 
 from matbench_discovery import SITE_DIR, figs, payload_numerics, preds
-from matbench_discovery.cli import cli_args, complete_models
+from matbench_discovery.cli import cli_args, complete_models, is_full_model_run
 from matbench_discovery.preds import elements
+
+is_full_model_run()  # check --models/--full-roster before loading, not at the write
 
 models_to_plot = complete_models()
 

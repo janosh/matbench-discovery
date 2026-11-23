@@ -56,7 +56,7 @@ hyperparams:
     cell_filter: FrechetCellFilter
     kappa:
       protocol: phonondb-v1
-      displacement_distance: 0.01 # legacy runs used 0.01 Å; the PhononDB-PBE reference uses 0.03 Å
+      displacement_distance: 0.03 # k_SRME run: its init_phono3py default, not overridden by the script
   architecture:
     graph_construction_radius: 6.0
 
@@ -94,34 +94,34 @@ metrics:
       missing_elements: []
   discovery:
     pred_file:
-      name: models/grace/grace-2l-mptrj/2024-11-11-discovery.csv.gz
-      url: https://figshare.com/files/66646121
-      size: 1321082
-      md5: 9facad7ad912e5292ba43b265ecf4969
+      name: models/grace/grace-2l-mptrj/2026-11-19-discovery.csv.gz
+      url: https://figshare.com/files/71653819
+      size: 1322810
+      md5: 4ac2b8d4f8e73e6132bc03a3e0bbf246
     full_test_set:
       F1: 0.687 # fraction
-      DAF: 3.714 # dimensionless
+      DAF: 3.724 # dimensionless
       Precision: 0.637 # fraction
       Recall: 0.746 # fraction
       Accuracy: 0.884 # fraction
-      TP: 32880 # count
-      FP: 18721 # count
-      TN: 194150 # count
-      FN: 11212 # count
+      TP: 32777 # count
+      FP: 18672 # count
+      TN: 194334 # count
+      FN: 11180 # count
       MAE: 0.05 # eV/atom
       RMSE: 0.092 # eV/atom
       R2: 0.74 # dimensionless
       missing_preds: 128 # count
     unique_prototypes:
       F1: 0.691 # fraction
-      DAF: 4.163 # dimensionless
+      DAF: 4.179 # dimensionless
       Precision: 0.636 # fraction
-      Recall: 0.757 # fraction
-      Accuracy: 0.895 # fraction
-      TP: 25255 # count
-      FP: 14425 # count
-      TN: 167689 # count
-      FN: 8119 # count
+      Recall: 0.756 # fraction
+      Accuracy: 0.896 # fraction
+      TP: 25144 # count
+      FP: 14382 # count
+      TN: 167864 # count
+      FN: 8098 # count
       MAE: 0.052 # eV/atom
       RMSE: 0.094 # eV/atom
       R2: 0.741 # dimensionless
@@ -132,32 +132,31 @@ metrics:
       url: https://figshare.com/files/70325088
       size: 95462499
       md5: e32e1b8aa461c82cbdf38b6a70834769
+    rmsd_auc: 0.66 # fraction
     symprec=1e-5:
-      rmsd: 0.0897 # unitless
-      n_sym_ops_mae: 1.8838 # unitless
+      n_sym_ops_mae: 1.8839 # unitless
       symmetry_decrease: 0.0349 # fraction
-      symmetry_match: 0.7315 # fraction
+      symmetry_match: 0.7316 # fraction
       symmetry_increase: 0.2292 # fraction
       symmetry_lateral: 0.0044 # fraction
       n_structures: 256862 # count
       analysis_file:
-        name: models/grace/grace-2l-mptrj/2024-11-11-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333719
-        size: 6717913
-        md5: 1520c9c3b6456f650e9e7d93edad2132
+        name: models/grace/grace-2l-mptrj/2024-11-11-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71652964
+        size: 6745239
+        md5: aa023824fe929485ebaaa82f102a9d29
     symprec=1e-2:
-      rmsd: 0.0897 # unitless
-      n_sym_ops_mae: 1.8495 # unitless
+      n_sym_ops_mae: 1.8496 # unitless
       symmetry_decrease: 0.0596 # fraction
       symmetry_match: 0.8107 # fraction
       symmetry_increase: 0.1228 # fraction
       symmetry_lateral: 0.0069 # fraction
       n_structures: 256862 # count
       analysis_file:
-        name: models/grace/grace-2l-mptrj/2024-11-11-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333722
-        size: 6735675
-        md5: b1266b0a328c574f37cd1ad9cfa3bf63
+        name: models/grace/grace-2l-mptrj/2024-11-11-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71652976
+        size: 6762767
+        md5: 091bc40534b15d81d7a9c07cee43c338
   md:
     pred_file:
       name: models/grace/grace-2l-mptrj/2026-06-28-md-metrics.csv.gz

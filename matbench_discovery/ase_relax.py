@@ -4,53 +4,29 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ase.filters import ExpCellFilter, FrechetCellFilter, UnitCellFilter
-from ase.optimize import (
-    BFGS,
-    FIRE,
-    FIRE2,
-    LBFGS,
-    BFGSLineSearch,
-    GoodOldQuasiNewton,
-    GPMin,
-    LBFGSLineSearch,
-)
-from ase.optimize.sciopt import SciPyFminBFGS, SciPyFminCG
+from ase.filters import ExpCellFilter, FrechetCellFilter
+from ase.optimize import FIRE, GoodOldQuasiNewton
 
 if TYPE_CHECKING:
     from ase.filters import Filter
     from ase.optimize.optimize import Optimizer
 
 
-OPTIMIZERS: dict[str, type[Optimizer]] = {
-    optimizer_class.__name__: optimizer_class
-    for optimizer_class in (
-        BFGS,
-        BFGSLineSearch,
-        FIRE,
-        FIRE2,
-        GPMin,
-        GoodOldQuasiNewton,
-        LBFGS,
-        LBFGSLineSearch,
-        SciPyFminBFGS,
-        SciPyFminCG,
-    )
+# only the optimizers and cell filters benchmark submissions were validated with,
+# keyed by their exact YAML names
+OPTIMIZERS: dict[str, type[Optimizer]] = {"FIRE": FIRE, "GOQN": GoodOldQuasiNewton}
+CELL_FILTERS: dict[str, type[Filter]] = {
+    "FrechetCellFilter": FrechetCellFilter,
+    "ExpCellFilter": ExpCellFilter,
 }
-OPTIMIZERS |= {"GOQN": GoodOldQuasiNewton, "QuasiNewton": BFGSLineSearch}
-CELL_FILTERS: dict[str, type[Filter] | None] = {
-    filter_class.__name__: filter_class
-    for filter_class in (FrechetCellFilter, ExpCellFilter, UnitCellFilter)
-}
-CELL_FILTERS |= {"frechet": FrechetCellFilter, "exp": ExpCellFilter, "none": None}
-OPTIMIZER_LOOKUP = {key.casefold(): value for key, value in OPTIMIZERS.items()}
-CELL_FILTER_LOOKUP = {key.casefold(): value for key, value in CELL_FILTERS.items()}
+# cell-filter name for a fixed cell, so CLI args (strings) can request one
+NO_CELL_FILTER = "none"
 
 
 def resolve_optimizer(name: str) -> type[Optimizer]:
-    """Resolve and validate an ASE optimizer name case-insensitively."""
+    """Resolve and validate an ASE optimizer name."""
     try:
-        return OPTIMIZER_LOOKUP[name.casefold()]
+        return OPTIMIZERS[name]
     except KeyError:
         raise ValueError(
             f"Unknown ASE optimizer {name!r}, choose from {sorted(OPTIMIZERS)}"
@@ -58,24 +34,24 @@ def resolve_optimizer(name: str) -> type[Optimizer]:
 
 
 def resolve_cell_filter(name: str | None) -> type[Filter] | None:
-    """Resolve and validate an ASE cell-filter name case-insensitively."""
-    if name is None:
+    """Resolve and validate an ASE cell-filter name, None or 'none' = fixed cell."""
+    if name is None or name == NO_CELL_FILTER:
         return None
     try:
-        return CELL_FILTER_LOOKUP[name.casefold()]
+        return CELL_FILTERS[name]
     except KeyError:
         raise ValueError(
-            f"Unknown ASE cell filter {name!r}, choose from {sorted(CELL_FILTERS)}"
+            f"Unknown ASE cell filter {name!r}, choose from "
+            f"{[*sorted(CELL_FILTERS), NO_CELL_FILTER]}"
         ) from None
 
 
 def canonical_optimizer_name(name: str) -> str:
-    """Return the stable YAML name for an optimizer alias."""
-    optimizer_class = resolve_optimizer(name)
-    return "GOQN" if optimizer_class is GoodOldQuasiNewton else optimizer_class.__name__
+    """Validate an optimizer name and return it for YAML/settings storage."""
+    resolve_optimizer(name)
+    return name
 
 
 def canonical_filter_name(name: str | None) -> str | None:
-    """Return the stable YAML name for a cell-filter alias."""
-    filter_class = resolve_cell_filter(name)
-    return filter_class.__name__ if filter_class is not None else None
+    """Validate a cell-filter name, mapping 'none' to None (fixed cell)."""
+    return None if resolve_cell_filter(name) is None else name

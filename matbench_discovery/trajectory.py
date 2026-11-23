@@ -142,6 +142,7 @@ class Trajectory:
         """Build a Trajectory from ASE frames, extracting energy/forces/stress/md_step
         where present (e.g. from a SinglePointCalculator on extxyz frames).
         """
+        from ase import Atoms
         from ase.calculators.calculator import PropertyNotImplementedError
 
         if len(frames) == 0:
@@ -158,49 +159,39 @@ class Trajectory:
                 raise ValueError(f"frame {idx} chemical species differ from frame 0")
             if not np.array_equal(atoms.pbc, first.pbc):
                 raise ValueError(f"frame {idx} pbc differs from frame 0")
-        positions = np.array([atoms.positions for atoms in frames])
-        cell = np.array([atoms.cell.array for atoms in frames])
 
-        def stack(getter: Callable[[Atoms], np.ndarray]) -> np.ndarray | None:
-            """Stack a per-frame quantity. Returns None if no frame has it; raises on
-            mixed availability (so a partially-labeled trajectory fails loud instead
-            of silently dropping the field) and on genuine calculator backend errors.
+        def calc_results(getter: Callable[[Atoms], np.ndarray]) -> list:
+            """Per-frame calculator results, None where a frame stores none (genuine
+            calculator backend errors propagate).
             """
-            values: list[np.ndarray | None] = []
+            results = []
             for atoms in frames:
-                if atoms.calc is None:
-                    values.append(None)
-                    continue
                 try:
-                    values.append(getter(atoms))
+                    results.append(None if atoms.calc is None else getter(atoms))
                 except PropertyNotImplementedError:
-                    values.append(None)  # property simply not stored on this frame
-            present = [value is not None for value in values]
-            if not any(present):
-                return None
-            if not all(present):
-                raise ValueError(
-                    f"frame {present.index(False)} missing a property "
-                    "that other frames provide"
-                )
-            return np.array(values)
+                    results.append(None)
+            return results
 
-        md_steps = [atoms.info.get("md_step") for atoms in frames]
-        present = [step is not None for step in md_steps]
-        # match stack(): all present -> keep, none present -> drop, partial -> fail loud
-        # rather than silently dropping the field
-        if any(present) and not all(present):
-            frame_idx = present.index(False)
-            raise ValueError(f"{frame_idx=} missing md_step that other frames have")
+        def stack(name: str, values: list) -> np.ndarray | None:
+            """Stack per-frame values, None if no frame has one. Mixed availability
+            raises so a partially-labeled trajectory fails loud instead of silently
+            dropping the field.
+            """
+            present = [value is not None for value in values]
+            if any(present) and not all(present):
+                idx = present.index(False)
+                raise ValueError(f"frame {idx} missing {name} that other frames have")
+            return np.array(values) if all(present) else None
+
         return cls(
             atomic_numbers=first.numbers.copy(),
-            positions=positions,
-            cell=cell,
+            positions=np.array([atoms.positions for atoms in frames]),
+            cell=np.array([atoms.cell.array for atoms in frames]),
             pbc=np.asarray(first.pbc, dtype=bool),
-            energy=stack(lambda atoms: atoms.get_potential_energy()),
-            forces=stack(lambda atoms: atoms.get_forces()),
-            stress=stack(lambda atoms: atoms.get_stress(voigt=True)),
-            md_step=np.array(md_steps) if all(present) else None,
+            energy=stack("energy", calc_results(Atoms.get_potential_energy)),
+            forces=stack("forces", calc_results(Atoms.get_forces)),
+            stress=stack("stress", calc_results(Atoms.get_stress)),  # Voigt by default
+            md_step=stack("md_step", [atoms.info.get("md_step") for atoms in frames]),
         )
 
     @classmethod
@@ -300,13 +291,12 @@ class Trajectory:
 
         positions = grab(col_start["pos"])
         forces = grab(col_start["forces"]) if "forces" in col_start else None
-        species_col = table.iloc[:, col_start["species"]].to_numpy(dtype=str)
-        species_all = species_col.reshape(n_frames, -1)
-        if (species_differs := (species_all != species_all[0]).any(axis=1)).any():
+        species = table.iloc[:, col_start["species"]].to_numpy(dtype=str)
+        species = species.reshape(n_frames, n_atoms)
+        if (species_differs := (species != species[0]).any(axis=1)).any():
             bad = int(np.argmax(species_differs))
             raise ValueError(f"{path!r}: frame {bad} species differ from frame 0")
-        species = species_all[0]
-        atomic_numbers = np.asarray(symbols2numbers(list(species)))
+        atomic_numbers = np.asarray(symbols2numbers(list(species[0])))
 
         # per-frame floats parsed from the comment lines
         def comment_field(pattern: str, width: int) -> np.ndarray | None:

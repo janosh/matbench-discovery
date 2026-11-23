@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from typing import Any, cast
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 import pytest
 from numpy.testing import assert_allclose
@@ -527,12 +528,15 @@ def test_diffuson_kappa_min_classical_limit(atom_density: float) -> None:
 def test_diffuson_kappa_min_weights_and_soft_modes() -> None:
     """q-point weights equal repeated q-points; imaginary modes carry no heat."""
     kappa_min = partial(phonon_metrics.diffuson_kappa_min, atom_density=0.05)
-    weighted = kappa_min([[1, 2, 3], [4, 5, 6]], [3, 1])
-    repeated = kappa_min([[1, 2, 3]] * 3 + [[4, 5, 6]], None)
+    weighted = kappa_min(np.array([[1, 2, 3], [4, 5, 6]]), np.array([3, 1]))
+    repeated = kappa_min(np.array([[1, 2, 3]] * 3 + [[4, 5, 6]]), None)
     assert_allclose(weighted, repeated, rtol=1e-12)
-    assert kappa_min([[-2, 0, 3]], None) == kappa_min([[0, 0, 3]], None)
+    assert kappa_min(np.array([[-2, 0, 3]]), None) == kappa_min(
+        np.array([[0, 0, 3]]), None
+    )
     # quantum heat capacities lower the floor at low T
-    assert kappa_min([[5, 5, 5]], None, temperature=50) < kappa_min([[5, 5, 5]], None)
+    flat = np.full((1, 3), 5)
+    assert kappa_min(flat, None, temperature=50) < kappa_min(flat, None)
 
 
 @pytest.mark.parametrize(
@@ -545,11 +549,11 @@ def test_diffuson_kappa_min_weights_and_soft_modes() -> None:
     ],
 )
 def test_diffuson_kappa_min_rejects_bad_input(
-    freqs: list[object], atom_density: float, match: str
+    freqs: npt.ArrayLike, atom_density: float, match: str
 ) -> None:
     """Malformed spectra or non-positive densities raise."""
     with pytest.raises(ValueError, match=match):
-        phonon_metrics.diffuson_kappa_min(freqs, None, atom_density)
+        phonon_metrics.diffuson_kappa_min(np.array(freqs), None, atom_density)
 
 
 @pytest.mark.parametrize(
@@ -602,7 +606,7 @@ def test_kappa_analysis_uses_shared_spectrum_helpers(
     assert expected_w1 == pytest.approx([0, 0.5 / 3])  # one of 3 modes shifted 0.5
     assert payload["srme_censored"] == [False, False]
     assert payload["freq_w1"] == pytest.approx(expected_w1, abs=5e-5)
-    assert payload["freq_w1_mean"] == pytest.approx(np.mean(expected_w1), abs=1e-4)
+    assert payload["freq_w1_mean"] == pytest.approx(np.mean([0, 0.5 / 3]), abs=1e-4)
 
 
 def test_evaluate_kappa_predictions_rejects_duplicate_ids(

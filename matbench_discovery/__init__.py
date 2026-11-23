@@ -43,8 +43,8 @@ def file_digest(path: str, algorithm: str = "sha256") -> str:
 
 
 @contextmanager
-def atomic_output_path(path: str) -> Generator[str]:
-    """Yield a temp sibling of path, renamed over path on success, removed on error."""
+def atomic_output_path(path: str, *, overwrite: bool = True) -> Generator[str]:
+    """Publish a temp sibling atomically, optionally requiring a new destination."""
     parent = os.path.dirname(path) or "."
     os.makedirs(parent, exist_ok=True)
     file_descriptor, temporary_path = tempfile.mkstemp(
@@ -53,7 +53,10 @@ def atomic_output_path(path: str) -> Generator[str]:
     os.close(file_descriptor)
     try:
         yield temporary_path
-        os.replace(temporary_path, path)
+        if overwrite:
+            os.replace(temporary_path, path)
+        else:
+            os.link(temporary_path, path)
     finally:
         if os.path.isfile(temporary_path):
             os.remove(temporary_path)

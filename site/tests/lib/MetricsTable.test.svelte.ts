@@ -251,11 +251,11 @@ describe(`MetricsTable`, () => {
     const pending = doc_query(`a[href="/models/equflash-29m-oam"]`).closest(`tr`)
     if (!unsupported || !pending) throw new Error(`Missing model rows`)
     expect(
-      doc_query(`td[data-col="RMSD"] [data-title]`, unsupported).dataset.title,
+      doc_query(`td[data-col="RMSD AUC"] [data-title]`, unsupported).dataset.title,
     ).toContain(`requires forces`)
     const gnome = doc_query(`a[href="/models/gnome"]`).closest(`tr`)
     if (!gnome) throw new Error(`Missing GNoME row`)
-    expect(doc_query(`td[data-col="RMSD"] [data-title]`, gnome).dataset.title).toBe(
+    expect(doc_query(`td[data-col="RMSD AUC"] [data-title]`, gnome).dataset.title).toBe(
       `Geometry Optimization: no results reported. Model weights are not publicly available.`,
     )
     const pending_cell = doc_query(`td[data-col="CMDS"]`, pending)
@@ -714,7 +714,7 @@ describe(`MetricsTable`, () => {
       `κfailed`, // ALL_METRICS (Phonon)
       `Im(ω)`, // ALL_METRICS (Phonon)
       `W1(ω)`, // ALL_METRICS (Phonon)
-      `RMSD`, // ALL_METRICS (Geo Opt)
+      `RMSD AUC`, // ALL_METRICS (Geo Opt)
       `ΔERMSE`, // ALL_METRICS (MD) - textContent doesn't keep subscript
       `FRMSE`, // ALL_METRICS (MD) - textContent doesn't keep subscript
       // ΔRDF is visible:false (hidden from leaderboards, redundant with ΔvDOS/ΔADF)
@@ -987,7 +987,7 @@ describe(`MetricsTable`, () => {
     vi.spyOn(HTMLAnchorElement.prototype, `click`).mockImplementation(() => {})
     const copy = vi.spyOn(navigator.clipboard, `writeText`).mockResolvedValue()
     const copy_html = vi.spyOn(navigator.clipboard, `write`).mockResolvedValue()
-    await mount_with_url(MetricsTable, `http://localhost/?sort=F1&dir=asc`, {
+    await mount_with_url(MetricsTable, `http://localhost/?sort=F1`, {
       props: {
         discovery_set,
         filters,
@@ -1091,7 +1091,7 @@ describe(`MetricsTable`, () => {
     await shift_click(`F1`)
     await shift_click(`F1`)
     await shift_click(`model_params`)
-    expect(query_param(`multi_sort`)).toBe(`-F1,-model_params`)
+    expect(query_param(`sort`)).toBe(`-F1,-model_params`)
     const shared_url = location.href
     expect(page.url.href).not.toBe(shared_url)
 
@@ -1101,7 +1101,6 @@ describe(`MetricsTable`, () => {
     await navigate(``, `popstate`)
     expect(ranking_context()).toContain(`DAF (descending)`)
     expect(query_param(`sort`)).toBeNull()
-    expect(query_param(`multi_sort`)).toBeNull()
     await navigate(new URL(shared_url).search, `popstate`)
     expect(header_cells().map((header) => header.dataset.colId)).toEqual(visible_ids)
     expect(row_models().map((model) => model.model_key)).toEqual(ordered_keys)
@@ -1192,7 +1191,7 @@ describe(`MetricsTable`, () => {
       [`?columns=Model,F1&column_order=F1,Model`, [`F1`, `Model`]],
       [`?columns=Model,F1,F1&column_order=F1,F1,Model`, [`F1`, `Model`]],
       [
-        `?columns=Model,missing&column_order=missing&multi_sort=-missing`,
+        `?columns=Model,missing&column_order=missing&sort=-missing`,
         [`Model`, `DAF`, `F1`],
       ],
       [`?columns=none`, []],
@@ -1205,7 +1204,7 @@ describe(`MetricsTable`, () => {
         },
       })
       expect(header_names()).toEqual(expected)
-      expect(query_param(`multi_sort`)).toBeNull()
+      expect(query_param(`sort`)).toBeNull()
       await navigate(``, `popstate`)
       expect(header_names()).toEqual([`Model`, `DAF`, `F1`])
       expect(query_param(`columns`)).toBeNull()

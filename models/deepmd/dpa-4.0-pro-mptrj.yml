@@ -167,35 +167,34 @@ metrics:
   geo_opt:
     pred_file:
       name: models/deepmd/dpa-4.0-pro-mptrj/2026-05-12-geo-opt.jsonl.gz
-      url: https://figshare.com/files/64733670
-      size: 106633293
-      md5: fee1a8aec62f9e3f9933f25211282f05
+      url: https://figshare.com/files/71653402
+      size: 129688707
+      md5: 5f2f6dbe4ce4444a35f7af1e4aaf8cf5
+    rmsd_auc: 0.7604 # fraction
     symprec=1e-2:
-      rmsd: 0.0694 # unitless
-      n_sym_ops_mae: 2.379 # unitless
-      symmetry_decrease: 0.2207 # fraction
+      n_sym_ops_mae: 2.3791 # unitless
+      symmetry_decrease: 0.2206 # fraction
       symmetry_match: 0.6502 # fraction
-      symmetry_increase: 0.1039 # fraction
+      symmetry_increase: 0.104 # fraction
       symmetry_lateral: 0.0252 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/deepmd/dpa-4.0-pro-mptrj/2026-05-12-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70334025
-        size: 6915491
-        md5: a6cd26ea3b2e8960f30443ea9652c0fa
+        name: models/deepmd/dpa-4.0-pro-mptrj/2026-05-12-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653414
+        size: 6938840
+        md5: 60ff0115e91b88f37b0a2ff9a4d01be6
     symprec=1e-5:
-      rmsd: 0.0694 # unitless
-      n_sym_ops_mae: 6.818 # unitless
-      symmetry_decrease: 0.6561 # fraction
+      n_sym_ops_mae: 6.8168 # unitless
+      symmetry_decrease: 0.656 # fraction
       symmetry_match: 0.2497 # fraction
-      symmetry_increase: 0.0674 # fraction
+      symmetry_increase: 0.0675 # fraction
       symmetry_lateral: 0.0268 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/deepmd/dpa-4.0-pro-mptrj/2026-05-12-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70334028
-        size: 6826684
-        md5: 8ab7b4c4c03aa3b8ba1676d295f7b585
+        name: models/deepmd/dpa-4.0-pro-mptrj/2026-05-12-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653417
+        size: 6850467
+        md5: c70b35caadb109e2a4c1fbe2fe545c63
   phonons:
     kappa_103:
       κ_SRME: 0.2414

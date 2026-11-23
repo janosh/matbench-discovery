@@ -93,37 +93,37 @@ metrics:
       missing_elements: []
   discovery:
     pred_file:
-      name: models/grace/grace-3l-oam-l/2026-07-02-discovery.csv.gz
-      url: https://figshare.com/files/66646130
-      size: 2889887
-      md5: a3799dbf73afef4cc709105d78312b13
+      name: models/grace/grace-3l-oam-l/2026-11-19-discovery.csv.gz
+      url: https://figshare.com/files/71653789
+      size: 2882111
+      md5: dc28c5a853e7e55ea384bbfd637f8087
     full_test_set:
       F1: 0.905 # fraction
-      DAF: 5.259 # dimensionless
+      DAF: 5.275 # dimensionless
       Precision: 0.902 # fraction
       Recall: 0.908 # fraction
       Accuracy: 0.967 # fraction
-      TP: 40043 # count
-      FP: 4328 # count
-      TN: 208543 # count
-      FN: 4049 # count
+      TP: 39916 # count
+      FP: 4318 # count
+      TN: 208688 # count
+      FN: 4041 # count
       MAE: 0.018 # eV/atom
       RMSE: 0.065 # eV/atom
       R2: 0.869 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
       F1: 0.925 # fraction
-      DAF: 6.041 # dimensionless
+      DAF: 6.065 # dimensionless
       Precision: 0.923 # fraction
       Recall: 0.926 # fraction
       Accuracy: 0.977 # fraction
-      TP: 30913 # count
-      FP: 2562 # count
-      TN: 179552 # count
-      FN: 2461 # count
+      TP: 30784 # count
+      FP: 2558 # count
+      TN: 179688 # count
+      FN: 2458 # count
       MAE: 0.018 # eV/atom
       RMSE: 0.065 # eV/atom
-      R2: 0.875 # dimensionless
+      R2: 0.876 # dimensionless
       missing_preds: 0 # count
   geo_opt:
     pred_file:
@@ -131,8 +131,8 @@ metrics:
       url: https://figshare.com/files/70325124
       size: 102731219
       md5: 6ed2c35f955bac7a14cd1d0bb1371a95
+    rmsd_auc: 0.8233 # fraction
     symprec=1e-2:
-      rmsd: 0.0575 # unitless
       n_sym_ops_mae: 1.6162 # unitless
       symmetry_decrease: 0.0384 # fraction
       symmetry_match: 0.824 # fraction
@@ -140,12 +140,11 @@ metrics:
       symmetry_lateral: 0.0076 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/grace/grace-3l-oam-l/2026-07-02-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333743
-        size: 8079667
-        md5: 2ec7a122ac9aa3fa4837e801fe066a24
+        name: models/grace/grace-3l-oam-l/2026-07-02-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71652997
+        size: 8103864
+        md5: a891408dc5c3d0fed7d8d1c195f50b42
     symprec=1e-5:
-      rmsd: 0.0575 # unitless
       n_sym_ops_mae: 2.1343 # unitless
       symmetry_decrease: 0.0427 # fraction
       symmetry_match: 0.6929 # fraction
@@ -153,10 +152,10 @@ metrics:
       symmetry_lateral: 0.005 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/grace/grace-3l-oam-l/2026-07-02-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333746
-        size: 8078743
-        md5: b75065937dbcae64af2f04be43e08c84
+        name: models/grace/grace-3l-oam-l/2026-07-02-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653000
+        size: 8103457
+        md5: 5f024b6d69dc14e65c46dc2df86d75c3
   md:
     pred_file:
       name: models/grace/grace-3l-oam-l/2026-07-03-md-metrics.csv.gz

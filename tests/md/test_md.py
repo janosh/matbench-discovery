@@ -10,6 +10,7 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 import ase.io
 import h5py
@@ -18,6 +19,7 @@ import pandas as pd
 import pytest
 from ase import Atoms
 from ase.build import bulk
+from ase.calculators.calculator import PropertyNotImplementedError
 from ase.calculators.emt import EMT
 
 from matbench_discovery import today
@@ -133,27 +135,11 @@ def _resume_until_complete[T](run: Callable[[], T]) -> T:
     raise AssertionError("resume loop did not complete")
 
 
-def test_reference_h5_roundtrip(tmp_path: Path) -> None:
+def test_reference_h5_roundtrip(tmp_path: Path, cu_emt_frames: list[Atoms]) -> None:
     """Reference HDF5 round-trips data and rejects missing or empty systems."""
     ref_file = str(tmp_path / "ref.h5")
-    trajectory_a = Trajectory.from_ase(
-        run_nvt_md(
-            bulk("Cu", cubic=True),
-            EMT(),
-            temperature_kelvin=300,
-            n_steps=6,
-            record_interval=1,
-        )
-    )
-    trajectory_b = Trajectory.from_ase(
-        run_nvt_md(
-            bulk("Al", cubic=True),
-            EMT(),
-            temperature_kelvin=500,
-            n_steps=4,
-            record_interval=1,
-        )
-    )
+    trajectory_a = Trajectory.from_ase(cu_emt_frames[:7])
+    trajectory_b = Trajectory.from_ase(cu_emt_frames[10:15])
     write_reference_h5(
         ref_file,
         [
@@ -216,6 +202,27 @@ def test_run_nvt_md() -> None:
     assert np.abs(frames[0].get_velocities()).max() > 0
     # atoms should have moved between frames
     assert np.abs(frames[-1].positions - frames[0].positions).max() > 1e-3
+
+
+def test_run_nvt_md_stress_probe(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Only PropertyNotImplementedError means "no stress"; real errors propagate."""
+
+    def run(stress_error: Exception) -> list[Atoms]:
+        """Two NVT steps with an EMT whose stress raises (energy/forces still work)."""
+        monkeypatch.setattr(EMT, "get_stress", Mock(side_effect=stress_error))
+        return run_nvt_md(
+            bulk("Cu", cubic=True),
+            EMT(),
+            temperature_kelvin=300,
+            n_steps=2,
+            record_interval=1,
+        )
+
+    frames = run(PropertyNotImplementedError("no stress"))
+    assert len(frames) == 3
+    assert all("stress" not in frame.calc.results for frame in frames)
+    with pytest.raises(RuntimeError, match="CUDA out of memory"):
+        run(RuntimeError("CUDA out of memory"))
 
 
 def test_run_nvt_md_seed_reproducibility() -> None:
@@ -343,6 +350,9 @@ def test_validate_pred_trajectory(tmp_path: Path, cu_emt_frames: list[Atoms]) ->
 
     for name, mutate in {
         "nan": lambda frames: frames[2].positions.__setitem__((0, 0), np.nan),
+        "nan_velocities": lambda frames: (
+            frames[2].arrays["momenta"].__setitem__((0, 0), np.nan)
+        ),
         "step": lambda frames: frames[2].info.__setitem__("md_step", 999),
     }.items():
         bad_frames = [frame.copy() for frame in frames]
@@ -350,20 +360,6 @@ def test_validate_pred_trajectory(tmp_path: Path, cu_emt_frames: list[Atoms]) ->
         bad_path = tmp_path / f"{name}.extxyz"
         ase.io.write(bad_path, bad_frames)
         assert validate(bad_path) is None, f"{name} should fail validation"
-
-
-def test_nvt_checkpoint_state_attrs() -> None:
-    """ASE NVT must retain the private state attributes used by checkpoints."""
-    from matbench_discovery.md import _init_nvt_dynamics, _nvt_state_attrs
-
-    atoms = bulk("Cu", cubic=True) * (2, 2, 2)
-    atoms.calc = EMT()
-    dynamics = _init_nvt_dynamics(
-        atoms, temperature_kelvin=300, time_step_fs=0.25, thermostat_time_scale_fs=25
-    )
-    state = _nvt_state_attrs(dynamics)  # raises RuntimeError if ASE renamed attrs
-    assert len(state) == 4
-    assert all(isinstance(array, np.ndarray) for array in state)
 
 
 def _run_short_resumable(
@@ -430,6 +426,23 @@ def test_run_nvt_md_resume_reproduces(
     assert run_info["run_time_sec"] == ref_info["run_time_sec"] == 4
 
 
+def test_run_nvt_md_resumable_skips_truncated_tail(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+) -> None:
+    """A tail cut off mid-frame after the checkpoint still resumes the prefix."""
+    atoms = bulk("Cu", cubic=True) * (2, 2, 2)
+    out_path = str(tmp_path / "out.extxyz")
+    _fail_save_checkpoint_after(monkeypatch, kills=1)
+    with pytest.raises(RuntimeError, match="simulated timeout"):
+        _run_short_resumable(atoms, out_path)
+    part = tmp_path / "out.part.extxyz"
+    part.write_text(part.read_text() + "32\nLattice='7 0 0 0 7 0 0 0 7'\nCu 0.0 0")
+
+    frames = _run_short_resumable(atoms, out_path)
+    assert "resuming" in capsys.readouterr().out
+    assert [frame.info["md_step"] for frame in frames] == list(range(0, 70, 10))
+
+
 def test_run_nvt_md_resumable_ignores_corrupt_checkpoint(tmp_path: Path) -> None:
     """Corrupt checkpoints fail closed and trigger a clean rollout."""
     atoms = bulk("Cu", cubic=True) * (2, 2, 2)
@@ -459,13 +472,19 @@ def test_run_nvt_md_resumable_ignores_corrupt_checkpoint(tmp_path: Path) -> None
         {"temperature_kelvin": 301.0},
         {"time_step_fs": 0.5},
         {"schema": CHECKPOINT_SCHEMA + 1},
+        {"ase_version": "0.0.0-other"},
     ],
-    ids=["unchanged", "seed", "temperature", "time_step", "schema"],
+    ids=["unchanged", "seed", "temperature", "time_step", "schema", "ase_version"],
 )
 def test_load_checkpoint_rejects_changed_run_parameters(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, changed: dict[str, float] | None
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture,
+    changed: dict[str, float | str] | None,
 ) -> None:
-    """Checkpoints resume only under the same seed, T, dt, schema and hardware."""
+    """Checkpoints resume only under the same seed, T, dt, schema, ASE version and
+    hardware.
+    """
     import matbench_discovery.md as md_mod
 
     atoms = bulk("Cu", cubic=True) * (2, 2, 2)
@@ -477,10 +496,11 @@ def test_load_checkpoint_rejects_changed_run_parameters(
     ckpt_path = f"{out_path}.ckpt.npz"
     assert os.path.isfile(ckpt_path)
 
-    changed = dict(changed or {})
-    if "schema" in changed:  # a newer code version bumped the checkpoint layout
-        new_schema = changed.pop("schema")
-        monkeypatch.setattr(md_mod, "CHECKPOINT_SCHEMA", new_schema)
+    param_changes = dict(changed or {})
+    if "schema" in param_changes:  # a newer code version bumped the checkpoint layout
+        monkeypatch.setattr(md_mod, "CHECKPOINT_SCHEMA", param_changes.pop("schema"))
+    if "ase_version" in param_changes:  # ASE upgraded between sessions
+        monkeypatch.setattr(md_mod.ase, "__version__", param_changes.pop("ase_version"))
     # params of _run_short_resumable (run_nvt_md_resumable defaults otherwise)
     params = NvtParams(
         temperature_kelvin=300,
@@ -489,12 +509,15 @@ def test_load_checkpoint_rejects_changed_run_parameters(
         thermostat_time_scale_fs=THERMOSTAT_TIME_SCALE_FS,
         seed=0,
     )
-    params = dataclasses.replace(params, **changed)
+    params = dataclasses.replace(params, **param_changes)
     loaded = md_mod._load_checkpoint(  # noqa: SLF001
         ckpt_path, atoms=atoms, params=params, n_steps=60
     )
-    if changed or md_mod.CHECKPOINT_SCHEMA != CHECKPOINT_SCHEMA:
+    if changed is not None:
         assert loaded is None, f"stale checkpoint resumed after {changed=}"
+        stale_code = {"schema", "ase_version"} & set(changed)
+        reason = "schema/version mismatch" if stale_code else "parameters mismatch"
+        assert reason in capsys.readouterr().out
     else:  # control: the untouched checkpoint must resume, else the cases are vacuous
         assert loaded is not None
         # first checkpoint holds frames at steps 0 and 10 (checkpoint every 2 frames)
@@ -504,6 +527,30 @@ def test_load_checkpoint_rejects_changed_run_parameters(
         with pytest.raises(ValueError, match="cannot resume under different run"):
             _run_short_resumable(atoms, out_path, runtime=other_gpu)
         assert os.path.isfile(ckpt_path)
+
+
+def test_run_md_benchmark_dry_run_skips_unsupported_systems(
+    tmp_path: Path, cu_emt_frames: list[Atoms]
+) -> None:
+    """EMT dry runs roll out the first reference system with elements EMT supports."""
+    indium_frames = [
+        Atoms(["In"] * len(frame), positions=frame.positions, cell=frame.cell, pbc=True)
+        for frame in cu_emt_frames
+    ]
+    ref_file = str(tmp_path / "ref.h5")
+    write_reference_h5(
+        ref_file,
+        [
+            ("InP_test", Trajectory.from_ase(indium_frames), 0.25, 300.0),
+            ("bulkCu_300K_test", Trajectory.from_ase(cu_emt_frames), 0.25, 300.0),
+        ],
+    )
+    df_md = _run_tiny_benchmark(ref_file, tmp_path / "out", dry_run=True)
+    assert list(df_md.index) == ["bulkCu_300K_test"]
+    with pytest.raises(ValueError, match=r"No system in \['InP_test'\] has elements"):
+        _run_tiny_benchmark(
+            ref_file, tmp_path / "out", systems=["InP_test"], dry_run=True
+        )
 
 
 @pytest.mark.parametrize("dry_run", [True, False])
@@ -520,15 +567,9 @@ def test_run_md_benchmark(
 
     df_md = run(dry=dry_run)
     assert list(df_md.index) == ["bulkCu_300K_test"]
-    metric_columns = {
-        "rdf_error",
-        "adf_error",
-        "vdos_error",
-        "pressure_mae",
-        "pressure_wasserstein",
-        "pressure_error",
-    }
-    assert metric_columns <= set(df_md.columns)
+    # energy/force RMSEs need a private reference
+    metric_cols = set(md_metrics.PER_SYSTEM_METRIC_COLS) - {"energy_rmse", "force_rmse"}
+    assert metric_cols <= set(df_md.columns)
 
     if dry_run:
         assert not out_dir.exists()  # dry run must not write outputs

@@ -187,13 +187,11 @@ def harmonic_thermal_data(phonon: Phonopy) -> dict[str, Any]:
         t_min=THERMAL_T_MIN, t_max=THERMAL_T_MAX, t_step=THERMAL_T_STEP
     )
     thermal = phonon.get_thermal_properties_dict()
-    # phonopy's ThermalProperties silently drops modes below cutoff_frequency=0, so for
-    # a dynamically unstable structure every curve below is computed from a subset of
-    # the modes (measured: Cv(1000 K) = 17.7 vs the 49.9 J/K/mol classical limit on a
-    # 2-atom cell with imaginary branches). Record the count so consumers can say so
-    # rather than presenting the truncated values as the material's thermodynamics.
-    # Counted against the same threshold as check_imaginary_freqs: modes dropped from
-    # the -0.01..0 THz noise band are physically zero and would flag stable materials
+    # phonopy's ThermalProperties silently drops modes below cutoff_frequency=0, so the
+    # curves of a dynamically unstable structure cover only some of its modes (measured
+    # Cv(1000 K) = 17.7 vs the 49.9 J/K/mol classical limit on a 2-atom cell with
+    # imaginary branches). Count them for consumers, against check_imaginary_freqs'
+    # threshold so the physically zero -0.01..0 THz noise band doesn't flag stable ones
     mesh_frequencies = np.asarray(phonon.get_mesh_dict()["frequencies"])
     n_imaginary_modes = int((mesh_frequencies < IMAGINARY_FREQ_THRESHOLD).sum())
 

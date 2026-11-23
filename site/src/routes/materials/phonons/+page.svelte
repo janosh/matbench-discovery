@@ -1,7 +1,8 @@
 <script lang="ts">
   import { HeatmapTable, type Column } from 'matterviz/table'
-  import { sanitize_compact_formula } from 'matterviz/sanitize'
+  import { compact_formula, FormulaText } from 'matterviz/composition'
   import { spacegroup_html } from '#lib/materials.js'
+  import type { CellSnippetArgs } from 'svelte-widgets/table'
   import type { PageData } from './$types'
 
   let { data }: { data: PageData } = $props()
@@ -12,7 +13,7 @@
   let rows = $derived(
     data.materials.map((material) => ({
       Material: `<a href="/materials/phonons/${material.material_id}">${material.material_id}</a>`,
-      Formula: sanitize_compact_formula(material.formula),
+      Formula: material.formula,
       Spacegroup: spacegroup_html(material.spg_num),
       kappa_dft: material.kappa_dft,
       median_srme: material.median_srme,
@@ -24,7 +25,7 @@
   )
   const columns: Column<(typeof rows)[number]>[] = [
     { id: `Material`, label: `Material`, pin: `left` },
-    { id: `Formula`, label: `Formula` },
+    { id: `Formula`, label: `Formula`, cell: formula_cell },
     { id: `Spacegroup`, label: `Spacegroup` },
     {
       id: `kappa_dft`,
@@ -56,6 +57,10 @@
     { id: `Worst`, label: `Worst model`, description: `Highest κ_SRME on this material` },
   ]
 </script>
+
+{#snippet formula_cell({ row }: CellSnippetArgs<(typeof rows)[number]>)}
+  <FormulaText text={compact_formula(row.Formula)} />
+{/snippet}
 
 <svelte:head>
   <title>Phonon materials • Matbench Discovery</title>

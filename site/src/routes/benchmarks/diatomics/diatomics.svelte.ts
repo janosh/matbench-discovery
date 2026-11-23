@@ -1,10 +1,7 @@
-import {
-  element_group_keys,
-  element_groups,
-  type ElementGroupKey,
-} from 'matterviz/element'
+import type { ChemicalElement, ElementCategory } from 'matterviz/element'
 import { DEFAULT_CATEGORY_COLORS } from 'matterviz/colors'
 import { SvelteMap, type SvelteSet } from 'svelte/reactivity'
+import type { ButtonGroupOption } from 'svelte-widgets'
 import { in_view } from 'svelte-widgets/attachments'
 import { valid_query_param, type UrlParamEntry } from 'svelte-widgets/browser'
 
@@ -27,15 +24,64 @@ export const MODEL_COLORS = [
   `#d6d3d1`, // stone
 ] as const
 
-// `elements` URL param: which matterviz element group's diatomics to show
+// Element-group filter buttons. Elements belong by periodic-table `categories`, else by
+// main-table `column` (halogens have no category of their own); `all` has neither. `tint` is the
+// category whose color tints the button.
+type ElementGroup = ButtonGroupOption & {
+  categories?: readonly ElementCategory[]
+  column?: number
+  tint?: ElementCategory
+}
+const category_group = (value: string, label: string, category: ElementCategory) =>
+  ({ value, label, categories: [category], tint: category }) satisfies ElementGroup
+
+export const ELEMENT_GROUPS = [
+  { value: `all`, label: `All`, tooltip: `Show all elements` },
+  category_group(`alkali`, `Alkali metals`, `alkali metal`),
+  category_group(`alkaline_earth`, `Alkaline earth metals`, `alkaline earth metal`),
+  category_group(`transition`, `Transition metals`, `transition metal`),
+  category_group(`post_transition`, `Post-transition metals`, `post-transition metal`),
+  category_group(`metalloid`, `Metalloids`, `metalloid`),
+  {
+    value: `nonmetal`,
+    label: `Nonmetals`,
+    tooltip: `Diatomic and polyatomic nonmetals`,
+    categories: [`diatomic nonmetal`, `polyatomic nonmetal`],
+    tint: `polyatomic nonmetal`,
+  },
+  {
+    value: `halogen`,
+    label: `Halogens`,
+    tooltip: `Group 17 halogen elements`,
+    column: 17,
+    tint: `diatomic nonmetal`, // F-I
+  },
+  category_group(`noble_gas`, `Noble gases`, `noble gas`),
+  category_group(`lanthanide`, `Lanthanides`, `lanthanide`),
+  category_group(`actinide`, `Actinides`, `actinide`),
+] as const satisfies readonly ElementGroup[]
+
+type ElementGroupKey = (typeof ELEMENT_GROUPS)[number][`value`]
+const group_by_key = new Map<string, ElementGroup>(
+  ELEMENT_GROUPS.map((group) => [group.value, group]),
+)
+const group_keys = new Set<ElementGroupKey>(ELEMENT_GROUPS.map(({ value }) => value))
+
+// `elements` URL param: which element group's diatomics to show
 export class ElementGroupParam {
   key = $state<ElementGroupKey>(`all`)
-  group = $derived(
-    element_groups.find(({ value }) => value === this.key) ?? element_groups[0],
-  )
+  readonly #group = $derived(group_by_key.get(this.key))
+
+  includes = ({ category, column, row }: ChemicalElement): boolean => {
+    if (!this.#group) throw new Error(`Unknown element group: ${this.key}`)
+    const { categories, column: group_column } = this.#group
+    if (categories) return categories.includes(category)
+    // rows 8+ are the f-block, whose cells reuse main-table columns (Lu, Lr in 17)
+    return group_column === undefined || (column === group_column && row <= 7)
+  }
 
   read = (params: URLSearchParams): void => {
-    this.key = valid_query_param(params, `elements`, `all`, element_group_keys)
+    this.key = valid_query_param(params, `elements`, `all`, group_keys)
   }
 
   get url_entry(): UrlParamEntry {
@@ -43,28 +89,11 @@ export class ElementGroupParam {
   }
 }
 
-// matterviz periodic-table category behind each element-group filter button (`all` has
-// none). Nonmetals span two categories; halogens F-I are all diatomic nonmetals.
-const GROUP_CATEGORIES: Partial<Record<ElementGroupKey, string>> = {
-  alkali: `alkali metal`,
-  alkaline_earth: `alkaline earth metal`,
-  transition: `transition metal`,
-  post_transition: `post-transition metal`,
-  metalloid: `metalloid`,
-  nonmetal: `polyatomic nonmetal`,
-  halogen: `diatomic nonmetal`,
-  noble_gas: `noble gas`,
-  lanthanide: `lanthanide`,
-  actinide: `actinide`,
-}
-
 // Attachment for an element-group ButtonGroup: tints each button with its category color
 export const tint_element_groups = (node: HTMLElement): void => {
   for (const button of node.querySelectorAll<HTMLElement>(`button[data-value]`)) {
-    const category = GROUP_CATEGORIES[button.dataset.value as ElementGroupKey]
-    if (category) {
-      button.style.setProperty(`--category-color`, DEFAULT_CATEGORY_COLORS[category])
-    }
+    const tint = group_by_key.get(button.dataset.value ?? ``)?.tint
+    if (tint) button.style.setProperty(`--category-color`, DEFAULT_CATEGORY_COLORS[tint])
   }
 }
 

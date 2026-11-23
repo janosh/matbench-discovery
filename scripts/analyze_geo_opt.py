@@ -2,18 +2,18 @@
 individual CSV files (one per symprec value) in a model's directory.
 
 Output files will have the same name as the input file containing the model's relaxed
-structures, but with the symprec value appended to the filename.
+structures, but with the symprec value and moyopy version appended to the filename.
 
 Note: StructureMatcher is configured with stol=1.0 and scale=False for exact matching.
-RMSD values are normalized (unitless) and NaN values are filled with 1.0 (the stol
-value) to properly account for structures that couldn't be matched.
+RMSD values are normalized (unitless) and NaN where no match was found. They are
+scored by metrics.geo_opt.rmsd_auc, where unmatched and missing structures score 0.
 
-Example usage (moyopy comes from the symmetry extra):
-    uv run --with-editable '.[symmetry]' scripts/analyze_geo_opt.py \
+Example usage:
+    uv run --with-editable . scripts/analyze_geo_opt.py \
         --models mace_mp_0 m3gnet --symprec 1e-2 1e-5
     # only analyze first 10 structures (CSV goes to a debug/ subdir, no YAML write)
-    uv run --with-editable '.[symmetry]' scripts/analyze_geo_opt.py --debug 10
-    uv run --with-editable '.[symmetry]' scripts/analyze_geo_opt.py --workers 4
+    uv run --with-editable . scripts/analyze_geo_opt.py --debug 10
+    uv run --with-editable . scripts/analyze_geo_opt.py --workers 4
 """
 
 # %%
@@ -28,18 +28,18 @@ import pandas as pd
 from pymatgen.core import Structure
 from pymatviz.enums import Key
 
-from matbench_discovery import ROOT, file_digest, today
+from matbench_discovery import ROOT, atomic_output_path, file_digest, today
 from matbench_discovery.cli import cli_parser, parse_cli_args
 from matbench_discovery.data import (
     artifact_filename,
     canonical_scientific_notation,
+    file_lock,
     file_ref_name,
     file_ref_url,
     parse_artifact_filename,
 )
-from matbench_discovery.enums import DataFiles, Model
+from matbench_discovery.enums import DataFiles, Model, resolve_verified_file
 from matbench_discovery.metrics import geo_opt
-from matbench_discovery.remote.fetch import maybe_auto_download_file
 from matbench_discovery.structure import symmetry
 
 if TYPE_CHECKING:
@@ -94,105 +94,110 @@ def analyze_model_symprec(
     overwrite: bool = False,
 ) -> pd.DataFrame | None:
     """Analyze a single model for a single symprec value."""
-    geo_opt_metrics: dict[str, Any] = model.metrics.get("geo_opt") or {}
+    # Serialize verification, CSV publication and metadata updates for this model.
+    with file_lock(f"{model.yaml_path}.geo-opt"):
+        model.__dict__.pop("metadata", None)
+        geo_opt_metrics: dict[str, Any] = model.metrics.get("geo_opt") or {}
 
-    # only the registered name: a cached analysis never needs the multi-GB file
-    geo_opt_name = file_ref_name(geo_opt_metrics.get("pred_file"))
-    if not geo_opt_name:
-        print(f"⚠️ {model.label} has no relaxed structures file")
-        return None
-    geo_opt_path = f"{ROOT}/{geo_opt_name}"
+        # only the registered name: a cached analysis never needs the multi-GB file
+        geo_opt_name = file_ref_name(geo_opt_metrics.get("pred_file"))
+        if not geo_opt_name:
+            print(f"⚠️ {model.label} has no relaxed structures file")
+            return None
+        geo_opt_path = f"{ROOT}/{geo_opt_name}"
 
-    symprec_str = f"symprec={canonical_scientific_notation(symprec)}"
-    geo_opt_basename = os.path.basename(geo_opt_path)
-    if parse_artifact_filename(geo_opt_basename) != "geo_opt":
-        raise ValueError(f"Expected geo-opt artifact, got {geo_opt_path!r}")
-    analysis_name = artifact_filename(
-        geo_opt_basename[:10],
-        "geo_opt_analysis",
-        symprec=symprec,
-        moyo_version=moyo_version,
-    )
-    geo_opt_dir = os.path.dirname(geo_opt_path)
-    if debug_mode:
-        # a debug subset must never clobber the full analysis CSV (nor, below, the
-        # model YAML), so it lands in a sibling debug/ dir like run_discovery's dry-run/
-        # keyed by subset size so --debug 3 doesn't reuse a cached --debug 10 CSV
-        geo_opt_csv_path = f"{geo_opt_dir}/debug/{debug_mode}/{analysis_name}"
-    else:
-        geo_opt_csv_path = f"{geo_opt_dir}/{analysis_name}"
+        symprec_str = f"symprec={canonical_scientific_notation(symprec)}"
+        geo_opt_basename = os.path.basename(geo_opt_path)
+        if parse_artifact_filename(geo_opt_basename) != "geo_opt":
+            raise ValueError(f"Expected geo-opt artifact, got {geo_opt_path!r}")
+        analysis_name = artifact_filename(
+            geo_opt_basename[:10],
+            "geo_opt_analysis",
+            symprec=symprec,
+            moyo_version=moyo_version,
+        )
+        geo_opt_dir = os.path.dirname(geo_opt_path)
+        if debug_mode:
+            # Separate each subset size from other debug runs and the full CSV.
+            geo_opt_csv_path = f"{geo_opt_dir}/debug/{debug_mode}/{analysis_name}"
+        else:
+            geo_opt_csv_path = f"{geo_opt_dir}/{analysis_name}"
 
-        # only reuse/download a published analysis file if its path matches exactly
-        # `or {}`: a null YAML value (symprec=1e-2: ~) must read as no metrics
-        symprec_metrics = geo_opt_metrics.get(symprec_str) or {}
-        analysis_ref = symprec_metrics.get("analysis_file") or {}
-        analysis_url = file_ref_url(analysis_ref)
-        analysis_file = file_ref_name(analysis_ref)
-        analysis_file_path = f"{ROOT}/{analysis_file}" if analysis_file else ""
+            # only reuse/download a published analysis file if its path matches exactly
+            # `or {}`: a null YAML value (symprec=1e-2: ~) must read as no metrics
+            symprec_metrics = geo_opt_metrics.get(symprec_str) or {}
+            analysis_ref = symprec_metrics.get("analysis_file") or {}
+            analysis_url = file_ref_url(analysis_ref)
+            analysis_file = file_ref_name(analysis_ref)
+            analysis_file_path = f"{ROOT}/{analysis_file}" if analysis_file else ""
 
-        if analysis_file_path == geo_opt_csv_path:
-            if not os.path.isfile(geo_opt_csv_path) and analysis_url:
-                maybe_auto_download_file(
-                    analysis_url,
+            if (
+                analysis_file_path == geo_opt_csv_path
+                and not overwrite
+                and (os.path.isfile(geo_opt_csv_path) or analysis_url)
+            ):
+                resolve_verified_file(
                     geo_opt_csv_path,
+                    url=analysis_url,
                     label=f"{model.label} {symprec_str}",
                     md5=analysis_ref.get("md5"),
                 )
-        elif analysis_file:
-            # Paths differ (moyo version change, etc.) - will recompute
-            print(f"⚠️ {model.label} {symprec_str=} path mismatch, will recompute")
-            print(f"  - Expected: {geo_opt_csv_path}")
-            print(f"  - Found: {analysis_file_path}")
 
-    if os.path.isfile(geo_opt_csv_path) and not overwrite:
-        # reuse the cached analysis but still (re)derive metrics from it below so the
-        # YAML never lags behind an already-analyzed CSV
-        print(f"{model.label} already analyzed at {geo_opt_csv_path}")
-        df_ml_geo_analysis = pd.read_csv(geo_opt_csv_path, index_col=0)
-    else:
-        # only reached without a cached CSV or with overwrite=True, so an existing
-        # file here is always being overwritten
-        action = "Overwriting" if os.path.isfile(geo_opt_csv_path) else "Analyzing"
-        print(f"{action} {model.label} for {symprec=}")
-        model_structs = load_model_structs(model, debug_mode)
+        reuse_csv = os.path.isfile(geo_opt_csv_path) and not overwrite
+        if reuse_csv:
+            # Rederive summary metrics from the cached CSV below.
+            print(f"{model.label} already analyzed at {geo_opt_csv_path}")
+            df_ml_geo_analysis = pd.read_csv(geo_opt_csv_path, index_col=0)
+        else:
+            # only reached without a cached CSV or with overwrite=True, so an existing
+            # file here is always being overwritten
+            action = "Overwriting" if os.path.isfile(geo_opt_csv_path) else "Analyzing"
+            print(f"{action} {model.label} for {symprec=}")
+            model_structs = load_model_structs(model, debug_mode)
 
-        pbar_desc = f"Process {pbar_pos}: Analyzing {model.label} for {symprec=}"
-        df_model_analysis = symmetry.get_sym_info_from_structs(
-            model_structs,
-            pbar=dict(desc=pbar_desc, position=pbar_pos, leave=True),
-            symprec=symprec,
-        )
+            pbar_desc = f"Process {pbar_pos}: Analyzing {model.label} for {symprec=}"
+            df_model_analysis = symmetry.get_sym_info_from_structs(
+                model_structs,
+                pbar=dict(desc=pbar_desc, position=pbar_pos, leave=True),
+                symprec=symprec,
+            )
 
-        pbar_desc = f"Process {pbar_pos}: Comparing DFT vs {model.label} for {symprec=}"
-        df_ml_geo_analysis = symmetry.pred_vs_ref_struct_symmetry(
-            df_model_analysis,
-            df_dft_analysis,
-            model_structs,
-            dft_structs,
-            pbar=dict(desc=pbar_desc, position=pbar_pos, leave=True),
-        )
+            pbar_desc = (
+                f"Process {pbar_pos}: Comparing DFT vs {model.label} for {symprec=}"
+            )
+            df_ml_geo_analysis = symmetry.pred_vs_ref_struct_symmetry(
+                df_model_analysis,
+                df_dft_analysis,
+                model_structs,
+                dft_structs,
+                pbar=dict(desc=pbar_desc, position=pbar_pos, leave=True),
+            )
 
-        os.makedirs(os.path.dirname(geo_opt_csv_path), exist_ok=True)
-        df_ml_geo_analysis.to_csv(geo_opt_csv_path)
-        print(f"Completed {model.label} {symprec=}, saved to {geo_opt_csv_path}")
+            with atomic_output_path(geo_opt_csv_path) as tmp_path:
+                df_ml_geo_analysis.to_csv(tmp_path, compression="gzip")
+            print(f"Completed {model.label} {symprec=}, saved to {geo_opt_csv_path}")
 
-    metrics_dict = geo_opt.calc_geo_opt_metrics(df_ml_geo_analysis)
-    df_metrics = pd.DataFrame([metrics_dict])
-    if debug_mode:
-        print(
-            f"Debug mode ({debug_mode} structures): not writing metrics.geo_opt for "
-            f"{model.label} {symprec=} to YAML\n{df_metrics.T}"
-        )
-    else:
-        geo_opt.write_metrics_to_yaml(df_metrics, model, symprec, geo_opt_csv_path)
-    return df_metrics
+        # a debug subset is scored on its own structures, not the full test set
+        ref_ids = df_ml_geo_analysis.index if debug_mode else df_dft_analysis.index
+        metrics_dict = geo_opt.calc_geo_opt_metrics(df_ml_geo_analysis, ref_ids)
+        df_metrics = pd.DataFrame([metrics_dict])
+        if debug_mode:
+            print(
+                f"Debug results for {model.label} ({debug_mode} structures, {symprec=})"
+                f"\n{df_metrics.T}"
+            )
+        else:
+            geo_opt.write_metrics_to_yaml(
+                df_metrics, model, symprec, geo_opt_csv_path, regenerated=not reuse_csv
+            )
+        return df_metrics
 
 
 def write_dft_reference(
     dft_structs: dict[str, Structure], symprec: float, moyo_version: str, out_dir: str
 ) -> pd.DataFrame:
     """Recompute the WBM DFT symmetry reference into a new file named by date and
-    moyopy version (never overwriting one) to upload and register in data-files.yml.
+    moyo version (never overwriting one) to upload and register in data-files.yml.
     """
     out_path = (
         f"{out_dir}/wbm/{today}-dft-geo-opt-symprec="
@@ -205,8 +210,8 @@ def write_dft_reference(
         pbar=dict(desc=f"Getting DFT symmetries {symprec=}"),
         symprec=symprec,
     )
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
-    df_dft_analysis.to_csv(out_path)
+    with atomic_output_path(out_path, overwrite=False) as tmp_path:
+        df_dft_analysis.to_csv(tmp_path, compression="gzip")
     md5 = file_digest(out_path, "md5")
     print(f"Wrote {out_path} ({md5=}): upload and register it in data-files.yml")
     return df_dft_analysis
@@ -252,6 +257,28 @@ def main(raw_args: list[str] | None = None) -> int:
     symprec_values: Final[Sequence[float]] = args.symprec
     moyo_version = importlib.metadata.version("moyopy")
 
+    # %% Check the registered DFT reference for each symprec value before the slow WBM
+    # load. Model analyses are only comparable to a reference from the same moyo
+    # version, so a mismatch fails here instead of silently mixing moyo versions.
+    reference_files: dict[float, DataFiles] = {}
+    for symprec in symprec_values:
+        symprec_str = f"symprec={canonical_scientific_notation(symprec)}"
+        data_file = DFT_REFERENCE_FILES.get(symprec)
+        if data_file is None:
+            raise ValueError(
+                f"No registered DFT reference for {symprec_str}, available: "
+                f"{sorted(DFT_REFERENCE_FILES)}"
+            )
+        ref_suffix = f"-moyo={moyo_version}.csv.gz"
+        if not args.write_dft_reference and not data_file.rel_path.endswith(ref_suffix):
+            raise ValueError(
+                f"Installed moyopy {moyo_version} does not match the registered "
+                f"DFT reference {data_file.rel_path}. Install the registered version, "
+                "or pass --write-dft-reference and register the new file in "
+                "data-files.yml"
+            )
+        reference_files[symprec] = data_file
+
     # %%
     print("Loading WBM PBE structures...")
     wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
@@ -264,31 +291,14 @@ def main(raw_args: list[str] | None = None) -> int:
         for mat_id, cse in df_wbm_structs[Key.computed_structure_entry].items()
     }
 
-    # %% Load the registered DFT reference for each symprec value. Model analyses are
-    # only comparable to a reference computed with the same moyopy version, so a version
-    # mismatch fails here instead of silently recomputing an unregistered reference.
-    dft_analysis_dict: dict[float, pd.DataFrame] = {}
-    for symprec in symprec_values:
-        symprec_str = f"symprec={canonical_scientific_notation(symprec)}"
-        data_file = DFT_REFERENCE_FILES.get(symprec)
-        if data_file is None:
-            raise ValueError(
-                f"No registered DFT reference for {symprec_str}, available: "
-                f"{sorted(DFT_REFERENCE_FILES)}"
-            )
-        if args.write_dft_reference:
-            dft_analysis_dict[symprec] = write_dft_reference(
-                dft_structs, symprec, moyo_version, DataFiles.base_dir
-            )
-            continue
-        if f"moyo={moyo_version}" not in data_file.rel_path:
-            raise ValueError(
-                f"Installed moyopy {moyo_version} does not match the registered "
-                f"DFT reference {data_file.rel_path}. Install the registered version, "
-                "or pass --write-dft-reference and register the new file in "
-                "data-files.yml"
-            )
-        dft_analysis_dict[symprec] = pd.read_csv(data_file.path).set_index(Key.mat_id)
+    dft_analysis_dict: dict[float, pd.DataFrame] = {
+        symprec: write_dft_reference(
+            dft_structs, symprec, moyo_version, DataFiles.base_dir
+        )
+        if args.write_dft_reference
+        else pd.read_csv(data_file.path).set_index(Key.mat_id)
+        for symprec, data_file in reference_files.items()
+    }
 
     tasks = list(itertools.product(args.models, symprec_values))
     n_workers = min(len(tasks), args.workers)

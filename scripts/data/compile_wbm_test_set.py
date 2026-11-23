@@ -4,42 +4,31 @@ https://nature.com/articles/s41524-020-00481-6
 """
 
 # %%
-import gzip
 import os
-import pickle
+from collections import defaultdict
 from glob import glob
+from itertools import combinations
 
 import numpy as np
 import pandas as pd
 from pandas.core.util.hashing import hash_pandas_object
-from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram
+from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram, PDEntry, PhaseDiagram
 from pymatgen.core import Composition, Structure
-from pymatgen.entries.compatibility import (
-    MaterialsProject2020Compatibility,
-    MaterialsProjectCompatibility,
-)
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import WBM_DIR, today
-from matbench_discovery.data import DataFiles, load_datasets
-from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.energy import calc_energy_from_e_refs
+from matbench_discovery.enums import DataFiles, MbdKey
 from matbench_discovery.remote.fetch import download_file
-from matbench_discovery.structure import prototype
+from matbench_discovery.wbm import (
+    WBM_ELEMENTAL_REF_ENERGIES,
+    mp2020_corrected,
+    unique_wbm_prototypes,
+)
 
-try:
-    import gdown
-except ImportError as exc:
-    exc.add_note(
-        "Run with uv run --with-editable '.[fetch-wbm-data]'. gdown is needed to "
-        "download WBM initial + relaxed structures from Google Drive."
-    )
-    raise
-
-
-# %% links to google drive files received via email from 1st author Hai-Chen Wang
+# links to google drive files received via email from 1st author Hai-Chen Wang
 # on 2021-06-15 containing initial and relaxed structures
 google_drive_ids = {
     1: "1ZUgtYwrfZn_P8bULWRtTXepyAxHVxS5C",
@@ -53,6 +42,9 @@ google_drive_ids = {
 # %%
 os.makedirs(f"{WBM_DIR}/raw", exist_ok=True)
 
+drive_download = (
+    "https://drive.usercontent.google.com/download?export=download&confirm=t"
+)
 for step, file_id in google_drive_ids.items():
     file_path = f"{WBM_DIR}/raw/wbm-structures-step-{step}.json.bz2"
 
@@ -61,7 +53,7 @@ for step, file_id in google_drive_ids.items():
         continue
 
     print(f"{step=}")
-    gdown.download(f"https://drive.google.com/u/0/uc?id={file_id}", file_path)
+    download_file(file_path, f"{drive_download}&id={file_id}")
 
 
 # %%
@@ -69,8 +61,7 @@ summary_path = f"{WBM_DIR}/raw/wbm-summary.txt"
 
 if not os.path.isfile(summary_path):
     summary_id_file = "1639IFUG7poaDE2uB6aISUOi65ooBwCIg"
-    summary_url = f"https://drive.google.com/u/0/uc?id={summary_id_file}"
-    gdown.download(summary_url, summary_path)
+    download_file(summary_path, f"{drive_download}&id={summary_id_file}")
 
 
 # %%
@@ -139,6 +130,7 @@ assert list(dfs_wbm_structs[5].query("org.isna()").index) == [
 
 # %%
 df_wbm = pd.concat(dfs_wbm_structs.values())
+del dfs_wbm_structs, df_wbm_step
 
 assert len(df_wbm) == sum(step_lens)
 
@@ -171,12 +163,12 @@ assert list(df_wbm.columns) == [Key.init_struct, Key.final_struct]
 
 # %% download WBM ComputedStructureEntries from
 # https://archive.materialscloud.org/record/2021.68
-mat_cloud_url = "https://archive.materialscloud.org/record/file?record_id=840"
+mat_cloud_url = "https://archive.materialscloud.org/api/records/qp8qv-gry23/files"
 
 for filename in (
     "README.txt",
     # same file as summary_path above except this doesn't have ID column
-    # "summary.txt.bz2",
+    "summary.txt.bz2",
     *(f"step_{step}.json.bz2" for step in range(1, 6)),
 ):
     file_path = f"{WBM_DIR}/raw/wbm-cse-{filename.lower().replace('_', '-')}"
@@ -184,7 +176,7 @@ for filename in (
         print(f"{file_path} already exists, skipping")
         continue
 
-    url = f"{mat_cloud_url}&filename={filename}"
+    url = f"{mat_cloud_url}/{filename}/content"
     download_file(file_path, url)
 
 
@@ -223,9 +215,10 @@ for json_path in cse_step_paths:
 df_wbm[Key.computed_structure_entry] = np.concatenate(
     [*dfs_wbm_cses.values()]
 ).squeeze()
+del dfs_wbm_cses, df_wbm_step
 
 for mat_id, cse in df_wbm[Key.computed_structure_entry].items():
-    # needed to ensure MaterialsProjectCompatibility can process the entries
+    # needed for the MP2020 corrections to classify the entries
     cse["parameters"]["run_type"] = (
         "GGA+U" if cse["parameters"]["is_hubbard"] else "GGA"
     )
@@ -273,24 +266,29 @@ df_wbm.pop("composition_from_final_struct")  # not needed anymore
 
 # %% randomly sample structures and ensure they match between CSE and final structure
 n_samples = 1000
-for _mat_id, row in tqdm(df_wbm.sample(n_samples).iterrows(), total=n_samples):
+for mat_id, row in tqdm(
+    df_wbm.sample(n_samples, random_state=0).iterrows(), total=n_samples
+):
     struct_final = Structure.from_dict(row[Key.final_struct])
     struct_from_cse = Structure.from_dict(
         row[Key.computed_structure_entry]["structure"]
     )
-    assert struct_final.matches(struct_from_cse), f"structure mismatch for {row.Index=}"
+    assert struct_final.matches(struct_from_cse), f"structure mismatch for {mat_id=}"
 
     # and check initial and final compositions match
     struct_init = Structure.from_dict(row[Key.init_struct])
     assert struct_init.composition == struct_final.composition, (
-        f"composition mismatch for {row.Index=}"
+        f"composition mismatch for {mat_id=}"
     )
+
+
+del df_wbm[Key.final_struct]
 
 
 # %% extract alphabetical formula from CSEs (will be used as ground-truth formulas since
 # more informative than reduced formulas found in df_summary)
 df_wbm["formula_from_cse"] = [
-    x.alphabetical_formula for x in df_wbm.pop("composition_from_cse")
+    comp.alphabetical_formula for comp in df_wbm.pop("composition_from_cse")
 ]
 
 
@@ -311,9 +309,9 @@ df_summary = pd.read_csv(
     f"{WBM_DIR}/raw/wbm-summary.txt", sep="\t", names=list(col_map.values())
 ).set_index(Key.mat_id)
 
-df_summary_bz2 = pd.read_csv(
-    f"{mat_cloud_url}&filename=summary.txt.bz2", sep="\t"
-).rename(columns=col_map)
+df_summary_bz2 = pd.read_csv(f"{WBM_DIR}/raw/wbm-cse-summary.txt.bz2", sep="\t").rename(
+    columns=col_map
+)
 
 # duplicate Ga3Ru2U3 step_3_28147 (1st one is wbm-2-18689) has 0 volume in
 # df_summary_bz2 vs 155.41 in df_summary
@@ -326,7 +324,7 @@ pd.testing.assert_frame_equal(
 no_id_mask = df_summary.index.isna()
 assert sum(no_id_mask) == 6, f"{sum(no_id_mask)=}"
 # the 'None' materials have 0 volume, energy, n_sites, bandgap, etc.
-assert all(df_summary[no_id_mask].drop(columns=[Key.formula]) == 0)
+assert df_summary[no_id_mask].drop(columns=[Key.formula]).eq(0).to_numpy().all()
 assert len(df_summary.query("volume > 0")) == len(df_wbm) + len(
     expected_ids_with_no_init_structs
 )
@@ -388,16 +386,11 @@ for mat_id, cse in df_wbm[Key.computed_structure_entry].items():
 
 print(f"total mismatching CSE IDs fixed: {len(updated_ids):,}")
 
-# sort formulas alphabetically
-df_summary["alph_formula"] = [
-    Composition(x).alphabetical_formula for x in df_summary[Key.formula]
-]
-# alphabetical formula and original formula differ due to spaces, number 1 after element
-# symbols (FeO vs Fe1 O1), and element order (FeO vs OFe)
-# validate pre-crop state: all formulas should differ from their alphabetical versions
-assert sum(df_summary.alph_formula != df_summary[Key.formula]) == len(df_summary)
-
-df_summary[Key.formula] = df_summary.pop("alph_formula")
+# sort formulas alphabetically: every source formula changes due to spaces, number 1
+# after element symbols (FeO vs Fe1 O1), and element order (FeO vs OFe)
+alph_formulas = [Composition(x).alphabetical_formula for x in df_summary[Key.formula]]
+assert (df_summary[Key.formula] != alph_formulas).all()
+df_summary[Key.formula] = alph_formulas
 
 
 # %% write initial structures and computed structure entries to compressed json
@@ -411,6 +404,9 @@ for fname, cols in (
 ):
     all_cols = ["formula_from_cse", *cols]
     df_wbm[all_cols].reset_index().to_json(f"{WBM_DIR}/{today}-wbm-{fname}.json.bz2")
+
+
+del df_wbm[Key.init_struct]
 
 
 # %% df_summary and df_wbm formulas differ because summary formulas are reduced while
@@ -427,9 +423,8 @@ df_summary.loc["wbm-2-18689", MbdKey.dft_energy] = df_wbm.loc["wbm-2-18689"][
     Key.computed_structure_entry
 ]["energy"]
 
-# NOTE careful with ComputedEntries as object vs as dicts, the meaning of keys changes:
-# for example cse.energy == cse.uncorrected_energy + cse.correction
-# whereas cse.as_dict()["energy"] == cse.uncorrected_energy
+# NOTE in ComputedEntry dicts, "energy" is the uncorrected energy (pymatgen's
+# entry.energy property is uncorrected + correction)
 
 
 # %% compare summary energies with CSE energies
@@ -466,115 +461,130 @@ df_wbm = df_wbm.loc[df_summary.index]
 
 
 # make sure we dropped the expected number 524 of materials
-n_wbm_structs = load_datasets()["WBM"]["n_structures"]
-assert len(df_summary) == len(df_wbm) == n_wbm_structs  # 257_487 - 502 - 22
+assert len(df_summary) == len(df_wbm) == 256_963  # 257_487 - 502 - 22
 
 
 # %%
 for mat_id, cse in df_wbm[Key.computed_structure_entry].items():
     assert mat_id == cse["entry_id"], f"{mat_id} != {cse['entry_id']}"
 
-df_wbm[Key.computed_structure_entry] = [
-    ComputedStructureEntry.from_dict(dct)
-    for dct in tqdm(df_wbm[Key.computed_structure_entry])
-]
+wbm_cses = list(df_wbm[Key.computed_structure_entry])
 # raw WBM ComputedStructureEntries have no energy corrections applied:
-assert all(
-    cse.uncorrected_energy == cse.energy for cse in df_wbm[Key.computed_structure_entry]
-)
+assert all(cse["correction"] == 0 for cse in wbm_cses)
 # summary and CSE n_sites match
-assert all(
-    df_summary.n_sites
-    == [len(cse.structure) for cse in df_wbm[Key.computed_structure_entry]]
-)
+assert all(df_summary.n_sites == [len(cse["structure"]["sites"]) for cse in wbm_cses])
 
+# current MP2020 corrections (pymatgen's defaults: strict_anions="require_bound" since
+# pymatgen#3803, an anion correction needs oxidation state <= -1), the scheme model
+# predictions are corrected with. The legacy pre-2020 MaterialsProjectCompatibility
+# column e_correction_per_atom_mp_legacy is carried over from the published summary
+# below, so older models trained on the legacy scheme (e.g. MEGNet) can still swap
+# corrections.
+df_wbm_corr = mp2020_corrected(wbm_cses, verbose=True)
+pd.testing.assert_index_equal(df_wbm_corr.index, df_summary.index, check_names=False)
 
-# entries are corrected in-place by default so we apply legacy corrections first
-# and then leave the new corrections in place below
-# having both old and new corrections allows updating predictions from older models
-# like MEGNet that were trained on MP release prior to new corrections by subtracting
-# old corrections and adding the new ones
-entries_old_corr = MaterialsProjectCompatibility().process_entries(
-    df_wbm[Key.computed_structure_entry], clean=True, verbose=True
-)
-assert len(entries_old_corr) == 256_963, f"{len(entries_old_corr)=:,}, expected 256,963"
+n_corrected = (df_wbm_corr.correction_per_atom != 0).sum()
+assert n_corrected == 98_711, f"{n_corrected=:,}, expected 98,711"
 
-n_old_corrected = sum(cse.uncorrected_energy != cse.energy for cse in entries_old_corr)
-assert n_old_corrected == 39_591, f"{n_old_corrected=:,} expected 39,591"
-
-# extract legacy MP energy corrections to df_megnet
-df_wbm["e_correction_per_atom_mp_legacy"] = [
-    cse.correction_per_atom for cse in df_wbm[Key.computed_structure_entry]
-]
-
-# clean up legacy corrections and apply new corrections
-entries_new_corr = MaterialsProject2020Compatibility(
-    strict_anions="no_check"
-).process_entries(df_wbm[Key.computed_structure_entry], clean=True, verbose=True)
-assert len(entries_new_corr) == len(df_wbm), f"{len(entries_new_corr)=} {len(df_wbm)=}"
-
-n_corrected = sum(
-    cse.uncorrected_energy != cse.energy for cse in df_wbm[Key.computed_structure_entry]
-)
-# TODO 2024-08-07 n_corrected used to be 100,930, may have changed as a result of the
-# new strict_anions kwarg added in https://github.com/materialsproject/pymatgen/pull/3803
-# but strict_anions="no_check" which is meant to restore the pre-3803 behavior now
-# results in 99_000 corrected entries, which is closest one to the old number compared
-# to the other strict_anions options "require_exact" and "require_bound"
-assert n_corrected == 99_000, f"{n_corrected=:,}, expected 99k"
-
-df_summary["e_correction_per_atom_mp2020"] = [
-    cse.correction_per_atom for cse in df_wbm[Key.computed_structure_entry]
-]
+df_summary["e_correction_per_atom_mp2020"] = df_wbm_corr.correction_per_atom.to_numpy()
 
 avg_energy_corr = df_summary.e_correction_per_atom_mp2020.mean().round(4)
-assert avg_energy_corr == -0.1065, f"{avg_energy_corr=:.4}, expected -0.1065"
-
-
-# %%
-with gzip.open(DataFiles.mp_patched_phase_diagram.path, mode="rb") as zip_file:
-    ppd_mp: PatchedPhaseDiagram = pickle.load(zip_file)  # noqa: S301
+assert avg_energy_corr == -0.1062, f"{avg_energy_corr=:.4}, expected -0.1062"
 
 
 # %% calculate e_above_hull for each material
-# this loop needs above warnings.filterwarnings() in __init__.py to not crash Jupyter
-# kernel with logs
-# takes ~20 min at 200 it/s for 250k entries in WBM
 if MbdKey.each_true in df_summary:
     raise KeyError(f"{MbdKey.each_true!s} already in {df_summary.columns=}")
+del df_wbm, wbm_cses
 
-for mat_id, cse in tqdm(
-    df_wbm[Key.computed_structure_entry].items(), total=len(df_wbm)
-):
-    assert mat_id == cse.entry_id, f"{mat_id=} != {cse.entry_id=}"
-    assert cse.entry_id in df_summary.index, f"{cse.entry_id=} not in df_summary"
 
-    e_above_hull = ppd_mp.get_e_above_hull(cse, allow_negative=True)
+def corrected_pd_entries(df_corr: pd.DataFrame) -> list[PDEntry]:
+    """PDEntries with the MP2020-corrected total energies of mp2020_corrected rows."""
+    entries = []
+    for entry_id, comp_dict, e_per_atom in zip(
+        df_corr.index, df_corr.composition, df_corr.energy_per_atom, strict=True
+    ):
+        comp = Composition(comp_dict)
+        entries.append(PDEntry(comp, e_per_atom * comp.num_atoms, entry_id))
+    return entries
 
-    df_summary.loc[cse.entry_id, MbdKey.each_true] = e_above_hull
+
+# %% convex hull of all MP entries (MP2020-corrected energies)
+# MP entries are recorrected with the same scheme as the WBM entries: their stored
+# corrections came from the MP database build and differ for 329 of 154,718 entries
+df_mp_entries = pd.read_json(DataFiles.mp_computed_structure_entries.path)
+df_mp_corr = mp2020_corrected(list(df_mp_entries.entry), verbose=True)
+mp_pd_entries = corrected_pd_entries(df_mp_corr)
+ppd_mp = PatchedPhaseDiagram(mp_pd_entries, verbose=True)
+del df_mp_entries, df_mp_corr
+
+# 94,444 WBM entries lie in chemical systems no PPD subspace covers (e.g. Ce-Pb-Tm
+# without any MP ternary), where pymatgen falls back to an approximate SLSQP
+# decomposition (up to 6e-5 eV/atom off). Those get an exact PhaseDiagram over all MP
+# entries in their chemical system instead (44,593 small diagrams, ~1 min).
+mp_entries_by_chemsys: dict[frozenset, list[PDEntry]] = defaultdict(list)
+for pd_entry in mp_pd_entries:
+    mp_entries_by_chemsys[frozenset(pd_entry.elements)].append(pd_entry)
+hull_pds: dict[frozenset, PhaseDiagram] = {}  # per chemsys, scanning subspaces once
+
+
+def mp_hull_pd(entry: PDEntry) -> PhaseDiagram:
+    """PPD subspace containing entry, else an exact MP PhaseDiagram of its chemsys."""
+    chemsys = frozenset(entry.elements)
+    if chemsys in hull_pds:
+        return hull_pds[chemsys]
+    if any(chemsys <= space for space in ppd_mp.pds):
+        hull_pds[chemsys] = ppd_mp.get_pd_for_entry(entry)
+    else:
+        hull_pds[chemsys] = PhaseDiagram(
+            [
+                mp_entry
+                for n_elems in range(1, len(chemsys) + 1)
+                for sub_sys in combinations(chemsys, n_elems)
+                for mp_entry in mp_entries_by_chemsys.get(frozenset(sub_sys), [])
+            ]
+        )
+    return hull_pds[chemsys]
+
+
+# the hull spans every WBM composition: a ValueError here means a WBM entry has an
+# element no MP entry has
+wbm_entries = corrected_pd_entries(df_wbm_corr)
+wbm_hull_pds = [mp_hull_pd(entry) for entry in tqdm(wbm_entries, desc="MP hulls")]
+df_summary[MbdKey.each_true] = [
+    hull_pd.get_e_above_hull(entry, allow_negative=True)
+    for entry, hull_pd in zip(wbm_entries, wbm_hull_pds, strict=True)
+]
 
 
 # %% calculate formation energies from CSEs wrt MP elemental reference energies
-# first make sure source and target dfs have matching indices
-assert sum(df_wbm.index != df_summary.index) == 0
-
-for mat_id, row in tqdm(
-    df_wbm.iterrows(), total=len(df_wbm), desc="ML energies to CSEs"
-):
-    cse, formula = row[Key.computed_structure_entry], row.formula_from_cse
-    assert mat_id == cse.entry_id, f"{mat_id=} != {cse.entry_id=}"
-    assert mat_id in df_summary.index, f"{mat_id=} not in df_summary"
-
-    entry_like = dict(composition=formula, energy=cse.uncorrected_energy)
-    e_form = calc_energy_from_e_refs(entry_like, ref_energies=mp_elemental_ref_energies)
-    e_form_ppd = ppd_mp.get_form_energy_per_atom(cse) - cse.correction_per_atom
-
-    # make sure the phase diagram and standalone reference-energy methods of
-    # calculating formation energy agree
-    assert abs(e_form - e_form_ppd) < 1e-4, (
-        f"{mat_id}: {e_form=:.3} != {e_form_ppd=:.3} (diff={e_form - e_form_ppd:.3}))"
+e_forms_raw = np.array(
+    [
+        calc_energy_from_e_refs(
+            {"composition": comp_dict, "energy": uncorrected_energy},
+            ref_energies=WBM_ELEMENTAL_REF_ENERGIES,
+        )
+        for comp_dict, uncorrected_energy in zip(
+            df_wbm_corr.composition, df_wbm_corr.uncorrected_energy, strict=True
+        )
+    ]
+)
+# make sure the phase diagram and standalone reference-energy methods of calculating
+# formation energy agree
+e_forms_hull = (
+    np.array(
+        [
+            hull_pd.get_form_energy_per_atom(entry)
+            for entry, hull_pd in zip(wbm_entries, wbm_hull_pds, strict=True)
+        ]
     )
-    df_summary.loc[cse.entry_id, MbdKey.e_form_raw] = e_form
+    - df_summary["e_correction_per_atom_mp2020"].to_numpy()
+)
+del wbm_entries, wbm_hull_pds, df_wbm_corr
+e_form_diffs = pd.Series(e_forms_raw - e_forms_hull, index=df_summary.index)
+if (bad_e_forms := e_form_diffs[e_form_diffs.abs() >= 1e-4]).any():
+    raise ValueError(f"formation energies disagree by >= 1e-4 eV/atom: {bad_e_forms}")
+df_summary[MbdKey.e_form_raw] = e_forms_raw
 
 
 df_summary[MbdKey.e_form_raw.replace("uncorrected", "mp2020_corrected")] = (
@@ -582,80 +592,37 @@ df_summary[MbdKey.e_form_raw.replace("uncorrected", "mp2020_corrected")] = (
 )
 
 
-# %%
-# from initial structures
-for idx in tqdm(df_wbm.index):
-    if not pd.isna(df_summary.loc[idx].get(MbdKey.init_protostructure_spglib)):
-        continue  # Aflow label already computed
-    try:
-        struct = Structure.from_dict(df_wbm.loc[idx, Key.init_struct])
-        df_summary.loc[idx, MbdKey.init_protostructure_spglib] = (
-            prototype.get_protostructure_label(struct)
-        )
-    except (ValueError, KeyError, RuntimeError) as exc:
-        print(f"{idx=} {exc=}")
-
-# from relaxed structures
-for idx in tqdm(df_wbm.index):
-    if not pd.isna(df_summary.loc[idx].get(MbdKey.protostructure_spglib)):
-        continue
-
-    try:
-        cse = df_wbm.loc[idx, Key.computed_structure_entry]
-        struct = Structure.from_dict(cse["structure"])
-        df_summary.loc[idx, MbdKey.protostructure_spglib] = (
-            prototype.get_protostructure_label(struct)
-        )
-    except (ValueError, KeyError, RuntimeError) as exc:
-        print(f"{idx=} {exc=}")
-
-assert df_summary[MbdKey.init_protostructure_spglib].isna().sum() == 0
-assert df_summary[MbdKey.protostructure_spglib].isna().sum() == 0
-
-
-# %%
-fingerprints_path = f"{WBM_DIR}/site-stats.json.gz"
-if not os.path.isfile(fingerprints_path):
-    raise FileNotFoundError(
-        f"{fingerprints_path=} not found; regenerate with "
-        "scripts/attic/compute_struct_fingerprints.py from git history (deleted in "
-        "17401a78)"
-    )
-fp_diff_col = "site_stats_fingerprint_init_final_norm_diff"
-df_fp = pd.read_json(fingerprints_path).set_index(Key.mat_id)
-if fp_diff_col not in df_fp:
-    raise KeyError(f"{fingerprints_path=} does not contain {fp_diff_col=}")
-df_summary[fp_diff_col] = df_fp[fp_diff_col]
-
-
-# %% mark WBM materials with matching prototype in MP or duplicate prototypes
-# in WBM (keeping only the lowest energy one)
-df_mp = pd.read_csv(DataFiles.mp_energies.path, index_col=0)
-
-# mask WBM materials with matching prototype in MP
-mask_proto_in_mp = df_summary[MbdKey.init_protostructure_spglib].isin(
-    df_mp[MbdKey.protostructure_spglib]
+# %% Keep the structural descriptors that define the published benchmark. Its spglib
+# labels can differ from current assignments even after converting Pearson symbols.
+archived_cols = [
+    "e_correction_per_atom_mp_legacy",
+    MbdKey.init_protostructure_spglib,
+    MbdKey.protostructure_spglib,
+    "site_stats_fingerprint_init_final_norm_diff",
+]
+archived = pd.read_csv(
+    DataFiles.wbm_summary_2023.path,
+    index_col=Key.mat_id,
+    usecols=[Key.mat_id, *archived_cols, MbdKey.uniq_proto],
 )
-# mask duplicate prototypes in WBM (keeping the lowest energy one)
-mask_dupe_protos = df_summary.sort_values(
-    by=[MbdKey.init_protostructure_spglib, MbdKey.each_wbm]
-).duplicated(subset=MbdKey.init_protostructure_spglib, keep="first")
-assert sum(mask_proto_in_mp) == 11_175, f"{sum(mask_proto_in_mp)=:_}"
-assert sum(mask_dupe_protos) == 32_784, f"{sum(mask_dupe_protos)=:_}"
+pd.testing.assert_index_equal(df_summary.index, archived.index)
+df_summary = df_summary.join(archived[archived_cols], validate="one_to_one")
+n_legacy = (df_summary.e_correction_per_atom_mp_legacy != 0).sum()
+assert n_legacy == 39_591, f"{n_legacy=:,} expected 39,591"
 
-df_summary[MbdKey.uniq_proto] = ~(mask_proto_in_mp | mask_dupe_protos)
-n_wbm_materials = load_datasets()["WBM"]["n_materials"]
-assert dict(df_summary[MbdKey.uniq_proto].value_counts()) == {
-    True: n_wbm_materials,  # should be 215_488
-    False: n_wbm_structs - n_wbm_materials,  # should be 41,475
-}
-
-first_uniq_proto_wbm_ids = ["wbm-1-7", "wbm-1-8", "wbm-1-15", "wbm-1-20", "wbm-1-33"]
-assert (
-    list(df_summary.query(f"~{MbdKey.uniq_proto}").head(5).index)
-    == first_uniq_proto_wbm_ids
+# Rebuild cohort membership from relaxed labels and original WBM hull distances.
+df_mp = pd.read_csv(DataFiles.mp_energies.path, usecols=[MbdKey.protostructure_spglib])
+df_summary[MbdKey.uniq_proto] = unique_wbm_prototypes(
+    df_summary, df_mp[MbdKey.protostructure_spglib]
+)
+pd.testing.assert_series_equal(
+    df_summary[MbdKey.uniq_proto], archived[MbdKey.uniq_proto]
 )
 
 
 # %% write final summary data to disk (yeah!)
-df_summary.round(6).to_csv(f"{WBM_DIR}/{today}-wbm-summary.csv.gz")
+schema = pd.read_csv(
+    DataFiles.wbm_summary_2023.path, nrows=0, index_col=Key.mat_id
+).columns
+pd.testing.assert_index_equal(df_summary.columns.sort_values(), schema.sort_values())
+df_summary[schema].round(6).to_csv(f"{WBM_DIR}/{today}-wbm-summary.csv.gz")

@@ -30,7 +30,7 @@ describe(`Models Page`, () => {
     ])
     expect(
       [...document.querySelectorAll(`ul button`)].map((btn) => btn.textContent?.trim()),
-    ).toStrictEqual([`Model Name`, `CPS`, `F1`, `RMSD`, `κSRME`, `CMDS`, `CDS`])
+    ).toStrictEqual([`Model Name`, `CPS`, `F1`, `RMSD AUC`, `κSRME`, `CMDS`, `CDS`])
     // a <legend> outside a <fieldset> is invalid HTML
     expect(document.querySelector(`legend`)).toBeNull()
     const legend = doc_query(`.legend`)
@@ -83,9 +83,12 @@ describe(`Models Page`, () => {
 
   it.each([
     [ALL_METRICS.F1.key, `desc`],
-    [ALL_METRICS.RMSD.key, `asc`], // lower = better
+    [ALL_METRICS.RMSD.key, `desc`],
   ])(`colors the best %s card blue and the worst red`, async (sort, dir) => {
-    await mount_with_url(ModelsPage, `http://localhost/models?sort=${sort}&dir=${dir}`)
+    await mount_with_url(
+      ModelsPage,
+      `http://localhost/models?sort=${dir === `desc` ? `-` : ``}${sort}`,
+    )
     expect(doc_query(`ul li.active button`).id).toBe(sort)
     const rd_bu = get_d3_interpolator(`interpolateRdBu`)
     const backgrounds = [...model_cards()].map(
@@ -98,7 +101,7 @@ describe(`Models Page`, () => {
   it.each([
     [`F1`, `metrics.discovery.unique_prototypes.F1`, `desc`],
     [`diatomics_combined_score`, `metrics.diatomics.combined_score`, `desc`],
-    [`rmsd`, `metrics.geo_opt.symprec=1e-2.rmsd`, `asc`],
+    [`rmsd_auc`, `metrics.geo_opt.rmsd_auc`, `desc`],
     [`Model`, `model_name`, `asc`],
   ] as const)(
     `sorts by %s and preserves the model limit`,
@@ -135,8 +138,7 @@ describe(`Models Page`, () => {
       await tick()
       expect(doc_query(`ul li.active button`).id).toBe(key)
       const params = new URL(location.href).searchParams
-      expect(params.get(`sort`)).toBe(key)
-      expect(params.get(`dir`)).toBe(direction === `desc` ? null : direction)
+      expect(params.get(`sort`)).toBe(`${direction === `desc` ? `-` : ``}${key}`)
       expect(params.get(`n_best`)).toBe(`5`)
     },
   )
@@ -149,10 +151,7 @@ describe(`Models Page`, () => {
     [`-3`, MODELS.length],
     [`abc`, MODELS.length],
   ])(`normalizes n_best=%s and invalid sorting parameters`, async (input, expected) => {
-    await mount_with_url(
-      ModelsPage,
-      `http://localhost/models?sort=bogus&dir=sideways&n_best=${input}`,
-    )
+    await mount_with_url(ModelsPage, `http://localhost/models?sort=bogus&n_best=${input}`)
 
     expect(model_cards()).toHaveLength(expected)
     expect(doc_query<HTMLInputElement>(`input[type="number"]`).value).toBe(
@@ -172,7 +171,7 @@ describe(`Models Page`, () => {
   ] as const)(
     `restores URL state and applies a model limit of %s through the controls`,
     async (input, expected) => {
-      await mount_with_url(ModelsPage, `http://localhost/models?sort=F1&dir=asc&n_best=5`)
+      await mount_with_url(ModelsPage, `http://localhost/models?sort=F1&n_best=5`)
 
       expect(doc_query(`ul li.active button`).id).toBe(`F1`)
       expect(doc_query<HTMLInputElement>(`input[type="radio"]:checked`).value).toBe(`asc`)
@@ -186,8 +185,7 @@ describe(`Models Page`, () => {
 
       expect(model_cards()).toHaveLength(expected)
       const params = new URL(location.href).searchParams
-      expect(params.get(`sort`)).toBe(`F1`)
-      expect(params.has(`dir`)).toBe(false)
+      expect(params.get(`sort`)).toBe(`-F1`)
       expect(params.get(`n_best`)).toBe(
         expected === MODELS.length ? null : String(expected),
       )

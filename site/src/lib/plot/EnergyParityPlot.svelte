@@ -20,7 +20,7 @@
   import type { LoadStatus } from '#lib/asset-loader.js'
   import { to_error } from 'svelte-widgets/utils'
   import type { ModelData } from '#lib/types.js'
-  import { compact_formula, sanitize_compact_formula } from 'matterviz/sanitize'
+  import { compact_formula, FormulaText } from 'matterviz/composition'
   import { Spinner } from 'svelte-widgets'
   import type { AnyStructure } from 'matterviz/structure'
   import { BinnedScatterPlot } from 'matterviz/plot'
@@ -132,23 +132,6 @@
   )
   let x_label = $derived(`PBE ${axis_label}`)
   let y_label = $derived(`${model.model_name} ${axis_label}`)
-  // manual min/max loop (not Math.min(...arr)) because WBM x/y arrays are too large
-  // to spread as function args without overflowing the call stack
-  let extent = $derived.by((): [number, number] => {
-    if (!parity) return [-1, 1]
-    let [min, max] = [Infinity, -Infinity]
-    for (const values of [parity.x, parity.y]) {
-      for (const value of values) {
-        if (!Number.isFinite(value)) continue
-        if (value < min) min = value
-        if (value > max) max = value
-      }
-    }
-    if (!Number.isFinite(min) || !Number.isFinite(max)) return [-1, 1]
-    if (min === max) return [min - 0.5, max + 0.5]
-    const padding = (max - min) * 0.04
-    return [min - padding, max + padding]
-  })
 
   async function load_plot_data(model_key: string) {
     if (base && parity_model?.model_key === model_key) {
@@ -280,7 +263,7 @@ title, so label the section for screen readers instead -->
         <span style="font-weight: 650">{point_data.material_id}</span>
         {#if point_data.formula}
           <br /><span style="font-weight: 400"
-            >{@html sanitize_compact_formula(point_data.formula)}</span
+            ><FormulaText text={compact_formula(point_data.formula)} /></span
           >
         {/if}
       {/if}
@@ -290,8 +273,10 @@ title, so label the section for screen readers instead -->
       {series}
       style="height: 520px"
       padding={{ l: 75 }}
-      x_axis={{ label: x_label, format: `.2f`, range: extent }}
-      y_axis={{ label: y_label, format: `.2f`, range: extent }}
+      x_axis={{ label: x_label, format: `.2f` }}
+      y_axis={{ label: y_label, format: `.2f` }}
+      shared_xy_range
+      range_padding={0.04}
       density={{
         color_scale: { type: `log`, scheme: `interpolateMagma` },
       }}
@@ -319,7 +304,7 @@ title, so label the section for screen readers instead -->
 
       {#snippet annotation()}
         {#if stats && Number.isFinite(stats.mae)}
-          <div class="plot-annotation" style="position: static">
+          <div class="metric-annotation" style="position: static">
             MAE = {format_num(stats.mae * 1000, `.3~`)} <small>meV/atom</small><br />
             R<sup>2</sup> = {format_num(stats.r2, `.3~`)}
           </div>

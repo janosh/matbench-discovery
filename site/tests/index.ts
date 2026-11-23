@@ -308,7 +308,7 @@ export async function open_column_menu(): Promise<HTMLElement> {
 export const heatmap_toggle = async (): Promise<HTMLInputElement> =>
   doc_query(`input[aria-label="Toggle heatmap colors"]`, await open_column_menu())
 
-// a task page's metrics table restored `sort`/`dir` and `heatmap=0` from its URL;
+// a task page's metrics table restored `sort` and `heatmap=0` from its URL;
 // returns the heatmap checkbox for follow-up toggling
 export async function expect_table_url_state(
   sort_label: string,

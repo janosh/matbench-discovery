@@ -133,10 +133,10 @@
 </p>
 <p>
   Δx<sub>κ</sub> is the atomic displacement each model used to compute force constants by
-  finite differences. The PhononDB-PBE reference uses 0.03 Å. Earlier submissions were run
-  with 0.01 Å; finite-difference third-order force constants depend on the step size, so
-  their κ<sub>SRME</sub> is not strictly comparable with models run at 0.03 Å. The prescribed
-  value for future model submissions is 0.03 Å.
+  finite differences. The PhononDB-PBE reference uses 0.03 Å. Several 2025 submissions
+  were run with 0.01 Å; finite-difference third-order force constants depend on the step
+  size, so their κ<sub>SRME</sub> is not strictly comparable with models run at 0.03 Å. The
+  prescribed value for future model submissions is 0.03 Å.
 </p>
 <section class="full-bleed">
   <MetricsTable
@@ -232,7 +232,7 @@
     </div>
   {:else if kappa_analysis}
     <!-- analysis loaded but has no entry for this model: don't spin forever -->
-    <p style="text-align: center; color: var(--text-muted)">
+    <p style="text-align: center; color: var(--text-color-muted)">
       No per-material phonon diagnostics available for {selected_model.model_name}.
     </p>
   {:else}
@@ -246,7 +246,10 @@
 <p>
   The <a href={phonon_url}>PhononDB PBE test set</a> contains 103 Materials Project crystals.
   After one simultaneous cell-and-site relaxation, finite-displacement forces yield second-
-  and third-order force constants and each material's conductivity.
+  and third-order force constants and each material's conductivity. The displacement listed
+  in the table belongs to the conductivity run. Separate harmonic calculations can use another
+  displacement. Their force files store the distance and displacement vectors used for each
+  material.
 </p>
 <p>
   κ<sub>SRME</sub> compares mode contributions before summation, while κ<sub>SRE</sub>

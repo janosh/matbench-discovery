@@ -40,8 +40,7 @@ from matbench_discovery.remote import figshare
 PASS, FAIL, SKIP = "✓", "✗", "○"
 # task_coverage statuses that mean the task has results worth checking artifacts for
 COVERED_STATUSES = frozenset({"complete", "partial"})
-# each entry is the `uv run` argument string for one payload script; kappa needs the
-# phonons extra (phono3py/phonopy) when computing conductivity diagnostics
+# each entry is the `uv run` argument string for one payload script
 PAYLOAD_SCRIPTS = (
     "scripts/model_figs/roc_curves_models.py",
     "scripts/model_figs/hull_dist_box_plot.py",
@@ -49,15 +48,14 @@ PAYLOAD_SCRIPTS = (
     "scripts/model_figs/rolling_hull_dist_mae_models.py",
     "scripts/model_figs/tiles_hist_classified_stable_models.py",
     "scripts/model_figs/single_model_per_element_errors.py",
-    "--extra phonons scripts/model_figs/kappa_103_analysis.py",
+    "scripts/model_figs/kappa_103_analysis.py",
     "scripts/evals/geo_opt.py",
 )
 # (label, skipped for energy-only models, fatal on failure, `uv run` args).
-# kappa needs the phonons extra (phono3py/phonopy); geo-opt the symmetry extra (moyopy)
 EVAL_STEPS = (
     ("Discovery metrics", False, True, "scripts/evals/discovery.py"),
-    ("Kappa metrics", True, True, "--extra phonons scripts/evals/kappa.py"),
-    ("Geo-opt analysis", True, True, "--extra symmetry scripts/analyze_geo_opt.py"),
+    ("Kappa metrics", True, True, "scripts/evals/kappa.py"),
+    ("Geo-opt analysis", True, True, "scripts/analyze_geo_opt.py"),
     ("Diatomic metrics", True, False, "scripts/evals/diatomic_metrics.py"),
 )
 FIG_STEPS = (
@@ -120,19 +118,8 @@ def run_cmd(*cmd: str) -> bool:
 
 
 def uv_run_args(args: str) -> tuple[str, ...]:
-    """Build ``uv run`` args, resolving leading ``--extra NAME`` flags into an
-    editable project requirement (e.g. '--extra phonons x.py' -> --with-editable
-    .[phonons] x.py).
-    """
-    tokens = shlex.split(args)
-    extras: list[str] = []
-    while tokens[:1] == ["--extra"]:
-        if len(tokens) < 2 or not tokens[1]:
-            raise ValueError("uv run --extra requires a non-empty value")
-        extras.append(tokens[1])
-        tokens = tokens[2:]
-    project_req = f".[{','.join(extras)}]" if extras else "."
-    return ("uv", "run", "--with-editable", project_req, *tokens)
+    """``uv run`` args running a shell-quoted command against the editable project."""
+    return ("uv", "run", "--with-editable", ".", *shlex.split(args))
 
 
 def check_submission(

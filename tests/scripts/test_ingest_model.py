@@ -93,7 +93,7 @@ def test_unregistered_discovery_model_validation(
 ) -> None:
     """Trusted artifact validation does not require PR calculator code."""
     monkeypatch.delitem(
-        ingest.CALCULATORS,  # ty: ignore[invalid-argument-type]
+        ingest.CALCULATORS,
         Model["mace_mpa_0"].name,
     )
     checks = ingest.Checklist()
@@ -261,18 +261,10 @@ def test_run_payload_refresh_scopes(run_cmd_calls: list[tuple[str, ...]]) -> Non
         "single_model_per_element_errors.py" in " ".join(cmd) for cmd in script_calls
     )
     assert all(
-        cmd[2] == "--with-editable"
-        and cmd[3].startswith(".")
+        cmd[2:4] == ("--with-editable", ".")
         and cmd[-3:] == ("--models", *(model.name for model in models))
         for cmd in script_calls
     )
-    kappa_call = next(
-        cmd
-        for cmd in script_calls
-        if any("kappa_103_analysis.py" in arg for arg in cmd)
-    )
-    assert kappa_call[2:4] == ("--with-editable", ".[phonons]")
-    assert "--extra" not in kappa_call
     assert "summarize_payload_changes.py" in " ".join(report_call)
     assert "pytest" in test_call
     assert test_call[2:4] == ("--with-editable", ".")
@@ -283,19 +275,17 @@ def test_run_payload_refresh_scopes(run_cmd_calls: list[tuple[str, ...]]) -> Non
     assert all(command[-1] == "--full-roster" for command in payload_calls)
 
 
-def test_run_model_steps_installs_project_extras(
+def test_run_model_steps_appends_model_args(
     run_cmd_calls: list[tuple[str, ...]],
 ) -> None:
-    """Per-model eval subprocesses resolve project extras such as phonons."""
+    """Per-model eval subprocesses run against the editable project with --models."""
     checks = ingest.Checklist()
-    step_cmd = "--extra phonons scripts/evals/kappa.py"
-    steps = [("Kappa metrics", True, True, step_cmd)]
+    steps = [("Geo-opt analysis", True, True, "scripts/analyze_geo_opt.py")]
     ingest.run_model_steps(
         "evals", steps, Model["mace_mpa_0"], checks, energy_only=False
     )
-
-    expected = uv_cmd(".[phonons]", "scripts/evals/kappa.py", "--models", "mace_mpa_0")
-    assert run_cmd_calls == [expected]
+    expected = ("uv", "run", "--with-editable", ".", "scripts/analyze_geo_opt.py")
+    assert run_cmd_calls == [(*expected, "--models", "mace_mpa_0")]
     assert checks.n_failed == 0
 
 
@@ -365,40 +355,12 @@ def test_publish_parity_assets_once(
     assert not run_cmd_calls
 
 
-def uv_cmd(project_req: str, *args: str) -> tuple[str, ...]:
-    """Expected uv run command with editable project requirement."""
-    return ("uv", "run", "--with-editable", project_req, *args)
-
-
-@pytest.mark.parametrize(
-    ("args", "expected"),
-    [
-        (
-            '--extra phonons python -c "print(1, 2)"',
-            uv_cmd(".[phonons]", "python", "-c", "print(1, 2)"),
-        ),
-        (
-            "python child.py --extra keep --flag value",
-            uv_cmd(".", "python", "child.py", "--extra", "keep", "--flag", "value"),
-        ),
-        (
-            "--extra phonons --extra symmetry python child.py --extra keep",
-            uv_cmd(".[phonons,symmetry]", "python", "child.py", "--extra", "keep"),
-        ),
-    ],
-)
-def test_uv_run_args_parses_only_top_level_extras(
-    args: str, expected: tuple[str, ...]
-) -> None:
-    """uv_run_args preserves child command args while resolving top-level extras."""
-    assert ingest.uv_run_args(args) == expected
-
-
-@pytest.mark.parametrize("args", ["--extra", '--extra ""'])
-def test_uv_run_args_rejects_empty_extra(args: str) -> None:
-    """Top-level --extra must have a non-empty value."""
-    with pytest.raises(ValueError, match="--extra requires"):
-        ingest.uv_run_args(args)
+def test_uv_run_args_preserves_child_args() -> None:
+    """uv_run_args shell-splits the command, keeping child args such as --extra."""
+    assert ingest.uv_run_args('python -c "print(1)" --extra keep') == (
+        *("uv", "run", "--with-editable", ".", "python", "-c", "print(1)"),
+        *("--extra", "keep"),
+    )
 
 
 @pytest.mark.parametrize(

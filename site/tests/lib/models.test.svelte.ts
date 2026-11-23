@@ -1,9 +1,5 @@
 import DATASETS from '$pkg/datasets.yml'
-import {
-  calculate_cps,
-  CPS_CONFIG,
-  DEFAULT_CPS_CONFIG,
-} from '#lib/combined-scores.svelte.js'
+import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '#lib/combined-scores.svelte.js'
 import { attach_style, order_models } from '#lib/fig-helpers.js'
 import { ALL_METRICS } from '#lib/labels.js'
 import {
@@ -97,9 +93,9 @@ describe(`get_pred_file_urls`, () => {
         discovery: { pred_file: file(1, 1315780) },
         geo_opt: {
           pred_file: null,
+          rmsd_auc: 0.8,
           // only symprec=1e-2 has an analysis file, so 1e-5 must be skipped
           'symprec=1e-2': {
-            rmsd: 0.06,
             n_sym_ops_mae: 2,
             symmetry_decrease: 0.1,
             symmetry_match: 0.8,
@@ -335,16 +331,16 @@ describe(`update_models_cps`, () => {
     expect(models_with_nan_cps.length).toBeGreaterThan(0)
   })
 
-  it(`computes CPS from the same RMSD symprec the table displays`, () => {
-    // regression: update_models_cps read symprec=1e-5 RMSD while the table shows
-    // symprec=1e-2 (ALL_METRICS.RMSD.path), so CPS could silently diverge from the
-    // displayed value whenever the two symprec levels' RMSDs differ
-    expect(ALL_METRICS.RMSD.path).toBe(`metrics.geo_opt.symprec=1e-2`)
+  it(`computes CPS from the task-level RMSD AUC the table displays`, () => {
+    // RMSD is symprec-invariant, so its score lives once at metrics.geo_opt and the
+    // table column and CPS read the same value
+    expect(ALL_METRICS.RMSD.path).toBe(`metrics.geo_opt`)
+    expect(ALL_METRICS.RMSD.key).toBe(`rmsd_auc`)
 
     const model = {
       metrics: {
         discovery: { unique_prototypes: { F1: 0.8 } },
-        geo_opt: { 'symprec=1e-2': { rmsd: 0.01 }, 'symprec=1e-5': { rmsd: 0.2 } },
+        geo_opt: { rmsd_auc: 0.8, 'symprec=1e-2': { rmsd: 0.2 } },
         phonons: { kappa_103: { κ_SRME: 0.5 } },
       },
     } as unknown as ModelData
@@ -355,8 +351,7 @@ describe(`update_models_cps`, () => {
       κ_SRME: { ...DEFAULT_CPS_CONFIG.κ_SRME, weight: 0 },
     }
     update_models_cps([model], rmsd_only_config)
-    expect(model.CPS).toBe(calculate_cps(undefined, 0.01, undefined, rmsd_only_config))
-    expect(model.CPS).not.toBe(calculate_cps(undefined, 0.2, undefined, rmsd_only_config))
+    expect(model.CPS).toBe(0.8)
   })
 
   // all-NaN arrays compare equal, so the inequalities also require some finite CPS

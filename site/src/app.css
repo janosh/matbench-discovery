@@ -85,7 +85,7 @@
   /* can be increased on pages without much text like /models */
   --main-max-width: 50rem;
 
-  --text-muted: var(--text-secondary);
+  --text-color-muted: var(--text-secondary);
 }
 html {
   scroll-behavior: smooth;
@@ -378,7 +378,7 @@ kbd {
 .diatomic-plot-placeholder {
   display: grid;
   place-items: start center;
-  color: var(--text-muted);
+  color: var(--text-color-muted);
 }
 .diatomic-plot {
   --scatter-font-size: 14px;
@@ -426,7 +426,7 @@ kbd {
   --btn-group-btn-active-border-color: var(--category-color);
 }
 /* In-plot metric annotation, bottom-right corner (energy/kappa parity plots) */
-.plot-annotation {
+.metric-annotation {
   position: absolute;
   inset: auto 2em 5em auto;
   padding: 1pt 4pt;
@@ -449,6 +449,6 @@ kbd {
   display: grid;
   min-height: 180px;
   place-items: center;
-  color: var(--text-muted);
+  color: var(--text-color-muted);
   text-align: center;
 }

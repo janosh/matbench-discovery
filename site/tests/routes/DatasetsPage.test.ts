@@ -67,10 +67,10 @@ describe(`Datasets Page`, () => {
         `Models`,
       ])
     }
-    expect(plot.series?.flatMap(({ x }) => x)).toHaveLength(
+    expect(plot.series?.flatMap(({ x }) => Array.from(x))).toHaveLength(
       Object.values(DATASETS).filter(({ n_structures }) => n_structures !== null).length,
     )
-    expect(plot.series?.every(({ y }) => y.every(Number.isFinite))).toBe(true)
+    expect(plot.series?.every(({ y }) => Array.from(y).every(Number.isFinite))).toBe(true)
     expect(plot).toMatchObject({
       color_bar: { title: `Models`, selected_property_key: `n_models` },
       color_scale: { type: { type: `arcsinh`, threshold: 0.25 } },
@@ -157,7 +157,7 @@ describe(`Datasets Page`, () => {
     [`q=phonon`, [`MDR-MP PBE ω_q`, `MDR Phonon PBE`]],
     [`access=partial`, [`GNoME`, `ELEMENTA`]],
     [`role=test`, [`WBM`, `MDR Phonon PBE`, `OCx24`, `rMD17`]],
-    [`access=partial&sort=Created`, [`ELEMENTA`, `GNoME`]],
+    [`access=partial&sort=-Created`, [`ELEMENTA`, `GNoME`]],
     [`role=repository&method=ML`, [`NOMAD`]],
     [
       `q=OMol25&access=public&method=DFT`,
@@ -182,12 +182,12 @@ describe(`Datasets Page`, () => {
     )
     plot_props().on_axis_change?.(`y`, `n_models`)
     await tick()
-    expect(plot_props().series?.flatMap(({ y }) => y)).toEqual([0])
+    expect(plot_props().series?.flatMap(({ y }) => Array.from(y))).toEqual([0])
   })
 
   it(`syncs controls and sort, handles empty results, and resets only filters`, async () => {
     await mount_query(
-      `access=invalid&role=invalid&method=invalid&sort=Links&dir=bad&color=invalid&x=role&y=invalid&size=access`,
+      `access=invalid&role=invalid&method=invalid&sort=Links&color=invalid&x=role&y=invalid&size=access`,
     )
     expect(location.search).toBe(``)
     const search = doc_query<HTMLInputElement>(`[aria-label="Search datasets"]`)
@@ -240,7 +240,7 @@ describe(`Datasets Page`, () => {
     // a third click on the sole sort key clears it, back to the data's order
     header?.click()
     await tick()
-    expect(query_param(`sort`)).toBe(`none`)
+    expect(query_param(`sort`)).toBe(``)
     expect(sorted_header()).toBeNull()
   })
 
@@ -394,7 +394,7 @@ describe(`Datasets Page`, () => {
         dataset.n_materials != null && (dim === `color` || dataset.n_structures !== null),
     )
     expect(series.map(({ id }) => id)).toEqual(entries.map(([key]) => key))
-    expect(series.flatMap((entry) => entry[series_key])).toEqual(
+    expect(series.flatMap((entry) => Array.from(entry[series_key] ?? []))).toEqual(
       entries.map(([, dataset]) => dataset.n_materials),
     )
     if (dim === `color`) expect(plot_props().color_bar?.categories).toBeUndefined()

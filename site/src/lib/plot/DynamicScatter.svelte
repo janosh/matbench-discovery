@@ -260,7 +260,7 @@
       label,
       legend_group,
       markers: `line` as const,
-      line_style: { stroke: `gray`, stroke_width: 1.5, line_dash: `5 3` },
+      line_style: { color: `gray`, width: 1.5, dash: `5 3` },
     })
 
     if (label_data_path(axes.x).includes(`date`)) {

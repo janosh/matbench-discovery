@@ -17,7 +17,6 @@
   } from '#lib/labels.js'
   import { is_finite_num, metric_value } from '#lib/metrics.js'
   import { ACTIVE_MODELS, task_page_filters } from '#lib/models.svelte.js'
-  import { sort_from_query } from 'matterviz/url-params'
   import { valid_query_param } from 'svelte-widgets/browser'
   import type { DiscoverySet, Label, ModelData } from '#lib/types.js'
   import { ButtonGroup } from 'svelte-widgets'
@@ -75,16 +74,13 @@
     new Set([...headline_metric_keys, ...col_presets[col_preset].map((col) => col.key)]),
   )
   let discovery_set: DiscoverySet = $state(`unique_prototypes`)
-  // MetricsTable reads and writes the sort's URL params; this page only re-sorts on a preset
-  // change until the user picks a column themselves
+  // MetricsTable reads and writes the sort's URL param; a preset change re-sorts only while the
+  // table still shows the previous preset's default, so a column the user picked sticks
   let sort = $state<TableSort[]>([default_sort_for(default_col_preset)])
-  let auto_sort_enabled = $state(true)
-
-  function handle_table_event(event: Event) {
-    if (event instanceof KeyboardEvent && ![`Enter`, ` `].includes(event.key)) return
-    const target = event.target
-    if (!(target instanceof Element)) return
-    if (target.closest(`thead th[tabindex="0"]`)) auto_sort_enabled = false
+  let sort_preset: ColPreset = default_col_preset
+  const shows_default_sort = (preset: ColPreset): boolean => {
+    const { column, dir } = default_sort_for(preset)
+    return sort.length === 1 && sort[0].column === column && sort[0].dir === dir
   }
 
   const valid_sets = new Set(DISCOVERY_SETS)
@@ -95,13 +91,7 @@
       default_col_preset,
       col_presets,
     )
-    const default_sort = default_sort_for(next_preset)
-    const next_sort = sort_from_query(params, default_sort)
-    auto_sort_enabled =
-      !params.has(`multi_sort`) &&
-      next_sort.column === default_sort.column &&
-      next_sort.dir === default_sort.dir
-
+    sort_preset = next_preset
     discovery_set = valid_query_param(params, `set`, `unique_prototypes`, valid_sets)
     col_preset = next_preset
     // Reapply the preset even when only its columns were customized.
@@ -141,7 +131,8 @@
       options={col_preset_options}
       tooltip_options={{ placement: `top` }}
       on_change={() => {
-        if (auto_sort_enabled) sort = [default_sort_for(col_preset)]
+        if (shows_default_sort(sort_preset)) sort = [default_sort_for(col_preset)]
+        sort_preset = col_preset
       }}
     />
   </div>
@@ -162,11 +153,7 @@
     </p>
   {/if}
 
-  <section
-    class="full-bleed"
-    onclickcapture={handle_table_event}
-    onkeydowncapture={handle_table_event}
-  >
+  <section class="full-bleed">
     <MetricsTable
       col_filter={(col) =>
         metadata_keys.has(col.key)
@@ -261,7 +248,7 @@
   }
   .intro {
     text-align: center;
-    color: var(--text-muted);
+    color: var(--text-color-muted);
     margin: 0 0 1.8em;
   }
   figcaption {
@@ -275,7 +262,7 @@
     }
     > p {
       text-align: center;
-      color: var(--text-muted);
+      color: var(--text-color-muted);
       margin-block-start: 0;
     }
   }

@@ -4,7 +4,7 @@
   import { format_num } from 'svelte-widgets/format'
   import { goto } from '$app/navigation'
   import type kappa_data from '#figs/kappa-103-analysis.jsonl'
-  import { sanitize_compact_formula } from 'matterviz/sanitize'
+  import { compact_formula, FormulaText } from 'matterviz/composition'
   import { ScatterPlot, type DataSeries } from 'matterviz/plot'
   import { CRYSTAL_SYSTEM_COLORS, spacegroup_to_crystal_sys } from 'matterviz/symmetry'
   import type { CrystalSystem } from 'matterviz/symmetry'
@@ -102,7 +102,7 @@
     {#if metadata}
       {@const point = metadata as SrmePoint}
       <strong>{point.material_id}</strong>
-      {@html sanitize_compact_formula(point.formula)} (SG {point.spg_num})<br />
+      <FormulaText text={compact_formula(point.formula)} /> (SG {point.spg_num})<br />
       PBE κ: {format_num(point.kappa_dft, `.3~`)} <small>W/mK</small><br />
       {#if point.kappa_ml !== null}
         {entry.label} κ: {format_num(point.kappa_ml, `.3~`)} <small>W/mK</small><br />

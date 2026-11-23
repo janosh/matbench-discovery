@@ -61,35 +61,35 @@ notes:
 metrics:
   discovery:
     pred_file:
-      name: models/megnet/megnet/2022-11-18-discovery.csv.gz
-      url: https://figshare.com/files/66646259
-      size: 1336003
-      md5: dc11b7fe709c309f2c5b853114b7f315
+      name: models/megnet/megnet/2026-11-19-discovery.csv.gz
+      url: https://figshare.com/files/71653837
+      size: 1337639
+      md5: c00e57f2fb7e6903a9fa6de0593cd351
     full_test_set:
-      F1: 0.513 # fraction
-      DAF: 2.699 # dimensionless
+      F1: 0.512 # fraction
+      DAF: 2.707 # dimensionless
       Precision: 0.463 # fraction
       Recall: 0.574 # fraction
       Accuracy: 0.813 # fraction
-      TP: 25311 # count
-      FP: 29342 # count
-      TN: 183529 # count
-      FN: 18781 # count
+      TP: 25223 # count
+      FP: 29254 # count
+      TN: 183752 # count
+      FN: 18734 # count
       MAE: 0.128 # eV/atom
       RMSE: 0.204 # eV/atom
-      R2: -0.277 # dimensionless
+      R2: -0.275 # dimensionless
       missing_preds: 1 # count
     unique_prototypes:
       F1: 0.51 # fraction
-      DAF: 2.959 # dimensionless
+      DAF: 2.97 # dimensionless
       Precision: 0.452 # fraction
       Recall: 0.585 # fraction
-      Accuracy: 0.826 # fraction
-      TP: 19537 # count
-      FP: 23651 # count
-      TN: 158463 # count
-      FN: 13837 # count
+      Accuracy: 0.827 # fraction
+      TP: 19444 # count
+      FP: 23564 # count
+      TN: 158682 # count
+      FN: 13798 # count
       MAE: 0.13 # eV/atom
       RMSE: 0.206 # eV/atom
-      R2: -0.248 # dimensionless
+      R2: -0.246 # dimensionless
       missing_preds: 0 # count

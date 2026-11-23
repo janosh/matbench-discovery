@@ -9,7 +9,8 @@
   import { get_nested_value, label_data_path, sort_models } from '#lib/metrics.js'
   import { MODELS } from '#lib/models.svelte.js'
   import { bind_url_params } from '#lib/url-state.svelte.js'
-  import { valid_query_param } from 'svelte-widgets/browser'
+  import type { TableSort } from 'svelte-widgets/table'
+  import { sort_from_param, sort_url_entry } from 'svelte-widgets/table'
   import { clamp_integer } from 'svelte-widgets/utils'
   import { ColorBar } from 'matterviz/plot'
   import { get_d3_interpolator } from 'matterviz/colors'
@@ -38,18 +39,24 @@
   ]
   const sort_options = [{ ...METADATA_COLS.model_name, label: `Model Name` }, ...metrics]
 
-  const order_dirs = new Set([`asc`, `desc`] as const)
+  const sort_options_by_key = new Map(sort_options.map((option) => [option.key, option]))
+  const default_sort: TableSort[] = [{ column: ALL_METRICS.CPS.key, dir: `desc` }]
   const read_url_params = (params: URLSearchParams) => {
-    sort_by =
-      sort_options.find(({ key }) => key === params.get(`sort`)) ?? ALL_METRICS.CPS
-    order = valid_query_param(params, `dir`, `desc`, order_dirs)
+    // cards sort by one key: the first of a multi-key `?sort`, the default for an empty one
+    const [{ column, dir }] = [
+      ...sort_from_param(params, default_sort, {
+        valid_columns: new Set(sort_options_by_key.keys()),
+      }),
+      ...default_sort,
+    ]
+    sort_by = sort_options_by_key.get(column) ?? ALL_METRICS.CPS
+    order = dir
     // Missing, non-numeric, or below-minimum limits reset to all models.
     const n_best = Number(params.get(`n_best`) ?? ``)
     show_n_best = n_best >= min_models ? clamp_model_count(n_best) : MODELS.length
   }
   bind_url_params(read_url_params, () => [
-    [`sort`, sort_by.key, ALL_METRICS.CPS.key],
-    [`dir`, order, `desc`],
+    sort_url_entry([{ column: sort_by.key, dir: order }], default_sort),
     [`n_best`, `${model_limit}`, `${MODELS.length}`],
   ])
 

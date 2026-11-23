@@ -67,7 +67,7 @@ hyperparams:
     cell_filter: FrechetCellFilter
     kappa:
       protocol: phonondb-v1
-      displacement_distance: 0.01 # legacy runs used 0.01 Å; the PhononDB-PBE reference uses 0.03 Å
+      displacement_distance: 0.03 # k_SRME run: its init_phono3py default, not overridden by the script
   architecture:
     graph_construction_radius: 12.0
     max_neighbors: 20
@@ -141,32 +141,32 @@ metrics:
       size: 1327151
       md5: 3658def6173e02579455ba480ff77ea4
     full_test_set:
-      F1: 0.896 # fraction
-      DAF: 5.243 # dimensionless
-      Precision: 0.9 # fraction
-      Recall: 0.893 # fraction
-      Accuracy: 0.965 # fraction
-      TP: 39379 # count
-      FP: 4393 # count
-      TN: 208478 # count
-      FN: 4713 # count
-      MAE: 0.02 # eV/atom
-      RMSE: 0.071 # eV/atom
-      R2: 0.842 # dimensionless
+      F1: 0.902 # fraction
+      DAF: 5.279 # dimensionless
+      Precision: 0.903 # fraction
+      Recall: 0.901 # fraction
+      Accuracy: 0.966 # fraction
+      TP: 39584 # count
+      FP: 4249 # count
+      TN: 208757 # count
+      FN: 4373 # count
+      MAE: 0.019 # eV/atom
+      RMSE: 0.07 # eV/atom
+      R2: 0.848 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.917 # fraction
-      DAF: 6.047 # dimensionless
-      Precision: 0.924 # fraction
-      Recall: 0.91 # fraction
-      Accuracy: 0.975 # fraction
-      TP: 30372 # count
-      FP: 2481 # count
-      TN: 179633 # count
-      FN: 3002 # count
-      MAE: 0.02 # eV/atom
-      RMSE: 0.072 # eV/atom
-      R2: 0.848 # dimensionless
+      F1: 0.923 # fraction
+      DAF: 6.092 # dimensionless
+      Precision: 0.927 # fraction
+      Recall: 0.918 # fraction
+      Accuracy: 0.976 # fraction
+      TP: 30520 # count
+      FP: 2388 # count
+      TN: 179858 # count
+      FN: 2722 # count
+      MAE: 0.019 # eV/atom
+      RMSE: 0.07 # eV/atom
+      R2: 0.854 # dimensionless
       missing_preds: 0 # count
   geo_opt:
     pred_file:
@@ -174,32 +174,31 @@ metrics:
       url: https://figshare.com/files/70327950
       size: 197152265
       md5: 1213bbac261de149a1d9bd19802d0398
+    rmsd_auc: 0.7809 # fraction
     symprec=1e-5:
-      rmsd: 0.0691 # unitless
-      n_sym_ops_mae: 9.7872 # unitless
+      n_sym_ops_mae: 9.7871 # unitless
       symmetry_decrease: 0.852 # fraction
       symmetry_match: 0.1422 # fraction
       symmetry_increase: 0.0045 # fraction
       symmetry_lateral: 0.0013 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/eqv2/eqv2-m-omat-salex-mp/2024-10-18-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333686
-        size: 6429074
-        md5: 6f4d9d940eb540929bdcf20646395b18
+        name: models/eqv2/eqv2-m-omat-salex-mp/2024-10-18-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71652499
+        size: 6450651
+        md5: 5140f73b825e16f1eb244b2d89808062
     symprec=1e-2:
-      rmsd: 0.0691 # unitless
       n_sym_ops_mae: 1.9989 # unitless
-      symmetry_decrease: 0.1118 # fraction
-      symmetry_match: 0.7725 # fraction
+      symmetry_decrease: 0.1117 # fraction
+      symmetry_match: 0.7726 # fraction
       symmetry_increase: 0.1052 # fraction
       symmetry_lateral: 0.0105 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/eqv2/eqv2-m-omat-salex-mp/2024-10-18-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333689
-        size: 6892677
-        md5: 9b92c24ac407560159dd1fbd575b0409
+        name: models/eqv2/eqv2-m-omat-salex-mp/2024-10-18-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71652583
+        size: 6918357
+        md5: de8fcea6fba712cb42b1c4d19cb3854b
   md:
     pred_file:
       name: models/eqv2/eqv2-m-omat-salex-mp/2026-06-28-md-metrics.csv.gz

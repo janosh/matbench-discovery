@@ -29,39 +29,49 @@ def get_sym_info_from_structs(
             Structures or ASE Atoms objects
         pbar (bool | dict[str, Any], optional): Whether to show progress bar. Defaults
             to True.
-        symprec (float, optional): Symmetry precision of moyopy. Defaults to 1e-2.
+        symprec (float, optional): Symmetry precision of moyopy in Å. Defaults to 1e-2.
         angle_tolerance (float, optional): Angle tolerance of moyopy (in radians unlike
             spglib which uses degrees!). Defaults to None.
 
     Returns:
-        pd.DataFrame: DataFrame containing symmetry information for each structure
+        pd.DataFrame: DataFrame containing symmetry information for each structure.
+            Hall numbers (and the Hall symbols and Wyckoff letters that follow from
+            them) are in spglib's setting (smallest Hall number per space group), as
+            in the registered WBM DFT symmetry references. moyopy's default setting
+            differs for some space groups (e.g. origin choice 2).
     """
     import moyopy
     from moyopy.interface import MoyoAdapter
 
+    spglib_setting = moyopy.Setting.spglib()
     results: dict[str, dict[str, str | int | list[str] | float | None]] = {}
-    iterator = structures.items()
-    if pbar:
-        pbar_kwargs = {"desc": "Analyzing symmetry"} | (
-            pbar if isinstance(pbar, dict) else {}
-        )
-        iterator = tqdm(iterator, total=len(structures), **pbar_kwargs)
+    pbar_kwargs = pbar if isinstance(pbar, dict) else {"disable": not pbar}
+    iterator = tqdm(
+        structures.items(),
+        total=len(structures),
+        **{"desc": "Analyzing symmetry"} | pbar_kwargs,
+    )
 
     for struct_key, struct in iterator:
         if not isinstance(struct, (Structure, ase.atoms.Atoms)):
             raise TypeError(
                 f"Expected Structure or Atoms for {struct_key!r}, got {type(struct)}"
             )
-        moyo_cell = MoyoAdapter.from_py_obj(struct)
-
-        sym_data = moyopy.MoyoDataset(
-            moyo_cell, symprec=symprec, angle_tolerance=angle_tolerance
-        )
+        try:
+            sym_data = moyopy.MoyoDataset(
+                MoyoAdapter.from_py_obj(struct),
+                symprec=symprec,
+                angle_tolerance=angle_tolerance,
+                setting=spglib_setting,
+            )
+        except Exception as exc:  # name the failing structure, then re-raise
+            exc.add_note(f"{Key.mat_id}={struct_key!r}")
+            raise
 
         sym_ops = sym_data.operations
         hall_symbol_entry = moyopy.HallSymbolEntry(hall_number=sym_data.hall_number)
 
-        sym_info = {
+        results[struct_key] = {
             Key.spg_num: sym_data.number,
             Key.hall_num: sym_data.hall_number,
             MbdKey.international_spg_name: hall_symbol_entry.hm_short,
@@ -70,10 +80,9 @@ def get_sym_info_from_structs(
             Key.n_rot_syms: len(sym_ops.rotations),
             Key.n_trans_syms: len(sym_ops.translations),
             Key.hall_symbol: hall_symbol_entry.hall_symbol,
+            Key.symprec: symprec,
+            Key.angle_tolerance: angle_tolerance,
         }
-        results[struct_key] = sym_info | dict(
-            symprec=symprec, angle_tolerance=angle_tolerance
-        )
 
     df_sym = pd.DataFrame(results).T
     df_sym.index.name = Key.mat_id
@@ -90,9 +99,6 @@ def pred_vs_ref_struct_symmetry(
 ) -> pd.DataFrame:
     """Get RMSD and compare symmetry between ML and DFT reference structures.
 
-    Returns a copy of df_sym_pred with added columns for symmetry differences and
-    RMSDs; the input DataFrame is left unchanged.
-
     Args:
         df_sym_pred (pd.DataFrame): symmetry information for ML model as returned by
             analyze_symmetry.
@@ -104,7 +110,8 @@ def pred_vs_ref_struct_symmetry(
             to True.
 
     Returns:
-        pd.DataFrame: with added columns for symmetry differences
+        pd.DataFrame: copy of df_sym_pred (input left unchanged) with added columns for
+            symmetry differences and RMSDs.
     """
     if df_sym_ref.index.name != Key.mat_id:
         raise ValueError(f"{df_sym_ref.index.name=} must be {Key.mat_id!s}")
@@ -122,24 +129,26 @@ def pred_vs_ref_struct_symmetry(
     # positions from DFT-relaxed positions. details in https://github.com/janosh/matbench-discovery/issues/230
     structure_matcher = StructureMatcher(stol=1.0, scale=False)
     ref_ids, pred_ids = set(ref_structs), set(pred_structs)
-    shared_ids = ref_ids & pred_ids
+    shared_ids = sorted(ref_ids & pred_ids)
     if len(shared_ids) == 0:
         raise ValueError(f"No shared IDs between:\n{pred_ids=}\n{ref_ids=}")
 
-    df_result[MbdKey.structure_rmsd_vs_dft] = None
-
-    if pbar:
-        pbar_kwargs = pbar if isinstance(pbar, dict) else {}
-        shared_ids = tqdm(
-            shared_ids,
-            **dict(leave=False, desc="Calculating RMSD") | pbar_kwargs,
-        )
-
-    for mat_id in shared_ids:
-        rmsd, max_dist = structure_matcher.get_rms_dist(
-            pred_structs[mat_id], ref_structs[mat_id]
-        ) or (None, None)
-        df_result.loc[mat_id, MbdKey.structure_rmsd_vs_dft] = rmsd
-        df_result.loc[mat_id, Key.max_pair_dist] = max_dist
+    pbar_kwargs = pbar if isinstance(pbar, dict) else {"disable": not pbar}
+    iterator = tqdm(
+        shared_ids, **{"leave": False, "desc": "Calculating RMSD"} | pbar_kwargs
+    )
+    # normalized RMS and max displacement, NaN for unmatched pairs and for IDs
+    # without a reference structure (float columns, never None/object dtype)
+    df_rms = pd.DataFrame(
+        [
+            structure_matcher.get_rms_dist(pred_structs[mat_id], ref_structs[mat_id])
+            or (float("nan"),) * 2
+            for mat_id in iterator
+        ],
+        index=shared_ids,
+        columns=[MbdKey.structure_rmsd_vs_dft, Key.max_pair_dist],
+        dtype=float,
+    )
+    df_result[df_rms.columns] = df_rms.reindex(df_result.index)
 
     return df_result

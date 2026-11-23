@@ -33,6 +33,7 @@ from matbench_discovery.hpc import (
     material_id_hash,
     memory_peaks,
     merge_audit_metadata,
+    model_supports_elements,
     reset_gpu_peak_memory,
 )
 
@@ -302,15 +303,13 @@ def load_wbm_atoms(
         return {material_id: atoms_by_id[material_id] for material_id in expected_ids}
 
     candidate_ids = [
-        material_id for material_id in expected_ids if material_id in atoms_by_id
+        material_id
+        for material_id in expected_ids
+        if material_id in atoms_by_id
+        and model_supports_elements(
+            model_key, atoms_by_id[material_id].get_chemical_symbols()
+        )
     ]
-    if model_key == "emt":
-        emt_elements = {"H", "Al", "Ni", "Cu", "Pd", "Ag", "Pt", "Au"}
-        candidate_ids = [
-            material_id
-            for material_id in candidate_ids
-            if set(atoms_by_id[material_id].get_chemical_symbols()) <= emt_elements
-        ]
     selected_ids = candidate_ids[:DEFAULT_DRY_RUN_STRUCTURES]
     if not selected_ids:
         raise ValueError(f"No dry-run-compatible WBM structures found for {model_key}")
@@ -364,9 +363,18 @@ def _json_default(value: object) -> object:
     raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
 
 
+def _event_payload(event: Mapping[str, Any]) -> str:
+    """One JSONL event line (raises on non-serializable or non-finite values)."""
+    return json.dumps(event, default=_json_default, allow_nan=False)
+
+
 def _append_shard_event(shard_path: str, event: Mapping[str, Any]) -> None:
     """Append and fsync one JSONL event."""
-    payload = json.dumps(event, default=_json_default, allow_nan=False)
+    _append_shard_line(shard_path, _event_payload(event))
+
+
+def _append_shard_line(shard_path: str, payload: str) -> None:
+    """Append and fsync one serialized JSONL event."""
     with open(shard_path, mode="ab+") as file:
         file.seek(0, os.SEEK_END)
         if file.tell():
@@ -561,14 +569,17 @@ def run_discovery_shard(
             }
             record = replace(record, **cost)
             try:
-                _append_shard_event(shard_path, {"type": "record", **asdict(record)})
+                payload = _event_payload({"type": "record", **asdict(record)})
             except (TypeError, ValueError) as exc:
                 # a non-JSON-serializable relaxed structure must not become a poison
                 # pill that crashes this run and every resume at the same material
-                error = f"unserializable relaxation record: {exc}"
+                error = f"unserializable relaxation record: {type(exc).__name__}: {exc}"
                 record = replace(RelaxationRecord(material_id, error=error), **cost)
                 print(f"Failed to serialize {material_id}: {record.error}")
-                _append_shard_event(shard_path, {"type": "record", **asdict(record)})
+                payload = _event_payload({"type": "record", **asdict(record)})
+            # outside the try: a failed write (e.g. fsync OSError) must propagate,
+            # not append a second record for the same material
+            _append_shard_line(shard_path, payload)
         return read_discovery_shard(shard_path)
 
 
@@ -685,7 +696,7 @@ def _load_wbm_cse_frame(material_ids: Sequence[str] | None = None) -> pd.DataFra
         DataFiles.wbm_computed_structure_entries.path, lines=True
     ).set_index(Key.mat_id)
     if material_ids is not None:
-        df_wbm_cse = df_wbm_cse.loc[df_wbm_cse.index.isin(material_ids)]
+        df_wbm_cse = df_wbm_cse.loc[df_wbm_cse.index.isin(list(material_ids))]
     df_wbm_cse[Key.computed_structure_entry] = [
         ComputedStructureEntry.from_dict(entry)
         for entry in tqdm(

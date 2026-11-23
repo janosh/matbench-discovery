@@ -62,35 +62,35 @@ notes:
 metrics:
   discovery:
     pred_file:
-      name: models/wrenformer/wrenformer/2022-11-15-discovery.csv.gz
-      url: https://figshare.com/files/66646136
-      size: 1619355
-      md5: 5d8f9eecf0cfcb2a7f9901af68f3f16e
+      name: models/wrenformer/wrenformer/2026-11-19-discovery.csv.gz
+      url: https://figshare.com/files/71653852
+      size: 1618804
+      md5: 1994cfd6a26700ac9c1fb58189711dcd
     full_test_set:
       F1: 0.479 # fraction
-      DAF: 2.13 # dimensionless
-      Precision: 0.365 # fraction
-      Recall: 0.693 # fraction
-      Accuracy: 0.741 # fraction
-      TP: 30566 # count
-      FP: 53076 # count
-      TN: 159795 # count
-      FN: 13526 # count
+      DAF: 2.137 # dimensionless
+      Precision: 0.366 # fraction
+      Recall: 0.692 # fraction
+      Accuracy: 0.742 # fraction
+      TP: 30433 # count
+      FP: 52802 # count
+      TN: 160204 # count
+      FN: 13524 # count
       MAE: 0.105 # eV/atom
       RMSE: 0.182 # eV/atom
-      R2: -0.02 # dimensionless
+      R2: -0.018 # dimensionless
       missing_preds: 7 # count
     unique_prototypes:
       F1: 0.466 # fraction
-      DAF: 2.256 # dimensionless
+      DAF: 2.265 # dimensionless
       Precision: 0.345 # fraction
-      Recall: 0.719 # fraction
-      Accuracy: 0.745 # fraction
-      TP: 23992 # count
-      FP: 45575 # count
-      TN: 136539 # count
-      FN: 9382 # count
+      Recall: 0.718 # fraction
+      Accuracy: 0.746 # fraction
+      TP: 23863 # count
+      FP: 45339 # count
+      TN: 136907 # count
+      FN: 9379 # count
       MAE: 0.11 # eV/atom
       RMSE: 0.186 # eV/atom
-      R2: -0.018 # dimensionless
+      R2: -0.016 # dimensionless
       missing_preds: 5 # count

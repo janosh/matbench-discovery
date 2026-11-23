@@ -120,7 +120,7 @@
   .value {
     display: flex;
     align-items: baseline;
-    color: var(--text-muted);
+    color: var(--text-color-muted);
   }
   input {
     field-sizing: content;
@@ -143,7 +143,7 @@
   small {
     display: block;
     margin-top: 0.5em;
-    color: var(--text-muted);
+    color: var(--text-color-muted);
     font-size: 0.85em;
   }
 </style>

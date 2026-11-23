@@ -15,8 +15,11 @@ import {
   update_models_cmds,
 } from './combined-scores.svelte.js'
 import { get_org_logo } from './labels.js'
-import { apply_weights_param, weights_to_param } from 'matterviz/url-params'
-import type { UrlParamEntry } from 'svelte-widgets/browser'
+import {
+  numbers_from_param,
+  numbers_url_entry,
+  type UrlParamEntry,
+} from 'svelte-widgets/browser'
 import { bind_url_params, UrlTableFilters } from './url-state.svelte.js'
 
 // client bundles lack the ServerOnlyModelKey fields (see #lib/types.js)
@@ -117,12 +120,10 @@ export const ACTIVE_MODELS = MODELS.slice(0, active_entries.length)
 export function update_models_cps(models: ModelData[], cps_config: CpsConfig) {
   models.forEach((model) => {
     const f1 = model.metrics?.discovery?.unique_prototypes?.F1
-    // use symprec=1e-2 to match the RMSD column path declared in ALL_METRICS.RMSD,
-    // so the displayed RMSD is the same value that feeds into CPS
-    const rmsd = model.metrics?.geo_opt?.[`symprec=1e-2`]?.rmsd
+    const rmsd_auc = model.metrics?.geo_opt?.rmsd_auc
     const kappa = model.metrics?.phonons?.kappa_103?.κ_SRME
 
-    model.CPS = calculate_cps(f1, rmsd, kappa, cps_config) ?? Number.NaN
+    model.CPS = calculate_cps(f1, rmsd_auc, kappa, cps_config) ?? Number.NaN
   })
 }
 
@@ -136,7 +137,8 @@ update_models_cmds(MODELS, CMDS_CONFIG)
 // semantics as CPS/CMDS
 update_models_cds(MODELS, CDS_CONFIG)
 
-const score_configs = {
+type WeightConfig = Record<string, { weight: number }>
+const score_configs: Record<string, { config: WeightConfig; defaults: WeightConfig }> = {
   CPS: { config: CPS_CONFIG, defaults: DEFAULT_CPS_CONFIG },
   CMDS: { config: CMDS_CONFIG, defaults: DEFAULT_CMDS_CONFIG },
   CDS: { config: CDS_CONFIG, defaults: DEFAULT_CDS_CONFIG },
@@ -153,6 +155,10 @@ export const score_weight_records = (): Record<string, Record<string, number>> =
     ]),
   )
 
+// config's weights in the defaults' key order, which fixes each one's position in the URL param
+const weight_list = (config: WeightConfig, defaults: WeightConfig): number[] =>
+  Object.keys(defaults).map((name) => config[name].weight)
+
 // Mounted once in the root layout so model pages and comparisons restore scores
 // without depending on a task's weight-adjustment chart being present. In-app links
 // without a weights param keep the current weights; entry and back/forward reset them.
@@ -161,16 +167,23 @@ export function bind_score_weights(): void {
     (params, { type }) => {
       const reset_missing = type === `enter` || type === `popstate`
       for (const [score, { config, defaults }] of Object.entries(score_configs)) {
-        const param = params.get(`${score.toLowerCase()}_weights`)
-        if (param !== null || reset_missing) apply_weights_param(param, config, defaults)
+        const key = `${score.toLowerCase()}_weights`
+        if (params.get(key) === null && !reset_missing) continue
+        const weights = numbers_from_param(params, key, weight_list(defaults, defaults), {
+          normalize: true,
+        })
+        for (const [idx, name] of Object.keys(defaults).entries())
+          config[name].weight = weights[idx]
       }
     },
     () =>
-      Object.entries(score_configs).map(([score, { config, defaults }]) => [
-        `${score.toLowerCase()}_weights`,
-        // full precision so a shared link reproduces its scores exactly
-        weights_to_param(config, defaults, { decimals: Infinity }),
-      ]),
+      Object.entries(score_configs).map(([score, { config, defaults }]) =>
+        numbers_url_entry(
+          `${score.toLowerCase()}_weights`,
+          weight_list(config, defaults),
+          weight_list(defaults, defaults),
+        ),
+      ),
   )
   $effect(() => {
     update_models_cps(MODELS, CPS_CONFIG)

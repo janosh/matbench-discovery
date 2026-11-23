@@ -59,11 +59,8 @@ def _check_density(values: np.ndarray, label: str, *, check_area: bool = True) -
         raise ValueError(f"{label} has non-positive area")
 
 
-# units of per-system metric columns shared between eval scripts and aggregation
-# (no combined_score here: CMDS is site-computed, see module docstring)
-# NOTE: these are the *model-level* units after calc_md_metrics aggregation. In the
-# per-system CSVs written by run_md_benchmark, energy_rmse/force_rmse are still in
-# eV/atom and eV/Å (calc_energy_force_rmse output); calc_md_metrics scales them x1000.
+# model-level units of the metric columns (no combined_score: CMDS is site-computed).
+# Per-system CSV energy_rmse/force_rmse are in eV/atom and eV/Å; calc_md_metrics x1000
 METRIC_UNITS = {
     "energy_rmse": "meV/atom",
     "force_rmse": "meV/Å",
@@ -513,9 +510,7 @@ def calc_vdos_error(
     return float(min(1, w1 / sigma_ref) * 100)
 
 
-def get_trajectory_pressures(
-    trajectory: TrajectoryLike,
-) -> np.ndarray:
+def get_trajectory_pressures(trajectory: TrajectoryLike) -> np.ndarray:
     """Per-frame pressures in GPa from the per-frame Voigt stresses (paper Eq. 5),
     vectorized over frames. Raises ValueError if the trajectory has no stress data.
     """
@@ -558,14 +553,11 @@ def calc_pressure_metrics(
     noise rather than model bias. W1 and E_P compare the full pressure distributions,
     capturing both the mean offset and fluctuation-width differences.
     """
-    pressures_ref = np.asarray(pressures_ref)
-    pressures_pred = np.asarray(pressures_pred)
+    pressures_ref, pressures_pred = map(np.asarray, (pressures_ref, pressures_pred))
     if len(pressures_ref) == 0 or len(pressures_pred) == 0:
         raise ValueError("Cannot compute pressure metrics of empty pressure arrays")
-
-    mae = abs(float(pressures_ref.mean()) - float(pressures_pred.mean()))
     return {
-        "pressure_mae": mae,
+        "pressure_mae": abs(float(pressures_ref.mean()) - float(pressures_pred.mean())),
         "pressure_wasserstein": float(
             wasserstein_distance(pressures_ref, pressures_pred)
         ),
@@ -629,7 +621,13 @@ def calc_energy_force_rmse(
         )
         atoms.calc = calculator
         energy_pred[frame_idx] = atoms.get_potential_energy()
-        force_se[frame_idx] = ((atoms.get_forces() - traj.forces[frame_idx]) ** 2).sum()
+        forces, ref_forces = atoms.get_forces(), traj.forces[frame_idx]
+        if forces.shape != ref_forces.shape:  # would broadcast silently
+            raise ValueError(
+                f"Expected forces of shape {ref_forces.shape} at frame {frame_idx}, "
+                f"got {forces.shape}"
+            )
+        force_se[frame_idx] = ((forces - ref_forces) ** 2).sum()
 
     pred_dev = (energy_pred - energy_pred.mean()) / traj.n_atoms
     ref_dev = (traj.energy - traj.energy.mean()) / traj.n_atoms
@@ -810,7 +808,9 @@ def write_metrics_to_yaml(
 
     The ``cost`` mapping comes atomically from the ``metrics`` cost keys via
     hpc.with_cost_block. ``pred_file_path=None`` recomputes the registered CSV
-    (keeping its file ref), a path registers a new CSV.
+    (keeping its file ref), a path registers a new CSV. A legacy CSV cost without a
+    cost_source that no YAML cost block tags is unattributable, so it is skipped
+    (with a message) rather than published or guessed.
     """
     if pred_file_path is None and pred_file_url is not None:
         raise ValueError("pred_file_url requires pred_file_path")
@@ -832,9 +832,16 @@ def write_metrics_to_yaml(
             )
         elif "pred_file" in existing:
             block["pred_file"] = existing["pred_file"]
+        cost = artifact_cost
+        if cost and cost.get("cost_source") is None and not existing.get("cost"):
+            print(
+                f"\t{model.name}: skipping MD cost {cost}: the artifact records no "
+                "cost_source and the YAML has no cost block to attribute it to"
+            )
+            cost = {}
         block = with_cost_block(
             block | scores,
-            artifact_cost,
+            cost,
             after="pred_file",
             existing=existing,
             same_artifact=pred_file_path is None,

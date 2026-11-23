@@ -148,32 +148,32 @@ metrics:
       size: 1322880
       md5: 50525b716267ba5e4396a6be01d83dc1
     full_test_set:
-      F1: 0.766 # fraction
-      DAF: 4.361 # dimensionless
-      Precision: 0.748 # fraction
-      Recall: 0.784 # fraction
-      Accuracy: 0.918 # fraction
-      TP: 34551 # count
-      FP: 11622 # count
-      TN: 201249 # count
-      FN: 9541 # count
+      F1: 0.77 # fraction
+      DAF: 4.388 # dimensionless
+      Precision: 0.751 # fraction
+      Recall: 0.79 # fraction
+      Accuracy: 0.919 # fraction
+      TP: 34709 # count
+      FP: 11535 # count
+      TN: 201471 # count
+      FN: 9248 # count
       MAE: 0.039 # eV/atom
       RMSE: 0.082 # eV/atom
-      R2: 0.791 # dimensionless
+      R2: 0.795 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.777 # fraction
-      DAF: 4.932 # dimensionless
-      Precision: 0.754 # fraction
-      Recall: 0.801 # fraction
-      Accuracy: 0.929 # fraction
-      TP: 26723 # count
-      FP: 8721 # count
-      TN: 173393 # count
-      FN: 6651 # count
-      MAE: 0.041 # eV/atom
-      RMSE: 0.084 # eV/atom
-      R2: 0.793 # dimensionless
+      F1: 0.781 # fraction
+      DAF: 4.965 # dimensionless
+      Precision: 0.756 # fraction
+      Recall: 0.807 # fraction
+      Accuracy: 0.93 # fraction
+      TP: 26832 # count
+      FP: 8670 # count
+      TN: 173576 # count
+      FN: 6410 # count
+      MAE: 0.04 # eV/atom
+      RMSE: 0.083 # eV/atom
+      R2: 0.798 # dimensionless
       missing_preds: 0 # count
   geo_opt:
     pred_file:
@@ -181,32 +181,31 @@ metrics:
       url: https://figshare.com/files/70325145
       size: 142688075
       md5: e85f99ac89f805843e52697c345b9204
+    rmsd_auc: 0.6937 # fraction
     symprec=1e-2:
-      rmsd: 0.0796 # unitless
-      n_sym_ops_mae: 1.8758 # unitless
+      n_sym_ops_mae: 1.8759 # unitless
       symmetry_decrease: 0.0755 # fraction
       symmetry_match: 0.8002 # fraction
       symmetry_increase: 0.1163 # fraction
       symmetry_lateral: 0.008 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/hienet/hienet/2025-07-01-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333749
-        size: 6823514
-        md5: f1ba446c5d553895b61424e5af046677
+        name: models/hienet/hienet/2025-07-01-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653003
+        size: 6852680
+        md5: 52e80e11fe69635f720875efed73254e
     symprec=1e-5:
-      rmsd: 0.0796 # unitless
-      n_sym_ops_mae: 2.6208 # unitless
+      n_sym_ops_mae: 2.6206 # unitless
       symmetry_decrease: 0.3493 # fraction
       symmetry_match: 0.4521 # fraction
       symmetry_increase: 0.1532 # fraction
       symmetry_lateral: 0.0454 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/hienet/hienet/2025-07-01-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://figshare.com/files/70333752
-        size: 6750262
-        md5: 428e67078395aead22aae7c0461ca461
+        name: models/hienet/hienet/2025-07-01-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71653033
+        size: 6778807
+        md5: 7e0d4b6eff3212f6c6de100f05cf1145
   md:
     pred_file:
       name: models/hienet/hienet/2026-06-28-md-metrics.csv.gz

@@ -34,6 +34,7 @@ from matbench_discovery.hpc import (
     material_id_hash,
     memory_peaks,
     merge_audit_metadata,
+    model_supports_elements,
     partition_material_ids,
     reset_gpu_peak_memory,
 )
@@ -459,10 +460,13 @@ def kappa_source_digest(adapter: StandardKappaAdapter, model_key: str) -> str:
 def load_phonondb_atoms(
     dataset_path: str | None = None,
     *,
+    model_key: str,
     dry_run: bool = False,
     dry_run_size: int = 1,
 ) -> dict[str, Atoms]:
-    """Load the canonical 103 structures and optionally retain a smoke-test subset."""
+    """Load the canonical 103 structures and optionally retain a smoke-test subset of
+    the smallest structures whose elements model_key supports.
+    """
     from ase.io import read
 
     path = dataset_path or DataFiles.phonondb_pbe_103_structures.path
@@ -480,14 +484,18 @@ def load_phonondb_atoms(
         )
     if not dry_run:
         return atoms_by_id
-    if not 1 <= dry_run_size <= len(atoms_by_id):
+    candidates = [
+        (material_id, atoms)
+        for material_id, atoms in atoms_by_id.items()
+        if model_supports_elements(model_key, atoms.get_chemical_symbols())
+    ]
+    if not 1 <= dry_run_size <= len(candidates):
         raise ValueError(
-            f"dry_run_size must be in [1, {len(atoms_by_id)}], got {dry_run_size}"
+            f"dry_run_size must be in [1, {len(candidates)}] (PhononDB structures "
+            f"{model_key} supports), got {dry_run_size}"
         )
-    smallest_structures = sorted(
-        atoms_by_id.items(), key=lambda item: (len(item[1]), item[0])
-    )[:dry_run_size]
-    return dict(smallest_structures)
+    candidates.sort(key=lambda item: (len(item[1]), item[0]))
+    return dict(candidates[:dry_run_size])
 
 
 def build_kappa_manifest(
@@ -634,9 +642,7 @@ def calculate_kappa_for_structure(
         error_stage = "ForceConstant"
         phono3py = adapter.init_phono3py(atoms, settings)
         phono3py, fc2_set, frequencies = adapter.calculate_fc2(
-            phono3py,
-            calculator,
-            settings,
+            phono3py, calculator, settings
         )
         has_imaginary_modes = check_imaginary_freqs(frequencies)
         result |= {
@@ -668,10 +674,7 @@ def calculate_kappa_for_structure(
             settings=settings,
         ):
             fc3_set = adapter.calculate_fc3(
-                phono3py,
-                calculator,
-                settings,
-                max_evaluations=max_fc3_evaluations,
+                phono3py, calculator, settings, max_evaluations=max_fc3_evaluations
             )
             if forces is not None:
                 forces = force_sets.add_fc3_forces(forces, phono3py, fc3_set)
@@ -918,12 +921,9 @@ def merge_kappa_shards(
             f"Manifest model {manifest.model_key!r} does not match {model_key!r}"
         )
 
-    expected_ids_source = (
-        expected_material_ids
-        if expected_material_ids is not None
-        else manifest.material_ids
-    )
-    expected_ids = tuple(map(str, expected_ids_source))
+    if expected_material_ids is None:
+        expected_material_ids = manifest.material_ids
+    expected_ids = tuple(map(str, expected_material_ids))
     if len(expected_ids) != len(set(expected_ids)):
         raise ValueError("Expected kappa material IDs contain duplicates")
     if expected_ids != manifest.material_ids:

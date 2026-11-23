@@ -4,12 +4,13 @@
   import { element_tooltip } from '#lib/plot/DiatomicCurve.svelte'
   import { bind_url_params } from '#lib/url-state.svelte.js'
   import { ScatterPlot } from 'matterviz/plot'
-  import { element_data, element_groups } from 'matterviz/element'
+  import { element_data } from 'matterviz/element'
   import { DEFAULT_CATEGORY_COLORS } from 'matterviz/colors'
   import { SvelteSet } from 'svelte/reactivity'
   import type { PageData } from './$types'
   import {
     DFT_REF_COLORS,
+    ELEMENT_GROUPS,
     ElementGroupParam,
     make_plot_observer,
     tint_element_groups,
@@ -29,7 +30,7 @@
   const element_group = new ElementGroupParam()
   let formulas = $derived(
     element_data
-      .filter(element_group.group.includes)
+      .filter(element_group.includes)
       .map((element) => ({ formula: `${element.symbol}-${element.symbol}`, element }))
       .filter(({ formula }) => formula in magmom_curves),
   )
@@ -61,9 +62,9 @@
             ...(atom_idx === 1 ? { fill_opacity: 0.5 } : {}),
           },
           line_style: {
-            stroke: DFT_REF_COLORS[functional] ?? `gray`,
+            color: DFT_REF_COLORS[functional] ?? `gray`,
             // atom 2 dashed so overlapping FM branches (m1 == m2) stay legible
-            ...(atom_idx === 1 ? { line_dash: `4 3` } : {}),
+            ...(atom_idx === 1 ? { dash: `4 3` } : {}),
           },
         })),
       )
@@ -109,7 +110,7 @@
   label="Element group filter"
   class="element-group-filter"
   {@attach tint_element_groups}
-  options={element_groups}
+  options={ELEMENT_GROUPS}
   bind:value={element_group.key}
   style="margin-block: 1em"
 />

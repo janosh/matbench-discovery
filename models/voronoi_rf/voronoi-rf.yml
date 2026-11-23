@@ -54,35 +54,35 @@ notes:
 metrics:
   discovery:
     pred_file:
-      name: models/voronoi_rf/voronoi-rf/2022-11-27-discovery.csv.gz
-      url: https://figshare.com/files/66646205
-      size: 1316225
-      md5: 0f401e0af05e4b863ac2f94a24966f94
+      name: models/voronoi_rf/voronoi-rf/2026-11-19-discovery.csv.gz
+      url: https://figshare.com/files/71653867
+      size: 1317812
+      md5: 5c2d2c236d36e9eeaa6949cb015df6ae
     full_test_set:
       F1: 0.344 # fraction
-      DAF: 1.509 # dimensionless
+      DAF: 1.517 # dimensionless
       Precision: 0.259 # fraction
-      Recall: 0.511 # fraction
-      Accuracy: 0.665 # fraction
-      TP: 22517 # count
-      FP: 64431 # count
-      TN: 148440 # count
-      FN: 21575 # count
+      Recall: 0.512 # fraction
+      Accuracy: 0.667 # fraction
+      TP: 22504 # count
+      FP: 64227 # count
+      TN: 148779 # count
+      FN: 21453 # count
       MAE: 0.141 # eV/atom
       RMSE: 0.206 # eV/atom
-      R2: -0.316 # dimensionless
+      R2: -0.313 # dimensionless
       missing_preds: 19 # count
     unique_prototypes:
       F1: 0.333 # fraction
-      DAF: 1.579 # dimensionless
+      DAF: 1.586 # dimensionless
       Precision: 0.241 # fraction
-      Recall: 0.535 # fraction
-      Accuracy: 0.668 # fraction
-      TP: 17854 # count
-      FP: 56122 # count
-      TN: 125992 # count
-      FN: 15520 # count
+      Recall: 0.536 # fraction
+      Accuracy: 0.669 # fraction
+      TP: 17810 # count
+      FP: 55953 # count
+      TN: 126293 # count
+      FN: 15432 # count
       MAE: 0.148 # eV/atom
       RMSE: 0.212 # eV/atom
-      R2: -0.329 # dimensionless
+      R2: -0.327 # dimensionless
       missing_preds: 2 # count
