@@ -167,6 +167,8 @@ Nd = "Nd" # Chemical element: Neodymium
 nd = "nd"
 MatRIS = "MatRIS" # Model name
 matris = "matris"
+Mena = "Mena" # Model name
+mena = "mena"
 titel = "titel"
 centre = "centre" # ICAMS official spelling in logo filename
 

@@ -1039,6 +1039,22 @@ def _bam(device: str, checkpoint: str) -> Calculator:
     return RACECalculator(model=checkpoint, device=device)
 
 
+def _mena_lam6(device: str, checkpoint: str) -> Calculator:
+    """Load Mena-LAM-6's ASE calculator with MP2020 PBE/PBE+U routing."""
+    from lam4.calc import MenaCalculator
+
+    return MenaCalculator.from_checkpoint(
+        checkpoint,
+        device=device,
+        lot="mp",
+        dtype="float32",
+        precision="fp32_ieee",
+        weights="ema",
+        add_dispersion=False,
+        compile=False,
+    )
+
+
 def _emt(device: str) -> Calculator:  # noqa: ARG001 - CPU only, debug model
     """Load ASE's EMT calculator (debug model, CPU only)."""
     from ase.calculators.emt import EMT
@@ -1195,6 +1211,7 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
         "equflashv2_45m_oam": _checkpoint_spec(
             "equflashv2_45m_oam", _equflash, ext=".pt"
         ),
+        "mena_lam_6": _checkpoint_spec("mena_lam_6", _mena_lam6, ext=".pt"),
         # Eager: no Model YAML / environment; do not wrap with _runtime_calc_spec.
         "emt": CalcSpec(_emt),
     }

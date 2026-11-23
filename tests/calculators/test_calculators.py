@@ -719,3 +719,34 @@ def test_mace_soyo_exports_per_gpu_arch(
         assert os.path.isfile(command[command.index("--structure-file") + 1])
     with pytest.raises(ValueError, match="requires CUDA"):
         make_calc("cpu", path)
+
+
+@pytest.mark.parametrize("device", ["cpu", "cuda", "cuda:1"])
+def test_mena_lam6_factory_honors_requested_device_and_mp_routing(
+    device: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Mena-LAM-6 loads from checkpoint on the requested device with MP2020 routing."""
+    from_checkpoint = Mock()
+    lam4_calc_module = ModuleType("lam4.calc")
+    lam4_calc_module.__dict__["MenaCalculator"] = SimpleNamespace(
+        from_checkpoint=from_checkpoint
+    )
+    for module_name, module in {
+        "lam4": ModuleType("lam4"),
+        "lam4.calc": lam4_calc_module,
+    }.items():
+        monkeypatch.setitem(sys.modules, module_name, module)
+
+    checkpoint = "mena-lam6-v1.pt"
+    calc = CALCULATORS["mena_lam_6"].make_calc(device, checkpoint=checkpoint)
+    from_checkpoint.assert_called_once_with(
+        checkpoint,
+        device=device,
+        lot="mp",
+        dtype="float32",
+        precision="fp32_ieee",
+        weights="ema",
+        add_dispersion=False,
+        compile=False,
+    )
+    assert calc is from_checkpoint.return_value
