@@ -319,7 +319,7 @@ title, so label the section for screen readers instead -->
 
       {#snippet annotation()}
         {#if stats && Number.isFinite(stats.mae)}
-          <div class="plot-annotation" style="position: static">
+          <div class="metric-annotation" style="position: static">
             MAE = {format_num(stats.mae * 1000, `.3~`)} <small>meV/atom</small><br />
             R<sup>2</sup> = {format_num(stats.r2, `.3~`)}
           </div>

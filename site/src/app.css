@@ -426,7 +426,7 @@ kbd {
   --btn-group-btn-active-border-color: var(--category-color);
 }
 /* In-plot metric annotation, bottom-right corner (energy/kappa parity plots) */
-.plot-annotation {
+.metric-annotation {
   position: absolute;
   inset: auto 2em 5em auto;
   padding: 1pt 4pt;

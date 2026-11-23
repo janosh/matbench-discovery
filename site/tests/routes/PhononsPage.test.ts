@@ -100,7 +100,7 @@ describe(`Phonons Task Page`, () => {
       target: document.body,
       props: { entry, base: kappa_103_analysis },
     })
-    const annotation = await vi.waitFor(() => doc_query(`.plot-annotation`))
+    const annotation = await vi.waitFor(() => doc_query(`.metric-annotation`))
     const annotation_frame = annotation.closest(`foreignObject`)
     const plot_area = doc_query(`clipPath rect`, annotation.closest(`svg`))
     // Keep the metric inside the data area when the legend reserves bottom padding.

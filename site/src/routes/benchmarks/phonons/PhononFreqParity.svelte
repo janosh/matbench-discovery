@@ -121,7 +121,7 @@
           height={Math.max(1, height - pad.t - pad.b)}
           style="pointer-events: none; overflow: visible"
         >
-          <div class="plot-annotation" style="inset: auto 0.5em 0.5em auto">
+          <div class="metric-annotation" style="inset: auto 0.5em 0.5em auto">
             W₁(ω) = {format_num(entry.freq_w1_mean, `.3~`)} <small>THz</small>
           </div>
         </foreignObject>

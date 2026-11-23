@@ -258,7 +258,7 @@
         {#if kappa_srme != null || kappa_sre != null}
           {@const style = 'pointer-events: none; overflow: visible'}
           <foreignObject x="0" y="0" {width} {height} {style}>
-            <div class="plot-annotation">
+            <div class="metric-annotation">
               {#if kappa_srme != null}
                 κ<sub>SRME</sub> = {format_num(kappa_srme, `.3~`)}<br />
               {/if}
