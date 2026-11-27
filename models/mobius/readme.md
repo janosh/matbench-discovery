@@ -53,9 +53,9 @@ force sidecar. The four κ artifacts are version 2 of the Figshare record.
 
 | Task | Result |
 | --- | ---: |
-| Discovery F1 (full test set) | 0.866356 |
-| Discovery F1 (unique prototypes) | 0.885614 |
-| Geometry RMSD | 0.062821 |
+| Discovery F1 (full test set) | 0.872 |
+| Discovery F1 (unique prototypes) | 0.891 |
+| Geometry RMSD AUC (symprec 1e-5 analysis) | 0.7863 |
 | κ<sub>SRME</sub> | 0.296886 |
 | κ<sub>SRE</sub> | 0.191703 |
 | κ<sub>SRD</sub> | -0.066578 |

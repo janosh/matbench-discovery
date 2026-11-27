@@ -2,21 +2,21 @@ model_name: Möbius OAM
 model_key: mobius-oam
 model_version: eq_0.1
 dates:
-  benchmark_added: null
-  paper_published: null
+  benchmark_added:
+  paper_published:
 lifecycle: pending
 authors:
-  - name: Jiahui Liu
-    affiliation: "Zhongguancun Academy, Beijing 100094, China; Zhongguancun Institute of Artificial Intelligence, Beijing 100094, China"
-    email: liujiahui@zgci.ac.cn
-    corresponding: true
+- name: Jiahui Liu
+  affiliation: "Zhongguancun Academy, Beijing 100094, China; Zhongguancun Institute of Artificial Intelligence, Beijing 100094, China"
+  email: liujiahui@zgci.ac.cn
+  corresponding: true
 
 repo: https://github.com/Jonsnow-willow/rune
-doi: null
-paper: null
+doi:
+paper:
 docs: https://github.com/Jonsnow-willow/rune
-pypi: null
-pr_url: null
+pypi:
+pr_url: https://github.com/janosh/matbench-discovery/pull/415
 # CONFIRMED_UPLOAD: public inference weight `model.pt` is on Figshare.
 # The public model.pt is state-identical to the historical epoch-0001.pt checkpoint.
 checkpoint_url: https://figshare.com/files/71448163
@@ -30,12 +30,12 @@ license:
 
 environment:
   dependencies:
-    - rune-mlff @ git+https://github.com/Jonsnow-willow/rune@7f2a36c643bb79149b4714c04263002b7aea5f92
-    - torch==2.10.0
+  - rune-mlff @ git+https://github.com/Jonsnow-willow/rune@7f2a36c643bb79149b4714c04263002b7aea5f92
+  - torch==2.10.0
   python_version: '3.14'
   find_links: []
   extra_index_urls: []
-  project: null
+  project:
 
 openness: OSOD
 architecture_types: [gnn]
@@ -108,34 +108,33 @@ metrics:
       max_rss_gb: 2.062
       max_gpu_mem_gb: 0.324
     full_test_set:
-      F1: 0.86635589204439
-      DAF: 4.910642923010224
-      Precision: 0.8426118459130957
-      Recall: 0.8914769119114578
-      Accuracy: 0.952806435167709
-      TP: 39307
-      FP: 7342
-      TN: 205529
-      FN: 4785
-      MAE: 0.022068632983215354
-      RMSE: 0.06821231565719116
-      R2: 0.8563406392322699
-      missing_preds: 0
+      F1: 0.872 # fraction
+      DAF: 4.944 # dimensionless
+      Precision: 0.846 # fraction
+      Recall: 0.899 # fraction
+      Accuracy: 0.955 # fraction
+      TP: 39513 # count
+      FP: 7208 # count
+      TN: 205798 # count
+      FN: 4444 # count
+      MAE: 0.021 # eV/atom
+      RMSE: 0.067 # eV/atom
+      R2: 0.861 # dimensionless
+      missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.8856141585653748
-      DAF: 5.672500783316742
-      Precision: 0.8671643933955492
-      Recall: 0.9048660634026487
-      Accuracy: 0.9637984481734482
-      TP: 30199
-      FP: 4626
-      TN: 177488
-      FN: 3175
-      MAE: 0.022440372549747557
-      RMSE: 0.06833203996252095
-      R2: 0.8623044628632898
-      missing_preds: 0
-
+      F1: 0.891 # fraction
+      DAF: 5.714 # dimensionless
+      Precision: 0.87 # fraction
+      Recall: 0.913 # fraction
+      Accuracy: 0.965 # fraction
+      TP: 30348 # count
+      FP: 4541 # count
+      TN: 177705 # count
+      FN: 2894 # count
+      MAE: 0.022 # eV/atom
+      RMSE: 0.067 # eV/atom
+      R2: 0.868 # dimensionless
+      missing_preds: 0 # count
   geo_opt:
     status: complete
     pred_file:
@@ -143,16 +142,31 @@ metrics:
       url: https://figshare.com/files/71448172
       size: 102744390
       md5: 5f3b2b82bc5d5bc5261cb045cdf2165f
+    rmsd_auc: 0.7863 # fraction
     symprec=1e-5:
-      rmsd: 0.06282060650258782
-      n_sym_ops_mae: 2.057428501379576
-      symmetry_decrease: 0.04895257293851644
-      symmetry_match: 0.7014745313527628
-      symmetry_increase: 0.2441246405124473
-      # 1400 / 256963; residual category from the recovered symmetry counts.
-      symmetry_lateral: 0.005448255196273393
-      n_structures: 256963
-
+      n_sym_ops_mae: 2.0576 # unitless
+      symmetry_decrease: 0.0489 # fraction
+      symmetry_match: 0.7015 # fraction
+      symmetry_increase: 0.2441 # fraction
+      symmetry_lateral: 0.0054 # fraction
+      n_structures: 256963 # count
+      analysis_file:
+        name: models/mobius/mobius-oam/2026-10-29-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71970694
+        size: 6875970
+        md5: 699c8d159faa8ebd05713e8162c5bfcc
+    symprec=1e-2:
+      n_sym_ops_mae: 1.7064 # unitless
+      symmetry_decrease: 0.0472 # fraction
+      symmetry_match: 0.818 # fraction
+      symmetry_increase: 0.1275 # fraction
+      symmetry_lateral: 0.0073 # fraction
+      n_structures: 256963 # count
+      analysis_file:
+        name: models/mobius/mobius-oam/2026-10-29-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71970697
+        size: 6856583
+        md5: 34a06a5b6949b080b23fd3128528d4ed
   phonons:
     status: complete
     kappa_103:
