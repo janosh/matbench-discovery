@@ -18,6 +18,7 @@ import shutil
 import socket
 import subprocess
 import sys
+import threading
 import time
 import zipfile
 from collections.abc import Callable, Iterator, Mapping, MutableMapping, Sequence
@@ -1039,6 +1040,195 @@ def _bam(device: str, checkpoint: str) -> Calculator:
     return RACECalculator(model=checkpoint, device=device)
 
 
+# cuequivariance_jax.segmented_polynomial is a process-wide attribute that a pure-JAX
+# RACE v2 calculator swaps while its model call runs (and jit traces), and the
+# evaluator reads its core exclusion from the environment while it is built: every
+# RACE v2 model call, evaluator construction and read of the original function holds
+# this lock so that no concurrent call or factory sees the other's state
+_RACE_V2_LOCK = threading.Lock()
+
+
+def _race_v2(device: str, checkpoint: str, dtype: str = "float64") -> Calculator:
+    """Load the RACE v2 JAX model (BAM_V2, race_v2) from a .pkl checkpoint as an ASE
+    calculator on race_v2.inference.relax_batched.RaceEvaluator (float64 inputs; the
+    evaluator of the authors' relaxations and MD).
+
+    Settings: core exclusion on with the table shipped in the package (ZBL below the
+    shortest training distance of an element pair; set for this evaluator only unless
+    BAM_CORE_EXCLUSION overrides it), vesin neighbor list, float64, periodic cells.
+    JAX picks the device (JAX_PLATFORMS=cpu for a CPU run): device="cpu" is also what
+    an omitted device resolves to without torch, so it leaves the choice to JAX, while
+    device="cuda" on a JAX without a GPU backend raises.
+    Padded shapes: atoms to a multiple of 16, edges to the ladder 1024 * 2^k * {1, 1.5}
+    (few compilations over a set of different cells); RACE_V2_PAD=tight pads to the
+    structure plus 6 % instead (one shape per atom count, for MD).
+    The edge tensor product and the symmetric contraction use the fused cuEquivariance
+    CUDA kernel (method uniform_1d). Its binaries need compute capability >= 8.0 of the
+    GPU JAX runs on, so on older GPUs (e.g. V100), off GPU or with an unknown capability
+    the same polynomials run in pure JAX (method naive), set
+    only around this calculator's model calls (under a lock shared by all RACE v2
+    calculators); RACE_V2_TP_METHOD=naive|uniform_1d overrides the choice.
+    Acceleration labels: cuequivariance, tight_padding.
+    """
+    import json
+
+    os.environ.setdefault("BAM_NEIGHBORS", "vesin")
+    os.environ.setdefault("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
+    if dtype != "float64":
+        raise ValueError(f"RACE v2 runs in float64 only, got {dtype=}")
+    os.environ["BAM_PREDICT_X64"] = "1"
+
+    import jax
+
+    # start the CUDA backend first: it loads the NVIDIA libraries (libnvrtc) that the
+    # cuEquivariance kernel library links against
+    jax_device = jax.devices()[0]
+    backend = jax.default_backend()
+    if device.split(":", 1)[0] in ("cuda", "gpu") and backend != "gpu":
+        raise ValueError(
+            f"RACE v2 got {device=} but JAX runs on {backend!r}: install a CUDA build "
+            "of jax (jax[cuda12]) or select the CPU with JAX_PLATFORMS=cpu"
+        )
+
+    import cuequivariance_jax as cuex
+    import cuequivariance_jax.segmented_polynomials.segmented_polynomial as seg_poly
+    import numpy as np
+    from ase import Atoms
+    from ase.calculators.calculator import Calculator as AseCalculator
+    from ase.calculators.calculator import all_changes
+    from jax._src.interpreters import partial_eval
+    from race_v2.data.loaders import fixed_collate_fn
+    from race_v2.data.stream_data import _cast, _to_graph
+    from race_v2.inference import relax_batched
+    from race_v2.inference.predict import DEFAULT_CORE_EXCLUSION
+
+    # the benchmark's core-exclusion default, exported only while the evaluator is
+    # built (a caller's BAM_CORE_EXCLUSION wins)
+    default_core_exclusion = json.dumps(DEFAULT_CORE_EXCLUSION)
+
+    # cuequivariance-jax (0.13, 0.14) registers a DCE rule (used_outputs, eqn);
+    # jax 0.12 calls the rules with (used_outputs, live_inputs, eqn)
+    dce_rule = seg_poly.segmented_polynomial_dce
+    if len(inspect.signature(dce_rule).parameters) == 2:
+        partial_eval.dce_rules[seg_poly.segmented_polynomial_p] = (
+            lambda used_outputs, *rest: dce_rule(used_outputs, rest[-1])
+        )
+
+    method = os.getenv("RACE_V2_TP_METHOD", "")
+    if not method:
+        # compute capability of the GPU JAX executes on; naive when it is unknown
+        capability = str(getattr(jax_device, "compute_capability", ""))
+        try:
+            fast = backend == "gpu" and float(capability) >= 8
+        except TypeError, ValueError:
+            fast = False
+        method = "uniform_1d" if fast else "naive"
+    with _RACE_V2_LOCK:
+        fused = cuex.segmented_polynomial
+
+    def segmented_polynomial_naive(*args: object, **kwargs: object) -> object:
+        """cuex.segmented_polynomial with the pure-JAX method."""
+        return fused(*args, **{**kwargs, "method": "naive"})
+
+    tight = os.getenv("RACE_V2_PAD", "ladder") == "tight"
+    ladder = relax_batched._rung  # noqa: SLF001
+
+    class RACEv2JaxCalculator(AseCalculator):
+        """Energy, forces and stress of one structure from the jitted JAX model."""
+
+        implemented_properties = ("energy", "free_energy", "forces", "stress")
+
+        def __init__(self, checkpoint_path: str) -> None:
+            super().__init__()
+            # the override check sits inside the lock, so a concurrent RACE v2
+            # factory never mistakes another's temporary default for a caller's
+            with _RACE_V2_LOCK:
+                export = not os.getenv("BAM_CORE_EXCLUSION")
+                if export:
+                    os.environ["BAM_CORE_EXCLUSION"] = default_core_exclusion
+                try:
+                    self.evaluator = relax_batched.RaceEvaluator(
+                        checkpoint_path, max_graphs=2
+                    )
+                finally:
+                    if export:
+                        os.environ.pop("BAM_CORE_EXCLUSION", None)
+            if self.evaluator.dtype != np.float64:
+                raise RuntimeError("RACE v2 evaluator is not float64")
+            self.prepare = self.evaluator.prepare_fn()
+            self.tight_shapes: dict[int, tuple[int, int]] = {}
+
+        def padded_shape(self, n_atoms: int, n_edges: int) -> tuple[int, int]:
+            """Padded (atoms, edges) of the compiled call for this structure."""
+            n_pad = -(-(n_atoms + 1) // 16) * 16
+            if not tight:
+                return n_pad, ladder(max(n_edges, 1), 1024)
+            shape = self.tight_shapes.get(n_atoms)
+            if shape is None or n_edges > shape[1]:
+                shape = (n_pad, max(512, -(-int(n_edges * 1.06) // 512) * 512))
+                self.tight_shapes[n_atoms] = shape
+            return shape
+
+        def calculate(
+            self,
+            atoms: Atoms | None = None,
+            properties: Sequence[str] = ("energy",),
+            system_changes: Sequence[str] = all_changes,
+        ) -> None:
+            """Evaluate the structure in one padded, compiled model call."""
+            super().calculate(atoms, properties, system_changes)
+            if not self.atoms.pbc.any():
+                # race_v2's payload needs the image shifts of a periodic cell
+                raise ValueError(
+                    "RACE v2 calculator takes periodic cells only: set atoms.pbc and a "
+                    "cell (with vacuum around a molecule)"
+                )
+            evaluator = self.evaluator
+            try:
+                payload = self.prepare(self.atoms)
+            except KeyError as exc:
+                raise ValueError(
+                    f"element Z={exc.args[0]} is not in the model's atomic_numbers"
+                ) from exc
+            shape = self.padded_shape(
+                int(payload["n_node"][0]), int(payload["n_edge"][0])
+            )
+            evaluator.shapes.add(shape)
+            graph = _to_graph(
+                _cast(
+                    {k: v for k, v in payload.items() if k != "numbers"},
+                    evaluator.dtype,
+                )
+            )
+            batch = fixed_collate_fn([graph], evaluator.max_graphs, *shape)
+            # the model looks cuex.segmented_polynomial up while jit traces a new
+            # shape: a pure-JAX calculator swaps it in only around its own calls, and
+            # the lock keeps concurrent calls of other calculators off the swap
+            with _RACE_V2_LOCK:
+                if method == "naive":
+                    cuex.segmented_polynomial = segmented_polynomial_naive
+                try:
+                    output = evaluator._step(batch)  # noqa: SLF001
+                finally:
+                    cuex.segmented_polynomial = fused
+            [(energy, forces, stress)] = evaluator.collect(
+                (output, [payload["numbers"]])
+            )
+            self.results = {
+                "energy": energy,
+                "free_energy": energy,
+                "forces": forces,
+                "stress": stress,
+            }
+
+    calc = RACEv2JaxCalculator(checkpoint)
+    # cuEquivariance falls back to pure JAX off CUDA, so the fused kernel only runs
+    # (and is only labeled) on a GPU backend
+    on_gpu = jax.default_backend() == "gpu"
+    flags = ("cuequivariance",) if method == "uniform_1d" and on_gpu else ()
+    return _with_acceleration(calc, *flags, *(("tight_padding",) if tight else ()))
+
+
 def _emt(device: str) -> Calculator:  # noqa: ARG001 - CPU only, debug model
     """Load ASE's EMT calculator (debug model, CPU only)."""
     from ase.calculators.emt import EMT
@@ -1171,6 +1361,9 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
         "tece_oam_rra_1_0": _named_spec(_tace, "tece_oam_rra_1_0", checkpoint=True),
         "bam_mp_core": _checkpoint_spec("bam_mp_core", _bam, ext=".pkl"),
         "bam_mp_dens": _checkpoint_spec("bam_mp_dens", _bam, ext=".pkl"),
+        "race_v2_1_9m_oam_replay": _checkpoint_spec(
+            "race_v2_1_9m_oam_replay", _race_v2, ext=".pkl"
+        ),
         "dpa_3_1_mptrj": _deepmd_spec("dpa_3_1_mptrj"),
         "dpa_3_1_3m_ft": _deepmd_spec("dpa_3_1_3m_ft"),
         "dpa3_v2_mptrj": _deepmd_spec("dpa3_v2_mptrj"),
