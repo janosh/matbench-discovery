@@ -1051,15 +1051,17 @@ def _race_v2(device: str, checkpoint: str, dtype: str = "float64") -> Calculator
     structure plus 6 % instead (one shape per atom count, for MD).
     The edge tensor product and the symmetric contraction use the fused cuEquivariance
     CUDA kernel (method uniform_1d). Its binaries need compute capability >= 8.0, so on
-    older GPUs (e.g. V100) the same polynomials run in pure JAX (method naive);
-    RACE_V2_TP_METHOD=naive|uniform_1d overrides the choice.
+    older GPUs (e.g. V100) the same polynomials run in pure JAX (method naive), set
+    only around this calculator's model calls; RACE_V2_TP_METHOD=naive|uniform_1d
+    overrides the choice. Acceleration labels: cuequivariance, tight_padding.
     """
     import json
 
     os.environ.setdefault("BAM_NEIGHBORS", "vesin")
     os.environ.setdefault("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
-    if dtype == "float64":
-        os.environ["BAM_PREDICT_X64"] = "1"
+    if dtype != "float64":
+        raise ValueError(f"RACE v2 runs in float64 only, got {dtype=}")
+    os.environ["BAM_PREDICT_X64"] = "1"
 
     import jax
 
@@ -1103,13 +1105,10 @@ def _race_v2(device: str, checkpoint: str, dtype: str = "float64") -> Calculator
         except OSError, subprocess.SubprocessError, IndexError, ValueError:
             method = "uniform_1d"
     fused = cuex.segmented_polynomial
-    if method == "naive" and fused.__name__ != "segmented_polynomial_naive":
 
-        def segmented_polynomial_naive(*args: object, **kwargs: object) -> object:
-            """cuex.segmented_polynomial with the pure-JAX method."""
-            return fused(*args, **{**kwargs, "method": "naive"})
-
-        cuex.segmented_polynomial = segmented_polynomial_naive
+    def segmented_polynomial_naive(*args: object, **kwargs: object) -> object:
+        """cuex.segmented_polynomial with the pure-JAX method."""
+        return fused(*args, **{**kwargs, "method": "naive"})
 
     tight = os.getenv("RACE_V2_PAD", "ladder") == "tight"
     ladder = relax_batched._rung  # noqa: SLF001
@@ -1122,7 +1121,7 @@ def _race_v2(device: str, checkpoint: str, dtype: str = "float64") -> Calculator
         def __init__(self, checkpoint_path: str) -> None:
             super().__init__()
             self.evaluator = relax_batched.RaceEvaluator(checkpoint_path, max_graphs=2)
-            if dtype == "float64" and self.evaluator.dtype != np.float64:
+            if self.evaluator.dtype != np.float64:
                 raise RuntimeError("RACE v2 evaluator is not float64")
             self.prepare = self.evaluator.prepare_fn()
             self.tight_shapes: dict[int, tuple[int, int]] = {}
@@ -1164,9 +1163,18 @@ def _race_v2(device: str, checkpoint: str, dtype: str = "float64") -> Calculator
                 )
             )
             batch = fixed_collate_fn([graph], evaluator.max_graphs, *shape)
-            energy, forces, stress = evaluator.collect(
-                (evaluator._step(batch), [payload["numbers"]])  # noqa: SLF001
-            )[0]
+            # the model looks cuex.segmented_polynomial up while jit traces a new
+            # shape: a pure-JAX calculator swaps it in only around its own calls, so
+            # other calculators in the process keep their method
+            if method == "naive":
+                cuex.segmented_polynomial = segmented_polynomial_naive
+            try:
+                output = evaluator._step(batch)  # noqa: SLF001
+            finally:
+                cuex.segmented_polynomial = fused
+            [(energy, forces, stress)] = evaluator.collect(
+                (output, [payload["numbers"]])
+            )
             self.results = {
                 "energy": energy,
                 "free_energy": energy,
@@ -1175,9 +1183,8 @@ def _race_v2(device: str, checkpoint: str, dtype: str = "float64") -> Calculator
             }
 
     calc = RACEv2JaxCalculator(checkpoint)
-    return _with_acceleration(
-        calc, *(("cuequivariance",) if method == "uniform_1d" else ())
-    )
+    flags = ("cuequivariance",) if method == "uniform_1d" else ()
+    return _with_acceleration(calc, *flags, *(("tight_padding",) if tight else ()))
 
 
 def _emt(device: str) -> Calculator:  # noqa: ARG001 - CPU only, debug model

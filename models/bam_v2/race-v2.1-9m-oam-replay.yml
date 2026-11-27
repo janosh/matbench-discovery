@@ -143,7 +143,7 @@ metrics:
       url: https://figshare.com/files/71951623
       size: 265807
       md5: 'dc995868a4b6bcae2c8a869a9693c907'
-    cost: {source: runner, hardware: NVIDIA GH200 120GB, device: gpu, dtype: float64, acceleration: [tight_padding], n_shards: 1, n_processes: 1, run_time_sec: 57.48, load_time_sec: 30.46}
+    cost: {source: author_reported, hardware: NVIDIA GH200 120GB, device: gpu, dtype: float64, acceleration: [tight_padding], n_shards: 1, n_processes: 1, run_time_sec: 57.48, load_time_sec: 30.46}
     pbe_wall_dist_mae: 0.1422
     pbe_energy_mae: 1.488
     pbe_bond_length_error: 0.2222
@@ -169,7 +169,7 @@ metrics:
       url: https://figshare.com/files/71951632
       size: 1593
       md5: '7405171cb95e9c4bad3ee81c8dc2b4eb'
-    cost: {source: runner, hardware: NVIDIA GH200 120GB, device: gpu, dtype: float64, acceleration: [tight_padding], n_processes: 2, run_time_sec: 20472.4, load_time_sec: 129.25, max_rss_gb: 7.159}
+    cost: {source: author_reported, hardware: NVIDIA GH200 120GB, device: gpu, dtype: float64, acceleration: [tight_padding], n_processes: 2, run_time_sec: 20472.4, load_time_sec: 129.25, max_rss_gb: 7.159}
     rdf_error: 3.1812 # %
     adf_error: 1.3966 # %
     vdos_error: 22.2966 # %
