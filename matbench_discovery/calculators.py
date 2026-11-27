@@ -1104,9 +1104,7 @@ def _race_v2(device: str, checkpoint: str, dtype: str = "float64") -> Calculator
 
     # the benchmark's core-exclusion default, exported only while the evaluator is
     # built (a caller's BAM_CORE_EXCLUSION wins)
-    core_exclusion = (
-        None if os.getenv("BAM_CORE_EXCLUSION") else json.dumps(DEFAULT_CORE_EXCLUSION)
-    )
+    default_core_exclusion = json.dumps(DEFAULT_CORE_EXCLUSION)
 
     # cuequivariance-jax (0.13, 0.14) registers a DCE rule (used_outputs, eqn);
     # jax 0.12 calls the rules with (used_outputs, live_inputs, eqn)
@@ -1142,15 +1140,18 @@ def _race_v2(device: str, checkpoint: str, dtype: str = "float64") -> Calculator
 
         def __init__(self, checkpoint_path: str) -> None:
             super().__init__()
+            # the override check sits inside the lock, so a concurrent RACE v2
+            # factory never mistakes another's temporary default for a caller's
             with _RACE_V2_LOCK:
-                if core_exclusion is not None:
-                    os.environ["BAM_CORE_EXCLUSION"] = core_exclusion
+                export = not os.getenv("BAM_CORE_EXCLUSION")
+                if export:
+                    os.environ["BAM_CORE_EXCLUSION"] = default_core_exclusion
                 try:
                     self.evaluator = relax_batched.RaceEvaluator(
                         checkpoint_path, max_graphs=2
                     )
                 finally:
-                    if core_exclusion is not None:
+                    if export:
                         os.environ.pop("BAM_CORE_EXCLUSION", None)
             if self.evaluator.dtype != np.float64:
                 raise RuntimeError("RACE v2 evaluator is not float64")
