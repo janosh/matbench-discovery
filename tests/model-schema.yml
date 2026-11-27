@@ -93,7 +93,7 @@ definitions:
         uniqueItems: true
         items:
           type: string
-          enum: [cuequivariance, openequivariance, torch_aot_inductor, prophet_kernels]
+          enum: [cuequivariance, openequivariance, torch_aot_inductor, prophet_kernels, tight_padding]
       n_shards: &positive_int
         type: integer
         minimum: 1

@@ -1,0 +1,208 @@
+model_name: BAM-V2-Athena-OAM
+model_key: race-v2.1-9m-oam-replay
+model_version: '2.1'
+dates:
+  benchmark_added: '2026-11-27'
+  paper_published:
+lifecycle: pending
+authors:
+- name: Chang Woo Myung
+  affiliation: Department of Energy Science, Sungkyunkwan University
+  email: cwmyung@skku.edu
+  corresponding: true
+
+repo: https://github.com/myung-group/BAM_V2
+doi:
+paper:
+docs: https://github.com/myung-group/BAM_V2/tree/main
+pr_url:
+checkpoint_url: https://github.com/myung-group/BAM_V2/releases/download/race-v2.1/race-v2.1-9m-oam-replay.pkl
+license:
+  code: MIT
+  code_url: https://github.com/myung-group/BAM_V2/blob/main/LICENSE
+  checkpoint: MIT
+  checkpoint_url: https://github.com/myung-group/BAM_V2/blob/main/LICENSE
+
+environment:
+  python_version: '3.14'
+  dependencies:
+  # commit on main that holds the packaging patch (the runs used a wheel built from this tree)
+  - bam-v2 @ git+https://github.com/myung-group/BAM_V2@c1873e0fe14cacb69775fdb54ccb281269fc82d8
+  - jax[cuda12]==0.12.0.1
+  - flax==0.12.10
+  - optax
+  - jraph
+  - e3nn-jax==0.21.0
+  - vesin==0.6.2
+  # fused CUDA kernel of the edge tensor product and the symmetric contraction (GPUs of compute capability >= 8.0)
+  - cuequivariance==0.13.0
+  - cuequivariance-jax==0.13.0
+  - cuequivariance-ops-jax-cu12==0.13.0
+openness: OSOD
+architecture_types: [gnn]
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+training_sets: [OMat24, MPtrj, sAlex]
+fine_tune: true
+test_set_informed: [diatomics]
+model_params: 9017332
+hyperparams:
+  evaluation:
+    ase_optimizer: FIRE
+    cell_filter: FrechetCellFilter
+    max_force: 0.05
+    max_steps: 500
+    kappa:
+      protocol: phonondb-v1
+      displacement_distance: 0.03
+      force_max: 1.0e-4
+      max_steps: 300
+      symprec: 1.0e-5
+      ase_optimizer: FIRE
+      ase_filter: FrechetCellFilter
+  architecture:
+    graph_construction_radius: 7.0
+    max_neighbors:
+    n_layers: 5
+    max_ell: 3
+    channels: 128
+notes:
+  description: |
+    RACE v2.1 is a layer-wise equivariant cluster expansion (5 layers, lmax 3, 128 channels, cutoff 7 Å, 9.0M
+    parameters) with a bilinear layer update, a 64-channel edge tensor-product bottleneck and a C4 cutoff envelope.
+    Forces and stress are derivatives of the energy. Inference runs in float64 with the JAX training code (race_v2)
+    and a parameter-free core exclusion: below the shortest distance of an element
+    pair in the training data the learned edges are switched off and replaced by ZBL.
+  training: |
+    OMat24 pretraining from scratch (2 data epochs), fine-tuning on MPtrj ×8 + sAlex ×1 (6.2 data epochs), then a
+    replay stage of about 1 data epoch on the fine-tuning stream plus 20 % of OMat24 (forces and stress only).
+    The submitted checkpoint is the last epoch of this schedule; no checkpoint selection on benchmark scores.
+  disclosure: |
+    diatomics: the parameter-free core exclusion (learned edges replaced by ZBL below the shortest distance of an
+    element pair in the training data) was added after the diatomic curves of the earlier RACE v2.0 model diverged at
+    short range for noble-gas dimers; its distances come from the training data only (MPtrj, sAlex, OMat24:
+    race_v2/resources/mindist_train_mptrj_salex_omat24.json in BAM_V2), not from the diatomics test set.
+  benchmark_runs: |
+    The registered calculator is the JAX model on race_v2.inference.relax_batched.RaceEvaluator (float64, core
+    exclusion on), the evaluator of all runs below.
+    Molecular dynamics and diatomic curves (2026-11-22): the benchmark's own code (matbench_discovery.md.run_md_benchmark,
+    predict_curves / write_results of models/run_diatomics.py, commit 6d587c1) called from the authors' script
+    scripts/eval/mbd/md_diatomics.py of the repository with the same evaluator (graphs padded to the structure plus
+    6 %: cost label tight_padding, RACE_V2_PAD=tight of the registered calculator) on NVIDIA GH200; not through the
+    models/run_*.py entry points.
+    Discovery and geometry optimization (2026-11-22): relaxed with the same evaluator and a batched FIRE +
+    FrechetCellFilter of the authors (same settings as the shared runner: fmax 0.05 eV/Å, at most 500 steps, float64),
+    then converted to the canonical artifacts with matbench_discovery.discovery.write_discovery_artifacts.
+    Thermal conductivity (2026-11-26/27): the shared runner models/run_kappa.py (8 shards, merged with --merge-shards)
+    with the registered calculator (fused cuEquivariance kernel, float64) on NVIDIA A100-SXM4-80GB.
+metrics:
+  discovery:
+    pred_file:
+      name: models/bam_v2/race-v2.1-9m-oam-replay/2026-11-22-discovery.csv.gz
+      url: https://figshare.com/files/71951626
+      size: 1321129
+      md5: 'f3c6be39edfe9c7d1b3c9f780609488a'
+    full_test_set:
+      F1: 0.877 # fraction
+      DAF: 5.174 # dimensionless
+      Precision: 0.888 # fraction
+      Recall: 0.866 # fraction
+      Accuracy: 0.958 # fraction
+      TP: 38202 # count
+      FP: 4829 # count
+      TN: 208042 # count
+      FN: 5890 # count
+      MAE: 0.02 # eV/atom
+      RMSE: 0.066 # eV/atom
+      R2: 0.864 # dimensionless
+      missing_preds: 2 # count
+    unique_prototypes:
+      F1: 0.899 # fraction
+      DAF: 5.956 # dimensionless
+      Precision: 0.911 # fraction
+      Recall: 0.887 # fraction
+      Accuracy: 0.969 # fraction
+      TP: 29616 # count
+      FP: 2910 # count
+      TN: 179204 # count
+      FN: 3758 # count
+      MAE: 0.021 # eV/atom
+      RMSE: 0.066 # eV/atom
+      R2: 0.871 # dimensionless
+      missing_preds: 0 # count
+  geo_opt:
+    pred_file:
+      name: models/bam_v2/race-v2.1-9m-oam-replay/2026-11-22-geo-opt.jsonl.gz
+      url: https://figshare.com/files/71951641
+      size: 95043876
+      md5: '35f72f8f73c417e88cfdddc4686999e3'
+  diatomics:
+    pred_file:
+      name: models/bam_v2/race-v2.1-9m-oam-replay/2026-11-22-diatomics.json.gz
+      url: https://figshare.com/files/71951623
+      size: 265807
+      md5: 'dc995868a4b6bcae2c8a869a9693c907'
+    cost: {source: runner, hardware: NVIDIA GH200 120GB, device: gpu, dtype: float64, acceleration: [tight_padding], n_shards: 1, n_processes: 1, run_time_sec: 57.48, load_time_sec: 30.46}
+    pbe_wall_dist_mae: 0.1422
+    pbe_energy_mae: 1.488
+    pbe_bond_length_error: 0.2222
+    pbe_well_depth_error: 0.5376
+    pbe_vib_freq_error: 61.02
+    tortuosity: 1.094
+    energy_diff_flips: 2.195
+    energy_jump: 34.78
+    force_flips: 2.322
+    force_total_variation: 4913.0
+    force_jump: 3250.0
+    pbe_force_mae: 10.21
+    pbe_vib_freq_coverage:
+      n_valid: 79
+      n_eligible: 81
+      failed_elements:
+      - Cs
+      - Sr
+      missing_elements: []
+  md:
+    pred_file:
+      name: models/bam_v2/race-v2.1-9m-oam-replay/2026-11-25-md-metrics.csv.gz
+      url: https://figshare.com/files/71951632
+      size: 1593
+      md5: '7405171cb95e9c4bad3ee81c8dc2b4eb'
+    cost: {source: runner, hardware: NVIDIA GH200 120GB, device: gpu, dtype: float64, acceleration: [tight_padding], n_processes: 2, run_time_sec: 20472.4, load_time_sec: 129.25, max_rss_gb: 7.159}
+    rdf_error: 3.1812 # %
+    adf_error: 1.3966 # %
+    vdos_error: 22.2966 # %
+    pressure_mae: 0.6135 # GPa
+    pressure_wasserstein: 0.631 # GPa
+    pressure_error: 39.2285 # %
+    n_systems: 17 # count
+  phonons:
+    kappa_103:
+      κ_SRME: 0.1616
+      κ_SRE: 0.0776
+      κ_SRD: 0.0027
+      κ_failure_rate: 0.0
+      imaginary_mode_rate: 0.0
+      spectrum_w1: 0.0888
+      pred_file:
+        name: models/bam_v2/race-v2.1-9m-oam-replay/2026-11-26-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/71951635
+        size: 15375017
+        md5: '87fe3b3e466743d51a840332a4938ae7'
+      force_file:
+        name: models/bam_v2/race-v2.1-9m-oam-replay/2026-11-26-phonons-kappa-103-forces.h5
+        url: https://figshare.com/files/71951647
+        size: 48252220
+        md5: 'aa22ff25915ed7f0ebfba001b88cb4ea'
+      phonon_file:
+        name: models/bam_v2/race-v2.1-9m-oam-replay/2026-11-26-phonons-kappa-103-phonons.json.gz
+        url: https://figshare.com/files/71951644
+        size: 28710468
+        md5: '5bcebad35c34d42fd67d9115f631af48'
+      run_info_file:
+        name: models/bam_v2/race-v2.1-9m-oam-replay/2026-11-26-phonons-kappa-103-run-info.json
+        url: https://figshare.com/files/71951638
+        size: 5801
+        md5: '4489ea0f8a5ce43447b7225dedff1979'
+      cost: {source: runner, hardware: NVIDIA A100-SXM4-80GB, device: gpu, dtype: float64, acceleration: [cuequivariance], n_shards: 8, n_processes: 34, run_time_sec: 43068.25, load_time_sec: 1167.3, max_rss_gb: 11.645}

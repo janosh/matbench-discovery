@@ -1039,6 +1039,140 @@ def _bam(device: str, checkpoint: str) -> Calculator:
     return RACECalculator(model=checkpoint, device=device)
 
 
+def _race_v2(device: str, checkpoint: str, dtype: str = "float64") -> Calculator:  # noqa: ARG001 - JAX picks the GPU
+    """Load the RACE v2 JAX model (BAM_V2, race_v2) from a .pkl checkpoint as an ASE
+    calculator on race_v2.inference.relax_batched.RaceEvaluator (float64 inputs; the
+    evaluator of the authors' relaxations and MD).
+
+    Settings: core exclusion on with the table shipped in the package (ZBL below the
+    shortest training distance of an element pair), vesin neighbor list, float64.
+    Padded shapes: atoms to a multiple of 16, edges to the ladder 1024 * 2^k * {1, 1.5}
+    (few compilations over a set of different cells); RACE_V2_PAD=tight pads to the
+    structure plus 6 % instead (one shape per atom count, for MD).
+    The edge tensor product and the symmetric contraction use the fused cuEquivariance
+    CUDA kernel (method uniform_1d). Its binaries need compute capability >= 8.0, so on
+    older GPUs (e.g. V100) the same polynomials run in pure JAX (method naive);
+    RACE_V2_TP_METHOD=naive|uniform_1d overrides the choice.
+    """
+    import json
+
+    os.environ.setdefault("BAM_NEIGHBORS", "vesin")
+    os.environ.setdefault("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
+    if dtype == "float64":
+        os.environ["BAM_PREDICT_X64"] = "1"
+
+    import jax
+
+    # start the CUDA backend first: it loads the NVIDIA libraries (libnvrtc) that the
+    # cuEquivariance kernel library links against
+    jax.devices()
+
+    import cuequivariance_jax as cuex
+    import cuequivariance_jax.segmented_polynomials.segmented_polynomial as seg_poly
+    import numpy as np
+    from ase.calculators.calculator import Calculator as AseCalculator
+    from ase.calculators.calculator import all_changes
+    from jax._src.interpreters import partial_eval
+    from race_v2.data.loaders import fixed_collate_fn
+    from race_v2.data.stream_data import _cast, _to_graph
+    from race_v2.inference import relax_batched
+    from race_v2.inference.predict import DEFAULT_CORE_EXCLUSION
+
+    os.environ.setdefault("BAM_CORE_EXCLUSION", json.dumps(DEFAULT_CORE_EXCLUSION))
+
+    # cuequivariance-jax (0.13, 0.14) registers a DCE rule (used_outputs, eqn);
+    # jax 0.12 calls the rules with (used_outputs, live_inputs, eqn)
+    dce_rule = seg_poly.segmented_polynomial_dce
+    if len(inspect.signature(dce_rule).parameters) == 2:
+        partial_eval.dce_rules[seg_poly.segmented_polynomial_p] = (
+            lambda used_outputs, *rest: dce_rule(used_outputs, rest[-1])
+        )
+
+    method = os.getenv("RACE_V2_TP_METHOD", "")
+    if not method:
+        try:
+            capability = subprocess.run(  # noqa: S603
+                ["nvidia-smi", "--query-gpu=compute_cap", "--format=csv,noheader"],  # noqa: S607
+                capture_output=True,
+                text=True,
+                check=True,
+                timeout=30,
+            ).stdout.split()[0]
+            method = "uniform_1d" if float(capability) >= 8 else "naive"  # noqa: PLR2004
+        except (OSError, subprocess.SubprocessError, IndexError, ValueError):
+            method = "uniform_1d"
+    if method == "naive" and not getattr(cuex.segmented_polynomial, "race_v2_naive", False):
+        fused = cuex.segmented_polynomial
+
+        def segmented_polynomial_naive(*args: Any, **kwargs: Any) -> Any:
+            """cuex.segmented_polynomial with the pure-JAX method."""
+            return fused(*args, **{**kwargs, "method": "naive"})
+
+        segmented_polynomial_naive.race_v2_naive = True  # type: ignore[attr-defined]
+        cuex.segmented_polynomial = segmented_polynomial_naive
+
+    tight = os.getenv("RACE_V2_PAD", "ladder") == "tight"
+    ladder = relax_batched._rung  # noqa: SLF001
+
+    class RACEv2JaxCalculator(AseCalculator):
+        """Energy, forces and stress of one structure from the jitted JAX model."""
+
+        implemented_properties = ("energy", "free_energy", "forces", "stress")
+
+        def __init__(self, checkpoint_path: str) -> None:
+            super().__init__()
+            self.evaluator = relax_batched.RaceEvaluator(checkpoint_path, max_graphs=2)
+            if dtype == "float64" and self.evaluator.dtype != np.float64:
+                raise RuntimeError("RACE v2 evaluator is not float64")
+            self.prepare = self.evaluator.prepare_fn()
+            self.tight_shapes: dict[int, tuple[int, int]] = {}
+
+        def padded_shape(self, n_atoms: int, n_edges: int) -> tuple[int, int]:
+            """Padded (atoms, edges) of the compiled call for this structure."""
+            n_pad = -(-(n_atoms + 1) // 16) * 16
+            if not tight:
+                return n_pad, ladder(max(n_edges, 1), 1024)
+            shape = self.tight_shapes.get(n_atoms)
+            if shape is None or n_edges > shape[1]:
+                shape = (n_pad, max(512, -(-int(n_edges * 1.06) // 512) * 512))
+                self.tight_shapes[n_atoms] = shape
+            return shape
+
+        def calculate(
+            self,
+            atoms: Atoms | None = None,
+            properties: Sequence[str] = ("energy",),
+            system_changes: Sequence[str] = all_changes,
+        ) -> None:
+            """Evaluate the structure in one padded, compiled model call."""
+            super().calculate(atoms, properties, system_changes)
+            evaluator = self.evaluator
+            try:
+                payload = self.prepare(self.atoms)
+            except KeyError as exc:
+                raise ValueError(
+                    f"element Z={exc.args[0]} is not in the model's atomic_numbers"
+                ) from exc
+            shape = self.padded_shape(int(payload["n_node"][0]), int(payload["n_edge"][0]))
+            evaluator.shapes.add(shape)
+            graph = _to_graph(
+                _cast({k: v for k, v in payload.items() if k != "numbers"}, evaluator.dtype)
+            )
+            batch = fixed_collate_fn([graph], evaluator.max_graphs, *shape)
+            energy, forces, stress = evaluator.collect(
+                (evaluator._step(batch), [payload["numbers"]])  # noqa: SLF001
+            )[0]
+            self.results = {
+                "energy": energy,
+                "free_energy": energy,
+                "forces": forces,
+                "stress": stress,
+            }
+
+    calc = RACEv2JaxCalculator(checkpoint)
+    return _with_acceleration(calc, *(("cuequivariance",) if method == "uniform_1d" else ()))
+
+
 def _emt(device: str) -> Calculator:  # noqa: ARG001 - CPU only, debug model
     """Load ASE's EMT calculator (debug model, CPU only)."""
     from ase.calculators.emt import EMT
@@ -1171,6 +1305,9 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
         "tece_oam_rra_1_0": _named_spec(_tace, "tece_oam_rra_1_0", checkpoint=True),
         "bam_mp_core": _checkpoint_spec("bam_mp_core", _bam, ext=".pkl"),
         "bam_mp_dens": _checkpoint_spec("bam_mp_dens", _bam, ext=".pkl"),
+        "race_v2_1_9m_oam_replay": _checkpoint_spec(
+            "race_v2_1_9m_oam_replay", _race_v2, ext=".pkl"
+        ),
         "dpa_3_1_mptrj": _deepmd_spec("dpa_3_1_mptrj"),
         "dpa_3_1_3m_ft": _deepmd_spec("dpa_3_1_3m_ft"),
         "dpa3_v2_mptrj": _deepmd_spec("dpa3_v2_mptrj"),
