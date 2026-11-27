@@ -5,7 +5,7 @@ Mena is a family of compact equivariant machine-learning interatomic potentials 
 - Code: [iatecoding/mena-lab](https://github.com/iatecoding/mena-lab) (`Apache-2.0`)
 - Weights: [iatecoding/Mena-LAM-6](https://huggingface.co/iatecoding/Mena-LAM-6/resolve/main/mena-lam6-v1.pt) (`CC-BY-4.0`)
 - Predictions archive: [Zenodo 10.5281/zenodo.24461178](https://doi.org/10.5281/zenodo.24461178) & [Hugging Face mirror](https://huggingface.co/datasets/iatecoding/mena-lam-6-matbench-discovery) (`CC-BY-4.0`)
-- Paper: in preparation
+- Paper: [Mena-LAM Technical Report (PDF)](https://github.com/iatecoding/mena-lab/blob/main/docs/Mena-LAM-Technical-Report.pdf)
 
 ## Mena-LAM-6
 

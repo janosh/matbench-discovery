@@ -17,7 +17,7 @@ trained_by:
   corresponding: true
 repo: https://github.com/iatecoding/mena-lab
 doi: https://doi.org/10.5281/zenodo.24461178
-paper:
+paper: https://github.com/iatecoding/mena-lab/blob/main/docs/Mena-LAM-Technical-Report.pdf
 docs: https://github.com/iatecoding/mena-lab#readme
 pypi:
 pr_url: https://github.com/janosh/matbench-discovery/pull/420
@@ -56,7 +56,7 @@ training_sets:
 - OMC25
 - MAD-1.6
 - SPICE 2
-test_set_informed: [discovery]
+test_set_informed: [discovery, phonons]
 model_params: 8479848
 training_cost:
   entries:
@@ -97,13 +97,21 @@ notes:
     IEEE FP32 cooldown.
   disclosure: >
     Earlier Mena-LAM WBM-5k lanthanide errors prompted factorizing VASP PBE_52 vs PBE_54
-    PAW tokens, and mid-run crystal-pair loss ablations included a 250-structure WBM
-    subsample check, so the discovery test set informed model development. The submitted
+    PAW tokens, earlier Mena-LAM-preview kappa-103 softening motivated adding crystal
+    secant pair supervision (P_cry) and strict IEEE FP32 cooldown, and mid-run P_cry
+    ablations checked a 250-structure WBM subsample and a 16-crystal subset of
+    PhononDB-103 (SRME 0.326 -> 0.280), so the discovery and phonons test sets informed
+    model development. DynaMat MD did not inform LAM-6 design choices. The submitted
     checkpoint is the final training endpoint (step 747,692).
   discovery: >
-    WBM relaxations used a GPU-resident FP64 FIRE + FrechetCellFilter batched stream
-    (fmax 0.02 eV/A, max 500 steps, strict IEEE FP32 with Dual-CSR CUDA kernels) on one
-    RTX PRO 6000 Blackwell GPU, exported via matbench_discovery.discovery.write_discovery_artifacts.
+    WBM relaxations used a custom batched GPU-resident FP64 FIRE + FrechetCellFilter
+    engine (fmax 0.02 eV/A, max 500 steps, strict IEEE FP32 with Dual-CSR CUDA kernels)
+    on one RTX PRO 6000 Blackwell GPU, exported via
+    matbench_discovery.discovery.write_discovery_artifacts. The reported 278.23 s
+    run_time_sec comes from this batched GPU engine and is not directly comparable to
+    serial ASE runner times. Verified against serial ASE FIRE(FrechetCellFilter) on 50
+    random WBM structures (seed 42): 49/50 exact step-count matches, median |dE|/atom
+    5.7e-8 eV/at (max 1.7e-5 eV/at), median |dV|/V 1.5e-8 (max 1.8e-4).
   phonons: >
     Evaluated with phono3py 3.30.0 / phonopy 3.5.1 (displacement_distance=0.03 A) in strict
     IEEE FP32 with Dual-CSR CUDA kernels on one RTX PRO 6000 Blackwell GPU.
