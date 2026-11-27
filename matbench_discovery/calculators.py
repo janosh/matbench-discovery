@@ -1183,7 +1183,10 @@ def _race_v2(device: str, checkpoint: str, dtype: str = "float64") -> Calculator
             }
 
     calc = RACEv2JaxCalculator(checkpoint)
-    flags = ("cuequivariance",) if method == "uniform_1d" else ()
+    # cuEquivariance falls back to pure JAX off CUDA, so the fused kernel only runs
+    # (and is only labeled) on a GPU backend
+    on_gpu = jax.default_backend() == "gpu"
+    flags = ("cuequivariance",) if method == "uniform_1d" and on_gpu else ()
     return _with_acceleration(calc, *flags, *(("tight_padding",) if tight else ()))
 
 
