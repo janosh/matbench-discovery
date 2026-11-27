@@ -1070,6 +1070,7 @@ def _race_v2(device: str, checkpoint: str, dtype: str = "float64") -> Calculator
     import cuequivariance_jax as cuex
     import cuequivariance_jax.segmented_polynomials.segmented_polynomial as seg_poly
     import numpy as np
+    from ase import Atoms
     from ase.calculators.calculator import Calculator as AseCalculator
     from ase.calculators.calculator import all_changes
     from jax._src.interpreters import partial_eval
@@ -1091,24 +1092,23 @@ def _race_v2(device: str, checkpoint: str, dtype: str = "float64") -> Calculator
     method = os.getenv("RACE_V2_TP_METHOD", "")
     if not method:
         try:
-            capability = subprocess.run(  # noqa: S603
+            capability = subprocess.run(
                 ["nvidia-smi", "--query-gpu=compute_cap", "--format=csv,noheader"],  # noqa: S607
                 capture_output=True,
                 text=True,
                 check=True,
                 timeout=30,
             ).stdout.split()[0]
-            method = "uniform_1d" if float(capability) >= 8 else "naive"  # noqa: PLR2004
-        except (OSError, subprocess.SubprocessError, IndexError, ValueError):
+            method = "uniform_1d" if float(capability) >= 8 else "naive"
+        except OSError, subprocess.SubprocessError, IndexError, ValueError:
             method = "uniform_1d"
-    if method == "naive" and not getattr(cuex.segmented_polynomial, "race_v2_naive", False):
-        fused = cuex.segmented_polynomial
+    fused = cuex.segmented_polynomial
+    if method == "naive" and fused.__name__ != "segmented_polynomial_naive":
 
-        def segmented_polynomial_naive(*args: Any, **kwargs: Any) -> Any:
+        def segmented_polynomial_naive(*args: object, **kwargs: object) -> object:
             """cuex.segmented_polynomial with the pure-JAX method."""
             return fused(*args, **{**kwargs, "method": "naive"})
 
-        segmented_polynomial_naive.race_v2_naive = True  # type: ignore[attr-defined]
         cuex.segmented_polynomial = segmented_polynomial_naive
 
     tight = os.getenv("RACE_V2_PAD", "ladder") == "tight"
@@ -1153,10 +1153,15 @@ def _race_v2(device: str, checkpoint: str, dtype: str = "float64") -> Calculator
                 raise ValueError(
                     f"element Z={exc.args[0]} is not in the model's atomic_numbers"
                 ) from exc
-            shape = self.padded_shape(int(payload["n_node"][0]), int(payload["n_edge"][0]))
+            shape = self.padded_shape(
+                int(payload["n_node"][0]), int(payload["n_edge"][0])
+            )
             evaluator.shapes.add(shape)
             graph = _to_graph(
-                _cast({k: v for k, v in payload.items() if k != "numbers"}, evaluator.dtype)
+                _cast(
+                    {k: v for k, v in payload.items() if k != "numbers"},
+                    evaluator.dtype,
+                )
             )
             batch = fixed_collate_fn([graph], evaluator.max_graphs, *shape)
             energy, forces, stress = evaluator.collect(
@@ -1170,7 +1175,9 @@ def _race_v2(device: str, checkpoint: str, dtype: str = "float64") -> Calculator
             }
 
     calc = RACEv2JaxCalculator(checkpoint)
-    return _with_acceleration(calc, *(("cuequivariance",) if method == "uniform_1d" else ()))
+    return _with_acceleration(
+        calc, *(("cuequivariance",) if method == "uniform_1d" else ())
+    )
 
 
 def _emt(device: str) -> Calculator:  # noqa: ARG001 - CPU only, debug model
