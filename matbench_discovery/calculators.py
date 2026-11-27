@@ -1041,25 +1041,30 @@ def _bam(device: str, checkpoint: str) -> Calculator:
 
 
 # cuequivariance_jax.segmented_polynomial is a process-wide attribute that a pure-JAX
-# RACE v2 calculator swaps while its model call runs (and jit traces): every RACE v2
-# model call, and the read of the original function, holds this lock so that no
-# concurrent call or factory sees the other method
-_RACE_V2_CUEX_LOCK = threading.Lock()
+# RACE v2 calculator swaps while its model call runs (and jit traces), and the
+# evaluator reads its core exclusion from the environment while it is built: every
+# RACE v2 model call, evaluator construction and read of the original function holds
+# this lock so that no concurrent call or factory sees the other's state
+_RACE_V2_LOCK = threading.Lock()
 
 
-def _race_v2(device: str, checkpoint: str, dtype: str = "float64") -> Calculator:  # noqa: ARG001 - JAX picks the GPU
+def _race_v2(device: str, checkpoint: str, dtype: str = "float64") -> Calculator:
     """Load the RACE v2 JAX model (BAM_V2, race_v2) from a .pkl checkpoint as an ASE
     calculator on race_v2.inference.relax_batched.RaceEvaluator (float64 inputs; the
     evaluator of the authors' relaxations and MD).
 
     Settings: core exclusion on with the table shipped in the package (ZBL below the
-    shortest training distance of an element pair), vesin neighbor list, float64.
+    shortest training distance of an element pair; set for this evaluator only unless
+    BAM_CORE_EXCLUSION overrides it), vesin neighbor list, float64, periodic cells.
+    JAX picks the device (JAX_PLATFORMS=cpu for a CPU run): a device that differs from
+    the JAX backend raises.
     Padded shapes: atoms to a multiple of 16, edges to the ladder 1024 * 2^k * {1, 1.5}
     (few compilations over a set of different cells); RACE_V2_PAD=tight pads to the
     structure plus 6 % instead (one shape per atom count, for MD).
     The edge tensor product and the symmetric contraction use the fused cuEquivariance
-    CUDA kernel (method uniform_1d). Its binaries need compute capability >= 8.0, so on
-    older GPUs (e.g. V100) the same polynomials run in pure JAX (method naive), set
+    CUDA kernel (method uniform_1d). Its binaries need compute capability >= 8.0 of the
+    GPU JAX runs on, so on older GPUs (e.g. V100), off GPU or with an unknown capability
+    the same polynomials run in pure JAX (method naive), set
     only around this calculator's model calls (under a lock shared by all RACE v2
     calculators); RACE_V2_TP_METHOD=naive|uniform_1d overrides the choice.
     Acceleration labels: cuequivariance, tight_padding.
@@ -1076,7 +1081,13 @@ def _race_v2(device: str, checkpoint: str, dtype: str = "float64") -> Calculator
 
     # start the CUDA backend first: it loads the NVIDIA libraries (libnvrtc) that the
     # cuEquivariance kernel library links against
-    jax.devices()
+    jax_device = jax.devices()[0]
+    backend = jax.default_backend()
+    if {"cuda": "gpu"}.get(kind := device.split(":", 1)[0], kind) != backend:
+        raise ValueError(
+            f"RACE v2 got {device=} but JAX runs on {backend!r}: JAX picks the device, "
+            "select it with JAX_PLATFORMS (e.g. JAX_PLATFORMS=cpu) before loading"
+        )
 
     import cuequivariance_jax as cuex
     import cuequivariance_jax.segmented_polynomials.segmented_polynomial as seg_poly
@@ -1090,7 +1101,11 @@ def _race_v2(device: str, checkpoint: str, dtype: str = "float64") -> Calculator
     from race_v2.inference import relax_batched
     from race_v2.inference.predict import DEFAULT_CORE_EXCLUSION
 
-    os.environ.setdefault("BAM_CORE_EXCLUSION", json.dumps(DEFAULT_CORE_EXCLUSION))
+    # the benchmark's core-exclusion default, exported only while the evaluator is
+    # built (a caller's BAM_CORE_EXCLUSION wins)
+    core_exclusion = (
+        None if os.getenv("BAM_CORE_EXCLUSION") else json.dumps(DEFAULT_CORE_EXCLUSION)
+    )
 
     # cuequivariance-jax (0.13, 0.14) registers a DCE rule (used_outputs, eqn);
     # jax 0.12 calls the rules with (used_outputs, live_inputs, eqn)
@@ -1102,18 +1117,14 @@ def _race_v2(device: str, checkpoint: str, dtype: str = "float64") -> Calculator
 
     method = os.getenv("RACE_V2_TP_METHOD", "")
     if not method:
+        # compute capability of the GPU JAX executes on; naive when it is unknown
+        capability = str(getattr(jax_device, "compute_capability", ""))
         try:
-            capability = subprocess.run(
-                ["nvidia-smi", "--query-gpu=compute_cap", "--format=csv,noheader"],  # noqa: S607
-                capture_output=True,
-                text=True,
-                check=True,
-                timeout=30,
-            ).stdout.split()[0]
-            method = "uniform_1d" if float(capability) >= 8 else "naive"
-        except OSError, subprocess.SubprocessError, IndexError, ValueError:
-            method = "uniform_1d"
-    with _RACE_V2_CUEX_LOCK:
+            fast = backend == "gpu" and float(capability) >= 8
+        except TypeError, ValueError:
+            fast = False
+        method = "uniform_1d" if fast else "naive"
+    with _RACE_V2_LOCK:
         fused = cuex.segmented_polynomial
 
     def segmented_polynomial_naive(*args: object, **kwargs: object) -> object:
@@ -1130,7 +1141,16 @@ def _race_v2(device: str, checkpoint: str, dtype: str = "float64") -> Calculator
 
         def __init__(self, checkpoint_path: str) -> None:
             super().__init__()
-            self.evaluator = relax_batched.RaceEvaluator(checkpoint_path, max_graphs=2)
+            with _RACE_V2_LOCK:
+                if core_exclusion is not None:
+                    os.environ["BAM_CORE_EXCLUSION"] = core_exclusion
+                try:
+                    self.evaluator = relax_batched.RaceEvaluator(
+                        checkpoint_path, max_graphs=2
+                    )
+                finally:
+                    if core_exclusion is not None:
+                        os.environ.pop("BAM_CORE_EXCLUSION", None)
             if self.evaluator.dtype != np.float64:
                 raise RuntimeError("RACE v2 evaluator is not float64")
             self.prepare = self.evaluator.prepare_fn()
@@ -1155,6 +1175,12 @@ def _race_v2(device: str, checkpoint: str, dtype: str = "float64") -> Calculator
         ) -> None:
             """Evaluate the structure in one padded, compiled model call."""
             super().calculate(atoms, properties, system_changes)
+            if not self.atoms.pbc.any():
+                # race_v2's payload needs the image shifts of a periodic cell
+                raise ValueError(
+                    "RACE v2 calculator takes periodic cells only: set atoms.pbc and a "
+                    "cell (with vacuum around a molecule)"
+                )
             evaluator = self.evaluator
             try:
                 payload = self.prepare(self.atoms)
@@ -1176,7 +1202,7 @@ def _race_v2(device: str, checkpoint: str, dtype: str = "float64") -> Calculator
             # the model looks cuex.segmented_polynomial up while jit traces a new
             # shape: a pure-JAX calculator swaps it in only around its own calls, and
             # the lock keeps concurrent calls of other calculators off the swap
-            with _RACE_V2_CUEX_LOCK:
+            with _RACE_V2_LOCK:
                 if method == "naive":
                     cuex.segmented_polynomial = segmented_polynomial_naive
                 try:
