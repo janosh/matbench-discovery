@@ -15,7 +15,7 @@ repo: https://github.com/myung-group/BAM_V2
 doi:
 paper:
 docs: https://github.com/myung-group/BAM_V2/tree/main
-pr_url:
+pr_url: https://github.com/janosh/matbench-discovery/pull/421
 checkpoint_url: https://github.com/myung-group/BAM_V2/releases/download/race-v2.1/race-v2.1-9m-oam-replay.pkl
 license:
   code: MIT
