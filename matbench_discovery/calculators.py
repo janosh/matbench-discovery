@@ -18,6 +18,7 @@ import shutil
 import socket
 import subprocess
 import sys
+import threading
 import time
 import zipfile
 from collections.abc import Callable, Iterator, Mapping, MutableMapping, Sequence
@@ -1039,6 +1040,13 @@ def _bam(device: str, checkpoint: str) -> Calculator:
     return RACECalculator(model=checkpoint, device=device)
 
 
+# cuequivariance_jax.segmented_polynomial is a process-wide attribute that a pure-JAX
+# RACE v2 calculator swaps while its model call runs (and jit traces): every RACE v2
+# model call, and the read of the original function, holds this lock so that no
+# concurrent call or factory sees the other method
+_RACE_V2_CUEX_LOCK = threading.Lock()
+
+
 def _race_v2(device: str, checkpoint: str, dtype: str = "float64") -> Calculator:  # noqa: ARG001 - JAX picks the GPU
     """Load the RACE v2 JAX model (BAM_V2, race_v2) from a .pkl checkpoint as an ASE
     calculator on race_v2.inference.relax_batched.RaceEvaluator (float64 inputs; the
@@ -1052,8 +1060,9 @@ def _race_v2(device: str, checkpoint: str, dtype: str = "float64") -> Calculator
     The edge tensor product and the symmetric contraction use the fused cuEquivariance
     CUDA kernel (method uniform_1d). Its binaries need compute capability >= 8.0, so on
     older GPUs (e.g. V100) the same polynomials run in pure JAX (method naive), set
-    only around this calculator's model calls; RACE_V2_TP_METHOD=naive|uniform_1d
-    overrides the choice. Acceleration labels: cuequivariance, tight_padding.
+    only around this calculator's model calls (under a lock shared by all RACE v2
+    calculators); RACE_V2_TP_METHOD=naive|uniform_1d overrides the choice.
+    Acceleration labels: cuequivariance, tight_padding.
     """
     import json
 
@@ -1104,7 +1113,8 @@ def _race_v2(device: str, checkpoint: str, dtype: str = "float64") -> Calculator
             method = "uniform_1d" if float(capability) >= 8 else "naive"
         except OSError, subprocess.SubprocessError, IndexError, ValueError:
             method = "uniform_1d"
-    fused = cuex.segmented_polynomial
+    with _RACE_V2_CUEX_LOCK:
+        fused = cuex.segmented_polynomial
 
     def segmented_polynomial_naive(*args: object, **kwargs: object) -> object:
         """cuex.segmented_polynomial with the pure-JAX method."""
@@ -1164,14 +1174,15 @@ def _race_v2(device: str, checkpoint: str, dtype: str = "float64") -> Calculator
             )
             batch = fixed_collate_fn([graph], evaluator.max_graphs, *shape)
             # the model looks cuex.segmented_polynomial up while jit traces a new
-            # shape: a pure-JAX calculator swaps it in only around its own calls, so
-            # other calculators in the process keep their method
-            if method == "naive":
-                cuex.segmented_polynomial = segmented_polynomial_naive
-            try:
-                output = evaluator._step(batch)  # noqa: SLF001
-            finally:
-                cuex.segmented_polynomial = fused
+            # shape: a pure-JAX calculator swaps it in only around its own calls, and
+            # the lock keeps concurrent calls of other calculators off the swap
+            with _RACE_V2_CUEX_LOCK:
+                if method == "naive":
+                    cuex.segmented_polynomial = segmented_polynomial_naive
+                try:
+                    output = evaluator._step(batch)  # noqa: SLF001
+                finally:
+                    cuex.segmented_polynomial = fused
             [(energy, forces, stress)] = evaluator.collect(
                 (output, [payload["numbers"]])
             )
