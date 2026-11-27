@@ -790,6 +790,8 @@ def test_mena_lam6_routes_mp2020_u_flag_by_composition(
     seen_u_flags: list[int | None] = []
 
     class _FakeMenaCalc(Calculator):
+        """Stub MenaCalculator tracking u_flag without external deps."""
+
         implemented_properties: list[str] = [  # noqa: RUF012
             "energy",
             "free_energy",
@@ -803,9 +805,10 @@ def test_mena_lam6_routes_mp2020_u_flag_by_composition(
             properties: list[str] | None = None,
             system_changes: list[str] | None = None,
         ) -> None:
-            del properties, system_changes
-            assert atoms is not None
-            seen_u_flags.append(atoms.info.get("u_flag"))
+            """Record u_flag and emit a fixed energy."""
+            super().calculate(atoms, properties, system_changes)
+            assert self.atoms is not None
+            seen_u_flags.append(self.atoms.info.get("u_flag"))
             self.results = {"energy": -3.5, "free_energy": -3.5}
 
     lam4_calc_module = ModuleType("lam4.calc")
@@ -823,3 +826,66 @@ def test_mena_lam6_routes_mp2020_u_flag_by_composition(
     assert atoms.get_potential_energy() == -3.5
     assert seen_u_flags == [expected_u_flag]
     assert "u_flag" not in atoms.info
+
+
+def test_mena_lam6_invalidates_cache_when_charge_info_changes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Wrapper delegates check_state so nonperiodic charge edits invalidate cache."""
+    calls: list[int] = []
+
+    class _FakeMetadataMenaCalc(Calculator):
+        """Stub MenaCalculator whose check_state tracks atoms.info['charge']."""
+
+        implemented_properties: list[str] = [  # noqa: RUF012
+            "energy",
+            "free_energy",
+            "forces",
+            "stress",
+        ]
+
+        def __init__(self) -> None:
+            """Initialize cached charge signature."""
+            super().__init__()
+            self._last_charge: int | None = None
+
+        def check_state(self, atoms: Atoms, tol: float = 1e-15) -> list[str]:
+            """Invalidate when geometry or atoms.info['charge'] changes."""
+            changes = super().check_state(atoms, tol=tol)
+            charge = int(atoms.info.get("charge", 0))
+            if not changes and self._last_charge != charge:
+                changes.append("info")
+            return changes
+
+        def calculate(
+            self,
+            atoms: Atoms | None = None,
+            properties: list[str] | None = None,
+            system_changes: list[str] | None = None,
+        ) -> None:
+            """Store charge-dependent energy."""
+            super().calculate(atoms, properties, system_changes)
+            assert self.atoms is not None
+            charge = int(self.atoms.info.get("charge", 0))
+            self._last_charge = charge
+            calls.append(charge)
+            energy = -1.0 - charge
+            self.results = {"energy": energy, "free_energy": energy}
+
+    lam4_calc_module = ModuleType("lam4.calc")
+    lam4_calc_module.__dict__["MenaCalculator"] = SimpleNamespace(
+        from_checkpoint=Mock(return_value=_FakeMetadataMenaCalc())
+    )
+    for module_name, module in {
+        "lam4": ModuleType("lam4"),
+        "lam4.calc": lam4_calc_module,
+    }.items():
+        monkeypatch.setitem(sys.modules, module_name, module)
+
+    mol = Atoms("H2", positions=[[0, 0, 0], [0, 0, 0.74]], info={"charge": 0})
+    mol.calc = CALCULATORS["mena_lam_6"].make_calc("cpu", checkpoint="mena-lam6-v1.pt")
+    assert mol.get_potential_energy() == -1.0
+    assert mol.get_potential_energy() == -1.0  # unchanged state stays cached
+    mol.info["charge"] = 1
+    assert mol.get_potential_energy() == -2.0
+    assert calls == [0, 1]

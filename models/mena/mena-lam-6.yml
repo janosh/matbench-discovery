@@ -130,32 +130,32 @@ metrics:
       md5: 2c357b5bdf1b796a25780855fac19b0f
     cost: {source: author_reported, hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 278.23, load_time_sec: 1.76, max_rss_gb: 2.935, max_gpu_mem_gb: 2.256}
     full_test_set:
-      F1: 0.886 # fraction
-      DAF: 5.187 # dimensionless
-      Precision: 0.89 # fraction
-      Recall: 0.882 # fraction
-      Accuracy: 0.961 # fraction
-      TP: 38906 # count
-      FP: 4810 # count
-      TN: 208061 # count
-      FN: 5186 # count
-      MAE: 0.02 # eV/atom
-      RMSE: 0.066 # eV/atom
-      R2: 0.864 # dimensionless
+      F1: 0.892 # fraction
+      DAF: 5.221 # dimensionless
+      Precision: 0.893 # fraction
+      Recall: 0.89 # fraction
+      Accuracy: 0.963 # fraction
+      TP: 39123 # count
+      FP: 4679 # count
+      TN: 208327 # count
+      FN: 4834 # count
+      MAE: 0.019 # eV/atom
+      RMSE: 0.065 # eV/atom
+      R2: 0.869 # dimensionless
       missing_preds: 2 # count
     unique_prototypes:
-      F1: 0.904 # fraction
-      DAF: 5.944 # dimensionless
-      Precision: 0.909 # fraction
-      Recall: 0.899 # fraction
-      Accuracy: 0.97 # fraction
-      TP: 29994 # count
-      FP: 3016 # count
-      TN: 179098 # count
-      FN: 3380 # count
-      MAE: 0.021 # eV/atom
-      RMSE: 0.066 # eV/atom
-      R2: 0.87 # dimensionless
+      F1: 0.909 # fraction
+      DAF: 5.987 # dimensionless
+      Precision: 0.911 # fraction
+      Recall: 0.907 # fraction
+      Accuracy: 0.972 # fraction
+      TP: 30150 # count
+      FP: 2930 # count
+      TN: 179316 # count
+      FN: 3092 # count
+      MAE: 0.02 # eV/atom
+      RMSE: 0.065 # eV/atom
+      R2: 0.875 # dimensionless
       missing_preds: 0 # count
   geo_opt:
     pred_file:
@@ -164,31 +164,30 @@ metrics:
       size: 102325885
       md5: 37ad43d4dd2689be719dd5302daf3abe
     symprec=1e-2:
-      rmsd: 0.0623 # unitless
-      n_sym_ops_mae: 1.6973 # unitless
+      n_sym_ops_mae: 1.6969 # unitless
       symmetry_decrease: 0.0478 # fraction
       symmetry_match: 0.8189 # fraction
       symmetry_increase: 0.126 # fraction
       symmetry_lateral: 0.0072 # fraction
       n_structures: 256963 # count
       analysis_file:
-        name: models/mena/mena-lam-6/2026-11-22-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        url: https://huggingface.co/datasets/iatecoding/mena-lam-6-matbench-discovery/resolve/main/2026-11-22-geo-opt-symprec=1e-2-moyo=0.21.0.csv.gz
-        size: 6864836
-        md5: d2040d9112f6e07cd4ad729966f6025b
+        name: models/mena/mena-lam-6/2026-11-22-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://huggingface.co/datasets/iatecoding/mena-lam-6-matbench-discovery/resolve/main/2026-11-22-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        size: 6869186
+        md5: 910e299e7f9032ad82f172baa8a5c258
     symprec=1e-5:
-      rmsd: 0.0623
-      n_sym_ops_mae: 2.1481
-      symmetry_decrease: 0.0638
-      symmetry_match: 0.6915
-      symmetry_increase: 0.2388
-      symmetry_lateral: 0.0059
-      n_structures: 256963
+      n_sym_ops_mae: 2.1481 # unitless
+      symmetry_decrease: 0.0637 # fraction
+      symmetry_match: 0.6915 # fraction
+      symmetry_increase: 0.2389 # fraction
+      symmetry_lateral: 0.0059 # fraction
+      n_structures: 256963 # count
       analysis_file:
-        name: models/mena/mena-lam-6/2026-11-22-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        url: https://huggingface.co/datasets/iatecoding/mena-lam-6-matbench-discovery/resolve/main/2026-11-22-geo-opt-symprec=1e-5-moyo=0.21.0.csv.gz
-        size: 6903846
-        md5: a62cba33d4fa5688cbefa85b5284c1b8
+        name: models/mena/mena-lam-6/2026-11-22-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://huggingface.co/datasets/iatecoding/mena-lam-6-matbench-discovery/resolve/main/2026-11-22-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        size: 6907873
+        md5: 28064126fdb5253f753f10243177a9ce
+    rmsd_auc: 0.7891 # fraction
   phonons:
     kappa_103:
       pred_file:
