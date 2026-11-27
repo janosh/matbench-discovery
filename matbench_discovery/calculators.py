@@ -1056,8 +1056,9 @@ def _race_v2(device: str, checkpoint: str, dtype: str = "float64") -> Calculator
     Settings: core exclusion on with the table shipped in the package (ZBL below the
     shortest training distance of an element pair; set for this evaluator only unless
     BAM_CORE_EXCLUSION overrides it), vesin neighbor list, float64, periodic cells.
-    JAX picks the device (JAX_PLATFORMS=cpu for a CPU run): a device that differs from
-    the JAX backend raises.
+    JAX picks the device (JAX_PLATFORMS=cpu for a CPU run): device="cpu" is also what
+    an omitted device resolves to without torch, so it leaves the choice to JAX, while
+    device="cuda" on a JAX without a GPU backend raises.
     Padded shapes: atoms to a multiple of 16, edges to the ladder 1024 * 2^k * {1, 1.5}
     (few compilations over a set of different cells); RACE_V2_PAD=tight pads to the
     structure plus 6 % instead (one shape per atom count, for MD).
@@ -1083,10 +1084,10 @@ def _race_v2(device: str, checkpoint: str, dtype: str = "float64") -> Calculator
     # cuEquivariance kernel library links against
     jax_device = jax.devices()[0]
     backend = jax.default_backend()
-    if {"cuda": "gpu"}.get(kind := device.split(":", 1)[0], kind) != backend:
+    if device.split(":", 1)[0] in ("cuda", "gpu") and backend != "gpu":
         raise ValueError(
-            f"RACE v2 got {device=} but JAX runs on {backend!r}: JAX picks the device, "
-            "select it with JAX_PLATFORMS (e.g. JAX_PLATFORMS=cpu) before loading"
+            f"RACE v2 got {device=} but JAX runs on {backend!r}: install a CUDA build "
+            "of jax (jax[cuda12]) or select the CPU with JAX_PLATFORMS=cpu"
         )
 
     import cuequivariance_jax as cuex
