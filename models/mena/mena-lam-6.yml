@@ -82,19 +82,27 @@ hyperparams:
     ema_decay: 0.999
 notes:
   description: >
-    Mena-LAM-6 (lam6_v1, 8.48M parameters) is a unified 3-stage equivariant
-    message-passing interatomic potential with a smooth 6.0 A radial cutoff (C3 taper
-    from 5.0 to 6.0 A), factorized PAW/XC level-of-theory conditioning (separating
-    vasp_pbe52, vasp_pbe54, and vasp_pbe64), and continuous cloud-overlap and electronic
-    auxiliary heads. For Materials Project benchmarks, MenaCalculator runs in strict IEEE
-    float32 (allow_tf32=False) with lot="mp" (MP2020 composition +U rule: O or F together
-    with V, Cr, Mn, Fe, Co, Ni, Mo, or W) and add_dispersion=False.
+    Mena-LAM-6 (lam6_v1, 8.48M total parameters) is a unified 3-stage equivariant
+    message-passing potential trained from scratch in 48.5 net GPU-hours on one RTX PRO
+    6000 Blackwell GPU across crystals, surfaces, molecular crystals, and open molecules
+    (~38% of batches / ~20 GPU-hours dedicated to periodic materials and surfaces; ~62% /
+    ~28.5 GPU-hours to open molecules OMol25 and SPICE 2), using factorized PAW/XC
+    level-of-theory conditioning (separating vasp_pbe52, vasp_pbe54, and vasp_pbe64). It
+    uses a 6.0 A radial cutoff (C3 taper from 5.0 to 6.0 A) with product-only edges and
+    Dual-CSR register-streaming kernels (CUDA, Apple Metal, OpenMP CPU) that avoid saving
+    edge activation buffers, keeping live memory around 6-38 KB/atom (0.46 GB VRAM on
+    DynaMat MD, >300k atoms on a single GPU). Of the 8.48M parameters, ~7.35M form the
+    shared trunk, ~0.50M are frozen isolated-atom references, and ~0.63M are dedicated
+    molecular/electronic heads (charge, spin, dipole, polarizability, gap) inactive on
+    periodic crystals. For Materials Project benchmarks, it runs in float32 under lot="mp"
+    (MP2020 composition +U rule) with no D3 dispersion correction.
   training: >
-    Trained for 747,692 steps (EMA decay 0.999, 48.5 net GPU-hours) from scratch on a
-    single NVIDIA RTX PRO 6000 Blackwell GPU across OMol25, SPICE 2, MPtrj, sAlex, OMat24,
-    OC20, OC25, MAD-1.6, OMC25, and MatPES (PBE and r2SCAN) using Muon + AdamW with a WSD
-    schedule, crystal secant pair loss (P_cry from step 406,311), and an 18-hour strict
-    IEEE FP32 cooldown.
+    Trained from scratch for 747,692 steps (EMA 0.999, 48.5 net GPU-hours) on one NVIDIA
+    RTX PRO 6000 Blackwell GPU across 11 crystal, surface, and molecular datasets. Roughly
+    62% of training batches were dedicated to open molecules (OMol25, SPICE 2) and 38% to
+    periodic materials (MPtrj, sAlex, OMat24, MatPES PBE/r2SCAN, OC20, OC25, OMC25, MAD-1.6),
+    using Muon + AdamW with a WSD schedule, crystal secant pair loss (P_cry from step
+    406,311), and an 18-hour FP32 cooldown.
   disclosure: >
     Earlier Mena-LAM WBM-5k lanthanide errors prompted factorizing VASP PBE_52 vs PBE_54
     PAW tokens, earlier Mena-LAM-preview kappa-103 softening motivated adding crystal
