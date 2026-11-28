@@ -528,7 +528,7 @@
   {...rest}
   oncontextmenucapture={open_menu}
   class={[`leaderboard`, rest.class]}
-  root_style="--table-sticky-cell-odd-bg: linear-gradient(var(--table-odd), var(--table-odd)), var(--page-bg); --table-row-num-padding-left: 0; --table-column-max-width: 14.4em;"
+  style="--table-sticky-cell-odd-bg: linear-gradient(var(--table-odd), var(--table-odd)), var(--page-bg); --table-row-num-padding-left: 0; --table-column-max-width: 14.4em;"
 >
   {#snippet controls()}
     <TableControls

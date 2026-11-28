@@ -949,7 +949,7 @@ describe(`MetricsTable`, () => {
       expect(label?.textContent).toContain(`Show all`)
       expect(get_rows()).toHaveLength(1)
       expect(get_rows()[0].classList.contains(`highlight`)).toBe(false)
-      expect(filters.url_entries).toContainEqual([`selected_only`, `1`])
+      expect(filters.url_entries).toContainEqual([`selected_only`, `1`, `0`])
 
       filters.read(new URLSearchParams())
       await tick()
@@ -966,7 +966,7 @@ describe(`MetricsTable`, () => {
       expect(label?.textContent).toContain(`Show only 1 selected`)
       expect(get_rows()).toHaveLength(initial_count)
       expect(get_rows()[0].classList.contains(`highlight`)).toBe(true)
-      expect(filters.url_entries).toContainEqual([`selected_only`, ``])
+      expect(filters.url_entries).toContainEqual([`selected_only`, `0`, `0`])
     })
   })
 
