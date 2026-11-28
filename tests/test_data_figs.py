@@ -10,7 +10,6 @@ import pandas as pd
 import pymatviz as pmv
 import pytest
 from pymatgen.core import Composition
-from pymatviz.enums import Key
 
 from matbench_discovery import ROOT
 from matbench_discovery.data_figs import (
@@ -25,7 +24,7 @@ from matbench_discovery.data_figs import (
     build_wbm_hull_dist_hist,
 )
 from matbench_discovery.energy import mp_elem_ref_entries
-from matbench_discovery.enums import DataFiles, MbdKey
+from matbench_discovery.enums import DataFiles, Key
 
 
 def test_export_benchmark_element_counts(
@@ -149,7 +148,7 @@ def test_build_mp_trj_hist_payload() -> None:
     """MPtrj payload combines scalar, nested, and structure-size histograms."""
     df_mp_trj = pd.DataFrame(
         {
-            MbdKey.e_form_dft: [-1.0, -0.5],
+            Key.e_form_dft: [-1.0, -0.5],
             Key.forces: [
                 [[1.0, -2.0, 0.0], [0.5, 0.0, 0.0]],
                 [[3.0, 0.0, -1.0]],
@@ -245,18 +244,18 @@ def test_available_static_builders_match_committed_payloads() -> None:
         typ="series",
     )
     expected_payloads = {
-        "hist-wbm-e-form-per-atom": build_wbm_e_form_hist(df_wbm[MbdKey.e_form_wbm]),
-        "hist-wbm-hull-dist": build_wbm_hull_dist_hist(df_wbm[MbdKey.each_true]),
+        "hist-wbm-e-form-per-atom": build_wbm_e_form_hist(df_wbm[Key.e_form_wbm]),
+        "hist-wbm-hull-dist": build_wbm_hull_dist_hist(df_wbm[Key.each_true]),
         "mp-elemental-ref-energies": build_mp_elemental_ref_energies(
             mp_elem_ref_entries
         ),
         "spacegroup-sunbursts": build_spacegroup_sunbursts(
-            df_mp[MbdKey.protostructure_spglib].str.split("_").str[2].astype(int),
-            df_wbm[MbdKey.init_protostructure_spglib].str.split("_").str[2].astype(int),
+            df_mp[Key.protostructure_spglib].str.split("_").str[2].astype(int),
+            df_wbm[Key.init_protostructure_spglib].str.split("_").str[2].astype(int),
         ),
         "element-counts-mp-vs-wbm": build_element_counts_payload(
             route_mp_counts,
-            df_wbm.query(MbdKey.uniq_proto)[Key.formula],
+            df_wbm.query(Key.uniq_proto)[Key.formula],
             n_mp_structures=len(df_mp),
         ),
     }

@@ -23,7 +23,7 @@ from matbench_discovery.data import (
     merge_file_ref,
     update_yaml_file,
 )
-from matbench_discovery.enums import MbdKey, Model
+from matbench_discovery.enums import Key, Model
 from matbench_discovery.hpc import with_cost_block
 from matbench_discovery.metrics.diatomics.energy import (
     calc_energy_diff_flips,
@@ -62,18 +62,18 @@ DIATOMIC_WALL_R_MIN_FACTOR = 0.8
 DIATOMIC_METRIC_KEYS = frozenset(
     str(key)
     for key in (
-        MbdKey.tortuosity,
-        MbdKey.force_flips,
-        MbdKey.energy_jump,
-        MbdKey.energy_diff_flips,
-        MbdKey.force_total_variation,
-        MbdKey.force_jump,
-        MbdKey.pbe_wall_dist_mae,
-        MbdKey.pbe_energy_mae,
-        MbdKey.pbe_bond_length_error,
-        MbdKey.pbe_well_depth_error,
-        MbdKey.pbe_force_mae,
-        MbdKey.pbe_vib_freq_error,
+        Key.tortuosity,
+        Key.force_flips,
+        Key.energy_jump,
+        Key.energy_diff_flips,
+        Key.force_total_variation,
+        Key.force_jump,
+        Key.pbe_wall_dist_mae,
+        Key.pbe_energy_mae,
+        Key.pbe_bond_length_error,
+        Key.pbe_well_depth_error,
+        Key.pbe_force_mae,
+        Key.pbe_vib_freq_error,
     )
 )
 
@@ -306,15 +306,13 @@ def calc_diatomic_metrics(
         raise ValueError(
             f"{unknown_metrics=}. Valid keys: {sorted(DIATOMIC_METRIC_KEYS)}"
         )
-    requested_metrics = {MbdKey(key) for key in requested_metric_keys}
+    requested_metrics = {Key(key) for key in requested_metric_keys}
 
     results: dict[str, dict[str, float]] = {}
-    metric_kwargs = {
-        MbdKey(key): kwargs.copy() for key, kwargs in (metrics or {}).items()
-    }
+    metric_kwargs = {Key(key): kwargs.copy() for key, kwargs in (metrics or {}).items()}
     for key in requested_metrics & {
-        MbdKey.pbe_energy_mae,
-        MbdKey.pbe_force_mae,
+        Key.pbe_energy_mae,
+        Key.pbe_force_mae,
     }:
         metric_kwargs.setdefault(key, {}).setdefault("interpolate", interpolate)
 
@@ -348,13 +346,13 @@ def calc_diatomic_metrics(
         force_args = (seps_pred, pred_forces)
         # (metric_key, function, positional args) for metrics needing only the
         # predicted curve
-        metric_calls: list[tuple[MbdKey, Any, tuple[Any, ...]]] = [
-            (MbdKey.tortuosity, calc_tortuosity, energy_args),
-            (MbdKey.energy_diff_flips, calc_energy_diff_flips, energy_args),
-            (MbdKey.energy_jump, calc_energy_jump, energy_args),
-            (MbdKey.force_flips, calc_force_flips, force_args),
-            (MbdKey.force_total_variation, calc_force_total_variation, force_args),
-            (MbdKey.force_jump, calc_force_jump, force_args),
+        metric_calls: list[tuple[Key, Any, tuple[Any, ...]]] = [
+            (Key.tortuosity, calc_tortuosity, energy_args),
+            (Key.energy_diff_flips, calc_energy_diff_flips, energy_args),
+            (Key.energy_jump, calc_energy_jump, energy_args),
+            (Key.force_flips, calc_force_flips, force_args),
+            (Key.force_total_variation, calc_force_total_variation, force_args),
+            (Key.force_jump, calc_force_jump, force_args),
         ]
 
         # prepend reference-requiring metrics when a matching reference curve exists
@@ -373,15 +371,15 @@ def calc_diatomic_metrics(
             if len(seps_ref) >= 2:
                 pair_args = (seps_ref, ref_energies, seps_pred, pred_energies)
                 metric_calls[:0] = [
-                    (MbdKey.pbe_energy_mae, calc_pbe_energy_mae, pair_args),
+                    (Key.pbe_energy_mae, calc_pbe_energy_mae, pair_args),
                     (
-                        MbdKey.pbe_bond_length_error,
+                        Key.pbe_bond_length_error,
                         calc_pbe_bond_length_error,
                         pair_args,
                     ),
-                    (MbdKey.pbe_well_depth_error, calc_pbe_well_depth_error, pair_args),
+                    (Key.pbe_well_depth_error, calc_pbe_well_depth_error, pair_args),
                     (
-                        MbdKey.pbe_vib_freq_error,
+                        Key.pbe_vib_freq_error,
                         calc_pbe_vib_freq_error,
                         (elem_symbol, *pair_args),
                     ),
@@ -402,7 +400,7 @@ def calc_diatomic_metrics(
                     pred_energies_raw[pred_wall_mask],
                 )
                 metric_calls.insert(
-                    0, (MbdKey.pbe_wall_dist_mae, calc_pbe_wall_dist_mae, wall_args)
+                    0, (Key.pbe_wall_dist_mae, calc_pbe_wall_dist_mae, wall_args)
                 )
             ref_forces = np.asarray(ref_data.forces)
             if (
@@ -411,7 +409,7 @@ def calc_diatomic_metrics(
                 and len(seps_ref) >= 2
             ):
                 ref_forces = ref_forces[ref_mask]
-                force_interpolate = metric_kwargs.get(MbdKey.pbe_force_mae, {}).get(
+                force_interpolate = metric_kwargs.get(Key.pbe_force_mae, {}).get(
                     "interpolate", False
                 )
                 same_grid = np.array_equal(seps_ref, seps_pred)
@@ -421,7 +419,7 @@ def calc_diatomic_metrics(
                 if same_grid or (force_interpolate and has_overlap):
                     force_pair_args = (seps_ref, ref_forces, seps_pred, pred_forces)
                     metric_calls.append(
-                        (MbdKey.pbe_force_mae, calc_force_mae, force_pair_args)
+                        (Key.pbe_force_mae, calc_force_mae, force_pair_args)
                     )
 
         results[elem_symbol] = {
@@ -475,7 +473,7 @@ def calc_vib_freq_coverage(
     valid = {
         element
         for element, values in metrics.items()
-        if np.isfinite(values.get(MbdKey.pbe_vib_freq_error, np.nan))
+        if np.isfinite(values.get(Key.pbe_vib_freq_error, np.nan))
     }
     if invalid := valid - eligible:
         raise ValueError(

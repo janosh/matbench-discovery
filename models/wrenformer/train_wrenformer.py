@@ -24,10 +24,9 @@ from aviary import ROOT as AVIARY_ROOT
 from aviary.utils import train_ensemble
 from aviary.wrenformer.data import df_to_in_mem_dataloader
 from aviary.wrenformer.model import Wrenformer
-from pymatviz.enums import Key
 
 from matbench_discovery import timestamp, today
-from matbench_discovery.enums import DataFiles, MbdKey, Model
+from matbench_discovery.enums import DataFiles, Key, Model
 from matbench_discovery.hpc import slurm_submit
 
 __author__ = "Janosh Riebesell"
@@ -69,8 +68,8 @@ df_data = pd.read_csv(data_path, keep_default_na=False, na_values=[]).set_index(
 
 if target_col not in df_data:
     raise TypeError(f"{target_col!s} not in {df_data.columns=}")
-if MbdKey.protostructure_spglib not in df_data:
-    raise TypeError(f"{MbdKey.protostructure_spglib!s} not in {df_data.columns=}")
+if Key.protostructure_spglib not in df_data:
+    raise TypeError(f"{Key.protostructure_spglib!s} not in {df_data.columns=}")
 
 # Match the deterministic split used by aviary v0.1.0's df_train_test_split().
 df_shuffled = df_data.sample(frac=1, random_state=0)
@@ -79,7 +78,7 @@ test_df = df_shuffled.drop(train_df.index)
 
 loss_dict = {target_col: "L1"}
 data_loader_kwargs = dict(
-    input_col=MbdKey.protostructure_spglib,
+    input_col=Key.protostructure_spglib,
     target_col=target_col,
     id_col=Key.mat_id,
     embedding_type="protostructure",

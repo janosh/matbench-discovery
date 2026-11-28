@@ -15,7 +15,7 @@ from sklearn.metrics import (
 )
 
 from matbench_discovery.data import load_discovery_predictions
-from matbench_discovery.enums import MbdKey, Model, TestSubset
+from matbench_discovery.enums import Key, Model, TestSubset
 from matbench_discovery.metrics.discovery import (
     calc_discovery_metrics,
     classify_stable,
@@ -43,9 +43,9 @@ def test_prepare_model_predictions_masks_rounds_and_aligns() -> None:
     material_ids = pd.Index(["wbm-1", "wbm-2"])
     df_reference = pd.DataFrame(
         {
-            MbdKey.e_form_dft: [0.0004, 0.0],
-            MbdKey.each_true: [0.1004, 0.2],
-            MbdKey.uniq_proto: [True, False],
+            Key.e_form_dft: [0.0004, 0.0],
+            Key.each_true: [0.1004, 0.2],
+            Key.uniq_proto: [True, False],
         },
         index=material_ids,
     )
@@ -55,11 +55,11 @@ def test_prepare_model_predictions_masks_rounds_and_aligns() -> None:
         df_reference, model_preds
     )
 
-    assert rounded_reference[MbdKey.each_true].tolist() == [0.1, 0.2]
+    assert rounded_reference[Key.each_true].tolist() == [0.1, 0.2]
     assert cleaned_preds.loc["wbm-1"] == pytest.approx(0.124)
     assert pd.isna(cleaned_preds.loc["wbm-2"])
     assert rounded_reference.index.equals(material_ids)
-    assert rounded_reference[MbdKey.uniq_proto].tolist() == [True, False]
+    assert rounded_reference[Key.uniq_proto].tolist() == [True, False]
 
     # Alignment fires at public entry points (prepare reindexes onto the reference)
     foreign_preds = pd.Series([0.1], index=pd.Index(["wbm-3"]))
@@ -216,9 +216,9 @@ def test_discovery_metrics_match_manual_calculation_and_round_trip(
     material_ids = pd.Index([f"wbm-{idx}" for idx in range(6)])
     df_test = pd.DataFrame(
         {
-            MbdKey.each_true: [-0.2, -0.1, 0.1, 0.2, -0.05, 0.3],
-            MbdKey.e_form_dft: [-1.0, -0.9, -0.8, -0.7, -0.6, -0.5],
-            MbdKey.uniq_proto: [True, True, False, True, True, False],
+            Key.each_true: [-0.2, -0.1, 0.1, 0.2, -0.05, 0.3],
+            Key.e_form_dft: [-1.0, -0.9, -0.8, -0.7, -0.6, -0.5],
+            Key.uniq_proto: [True, True, False, True, True, False],
         },
         index=material_ids,
     )
@@ -227,18 +227,18 @@ def test_discovery_metrics_match_manual_calculation_and_round_trip(
         [-1.1, -0.7, np.nan, -0.6, np.nan, -0.4], index=material_ids
     )
     metrics_by_subset = calc_discovery_metrics(df_test, model_preds)
-    each_pred = df_test[MbdKey.each_true] + model_preds - df_test[MbdKey.e_form_dft]
+    each_pred = df_test[Key.each_true] + model_preds - df_test[Key.e_form_dft]
 
     assert set(metrics_by_subset) == set(TestSubset)
-    uniq_proto_idx = df_test.index[df_test[MbdKey.uniq_proto]]
+    uniq_proto_idx = df_test.index[df_test[Key.uniq_proto]]
     assert list(uniq_proto_idx) == ["wbm-0", "wbm-1", "wbm-3", "wbm-4"]
-    uniq_prevalence = (df_test.loc[uniq_proto_idx, MbdKey.each_true] <= 0).mean()
+    uniq_prevalence = (df_test.loc[uniq_proto_idx, Key.each_true] <= 0).mean()
     for subset, subset_idx in (
         (TestSubset.full_test_set, material_ids),
         (TestSubset.uniq_protos, uniq_proto_idx),
     ):
         expected = stable_metrics(
-            df_test.loc[subset_idx, MbdKey.each_true],
+            df_test.loc[subset_idx, Key.each_true],
             each_pred.loc[subset_idx],
             fillna=True,
         )
@@ -266,8 +266,8 @@ def test_discovery_metrics_match_manual_calculation_and_round_trip(
     written = write_all_metrics_to_yaml(
         mock_model, metrics_by_subset, df_test, model_preds
     )
-    assert written[TestSubset.full_test_set][str(MbdKey.missing_preds)] == 2
-    assert written[TestSubset.uniq_protos][str(MbdKey.missing_preds)] == 1
+    assert written[TestSubset.full_test_set][str(Key.missing_preds)] == 2
+    assert written[TestSubset.uniq_protos][str(Key.missing_preds)] == 1
     yaml_text = test_yaml.read_text(encoding="utf-8")
     assert "most_stable_10k" not in yaml_text
     assert "TPR:" not in yaml_text
@@ -318,8 +318,8 @@ def test_discovery_prediction_frames(
     material_ids = pd.Index(["wbm-2-1", "wbm-1-1", "wbm-3-1", "wbm-4-1"])
     raw = pd.DataFrame(
         {
-            MbdKey.e_form_dft: [-1.0004, -0.5, 0.0, -0.063],
-            MbdKey.each_true: [-0.1004, 0.2, 0.0, -0.074],
+            Key.e_form_dft: [-1.0004, -0.5, 0.0, -0.063],
+            Key.each_true: [-0.1004, 0.2, 0.0, -0.074],
             **dict.fromkeys(full_discovery_model_keys, (-1.1254, -0.25, np.nan, 0.011)),
         },
         index=material_ids,
@@ -345,7 +345,7 @@ def test_discovery_prediction_frames(
         # bit-identical to metrics' each_true + pred - e_form: the last row is exactly
         # 0.0 (stable) in that order but 3.5e-18 (unstable) as pred+(each_true-e_form)
         expected_each_pred = (
-            rounded[MbdKey.each_true] + rounded[model_key] - rounded[MbdKey.e_form_dft]
+            rounded[Key.each_true] + rounded[model_key] - rounded[Key.e_form_dft]
         )
         np.testing.assert_array_equal(df_each_pred[model_key], expected_each_pred)
         missing = model_key == Model["mace_mpa_0"].key

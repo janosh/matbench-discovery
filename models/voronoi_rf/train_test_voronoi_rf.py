@@ -8,7 +8,6 @@ from importlib.metadata import version
 import joblib
 import pandas as pd
 import wandb
-from pymatviz.enums import Key
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import r2_score
@@ -16,7 +15,7 @@ from sklearn.pipeline import Pipeline
 
 from matbench_discovery import ROOT, today
 from matbench_discovery.data import df_wbm, glob_to_df
-from matbench_discovery.enums import DataFiles, MbdKey, Task
+from matbench_discovery.enums import DataFiles, Key, Task
 from matbench_discovery.hpc import slurm_submit
 
 sys.path.append(f"{ROOT}/models")
@@ -63,7 +62,7 @@ print(f"{df_test.shape=}")
 
 for df, df_targets, e_form_col in (
     (df_train, df_mp, Key.formation_energy_per_atom),
-    (df_test, df_wbm, MbdKey.e_form_dft),
+    (df_test, df_wbm, Key.e_form_dft),
 ):
     df[Key.form_energy] = df_targets[e_form_col]
     n_nans = df_targets[e_form_col].isna().sum()
@@ -82,7 +81,7 @@ run_params = dict(
     versions={dep: version(dep) for dep in ("scikit-learn", "matminer", "numpy")},
     model_name=model_name,
     train_target_col=Key.form_energy,
-    test_target_col=MbdKey.e_form_dft,
+    test_target_col=Key.e_form_dft,
     df_train=dict(shape=str(df_train.shape)),
     df_test=dict(shape=str(df_test.shape)),
     slurm_vars=slurm_vars,
@@ -140,21 +139,21 @@ df_wbm[pred_col] = df_test[pred_col]
 df_wbm[pred_col].round(4).to_csv(out_path)
 
 table = wandb.Table(
-    dataframe=df_wbm[[Key.formula, MbdKey.e_form_dft, pred_col]].reset_index()
+    dataframe=df_wbm[[Key.formula, Key.e_form_dft, pred_col]].reset_index()
 )
 
 n_nans = df_wbm[pred_col].isna().sum()
 print(f"NaNs in predictions: {n_nans:,} / {len(df_wbm):,} = {n_nans / len(df_wbm):.2%}")
 
-MAE = (df_wbm[MbdKey.e_form_dft] - df_wbm[pred_col]).abs().mean()
-R2 = r2_score(*df_wbm[[MbdKey.e_form_dft, pred_col]].dropna().to_numpy().T)
+MAE = (df_wbm[Key.e_form_dft] - df_wbm[pred_col]).abs().mean()
+R2 = r2_score(*df_wbm[[Key.e_form_dft, pred_col]].dropna().to_numpy().T)
 title = f"{model_name} {task_type} {MAE=:.3} {R2=:.3}"
 print(title)
 
 scatter_plot = wandb.plot_table(
     vega_spec_name="janosh/scatter-parity",
     data_table=table,
-    fields={"x": MbdKey.e_form_dft, "y": pred_col},
+    fields={"x": Key.e_form_dft, "y": pred_col},
     string_fields={
         "title": title,
         "x_label": "DFT formation energy (eV/atom)",

@@ -12,11 +12,10 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_allclose
 from numpy.typing import NDArray
-from pymatviz.enums import Key
 
 from matbench_discovery import data as mbd_data
 from matbench_discovery.data import make_file_ref
-from matbench_discovery.enums import MbdKey, Model
+from matbench_discovery.enums import Key, Model
 from matbench_discovery.metrics import phonons as phonon_metrics
 
 _KAPPA_MODEL_DIR = "models/mace/mace-mp-0"
@@ -41,9 +40,9 @@ def df_pred() -> pd.DataFrame:
     """Mock DataFrame with ML predictions."""
     return pd.DataFrame(
         {
-            MbdKey.kappa_tot_rta: [np.diag([1, 2, 3]), 2 * np.eye(3)],
-            MbdKey.kappa_tot_avg: [2, 2],  # average of diagonal elements
-            MbdKey.mode_kappa_tot_rta: [np.diag([0.5, 1, 1.5]), np.eye(3)],
+            Key.kappa_tot_rta: [np.diag([1, 2, 3]), 2 * np.eye(3)],
+            Key.kappa_tot_avg: [2, 2],  # average of diagonal elements
+            Key.mode_kappa_tot_rta: [np.diag([0.5, 1, 1.5]), np.eye(3)],
             Key.mode_weights: [np.array([1]), np.array([1])],
             Key.has_imag_ph_modes: [False, False],
             Key.final_spg_num: [1, 1],
@@ -57,9 +56,9 @@ def df_true() -> pd.DataFrame:
     """Mock DataFrame with DFT reference values."""
     return pd.DataFrame(
         {
-            MbdKey.kappa_tot_rta: [np.diag([1, 2, 3]), np.diag([2, 2, 2])],
-            MbdKey.kappa_tot_avg: [2, 2],
-            MbdKey.mode_kappa_tot_rta: [np.diag([0.5, 1, 1.5]), np.eye(3)],
+            Key.kappa_tot_rta: [np.diag([1, 2, 3]), np.diag([2, 2, 2])],
+            Key.kappa_tot_avg: [2, 2],
+            Key.mode_kappa_tot_rta: [np.diag([0.5, 1, 1.5]), np.eye(3)],
             Key.mode_weights: [np.array([1]), np.array([1])],
         }
     )
@@ -70,10 +69,10 @@ def df_minimal() -> pd.DataFrame:
     """Minimal DataFrame with required columns."""
     return pd.DataFrame(
         {
-            MbdKey.kappa_tot_rta: [np.eye(3)],
-            MbdKey.kappa_tot_avg: [1.0],
+            Key.kappa_tot_rta: [np.eye(3)],
+            Key.kappa_tot_avg: [1.0],
             Key.mode_weights: [np.array([1])],
-            MbdKey.mode_kappa_tot_rta: [np.eye(3)],
+            Key.mode_kappa_tot_rta: [np.eye(3)],
         }
     )
 
@@ -83,9 +82,9 @@ def series_multi_temp() -> pd.Series:
     """Mock Series with multi-temperature data."""
     return pd.Series(
         {
-            MbdKey.kappa_tot_avg: np.array([2.0, 1.5, 1.0]),
-            MbdKey.kappa_tot_rta: np.array([2 * np.eye(3), 1.5 * np.eye(3), np.eye(3)]),
-            MbdKey.mode_kappa_tot_rta: np.array(
+            Key.kappa_tot_avg: np.array([2.0, 1.5, 1.0]),
+            Key.kappa_tot_rta: np.array([2 * np.eye(3), 1.5 * np.eye(3), np.eye(3)]),
+            Key.mode_kappa_tot_rta: np.array(
                 [[2 * np.eye(3)], [1.5 * np.eye(3)], [np.eye(3)]]
             ),
             Key.mode_weights: np.ones(1),
@@ -169,9 +168,9 @@ def test_weighted_quantiles_drops_nans_and_rejects_empty() -> None:
 @pytest.mark.parametrize(
     "weights,levels,match",
     [
-        (np.array([0.0, 0.0, 0.0]), np.array([0.5]), "positive"),
+        (np.array([0.0, 0.0, 0.0]), np.array([0.5]), "all zero"),
         (np.array([1.0, -1.0, 1.0]), np.array([0.5]), "non-negative"),
-        (np.array([1.0, np.nan, 1.0]), np.array([0.5]), "finite"),
+        (np.array([1.0, np.nan, 1.0]), np.array([0.5]), "NaN, inf"),
         (np.array([1.0, 1.0, 1.0]), np.array([-0.1]), r"\[0, 1\]"),
         (np.array([1.0, 1.0, 1.0]), np.array([1.1]), r"\[0, 1\]"),
         (np.array([1.0, 1.0, 1.0]), np.array([np.nan]), r"\[0, 1\]"),
@@ -213,12 +212,12 @@ def test_mode_weights_for_freqs(
         # so the per-material series SRME of the otherwise exact prediction is 0
         ({Key.has_imag_ph_modes: True}, 0, True),
         ({Key.final_spg_num: 2}, 0, True),
-        ({MbdKey.kappa_tot_avg: np.nan}, 2, True),
-        ({MbdKey.kappa_tot_avg: np.inf}, 2, True),
-        ({MbdKey.kappa_tot_avg: -1}, 2, True),
+        ({Key.kappa_tot_avg: np.nan}, 2, True),
+        ({Key.kappa_tot_avg: np.inf}, 2, True),
+        ({Key.kappa_tot_avg: -1}, 2, True),
         # zero predicted kappa is a valid exact-2 score, not a censored failure
         (
-            {MbdKey.kappa_tot_avg: 0, MbdKey.mode_kappa_tot_rta: np.zeros((3, 3))},
+            {Key.kappa_tot_avg: 0, Key.mode_kappa_tot_rta: np.zeros((3, 3))},
             2,
             False,
         ),
@@ -239,7 +238,7 @@ def test_calc_kappa_srme_invalid_predictions_score_two(
     # match the reference total to its mode-kappa average (diag 0.5, 1, 1.5) so an
     # all-zero prediction scores exactly 2; SRME numerators only use mode kappas
     reference = df_true.copy()
-    reference.loc[0, MbdKey.kappa_tot_avg] = 1
+    reference.loc[0, Key.kappa_tot_avg] = 1
     srme_values, censored_flags = phonon_metrics.calc_kappa_srme_dataframes(
         modified, reference
     )
@@ -252,20 +251,20 @@ def test_calc_kappa_srme_single_material() -> None:
     """Test SRME calculation for a single material."""
     ml_data = pd.Series(
         {
-            MbdKey.kappa_tot_avg: np.array([2.0]),
-            MbdKey.kappa_tot_rta: 2 * np.eye(3),
-            MbdKey.mode_kappa_tot_rta: np.eye(3),
+            Key.kappa_tot_avg: np.array([2.0]),
+            Key.kappa_tot_rta: 2 * np.eye(3),
+            Key.mode_kappa_tot_rta: np.eye(3),
             Key.mode_weights: np.array([1.0]),
         }
     )
     dft_data = ml_data.copy()
 
     assert phonon_metrics.calc_kappa_srme(ml_data, dft_data)[0] == 0
-    ml_data[MbdKey.mode_kappa_tot_avg] = dft_data[MbdKey.mode_kappa_tot_avg] = np.nan
+    ml_data[Key.mode_kappa_tot_avg] = dft_data[Key.mode_kappa_tot_avg] = np.nan
     assert phonon_metrics.calc_kappa_srme(ml_data, dft_data)[0] == 0
 
-    ml_data[MbdKey.kappa_tot_avg] = np.array([3.0])
-    ml_data[MbdKey.mode_kappa_tot_rta] = [1.5 * np.eye(3)]
+    ml_data[Key.kappa_tot_avg] = np.array([3.0])
+    ml_data[Key.mode_kappa_tot_rta] = [1.5 * np.eye(3)]
     assert phonon_metrics.calc_kappa_srme(ml_data, dft_data)[0] > 0
 
 
@@ -274,8 +273,8 @@ def test_calc_kappa_metrics_with_different_values(
 ) -> None:
     """Per-material SRD/SRE/SRME compare predicted tensors with reference scalars."""
     df_pred_copy = df_pred.copy()
-    df_pred_copy[MbdKey.kappa_tot_rta] = [2 * np.diag([1, 2, 3]), 4 * np.eye(3)]
-    df_pred_copy[MbdKey.mode_kappa_tot_rta] = [2 * np.diag([1, 2, 3]), 4 * np.eye(3)]
+    df_pred_copy[Key.kappa_tot_rta] = [2 * np.diag([1, 2, 3]), 4 * np.eye(3)]
+    df_pred_copy[Key.mode_kappa_tot_rta] = [2 * np.diag([1, 2, 3]), 4 * np.eye(3)]
 
     df_out = phonon_metrics.calc_kappa_metrics_from_dfs(df_pred_copy, df_true)
     pd.testing.assert_index_equal(df_out.index, df_pred.index)
@@ -285,13 +284,13 @@ def test_calc_kappa_metrics_with_different_values(
         Key.final_spg_num,
         Key.has_imag_ph_modes,
         Key.init_spg_num,
-        MbdKey.kappa_tot_avg,
-        MbdKey.kappa_tot_rta,
-        MbdKey.mode_kappa_tot_rta,
+        Key.kappa_tot_avg,
+        Key.kappa_tot_rta,
+        Key.mode_kappa_tot_rta,
         Key.mode_weights,
         Key.srd,
         phonon_metrics.SRME_CENSORED,
-        MbdKey.true_kappa_tot_avg,
+        Key.true_kappa_tot_avg,
     }
     # kappa_tot_avg is recomputed from the tensors: 4 vs reference 2 for both rows
     assert_allclose(df_out[Key.srd], [2 / 3, 2 / 3], rtol=1e-12)
@@ -306,9 +305,9 @@ def test_calc_kappa_srme_temperature_dependence(series_multi_temp: pd.Series) ->
     dft_data = series_multi_temp.copy()
     assert list(phonon_metrics.calc_kappa_srme(ml_data, dft_data)) == [0, 0, 0]
     # Make DFT values half of ML predictions without mutating shared arrays.
-    dft_data[MbdKey.kappa_tot_avg] = ml_data[MbdKey.kappa_tot_avg] / 2
-    dft_data[MbdKey.kappa_tot_rta] = ml_data[MbdKey.kappa_tot_rta] / 2
-    dft_data[MbdKey.mode_kappa_tot_rta] = ml_data[MbdKey.mode_kappa_tot_rta] / 2
+    dft_data[Key.kappa_tot_avg] = ml_data[Key.kappa_tot_avg] / 2
+    dft_data[Key.kappa_tot_rta] = ml_data[Key.kappa_tot_rta] / 2
+    dft_data[Key.mode_kappa_tot_rta] = ml_data[Key.mode_kappa_tot_rta] / 2
 
     kappa_srmes = phonon_metrics.calc_kappa_srme(ml_data, dft_data)
     assert list(kappa_srmes) == pytest.approx([2 / 3, 2 / 3, 2 / 3])
@@ -329,24 +328,24 @@ def test_calc_kappa_srme_rejects_invalid_reference(invalid_value: float) -> None
     """Invalid reference totals abort scoring instead of penalizing a model."""
     prediction = pd.Series(
         {
-            MbdKey.kappa_tot_avg: np.array([1.0]),
-            MbdKey.mode_kappa_tot_rta: np.eye(3),
+            Key.kappa_tot_avg: np.array([1.0]),
+            Key.mode_kappa_tot_rta: np.eye(3),
             Key.mode_weights: np.ones(3),
         }
     )
     reference = prediction.copy()
-    reference[MbdKey.kappa_tot_avg] = np.array([invalid_value])
+    reference[Key.kappa_tot_avg] = np.array([invalid_value])
     with pytest.raises(ValueError, match="Reference kappa totals"):
         phonon_metrics.calc_kappa_srme(prediction, reference)
     if np.isnan(invalid_value):
-        reference[MbdKey.kappa_tot_avg] = np.array([1.0])
-        reference[MbdKey.mode_kappa_tot_rta] = np.full((3, 3), np.nan)
+        reference[Key.kappa_tot_avg] = np.array([1.0])
+        reference[Key.mode_kappa_tot_rta] = np.full((3, 3), np.nan)
         prediction[Key.has_imag_ph_modes] = True
         with pytest.raises(ValueError, match="Reference mode"):
             phonon_metrics.calc_kappa_srme_dataframes(
                 pd.DataFrame([prediction]), pd.DataFrame([reference])
             )
-        prediction[MbdKey.kappa_tot_avg] = np.array([np.nan])
+        prediction[Key.kappa_tot_avg] = np.array([np.nan])
         with pytest.raises(ValueError, match="Reference mode"):
             phonon_metrics.calc_kappa_srme(prediction, reference)
 
@@ -354,8 +353,8 @@ def test_calc_kappa_srme_rejects_invalid_reference(invalid_value: float) -> None
 def test_calc_kappa_metrics_from_dfs_symmetry(df_minimal: pd.DataFrame) -> None:
     """Distinguish valid exact-2 SRME from imaginary-mode and symmetry failures."""
     df_pred = pd.concat([df_minimal] * 3, ignore_index=True).copy()
-    df_pred[MbdKey.kappa_tot_rta] = [np.zeros((3, 3)), np.eye(3), np.eye(3)]
-    df_pred[MbdKey.mode_kappa_tot_rta] = [np.zeros((3, 3)), np.eye(3), np.eye(3)]
+    df_pred[Key.kappa_tot_rta] = [np.zeros((3, 3)), np.eye(3), np.eye(3)]
+    df_pred[Key.mode_kappa_tot_rta] = [np.zeros((3, 3)), np.eye(3), np.eye(3)]
     df_pred[Key.has_imag_ph_modes] = [False, True, False]
     df_pred[Key.final_spg_num] = [1, 1, 2]
     df_pred[Key.init_spg_num] = [1, 1, 1]
@@ -417,9 +416,9 @@ def test_evaluate_kappa_predictions_returns_all_aggregate_metrics(
     failed_tensor = np.full((3, 3), np.nan)
     reference = pd.DataFrame(
         {
-            MbdKey.kappa_tot_rta: [np.eye(3)] * 3,
-            MbdKey.kappa_tot_avg: [1.0] * 3,
-            MbdKey.mode_kappa_tot_rta: [np.eye(3)] * 3,
+            Key.kappa_tot_rta: [np.eye(3)] * 3,
+            Key.kappa_tot_avg: [1.0] * 3,
+            Key.mode_kappa_tot_rta: [np.eye(3)] * 3,
             Key.mode_weights: [np.ones(1)] * 3,
             Key.ph_freqs: [np.array([[0.0, 1.0, 2.0]])] * 3,
         },
@@ -427,12 +426,12 @@ def test_evaluate_kappa_predictions_returns_all_aggregate_metrics(
     )
     predictions = pd.DataFrame(
         {
-            MbdKey.kappa_tot_rta: [
+            Key.kappa_tot_rta: [
                 np.eye(3),
                 3 * np.eye(3),
                 failed_tensor,
             ],
-            MbdKey.mode_kappa_tot_rta: [
+            Key.mode_kappa_tot_rta: [
                 np.eye(3),
                 3 * np.eye(3),
                 failed_tensor,
@@ -475,7 +474,7 @@ def test_evaluate_kappa_predictions_returns_all_aggregate_metrics(
     predictions[Key.ph_freqs] = [None] * len(predictions)
     no_spectrum_metrics = phonon_metrics.evaluate_kappa_predictions(predictions)
     assert no_spectrum_metrics["spectrum_w1"] is None
-    for key in (MbdKey.kappa_tot_rta, MbdKey.mode_kappa_tot_rta):
+    for key in (Key.kappa_tot_rta, Key.mode_kappa_tot_rta):
         predictions[key] = [failed_tensor] * len(predictions)
     predictions[Key.has_imag_ph_modes] = True
     failed_metrics = phonon_metrics.evaluate_kappa_predictions(predictions)
@@ -580,7 +579,10 @@ def test_kappa_analysis_uses_shared_spectrum_helpers(
     material_ids = ["mp-1", "mp-2"]
     df_pred = df_pred.set_axis(material_ids)
     df_true = df_true.set_axis(material_ids)
-    df_pred[Key.ph_freqs] = [np.array([[0.0, 1.0, 2.0]]), np.array([[0.5, 1.0, 2.0]])]
+    df_pred[Key.ph_freqs] = [
+        np.array([[0.0, 1.0, 2.0]]),
+        np.array([[0.5, 1.0, 2.0]]),
+    ]
     df_true[Key.ph_freqs] = [np.array([[0.0, 1.0, 2.0]])] * len(material_ids)
     atom_densities = {"mp-1": 0.05, "mp-2": 0.08}
     payload = model_payload(

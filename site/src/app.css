@@ -1,4 +1,5 @@
 @import 'svelte-widgets/highlight/theme.css';
+@import 'svelte-widgets/heading-anchors.css';
 
 .custom-tooltip > .tooltip-content {
   font-weight: 400;
@@ -65,11 +66,6 @@
     rgba(0, 0, 0, 0.06),
     color-mix(in srgb, currentcolor 12%, transparent)
   );
-
-  /* svelte-widgets ColumnPicker pane: its currentColor-based defaults are
-  near-invisible in light mode; use the theme border + shadow instead */
-  --column-picker-menu-border: 1px solid var(--border);
-  --column-picker-menu-shadow: 0 4px 12px var(--shadow);
 
   /* ButtonGroup site theme */
   --btn-group-display: flex;
@@ -146,12 +142,6 @@ button:hover {
 /* Remove after matterviz widens PlotControls range inputs beyond DraggablePane's generic 2.2em. */
 .draggable-pane.plot-controls-pane input.range-input[type='number'] {
   width: 3.5em;
-}
-/* svelte-widgets ActionMenu hardcodes a 3pt item radius (no CSS var); rounded hover
-   highlights leave notches against the menu's straight edges. Selector needs to beat the
-   scoped `.action-menu.svelte-x button` (0,2,1). */
-menu.action-menu button[role^='menuitem'] {
-  border-radius: 0;
 }
 div.multiselect button {
   background: transparent;
@@ -259,6 +249,7 @@ blockquote > :is(:first-child, :last-child) {
 /* longhands: the text-wrap shorthand would also reset an inherited white-space: nowrap */
 :where(h1, h2, h3, h4, h5, h6, address) {
   text-wrap-style: balance;
+  --heading-anchor-gap: calc(0.3em + 6pt);
 }
 :where(p, li, figcaption) {
   text-wrap-style: pretty;
@@ -275,22 +266,6 @@ blockquote > :is(:first-child, :last-child) {
 }
 :where(h2, h3, h4, h5, h6).toc-clicked {
   color: var(--link-hover);
-}
-/* style heading anchors added by heading_anchors attachment from svelte-widgets */
-:where(h1, h2, h3, h4, h5, h6, strong) a[aria-hidden='true'] {
-  transition: 0.3s;
-  margin-left: 6pt;
-  opacity: 0;
-}
-:where(h1, h2, h3, h4, h5, h6, strong):is(:hover, :focus-within) a[aria-hidden='true'],
-:where(h1, h2, h3, h4, h5, h6, strong) a[aria-hidden='true']:focus-visible {
-  opacity: 1;
-}
-strong a[aria-hidden='true'] {
-  vertical-align: middle;
-  line-height: 1em;
-  position: absolute;
-  left: 0;
 }
 @keyframes highlight-scroll-target {
   0%,

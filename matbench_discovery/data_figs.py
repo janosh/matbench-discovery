@@ -4,15 +4,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
+import moyopy
 import numpy as np
 import pandas as pd
 import pymatviz as pmv
 from pymatgen.core import Composition
-from pymatviz.enums import ElemCountMode, Key
-from pymatviz.utils import spg_to_crystal_sys
+from pymatviz.enums import ElemCountMode
 
 from matbench_discovery import payload_numerics
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.enums import Key
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -74,7 +74,7 @@ def _spacegroup_sunburst_data(
     grouped_counts: dict[str, list[tuple[int, int]]] = {}
     for spg_num, count in pd.Series(spacegroups).value_counts().sort_index().items():
         spg_num_int = int(cast("int", spg_num))
-        crystal_system = spg_to_crystal_sys(spg_num_int)
+        crystal_system = moyopy.SpaceGroupType(spg_num_int).crystal_system.lower()
         grouped_counts.setdefault(crystal_system, []).append((spg_num_int, int(count)))
 
     labels: list[str] = []
@@ -143,7 +143,7 @@ def build_mp_trj_hist_payload(df_mp_trj: pd.DataFrame) -> dict[str, Any]:
     )
     cumulative = n_sites_hist.cumsum() / n_sites_hist.sum()
     return {
-        "e-form": payload_numerics.histogram(df_mp_trj[MbdKey.e_form_dft], bins=300),
+        "e-form": payload_numerics.histogram(df_mp_trj[Key.e_form_dft], bins=300),
         "forces": payload_numerics.histogram(
             df_mp_trj[Key.forces].explode().explode().abs(), bins=300
         ),

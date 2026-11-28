@@ -19,7 +19,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from ase import Atoms
-from pymatviz.enums import Key
 from ruamel.yaml.comments import CommentedMap
 
 from matbench_discovery import TEST_FILES, preds
@@ -41,7 +40,7 @@ from matbench_discovery.data import (
     task_coverage,
     update_yaml_file,
 )
-from matbench_discovery.enums import DataFiles, MbdKey, Model, TestSubset
+from matbench_discovery.enums import DataFiles, Key, Model, TestSubset
 from matbench_discovery.preds import elements
 from matbench_discovery.wbm import (
     WBM_ELEMENTAL_REF_ENERGIES,
@@ -88,10 +87,10 @@ def test_df_wbm() -> None:
     assert set(df_wbm) > {Key.formula, Key.mat_id, Key.bandgap_pbe}
 
     for col in (
-        MbdKey.e_form_dft,
-        MbdKey.each_true,
-        MbdKey.init_protostructure_spglib,
-        MbdKey.protostructure_spglib,
+        Key.e_form_dft,
+        Key.each_true,
+        Key.init_protostructure_spglib,
+        Key.protostructure_spglib,
     ):
         assert col in df_wbm, f"{col=} not in {list(df_wbm)=}"
 
@@ -102,9 +101,9 @@ def test_wbm_reference_and_unique_prototypes() -> None:
     rows = ["less stable", "more stable", "known", "same energy"]
     summary = pd.DataFrame(
         {
-            MbdKey.init_protostructure_spglib: ["A", "B", "C", "D"],
-            MbdKey.protostructure_spglib: ["A", "A", "C", "A"],
-            MbdKey.each_wbm: [0.5, 0.1, -0.3, 0.1],
+            Key.init_protostructure_spglib: ["A", "B", "C", "D"],
+            Key.protostructure_spglib: ["A", "A", "C", "A"],
+            Key.each_wbm: [0.5, 0.1, -0.3, 0.1],
         },
         index=rows,
     )
@@ -290,7 +289,7 @@ def test_load_df_wbm_with_preds(
         model = Model[model_name]
         if max_error_threshold is not None:
             error = abs(
-                df_wbm_with_preds[model.key] - df_wbm_with_preds[MbdKey.e_form_dft]
+                df_wbm_with_preds[model.key] - df_wbm_with_preds[Key.e_form_dft]
             )
             n_kept = df_wbm_with_preds[model.key].notna().sum()
             assert np.all(error[~error.isna()] <= max_error_threshold)
@@ -383,7 +382,7 @@ def test_load_df_wbm_with_preds_subset(
     elif isinstance(subset, list | pd.Index):
         expected_index = df_wbm.loc[subset].index
     else:
-        expected_index = df_wbm.query(MbdKey.uniq_proto).index
+        expected_index = df_wbm.query(Key.uniq_proto).index
     assert df_subset.index.equals(expected_index)
     assert list(df_subset) == [*df_wbm, model.key]
     assert df_subset[model.key].notna().any()
@@ -397,8 +396,8 @@ def test_prediction_errors_and_element_enrichment(
     raw = pd.DataFrame(
         {
             Key.formula: ["Fe2O3", "FeO"],
-            MbdKey.each_true: [0.1234, 0.4567],
-            MbdKey.e_form_dft: [-1.2344, -2.3456],
+            Key.each_true: [0.1234, 0.4567],
+            Key.e_form_dft: [-1.2344, -2.3456],
             models[0].key: [-1.1111, -2.1111],
             models[1].key: [-1.0111, -2.0111],
         },
@@ -409,7 +408,7 @@ def test_prediction_errors_and_element_enrichment(
     predictions, errors = preds.load_prediction_errors(models)
     expected_predictions = raw.round(3)
     expected_errors = expected_predictions[[model.key for model in models]].sub(
-        expected_predictions[MbdKey.e_form_dft], axis="index"
+        expected_predictions[Key.e_form_dft], axis="index"
     )
     pd.testing.assert_frame_equal(predictions, expected_predictions)
     pd.testing.assert_frame_equal(errors, expected_errors)

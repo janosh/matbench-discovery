@@ -86,27 +86,27 @@ def histogram(
 
 
 def sankey_payload_from_flow(flow_data: Mapping[str, Any]) -> dict[str, Any]:
-    """Canonicalize ``pymatviz.sankey_flow_data`` output for a site payload."""
-    labels = [str(label) for label in flow_data["labels"]]
-    source_indices = np.asarray(flow_data["source_indices"], dtype=int).tolist()
-    target_indices = np.asarray(flow_data["target_indices"], dtype=int).tolist()
-    values = round_list(flow_data["value"])
-    if not labels or not source_indices or not target_indices:
+    """Canonicalize ``pymatviz.sankey.sankey_flow_data`` output (``nodes`` with ids
+    and labels, ``links`` between node ids) for a site payload: unused nodes are
+    dropped, node ids renumbered in order and links sorted.
+    """
+    nodes, links = flow_data["nodes"], flow_data["links"]
+    if not nodes or not links:
         raise ValueError("sankey flow has no nodes or links")
-    used_indices = sorted({*source_indices, *target_indices})
-    remap = {old_idx: new_idx for new_idx, old_idx in enumerate(used_indices)}
-    links = sorted(
-        zip(
-            (remap[source] for source in source_indices),
-            (remap[target] for target in target_indices),
-            values,
-            strict=True,
-        )
+    label_by_id = {int(node["id"]): str(node["label"]) for node in nodes}
+    used_ids = sorted(
+        {int(link["source"]) for link in links}
+        | {int(link["target"]) for link in links}
     )
-    sources, targets, values = map(list, zip(*links, strict=True))
+    remap = {old_id: new_id for new_id, old_id in enumerate(used_ids)}
+    rows = sorted(
+        (remap[int(link["source"])], remap[int(link["target"])], link["value"])
+        for link in links
+    )
+    sources, targets, values = map(list, zip(*rows, strict=True))
     return {
-        "labels": [labels[idx] for idx in used_indices],
+        "labels": [label_by_id[node_id] for node_id in used_ids],
         "source": sources,
         "target": targets,
-        "value": values,
+        "value": round_list(values),
     }

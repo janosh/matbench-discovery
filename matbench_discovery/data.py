@@ -29,13 +29,12 @@ import pandas as pd
 import yaml
 from ase import Atoms
 from filelock import BaseFileLock, FileLock
-from pymatviz.enums import Key
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 from tqdm import tqdm
 
 from matbench_discovery import PKG_DIR, atomic_output_path
-from matbench_discovery.enums import DataFiles, MbdKey, Model, TestSubset
+from matbench_discovery.enums import DataFiles, Key, Model, TestSubset
 
 round_trip_yaml = YAML()  # round-trippable YAML for updating model metadata files
 round_trip_yaml.preserve_quotes = True
@@ -457,7 +456,7 @@ def load_df_wbm_with_preds(
                 ) from exc
             if max_error_threshold is not None:
                 bad_mask = (
-                    abs(df_out[model_key] - df_out[MbdKey.e_form_dft])
+                    abs(df_out[model_key] - df_out[Key.e_form_dft])
                     > max_error_threshold
                 )
                 n_preds, n_bad = df_out[model_key].notna().sum(), bad_mask.sum()
@@ -474,7 +473,7 @@ def load_df_wbm_with_preds(
     # TestSubset(str) also rejects unknown subset names instead of indexing by them.
     if isinstance(subset, str):
         if TestSubset(subset) == TestSubset.uniq_protos:
-            df_out = df_out.query(MbdKey.uniq_proto)
+            df_out = df_out.query(Key.uniq_proto)
     elif subset is not None:
         df_out = df_out.loc[subset]
 
@@ -493,7 +492,7 @@ def load_discovery_predictions() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFra
 
     model_keys = [model.key for model in models_to_load]
     df_each_pred = pred_hull_dist(
-        df_preds[model_keys], df_preds[MbdKey.each_true], df_preds[MbdKey.e_form_dft]
+        df_preds[model_keys], df_preds[Key.each_true], df_preds[Key.e_form_dft]
     )
     return df_preds, df_each_pred, df_each_err
 

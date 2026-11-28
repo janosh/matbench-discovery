@@ -2,6 +2,7 @@
 // phononDB material, plus cross-model summaries for the /materials index. Pure
 // functions so prerender loaders can slice the 1 MB payload down to what a page needs.
 import type { KappaAnalysis } from '#lib/parity/kappa-parity.js'
+import { median } from 'd3-array'
 import { is_finite_num } from '#lib/metrics.js'
 import { SPACEGROUP_NUM_TO_SYMBOL } from 'matterviz/symmetry'
 
@@ -56,13 +57,6 @@ export type KappaMaterial = KappaMaterialSummary & {
   next_id: string | null
 }
 
-const median = (values: number[]): number | null => {
-  if (!values.length) return null
-  const sorted = values.toSorted((val_a, val_b) => val_a - val_b)
-  const mid = Math.floor(sorted.length / 2)
-  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
-}
-
 // null SRME (no prediction) sorts after every scored model
 const by_srme = (row_a: KappaMaterialModelRow, row_b: KappaMaterialModelRow): number =>
   (row_a.srme ?? Infinity) - (row_b.srme ?? Infinity) ||
@@ -111,8 +105,8 @@ function summarize(
     kappa_dft: analysis.kappa_dft[idx],
     n_models: rows.filter((row) => row.srme !== null || row.kappa_ml !== null).length,
     n_censored: rows.filter((row) => row.srme_censored).length,
-    median_srme: median(scored.flatMap((row) => row.srme ?? [])),
-    median_kappa_ratio: median(rows.flatMap((row) => row.kappa_ratio ?? [])),
+    median_srme: median(scored.flatMap((row) => row.srme ?? [])) ?? null,
+    median_kappa_ratio: median(rows.flatMap((row) => row.kappa_ratio ?? [])) ?? null,
     best: extreme(scored[0]),
     worst: extreme(scored.at(-1)),
   }

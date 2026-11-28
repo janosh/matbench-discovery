@@ -8,7 +8,7 @@ data set and separate true/false positives/negatives.
 from matbench_discovery import STABILITY_THRESHOLD, figs, payload_numerics
 from matbench_discovery.cli import cli_args, complete_models, is_full_model_run
 from matbench_discovery.data import load_df_wbm_with_preds
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.enums import Key
 from matbench_discovery.metrics import discovery
 
 is_full_model_run()  # check --models/--full-roster before loading, not at the write
@@ -29,9 +29,9 @@ for model in models_to_plot:
     metric_reference, model_preds = discovery.prepare_model_predictions(
         df_preds, df_preds[model.key]
     )
-    each_true = metric_reference[MbdKey.each_true]
+    each_true = metric_reference[Key.each_true]
     each_pred = discovery.pred_hull_dist(
-        model_preds, each_true, metric_reference[MbdKey.e_form_dft]
+        model_preds, each_true, metric_reference[Key.e_form_dft]
     )
     true_pos, false_neg, false_pos, true_neg = discovery.classify_stable(
         each_true, each_pred

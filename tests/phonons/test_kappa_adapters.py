@@ -12,8 +12,8 @@ import pytest
 from ase import Atoms
 from ase.calculators.calculator import Calculator
 from phonopy.structure.atoms import PhonopyAtoms
-from pymatviz.enums import Key
 
+from matbench_discovery.enums import Key
 from matbench_discovery.phonons.adapters.equflash import EquFlashKappaAdapter
 from matbench_discovery.phonons.adapters.pet import pet_batch_forces
 from matbench_discovery.phonons.adapters.standard import (

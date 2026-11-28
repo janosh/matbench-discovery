@@ -9,15 +9,14 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-import os
 import re
-import tempfile
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypeGuard
 
 import numpy as np
 import pandas as pd
 
+from matbench_discovery import atomic_output_path
 from matbench_discovery.enums import Model
 from matbench_discovery.figs import write_json_gz as write_shared_json_gz
 
@@ -203,18 +202,11 @@ def write_json_gz(path: Path, data: Mapping[str, object]) -> dict[str, str]:
 
 def write_manifest(path: Path, manifest: Mapping[str, object]) -> None:
     """Atomically replace the manifest consumed by Python and TypeScript."""
-    manifest_json = json.dumps(manifest, indent=2, sort_keys=True)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = tempfile.NamedTemporaryFile(  # noqa: SIM115 - closed before replace
-        mode="w", encoding="utf-8", dir=path.parent, delete=False
-    )
-    try:
-        with temporary as file:
-            file.write(f"{manifest_json}\n")
-        os.replace(temporary.name, path)
-    finally:
-        if os.path.isfile(temporary.name):
-            os.remove(temporary.name)
+    with (
+        atomic_output_path(str(path)) as temporary_path,
+        open(temporary_path, "w", encoding="utf-8") as file,
+    ):
+        file.write(f"{json.dumps(manifest, indent=2, sort_keys=True)}\n")
     print(f"Wrote {path}")
 
 

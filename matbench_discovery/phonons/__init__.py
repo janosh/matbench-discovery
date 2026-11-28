@@ -2,7 +2,8 @@
 
 import numpy as np
 import pandas as pd
-from pymatviz.enums import Key
+
+from matbench_discovery.enums import Key
 
 
 def read_kappa_json(path: str) -> pd.DataFrame:

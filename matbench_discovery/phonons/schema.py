@@ -6,18 +6,17 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
-from pymatviz.enums import Key
 
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.enums import Key
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
 KAPPA_TENSOR_KEYS = (
-    str(MbdKey.kappa_tot_rta),
-    str(MbdKey.kappa_p_rta),
-    str(MbdKey.kappa_c),
-    str(MbdKey.mode_kappa_tot_rta),
+    str(Key.kappa_tot_rta),
+    str(Key.kappa_p_rta),
+    str(Key.kappa_c),
+    str(Key.mode_kappa_tot_rta),
 )
 VOIGT_MATRIX_INDICES = np.array(((0, 5, 4), (5, 1, 3), (4, 3, 2)))
 
@@ -99,8 +98,8 @@ def normalize_kappa_result(result: Mapping[str, Any]) -> dict[str, Any]:
     normalized.setdefault("errors", [])
     normalized.setdefault("error_traceback", [])
     if _is_set(normalized["errors"]) or _is_set(normalized.get("conductivity_skipped")):
-        normalized[str(MbdKey.kappa_tot_rta)] = np.nan
-        normalized[str(MbdKey.mode_kappa_tot_rta)] = np.nan
+        normalized[str(Key.kappa_tot_rta)] = np.nan
+        normalized[str(Key.mode_kappa_tot_rta)] = np.nan
         normalized[str(Key.mode_weights)] = np.nan
     return normalized
 

@@ -11,7 +11,6 @@ import os
 import pandas as pd
 import pymatviz as pmv
 from pymatgen.entries.computed_entries import ComputedEntry
-from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import MP_DIR, ROOT, today
@@ -21,7 +20,7 @@ from matbench_discovery.energy import (
     get_elemental_ref_entries,
     mp_elemental_ref_energies,
 )
-from matbench_discovery.enums import DataFiles
+from matbench_discovery.enums import DataFiles, Key
 
 os.makedirs(MP_DIR, exist_ok=True)
 
@@ -30,7 +29,9 @@ os.makedirs(MP_DIR, exist_ok=True)
 # one ComputedStructureEntry dict per material: the functional (GGA or GGA+U) the
 # GGA/GGA+U mixing scheme picked for it
 docs = query_mp_api(
-    "materials/thermo", [Key.mat_id, "energy_type", "entries"], thermo_types="GGA_GGA+U"
+    "materials/thermo",
+    [Key.mat_id, "energy_type", "entries"],
+    thermo_types="GGA_GGA+U",
 )
 
 # save all ComputedStructureEntries to disk in the single-document JSON layout that

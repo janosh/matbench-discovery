@@ -26,7 +26,6 @@ from typing import TYPE_CHECKING, Any, Final
 
 import pandas as pd
 from pymatgen.core import Structure
-from pymatviz.enums import Key
 
 from matbench_discovery import ROOT, atomic_output_path, file_digest, today
 from matbench_discovery.cli import cli_parser, parse_cli_args
@@ -38,7 +37,7 @@ from matbench_discovery.data import (
     file_ref_url,
     parse_artifact_filename,
 )
-from matbench_discovery.enums import DataFiles, Model, resolve_verified_file
+from matbench_discovery.enums import DataFiles, Key, Model, resolve_verified_file
 from matbench_discovery.metrics import geo_opt
 from matbench_discovery.structure import symmetry
 

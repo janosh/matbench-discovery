@@ -9,7 +9,7 @@
   import {
     bool_from_param,
     bool_url_entry,
-    valid_query_param,
+    string_from_param,
   } from 'svelte-widgets/browser'
 
   const raw_counts = import.meta.glob<Record<ElementSymbol, number>>(
@@ -41,7 +41,7 @@
   )
 
   const read_url_params = (params: URLSearchParams) => {
-    filter = valid_query_param(params, `filter`, default_filter, elem_counts)
+    filter = string_from_param(params, `filter`, default_filter, elem_counts)
     log = bool_from_param(params, `log`)
     normalized_bar_counts = bool_from_param(params, `normalized`)
     color_scale = url_color_scale.read(params)

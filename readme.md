@@ -1,9 +1,7 @@
-<slot name="title">
-  <h1 align="center">
-    <img src="https://github.com/janosh/matbench-discovery/raw/main/site/static/favicon.svg" alt="Logo" width="60px"><br>
-    Matbench Discovery
-  </h1>
-</slot>
+<h1 align="center">
+  <img src="https://github.com/janosh/matbench-discovery/raw/main/site/static/favicon.svg" alt="Logo" width="60px"><br>
+  Matbench Discovery
+</h1>
 
 <h4 align="center" class="toc-exclude" style="display: none;">
 
@@ -15,20 +13,16 @@
 
 </h4>
 
-Matbench Discovery is an [interactive leaderboard](https://janosh.github.io/matbench-discovery) that ranks ML interatomic potentials across crystal stability prediction, geometry optimization, phonons and thermal conductivity, molecular dynamics, and diatomic potential-energy curves.
-
-The leaderboard covers methodologies including graph neural network (GNN) interatomic potentials, GNN one-shot predictors, iterative Bayesian optimizers and random forests with shallow-learning structure fingerprints.
-
-<slot name="best_report" />
+Matbench Discovery is an [interactive leaderboard](https://janosh.github.io/matbench-discovery) that ranks ML interatomic potentials across crystal stability prediction, geometry optimization, phonons and thermal conductivity, molecular dynamics, and diatomic potential-energy curves. It covers methodologies including graph neural network (GNN) interatomic potentials, GNN one-shot predictors, iterative Bayesian optimizers and random forests with shallow-learning structure fingerprints.
 
 The benchmark exposes accuracy, robustness, and computational-cost trade-offs across these tasks to help users choose models for static and finite-temperature materials simulations.
 
-> 📖 **Important:** In Matbench Discovery, the convex hull used to evaluate stability is constructed from DFT reference energies, not from model predictions. This differs from some other benchmarking approaches and has important implications for metric interpretation. See [`/benchmarks/discovery`](https://janosh.github.io/matbench-discovery/benchmarks/discovery#convex-hull-construction-in-matbench-discovery) for more information.
+> 📖 **Important:** The convex hull used to evaluate stability is constructed from DFT reference energies, not model predictions. This differs from some other benchmarks and has important implications for interpreting metrics. See [`/benchmarks/discovery`](https://janosh.github.io/matbench-discovery/benchmarks/discovery#convex-hull-construction-in-matbench-discovery) for details.
 
 To cite Matbench Discovery, use:
 
 > Riebesell, J., Goodall, R.E.A., Benner, P. et al. A framework to evaluate machine learning crystal stability predictions. Nat Mach Intell 7, 836–847 (2025). https://doi.org/10.1038/s42256-025-01055-1
 
-Are you submitting a new model? Follow the [contributing guide](https://janosh.github.io/matbench-discovery/contribute), including its branch-specific PR instructions for loading the model checklist. For other changes, use GitHub's documented [branch selector](https://github.com/janosh/matbench-discovery/compare) to open a regular PR with a blank description. Ask support questions via [GitHub discussion](https://github.com/janosh/matbench-discovery/discussions).
+Submitting a new model? Follow the [contributing guide](https://janosh.github.io/matbench-discovery/contribute), including its branch-specific PR instructions for loading the model checklist. For other changes, open a regular PR with a blank description via GitHub's [branch selector](https://github.com/janosh/matbench-discovery/compare). Ask support questions via [GitHub discussion](https://github.com/janosh/matbench-discovery/discussions).
 
-> Disclaimer: We evaluate how accurately ML models predict material properties like thermodynamic stability, thermal conductivity, and atomic positions using task-specific reference data. Although these properties are important for high-throughput materials discovery, the ranking cannot give a complete picture of a model's overall ability to drive materials research. A high ranking does not constitute endorsement by the Materials Project.
+> Disclaimer: We evaluate how accurately ML models predict material properties like thermodynamic stability, thermal conductivity, and atomic positions against task-specific reference data. These properties matter for high-throughput materials discovery, but the ranking cannot give a complete picture of a model's ability to drive materials research. A high ranking does not constitute endorsement by the Materials Project.

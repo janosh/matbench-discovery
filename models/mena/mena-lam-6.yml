@@ -1,0 +1,267 @@
+model_name: Mena-LAM-6
+model_key: mena-lam-6
+model_version: 0.2.0
+dates:
+  benchmark_added: '2026-11-23'
+  paper_published:
+lifecycle: active
+authors:
+- name: Francesco Viola
+  email: frankviola99@gmail.com
+  github: https://github.com/iatecoding
+  corresponding: true
+trained_by:
+- name: Francesco Viola
+  email: frankviola99@gmail.com
+  github: https://github.com/iatecoding
+  corresponding: true
+repo: https://github.com/iatecoding/mena-lab
+doi: https://doi.org/10.5281/zenodo.24461178
+paper: https://github.com/iatecoding/mena-lab/blob/main/docs/Mena-LAM-Technical-Report.pdf
+docs: https://github.com/iatecoding/mena-lab#readme
+pypi:
+pr_url: https://github.com/janosh/matbench-discovery/pull/420
+checkpoint_url: https://huggingface.co/iatecoding/Mena-LAM-6/resolve/main/mena-lam6-v1.pt
+license:
+  code: Apache-2.0
+  code_url: https://github.com/iatecoding/mena-lab/blob/main/LICENSE
+  checkpoint: CC-BY-4.0
+  checkpoint_url: https://github.com/iatecoding/mena-lab/blob/main/LICENSE-WEIGHTS
+environment:
+  dependencies:
+  - mena-lab @ git+https://github.com/iatecoding/mena-lab.git@1ec64b0bca34bbdf118c0226b082723ec3a5fdf4
+  - torch>=2.6.0
+  - vesin>=0.5.0
+  - numpy>=2.0.0
+  - scipy>=1.14.0
+  - ase>=3.24.0
+  - pymatgen>=2025.3.10
+  - phono3py==3.30.0
+  - moyopy>=0.12
+  python_version: '3.14'
+openness: OSOD
+architecture_types: [gnn]
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+training_sets:
+- MPtrj
+- OMat24
+- sAlex
+- OC20
+- MatPES PBE
+- MatPES r2SCAN
+- OC25
+- OMol25
+- OMC25
+- MAD-1.6
+- SPICE 2
+test_set_informed: [discovery, phonons]
+model_params: 8479848
+training_cost:
+  entries:
+  - hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition
+    count: 1
+    hours_per_device: 48.5
+hyperparams:
+  evaluation:
+    max_force: 0.02
+    max_steps: 500
+    ase_optimizer: FIRE
+    cell_filter: FrechetCellFilter
+    kappa:
+      protocol: phonondb-v1
+      displacement_distance: 0.03
+  architecture:
+    n_layers: 3
+    graph_construction_radius: 6.0
+  training:
+    steps: 747692
+    optimizer: Muon + AdamW
+    schedule: WSD
+    ema_decay: 0.999
+notes:
+  description: >
+    Mena-LAM-6 (lam6_v1) is an 8.48M-parameter 3-stage equivariant message-passing
+    potential with factorized PAW/XC level-of-theory conditioning (vasp_pbe52, vasp_pbe54,
+    vasp_pbe64), product-only edges and a 6.0 A cutoff (C3 taper from 5.0 A). Its Dual-CSR
+    register-streaming kernels (CUDA, Apple Metal, OpenMP CPU) save no edge activations,
+    keeping live memory at 6-38 KB/atom (0.46 GB VRAM on DynaMat MD, >300k atoms on one
+    GPU). About 7.35M parameters form the shared trunk, 0.50M are frozen isolated-atom
+    references and 0.63M are molecular/electronic heads (charge, spin, dipole,
+    polarizability, gap) inactive on periodic crystals. Benchmarks run in float32 with lot="mp" (MP2020 composition +U
+    rule) and no D3 dispersion.
+  training: >
+    Trained from scratch for 747,692 steps (EMA 0.999) in 48.5 net GPU-hours on one NVIDIA
+    RTX PRO 6000 Blackwell GPU: ~62% of batches (~28.5 GPU-hours) on open molecules
+    (OMol25, SPICE 2), ~38% (~20 GPU-hours) on periodic materials and surfaces (MPtrj,
+    sAlex, OMat24, MatPES PBE/r2SCAN, OC20, OC25, OMC25, MAD-1.6). Muon + AdamW with a
+    WSD schedule, crystal secant pair loss P_cry from step 406,311 and an 18-hour FP32
+    cooldown.
+  disclosure: >
+    Lanthanide errors of an earlier Mena-LAM on a 5k WBM subset prompted factorizing the
+    VASP PBE_52 vs PBE_54 PAW tokens. kappa-103 softening of Mena-LAM-preview motivated
+    the P_cry pair loss and the strict IEEE FP32 cooldown, and mid-run P_cry ablations
+    were checked on 250 WBM structures and 16 PhononDB-103 crystals (SRME 0.326 -> 0.280).
+    DynaMat MD did not inform design choices. The submitted checkpoint is the final
+    training step.
+  discovery: >
+    WBM relaxations used the author's batched GPU-resident FP64 FIRE + FrechetCellFilter
+    engine (fmax 0.02 eV/A, max 500 steps, IEEE FP32 model with Dual-CSR CUDA kernels) on
+    one RTX PRO 6000 Blackwell, exported with
+    matbench_discovery.discovery.write_discovery_artifacts, so the 278.23 s run_time_sec is not comparable to serial ASE runner times. Against
+    serial ASE FIRE(FrechetCellFilter) on 50 random WBM structures (seed 42), 49/50 step
+    counts match exactly, with median |dE|/atom 5.7e-8 eV (max 1.7e-5) and median |dV|/V
+    1.5e-8 (max 1.8e-4).
+  phonons: >
+    phono3py 3.30.0 / phonopy 3.5.1 (displacement 0.03 A) in IEEE FP32 with Dual-CSR CUDA
+    kernels on one RTX PRO 6000 Blackwell GPU.
+  md: >
+    All 17 DynaMat v1.0 systems (80,000 NVT Nose-Hoover chain steps, dt 0.25 fs), one at a
+    time on one RTX PRO 6000 Blackwell GPU in IEEE FP32 with Dual-CSR, torch.compile and 10-step
+    CUDA graphs (Verlet skin 0.6 A), matching ASE NoseHooverChainNVT within 1e-7 A over
+    400 steps.
+  diatomics: >
+    Official 92 x 119 homonuclear diatomic grid, one dimer per ASE call on one RTX PRO
+    6000 Blackwell GPU in IEEE FP32 with Dual-CSR and CUDA graphs.
+
+metrics:
+  discovery:
+    pred_file:
+      name: models/mena/mena-lam-6/2026-11-22-discovery.csv.gz
+      url: https://figshare.com/files/71982958
+      size: 1315755
+      md5: ad391f212db9e22a785b324bd28c9080
+    run_info_file:
+      name: models/mena/mena-lam-6/2026-11-22-discovery-run-info.json
+      url: https://huggingface.co/datasets/iatecoding/mena-lam-6-matbench-discovery/resolve/main/2026-11-22-discovery-run-info.json
+      size: 434
+      md5: 2c357b5bdf1b796a25780855fac19b0f
+    cost: {source: author_reported, hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 278.23, load_time_sec: 1.76, max_rss_gb: 2.935, max_gpu_mem_gb: 2.256}
+    full_test_set:
+      F1: 0.892 # fraction
+      DAF: 5.221 # dimensionless
+      Precision: 0.893 # fraction
+      Recall: 0.89 # fraction
+      Accuracy: 0.963 # fraction
+      TP: 39123 # count
+      FP: 4679 # count
+      TN: 208327 # count
+      FN: 4834 # count
+      MAE: 0.019 # eV/atom
+      RMSE: 0.065 # eV/atom
+      R2: 0.869 # dimensionless
+      missing_preds: 2 # count
+    unique_prototypes:
+      F1: 0.909 # fraction
+      DAF: 5.987 # dimensionless
+      Precision: 0.911 # fraction
+      Recall: 0.907 # fraction
+      Accuracy: 0.972 # fraction
+      TP: 30150 # count
+      FP: 2930 # count
+      TN: 179316 # count
+      FN: 3092 # count
+      MAE: 0.02 # eV/atom
+      RMSE: 0.065 # eV/atom
+      R2: 0.875 # dimensionless
+      missing_preds: 0 # count
+  geo_opt:
+    pred_file:
+      name: models/mena/mena-lam-6/2026-11-22-geo-opt.jsonl.gz
+      url: https://huggingface.co/datasets/iatecoding/mena-lam-6-matbench-discovery/resolve/main/2026-11-22-geo-opt.jsonl.gz
+      size: 102325885
+      md5: 37ad43d4dd2689be719dd5302daf3abe
+    symprec=1e-2:
+      n_sym_ops_mae: 1.6969 # unitless
+      symmetry_decrease: 0.0478 # fraction
+      symmetry_match: 0.8189 # fraction
+      symmetry_increase: 0.126 # fraction
+      symmetry_lateral: 0.0072 # fraction
+      n_structures: 256963 # count
+      analysis_file:
+        name: models/mena/mena-lam-6/2026-11-22-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71982961
+        size: 6869186
+        md5: 910e299e7f9032ad82f172baa8a5c258
+    symprec=1e-5:
+      n_sym_ops_mae: 2.1481 # unitless
+      symmetry_decrease: 0.0637 # fraction
+      symmetry_match: 0.6915 # fraction
+      symmetry_increase: 0.2389 # fraction
+      symmetry_lateral: 0.0059 # fraction
+      n_structures: 256963 # count
+      analysis_file:
+        name: models/mena/mena-lam-6/2026-11-22-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71982964
+        size: 6907873
+        md5: 28064126fdb5253f753f10243177a9ce
+    rmsd_auc: 0.7891 # fraction
+  phonons:
+    kappa_103:
+      pred_file:
+        name: models/mena/mena-lam-6/2026-11-20-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/71982967
+        size: 15661870
+        md5: a3af0db023411fb7b7fc27ac30b23c15
+      force_file:
+        name: models/mena/mena-lam-6/2026-11-20-phonons-kappa-103-forces.h5
+        url: https://huggingface.co/datasets/iatecoding/mena-lam-6-matbench-discovery/resolve/main/2026-11-20-phonons-kappa-103-forces.h5
+        size: 48970996
+        md5: 20f7fe59388def2fe36c2311763cc07c
+      phonon_file:
+        name: models/mena/mena-lam-6/2026-11-20-phonons-kappa-103-phonons.json.gz
+        url: https://figshare.com/files/71982973
+        size: 23617010
+        md5: 4f1e802c4eb3d0302fec5aaf101c26c5
+      run_info_file:
+        name: models/mena/mena-lam-6/2026-11-20-phonons-kappa-103-run-info.json
+        url: https://huggingface.co/datasets/iatecoding/mena-lam-6-matbench-discovery/resolve/main/2026-11-20-phonons-kappa-103-run-info.json
+        size: 495
+        md5: d94a0ac179a31dc6ccd85162790c8bda
+      cost: {source: author_reported, hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 1523.0, load_time_sec: 2.1}
+      κ_SRME: 0.1824
+      κ_SRE: 0.081
+      κ_SRD: -0.0232
+      κ_failure_rate: 0.0
+      imaginary_mode_rate: 0.0
+      spectrum_w1: 0.1153
+  md:
+    pred_file:
+      name: models/mena/mena-lam-6/2026-11-22-md-metrics.csv.gz
+      url: https://huggingface.co/datasets/iatecoding/mena-lam-6-matbench-discovery/resolve/main/2026-11-22-md-metrics.csv.gz
+      size: 1616
+      md5: 5b3674b3550142041ea3844639477089
+    cost: {source: author_reported, hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition, device: cuda, dtype: float32, acceleration: [], n_processes: 1, run_time_sec: 2613.88, load_time_sec: 1.59, max_rss_gb: 3.18, max_gpu_mem_gb: 0.456}
+    rdf_error: 3.3563 # %
+    adf_error: 1.2983 # %
+    vdos_error: 22.3462 # %
+    pressure_mae: 0.776 # GPa
+    pressure_wasserstein: 0.7836 # GPa
+    pressure_error: 51.1125 # %
+    n_systems: 17 # count
+  diatomics:
+    pred_file:
+      name: models/mena/mena-lam-6/2026-11-22-diatomics.json.gz
+      url: https://figshare.com/files/71982976
+      size: 279394
+      md5: f5d3cf946bd67048b0c47588f52661fb
+    cost: {source: author_reported, hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 21.11, load_time_sec: 1.34, max_rss_gb: 2.26, max_gpu_mem_gb: 0.199}
+    pbe_wall_dist_mae: 0.182
+    pbe_energy_mae: 1.039
+    pbe_bond_length_error: 0.3029
+    pbe_well_depth_error: 0.5287
+    pbe_vib_freq_error: 46.37
+    tortuosity: 1.014
+    energy_diff_flips: 2.08
+    energy_jump: 0.1211
+    force_flips: 2.046
+    force_total_variation: 134.4
+    force_jump: 23.81
+    pbe_force_mae: 1.512
+    pbe_vib_freq_coverage:
+      n_valid: 80
+      n_eligible: 81
+      failed_elements:
+      - Rb
+      missing_elements: []

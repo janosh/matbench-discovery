@@ -13,8 +13,7 @@ model's match rate, and they score 0 in the AUC (metrics.geo_opt.rmsd_auc).
 # %%
 import numpy as np
 import pandas as pd
-import pymatviz as pmv
-from pymatviz.enums import Key
+from pymatviz.sankey import sankey_flow_data
 
 from matbench_discovery import ROOT, figs, payload_numerics
 from matbench_discovery.cli import cli_args, is_full_model_run
@@ -23,7 +22,7 @@ from matbench_discovery.data import (
     file_ref_name,
     file_ref_url,
 )
-from matbench_discovery.enums import DataFiles, MbdKey, resolve_verified_file
+from matbench_discovery.enums import DataFiles, Key, resolve_verified_file
 from matbench_discovery.metrics import geo_opt
 
 # validate --models/--full-roster before minutes of loading, not at the first write
@@ -95,10 +94,7 @@ for model_key in model_keys:
         df_spg[Key.dft.label].isin(common_dft_spgs)
         & df_spg[model_key].isin(common_model_spgs)
     ].sort_values(by=Key.dft.label)
-    flow_data = pmv.sankey_flow_data(
-        df_spg_common.reset_index(),
-        [Key.dft.label, model_key],
-    )
+    flow_data = sankey_flow_data(df_spg_common.reset_index(), Key.dft.label, model_key)
     spg_sankey_models.append(
         {
             **model_identities[model_key],
@@ -142,7 +138,7 @@ figs.write_site_payload(
 
 # %% Difference in symmetry-operation counts for ML vs DFT-relaxed structures
 df_sym_ops_diff = pd.DataFrame(
-    {model_key: df_all[model_key, MbdKey.n_sym_ops_diff] for model_key in model_keys}
+    {model_key: df_all[model_key, Key.n_sym_ops_diff] for model_key in model_keys}
 )
 models_by_std = sorted(df_sym_ops_diff.std().items(), key=lambda item: item[1])
 sym_ops_models: list[dict[str, object]] = []
@@ -172,7 +168,7 @@ figs.write_site_payload(
 
 # %% Cumulative distribution of RMSD vs DFT over all reference structures
 x_max = geo_opt.RMSD_AUC_CUTOFF
-df_rmsd = df_all.xs(MbdKey.structure_rmsd_vs_dft, level=metric_lvl, axis="columns")
+df_rmsd = df_all.xs(Key.structure_rmsd_vs_dft, level=metric_lvl, axis="columns")
 rmsd_cdf_models: list[dict[str, object]] = []
 for model_key in model_keys:
     rmsds = df_rmsd[model_key]

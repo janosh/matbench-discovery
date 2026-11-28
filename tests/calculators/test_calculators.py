@@ -7,12 +7,14 @@ import subprocess
 import sys
 import tomllib
 import zipfile
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from unittest.mock import Mock
 
+import numpy as np
 import pytest
+from ase import Atoms
 from ase.calculators.calculator import Calculator
 from ase.calculators.emt import EMT
 from packaging.requirements import Requirement
@@ -719,3 +721,128 @@ def test_mace_soyo_exports_per_gpu_arch(
         assert os.path.isfile(command[command.index("--structure-file") + 1])
     with pytest.raises(ValueError, match="requires CUDA"):
         make_calc("cpu", path)
+
+
+class _FakeMenaCalc(Calculator):
+    """MenaCalculator stub: energy depends on info charge, stress only when periodic,
+    results replaced on every call like the real one.
+    """
+
+    implemented_properties: list[str] = [  # noqa: RUF012
+        "energy",
+        "free_energy",
+        "forces",
+        "stress",
+    ]
+    from_checkpoint_kwargs: dict[str, object] = {}  # noqa: RUF012
+
+    def __init__(self) -> None:
+        """Track seen u_flags and the charge of the last evaluation."""
+        super().__init__()
+        self.u_flags: list[int] = []
+        self.last_charge: int | None = None
+
+    @classmethod
+    def from_checkpoint(cls, checkpoint: str, **kwargs: object) -> _FakeMenaCalc:
+        """Record the load arguments and build the (sub)class like the real one."""
+        cls.from_checkpoint_kwargs = {"checkpoint": checkpoint, **kwargs}
+        return cls()
+
+    def check_state(self, atoms: Atoms, tol: float = 1e-15) -> list[str]:
+        """Also invalidate on info charge or u_flag changes (the real one keys its
+        cache on u_flag too, so unflagged atoms would never hit the cache).
+        """
+        changes = super().check_state(atoms, tol=tol)
+        old_info = {} if self.atoms is None else self.atoms.info
+        if not changes and (
+            self.last_charge != atoms.info.get("charge", 0)
+            or old_info.get("u_flag") != atoms.info.get("u_flag")
+        ):
+            changes.append("info")
+        return changes
+
+    def calculate(
+        self,
+        atoms: Atoms | None = None,
+        properties: Sequence[str] = ("energy",),
+        system_changes: Sequence[str] = (),
+    ) -> None:
+        """Record u_flag and emit charge-dependent energy (plus stress if periodic)."""
+        super().calculate(atoms, properties, system_changes)
+        assert self.atoms is not None
+        self.u_flags.append(self.atoms.info["u_flag"])
+        self.last_charge = self.atoms.info.get("charge", 0)
+        energy = -1.0 - self.last_charge
+        self.results = {"energy": energy, "free_energy": energy}
+        if self.atoms.pbc.all():
+            self.results["stress"] = np.ones(6)
+
+
+@pytest.fixture
+def make_mena(monkeypatch: pytest.MonkeyPatch) -> Callable[[], Calculator]:
+    """Stub lam4 so the Mena-LAM-6 factory subclasses _FakeMenaCalc."""
+    lam4_calc = ModuleType("lam4.calc")
+    lam4_calc.__dict__["MenaCalculator"] = _FakeMenaCalc
+    hubbard = ModuleType("lam4.registry.hubbard")
+    hubbard.__dict__.update(  # O, F and V, Cr, Mn, Fe, Co, Ni, Mo, W
+        MP_HUBBARD_ANIONS=frozenset({8, 9}),
+        MP_HUBBARD_METALS=frozenset({23, 24, 25, 26, 27, 28, 42, 74}),
+    )
+    for name in ("lam4", "lam4.registry"):
+        monkeypatch.setitem(sys.modules, name, ModuleType(name))
+    monkeypatch.setitem(sys.modules, "lam4.calc", lam4_calc)
+    monkeypatch.setitem(sys.modules, "lam4.registry.hubbard", hubbard)
+    return lambda: CALCULATORS["mena_lam_6"].make_calc("cpu", checkpoint="ckpt.pt")
+
+
+@pytest.mark.usefixtures("make_mena")
+@pytest.mark.parametrize("device", ["cpu", "cuda", "cuda:1"])
+def test_mena_lam6_factory_honors_requested_device(device: str) -> None:
+    """Mena-LAM-6 loads its checkpoint in strict FP32 with lot='mp' on the device."""
+    calc = CALCULATORS["mena_lam_6"].make_calc(device, checkpoint="mena-lam6-v1.pt")
+    assert isinstance(calc, _FakeMenaCalc)
+    assert type(calc).from_checkpoint_kwargs == {
+        "checkpoint": "mena-lam6-v1.pt",
+        "device": device,
+        "lot": "mp",
+        "dtype": "float32",
+        "precision": "fp32_ieee",
+        "weights": "ema",
+        "add_dispersion": False,
+        "compile": False,
+    }
+
+
+@pytest.mark.parametrize(
+    ("atoms", "expected_u_flag"),
+    [
+        # FeO stretched to 5 A has no first-shell neighbors but keeps the +U source
+        (Atoms("FeO", positions=[[0, 0, 0], [5, 0, 0]], cell=[20] * 3, pbc=True), 1),
+        (Atoms("VF3", positions=[[0, 0, 0], [5, 0, 0], [0, 5, 0], [0, 0, 5]]), 1),
+        (Atoms("Si2", positions=[[0, 0, 0], [2.35, 0, 0]], cell=[5] * 3, pbc=True), 0),
+        (Atoms("Fe2", positions=[[0, 0, 0], [2.5, 0, 0]], cell=[5] * 3, pbc=True), 0),
+        (Atoms("MgO", positions=[[0, 0, 0], [2.1, 0, 0]], cell=[5] * 3, pbc=True), 0),
+    ],
+)
+def test_mena_lam6_routes_mp2020_u_flag_by_composition(
+    atoms: Atoms, expected_u_flag: int, make_mena: Callable[[], Calculator]
+) -> None:
+    """u_flag follows the MP2020 composition rule without mutating the input atoms."""
+    atoms.calc = calc = make_mena()
+    assert atoms.get_potential_energy() == -1.0
+    assert calc.u_flags == [expected_u_flag]
+    assert "u_flag" not in atoms.info
+
+
+def test_mena_lam6_cache_follows_info_changes(
+    make_mena: Callable[[], Calculator],
+) -> None:
+    """check_state sees the u_flag copy, so unchanged atoms stay cached and info
+    changes still invalidate.
+    """
+    mol = Atoms("H2", positions=[[0, 0, 0], [0, 0, 0.74]], info={"charge": 0})
+    mol.calc = calc = make_mena()
+    assert mol.get_potential_energy() == mol.get_potential_energy() == -1.0
+    mol.info["charge"] = 1
+    assert mol.get_potential_energy() == -2.0
+    assert calc.u_flags == [0, 0]  # one evaluation per state

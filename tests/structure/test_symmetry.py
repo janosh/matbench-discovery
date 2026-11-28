@@ -5,9 +5,8 @@ import pandas as pd
 import pytest
 from pymatgen.core import Lattice, Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-from pymatviz.enums import Key
 
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.enums import Key
 from matbench_discovery.structure import symmetry
 
 
@@ -30,7 +29,7 @@ def test_analyze_symmetry_multiple_structures(
     assert list(df_sym) == [
         Key.spg_num,
         Key.hall_num,
-        MbdKey.international_spg_name,
+        Key.international_spg_name,
         Key.wyckoff_symbols,
         Key.n_sym_ops,
         Key.n_rot_syms,
@@ -41,7 +40,7 @@ def test_analyze_symmetry_multiple_structures(
     ]
     for col in (Key.n_sym_ops, Key.n_rot_syms, Key.n_trans_syms):
         assert list(df_sym[col]) == [96, 8, 2]
-    assert list(df_sym[MbdKey.international_spg_name]) == ["I m -3 m", "P m m m", "P 2"]
+    assert list(df_sym[Key.international_spg_name]) == ["I m -3 m", "P m m m", "P 2"]
     # Hall symbols are the setting-specific symbols, not the international short names
     assert df_sym[Key.hall_symbol].iloc[0] == "-I 4 2 3"
     assert df_sym[Key.hall_num].iloc[0] == 529
@@ -68,11 +67,14 @@ def test_pred_vs_ref_struct_symmetry(tetragonal_struct: Structure) -> None:
     spg_ml, spg_dft = df_ml[Key.spg_num].iloc[0], df_dft[Key.spg_num].iloc[0]
     assert spg_dft == 47
     assert spg_ml != spg_dft
-    assert df_compared[MbdKey.spg_num_diff].iloc[0] == spg_ml - spg_dft
-    n_ops_ml, n_ops_dft = df_ml[Key.n_sym_ops].iloc[0], df_dft[Key.n_sym_ops].iloc[0]
+    assert df_compared[Key.spg_num_diff].iloc[0] == spg_ml - spg_dft
+    n_ops_ml, n_ops_dft = (
+        df_ml[Key.n_sym_ops].iloc[0],
+        df_dft[Key.n_sym_ops].iloc[0],
+    )
     assert n_ops_ml < n_ops_dft == 8
-    assert df_compared[MbdKey.n_sym_ops_diff].iloc[0] == n_ops_ml - n_ops_dft
-    assert 0 < df_compared[MbdKey.structure_rmsd_vs_dft].iloc[0] < 0.1
+    assert df_compared[Key.n_sym_ops_diff].iloc[0] == n_ops_ml - n_ops_dft
+    assert 0 < df_compared[Key.structure_rmsd_vs_dft].iloc[0] < 0.1
 
     # IDs without a DFT reference keep their row with missing RMSD and max distance
     preds = {key: pred_struct, "pred-only": tetragonal_struct}
@@ -82,7 +84,7 @@ def test_pred_vs_ref_struct_symmetry(tetragonal_struct: Structure) -> None:
         preds,
         {key: tetragonal_struct},
     )
-    rms_cols = [MbdKey.structure_rmsd_vs_dft, Key.max_pair_dist]
+    rms_cols = [Key.structure_rmsd_vs_dft, Key.max_pair_dist]
     assert (df_partial[rms_cols].dtypes == "float64").all()
     assert df_partial.loc["pred-only", rms_cols].isna().all()
     assert (
@@ -90,7 +92,7 @@ def test_pred_vs_ref_struct_symmetry(tetragonal_struct: Structure) -> None:
         == df_compared.loc[key, rms_cols].tolist()
     )
     # all input columns survive in order, followed by the compared ones
-    diff_cols = [MbdKey.spg_num_diff, MbdKey.n_sym_ops_diff]
+    diff_cols = [Key.spg_num_diff, Key.n_sym_ops_diff]
     assert list(df_compared) == [*cols_in, *diff_cols, *rms_cols]
 
 
@@ -110,7 +112,7 @@ def test_geo_opt_relaxed_boundary_cell() -> None:
     )
     # exactly 0 on macOS, 4.2e-17 on Linux CI (BLAS round-off, below f64 eps 2.2e-16);
     # a boundary mismatch gives None or a large RMSD
-    rmsd = result.loc["boundary", MbdKey.structure_rmsd_vs_dft]
+    rmsd = result.loc["boundary", Key.structure_rmsd_vs_dft]
     assert rmsd == pytest.approx(0, abs=1e-14)
 
 
@@ -140,7 +142,7 @@ def test_analyze_symmetry_is_cell_choice_invariant(
         assert df_sym.index.name == Key.mat_id
         assert df_sym.index.tolist() == [mat_id]
         # space group name is a property of the lattice, not of the cell choice
-        assert df_sym[MbdKey.international_spg_name].iloc[0] == "I m -3 m"
+        assert df_sym[Key.international_spg_name].iloc[0] == "I m -3 m"
 
     cols_to_drop = [  # columns that depend on the cell choice
         Key.wyckoff_symbols,
@@ -173,7 +175,7 @@ def test_analyze_symmetry_with_ase_atoms(cubic_struct: Structure) -> None:
     fcc_row = df_ase.loc["ase"]
     # conventional 4-atom fcc cell: 48 point ops x 4 centering translations
     assert fcc_row[Key.spg_num] == 225
-    assert fcc_row[MbdKey.international_spg_name] == "F m -3 m"
+    assert fcc_row[Key.international_spg_name] == "F m -3 m"
     assert fcc_row[Key.hall_symbol] == "-F 4 2 3"
     assert fcc_row[Key.n_sym_ops] == 192
     assert fcc_row[Key.wyckoff_symbols] == ["a"] * 4

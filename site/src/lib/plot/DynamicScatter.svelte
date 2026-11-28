@@ -32,7 +32,7 @@
   import { wide_legend } from '#lib/fig-helpers.js'
   import { pareto_staircase, sota_frontier_indices, sota_step_line } from '#lib/sota.js'
   import { bind_url_params } from '#lib/url-state.svelte.js'
-  import { valid_query_param } from 'svelte-widgets/browser'
+  import { string_from_param } from 'svelte-widgets/browser'
   import { untrack } from 'svelte'
 
   // Keep size-select labels short by dropping discovery-set segments and abbreviating
@@ -220,15 +220,15 @@
   const param_key = (key: string): string => (url_prefix ? `${url_prefix}_${key}` : key)
   bind_url_params(
     (params) => {
-      x_key = valid_query_param(params, param_key(`x`), default_keys.x, numeric_keys)
-      y_key = valid_query_param(params, param_key(`y`), default_keys.y, numeric_keys)
-      color_key = valid_query_param(
+      x_key = string_from_param(params, param_key(`x`), default_keys.x, numeric_keys)
+      y_key = string_from_param(params, param_key(`y`), default_keys.y, numeric_keys)
+      color_key = string_from_param(
         params,
         param_key(`color`),
         default_keys.color,
         options_by_key,
       )
-      size_key = valid_query_param(
+      size_key = string_from_param(
         params,
         param_key(`size`),
         default_keys.size,
@@ -368,8 +368,12 @@
           if (event.type === `add` && event.option) size_key = event.option.key
         }}
         style="flex: none; width: 200px; min-width: 0; margin: 0; --sms-min-height: 28px"
-        ul_selected_style="flex-wrap: nowrap; overflow: hidden; min-width: 0;"
-        li_selected_style="font-size: 14px; min-width: 0; max-width: 100%; overflow: hidden;"
+        ul_selected_props={{
+          style: `flex-wrap: nowrap; overflow: hidden; min-width: 0;`,
+        }}
+        li_selected_props={{
+          style: `font-size: 14px; min-width: 0; max-width: 100%; overflow: hidden;`,
+        }}
       >
         {#snippet children({ option: prop, type })}
           <span class:selected-label={type === `selected`}>

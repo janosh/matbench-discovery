@@ -12,7 +12,7 @@ from ase.data import atomic_numbers, covalent_radii, vdw_alvarez
 
 from matbench_discovery import ROOT
 from matbench_discovery.data import file_ref_url, make_file_ref, update_yaml_file
-from matbench_discovery.enums import MbdKey, Model
+from matbench_discovery.enums import Key, Model
 from matbench_discovery.metrics import diatomics
 from matbench_discovery.metrics.diatomics import (
     DiatomicCurve,
@@ -198,9 +198,9 @@ def test_curve_shifts(
     metrics_out = diatomics.calc_diatomic_metrics(ref_curves, pred_curves)
 
     expected_metrics = {
-        MbdKey.pbe_energy_mae: pbe_energy_mae,
-        MbdKey.tortuosity: 1,
-        MbdKey.energy_jump: energy_jump,
+        Key.pbe_energy_mae: pbe_energy_mae,
+        Key.tortuosity: 1,
+        Key.energy_jump: energy_jump,
     }
     for metric_key, expect in expected_metrics.items():
         actual = metrics_out["H"][metric_key]
@@ -227,7 +227,7 @@ def test_pbe_force_mae_skips_unusable_ref_window(
     metrics_out = diatomics.calc_diatomic_metrics(
         h_curves(ref_distances),
         h_curves(pred_distances),
-        metrics={MbdKey.pbe_force_mae: {}},
+        metrics={Key.pbe_force_mae: {}},
         interpolate=interpolate,
     )
 
@@ -270,11 +270,11 @@ def test_calc_diatomic_metrics_gates_low_quality_refs_and_non_mp_elements() -> N
     # instead of aborting the model; out-of-window NaNs (Na) are never scored
     assert set(metrics_out) == {"H", "Ho", "Er", "Na"}
     assert np.isfinite(list(metrics_out["Na"].values())).all()
-    assert MbdKey.pbe_energy_mae in metrics_out["H"]
+    assert Key.pbe_energy_mae in metrics_out["H"]
     # jumpy/non-finite reference: self-consistency metrics only, no ref-relative ones
     for gated_elem in ("Ho", "Er"):
-        assert MbdKey.pbe_energy_mae not in metrics_out[gated_elem]
-        assert MbdKey.tortuosity in metrics_out[gated_elem]
+        assert Key.pbe_energy_mae not in metrics_out[gated_elem]
+        assert Key.tortuosity in metrics_out[gated_elem]
     # without reference curves there is no quality gate but non-MP skip still applies
     no_ref_out = diatomics.calc_diatomic_metrics(None, pred_curves)
     assert set(no_ref_out) == {"H", "Ho", "Er", "Na"}
@@ -308,7 +308,7 @@ def test_vib_freq_coverage(predicted_elements: tuple[str, ...]) -> None:
         {element: curves[element] for element in predicted_elements},
     )
     metrics = diatomics.calc_diatomic_metrics(
-        reference, predictions, metrics={MbdKey.pbe_vib_freq_error: {}}
+        reference, predictions, metrics={Key.pbe_vib_freq_error: {}}
     )
     coverage = diatomics.calc_vib_freq_coverage(reference, predictions, metrics)
     assert coverage["n_eligible"] == 81
@@ -323,7 +323,7 @@ def test_vib_freq_coverage(predicted_elements: tuple[str, ...]) -> None:
     ) == dict(n_valid=0, n_eligible=0, failed_elements=[], missing_elements=[])
     with pytest.raises(ValueError, match=r"reference-ineligible elements.*He"):
         diatomics.calc_vib_freq_coverage(
-            reference, predictions, metrics | {"He": {MbdKey.pbe_vib_freq_error: 1.0}}
+            reference, predictions, metrics | {"He": {Key.pbe_vib_freq_error: 1.0}}
         )
 
 
@@ -354,13 +354,13 @@ def test_diatomic_curve_metrics(
         DiatomicCurves.from_dict(raw_dict)
 
     custom_metrics: dict[str, dict[str, object]] = {
-        MbdKey.pbe_wall_dist_mae: {"thresholds_ev": (1.0,)},
+        Key.pbe_wall_dist_mae: {"thresholds_ev": (1.0,)},
     }
     custom_results = diatomics.calc_diatomic_metrics(
         ref_curves, pred_curves, metrics=custom_metrics
     )
     assert set(custom_results["H"]) == set(custom_metrics)
-    assert custom_results["H"][MbdKey.pbe_wall_dist_mae] >= 0
+    assert custom_results["H"][Key.pbe_wall_dist_mae] >= 0
 
     modified_dists = ref_dists.copy() * 1.001  # 0.1% difference
     modified_ref_curves = DiatomicCurves(
@@ -403,7 +403,7 @@ def test_diatomic_curve_metrics(
         )
     with pytest.raises(ValueError, match="uncorrected_energy"):
         diatomics.calc_diatomic_metrics(
-            ref_curves, pred_curves, metrics={MbdKey.dft_energy: {}}
+            ref_curves, pred_curves, metrics={Key.dft_energy: {}}
         )
 
 
@@ -442,12 +442,12 @@ def test_write_metrics_to_yaml(diatomics_model: tuple[Model, Path]) -> None:
 
     write_diatomics_yaml(model, yaml_path, existing_file_refs)
     metrics_by_element: dict[str, dict[str, float]] = {
-        "H": {MbdKey.energy_jump: 1.0, MbdKey.tortuosity: 2.0},
-        "He": {MbdKey.energy_jump: 4.0, MbdKey.tortuosity: 5.0},
+        "H": {Key.energy_jump: 1.0, Key.tortuosity: 2.0},
+        "He": {Key.energy_jump: 4.0, Key.tortuosity: 5.0},
     }
     expected_metrics = {
-        MbdKey.energy_jump: 2.5,
-        MbdKey.tortuosity: 3.5,
+        Key.energy_jump: 2.5,
+        Key.tortuosity: 3.5,
     }
     result = diatomics.write_metrics_to_yaml(model, metrics_by_element, run_metadata={})
     assert (
@@ -541,7 +541,7 @@ def test_general_window_excludes_deeper_overlap() -> None:
     pred = h_curves(dists, energies)
     metrics = diatomics.calc_diatomic_metrics(ref_curves=None, pred_curves=pred)
     # the 1e6 spike is below H's r_min so the in-window smooth curve has no jump
-    assert metrics["H"][MbdKey.energy_jump] == pytest.approx(0)
+    assert metrics["H"][Key.energy_jump] == pytest.approx(0)
 
 
 def test_wall_metric_uses_full_dft_range() -> None:
@@ -559,8 +559,8 @@ def test_wall_metric_uses_full_dft_range() -> None:
         pred_curves=h_curves(distances, predicted_energies),
     )["H"]
 
-    assert metrics[MbdKey.pbe_energy_mae] == pytest.approx(0)
-    assert metrics[MbdKey.pbe_wall_dist_mae] == pytest.approx(0.08538778)
+    assert metrics[Key.pbe_energy_mae] == pytest.approx(0)
+    assert metrics[Key.pbe_wall_dist_mae] == pytest.approx(0.08538778)
 
 
 def test_write_metrics_drops_deprecated_and_handles_nan(
@@ -581,15 +581,15 @@ def test_write_metrics_drops_deprecated_and_handles_nan(
     # Preserve first-seen order even when a metric's first finite value comes later.
     metrics: dict[str, dict[str, float]] = {
         "H": {
-            MbdKey.energy_jump: float("inf"),
-            MbdKey.tortuosity: 2.0,
-            MbdKey.pbe_energy_mae: 1.0,
-            MbdKey.pbe_vib_freq_error: 47.7,
+            Key.energy_jump: float("inf"),
+            Key.tortuosity: 2.0,
+            Key.pbe_energy_mae: 1.0,
+            Key.pbe_vib_freq_error: 47.7,
         },
         "He": {
-            MbdKey.energy_jump: 3.0,
-            MbdKey.tortuosity: float("nan"),
-            MbdKey.pbe_vib_freq_error: float("nan"),
+            Key.energy_jump: 3.0,
+            Key.tortuosity: float("nan"),
+            Key.pbe_vib_freq_error: float("nan"),
         },
     }
     coverage = diatomics.VibFreqCoverage(
@@ -614,7 +614,7 @@ def test_write_metrics_drops_deprecated_and_handles_nan(
     # All-nonfinite metrics are omitted and stale coverage is cleared.
     all_nan = diatomics.write_metrics_to_yaml(
         model,
-        {"H": {MbdKey.tortuosity: float("nan"), MbdKey.energy_jump: float("-inf")}},
+        {"H": {Key.tortuosity: float("nan"), Key.energy_jump: float("-inf")}},
         run_metadata={},
     )
     assert "tortuosity" not in all_nan

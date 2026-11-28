@@ -11,7 +11,7 @@ from sklearn.metrics import r2_score
 
 from matbench_discovery import STABILITY_THRESHOLD
 from matbench_discovery.data import MAX_E_FORM_ERROR_THRESHOLD
-from matbench_discovery.enums import MbdKey, Model, TestSubset
+from matbench_discovery.enums import Key, Model, TestSubset
 
 
 @overload
@@ -192,7 +192,7 @@ def wbm_uniq_proto_prevalence() -> float:
     """
     from matbench_discovery.data import df_wbm
 
-    each_true_uniq = df_wbm.query(MbdKey.uniq_proto)[MbdKey.each_true]
+    each_true_uniq = df_wbm.query(Key.uniq_proto)[Key.each_true]
     return float((each_true_uniq <= STABILITY_THRESHOLD).mean())
 
 
@@ -212,10 +212,10 @@ def prepare_model_predictions(
     predictions = pd.to_numeric(
         model_preds.reindex(df_reference.index), errors="coerce"
     )
-    bad_mask = abs(predictions - df_reference[MbdKey.e_form_dft]) > max_error_threshold
+    bad_mask = abs(predictions - df_reference[Key.e_form_dft]) > max_error_threshold
     predictions = predictions.mask(bad_mask).round(3)
     metric_reference = df_reference.loc[
-        :, [MbdKey.each_true, MbdKey.e_form_dft, MbdKey.uniq_proto]
+        :, [Key.each_true, Key.e_form_dft, Key.uniq_proto]
     ].round(3)
     return metric_reference, predictions
 
@@ -241,17 +241,17 @@ def calc_discovery_metrics(
     ``df_wbm`` frame, intended for synthetic test data only.
     """
     required_cols = {
-        str(MbdKey.each_true),
-        str(MbdKey.e_form_dft),
-        str(MbdKey.uniq_proto),
+        str(Key.each_true),
+        str(Key.e_form_dft),
+        str(Key.uniq_proto),
     }
     if missing_cols := required_cols - set(df_wbm):
         raise ValueError(f"WBM dataframe missing columns: {sorted(missing_cols)}")
 
     model_preds = _align_preds(df_wbm, model_preds)
-    each_true = df_wbm[MbdKey.each_true]
-    each_pred = pred_hull_dist(model_preds, each_true, df_wbm[MbdKey.e_form_dft])
-    uniq_proto_idx = df_wbm.index[df_wbm[MbdKey.uniq_proto].astype(bool)]
+    each_true = df_wbm[Key.each_true]
+    each_pred = pred_hull_dist(model_preds, each_true, df_wbm[Key.e_form_dft])
+    uniq_proto_idx = df_wbm.index[df_wbm[Key.uniq_proto].astype(bool)]
     metrics_by_subset = {
         TestSubset.full_test_set: stable_metrics(each_true, each_pred, fillna=True),
         TestSubset.uniq_protos: stable_metrics(
@@ -290,11 +290,11 @@ def write_all_metrics_to_yaml(
         "R2": "dimensionless",
         "DAF": "dimensionless",
         **dict.fromkeys(("Precision", "Recall", "Accuracy", "F1"), "fraction"),
-        **dict.fromkeys(("TP", "FP", "TN", "FN", str(MbdKey.missing_preds)), "count"),
+        **dict.fromkeys(("TP", "FP", "TN", "FN", str(Key.missing_preds)), "count"),
     }
     model_preds = _align_preds(df_wbm, model_preds)
     missing = model_preds.isna()
-    uniq_proto_mask = df_wbm[MbdKey.uniq_proto].astype(bool)
+    uniq_proto_mask = df_wbm[Key.uniq_proto].astype(bool)
     n_missing = {
         TestSubset.full_test_set: int(missing.sum()),
         TestSubset.uniq_protos: int(missing[uniq_proto_mask].sum()),
@@ -305,7 +305,7 @@ def write_all_metrics_to_yaml(
             key: int(value) if units[key] == "count" else round(float(value), 3)
             for key, value in metrics.items()
         }
-        rounded[str(MbdKey.missing_preds)] = n_missing[test_subset]
+        rounded[str(Key.missing_preds)] = n_missing[test_subset]
         written[test_subset] = commented_map_with_units(rounded, units)
 
     # Metric subset blocks always carry F1; pred_file / hardware do not.

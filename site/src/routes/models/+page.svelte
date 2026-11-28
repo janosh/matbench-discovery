@@ -44,9 +44,12 @@
   const read_url_params = (params: URLSearchParams) => {
     // cards sort by one key: the first of a multi-key `?sort`, the default for an empty one
     const [{ column, dir }] = [
-      ...sort_from_param(params, default_sort, {
-        valid_columns: new Set(sort_options_by_key.keys()),
-      }),
+      ...sort_from_param(
+        params,
+        `sort`,
+        default_sort,
+        new Set(sort_options_by_key.keys()),
+      ),
       ...default_sort,
     ]
     sort_by = sort_options_by_key.get(column) ?? ALL_METRICS.CPS
@@ -56,7 +59,7 @@
     show_n_best = n_best >= min_models ? clamp_model_count(n_best) : MODELS.length
   }
   bind_url_params(read_url_params, () => [
-    sort_url_entry([{ column: sort_by.key, dir: order }], default_sort),
+    sort_url_entry(`sort`, [{ column: sort_by.key, dir: order }], default_sort),
     [`n_best`, `${model_limit}`, `${MODELS.length}`],
   ])
 

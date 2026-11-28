@@ -10,6 +10,6 @@ The legacy one-off discovery executable was retired when
 [PR #375](https://github.com/janosh/matbench-discovery/pull/375) centralized
 discovery execution. EquFlash is explicitly marked as archived because the
 exercised Fair-Chem path requires installing `fairchem-core==1.10.0` with `--no-deps`:
-Fair-Chem declares Torch `<2.5`, while EquFlash requires Torch 2.9.1. Adding that
+Fair-Chem declares Torch `<2.5`, while EquFlash requires Torch 2.10.0. Adding that
 special-case environment and batched relaxation to the shared runner would make
 the common path less reliable.

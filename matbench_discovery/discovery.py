@@ -16,17 +16,16 @@ from pymatgen.core import Structure
 from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatgen.io.ase import AseAtomsAdaptor
-from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery import atomic_output_path
+from matbench_discovery import atomic_output_path, json_ready
 from matbench_discovery.ase_relax import (
     canonical_filter_name,
     canonical_optimizer_name,
     resolve_cell_filter,
     resolve_optimizer,
 )
-from matbench_discovery.enums import DataFiles, Model, TestSubset
+from matbench_discovery.enums import DataFiles, Key, Model, TestSubset
 from matbench_discovery.hpc import (
     check_resume_labels,
     material_id_from_atoms,
@@ -350,22 +349,9 @@ def relax_atoms(
     )
 
 
-def _json_default(value: object) -> object:
-    """Convert NumPy values while rejecting unsupported JSON objects.
-
-    Calculators may stuff arrays into ``atoms.info``, which
-    ``AseAtomsAdaptor.get_structure`` copies into ``Structure.properties``.
-    """
-    if isinstance(value, np.generic):
-        return value.item()
-    if isinstance(value, np.ndarray):
-        return value.tolist()  # ty: ignore[no-matching-overload]  # shape is unknown
-    raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
-
-
 def _event_payload(event: Mapping[str, Any]) -> str:
     """One JSONL event line (raises on non-serializable or non-finite values)."""
-    return json.dumps(event, default=_json_default, allow_nan=False)
+    return json.dumps(json_ready(event, nan_to_none=False), allow_nan=False)
 
 
 def _append_shard_event(shard_path: str, event: Mapping[str, Any]) -> None:

@@ -26,7 +26,8 @@ from importlib.metadata import PackageNotFoundError, requires, version
 from typing import Any
 from urllib.parse import urlsplit
 
-from ase.calculators.calculator import Calculator
+from ase import Atoms
+from ase.calculators.calculator import Calculator, all_changes
 from filelock import FileLock
 
 from matbench_discovery import DEFAULT_CACHE_DIR, file_digest
@@ -1039,6 +1040,48 @@ def _bam(device: str, checkpoint: str) -> Calculator:
     return RACECalculator(model=checkpoint, device=device)
 
 
+def _mena_lam6(device: str, checkpoint: str) -> Calculator:
+    """Load Mena-LAM-6 in strict FP32 with lot="mp", picking each structure's PBE or
+    PBE+U source by MP2020's composition rule (O or F with V, Cr, Mn, Fe, Co, Ni, Mo or
+    W) instead of MenaCalculator's coordination heuristic, so stretched oxides keep the
+    +U source. Per-atom +U masks stay coordination-based, as in training. Any
+    user-supplied atoms.info["u_flag"] is overridden.
+    """
+    from lam4.calc import MenaCalculator
+    from lam4.registry.hubbard import MP_HUBBARD_ANIONS, MP_HUBBARD_METALS
+
+    def with_u_flag(atoms: Atoms) -> Atoms:
+        atoms_copy = atoms.copy()  # never carries atoms' calculator
+        numbers = set(atoms_copy.numbers.tolist())
+        is_u = bool(numbers & MP_HUBBARD_ANIONS) and bool(numbers & MP_HUBBARD_METALS)
+        atoms_copy.info["u_flag"] = int(is_u)
+        return atoms_copy
+
+    class MenaMP2020Calculator(MenaCalculator):
+        def check_state(self, atoms: Atoms, tol: float = 1e-15) -> list[str]:
+            return super().check_state(with_u_flag(atoms), tol=tol)
+
+        def calculate(
+            self,
+            atoms: Atoms | None = None,
+            properties: Sequence[str] = ("energy",),
+            system_changes: Sequence[str] = tuple(all_changes),
+        ) -> None:
+            atoms = None if atoms is None else with_u_flag(atoms)
+            super().calculate(atoms, properties, system_changes)
+
+    return MenaMP2020Calculator.from_checkpoint(
+        checkpoint,
+        device=device,
+        lot="mp",
+        dtype="float32",
+        precision="fp32_ieee",
+        weights="ema",
+        add_dispersion=False,
+        compile=False,
+    )
+
+
 def _emt(device: str) -> Calculator:  # noqa: ARG001 - CPU only, debug model
     """Load ASE's EMT calculator (debug model, CPU only)."""
     from ase.calculators.emt import EMT
@@ -1195,6 +1238,7 @@ CALCULATORS: _CalcRegistry = _CalcRegistry(
         "equflashv2_45m_oam": _checkpoint_spec(
             "equflashv2_45m_oam", _equflash, ext=".pt"
         ),
+        "mena_lam_6": _checkpoint_spec("mena_lam_6", _mena_lam6, ext=".pt"),
         # Eager: no Model YAML / environment; do not wrap with _runtime_calc_spec.
         "emt": CalcSpec(_emt),
     }

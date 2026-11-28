@@ -30,9 +30,9 @@ import pytest
 import requests
 import yaml
 
-from matbench_discovery import ROOT
+from matbench_discovery import ROOT, json_ready
 from matbench_discovery.enums import Model
-from matbench_discovery.phonons.pipeline import json_ready, write_json_records
+from matbench_discovery.phonons.pipeline import write_json_records
 from tests.utils import import_repo_script, make_harmonic_record
 
 asset_helpers = import_repo_script("asset_helpers", "site/scripts/asset_helpers.py")
@@ -512,7 +512,7 @@ def test_prune_unreferenced_assets_keeps_exactly_the_manifest(
             """Simulate a failed manifest replacement."""
             raise OSError("replace failed")
 
-        monkeypatch.setattr(asset_helpers.os, "replace", fail_replace)
+        monkeypatch.setattr("os.replace", fail_replace)
         with pytest.raises(OSError, match="replace failed"):
             asset_helpers.write_manifest(manifest_path, manifest)
         assert manifest_path.read_text() == '{"previous": true}\n'

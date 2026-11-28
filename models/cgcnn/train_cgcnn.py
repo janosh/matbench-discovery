@@ -28,12 +28,11 @@ from aviary.cgcnn.data import CrystalGraphData, collate_batch
 from aviary.cgcnn.model import CrystalGraphConvNet
 from aviary.utils import train_ensemble
 from pymatgen.core import Structure
-from pymatviz.enums import Key
 from torch.utils.data import DataLoader
 from tqdm import tqdm, trange
 
 from matbench_discovery import timestamp, today
-from matbench_discovery.enums import DataFiles
+from matbench_discovery.enums import DataFiles, Key
 from matbench_discovery.hpc import slurm_submit
 
 np_rng = np.random.default_rng(seed=0)  # ensure reproducible structure perturbations

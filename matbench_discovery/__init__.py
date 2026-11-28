@@ -1,12 +1,15 @@
 """Global variables used all across the matbench_discovery package."""
 
 import hashlib
+import math
 import os
 import tempfile
 import warnings
-from collections.abc import Generator
+from collections.abc import Generator, Mapping
 from contextlib import contextmanager
 from datetime import UTC, datetime
+
+import numpy as np
 
 __version__ = "1.3.1"
 
@@ -60,6 +63,31 @@ def atomic_output_path(path: str, *, overwrite: bool = True) -> Generator[str]:
     finally:
         if os.path.isfile(temporary_path):
             os.remove(temporary_path)
+
+
+def json_ready(value: object, *, nan_to_none: bool = True) -> object:
+    """Recursively convert NumPy scalars and arrays, tuples and mappings to strict
+    JSON data. Non-finite floats become None, or raise ValueError when nan_to_none
+    is False (e.g. run events, where NaN signals a bug rather than missing data).
+    """
+    if isinstance(value, Mapping):
+        return {
+            str(key): json_ready(item, nan_to_none=nan_to_none)
+            for key, item in value.items()
+        }
+    if isinstance(value, np.ndarray):
+        return json_ready(value.tolist(), nan_to_none=nan_to_none)  # ty: ignore[no-matching-overload]
+    if isinstance(value, np.generic):
+        return json_ready(value.item(), nan_to_none=nan_to_none)
+    if isinstance(value, tuple | list):
+        return [json_ready(item, nan_to_none=nan_to_none) for item in value]
+    if isinstance(value, float) and not math.isfinite(value):
+        if nan_to_none:
+            return None
+        raise ValueError(f"Out of range float values are not JSON compliant: {value}")
+    if isinstance(value, str | int | float | bool) or value is None:
+        return value
+    raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
 
 
 TEST_FILES = f"{ROOT}/tests/files"  # directory to store test data

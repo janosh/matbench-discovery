@@ -16,10 +16,9 @@ import numpy as np
 import pandas as pd
 import pytest
 from ase import Atoms
-from pymatviz.enums import Key
 
 from matbench_discovery import file_digest
-from matbench_discovery.enums import MbdKey, Model
+from matbench_discovery.enums import Key, Model
 from matbench_discovery.phonons import force_sets
 from matbench_discovery.phonons.adapters import (
     FairchemKappaAdapter,
@@ -89,7 +88,7 @@ class ComputationStub:
             str(Key.mat_id): material_id,
             str(Key.formula): atoms.get_chemical_formula(),
             str(Key.has_imag_ph_modes): False,
-            str(MbdKey.kappa_tot_rta): [[1, 2, 3, 4, 5, 6]],
+            str(Key.kappa_tot_rta): [[1, 2, 3, 4, 5, 6]],
             "errors": [],
             "error_traceback": [],
         }
@@ -660,7 +659,7 @@ def test_calculate_kappa_for_structure_runs_shared_physics_flow(
         assert temperatures == (300.0,)
         return (
             phono3py,
-            {str(MbdKey.kappa_tot_rta): np.eye(3).tolist()},
+            {str(Key.kappa_tot_rta): np.eye(3).tolist()},
             object(),
         )
 
@@ -695,9 +694,7 @@ def test_calculate_kappa_for_structure_runs_shared_physics_flow(
     assert computation.result.get("conductivity_skipped", False) is expected_skipped
     assert computation.result["errors"] == []
     if not expected_skipped:
-        np.testing.assert_array_equal(
-            computation.result[MbdKey.kappa_tot_rta], np.eye(3)
-        )
+        np.testing.assert_array_equal(computation.result[Key.kappa_tot_rta], np.eye(3))
     assert computation.forces is not None
     assert computation.forces["fc2_dataset"] == adapter.phono3py.phonon_dataset
     assert computation.forces["fc2_forces"].shape == (1, 1, 3)
@@ -832,14 +829,14 @@ def test_normalize_kappa_schema_and_voigt() -> None:
             str(Key.mat_id): "mp-1",
             str(Key.init_spg_num): 225,
             str(Key.final_spg_num): 221,
-            str(MbdKey.kappa_tot_rta): [1, 2, 3, 4, 5, 6],
+            str(Key.kappa_tot_rta): [1, 2, 3, 4, 5, 6],
         }
     )
     assert result[str(Key.mat_id)] == "mp-1"
     assert result[str(Key.init_spg_num)] == 225
     assert result[str(Key.final_spg_num)] == 221
     assert result["broken_symmetry"] is True
-    assert np.asarray(result[str(MbdKey.kappa_tot_rta)]).tolist() == [
+    assert np.asarray(result[str(Key.kappa_tot_rta)]).tolist() == [
         [1, 6, 5],
         [6, 2, 4],
         [5, 4, 3],
@@ -857,10 +854,10 @@ def test_normalize_kappa_schema_and_voigt() -> None:
         {
             str(Key.mat_id): "mp-1",
             "errors": ["failed after partial conductivity output"],
-            str(MbdKey.kappa_tot_rta): [1, 2, 3, 4, 5, 6],
+            str(Key.kappa_tot_rta): [1, 2, 3, 4, 5, 6],
         }
     )
-    assert np.isnan(failed_result[str(MbdKey.kappa_tot_rta)])
+    assert np.isnan(failed_result[str(Key.kappa_tot_rta)])
     assert voigt_6_to_full_3x3([1, 2, 3]) == [1, 2, 3]
 
 
@@ -894,14 +891,14 @@ def test_normalize_kappa_dataframe_preserves_order() -> None:
         {
             str(Key.mat_id): ["mp-2", "mp-1"],
             str(Key.init_spg_num): [225, 221],
-            str(MbdKey.kappa_tot_rta): [[1, 2, 3, 4, 5, 6]] * 2,
+            str(Key.kappa_tot_rta): [[1, 2, 3, 4, 5, 6]] * 2,
             "errors": [np.nan, []],
         }
     )
     df_normalized: pd.DataFrame = normalize_kappa_dataframe(df_input)
     assert list(df_normalized[str(Key.mat_id)]) == ["mp-2", "mp-1"]
     assert "mp_id" not in df_normalized
-    assert np.asarray(df_normalized[str(MbdKey.kappa_tot_rta)].iloc[0]).shape == (
+    assert np.asarray(df_normalized[str(Key.kappa_tot_rta)].iloc[0]).shape == (
         3,
         3,
     )
@@ -1090,8 +1087,8 @@ def test_harmonic_failure_resume_and_merge(
     assert merged.run_metadata["n_failed"] == 0
     assert merged.run_metadata["n_phonon_failed"] == 1
     np.testing.assert_array_equal(
-        merged.records[0].result[MbdKey.kappa_tot_rta],
-        record.result[MbdKey.kappa_tot_rta],
+        merged.records[0].result[Key.kappa_tot_rta],
+        record.result[Key.kappa_tot_rta],
     )
     shard_env.run(settings=settings, retry_failures=True)
     assert len(shard_env.computation.material_ids) == n_calls + 1

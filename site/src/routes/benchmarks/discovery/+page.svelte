@@ -5,7 +5,7 @@
   import DiscoverySetToggle from '#lib/DiscoverySetToggle.svelte'
   import { ACTIVE_MODELS, task_page_filters } from '#lib/models.svelte.js'
   import DynamicScatter from '#lib/plot/DynamicScatter.svelte'
-  import { valid_query_param } from 'svelte-widgets/browser'
+  import { string_from_param } from 'svelte-widgets/browser'
   import * as labels from '#lib/labels.js'
   import { DISCOVERY_SETS, type DiscoverySet, type ModelData } from '#lib/types.js'
   import HullConstructionNote from './hull-construction-note.md'
@@ -24,7 +24,7 @@
   const { filters, in_view } = task_page_filters(
     has_discovery_metrics,
     (params) => {
-      discovery_set = valid_query_param(
+      discovery_set = string_from_param(
         params,
         `set`,
         default_discovery_set,

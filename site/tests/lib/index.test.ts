@@ -10,7 +10,7 @@ import {
 } from '../../scripts/markdown-data.js'
 import { sync_url_params } from '#lib/url-state.svelte.js'
 import { goto } from '$app/navigation'
-import { valid_query_param } from 'svelte-widgets/browser'
+import { string_from_param } from 'svelte-widgets/browser'
 import { describe, expect, it, vi } from 'vite-plus/test'
 import { query_param } from '../index.js'
 
@@ -201,7 +201,7 @@ describe(`format_date`, () => {
   })
 })
 
-describe(`valid_query_param`, () => {
+describe(`string_from_param`, () => {
   it.each([
     [`F1`, `F1`],
     [`rmsd_auc`, `rmsd_auc`],
@@ -214,7 +214,7 @@ describe(`valid_query_param`, () => {
     [null, `CPS`],
   ])(`validates scatter axis %s against the option catalog`, (value, expected) => {
     const params = new URLSearchParams(value === null ? {} : { x: value })
-    expect(valid_query_param(params, `x`, `CPS`, scatter_options_by_key)).toBe(expected)
+    expect(string_from_param(params, `x`, `CPS`, scatter_options_by_key)).toBe(expected)
   })
 })
 

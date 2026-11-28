@@ -48,12 +48,14 @@
       dataset.n_structures === null
         ? `Unknown number of structures`
         : `${format_num(dataset.n_structures, `.3~s`)} structures`,
-      dataset.n_structures?.toLocaleString() ?? `Structure count not reported`,
+      dataset.n_structures == null
+        ? `Structure count not reported`
+        : format_num(dataset.n_structures, `,`),
     ],
     [
       Lattice,
       dataset.n_materials ? `${format_num(dataset.n_materials, `.3~s`)} materials` : null,
-      dataset.n_materials?.toLocaleString(),
+      dataset.n_materials == null ? undefined : format_num(dataset.n_materials, `,`),
     ],
     [Key, `${title_case(dataset.access)} access`],
     [License, dataset.license],

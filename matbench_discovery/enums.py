@@ -80,7 +80,7 @@ class LabelEnum(StrEnum):
 
 
 @unique
-class MbdKey(LabelEnum):
+class Key(LabelEnum):
     """Keys used to access dataframes columns."""
 
     dft_energy = "uncorrected_energy", "DFT Energy"
@@ -149,6 +149,64 @@ class MbdKey(LabelEnum):
     pbe_well_depth_error = "pbe_well_depth_error", "PBE Well Depth Error (eV)"
     pbe_force_mae = "pbe_force_mae", "PBE Force MAE (eV/Å)"
     pbe_vib_freq_error = "pbe_vib_freq_error", "PBE Vib. Freq. Error (cm⁻¹)"
+
+    # Identity, structure and composition columns
+    mat_id = "material_id", "Material ID"
+    task_id = "task_id", "Task ID"
+    formula = "formula", "Formula"
+    arity = "arity", "Arity"
+    n_sites = "n_sites", "Number of Sites"
+    n_structures = "n_structures", "Number of Structures"
+    atom_nums = "atom_nums", "Atomic Numbers"
+    atomic_number = "atomic_number", "Atomic Number"
+    structure = "structure", "Structure"
+    init_struct = "init_struct", "Initial Structure"
+    final_struct = "final_struct", "Final Structure"
+    computed_structure_entry = "computed_structure_entry", "Computed Structure Entry"
+    protostructure = "protostructure", "Protostructure Label"
+    dft = "dft", "DFT"
+
+    # Energies, forces and other DFT outputs
+    form_energy = "form_energy", "Formation Energy (eV/atom)"
+    formation_energy_per_atom = (
+        "formation_energy_per_atom",
+        "MP Formation Energy (eV/atom)",
+    )
+    bandgap_pbe = "bandgap_pbe", "PBE Band Gap (eV)"
+    forces = "forces", "Forces (eV/Å)"
+    stress = "stress", "Stress (eV/Å³)"
+    stress_trace = "stress_trace", "Stress Trace (eV/Å³)"
+    magmoms = "magmoms", "Magnetic Moments (μ<sub>B</sub>)"
+
+    # Symmetry analysis
+    spg_num = "spg_num", "Space Group Number"
+    init_spg_num = "init_spg_num", "Initial Space Group Number"
+    final_spg_num = "final_spg_num", "Final Space Group Number"
+    hall_num = "hall_num", "Hall number"
+    hall_symbol = "hall_symbol", "Hall symbol"
+    wyckoff_symbols = "wyckoff_symbols", "Wyckoff symbols"
+    n_sym_ops = "n_sym_ops", "Total number of symmetries"
+    n_rot_syms = "n_rot_syms", "Number of rotational symmetries"
+    n_trans_syms = "n_trans_syms", "Number of translational symmetries"
+    n_sym_ops_mae = (
+        "n_sym_ops_mae",
+        "Mean Absolute Error in Number of Symmetry Operations",
+    )
+    symprec = "symprec", "Symmetry Precision"
+    angle_tolerance = "angle_tolerance", "Angle Tolerance"
+    symmetry_match = "symmetry_match", "Symmetry Match"
+    symmetry_decrease = "symmetry_decrease", "Symmetry Decrease"
+    symmetry_increase = "symmetry_increase", "Symmetry Increase"
+    max_pair_dist = "max_pair_dist", "Maximum Pair Distance (Å)"
+
+    # Phonons
+    ph_freqs = "ph_freqs", "Phonon Frequencies (THz)"
+    has_imag_ph_modes = "has_imag_ph_modes", "Has Imaginary Phonon Modes"
+    mode_weights = "mode_weights", "Mode Weights"
+    q_points = "q_points", "q-Points"
+    sre = "sre", "Symmetric Relative Error"
+    srd = "srd", "Symmetric Relative Difference"
+    srme = "srme", "Symmetric Relative Mean Error"
 
 
 @unique

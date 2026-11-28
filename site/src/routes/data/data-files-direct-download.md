@@ -4,7 +4,7 @@
 
 ## Downloading data
 
-Public benchmark inputs and reference files are available from [Figshare](https://figshare.com/articles/dataset/22715158). The `DataFiles` registry downloads and caches individual files locally:
+Public benchmark inputs and reference files are on [Figshare](https://figshare.com/articles/dataset/22715158). The `DataFiles` registry downloads and caches individual files locally:
 
 ```py
 from matbench_discovery.enums import DataFiles

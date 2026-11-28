@@ -23,11 +23,10 @@ from asset_helpers import (
     write_json_gz,
     write_manifest,
 )
-from pymatviz.enums import Key
 
 from matbench_discovery import ROOT
 from matbench_discovery.data import load_df_wbm_with_preds
-from matbench_discovery.enums import DataFiles, MbdKey
+from matbench_discovery.enums import DataFiles, Key
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -176,8 +175,8 @@ def main(argv: Sequence[str] | None = None) -> None:
         "material_ids": material_ids,
         "formulas": df_preds[Key.formula].astype(str).tolist(),
         "n_sites": clean_ints(df_preds[Key.n_sites]),
-        "e_form_true": clean_floats(df_preds[MbdKey.e_form_dft], ENERGY_DECIMALS),
-        "each_true": clean_floats(df_preds[MbdKey.each_true], ENERGY_DECIMALS),
+        "e_form_true": clean_floats(df_preds[Key.e_form_dft], ENERGY_DECIMALS),
+        "each_true": clean_floats(df_preds[Key.each_true], ENERGY_DECIMALS),
         "structure_shard_size": args.structure_shard_size,
     }
     base_meta: dict[str, str] | None = None

@@ -10,7 +10,7 @@
 <script lang="ts">
   import { ScatterPlot } from 'matterviz/plot'
   import { DEFAULT_CATEGORY_COLORS } from 'matterviz/colors'
-  import { element_data } from 'matterviz/element'
+  import { coerce_elem_symbol, element_by_symbol } from 'matterviz/element'
   import { tooltip as add_tooltip } from 'svelte-widgets/attachments'
   import type { HTMLAttributes } from 'svelte/elements'
 
@@ -50,11 +50,8 @@
   const x_range: [number, number] = [0.2, 6]
   const y_range: [number, number] = [-8, 20]
   const no_tween = { duration: 0 } as const
-  const elements = element_data as ChemicalElement[]
-  let element_symbol = $derived(formula.split(`-`, 1)[0])
-  let element = $derived(
-    elements.find((element_entry) => element_entry.symbol === element_symbol),
-  )
+  let element_symbol = $derived(coerce_elem_symbol(formula.split(`-`, 1)[0]))
+  let element = $derived(element_symbol && element_by_symbol.get(element_symbol))
   let header_text = $derived(element ? `${element.number} ${formula}` : formula)
 
   let series = $derived(

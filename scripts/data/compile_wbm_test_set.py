@@ -15,12 +15,11 @@ from pandas.core.util.hashing import hash_pandas_object
 from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram, PDEntry, PhaseDiagram
 from pymatgen.core import Composition, Structure
 from pymatgen.entries.computed_entries import ComputedStructureEntry
-from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import WBM_DIR, today
 from matbench_discovery.energy import calc_energy_from_e_refs
-from matbench_discovery.enums import DataFiles, MbdKey
+from matbench_discovery.enums import DataFiles, Key
 from matbench_discovery.remote.fetch import download_file
 from matbench_discovery.wbm import (
     WBM_ELEMENTAL_REF_ENERGIES,
@@ -297,9 +296,9 @@ col_map = {
     "# comp": Key.formula,
     "nsites": Key.n_sites,
     "vol": "volume",
-    "e": MbdKey.dft_energy,
-    "e_form": MbdKey.e_form_wbm,
-    "e_hull": MbdKey.each_wbm,
+    "e": Key.dft_energy,
+    "e_form": Key.e_form_wbm,
+    "e_hull": Key.each_wbm,
     "gap": Key.bandgap_pbe,
     "id": Key.mat_id,
 }
@@ -419,7 +418,7 @@ df_summary[Key.formula] = df_wbm.formula_from_cse
 
 
 # fix bad energy which is 0 in df_summary but a more realistic -63.68 in CSE
-df_summary.loc["wbm-2-18689", MbdKey.dft_energy] = df_wbm.loc["wbm-2-18689"][
+df_summary.loc["wbm-2-18689", Key.dft_energy] = df_wbm.loc["wbm-2-18689"][
     Key.computed_structure_entry
 ]["energy"]
 
@@ -428,13 +427,13 @@ df_summary.loc["wbm-2-18689", MbdKey.dft_energy] = df_wbm.loc["wbm-2-18689"][
 
 
 # %% compare summary energies with CSE energies
-df_summary[f"{MbdKey.dft_energy}_from_cse"] = [
+df_summary[f"{Key.dft_energy}_from_cse"] = [
     cse["energy"] for cse in tqdm(df_wbm[Key.computed_structure_entry])
 ]
 
 # check CSE and summary energies are consistent, only exceeding 0.1 eV difference twice
 diff_e_cse_e_summary = (
-    df_summary[MbdKey.dft_energy] - df_summary.uncorrected_energy_from_cse
+    df_summary[Key.dft_energy] - df_summary.uncorrected_energy_from_cse
 )
 assert diff_e_cse_e_summary.max() < 0.15
 assert sum(diff_e_cse_e_summary > 0.1) == 2
@@ -442,15 +441,15 @@ assert sum(diff_e_cse_e_summary > 0.1) == 2
 
 # %% remove suspicious formation energy outliers
 e_form_cutoff = 5
-n_too_stable = sum(df_summary[MbdKey.e_form_wbm] < -e_form_cutoff)
+n_too_stable = sum(df_summary[Key.e_form_wbm] < -e_form_cutoff)
 print(f"{n_too_stable = }")  # n_too_stable = 502
-n_too_unstable = sum(df_summary[MbdKey.e_form_wbm] > e_form_cutoff)
+n_too_unstable = sum(df_summary[Key.e_form_wbm] > e_form_cutoff)
 print(f"{n_too_unstable = }")  # n_too_unstable = 22
 
 
 assert len(df_summary) == len(df_wbm) == 257_487
 
-query_str = f"{-e_form_cutoff} < {MbdKey.e_form_wbm} < {e_form_cutoff}"
+query_str = f"{-e_form_cutoff} < {Key.e_form_wbm} < {e_form_cutoff}"
 dropped_ids = sorted(set(df_summary.index) - set(df_summary.query(query_str).index))
 assert len(dropped_ids) == 502 + 22
 assert dropped_ids[:3] == ["wbm-1-12142", "wbm-1-12143", "wbm-1-12144"]
@@ -493,8 +492,8 @@ assert avg_energy_corr == -0.1062, f"{avg_energy_corr=:.4}, expected -0.1062"
 
 
 # %% calculate e_above_hull for each material
-if MbdKey.each_true in df_summary:
-    raise KeyError(f"{MbdKey.each_true!s} already in {df_summary.columns=}")
+if Key.each_true in df_summary:
+    raise KeyError(f"{Key.each_true!s} already in {df_summary.columns=}")
 del df_wbm, wbm_cses
 
 
@@ -551,7 +550,7 @@ def mp_hull_pd(entry: PDEntry) -> PhaseDiagram:
 # element no MP entry has
 wbm_entries = corrected_pd_entries(df_wbm_corr)
 wbm_hull_pds = [mp_hull_pd(entry) for entry in tqdm(wbm_entries, desc="MP hulls")]
-df_summary[MbdKey.each_true] = [
+df_summary[Key.each_true] = [
     hull_pd.get_e_above_hull(entry, allow_negative=True)
     for entry, hull_pd in zip(wbm_entries, wbm_hull_pds, strict=True)
 ]
@@ -584,11 +583,11 @@ del wbm_entries, wbm_hull_pds, df_wbm_corr
 e_form_diffs = pd.Series(e_forms_raw - e_forms_hull, index=df_summary.index)
 if (bad_e_forms := e_form_diffs[e_form_diffs.abs() >= 1e-4]).any():
     raise ValueError(f"formation energies disagree by >= 1e-4 eV/atom: {bad_e_forms}")
-df_summary[MbdKey.e_form_raw] = e_forms_raw
+df_summary[Key.e_form_raw] = e_forms_raw
 
 
-df_summary[MbdKey.e_form_raw.replace("uncorrected", "mp2020_corrected")] = (
-    df_summary[MbdKey.e_form_raw] + df_summary["e_correction_per_atom_mp2020"]
+df_summary[Key.e_form_raw.replace("uncorrected", "mp2020_corrected")] = (
+    df_summary[Key.e_form_raw] + df_summary["e_correction_per_atom_mp2020"]
 )
 
 
@@ -596,14 +595,14 @@ df_summary[MbdKey.e_form_raw.replace("uncorrected", "mp2020_corrected")] = (
 # labels can differ from current assignments even after converting Pearson symbols.
 archived_cols = [
     "e_correction_per_atom_mp_legacy",
-    MbdKey.init_protostructure_spglib,
-    MbdKey.protostructure_spglib,
+    Key.init_protostructure_spglib,
+    Key.protostructure_spglib,
     "site_stats_fingerprint_init_final_norm_diff",
 ]
 archived = pd.read_csv(
     DataFiles.wbm_summary_2023.path,
     index_col=Key.mat_id,
-    usecols=[Key.mat_id, *archived_cols, MbdKey.uniq_proto],
+    usecols=[Key.mat_id, *archived_cols, Key.uniq_proto],
 )
 pd.testing.assert_index_equal(df_summary.index, archived.index)
 df_summary = df_summary.join(archived[archived_cols], validate="one_to_one")
@@ -611,13 +610,11 @@ n_legacy = (df_summary.e_correction_per_atom_mp_legacy != 0).sum()
 assert n_legacy == 39_591, f"{n_legacy=:,} expected 39,591"
 
 # Rebuild cohort membership from relaxed labels and original WBM hull distances.
-df_mp = pd.read_csv(DataFiles.mp_energies.path, usecols=[MbdKey.protostructure_spglib])
-df_summary[MbdKey.uniq_proto] = unique_wbm_prototypes(
-    df_summary, df_mp[MbdKey.protostructure_spglib]
+df_mp = pd.read_csv(DataFiles.mp_energies.path, usecols=[Key.protostructure_spglib])
+df_summary[Key.uniq_proto] = unique_wbm_prototypes(
+    df_summary, df_mp[Key.protostructure_spglib]
 )
-pd.testing.assert_series_equal(
-    df_summary[MbdKey.uniq_proto], archived[MbdKey.uniq_proto]
-)
+pd.testing.assert_series_equal(df_summary[Key.uniq_proto], archived[Key.uniq_proto])
 
 
 # %% write final summary data to disk (yeah!)

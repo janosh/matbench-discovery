@@ -4,7 +4,6 @@ from typing import Any, Final
 
 import numpy as np
 import pandas as pd
-from pymatviz.enums import Key
 
 from matbench_discovery import repo_relative_path
 from matbench_discovery.data import (
@@ -13,7 +12,7 @@ from matbench_discovery.data import (
     merge_file_ref,
     update_yaml_file,
 )
-from matbench_discovery.enums import MbdKey, Model
+from matbench_discovery.enums import Key, Model
 
 # normalized RMSD at and beyond which a structure scores 0 in rmsd_auc
 RMSD_AUC_CUTOFF: Final = 0.05
@@ -85,7 +84,7 @@ def write_metrics_to_yaml(
 
     row = df_geo_opt.iloc[0]
     # RMSD is symprec-invariant, so its score lives at task level, not per symprec
-    score_key = str(MbdKey.rmsd_auc)
+    score_key = str(Key.rmsd_auc)
     task_scores = {score_key: round(float(row[score_key]), 4)}
     update_yaml_file(
         model.yaml_path,
@@ -98,7 +97,7 @@ def write_metrics_to_yaml(
         Key.symmetry_decrease: "fraction",
         Key.symmetry_match: "fraction",
         Key.symmetry_increase: "fraction",
-        MbdKey.symmetry_lateral: "fraction",
+        Key.symmetry_lateral: "fraction",
         Key.n_structures: "count",
     }
     metrics_for_symprec = commented_map_with_units(
@@ -151,8 +150,8 @@ def calc_geo_opt_metrics(
               only ones the symmetry metrics are calculated on
     """
     df_model_analysis = df_model_analysis.reindex(ref_ids)
-    spg_diff = df_model_analysis[MbdKey.spg_num_diff]
-    n_sym_ops_diff = df_model_analysis[MbdKey.n_sym_ops_diff]
+    spg_diff = df_model_analysis[Key.spg_num_diff]
+    n_sym_ops_diff = df_model_analysis[Key.n_sym_ops_diff]
 
     # symmetry metrics use only structures with valid symmetry results: detection can
     # fail in the symmetry finder itself, leaving model vs algo blame unassignable
@@ -163,12 +162,12 @@ def calc_geo_opt_metrics(
         Key.symmetry_decrease: (n_sym_ops_diff < 0) & changed_mask,
         Key.symmetry_match: ~changed_mask & valid_sym_mask,
         Key.symmetry_increase: (n_sym_ops_diff > 0) & changed_mask,
-        MbdKey.symmetry_lateral: (n_sym_ops_diff == 0) & changed_mask,
+        Key.symmetry_lateral: (n_sym_ops_diff == 0) & changed_mask,
     }
 
     return {
-        str(MbdKey.rmsd_auc): rmsd_auc(
-            df_model_analysis[MbdKey.structure_rmsd_vs_dft], ref_ids
+        str(Key.rmsd_auc): rmsd_auc(
+            df_model_analysis[Key.structure_rmsd_vs_dft], ref_ids
         ),
         str(Key.n_sym_ops_mae): float(n_sym_ops_diff[valid_sym_mask].abs().mean()),
         **{

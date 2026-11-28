@@ -17,7 +17,7 @@
   } from '#lib/labels.js'
   import { is_finite_num, metric_value } from '#lib/metrics.js'
   import { ACTIVE_MODELS, task_page_filters } from '#lib/models.svelte.js'
-  import { valid_query_param } from 'svelte-widgets/browser'
+  import { string_from_param } from 'svelte-widgets/browser'
   import type { DiscoverySet, Label, ModelData } from '#lib/types.js'
   import { ButtonGroup } from 'svelte-widgets'
   import { slide } from 'svelte/transition'
@@ -85,14 +85,14 @@
 
   const valid_sets = new Set(DISCOVERY_SETS)
   const read_url_params = (params: URLSearchParams) => {
-    const next_preset = valid_query_param(
+    const next_preset = string_from_param(
       params,
       `preset`,
       default_col_preset,
       col_presets,
     )
     sort_preset = next_preset
-    discovery_set = valid_query_param(params, `set`, `unique_prototypes`, valid_sets)
+    discovery_set = string_from_param(params, `set`, `unique_prototypes`, valid_sets)
     col_preset = next_preset
     // Reapply the preset even when only its columns were customized.
     preset_metric_keys = new Set(preset_metric_keys)

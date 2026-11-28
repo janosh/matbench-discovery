@@ -180,10 +180,10 @@
   {actions}
   bind:open={search_open}
   placeholder="Search models, datasets, and pages…"
-  input_style="padding: 0.3em 0.6em"
+  input_props={{ style: `padding: 0.3em 0.6em` }}
   style="overflow: hidden"
-  li_option_style="padding: 0.15em 0.6em"
-  li_group_header_style="padding: 0.2em 0.6em"
+  li_option_props={{ style: `padding: 0.15em 0.6em` }}
+  li_group_header_props={{ style: `padding: 0.2em 0.6em` }}
   dialog_props={{ style: `top: 15vh` }}
 />
 <CopyButton global />

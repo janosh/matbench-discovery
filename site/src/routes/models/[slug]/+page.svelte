@@ -57,7 +57,7 @@
   import { tooltip } from 'svelte-widgets/attachments'
   import { SvelteSet } from 'svelte/reactivity'
   import { bind_url_params } from '#lib/url-state.svelte.js'
-  import { valid_query_param } from 'svelte-widgets/browser'
+  import { string_from_param } from 'svelte-widgets/browser'
   import type { LoadStatus } from '#lib/asset-loader.js'
   import { parse_dependency_spec } from '#lib/environment.js'
   import { per_element_each_errors as per_elem_each_errors } from '#lib/per-element-errors.js'
@@ -130,13 +130,13 @@
   let diagnostic_task = $state(``)
   bind_url_params(
     (params) => {
-      energy_parity_tab = valid_query_param(
+      energy_parity_tab = string_from_param(
         params,
         `energy_tab`,
         default_energy_tab,
         energy_tab_values,
       )
-      diagnostic_task = valid_query_param(params, `diagnostic`, ``, diagnostic_values)
+      diagnostic_task = string_from_param(params, `diagnostic`, ``, diagnostic_values)
     },
     () => [
       [`energy_tab`, energy_parity_tab, default_energy_tab],
@@ -279,7 +279,7 @@
       </span>
     {/if}
 
-    <span title={model.model_params.toLocaleString()} {@attach tooltip()}>
+    <span title={format_num(model.model_params, `,`)} {@attach tooltip()}>
       <Icon icon={NeuralNetwork} />
       {format_num(model.model_params, `.3~s`)}
       parameters
@@ -464,7 +464,9 @@
       <p>
         <a href="/data/{slug}">{name}</a>:
         <span
-          title={n_structures?.toLocaleString() ?? `Structure count not reported`}
+          title={n_structures == null
+            ? `Structure count not reported`
+            : format_num(n_structures, `,`)}
           {@attach tooltip()}
         >
           <strong
@@ -475,7 +477,7 @@
         </span>
         structures
         {#if typeof n_materials == `number`}
-          from <span title={n_materials.toLocaleString()} {@attach tooltip()}>
+          from <span title={format_num(n_materials, `,`)} {@attach tooltip()}>
             <strong>{format_num(n_materials)}</strong>
           </span> materials
         {/if}
@@ -561,7 +563,7 @@
             </h3>
             <PeriodicTable
               {heatmap_values}
-              {color_scale}
+              color_scale={{ scheme: color_scale, value_range: [0, null] }}
               bind:active_element
               tile_props={{ float_fmt: `.2f` }}
               show_photo={false}

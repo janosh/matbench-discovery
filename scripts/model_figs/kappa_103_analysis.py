@@ -19,11 +19,10 @@ from typing import Any, Final
 
 import numpy as np
 import pandas as pd
-from pymatviz.enums import Key
 
 from matbench_discovery import ROOT, figs, payload_numerics
 from matbench_discovery.cli import cli_args, is_full_model_run
-from matbench_discovery.enums import DataFiles, MbdKey, Model
+from matbench_discovery.enums import DataFiles, Key, Model
 
 KAPPA_DECIMALS: Final = 4
 FREQ_DECIMALS: Final = 2  # THz
@@ -119,7 +118,7 @@ def model_payload(
             continue
         row_ml = df_metrics.loc[mat_id]
         row_dft = df_dft.loc[mat_id]
-        kappa_ml = first_scalar(row_ml.get(MbdKey.kappa_tot_avg))
+        kappa_ml = first_scalar(row_ml.get(Key.kappa_tot_avg))
         cols["kappa_ml"].append(kappa_ml)
         cols["srme"].append(first_scalar(row_ml.get(Key.srme)))
         cols["srme_censored"].append(row_flag(row_ml, phonon_metrics.SRME_CENSORED))
@@ -251,8 +250,7 @@ def main() -> int:
         "formulas": [str(df_dft.loc[mid].get("name", "")) for mid in material_ids],
         "spg_nums": spg_nums,
         "kappa_dft": [
-            first_scalar(df_dft.loc[mid].get(MbdKey.kappa_tot_avg))
-            for mid in material_ids
+            first_scalar(df_dft.loc[mid].get(Key.kappa_tot_avg)) for mid in material_ids
         ],
         "models": models,
     }

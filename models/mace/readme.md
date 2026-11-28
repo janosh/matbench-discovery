@@ -15,6 +15,6 @@ trained on MPtrj. We also tested Ilyes Batatia's
 MPtrj-trained model performed better. Philipp Benner later shared a 16M-parameter MACE
 trained for over 100 MPtrj epochs, which achieved F1 0.64 and DAF 3.13.
 
-`train_mace.py` is a historical multi-GPU example, not guaranteed to match current
+[`train_mace.py`](https://github.com/janosh/matbench-discovery/blob/15acb3f02d/models/mace/train_mace.py) (removed in [`c8ee1d5e`](https://github.com/janosh/matbench-discovery/commit/c8ee1d5e)) is a historical multi-GPU example, not guaranteed to match current
 MACE releases. Relaxations used ASE `FIRE` + `FrechetCellFilter` with
 `max_force=0.05` eV/Å or 500 steps.

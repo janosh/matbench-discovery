@@ -4,11 +4,10 @@ from collections.abc import Sequence
 
 import pandas as pd
 from pymatgen.core import Composition
-from pymatviz.enums import Key
 
 from matbench_discovery import ROOT
 from matbench_discovery.data import load_df_wbm_with_preds
-from matbench_discovery.enums import MbdKey, Model, TestSubset
+from matbench_discovery.enums import Key, Model, TestSubset
 
 TEST_SET_STD_COL = "Test set standard deviation"
 TRAIN_COUNT_COL = "MP Occurrences"
@@ -25,7 +24,7 @@ def load_prediction_errors(
     """
     predictions = load_df_wbm_with_preds(models=models, subset=subset).round(3)
     model_keys = [model.key for model in models]
-    errors = predictions[model_keys].sub(predictions[MbdKey.e_form_dft], axis="index")
+    errors = predictions[model_keys].sub(predictions[Key.e_form_dft], axis="index")
     return predictions, errors
 
 
@@ -41,7 +40,6 @@ def derive_element_data(
     )
     element_data.index.name = "symbol"
     element_data[TEST_SET_STD_COL] = (
-        compositions.where(pd.isna, 1)
-        * predictions[MbdKey.each_true].to_numpy()[:, None]
+        compositions.where(pd.isna, 1) * predictions[Key.each_true].to_numpy()[:, None]
     ).std()
     return compositions, element_data

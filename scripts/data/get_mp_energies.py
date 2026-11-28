@@ -23,13 +23,13 @@ import os
 import pandas as pd
 import plotly.express as px
 import pymatviz as pmv
+from pymatgen.analysis.prototypes import get_protostructure_label_from_moyopy
 from pymatgen.core import Element, Structure
-from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import MP_DIR, STABILITY_THRESHOLD, today
 from matbench_discovery.data import DataFiles, query_mp_api
-from matbench_discovery.structure import prototype
+from matbench_discovery.enums import Key
 
 os.makedirs(MP_DIR, exist_ok=True)
 potcar_spec_key = "potcar_spec"
@@ -79,7 +79,7 @@ df_mp_cse[Key.structure] = [
 ]
 # raises if symmetry detection fails for any structure
 df_mp_cse[f"{Key.protostructure}_moyo"] = [
-    prototype.get_protostructure_label(struct)
+    get_protostructure_label_from_moyopy(struct, raise_errors=True)
     for struct in tqdm(df_mp_cse.structure, desc="Calculating proto-structure labels")
 ]
 df_mp[f"{Key.protostructure}_moyo"] = df_mp_cse[f"{Key.protostructure}_moyo"]
