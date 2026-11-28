@@ -1,0 +1,210 @@
+model_name: Möbius OAM
+model_key: mobius-oam
+model_version: eq_0.1
+dates:
+  benchmark_added:
+  paper_published:
+lifecycle: pending
+authors:
+- name: Jiahui Liu
+  affiliation: "Zhongguancun Academy, Beijing 100094, China; Zhongguancun Institute of Artificial Intelligence, Beijing 100094, China"
+  email: liujiahui@zgci.ac.cn
+  corresponding: true
+
+repo: https://github.com/Jonsnow-willow/rune
+doi:
+paper:
+docs: https://github.com/Jonsnow-willow/rune
+pypi:
+pr_url: https://github.com/janosh/matbench-discovery/pull/415
+# CONFIRMED_UPLOAD: public inference weight `model.pt` is on Figshare.
+# The public model.pt is state-identical to the historical epoch-0001.pt checkpoint.
+checkpoint_url: https://figshare.com/files/71448163
+
+# CONFIRMED: the RUNE source repository is released under LGPL-3.0; the public checkpoint is released under CC-BY-4.0.
+license:
+  code: LGPL-3.0
+  code_url: https://github.com/Jonsnow-willow/rune/blob/main/LICENSE
+  checkpoint: CC-BY-4.0
+  checkpoint_url: https://creativecommons.org/licenses/by/4.0/legalcode
+
+environment:
+  dependencies:
+  - rune-mlff @ git+https://github.com/Jonsnow-willow/rune@7f2a36c643bb79149b4714c04263002b7aea5f92
+  - torch==2.10.0
+  python_version: '3.14'
+  find_links: []
+  extra_index_urls: []
+  project:
+
+openness: OSOD
+architecture_types: [gnn]
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+training_sets: [MPtrj, OMat24, sAlex]
+fine_tune: true
+size: 5M
+model_params: 5001403
+
+hyperparams:
+  evaluation:
+    max_force: 0.02
+    max_steps: 500
+    ase_optimizer: FIRE
+    cell_filter: FrechetCellFilter
+    kappa:
+      protocol: phonondb-v1
+      displacement_distance: 0.03
+      temperatures: [300]
+      ase_optimizer: FIRE
+      ase_filter: FrechetCellFilter
+      max_steps: 300
+      force_max: 0.0001
+      save_forces: true
+  architecture:
+    graph_construction_radius: 6.0
+
+notes:
+  figshare_doi: https://doi.org/10.6084/m9.figshare.35010493
+  description: |
+    Möbius OAM is an equivariant atomistic model pretrained on OMat24 and
+    fine-tuned on sAlex and MPTrj. This submission contains the public EQ
+    inference checkpoint and the discovery, geometry-optimization, and phonon
+    thermal-conductivity artifacts generated from it. The public model key is
+    intentionally kept as mobius-oam.
+  benchmark: |
+    Discovery and geometry optimization artifacts remain from Matbench Discovery
+    commit 7a7a941, float32 inference, FIRE/FrechetCellFilter, max_force 0.02 eV/Å,
+    and max_steps 500. The κ full run uses current main commit
+    6d587c184cdb4a4865dc0b15b04a5e6d77ed464f, 0.03 Å displacement, 300 K,
+    force_max 1e-4, max_steps 300, save_forces=true, and the complete benchmark
+    supercells and q meshes.
+  reproducibility: |
+    The public model.pt is state-identical to the historical epoch-0001
+    checkpoint. The submission pins RUNE to public release commit
+    7f2a36c643bb79149b4714c04263002b7aea5f92. RUNE preserves the precision
+    stored in the Möbius checkpoint and this model.pt contains float32 weights.
+    The current κ rerun stores the required harmonic schema v3 sidecar and HDF5
+    force sidecar. Artifact names, sizes, and MD5 values are recorded below.
+  checkpoint_sha256: 9d05e3cbad32ef410ab68d9853de5f0a50877ba807e778e0ab570e67e68d72cd
+  inference_weight_sha256: 971e74ddfea4026d5507bd5158c825ec4ad07fb58d287670cd3d6ecd5bff3712
+
+metrics:
+  discovery:
+    status: complete
+    pred_file:
+      name: models/mobius/mobius-oam/2026-10-29-discovery.csv.gz
+      url: https://figshare.com/files/71448160
+      size: 1316193
+      md5: d79359e080b1eec616b43a7b73f6c794
+    cost:
+      source: salvaged
+      hardware: NVIDIA A100-SXM4-80GB
+      device: cuda
+      dtype: float32
+      n_shards: 9
+      run_time_sec: 582945.88
+      max_rss_gb: 2.062
+      max_gpu_mem_gb: 0.324
+    full_test_set:
+      F1: 0.872 # fraction
+      DAF: 4.944 # dimensionless
+      Precision: 0.846 # fraction
+      Recall: 0.899 # fraction
+      Accuracy: 0.955 # fraction
+      TP: 39513 # count
+      FP: 7208 # count
+      TN: 205798 # count
+      FN: 4444 # count
+      MAE: 0.021 # eV/atom
+      RMSE: 0.067 # eV/atom
+      R2: 0.861 # dimensionless
+      missing_preds: 2 # count
+    unique_prototypes:
+      F1: 0.891 # fraction
+      DAF: 5.714 # dimensionless
+      Precision: 0.87 # fraction
+      Recall: 0.913 # fraction
+      Accuracy: 0.965 # fraction
+      TP: 30348 # count
+      FP: 4541 # count
+      TN: 177705 # count
+      FN: 2894 # count
+      MAE: 0.022 # eV/atom
+      RMSE: 0.067 # eV/atom
+      R2: 0.868 # dimensionless
+      missing_preds: 0 # count
+  geo_opt:
+    status: complete
+    pred_file:
+      name: models/mobius/mobius-oam/2026-10-29-geo-opt.jsonl.gz
+      url: https://figshare.com/files/71448172
+      size: 102744390
+      md5: 5f3b2b82bc5d5bc5261cb045cdf2165f
+    rmsd_auc: 0.7863 # fraction
+    symprec=1e-5:
+      n_sym_ops_mae: 2.0576 # unitless
+      symmetry_decrease: 0.0489 # fraction
+      symmetry_match: 0.7015 # fraction
+      symmetry_increase: 0.2441 # fraction
+      symmetry_lateral: 0.0054 # fraction
+      n_structures: 256963 # count
+      analysis_file:
+        name: models/mobius/mobius-oam/2026-10-29-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71970694
+        size: 6875970
+        md5: 699c8d159faa8ebd05713e8162c5bfcc
+    symprec=1e-2:
+      n_sym_ops_mae: 1.7064 # unitless
+      symmetry_decrease: 0.0472 # fraction
+      symmetry_match: 0.818 # fraction
+      symmetry_increase: 0.1275 # fraction
+      symmetry_lateral: 0.0073 # fraction
+      n_structures: 256963 # count
+      analysis_file:
+        name: models/mobius/mobius-oam/2026-10-29-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71970697
+        size: 6856583
+        md5: 34a06a5b6949b080b23fd3128528d4ed
+  phonons:
+    status: complete
+    kappa_103:
+      κ_SRME: 0.29688585645623927
+      κ_SRE: 0.19170287982921577
+      κ_SRD: -0.06657768693541793
+      κ_failure_rate: 0.009708737864077669
+      imaginary_mode_rate: 0.009708737864077669
+      spectrum_w1: 0.16562912621359221
+      pred_file:
+        name: models/mobius/mobius-oam/2026-11-17-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/71618038
+        size: 15671813
+        md5: 832bf4903cbef68260a0b47f0ec1b00a
+      run_info_file:
+        name: models/mobius/mobius-oam/2026-11-17-phonons-kappa-103-run-info.json
+        url: https://figshare.com/files/71618035
+        size: 5322
+        md5: 624752f28c80f7be584a85c6a19c934b
+      phonon_file:
+        name: models/mobius/mobius-oam/2026-11-17-phonons-kappa-103-phonons.json.gz
+        url: https://figshare.com/files/71618032
+        size: 28676364
+        md5: 2c726bd890d09c47ca560ac703276a3a
+      force_file:
+        name: models/mobius/mobius-oam/2026-11-17-phonons-kappa-103-forces.h5
+        url: https://figshare.com/files/71618041
+        size: 48574789
+        md5: ff9e08011c4e7d2d93c661fcdfb93472
+      cost:
+        source: runner
+        hardware: NVIDIA A100-SXM4-80GB
+        device: cuda
+        dtype: float32
+        n_shards: 5
+        n_processes: 5
+        run_time_sec: 19108.74
+        load_time_sec: 3.13
+        max_rss_gb: 1.755
+        max_gpu_mem_gb: 3.115
+        acceleration: []
