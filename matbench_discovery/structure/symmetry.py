@@ -7,15 +7,13 @@ import ase.atoms
 import pandas as pd
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Structure
-from pymatviz.enums import Key
-from pymatviz.typing import AnyStructure
 from tqdm import tqdm
 
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.enums import Key
 
 
 def get_sym_info_from_structs(
-    structures: Mapping[str, AnyStructure | Structure],
+    structures: Mapping[str, Structure | ase.atoms.Atoms],
     *,
     pbar: bool | dict[str, Any] = True,
     symprec: float = 1e-2,
@@ -74,7 +72,7 @@ def get_sym_info_from_structs(
         results[struct_key] = {
             Key.spg_num: sym_data.number,
             Key.hall_num: sym_data.hall_number,
-            MbdKey.international_spg_name: hall_symbol_entry.hm_short,
+            Key.international_spg_name: hall_symbol_entry.hm_short,
             Key.wyckoff_symbols: sym_data.wyckoffs,
             Key.n_sym_ops: sym_ops.num_operations,
             Key.n_rot_syms: len(sym_ops.rotations),
@@ -120,8 +118,8 @@ def pred_vs_ref_struct_symmetry(
 
     df_result = df_sym_pred.copy()
 
-    df_result[MbdKey.spg_num_diff] = df_sym_pred[Key.spg_num] - df_sym_ref[Key.spg_num]
-    df_result[MbdKey.n_sym_ops_diff] = (
+    df_result[Key.spg_num_diff] = df_sym_pred[Key.spg_num] - df_sym_ref[Key.spg_num]
+    df_result[Key.n_sym_ops_diff] = (
         df_sym_pred[Key.n_sym_ops] - df_sym_ref[Key.n_sym_ops]
     )
 
@@ -146,7 +144,7 @@ def pred_vs_ref_struct_symmetry(
             for mat_id in iterator
         ],
         index=shared_ids,
-        columns=[MbdKey.structure_rmsd_vs_dft, Key.max_pair_dist],
+        columns=[Key.structure_rmsd_vs_dft, Key.max_pair_dist],
         dtype=float,
     )
     df_result[df_rms.columns] = df_rms.reindex(df_result.index)

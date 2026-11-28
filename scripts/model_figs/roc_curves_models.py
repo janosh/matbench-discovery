@@ -6,19 +6,19 @@ import sklearn.metrics as sk_metrics
 from matbench_discovery import STABILITY_THRESHOLD, figs, payload_numerics
 from matbench_discovery.cli import cli_args, complete_models, is_full_model_run
 from matbench_discovery.data import load_discovery_predictions
-from matbench_discovery.enums import MbdKey, TestSubset
+from matbench_discovery.enums import Key, TestSubset
 
 is_full_model_run()  # check --models/--full-roster before loading, not at the write
 
 df_preds, df_each_pred, _df_each_err = load_discovery_predictions()
 test_subset = cli_args.test_subset
 if test_subset == TestSubset.uniq_protos:
-    df_preds = df_preds.query(MbdKey.uniq_proto)
+    df_preds = df_preds.query(Key.uniq_proto)
     df_each_pred = df_each_pred.loc[df_preds.index]
 
 
 # %% Convert E_(hull dist) continuous targets to binary classification labels
-binary_targets = (df_preds[MbdKey.each_true] > STABILITY_THRESHOLD).astype(int)
+binary_targets = (df_preds[Key.each_true] > STABILITY_THRESHOLD).astype(int)
 
 
 # %%

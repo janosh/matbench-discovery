@@ -76,9 +76,7 @@ describe(`Model Detail Page`, () => {
     vi.spyOn(predictions, `read_md_per_system`).mockResolvedValue(null)
     // Exercise the serialized server/client boundary instead of sharing object references.
     const serialized = JSON.stringify(
-      await load({ params: { slug: score_model.model_key } } as Parameters<
-        typeof load
-      >[0]),
+      await load({ params: { slug: score_model.model_key } }),
     )
     const data: PageData = JSON.parse(serialized)
     // only the detail-page fields stripped from client bundles ride along with the key

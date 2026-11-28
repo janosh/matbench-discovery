@@ -8,12 +8,12 @@ import pandas as pd
 import plotly.express as px
 import pymatviz as pmv
 from pymatgen.core import Composition
-from pymatviz.enums import ElemCountMode, Key
+from pymatviz.enums import ElemCountMode
 
 from matbench_discovery import MP_DIR, PDF_FIGS
 from matbench_discovery.data import df_wbm
 from matbench_discovery.data_figs import build_route_element_counts
-from matbench_discovery.enums import DataFiles, MbdKey
+from matbench_discovery.enums import DataFiles, Key
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-11-22"
@@ -205,7 +205,7 @@ fig.show()
 
 # %% plot formation energy per atom distribution
 # pdf_kwargs defined to use the same figure size for all plots
-fig = pmv.histogram(df_mp_trj[MbdKey.e_form_dft], bins=300, opacity=1)
+fig = pmv.histogram(df_mp_trj[Key.e_form_dft], bins=300, opacity=1)
 if log := False:
     fig.update_yaxes(type="log")
 fig.layout.xaxis.title = "E<sub>form</sub> (eV/atom)"

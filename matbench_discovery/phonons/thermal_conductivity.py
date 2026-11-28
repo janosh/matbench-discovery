@@ -19,9 +19,8 @@ from ase import Atoms
 from ase.calculators.calculator import Calculator
 from phono3py.api_phono3py import Phono3py
 from phonopy.structure.atoms import PhonopyAtoms
-from pymatviz.enums import Key
 
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.enums import Key
 
 if TYPE_CHECKING:
     from phono3py.conductivity.calculators import LBTECalculator, RTACalculator
@@ -204,14 +203,14 @@ def calculate_conductivity(
         raise RuntimeError(f"missing kappa output for {ph3=}")
 
     kappa_dict: dict[str, np.ndarray] = {
-        MbdKey.kappa_tot_rta: deepcopy(extra["kappa_TOT_RTA"][0]),
-        MbdKey.kappa_p_rta: deepcopy(extra["kappa_P_RTA"][0]),
-        MbdKey.kappa_c: deepcopy(extra["kappa_C"][0]),
+        Key.kappa_tot_rta: deepcopy(extra["kappa_TOT_RTA"][0]),
+        Key.kappa_p_rta: deepcopy(extra["kappa_P_RTA"][0]),
+        Key.kappa_c: deepcopy(extra["kappa_C"][0]),
         Key.mode_weights: deepcopy(kappa.grid_weights),
         Key.q_points: deepcopy(kappa.qpoints),
         Key.ph_freqs: deepcopy(kappa.frequencies),
     }
-    mode_kappa_total = kappa_dict[MbdKey.mode_kappa_tot_rta] = calc_mode_kappa_tot(
+    mode_kappa_total = kappa_dict[Key.mode_kappa_tot_rta] = calc_mode_kappa_tot(
         extra["mode_kappa_P_RTA"][0], extra["mode_kappa_C"][0], mode_cv
     )
 
@@ -219,7 +218,7 @@ def calculate_conductivity(
         axis=tuple(range(1, mode_kappa_total.ndim - 1))
     ) / np.sum(kappa_dict[Key.mode_weights])
 
-    kappa_tot_rta = kappa_dict[MbdKey.kappa_tot_rta]
+    kappa_tot_rta = kappa_dict[Key.kappa_tot_rta]
     if np.any(np.abs(sum_mode_kappa_tot - kappa_tot_rta) > mode_kappa_thresh):
         warnings.warn(
             f"Total mode kappa does not sum to total kappa. {sum_mode_kappa_tot=}, "

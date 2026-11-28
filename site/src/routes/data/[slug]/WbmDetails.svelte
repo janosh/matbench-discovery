@@ -43,7 +43,7 @@
   import {
     bool_from_param,
     bool_url_entry,
-    valid_query_param,
+    string_from_param,
   } from 'svelte-widgets/browser'
   import MPtrjElemCountsPtable from './MPtrjElemCountsPtable.svelte'
   import MpTrjNSitesHist from './MpTrjNSitesHist.svelte'
@@ -63,7 +63,7 @@
   let count_mode = $state(count_modes[0])
 
   const read_url_params = (params: URLSearchParams) => {
-    count_mode = valid_query_param(
+    count_mode = string_from_param(
       params,
       `count_mode`,
       count_modes[0],
@@ -209,8 +209,8 @@
   ternary phases making up 74% of the data set followed by about 13% each of binaries and
   quaternaries. MP has a more even distribution, in particular with more than double the
   relative share of quaternary phases and a significant number of quinternaries which are
-  almost absent from WBM. Not shown in this plot for visual clarity are 3% of MP
-  structures containing more than 5 elements (up to 9). We also include MPtrj in this plot
+  almost absent from WBM. Not shown in this plot for visual clarity are 0.15% of MP
+  structures containing more than 6 elements (up to 9). We also include MPtrj in this plot
   to show a slight drop in relative abundance of quinternary and higher phases vs MP
   ground states.
 </p>
@@ -219,8 +219,7 @@
   style="height: 320px; margin: auto; max-width: 80cqw; padding-right: 2em"
 />
 <p>
-  Histogram of number of atoms per structure. The inset shows the same distribution
-  log-scaled to visualize the tail of large structures. The green cumulative line in the
-  inset shows that 82% have less than 50 sites and 97% of structures in MPtrj have less
-  than 100 atoms.
+  Histogram of number of atoms per structure in MPtrj. The cumulative line (right axis)
+  shows that 82% of structures have less than 50 sites and 96% less than 100 atoms. Dashed
+  lines mark the 90th percentile.
 </p>

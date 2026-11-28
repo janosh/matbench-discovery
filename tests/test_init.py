@@ -1,13 +1,15 @@
 """Tests for package-level helpers and import-time configuration."""
 
+import math
 import os
 import warnings
 from pathlib import Path
 
+import numpy as np
 import pytest
 from pymatgen.core import Element
 
-from matbench_discovery import ROOT, atomic_output_path, repo_relative_path
+from matbench_discovery import ROOT, atomic_output_path, json_ready, repo_relative_path
 
 
 @pytest.mark.parametrize(
@@ -52,6 +54,23 @@ def test_atomic_output_path_keeps_old_file_on_error(tmp_path: Path) -> None:
     with open(target, encoding="utf-8") as file:
         assert file.read() == "old"
     assert os.listdir(tmp_path) == ["out.txt"]
+
+
+@pytest.mark.parametrize("nan_to_none", [True, False])
+def test_json_ready(nan_to_none: bool) -> None:
+    """NumPy, tuple and key conversion; non-finite floats become None or raise."""
+    data = {1: (np.int64(2), np.array([0.5, 1.5])), "flag": np.bool_(1)}
+    assert json_ready(data, nan_to_none=nan_to_none) == {
+        "1": [2, [0.5, 1.5]],
+        "flag": True,
+    }
+    if nan_to_none:
+        assert json_ready([np.float32("nan"), math.inf]) == [None, None]
+    else:
+        with pytest.raises(ValueError, match="not JSON compliant: nan"):
+            json_ready({"x": [np.nan]}, nan_to_none=False)
+    with pytest.raises(TypeError, match="object is not JSON serializable"):
+        json_ready(object(), nan_to_none=nan_to_none)
 
 
 def test_pymatgen_electronegativity_warning_filtered() -> None:

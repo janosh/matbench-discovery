@@ -189,6 +189,11 @@ metrics:
         size: 11095206
         md5: 3f28a0b97b96d061c6a22a8822530a0f
         url: https://figshare.com/files/71287342
+      force_file:
+        name: models/deepmd/dpa-4.1-air-oam/2026-10-02-phonons-kappa-103-forces.h5
+        url: https://figshare.com/files/71969545
+        size: 49272965
+        md5: aaf98a993416fc2e89aaea723ee4a1c6
       run_info_file:
         name: models/deepmd/dpa-4.1-air-oam/2026-10-02-phonons-kappa-103-run-info.json
         size: 964

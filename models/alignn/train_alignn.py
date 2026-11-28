@@ -23,11 +23,10 @@ from alignn.data import get_train_val_loaders
 from alignn.train import train_dgl
 from pymatgen.core import Structure
 from pymatgen.io.jarvis import JarvisAtomsAdaptor
-from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import today
-from matbench_discovery.enums import DataFiles, Model
+from matbench_discovery.enums import DataFiles, Key, Model
 from matbench_discovery.hpc import slurm_submit
 
 module_dir = os.path.dirname(__file__)

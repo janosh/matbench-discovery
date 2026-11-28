@@ -10,7 +10,7 @@
   import { load_kappa_analysis, type KappaAnalysis } from '#lib/parity/kappa-parity.js'
   import DynamicScatter from '#lib/plot/DynamicScatter.svelte'
   import KappaParityPlot from '#lib/plot/KappaParityPlot.svelte'
-  import { valid_query_param } from 'svelte-widgets/browser'
+  import { string_from_param } from 'svelte-widgets/browser'
   import {
     HYPERPARAMS,
     PHONON_METRICS,
@@ -97,8 +97,8 @@
   const { filters, in_view } = task_page_filters(
     has_phonon_metrics,
     (params) => {
-      selected_key = valid_query_param(params, `model`, default_selected_key, model_keys)
-      sort_mode = valid_query_param(params, `model_sort`, default_sort_mode, sort_compare)
+      selected_key = string_from_param(params, `model`, default_selected_key, model_keys)
+      sort_mode = string_from_param(params, `model_sort`, default_sort_mode, sort_compare)
     },
     () => [
       [`model`, selected_key, default_selected_key],
@@ -133,10 +133,10 @@
 </p>
 <p>
   Δx<sub>κ</sub> is the atomic displacement each model used to compute force constants by
-  finite differences. The PhononDB-PBE reference uses 0.03 Å. Several 2025 submissions
-  were run with 0.01 Å; finite-difference third-order force constants depend on the step
-  size, so their κ<sub>SRME</sub> is not strictly comparable with models run at 0.03 Å. The
-  prescribed value for future model submissions is 0.03 Å.
+  finite differences. The PhononDB-PBE reference uses 0.03 Å. A few submissions were run
+  with 0.01 Å and one with 0.05 Å; finite-difference third-order force constants depend on
+  the step size, so their κ<sub>SRME</sub> is not strictly comparable with models run at 0.03
+  Å. The prescribed value for future model submissions is 0.03 Å.
 </p>
 <section class="full-bleed">
   <MetricsTable

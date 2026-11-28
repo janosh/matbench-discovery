@@ -5,10 +5,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from pymatviz.enums import Key
 
 from matbench_discovery.data import make_file_ref, round_trip_yaml
-from matbench_discovery.enums import MbdKey, Model
+from matbench_discovery.enums import Key, Model
 from matbench_discovery.metrics import geo_opt
 from tests.utils import patch_model_metadata
 
@@ -21,7 +20,7 @@ SYM_METRIC_KEYS = (
     Key.symmetry_decrease,
     Key.symmetry_match,
     Key.symmetry_increase,
-    MbdKey.symmetry_lateral,
+    Key.symmetry_lateral,
     Key.n_sym_ops_mae,
 )
 
@@ -59,9 +58,9 @@ def test_calc_geo_opt_metrics_parametrized(
     rmsds = [0.01] * (len(spg_diffs) - 1) + [np.nan]
     df_geo_opt = pd.DataFrame(
         {
-            MbdKey.structure_rmsd_vs_dft: rmsds,
-            MbdKey.spg_num_diff: spg_diffs,
-            MbdKey.n_sym_ops_diff: n_sym_ops_diffs,
+            Key.structure_rmsd_vs_dft: rmsds,
+            Key.spg_num_diff: spg_diffs,
+            Key.n_sym_ops_diff: n_sym_ops_diffs,
         },
         index=ids,
     )
@@ -78,7 +77,7 @@ def test_calc_geo_opt_metrics_parametrized(
     # n_structures should be the number of non-NaN spg_diff values
     assert results[str(Key.n_structures)] == np.count_nonzero(pd.notna(spg_diffs))
     expected_auc = (len(spg_diffs) - 1) * (1 - 0.01 / 0.05) / len(ref_ids)
-    assert results[str(MbdKey.rmsd_auc)] == pytest.approx(expected_auc, rel=1e-12)
+    assert results[str(Key.rmsd_auc)] == pytest.approx(expected_auc, rel=1e-12)
 
 
 @pytest.mark.parametrize(
@@ -141,7 +140,7 @@ _BLOCK = {
     Key.symmetry_decrease: 0.3,
     Key.symmetry_match: 0.4,
     Key.symmetry_increase: 0.0,
-    MbdKey.symmetry_lateral: 0.0,
+    Key.symmetry_lateral: 0.0,
     Key.n_structures: 0,
 }
 _NAN_BLOCK = _BLOCK | {
@@ -165,7 +164,7 @@ _NAN_BLOCK = _BLOCK | {
 )
 def test_write_geo_opt_metrics_to_yaml(
     auc: float,
-    block: dict[MbdKey | Key, float],
+    block: dict[Key, float],
     analysis_file_path: str,
     existing_ref: dict[str, object] | None,
     regenerated: bool,
@@ -187,7 +186,7 @@ def test_write_geo_opt_metrics_to_yaml(
     assert model.metrics["geo_opt"][symprec_key] == prior_block
 
     geo_opt.write_metrics_to_yaml(
-        pd.DataFrame([{MbdKey.rmsd_auc: auc, **block}]),
+        pd.DataFrame([{Key.rmsd_auc: auc, **block}]),
         model,
         1e-2,
         analysis_file_path,
@@ -202,5 +201,5 @@ def test_write_geo_opt_metrics_to_yaml(
     for key, expected_val in block.items():
         assert actual_block[key] == pytest.approx(expected_val, nan_ok=True), key
     # RMSD is symprec-invariant: its score sits once at task level
-    assert geo_opt_block[str(MbdKey.rmsd_auc)] == auc
+    assert geo_opt_block[str(Key.rmsd_auc)] == auc
     assert real_yaml_path.read_bytes() == original

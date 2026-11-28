@@ -6,9 +6,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from pymatviz.enums import Key
 
 from matbench_discovery import phonons
+from matbench_discovery.enums import Key
 
 
 @pytest.mark.parametrize(
@@ -42,7 +42,11 @@ def test_read_kappa_json_sets_material_id_index(tmp_path: Path) -> None:
             Key.init_spg_num: 225,
             Key.final_spg_num: 221,
         },
-        {Key.mat_id: "mp-2", "kappa_tot_rta": [tensor], "conductivity_skipped": True},
+        {
+            Key.mat_id: "mp-2",
+            "kappa_tot_rta": [tensor],
+            "conductivity_skipped": True,
+        },
         {Key.mat_id: "mp-3", "kappa_tot_rta": [tensor], "broken_symmetry": False},
     ]
     json_path.write_text(json.dumps(records))

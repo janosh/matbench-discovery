@@ -4,7 +4,7 @@ model_version: 0.2.0
 dates:
   benchmark_added: '2026-11-23'
   paper_published:
-lifecycle: pending
+lifecycle: active
 authors:
 - name: Francesco Viola
   email: frankviola99@gmail.com
@@ -82,61 +82,54 @@ hyperparams:
     ema_decay: 0.999
 notes:
   description: >
-    Mena-LAM-6 (lam6_v1, 8.48M total parameters) is a unified 3-stage equivariant
-    message-passing potential trained from scratch in 48.5 net GPU-hours on one RTX PRO
-    6000 Blackwell GPU across crystals, surfaces, molecular crystals, and open molecules
-    (~38% of batches / ~20 GPU-hours dedicated to periodic materials and surfaces; ~62% /
-    ~28.5 GPU-hours to open molecules OMol25 and SPICE 2), using factorized PAW/XC
-    level-of-theory conditioning (separating vasp_pbe52, vasp_pbe54, and vasp_pbe64). It
-    uses a 6.0 A radial cutoff (C3 taper from 5.0 to 6.0 A) with product-only edges and
-    Dual-CSR register-streaming kernels (CUDA, Apple Metal, OpenMP CPU) that avoid saving
-    edge activation buffers, keeping live memory around 6-38 KB/atom (0.46 GB VRAM on
-    DynaMat MD, >300k atoms on a single GPU). Of the 8.48M parameters, ~7.35M form the
-    shared trunk, ~0.50M are frozen isolated-atom references, and ~0.63M are dedicated
-    molecular/electronic heads (charge, spin, dipole, polarizability, gap) inactive on
-    periodic crystals. For Materials Project benchmarks, it runs in float32 under lot="mp"
-    (MP2020 composition +U rule) with no D3 dispersion correction.
+    Mena-LAM-6 (lam6_v1) is an 8.48M-parameter 3-stage equivariant message-passing
+    potential with factorized PAW/XC level-of-theory conditioning (vasp_pbe52, vasp_pbe54,
+    vasp_pbe64), product-only edges and a 6.0 A cutoff (C3 taper from 5.0 A). Its Dual-CSR
+    register-streaming kernels (CUDA, Apple Metal, OpenMP CPU) save no edge activations,
+    keeping live memory at 6-38 KB/atom (0.46 GB VRAM on DynaMat MD, >300k atoms on one
+    GPU). About 7.35M parameters form the shared trunk, 0.50M are frozen isolated-atom
+    references and 0.63M are molecular/electronic heads (charge, spin, dipole,
+    polarizability, gap) inactive on periodic crystals. Benchmarks run in float32 with lot="mp" (MP2020 composition +U
+    rule) and no D3 dispersion.
   training: >
-    Trained from scratch for 747,692 steps (EMA 0.999, 48.5 net GPU-hours) on one NVIDIA
-    RTX PRO 6000 Blackwell GPU across 11 crystal, surface, and molecular datasets. Roughly
-    62% of training batches were dedicated to open molecules (OMol25, SPICE 2) and 38% to
-    periodic materials (MPtrj, sAlex, OMat24, MatPES PBE/r2SCAN, OC20, OC25, OMC25, MAD-1.6),
-    using Muon + AdamW with a WSD schedule, crystal secant pair loss (P_cry from step
-    406,311), and an 18-hour FP32 cooldown.
+    Trained from scratch for 747,692 steps (EMA 0.999) in 48.5 net GPU-hours on one NVIDIA
+    RTX PRO 6000 Blackwell GPU: ~62% of batches (~28.5 GPU-hours) on open molecules
+    (OMol25, SPICE 2), ~38% (~20 GPU-hours) on periodic materials and surfaces (MPtrj,
+    sAlex, OMat24, MatPES PBE/r2SCAN, OC20, OC25, OMC25, MAD-1.6). Muon + AdamW with a
+    WSD schedule, crystal secant pair loss P_cry from step 406,311 and an 18-hour FP32
+    cooldown.
   disclosure: >
-    Earlier Mena-LAM WBM-5k lanthanide errors prompted factorizing VASP PBE_52 vs PBE_54
-    PAW tokens, earlier Mena-LAM-preview kappa-103 softening motivated adding crystal
-    secant pair supervision (P_cry) and strict IEEE FP32 cooldown, and mid-run P_cry
-    ablations checked a 250-structure WBM subsample and a 16-crystal subset of
-    PhononDB-103 (SRME 0.326 -> 0.280), so the discovery and phonons test sets informed
-    model development. DynaMat MD did not inform LAM-6 design choices. The submitted
-    checkpoint is the final training endpoint (step 747,692).
+    Lanthanide errors of an earlier Mena-LAM on a 5k WBM subset prompted factorizing the
+    VASP PBE_52 vs PBE_54 PAW tokens. kappa-103 softening of Mena-LAM-preview motivated
+    the P_cry pair loss and the strict IEEE FP32 cooldown, and mid-run P_cry ablations
+    were checked on 250 WBM structures and 16 PhononDB-103 crystals (SRME 0.326 -> 0.280).
+    DynaMat MD did not inform design choices. The submitted checkpoint is the final
+    training step.
   discovery: >
-    WBM relaxations used a custom batched GPU-resident FP64 FIRE + FrechetCellFilter
-    engine (fmax 0.02 eV/A, max 500 steps, strict IEEE FP32 with Dual-CSR CUDA kernels)
-    on one RTX PRO 6000 Blackwell GPU, exported via
-    matbench_discovery.discovery.write_discovery_artifacts. The reported 278.23 s
-    run_time_sec comes from this batched GPU engine and is not directly comparable to
-    serial ASE runner times. Verified against serial ASE FIRE(FrechetCellFilter) on 50
-    random WBM structures (seed 42): 49/50 exact step-count matches, median |dE|/atom
-    5.7e-8 eV/at (max 1.7e-5 eV/at), median |dV|/V 1.5e-8 (max 1.8e-4).
+    WBM relaxations used the author's batched GPU-resident FP64 FIRE + FrechetCellFilter
+    engine (fmax 0.02 eV/A, max 500 steps, IEEE FP32 model with Dual-CSR CUDA kernels) on
+    one RTX PRO 6000 Blackwell, exported with
+    matbench_discovery.discovery.write_discovery_artifacts, so the 278.23 s run_time_sec is not comparable to serial ASE runner times. Against
+    serial ASE FIRE(FrechetCellFilter) on 50 random WBM structures (seed 42), 49/50 step
+    counts match exactly, with median |dE|/atom 5.7e-8 eV (max 1.7e-5) and median |dV|/V
+    1.5e-8 (max 1.8e-4).
   phonons: >
-    Evaluated with phono3py 3.30.0 / phonopy 3.5.1 (displacement_distance=0.03 A) in strict
-    IEEE FP32 with Dual-CSR CUDA kernels on one RTX PRO 6000 Blackwell GPU.
+    phono3py 3.30.0 / phonopy 3.5.1 (displacement 0.03 A) in IEEE FP32 with Dual-CSR CUDA
+    kernels on one RTX PRO 6000 Blackwell GPU.
   md: >
-    Evaluated on all 17 DynaMat v1.0 systems (80,000 steps NVT Nose-Hoover chain, dt=0.25 fs)
-    one system at a time on one RTX PRO 6000 Blackwell GPU using strict IEEE FP32,
-    Dual-CSR, torch.compile, and 10-step CUDA graphs (Verlet skin 0.6 A), verified to
-    match ASE NoseHooverChainNVT within 1e-7 A over 400 steps.
+    All 17 DynaMat v1.0 systems (80,000 NVT Nose-Hoover chain steps, dt 0.25 fs), one at a
+    time on one RTX PRO 6000 Blackwell GPU in IEEE FP32 with Dual-CSR, torch.compile and 10-step
+    CUDA graphs (Verlet skin 0.6 A), matching ASE NoseHooverChainNVT within 1e-7 A over
+    400 steps.
   diatomics: >
-    Evaluated on the official 92 x 119 homonuclear diatomic grid one dimer per ASE call
-    on one RTX PRO 6000 Blackwell GPU using strict IEEE FP32, Dual-CSR, and CUDA graphs.
+    Official 92 x 119 homonuclear diatomic grid, one dimer per ASE call on one RTX PRO
+    6000 Blackwell GPU in IEEE FP32 with Dual-CSR and CUDA graphs.
 
 metrics:
   discovery:
     pred_file:
       name: models/mena/mena-lam-6/2026-11-22-discovery.csv.gz
-      url: https://huggingface.co/datasets/iatecoding/mena-lam-6-matbench-discovery/resolve/main/2026-11-22-discovery.csv.gz
+      url: https://figshare.com/files/71982958
       size: 1315755
       md5: ad391f212db9e22a785b324bd28c9080
     run_info_file:
@@ -188,7 +181,7 @@ metrics:
       n_structures: 256963 # count
       analysis_file:
         name: models/mena/mena-lam-6/2026-11-22-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
-        url: https://huggingface.co/datasets/iatecoding/mena-lam-6-matbench-discovery/resolve/main/2026-11-22-geo-opt-symprec=1e-2-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71982961
         size: 6869186
         md5: 910e299e7f9032ad82f172baa8a5c258
     symprec=1e-5:
@@ -200,7 +193,7 @@ metrics:
       n_structures: 256963 # count
       analysis_file:
         name: models/mena/mena-lam-6/2026-11-22-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
-        url: https://huggingface.co/datasets/iatecoding/mena-lam-6-matbench-discovery/resolve/main/2026-11-22-geo-opt-symprec=1e-5-moyo=0.22.0.csv.gz
+        url: https://figshare.com/files/71982964
         size: 6907873
         md5: 28064126fdb5253f753f10243177a9ce
     rmsd_auc: 0.7891 # fraction
@@ -208,7 +201,7 @@ metrics:
     kappa_103:
       pred_file:
         name: models/mena/mena-lam-6/2026-11-20-phonons-kappa-103.json.gz
-        url: https://huggingface.co/datasets/iatecoding/mena-lam-6-matbench-discovery/resolve/main/2026-11-20-phonons-kappa-103.json.gz
+        url: https://figshare.com/files/71982967
         size: 15661870
         md5: a3af0db023411fb7b7fc27ac30b23c15
       force_file:
@@ -218,7 +211,7 @@ metrics:
         md5: 20f7fe59388def2fe36c2311763cc07c
       phonon_file:
         name: models/mena/mena-lam-6/2026-11-20-phonons-kappa-103-phonons.json.gz
-        url: https://huggingface.co/datasets/iatecoding/mena-lam-6-matbench-discovery/resolve/main/2026-11-20-phonons-kappa-103-phonons.json.gz
+        url: https://figshare.com/files/71982973
         size: 23617010
         md5: 4f1e802c4eb3d0302fec5aaf101c26c5
       run_info_file:
@@ -250,7 +243,7 @@ metrics:
   diatomics:
     pred_file:
       name: models/mena/mena-lam-6/2026-11-22-diatomics.json.gz
-      url: https://huggingface.co/datasets/iatecoding/mena-lam-6-matbench-discovery/resolve/main/2026-11-22-diatomics.json.gz
+      url: https://figshare.com/files/71982976
       size: 279394
       md5: f5d3cf946bd67048b0c47588f52661fb
     cost: {source: author_reported, hardware: NVIDIA RTX PRO 6000 Blackwell Server Edition, device: cuda, dtype: float32, acceleration: [], n_shards: 1, n_processes: 1, run_time_sec: 21.11, load_time_sec: 1.34, max_rss_gb: 2.26, max_gpu_mem_gb: 0.199}

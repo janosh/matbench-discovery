@@ -132,7 +132,7 @@ describe(`diatomics server data loader`, () => {
     },
   )
 
-  const load_page = () => load({} as Parameters<typeof load>[0])
+  const load_page = () => load({})
   const diatomics_keys = ACTIVE_MODELS.filter(has_diatomics_curves).map(
     ({ model_key }) => model_key,
   )

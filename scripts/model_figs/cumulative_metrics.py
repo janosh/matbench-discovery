@@ -12,7 +12,7 @@ import numpy as np
 from matbench_discovery import STABILITY_THRESHOLD, figs, payload_numerics
 from matbench_discovery.cli import cli_args, complete_models, is_full_model_run
 from matbench_discovery.data import load_discovery_predictions
-from matbench_discovery.enums import MbdKey, TestSubset
+from matbench_discovery.enums import Key, TestSubset
 from matbench_discovery.metrics.discovery import classify_stable
 
 is_full_model_run()  # check --models/--full-roster before loading, not at the write
@@ -20,7 +20,7 @@ is_full_model_run()  # check --models/--full-roster before loading, not at the w
 df_preds, df_each_pred, _df_each_err = load_discovery_predictions()
 test_subset = cli_args.test_subset
 if test_subset == TestSubset.uniq_protos:
-    df_preds = df_preds.query(MbdKey.uniq_proto)
+    df_preds = df_preds.query(Key.uniq_proto)
     df_each_pred = df_each_pred.loc[df_preds.index]
 
 
@@ -30,7 +30,7 @@ for model in complete_models():
     each_pred = (
         df_each_pred[model.key].sort_index(kind="stable").sort_values(kind="stable")
     )
-    each_true = df_preds[MbdKey.each_true].loc[each_pred.index]
+    each_true = df_preds[Key.each_true].loc[each_pred.index]
     true_pos, false_neg, false_pos, _true_neg = classify_stable(
         each_true, each_pred, stability_threshold=STABILITY_THRESHOLD
     )
@@ -65,7 +65,7 @@ for model in complete_models():
             ],
         }
     )
-n_stable = int((df_preds[MbdKey.each_true] <= STABILITY_THRESHOLD).sum())
+n_stable = int((df_preds[Key.each_true] <= STABILITY_THRESHOLD).sum())
 provenance = figs.build_discovery_payload_provenance(
     generator=__file__,
     test_subset=test_subset.value,

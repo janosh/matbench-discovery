@@ -155,6 +155,8 @@ describe(`Datasets Page`, () => {
 
   it.each([
     [`q=phonon`, [`MDR-MP PBE ω_q`, `MDR Phonon PBE`]],
+    // non-ASCII query and text take the case-folding path
+    [`q=%CF%89_Q`, [`MDR-MP PBE ω_q`]],
     [`access=partial`, [`GNoME`, `ELEMENTA`]],
     [`role=test`, [`WBM`, `MDR Phonon PBE`, `OCx24`, `rMD17`]],
     [`access=partial&sort=-Created`, [`ELEMENTA`, `GNoME`]],

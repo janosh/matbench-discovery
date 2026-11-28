@@ -257,7 +257,7 @@ export const HYPERPARAMS: HyperparamLabels = {
     key: `displacement_distance`,
     label: `Δx<sub>κ</sub>`,
     path: `hyperparams.evaluation.kappa`,
-    description: `Finite-difference atomic displacement for the κ force constants. The PhononDB-PBE reference uses 0.03 Å, so κ<sub>SRME</sub> of models run with 0.01 Å is not strictly comparable`,
+    description: `Finite-difference atomic displacement for the κ force constants. The PhononDB-PBE reference uses 0.03 Å, so κ<sub>SRME</sub> of models run with other step sizes (e.g. 0.01 Å) is not strictly comparable`,
     unit: `Å`,
   },
   batch_size: {

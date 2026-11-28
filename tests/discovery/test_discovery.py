@@ -18,7 +18,6 @@ from ase.calculators.emt import EMT
 from pymatgen.core import Lattice, Structure
 from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
 from pymatgen.entries.computed_entries import ComputedStructureEntry
-from pymatviz.enums import Key
 
 import matbench_discovery.discovery as discovery_core
 import models.run_discovery as discovery_runner
@@ -38,7 +37,7 @@ from matbench_discovery.discovery import (
     write_discovery_artifacts,
 )
 from matbench_discovery.energy import calc_energy_from_e_refs
-from matbench_discovery.enums import MbdKey, Model, TestSubset
+from matbench_discovery.enums import Key, Model, TestSubset
 from matbench_discovery.hpc import (
     effective_shard_args,
     material_id_hash,
@@ -158,7 +157,12 @@ def test_artifacts_match_legacy_mp2020_join_semantics(
         structure, -8.0, parameters={"run_type": "GGA"}
     )
     df_entries = pd.DataFrame(
-        {Key.computed_structure_entry: [original_entry, copy.deepcopy(original_entry)]},
+        {
+            Key.computed_structure_entry: [
+                original_entry,
+                copy.deepcopy(original_entry),
+            ]
+        },
         index=[material_id, rejected_id],
     )
     compatibility = MaterialsProject2020Compatibility(check_potcar=False)
@@ -246,9 +250,9 @@ def test_write_yaml_results_masks_outliers_and_updates_yaml(
     material_ids = ["wbm-1", "wbm-2", "wbm-3", "wbm-4"]
     df_fake_wbm = pd.DataFrame(
         {
-            MbdKey.each_true: [-0.1, 0.2, 0.0, -0.2],
-            MbdKey.e_form_dft: [-1.0, -0.5, -0.8, -0.9],
-            MbdKey.uniq_proto: [True, True, False, True],
+            Key.each_true: [-0.1, 0.2, 0.0, -0.2],
+            Key.e_form_dft: [-1.0, -0.5, -0.8, -0.9],
+            Key.uniq_proto: [True, True, False, True],
         },
         index=pd.Index(material_ids, name=str(Key.mat_id)),
     )
@@ -307,7 +311,7 @@ def test_write_yaml_results_masks_outliers_and_updates_yaml(
     assert "cost" not in written["metrics"]["geo_opt"]
     assert set(discovery_yaml) >= {str(subset) for subset in TestSubset}
     full_metrics = discovery_yaml[str(TestSubset.full_test_set)]
-    assert full_metrics[str(MbdKey.missing_preds)] == 2
+    assert full_metrics[str(Key.missing_preds)] == 2
     assert full_metrics["TP"] == 1
     assert type(full_metrics["TP"]) is int, "counts are written as integers"
     # DAF denominator is the uniq-proto stable prevalence 2/3, Precision is 1

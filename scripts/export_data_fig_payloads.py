@@ -11,7 +11,6 @@ import h5py
 import pandas as pd
 from ase.data import chemical_symbols
 from pymatgen.core import Composition
-from pymatviz.enums import Key
 
 from matbench_discovery import MP_DIR, ROOT, SITE_FIG_DATA, figs
 from matbench_discovery.data_figs import (
@@ -24,7 +23,7 @@ from matbench_discovery.data_figs import (
     build_wbm_e_form_hist,
     build_wbm_hull_dist_hist,
 )
-from matbench_discovery.enums import DataFiles, MbdKey
+from matbench_discovery.enums import DataFiles, Key
 
 MP_TRJ_SUMMARY_PATH = f"{MP_DIR}/2022-09-16-mp-trj-summary.json.bz2"
 ROUTE_DATA_DIR = f"{ROOT}/site/src/routes/data"
@@ -112,14 +111,12 @@ def main() -> None:
         Key.mat_id
     )
     wbm_spacegroups = (
-        df_wbm[MbdKey.init_protostructure_spglib].str.split("_").str[2].astype(int)
+        df_wbm[Key.init_protostructure_spglib].str.split("_").str[2].astype(int)
     )
-    mp_spacegroups = (
-        df_mp[MbdKey.protostructure_spglib].str.split("_").str[2].astype(int)
-    )
+    mp_spacegroups = df_mp[Key.protostructure_spglib].str.split("_").str[2].astype(int)
     payloads = {
-        "hist-wbm-e-form-per-atom": build_wbm_e_form_hist(df_wbm[MbdKey.e_form_wbm]),
-        "hist-wbm-hull-dist": build_wbm_hull_dist_hist(df_wbm[MbdKey.each_true]),
+        "hist-wbm-e-form-per-atom": build_wbm_e_form_hist(df_wbm[Key.e_form_wbm]),
+        "hist-wbm-hull-dist": build_wbm_hull_dist_hist(df_wbm[Key.each_true]),
         "mp-elemental-ref-energies": build_mp_elemental_ref_energies(
             mp_elem_ref_entries
         ),
@@ -145,7 +142,7 @@ def main() -> None:
         f"{SITE_FIG_DATA}/element-counts-mp-vs-wbm.json.gz",
         build_element_counts_payload(
             route_counts["mp-element-counts-by-occurrence"],
-            df_wbm.query(MbdKey.uniq_proto)[Key.formula],
+            df_wbm.query(Key.uniq_proto)[Key.formula],
             n_mp_structures=len(df_mp),
         ),
     )

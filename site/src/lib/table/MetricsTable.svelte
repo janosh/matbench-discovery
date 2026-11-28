@@ -215,7 +215,7 @@
       const sortable = new Set(
         column_defaults.filter((col) => col.sortable !== false).map((col) => col.id),
       )
-      sort = sort_from_param(params, default_sort, { valid_columns: sortable })
+      sort = sort_from_param(params, `sort`, default_sort, sortable)
       custom_visible = read_ids(params, `columns`)
       column_order = [
         ...new Set([
@@ -225,7 +225,7 @@
       ]
     },
     () => [
-      sort_url_entry(sort, default_sort),
+      sort_url_entry(`sort`, sort, default_sort),
       // Persist mobile defaults as well, so a shared view has the same columns on desktop.
       [
         `columns`,
@@ -602,7 +602,7 @@
   trigger="none"
   dismiss={{ dismiss_on: `press` }}
   aria-label="Model row actions"
-  style="font-size: 12px; --action-menu-padding: 0; --action-menu-item-padding: 3pt 8pt"
+  style="font-size: 12px; --action-menu-padding: 0; --action-menu-item-padding: 3pt 8pt; --action-menu-item-radius: 0"
 />
 
 <style>

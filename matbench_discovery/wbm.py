@@ -6,11 +6,10 @@ from typing import Any
 import pandas as pd
 from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
 from pymatgen.entries.computed_entries import ComputedStructureEntry
-from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery.energy import mp_elemental_ref_energies
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.enums import Key
 
 # The published WBM formation-energy calculation used elemental energies to 4 decimals:
 # https://github.com/janosh/matbench-discovery/blob/a7f693d1/matbench_discovery/energy.py#L74-L77
@@ -69,9 +68,9 @@ def mp2020_corrected(
 
 def unique_wbm_prototypes(summary: pd.DataFrame, mp_prototypes: pd.Series) -> pd.Series:
     """Select the lowest original WBM hull distance per novel relaxed prototype."""
-    prototype = MbdKey.protostructure_spglib
-    ranked = summary.sort_values([prototype, MbdKey.each_wbm])
+    prototype = Key.protostructure_spglib
+    ranked = summary.sort_values([prototype, Key.each_wbm])
     duplicate = ranked.duplicated(prototype).reindex(summary.index)
     return (~(summary[prototype].isin(mp_prototypes) | duplicate)).rename(
-        MbdKey.uniq_proto
+        Key.uniq_proto
     )

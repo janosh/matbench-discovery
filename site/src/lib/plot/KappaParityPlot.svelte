@@ -25,7 +25,7 @@
   import { to_error } from 'svelte-widgets/utils'
   import { ParityLoadController } from '#lib/parity/load-controller.svelte.js'
   import { parity_diagonal } from '#lib/fig-helpers.js'
-  import { get_nested_number, is_finite_num } from '#lib/metrics.js'
+  import { get_nested_number } from '#lib/metrics.js'
   import type { ModelData } from '#lib/types.js'
   import { compact_formula, FormulaText } from 'matterviz/composition'
   import { sanitize_html } from 'matterviz/sanitize'
@@ -70,12 +70,6 @@
       shown_metric === `srme` ? (srme_by_id?.get(point.material_id) ?? null) : point.sre,
     ),
   )
-  let color_range = $derived.by((): [number, number] => {
-    const finite_values = color_values.filter(is_finite_num)
-    return finite_values.length > 0
-      ? [Math.min(...finite_values), Math.max(...finite_values)]
-      : [0, 1]
-  })
   let series = $derived<DataSeries<KappaParityPoint>[]>(
     parity
       ? [
@@ -217,7 +211,6 @@
       shared_xy_range
       range_padding={0.03}
       size_scale={{ type: `linear`, radius_range: [4, 7] }}
-      color_scale={{ value_range: color_range }}
       color_bar={{
         title: `${color_metric_labels[shown_metric]} (${format_num(
           parity?.points.length ?? 0,

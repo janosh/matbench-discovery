@@ -4,14 +4,14 @@
 from matbench_discovery import figs, payload_numerics
 from matbench_discovery.cli import cli_args, complete_models, is_full_model_run
 from matbench_discovery.data import load_discovery_predictions
-from matbench_discovery.enums import MbdKey, TestSubset
+from matbench_discovery.enums import Key, TestSubset
 
 is_full_model_run()  # check --models/--full-roster before loading, not at the write
 
 df_preds, _df_each_pred, df_each_err = load_discovery_predictions()
 test_subset = cli_args.test_subset
 if test_subset == TestSubset.uniq_protos:
-    df_preds = df_preds.query(MbdKey.uniq_proto)
+    df_preds = df_preds.query(Key.uniq_proto)
     df_each_err = df_each_err.loc[df_preds.index]
 
 

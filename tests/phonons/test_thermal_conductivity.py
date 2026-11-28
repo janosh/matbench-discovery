@@ -14,12 +14,11 @@ from phono3py.api_phono3py import Phono3py
 from phono3py.conductivity.calculators import RTACalculator
 from phonopy import Phonopy
 from phonopy.structure.atoms import PhonopyAtoms
-from pymatviz.enums import Key
 
-from matbench_discovery.enums import MbdKey
+from matbench_discovery import json_ready
+from matbench_discovery.enums import Key
 from matbench_discovery.phonons import harmonic
 from matbench_discovery.phonons import thermal_conductivity as ltc
-from matbench_discovery.phonons.pipeline import json_ready
 
 
 @pytest.mark.parametrize(
@@ -170,13 +169,13 @@ def test_calculate_conductivity(cu_atoms: Atoms) -> None:
 
     assert isinstance(ph3, Phono3py)
     required_keys = {
-        MbdKey.kappa_tot_rta,
-        MbdKey.kappa_p_rta,
-        MbdKey.kappa_c,
+        Key.kappa_tot_rta,
+        Key.kappa_p_rta,
+        Key.kappa_c,
         Key.mode_weights,
         Key.q_points,
         Key.ph_freqs,
-        MbdKey.mode_kappa_tot_rta,
+        Key.mode_kappa_tot_rta,
     }
     assert set(kappa_dict) >= required_keys
     assert all(isinstance(val, np.ndarray) for val in kappa_dict.values())
@@ -189,7 +188,7 @@ def test_calculate_conductivity(cu_atoms: Atoms) -> None:
     assert gamma.shape == (1, 1, n_irreducible_q, 3)
     assert gamma.max() > 0  # nonzero FC3 gives anharmonic scattering
 
-    kappa_voigt = kappa_dict[MbdKey.kappa_tot_rta][0]  # xx, yy, zz, yz, xz, xy
+    kappa_voigt = kappa_dict[Key.kappa_tot_rta][0]  # xx, yy, zz, yz, xz, xy
     assert 1 < kappa_voigt[0] < 1000  # EMT Cu ~24 W/mK: catches unit/scale bugs
     # cubic symmetry: observed 0 diagonal spread and ~1e-16 off-diagonals; 1e-10
     # leaves ample margin above f64 eps (2.2e-16) times ~100 summed mesh terms

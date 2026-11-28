@@ -3,7 +3,7 @@ import { DEFAULT_CATEGORY_COLORS } from 'matterviz/colors'
 import { SvelteMap, type SvelteSet } from 'svelte/reactivity'
 import type { ButtonGroupOption } from 'svelte-widgets'
 import { in_view } from 'svelte-widgets/attachments'
-import { valid_query_param, type UrlParamEntry } from 'svelte-widgets/browser'
+import { string_from_param, type UrlParamEntry } from 'svelte-widgets/browser'
 
 // Light, saturated-but-not-neon hues that read on both themes and carry black tooltip
 // text. DFT references take cyan/periwinkle, which the model palette leaves out.
@@ -81,7 +81,7 @@ export class ElementGroupParam {
   }
 
   read = (params: URLSearchParams): void => {
-    this.key = valid_query_param(params, `elements`, `all`, group_keys)
+    this.key = string_from_param(params, `elements`, `all`, group_keys)
   }
 
   get url_entry(): UrlParamEntry {

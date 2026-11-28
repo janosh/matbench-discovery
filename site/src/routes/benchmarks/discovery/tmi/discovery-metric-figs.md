@@ -132,6 +132,17 @@ import { format_num } from 'svelte-widgets/format'
     curve: `linear`,
   }]
 
+  // gray box as wide as the window each rolling MAE point averages over, drawn top left
+  // where the plot is empty (inside y < |x|, outside the triangle of peril)
+  const { rolling_window } = rolling_mae.identity.parameters
+  const window_box: FillRegion = {
+    label: `Rolling window (${rolling_window} eV/atom)`,
+    lower: { type: `constant`, value: 0.088 },
+    upper: { type: `constant`, value: 0.095 },
+    x_range: [-0.19, -0.19 + rolling_window],
+    fill: `rgba(128, 128, 128, 0.5)`,
+  }
+
   const clf_classes = [
     { key: `tp`, label: `True Positive`, color: `lightseagreen` },
     { key: `fn`, label: `False Negative`, color: `orange` },
@@ -166,7 +177,7 @@ show_controls={false}
 style="height: 600px"
 />
 
-> @label:fig:box-hull-dist-errors Box plot of interquartile ranges (IQR) of hull distance errors for each model. The whiskers extend to the minimum and maximum values. The horizontal line inside the box shows the median. BOWSR has the highest median error, while Voronoi RF has the highest IQR. Note that MEGNet and CGCNN are the only models with a positive median. Their hull distance errors are biased towards more frequently predicting thermodynamic instability, explaining why they are closest to getting the overall number of stable structures in the test set right (see cumulative precision/recall in @fig:cumulative-precision-recall).
+> @label:fig:box-hull-dist-errors Box plot of interquartile ranges (IQR) of hull distance errors for each model. Whiskers extend to the 5th and 95th percentiles; the horizontal line inside each box marks the median. BOWSR has the largest median error (-0.058 eV/atom), Voronoi RF the highest IQR. Most medians are negative, i.e. biased towards predicting stability. Six models have a positive median, the largest being MEGNet (0.017), ESNet (0.011) and CGCNN (0.007): their errors are biased towards predicting thermodynamic instability, so they predict fewer stable materials (see cumulative precision/recall in @fig:cumulative-precision-recall).
 
 ## Cumulative Precision and Recall
 
@@ -198,12 +209,7 @@ style="height: 600px"
 
 <PlotLegend series_data={cum_pr_legend} draggable={false} filterable={false} style={wide_legend.style} />
 
-> @label:fig:cumulative-precision-recall Model precision and recall for thermodynamic stability classification as a function of number of materials ranked from most to least stable by each model.
-> CHGNet initially achieves the highest cumulative precision and recall.
-> Simulates materials discovery efforts of different sizes since a typical campaign will rank hypothetical materials by model-predicted hull distance from most to least stable and validate the most stable predictions first.
-> A higher fraction of correct stable predictions corresponds to higher precision and fewer stable materials overlooked correspond to higher recall.
-> This figure highlights how different models perform better or worse depending on the length of the discovery campaign.
-> The UIPs (CHGNet, M3GNet, MACE) are seen to offer significantly improved precision on shorter campaigns of ~20k or less materials validated as they are less prone to false positive predictions among highly stable materials.
+> @label:fig:cumulative-precision-recall Model precision and recall for thermodynamic stability classification as a function of the number of materials ranked from most to least stable by each model. The best current UIPs exceed 99% precision over their first 1k materials. This simulates discovery campaigns of different sizes, since a typical campaign ranks hypothetical materials by model-predicted hull distance from most to least stable and validates the most stable predictions first. A higher fraction of correct stable predictions means higher precision; fewer overlooked stable materials mean higher recall. Models perform better or worse depending on campaign length. UIPs offer significantly higher precision on shorter campaigns of ~20k or fewer validated materials (about 0.97 for the best after ~22k vs 0.33–0.46 for Voronoi RF and BOWSR) as they are less prone to false positive predictions among highly stable materials.
 
 ## Receiver Operating Characteristic (ROC) Curve
 
@@ -218,7 +224,7 @@ line_tween={{ duration: 0 }}
 style="height: 700px"
 />
 
-> @label:fig:roc-models Receiver operating characteristic (ROC) curve for each model. TPR/FPR = true/false positive rate. FPR on the $x$ axis is the fraction of unstable structures classified as stable. TPR on the $y$ axis is the fraction of stable structures classified as stable. Dashed diagonal shows a random classifier.
+> @label:fig:roc-models Receiver operating characteristic (ROC) curve for each model. TPR/FPR = true/false positive rate. FPR ($x$ axis) is the fraction of unstable structures classified as stable; TPR ($y$ axis) the fraction of stable structures classified as stable. The dashed diagonal is a random classifier.
 
 ## Rolling MAE vs Hull Distance
 
@@ -236,7 +242,7 @@ style="height: 700px"
   />
   <ScatterPlot
     series={rolling_mae_series}
-    fill_regions={peril_region}
+    fill_regions={[...peril_region, window_box]}
     legend={wide_legend}
     x_axis={{ label: `E<sub>above MP hull</sub> (eV/atom)`, range: [-0.2, 0.2] }}
     y_axis={{ label: `Rolling MAE (eV/atom)`, range: [0, 0.1] }}
@@ -247,13 +253,7 @@ style="height: 700px"
   />
 </div>
 
-> @label:fig:rolling-mae-vs-hull-dist-models Universal potentials are more reliable classifiers because they exit the red triangle earliest.
-> These lines show the rolling MAE on the WBM test set as the energy to the convex hull of the MP training set is varied.
-> Lower is better.
-> Inside the large red 'triangle of peril', models are most likely to misclassify structures.
-> As long as a model's rolling MAE remains inside the triangle, its mean error is larger than the distance to the convex hull.
-> If the model's error for a given prediction happens to point towards the stability threshold at $E$<sub>above MP hull</sub> = 0, its average error will change the stability classification from true positive/negative to false negative/positive.
-> The width of the 'rolling window' box indicates the width over which prediction errors were averaged.
+> @label:fig:rolling-mae-vs-hull-dist-models Universal potentials are more reliable classifiers because they exit the red triangle earliest. Lines show the rolling MAE on the WBM test set as a function of the energy to the convex hull of the MP training set (lower is better). Inside the large red 'triangle of peril', models are most likely to misclassify structures: while a model's rolling MAE stays inside the triangle, its mean error exceeds the distance to the convex hull, so if its error for a given prediction points towards the stability threshold at $E$<sub>above MP hull</sub> = 0, the average error flips the stability classification from true positive/negative to false negative/positive. The gray box at the top left shows the width of the rolling window (0.04 eV/atom) over which prediction errors are averaged, stepped every 0.005 eV/atom.
 
 ## Distribution of Model-Predicted Hull Distance
 
@@ -331,9 +331,10 @@ style="margin: 0 auto 1em"
   .fig-grid.two-col figcaption {
     margin-top: -0.5em;
   }
+  /* grid, not a flex column: the plot frames' flex: 1 would override their fixed
+  heights and squeeze the legend out beside the plot */
   .rolling-mae {
-    display: flex;
-    flex-direction: column;
+    display: grid;
     gap: 1.5em;
   }
 </style>

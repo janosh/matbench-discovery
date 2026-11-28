@@ -19,8 +19,7 @@ vi.mock(`#lib/server/model-details.js`, () => ({ model_details: () => details })
 
 vi.mock(`#lib/models.svelte.js`, () => ({ MODELS: [model] }))
 
-const load_model = () =>
-  load({ params: { slug: model.model_key } } as Parameters<typeof load>[0])
+const load_model = () => load({ params: { slug: model.model_key } })
 
 // CSVs written by scripts/evals/md.py use eV and empty cells for unavailable values.
 const csv_fixture = [
@@ -116,7 +115,7 @@ describe(`model-key routes`, () => {
     await expect(
       load({
         params: { slug: `missing` },
-      } as Parameters<typeof load>[0]),
+      }),
     ).rejects.toMatchObject({ status: 404 })
   })
 })

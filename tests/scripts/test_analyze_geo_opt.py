@@ -13,7 +13,7 @@ import pandas as pd
 import pytest
 from pymatgen.core import Lattice, Structure
 
-from matbench_discovery.enums import MbdKey, Model
+from matbench_discovery.enums import Key, Model
 from tests.utils import import_repo_script
 
 MOYO_VERSION = "0.4.2"
@@ -45,9 +45,9 @@ def fake_analysis(material_ids: list[str]) -> pd.DataFrame:
     """Analysis frame with the columns calc_geo_opt_metrics needs."""
     return pd.DataFrame(
         {
-            MbdKey.structure_rmsd_vs_dft: [0.01] * len(material_ids),
-            MbdKey.spg_num_diff: [0] * len(material_ids),
-            MbdKey.n_sym_ops_diff: [0] * len(material_ids),
+            Key.structure_rmsd_vs_dft: [0.01] * len(material_ids),
+            Key.spg_num_diff: [0] * len(material_ids),
+            Key.n_sym_ops_diff: [0] * len(material_ids),
         },
         index=pd.Index(material_ids, name="material_id"),
     )

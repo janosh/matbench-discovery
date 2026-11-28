@@ -1040,73 +1040,37 @@ def _bam(device: str, checkpoint: str) -> Calculator:
     return RACECalculator(model=checkpoint, device=device)
 
 
-# MP2020 +U rule: O (8) or F (9) paired with V..Ni (23..28), Mo (42), or W (74)
-_MP2020_HUBBARD_METALS = frozenset({23, 24, 25, 26, 27, 28, 42, 74})
-_MP2020_HUBBARD_ANIONS = frozenset({8, 9})
-
-
-def _mp2020_u_flag(atoms: Atoms) -> int:
-    """Return 1 iff atoms matches the MP2020 composition +U rule, else 0."""
-    atomic_nums = set(atoms.get_atomic_numbers().tolist())
-    return int(
-        bool(atomic_nums & _MP2020_HUBBARD_ANIONS)
-        and bool(atomic_nums & _MP2020_HUBBARD_METALS)
-    )
-
-
-def _prepare_mena_atoms(atoms: Atoms) -> Atoms:
-    """Return a detached Atoms copy with composition-based MP2020 u_flag."""
-    atoms_copy = atoms.copy()
-    atoms_copy.calc = None
-    # MenaCalculator(lot="mp") honors per-structure atoms.info["u_flag"], bypassing
-    # its coordination-based heuristic so stretched oxides still route to mp_pbeU.
-    atoms_copy.info["u_flag"] = _mp2020_u_flag(atoms_copy)
-    return atoms_copy
-
-
-class _MenaMP2020Calculator(Calculator):
-    """Wrap MenaCalculator with MP2020 composition-based +U routing per structure."""
-
-    implemented_properties: list[str] = [  # noqa: RUF012
-        "energy",
-        "free_energy",
-        "forces",
-        "stress",
-    ]
-
-    def __init__(self, inner: Calculator) -> None:
-        """Initialize wrapper around a configured MenaCalculator instance."""
-        super().__init__()
-        self._inner = inner
-
-    def check_state(self, atoms: Atoms, tol: float = 1e-15) -> list[str]:
-        """Delegate state comparison so inner metadata changes invalidate cache."""
-        return self._inner.check_state(_prepare_mena_atoms(atoms), tol=tol)
-
-    def calculate(
-        self,
-        atoms: Atoms | None = None,
-        properties: Sequence[str] = ("energy",),
-        system_changes: Sequence[str] = tuple(all_changes),
-    ) -> None:
-        """Evaluate inner calculator on a copy carrying MP2020 composition u_flag."""
-        super().calculate(atoms, list(properties), list(system_changes))
-        if self.atoms is None:
-            raise ValueError("atoms must be provided for MenaCalculator evaluation")
-        atoms_copy = _prepare_mena_atoms(self.atoms)
-        self._inner.calculate(
-            atoms_copy,
-            properties=list(properties),
-            system_changes=list(system_changes),
-        )
-        self.results |= dict(self._inner.results)
-
-
 def _mena_lam6(device: str, checkpoint: str) -> Calculator:
-    """Load Mena-LAM-6's ASE calculator with MP2020 composition PBE/PBE+U routing."""
+    """Load Mena-LAM-6 in strict FP32 with lot="mp", picking each structure's PBE or
+    PBE+U source by MP2020's composition rule (O or F with V, Cr, Mn, Fe, Co, Ni, Mo or
+    W) instead of MenaCalculator's coordination heuristic, so stretched oxides keep the
+    +U source. Per-atom +U masks stay coordination-based, as in training. Any
+    user-supplied atoms.info["u_flag"] is overridden.
+    """
     from lam4.calc import MenaCalculator
+    from lam4.registry.hubbard import MP_HUBBARD_ANIONS, MP_HUBBARD_METALS
 
-    inner = MenaCalculator.from_checkpoint(
+    def with_u_flag(atoms: Atoms) -> Atoms:
+        atoms_copy = atoms.copy()  # never carries atoms' calculator
+        numbers = set(atoms_copy.numbers.tolist())
+        is_u = bool(numbers & MP_HUBBARD_ANIONS) and bool(numbers & MP_HUBBARD_METALS)
+        atoms_copy.info["u_flag"] = int(is_u)
+        return atoms_copy
+
+    class MenaMP2020Calculator(MenaCalculator):
+        def check_state(self, atoms: Atoms, tol: float = 1e-15) -> list[str]:
+            return super().check_state(with_u_flag(atoms), tol=tol)
+
+        def calculate(
+            self,
+            atoms: Atoms | None = None,
+            properties: Sequence[str] = ("energy",),
+            system_changes: Sequence[str] = tuple(all_changes),
+        ) -> None:
+            atoms = None if atoms is None else with_u_flag(atoms)
+            super().calculate(atoms, properties, system_changes)
+
+    return MenaMP2020Calculator.from_checkpoint(
         checkpoint,
         device=device,
         lot="mp",
@@ -1116,7 +1080,6 @@ def _mena_lam6(device: str, checkpoint: str) -> Calculator:
         add_dispersion=False,
         compile=False,
     )
-    return _MenaMP2020Calculator(inner)
 
 
 def _emt(device: str) -> Calculator:  # noqa: ARG001 - CPU only, debug model

@@ -9,22 +9,21 @@ git clone https://github.com/janosh/matbench-discovery --depth 1
 uv pip install -e ./matbench-discovery
 ```
 
-There's also a [PyPI package](https://pypi.org/project/matbench-discovery) for faster installation if you don't need the latest code changes (unlikely if you're planning to submit a model since the benchmark is under active development).
+A [PyPI package](https://pypi.org/project/matbench-discovery) installs faster but lacks the latest code changes, which you likely need to submit a model since the benchmark is under active development.
 
 ## ✨ &thinsp; How to submit a new model
 
-To submit a new model to this benchmark and add it to our leaderboard, please create a model-submission pull request to the [`main` branch][repo] as described in [Step 4](#step-4-open-a-pr-to-the-matbench-discovery-repo). The PR must include the 3 required items:
+To add a model to the leaderboard, open a model-submission pull request to the [`main` branch][repo] as described in [Step 4](#step-4-open-a-pr-to-the-matbench-discovery-repo). The PR must include 3 items:
 
-1. You should share your model's predictions through a cloud storage service (we recommend [Figshare](https://figshare.com)) and include the stable direct-download links in your model YAML. Each artifact lives directly under `models/<family>/<model_key>/` and follows the canonical filename grammar:
+1. Your model's predictions, shared through cloud storage (we recommend [Figshare](https://figshare.com)) with stable direct-download links in your model YAML. Each artifact lives directly under `models/<family>/<model_key>/` and follows the canonical filename grammar:
 
-   - geometry optimization: `<yyyy-mm-dd>-geo-opt.jsonl.gz` — final relaxed structures with `energy`, `converged`, `n_steps`, and WBM material IDs in [JSON Lines format](https://jsonlines.org). Optional analysis files use `<yyyy-mm-dd>-geo-opt-symprec=<symprec>-moyo=<version>.csv.gz`.
-   - discovery: `<yyyy-mm-dd>-discovery.csv.gz` — compressed CSV with `material_id` and final `e_form_per_atom` columns.
-   - phonons: `<yyyy-mm-dd>-phonons-kappa-103.json.gz` — predictions for exactly the 103 PhononDB material IDs. Use canonical fields `material_id`, `init_spg_num`, `final_spg_num`, `has_imag_ph_modes`, and `ph_freqs`; legacy spellings such as `mp_id`, `spg_num`, and `frequencies` are rejected rather than converted while loading. The shared runner also writes `-phonons.json.gz` (referenced as `phonon_file`): unrounded compact FC2 (primitive-atom rows, which phonopy expands losslessly) with cell bases and masses, weighted mesh spectra, seekpath bands with eigenvectors and group velocities, tetrahedron DOS, and thermal properties. Schema v3 records can be restored with `matbench_discovery.phonons.harmonic.phonopy_from_harmonic_data(record)` to evaluate new metrics without MLIP force calls. Each harmonic analysis reports its own `errors`; these also appear as `phonon_errors` in predictions and never invalidate successful conductivity. Resume skips recorded failures unless `--retry-failures` is passed. The site displays modes for successful band paths. It also writes the raw FC2/FC3 finite-displacement force sets to `-forces.h5` (referenced as `force_file`, ~42 MB): per material the relaxed unit cell, supercell and primitive matrices, phono3py displacement datasets and float32 forces. Force constants can be refit from them without MLIP calls via `ph3 = matbench_discovery.phonons.force_sets.load_phono3py(path, material_id)`, then `ph3.produce_fc2()` / `ph3.produce_fc3()`. Set `save_forces: false` in the kappa hyperparams to skip it. Run provenance uses `-run-info.json`.
+   - geometry optimization: `<yyyy-mm-dd>-geo-opt.jsonl.gz`: final relaxed structures with `energy`, `converged`, `n_steps`, and WBM material IDs in [JSON Lines format](https://jsonlines.org). Optional analysis files use `<yyyy-mm-dd>-geo-opt-symprec=<symprec>-moyo=<version>.csv.gz`.
+   - discovery: `<yyyy-mm-dd>-discovery.csv.gz`: compressed CSV with `material_id` and final `e_form_per_atom` columns.
+   - phonons: `<yyyy-mm-dd>-phonons-kappa-103.json.gz`: predictions for exactly the 103 PhononDB material IDs, using canonical fields `material_id`, `init_spg_num`, `final_spg_num`, `has_imag_ph_modes`, and `ph_freqs`. Legacy spellings such as `mp_id`, `spg_num`, and `frequencies` are rejected on load, not converted. The shared runner also writes `-phonons.json.gz` (YAML key `phonon_file`): unrounded compact FC2 (primitive-atom rows, which phonopy expands losslessly) with cell bases and masses, weighted mesh spectra, seekpath bands with eigenvectors and group velocities, tetrahedron DOS, and thermal properties. Restore schema v3 records with `matbench_discovery.phonons.harmonic.phonopy_from_harmonic_data(record)` to evaluate new metrics without MLIP force calls. Each harmonic analysis reports its own `errors`, which also appear as `phonon_errors` in predictions and never invalidate successful conductivity. Resume skips recorded failures unless `--retry-failures` is passed. The site displays modes for successful band paths. The runner also writes the raw FC2/FC3 finite-displacement force sets to `-forces.h5` (YAML key `force_file`, ~42 MB): per material the relaxed unit cell, supercell and primitive matrices, phono3py displacement datasets and float32 forces. Refit force constants from them without MLIP calls via `ph3 = matbench_discovery.phonons.force_sets.load_phono3py(path, material_id)`, then `ph3.produce_fc2()` / `ph3.produce_fc3()`. Set `save_forces: false` in the kappa hyperparams to skip it. Run provenance goes in `-run-info.json`.
    - molecular dynamics: `<yyyy-mm-dd>-md-metrics.csv.gz`.
    - diatomics: `<yyyy-mm-dd>-diatomics.json.gz`.
 
-   Paths are validated by `matbench_discovery.data.parse_artifact_filename`. Record each
-   artifact as a nested object:
+   `matbench_discovery.data.parse_artifact_filename` validates paths. Record each artifact as a nested object:
 
    ```yaml
    pred_file:
@@ -36,9 +35,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
 
    The same shape is used for `analysis_file`, `force_file`, `phonon_file`, and `run_info_file`.
 
-   Optionally you can also share the complete relaxation trajectories. Having the forces and stresses at each relaxation step also allows analyzing any pathological behavior for structures where relaxation failed or went haywire.
-
-   Example of how to record these quantities for a single structure with ASE:
+   Optionally, also share the complete relaxation trajectories: per-step forces and stresses allow analyzing pathological behavior in structures whose relaxation failed or went haywire. To record them for a single structure with ASE:
 
    ```py
    from collections import defaultdict
@@ -81,19 +78,17 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    df_traj.to_csv("trajectory.csv.gz")  # Save final structure and trajectory data
    ```
 
-2. Reproducible inference code. If your model exposes an ASE calculator, register its constructor in [`matbench_discovery/calculators.py`](https://github.com/janosh/matbench-discovery/blob/main/matbench_discovery/calculators.py) and declare its isolated `uv` dependencies in YAML `environment`. The shared runners run on Python 3.14 with `matbench-discovery`'s own `ase`, `numpy`, `pymatgen`, `phonopy`, etc., so they install only your model-specific packages from `environment.dependencies` (e.g. your package, `torch`, PyG wheels) and treat `python_version` and pins of packages `matbench-discovery` already depends on as submission provenance. Your calculator stack must therefore resolve on Python 3.14 alongside those versions; check with `--print-cmd ... --dry-run`. The shared runners [`models/run_discovery.py`](https://github.com/janosh/matbench-discovery/blob/main/models/run_discovery.py), [`models/run_kappa.py`](https://github.com/janosh/matbench-discovery/blob/main/models/run_kappa.py), [`models/run_md.py`](https://github.com/janosh/matbench-discovery/blob/main/models/run_md.py), and [`models/run_diatomics.py`](https://github.com/janosh/matbench-discovery/blob/main/models/run_diatomics.py) are the only entry points for calculator-backed models; do not add per-model forks or join scripts.
+2. Reproducible inference code. If your model exposes an ASE calculator, register its constructor in [`matbench_discovery/calculators.py`](https://github.com/janosh/matbench-discovery/blob/main/matbench_discovery/calculators.py) and declare its isolated `uv` dependencies in YAML `environment`. The shared runners run on Python 3.14 with `matbench-discovery`'s own `ase`, `numpy`, `pymatgen`, `phonopy`, etc., so they install only your model-specific packages from `environment.dependencies` (e.g. your package, `torch`, PyG wheels) and treat `python_version` and pins of packages `matbench-discovery` already depends on as submission provenance. Your calculator stack must therefore resolve on Python 3.14 alongside those versions (check with `--print-cmd ... --dry-run`). The shared runners [`models/run_discovery.py`](https://github.com/janosh/matbench-discovery/blob/main/models/run_discovery.py), [`models/run_kappa.py`](https://github.com/janosh/matbench-discovery/blob/main/models/run_kappa.py), [`models/run_md.py`](https://github.com/janosh/matbench-discovery/blob/main/models/run_md.py), and [`models/run_diatomics.py`](https://github.com/janosh/matbench-discovery/blob/main/models/run_diatomics.py) are the only entry points for calculator-backed models: don't add per-model forks or join scripts. Calculator integration belongs in the same model PR, where CI tests it.
 
-   Calculator integration belongs in the same model PR, where CI tests it.
-
-   Models without an ASE calculator may need a task-specific `test_<model_key>_<task>.py` or an archived direct-prediction submission — discuss this before opening the PR. If the model was trained specifically for this benchmark, include `train_<model_key>.py` or a family-level `train_<family>.py`.
+   Models without an ASE calculator may need a task-specific `test_<model_key>_<task>.py` or an archived direct-prediction submission; discuss this before opening the PR. If the model was trained specifically for this benchmark, include `train_<model_key>.py` or a family-level `train_<family>.py`.
 
    ### Script Dependencies Declaration (Required)
 
-   **All custom test scripts must include a script dependencies section** using the [PEP 723 inline metadata format](https://docs.astral.sh/uv/guides/scripts/#declaring-script-dependencies): a single `uv run test_<model_key>_<task>.py` then installs dependencies and runs the script without manual environment setup, documents the exact package versions used for your submission, and keeps your code runnable even after breaking changes in package releases. If the resolver cannot express a required installation step such as `--no-deps`, include a documented install script as well. Standard calculator-backed models declare dependencies once in `environment` instead.
+   **All custom test scripts must declare their dependencies** in [PEP 723 inline metadata](https://docs.astral.sh/uv/guides/scripts/#declaring-script-dependencies). Then a single `uv run test_<model_key>_<task>.py` installs them and runs the script without manual environment setup, documents the exact package versions of your submission, and keeps your code runnable after breaking package releases. If the resolver cannot express a required installation step such as `--no-deps`, also include a documented install script. Standard calculator-backed models declare dependencies once in `environment` instead.
 
    ```python
    # /// script
-   # requires-python = ">=3.11,<3.13"
+   # requires-python = ">=3.14"
    # dependencies = [
    #   "numpy>=2.3.4",
    #   "torch>=2.8.0",
@@ -114,9 +109,9 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
 
    ### Automatic Checkpoint Downloading (Recommended)
 
-   Your script should automatically download the model checkpoint when first run and cache it to a standard location such as `~/.cache/<model_key>/checkpoint.pt` for later reuse. This also lowers the barrier for others to reproduce results.
+   On first run, your script should download the model checkpoint and cache it in a standard location such as `~/.cache/<model_key>/checkpoint.pt` for reuse, making results easier for others to reproduce.
 
-3. `models/<family>/<model_key>.yml`: A file recording the model's canonical identity, release, provenance, environments, task coverage, and artifacts. It is validated by [`tests/model-schema.yml`](https://github.com/janosh/matbench-discovery/blob/main/tests/model-schema.yml). Copy a current model such as `models/mace/mace-mp-0.yml`; this abbreviated template highlights the required structure:
+3. `models/<family>/<model_key>.yml`: records the model's canonical identity, release, provenance, environments, task coverage, and artifacts, validated by [`tests/model-schema.yml`](https://github.com/janosh/matbench-discovery/blob/main/tests/model-schema.yml). Copy a current model such as `models/mace/mace-mp-0.yml`; this abbreviated template shows the required structure:
 
    ```yml
    model_name: My new model # human-readable label
@@ -133,12 +128,12 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
        affiliation: Some University, Some National Lab
        email: john-doe@uni.edu
        orcid: https://orcid.org/0000-xxxx-yyyy-zzzz
-       url: lab.gov/john-doe
+       url: https://lab.gov/john-doe
        corresponding: true
      - name: Jane Doe
        affiliation: Some National Lab
        email: jane-doe@lab.gov
-       url: uni.edu/jane-doe
+       url: https://uni.edu/jane-doe
        orcid: https://orcid.org/0000-xxxx-yyyy-zzzz
    repo: https://github.com/<user>/<repo>
    docs: https://<model-docs-or-similar>.org
@@ -228,26 +223,21 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
          url: https://figshare.com/files/<figshare_id>
    ```
 
-   Task coverage is derived (no top-level `tasks:` block): metrics with results →
-   `complete`; `targets: E` → force tasks `not_applicable`; `lifecycle: aborted` →
-   `not_available`; otherwise `pending`. Optional exception notes live under the
-   metrics task, e.g. `metrics.md: {status: pending, reason: "…"}`.
+   Task coverage is derived (no top-level `tasks:` block): metrics with results → `complete`; `lifecycle: aborted` → `not_available`; `targets: E` → force tasks `not_applicable`; otherwise `pending`. Optional exception notes live under the metrics task, e.g. `metrics.md: {status: pending, reason: "…"}`. The schema rejects unknown keys; put free-form context under `notes`.
 
-   The schema rejects unknown keys; put free-form context under `notes`.
+   Set `test_set_informed` to every task (`discovery`, `geo_opt`, `phonons`, `diatomics`, `md`) whose test materials or results influenced the submitted model, directly or through earlier checkpoints. This includes test materials in the training or validation data, architecture or hyperparameter choices made from test-set ablations (even on a subsample), design changes prompted by test-set errors, checkpoint selection by benchmark score, and fine-tuning judged on the test task. Explain each case in one sentence under `notes.disclosure`, citing its source. Standard training sets (MPtrj, OMat24, sAlex, ...) and choices validated only on non-test data don't count. Flagged models are marked † on the leaderboards, not excluded.
 
-   Set `test_set_informed` to every task (`discovery`, `geo_opt`, `phonons`, `diatomics`, `md`) whose test materials or results influenced the submitted model, directly or through earlier checkpoints. That covers test materials in the training or validation data, architecture or hyperparameter choices made from test-set ablations (even on a subsample), design changes prompted by test-set errors, checkpoint selection by benchmark score, and fine-tuning judged on the test task. Explain each case in one sentence under `notes.disclosure`, citing its source. Standard training sets (MPtrj, OMat24, sAlex, ...) and choices validated only on non-test data don't count. Flagged models are marked † on the leaderboards, not excluded.
-
-Please see any of the subdirectories in [`models/`](https://github.com/janosh/matbench-discovery/blob/-/models) for example submissions. More detailed step-by-step instructions below.
+See the subdirectories of [`models/`](https://github.com/janosh/matbench-discovery/tree/main/models) for example submissions. Step-by-step instructions follow.
 
 ### Step 1: Clone the repo
 
 ```sh
 git clone https://github.com/janosh/matbench-discovery --depth 1
 cd matbench-discovery
-git checkout -b model-name-you-want-to-add
+git checkout -b <model_key>
 ```
 
-Tip: `--depth 1` only clones the latest commit, not the full `git history` which is faster if a repo contains large data files that changed over time.
+Tip: `--depth 1` clones only the latest commit, not the full `git history`, which is faster for repos with large data files that changed over time.
 
 ### Step 2: Commit model metadata and task-specific code to the repo
 
@@ -257,22 +247,22 @@ Create the model family folder
 mkdir -p models/<family>
 ```
 
-and place the above-listed files there. The file structure should look like this:
+and place the above files there:
 
 ```txt
 matbench-discovery-root
 └── models
     └── <family>
-        ├── readme.md
+        ├── readme.md  # optional
         ├── <model_key>.yml
         ├── <model_key>/  # prediction artifacts
         ├── test_<model_key>_<task>.py  # only without a shared runner
         └── train_<family>.py  # optional
 ```
 
-You can include arbitrary other supporting files like metadata and model features (below 10MB total to keep `git clone` time low) if they are needed to run the model or help others reproduce your results. For larger files, please upload to [Figshare](https://figshare.com) or similar and share the link in your PR description.
+You may include other supporting files such as metadata and model features (below 10MB total to keep `git clone` fast) if they are needed to run the model or reproduce your results. Upload larger files to [Figshare](https://figshare.com) or similar and link them in your PR description.
 
-Discovery, phonons, molecular dynamics, and diatomics do not need per-model scripts when a model exposes an ASE calculator. Register the calculator once in [`matbench_discovery/calculators.py`](https://github.com/janosh/matbench-discovery/blob/main/matbench_discovery/calculators.py), declare its isolated dependencies in `environment`, put the verified phonon protocol under `hyperparams.evaluation.kappa`, smoke-test the exact isolated command, and run the task-specific shared runner. Model-specific phonon batching or relaxation belongs in a typed adapter under `matbench_discovery/phonons/adapters`, not a forked executable.
+Models exposing an ASE calculator need no per-model scripts for discovery, phonons, molecular dynamics, or diatomics. Register the calculator once in [`matbench_discovery/calculators.py`](https://github.com/janosh/matbench-discovery/blob/main/matbench_discovery/calculators.py), declare its isolated dependencies in `environment`, put the verified phonon protocol under `hyperparams.evaluation.kappa`, smoke-test the exact isolated command, and run the task-specific shared runner. Model-specific phonon batching or relaxation belongs in a typed adapter under `matbench_discovery/phonons/adapters`, not a forked executable.
 
 ```sh
 # WBM discovery: relax/resume shards, then strictly merge and write YAML metrics
@@ -295,9 +285,9 @@ uv run models/run_diatomics.py --print-cmd --model <model_key> --dry-run
 eval "$(uv run models/run_diatomics.py --print-cmd --model <model_key> --write-yaml)"
 ```
 
-For a full contiguous Slurm discovery or kappa array, the runner can infer shard selection from `SLURM_ARRAY_TASK_COUNT`, `SLURM_ARRAY_TASK_ID`, `SLURM_ARRAY_TASK_MIN`, and `SLURM_ARRAY_TASK_MAX`. Any rerun of a shard subset (contiguous or sparse) must pass the original `--n-shards`; zero-based task IDs are then reused as the original shard indices. Kappa shards are balanced deterministically by atom count and resume from atomic per-material records. Only a strict, complete `--merge-shards --write-yaml` step updates model metadata, and official YAML writes reject protocol overrides and noncanonical dataset content.
+For a full contiguous Slurm discovery or kappa array, the runner infers shard selection from `SLURM_ARRAY_TASK_COUNT`, `SLURM_ARRAY_TASK_ID`, `SLURM_ARRAY_TASK_MIN`, and `SLURM_ARRAY_TASK_MAX`. Reruns of a shard subset (contiguous or sparse) must pass the original `--n-shards`; zero-based task IDs are then reused as the original shard indices. Kappa shards are balanced deterministically by atom count and resume from atomic per-material records. Only a strict, complete `--merge-shards --write-yaml` step updates model metadata, and official YAML writes reject protocol overrides and noncanonical dataset content.
 
-The MD runner's `--write-yaml` records model-level metrics under `metrics.md` and writes the per-system predictions to `<yyyy-mm-dd>-md-metrics.csv.gz`. Public runs compute the observable metrics only; energy/force RMSEs are maintainer-computed private-label diagnostics and are not required in external submissions. Upload generated artifacts to Figshare (or similar) and set their download URLs under the corresponding YAML `pred_file.url` fields — see [Step 3](#step-3-upload-results-files-to-figshare-or-similar) for the upload conventions.
+The MD runner's `--write-yaml` records model-level metrics under `metrics.md` and writes the per-system predictions to `<yyyy-mm-dd>-md-metrics.csv.gz`. Public runs compute only observable metrics; energy/force RMSEs are maintainer-computed private-label diagnostics, not required from external submissions. Upload generated artifacts to Figshare (or similar) and set their download URLs in the corresponding YAML `pred_file.url` fields ([Step 3](#step-3-upload-results-files-to-figshare-or-similar) has the upload conventions).
 
 For parallel MD runs, aggregate one selected run directory with `uv run scripts/evals/md.py --models <model_key> --md-run-dir <run_directory>`. Missing, duplicate, or unexpected systems abort the update. Without `--md-run-dir`, the evaluator only recomputes the YAML's declared prediction and preserves its download URL and checksums.
 
@@ -315,33 +305,32 @@ cost: {source: runner, hardware: NVIDIA H200, device: cuda, dtype: float64, acce
 
 Maintainers record reruns of a registered task under `metrics.{diatomics,md}.reproducibility` with `scripts/evals/reproducibility.py --task {diatomics,md} --models <model> --run LABEL PATH [URL]`, where PATH is a canonical artifact in the model dir or a subfolder like `repeat/` (for MD a combined per-system CSV). Runs are scored with the task's own metric code against the registered `pred_file`: `rel_changes` lists each nonzero max relative change, `repeat_rel_change` (`--repeat A B`) the noise floor between identical runs. The `status` is `reproduced` when every diatomic metric, or for MD the frame-wise `energy_rmse`/`force_rmse` (chaotic trajectory metrics are only listed), changed by at most `tolerance` (fixed at 1e-3), else `drifted` (needs `--cause` and `--note`); a verdict metric missing from any file makes it `inconclusive` (needs `--note`). Registering a new `pred_file` drops the block.
 
-The `Model` enum is built at import from every model YAML's `model_key`, so a new YAML is all a submission needs. Submit with `lifecycle: pending`: CI validates the model without requiring site payloads, and ingestion sets it `active` when it adds them. Models with `lifecycle: aborted` are omitted, while `Model.active()` selects models with `lifecycle: active`.
+The `Model` enum is built at import from every model YAML's `model_key`, so a new YAML is all a submission needs. Submit with `lifecycle: pending`: CI validates the model without requiring site payloads, and ingestion sets it `active` when it adds them. Models with `lifecycle: aborted` are omitted; `Model.active()` selects those with `lifecycle: active`.
 
 > [!WARNING]
-> Do not include a `filter_bad_preds.py` script or equivalent. This was a historical flaw in the evaluation and now all OOM outlier prediction handling is handled internally and consistently removing the need for this filtering stage.
+> Don't include a `filter_bad_preds.py` script or equivalent. That filtering stage was a historical flaw in the evaluation; OOM outlier predictions are now handled internally and consistently.
 
 ### Step 3: Upload results files to Figshare (or similar)
 
-Upload the canonical prediction artifacts for each submitted task to [Figshare](https://figshare.com) (or any cloud storage with stable direct-download links) and record their URLs in the corresponding `pred_file.url`, `analysis_file.url`, `force_file.url`, `phonon_file.url`, or `run_info_file.url` keys. These URLs are what automated ingestion downloads, so they must resolve without authentication. During ingestion we archive copies to the project's Figshare articles and update those URLs (optionally adding `size`/`md5`).
+Upload the canonical prediction artifacts for each submitted task to [Figshare](https://figshare.com) (or any cloud storage with stable direct-download links) and record their URLs in the corresponding `pred_file.url`, `analysis_file.url`, `force_file.url`, `phonon_file.url`, or `run_info_file.url` keys. Automated ingestion downloads these URLs, so they must resolve without authentication. During ingestion we archive copies to the project's Figshare articles and update those URLs (optionally adding `size`/`md5`).
 
 ### Step 4: Open a PR to the [Matbench Discovery repo][repo]
 
 Commit and push your files on a branch called `<model_key>`:
 
 ```sh
-git add models/<family>/<model_key>.yml models/<family>/readme.md
+git add models/<family> matbench_discovery/calculators.py  # prediction artifacts are gitignored
 git commit -m 'add <model_key> to Matbench Discovery leaderboard'
 git push -u origin <model_key>
 ```
 
-Then replace `YOUR_GITHUB_USER` and `MODEL_KEY` in this branch-specific URL. The
-explicit base and head branches ensure GitHub loads the model checklist:
+Then replace `YOUR_GITHUB_USER` and `MODEL_KEY` in this branch-specific URL, whose explicit base and head branches make GitHub load the model checklist:
 
 ```text
 https://github.com/janosh/matbench-discovery/compare/main...YOUR_GITHUB_USER:MODEL_KEY?expand=1&template=new_model.md
 ```
 
-Alternatively, use the GitHub CLI from the repository checkout:
+Or use the GitHub CLI from the repository checkout:
 
 ```sh
 gh pr create --repo janosh/matbench-discovery --base main \
@@ -349,14 +338,14 @@ gh pr create --repo janosh/matbench-discovery --base main \
   --template .github/PULL_REQUEST_TEMPLATE/new_model.md
 ```
 
-And you're done! Once tests pass, a maintainer reviews and ingests your model (see below), and after merge it appears on the leaderboard and in all site figures! 🎉
+Done! Once tests pass, a maintainer reviews and ingests your model (see below), and after merge it appears on the leaderboard and in all site figures! 🎉
 
 > [!IMPORTANT]
-> Keep the **"Allow edits by maintainers"** checkbox on your PR enabled (it's on by default). The maintainer pushes evaluation results and updated site assets as a commit onto your PR branch.
+> Keep the **"Allow edits by maintainers"** checkbox on your PR enabled (the default): the maintainer pushes evaluation results and updated site assets as a commit onto your PR branch.
 
 ### Step 5: Validate your submission
 
-Run the ingestion script (via [`uv`](https://docs.astral.sh/uv), no extra install needed) to validate your submission before opening a PR. It runs all evaluation scripts, generates required figures, and checks the PR checklist requirements (see `scripts/ingest_model.py --help` for all flags).
+Before marking your draft PR ready for review, validate your submission with the ingestion script (via [`uv`](https://docs.astral.sh/uv), no extra install needed; `scripts/ingest_model.py --help` lists all flags).
 
 #### Running the validation
 
@@ -365,15 +354,16 @@ uv run --with-editable . scripts/ingest_model.py <model_key>
 # e.g. mace-mpa-0 or mace_mpa_0 (dashes and underscores both work)
 ```
 
-This command will:
+It will:
 
-1. **Check PR requirements**: Verify model metadata, prediction URLs, shared-runner registration, and any task-specific scripts
-2. **Run evaluation scripts**: Execute discovery, kappa (phonon), and diatomic metrics evaluation for your model
-3. **Generate figures**: Create the required energy parity and per-element error plots
+1. **Check PR requirements**: model metadata, prediction URLs, shared-runner registration, and any task-specific scripts
+2. **Run evaluation scripts**: discovery, kappa (phonon), geo-opt analysis, and diatomic metrics for your model
+3. **Generate figures**: the energy and kappa parity assets
+4. **Activate and refresh payloads**: if every check passes, set `lifecycle: active` and splice the model into the committed site payloads (incl. per-element errors)
 
 ### Step 6 (optional): Copy WandB runs into our project
 
-[Weights and Biases](https://wandb.ai) ([GitHub](https://github.com/wandb/wandb)) logs training and test runs of ML models, auto-collecting metadata like what hardware the model ran on and for how long, CPU/GPU/network utilization over that period, the exact code in the launching script, and the dependency versions installed in the environment. This helps others reproduce your results or compare computational cost, so we strongly recommend tracking all runs that went into a model submission with WandB so they can be copied over to our project at <https://wandb.ai/janosh/matbench-discovery> for everyone to inspect.
+[Weights and Biases](https://wandb.ai) ([GitHub](https://github.com/wandb/wandb)) logs ML training and test runs, auto-collecting metadata such as the hardware used and run time, CPU/GPU/network utilization, the exact code of the launching script, and installed dependency versions. Since this helps others reproduce your results or compare computational cost, we strongly recommend tracking all runs behind a model submission with WandB so they can be copied to our project at <https://wandb.ai/janosh/matbench-discovery> for everyone to inspect.
 
 ## 🤖 &thinsp; Ingestion (what happens after your PR is opened)
 

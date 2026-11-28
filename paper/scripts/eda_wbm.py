@@ -10,13 +10,13 @@ import pandas as pd
 import plotly.express as px
 import pymatviz as pmv
 from pymatgen.core import Composition, Structure
-from pymatviz.enums import ElemCountMode, Key
+from pymatviz.enums import ElemCountMode
 from pymatviz.utils import si_fmt_int
 
 from matbench_discovery import PDF_FIGS, STABILITY_THRESHOLD, WBM_DIR
 from matbench_discovery.data import df_wbm, load_datasets
 from matbench_discovery.energy import mp_elem_ref_entries
-from matbench_discovery.enums import DataFiles, MbdKey
+from matbench_discovery.enums import DataFiles, Key
 
 for directory in (PDF_FIGS, WBM_DIR):
     os.makedirs(directory, exist_ok=True)
@@ -60,12 +60,12 @@ print(f"{STABILITY_THRESHOLD=}")
 for df, label, n_expected in (
     (df_wbm, "full WBM", load_datasets()["WBM"]["n_stable_materials"]),
     (
-        df_wbm.query(MbdKey.uniq_proto),
+        df_wbm.query(Key.uniq_proto),
         "WBM unique prototypes",
         load_datasets()["WBM"]["n_uniq_stable_materials"],
     ),
 ):
-    n_stable = sum(df[MbdKey.each_true] <= STABILITY_THRESHOLD)
+    n_stable = sum(df[Key.each_true] <= STABILITY_THRESHOLD)
     assert n_stable == n_expected, f"{label}: {n_stable=} != {n_expected=}"
     stable_rate = n_stable / len(df)
     print(f"{label}: {stable_rate=:.1%} ({n_stable:,} out of {len(df):,})")
@@ -121,9 +121,9 @@ for dataset, count_mode, elem_counts in all_counts:
 
 
 # %% histogram of energy distance to MP convex hull for WBM
-e_col = MbdKey.each_true
-# e_col = MbdKey.e_form_raw
-# e_col = MbdKey.e_form
+e_col = Key.each_true
+# e_col = Key.e_form_raw
+# e_col = Key.e_form
 mean, std = df_wbm[e_col].mean(), df_wbm[e_col].std()
 
 range_x = (mean - 2 * std, mean + 2 * std)
@@ -192,9 +192,9 @@ for x_pos, label in (
 
 fig.show()
 suffix = {
-    MbdKey.each_true: "hull-dist",
-    MbdKey.e_form_dft: "e-form",
-    MbdKey.e_form_raw: "e-form-uncorrected",
+    Key.each_true: "hull-dist",
+    Key.e_form_dft: "e-form",
+    Key.e_form_raw: "e-form-uncorrected",
 }[e_col]
 img_name = f"hist-wbm-{suffix}"
 # pmv.save_fig(fig, f"./figs/{img_name}.svg", width=800, height=500)
@@ -238,11 +238,9 @@ pmv.save_fig(fig, f"{PDF_FIGS}/mp-elemental-ref-energies.pdf")
 
 # %%
 df_wbm[Key.spg_num] = (
-    df_wbm[MbdKey.init_protostructure_spglib].str.split("_").str[2].astype(int)
+    df_wbm[Key.init_protostructure_spglib].str.split("_").str[2].astype(int)
 )
-df_mp[Key.spg_num] = (
-    df_mp[MbdKey.protostructure_spglib].str.split("_").str[2].astype(int)
-)
+df_mp[Key.spg_num] = df_mp[Key.protostructure_spglib].str.split("_").str[2].astype(int)
 
 
 # %%
@@ -295,9 +293,7 @@ pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=450, height=280)
 
 # %% find large structures that changed symmetry during relaxation
 df_sym_change = (
-    df_wbm.query(
-        f"{MbdKey.init_protostructure_spglib} != {MbdKey.protostructure_spglib}"
-    )
+    df_wbm.query(f"{Key.init_protostructure_spglib} != {Key.protostructure_spglib}")
     .filter(regex="protostructure|sites")
     .nlargest(10, Key.n_sites)
 )

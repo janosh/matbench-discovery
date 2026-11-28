@@ -1,16 +1,16 @@
 {
   "asset_prefix": "energy-parity-wbm-v1",
   "base": {
-    "asset": "energy-parity-wbm-v1-base-5bfe22576cb96883.json.gz",
-    "sha256": "1f78fccf9036c8c3ad51f12fcdc3d40c5027b3a0c2a9aeebdabc3ad24cdd80dc"
+    "asset": "energy-parity-wbm-v1-base-c48f19a98b126553.json.gz",
+    "sha256": "60956ae00854eb274c8041477b46eb68565d28f84e9679c8c9d5bd6e87ff863f"
   },
   "local_asset_base_url": "/energy-parity/assets",
   "material_ids_sha256": "ab4c269920f7e42a7743719183b041380c5bdd7b929cacb36eca718c5ba3bd64",
   "model_assets": {
     "alchembert": {
       "parity": {
-        "asset": "energy-parity-wbm-v1-model-alchembert-7944df55c6ff582f.json.gz",
-        "sha256": "f7551556ff967bdf80a184bbc7165d4f94af52747b750f0c03bcc3d8d6498578"
+        "asset": "energy-parity-wbm-v1-model-alchembert-59a21461f187c403.json.gz",
+        "sha256": "796773a8dfe39f140540eb3637e514cd65f39ebc58d5d824685fcce7342bd21d"
       }
     },
     "alignn-ff-mptrj": {
@@ -39,8 +39,8 @@
     },
     "bam-mp-dens": {
       "parity": {
-        "asset": "energy-parity-wbm-v1-model-bam-mp-dens-fc1a852b465cbbfc.json.gz",
-        "sha256": "96e4292f1db43fcf2c9b9d65fce0cbe0db5f022b8a2e2d83567b2913a156db6a"
+        "asset": "energy-parity-wbm-v1-model-bam-mp-dens-1c590b295ad69d5d.json.gz",
+        "sha256": "9b997caa4ddf7997863a73000d0b2d70a526a1667c69bc512efbf8a7b45a735e"
       }
     },
     "bowsr": {
@@ -51,20 +51,20 @@
     },
     "cgcnn": {
       "parity": {
-        "asset": "energy-parity-wbm-v1-model-cgcnn-bcf85d38b2618bda.json.gz",
-        "sha256": "2bab866d492d561d89e7478496edf989a50fc0fcfb505c10bd242f8bb4be940d"
+        "asset": "energy-parity-wbm-v1-model-cgcnn-2d443eeabe816f6e.json.gz",
+        "sha256": "21488c5aa4621ae12c1f592db2d39f1320312e28aa20e833f02efcfec35e3079"
       }
     },
     "cgcnn-p": {
       "parity": {
-        "asset": "energy-parity-wbm-v1-model-cgcnn-p-a12bb509e69897f4.json.gz",
-        "sha256": "c710b86d7ccc73d036cf80d66ef6f341c98c98a8bb0f886c4ea4d2f71bac0d11"
+        "asset": "energy-parity-wbm-v1-model-cgcnn-p-4dee2c429c3a4d16.json.gz",
+        "sha256": "32fc4de772f54a39f067116c540ba842bc80da50ba8743b941e7d9e52d84f39c"
       }
     },
     "chgnet-0.3.0": {
       "parity": {
-        "asset": "energy-parity-wbm-v1-model-chgnet-0.3.0-90e04dc181b55980.json.gz",
-        "sha256": "89696b62809adf7080ec5de17b6ecaffd818f595908b1877a7556ff3dadfee1d"
+        "asset": "energy-parity-wbm-v1-model-chgnet-0.3.0-234ebe8e2c0b91ed.json.gz",
+        "sha256": "3cb9208cbdb07774ca394d532ba63040222c9a8a2019f41b689fc2bad3801a80"
       }
     },
     "dpa-4.0.1-pro-mptrj": {
@@ -99,8 +99,8 @@
     },
     "ema-gnn": {
       "parity": {
-        "asset": "energy-parity-wbm-v1-model-ema-gnn-7524c82f451feff7.json.gz",
-        "sha256": "686c94ddb16e64751fc3efb67ac7595ddaaa07ecae24f14ae886d828a499ac14"
+        "asset": "energy-parity-wbm-v1-model-ema-gnn-81863b685a0ebb3d.json.gz",
+        "sha256": "69b2311b1846f3a46df420cb07e4c771c6707edcedbd838f1f27550b615eb41d"
       }
     },
     "eqnorm-mptrj": {
@@ -159,14 +159,14 @@
     },
     "esnet": {
       "parity": {
-        "asset": "energy-parity-wbm-v1-model-esnet-64f53eaf97314f42.json.gz",
-        "sha256": "86e098b35d4609e9b1e86444839279b2e2d8d2836fe460a7a23e26667e061c0b"
+        "asset": "energy-parity-wbm-v1-model-esnet-1dd2f8ec3d8f1bb8.json.gz",
+        "sha256": "755fa03adb8e913199ff607fd6b74162c17bb8ca4fad002dbca3d400653a5e9f"
       }
     },
     "gnome": {
       "parity": {
-        "asset": "energy-parity-wbm-v1-model-gnome-172c2f230c6b87b3.json.gz",
-        "sha256": "1a59e8bb22a50efb738a008677d7c97afc4155b38192cddefb9b3e8d4121f385"
+        "asset": "energy-parity-wbm-v1-model-gnome-70a0f47bc9a2b69c.json.gz",
+        "sha256": "f254fe4deb9a9a2fcf985717cfb2c4f8f2c81c195914128196eb5d12cdcc668e"
       }
     },
     "grace-1l-oam": {
@@ -177,8 +177,8 @@
     },
     "grace-2l-mptrj": {
       "parity": {
-        "asset": "energy-parity-wbm-v1-model-grace-2l-mptrj-bdebd6c04f4d6c75.json.gz",
-        "sha256": "51362e415469fff49e690d167804bcc4be493316a27fb4c555ef760e3fabebdb"
+        "asset": "energy-parity-wbm-v1-model-grace-2l-mptrj-8570af7378b86de6.json.gz",
+        "sha256": "18f7b71a5bb9b4b50ce4fa7982855258fc2f95ef599856d13973fc1c31e4e5e4"
       }
     },
     "grace-2l-oam": {
@@ -195,8 +195,8 @@
     },
     "grace-3l-oam-l": {
       "parity": {
-        "asset": "energy-parity-wbm-v1-model-grace-3l-oam-l-3dad45affa571605.json.gz",
-        "sha256": "e9b7c13bab104d55aac17273bef24b96a09ef0a432e130f48211d5c765da9202"
+        "asset": "energy-parity-wbm-v1-model-grace-3l-oam-l-2952119737542459.json.gz",
+        "sha256": "f2d9150aad6754aed1c225c6bec863b5b65b18eef8bef46e3ff94d89d4483777"
       }
     },
     "hienet": {
@@ -207,14 +207,14 @@
     },
     "m3gnet": {
       "parity": {
-        "asset": "energy-parity-wbm-v1-model-m3gnet-8417334835a76937.json.gz",
-        "sha256": "0d94eae2bbd80bc8b4987b5f05449feb1c26ac9262014c514586f5f0d4d755ce"
+        "asset": "energy-parity-wbm-v1-model-m3gnet-009057bb73c710ce.json.gz",
+        "sha256": "99b7c78a3c8a0956945f358f40e5e7d93ef252333556d196bd98cd3572683f7c"
       }
     },
     "mace-mp-0": {
       "parity": {
-        "asset": "energy-parity-wbm-v1-model-mace-mp-0-a952f26b64c74b76.json.gz",
-        "sha256": "e046fa4712a7505d21c8d5ae3bdc6770a0b2ff466c10d192765512997bcab5ce"
+        "asset": "energy-parity-wbm-v1-model-mace-mp-0-e2c0a3256fb005f3.json.gz",
+        "sha256": "48e4e5a91d045fdf7b3cc84a48b4b4c35d9a29e1e033efc090a20229ebdc2a5d"
       }
     },
     "mace-mpa-0": {
@@ -255,8 +255,14 @@
     },
     "megnet": {
       "parity": {
-        "asset": "energy-parity-wbm-v1-model-megnet-b0188465735f5022.json.gz",
-        "sha256": "982c25b8350c4b9f04b3caaf1ebc507b16d6382ba5d5ab2211d33f7c3e3c3e1f"
+        "asset": "energy-parity-wbm-v1-model-megnet-4924dc54ee92b6b1.json.gz",
+        "sha256": "743f67279e18297f69681171407ce8b46c4af2402a8f18733b666e45462a9ccd"
+      }
+    },
+    "mena-lam-6": {
+      "parity": {
+        "asset": "energy-parity-wbm-v1-model-mena-lam-6-5b882c9417097760.json.gz",
+        "sha256": "169d2be7b03b54821a9c7935ec6978a3d061600a962610a712e3ff572776d977"
       }
     },
     "nequip-mp-l-0.1": {
@@ -345,14 +351,14 @@
     },
     "voronoi-rf": {
       "parity": {
-        "asset": "energy-parity-wbm-v1-model-voronoi-rf-f45cd25e0c601ee7.json.gz",
-        "sha256": "cf2a8607c1447a7fd9fa17447f98eb3d3913ea539c2113833380c2a4a7b0b53f"
+        "asset": "energy-parity-wbm-v1-model-voronoi-rf-33b4583596b85811.json.gz",
+        "sha256": "1bb38c95e6588399a0aeeac5b2c34ec258fe1ceb9af719a7b8b7edd3af2f81ec"
       }
     },
     "wrenformer": {
       "parity": {
-        "asset": "energy-parity-wbm-v1-model-wrenformer-935219e1d17671d8.json.gz",
-        "sha256": "a14b76317b84f1a76a66097d97e96778a409d9b2316253ad65e026166b131be0"
+        "asset": "energy-parity-wbm-v1-model-wrenformer-ecc1bcefff7face7.json.gz",
+        "sha256": "d66462a9e376f857868b4f645ca099ac990196554726e256ba0a8eeb956fc008"
       }
     }
   },

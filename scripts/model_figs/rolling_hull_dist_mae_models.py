@@ -6,14 +6,14 @@ import numpy as np
 from matbench_discovery import figs, payload_numerics
 from matbench_discovery.cli import cli_args, complete_models, is_full_model_run
 from matbench_discovery.data import load_discovery_predictions
-from matbench_discovery.enums import MbdKey, TestSubset
+from matbench_discovery.enums import Key, TestSubset
 
 is_full_model_run()  # check --models/--full-roster before loading, not at the write
 
 df_preds, df_each_pred, _df_each_err = load_discovery_predictions()
 test_subset = cli_args.test_subset
 if test_subset == TestSubset.uniq_protos:
-    df_preds = df_preds.query(MbdKey.uniq_proto)
+    df_preds = df_preds.query(Key.uniq_proto)
     df_each_pred = df_each_pred.loc[df_preds.index]
 
 window = 0.04
@@ -21,7 +21,7 @@ rolling_x = np.arange(-0.2, 0.2, 0.005)
 rolling_models: list[dict[str, object]] = []
 for model in complete_models():
     each_pred = df_each_pred[model.key].dropna()
-    each_true = df_preds[MbdKey.each_true].loc[each_pred.index]
+    each_true = df_preds[Key.each_true].loc[each_pred.index]
     abs_error = (each_pred - each_true).abs()
     rolling_mae = [
         abs_error[
@@ -40,7 +40,7 @@ for model in complete_models():
 # add negligible noise to prevent strange binning artifacts in the marginal plot
 small_noise = np.random.default_rng(seed=0).random(len(df_preds)) * 1e-12
 counts, bins = np.histogram(
-    df_preds[MbdKey.each_true] + small_noise,
+    df_preds[Key.each_true] + small_noise,
     bins=200,  # finer than the clf histograms' 64 bins over +/-0.45 eV/atom
     range=(-0.7, 0.7),
 )

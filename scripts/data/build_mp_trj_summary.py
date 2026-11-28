@@ -10,13 +10,12 @@ import ase.io.extxyz
 import numpy as np
 import pandas as pd
 from pymatgen.core.tensors import Tensor
-from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import MP_DIR
 from matbench_discovery.data import ase_atoms_from_zip
 from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
-from matbench_discovery.enums import DataFiles, MbdKey
+from matbench_discovery.enums import DataFiles, Key
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-11-22"
@@ -72,7 +71,7 @@ if Key.formula not in df_mp_trj:
 
 # this is the unrelaxed (but MP2020 corrected) formation energy per atom of the actual
 # relaxation step
-df_mp_trj[MbdKey.e_form_dft] = [
+df_mp_trj[Key.e_form_dft] = [
     calc_energy_from_e_refs(formula, mp_elemental_ref_energies, total_energy=energy)
     for formula, energy in tqdm(
         zip(df_mp_trj[Key.formula], df_mp_trj["mp2020_corrected_energy"], strict=True),

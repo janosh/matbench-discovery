@@ -15,7 +15,7 @@ import warnings
 from collections.abc import Iterable, Mapping, Sequence, Sized
 from typing import TYPE_CHECKING, Any, Final, TypeIs
 
-from pymatviz.enums import Key
+from matbench_discovery.enums import Key
 
 if TYPE_CHECKING:
     from ase import Atoms

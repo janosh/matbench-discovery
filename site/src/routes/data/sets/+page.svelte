@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { CellSnippetArgs, TableSort } from 'svelte-widgets/table'
   import { format_num } from 'svelte-widgets/format'
+  import { create_term_matcher } from 'svelte-widgets/match'
   import {
     middle_ellipsis_parts,
     sort_from_param,
@@ -26,7 +27,7 @@
     Info,
     Optimade,
   } from 'svelte-widgets/icons'
-  import { valid_query_param } from 'svelte-widgets/browser'
+  import { string_from_param } from 'svelte-widgets/browser'
 
   const colors = {
     access: { public: `#25836d`, partial: `#b16c00`, unreleased: `#9771bb` },
@@ -54,7 +55,7 @@
   const datasets = Object.entries(DATASETS).map(([key, dataset]) => ({
     ...dataset,
     key,
-    search_text: `${key} ${dataset.name} ${dataset.description}`.toLowerCase(),
+    search_text: `${key} ${dataset.name} ${dataset.description}`,
     n_models: ACTIVE_MODELS.filter((model) => model.training_sets.includes(key)).length,
     release:
       dataset.static == null ? `Unknown` : dataset.static ? `Fixed release` : `Updated`,
@@ -171,16 +172,16 @@
   const read_url = (params: URLSearchParams) => {
     filters.q = params.get(`q`) ?? ``
     for (const [key, options] of filter_options) {
-      filters[key] = valid_query_param(params, key, ``, options)
+      filters[key] = string_from_param(params, key, ``, options)
     }
     // `sort=` keeps a cleared sort (the data's order) across reloads
-    sort = sort_from_param(params, default_sort, { valid_columns: sortable_columns })
+    sort = sort_from_param(params, `sort`, default_sort, sortable_columns)
   }
   bind_url_params(read_url, () => [
     ...Object.entries(filters),
-    sort_url_entry(sort, default_sort),
+    sort_url_entry(`sort`, sort, default_sort),
   ])
-  const search_words = $derived(filters.q.toLowerCase().trim().split(/\s+/))
+  const matches_query = $derived(create_term_matcher(filters.q))
   const filtered = $derived(
     datasets.filter(
       (dataset) =>
@@ -188,7 +189,7 @@
           ([key]) =>
             !filters[key] ||
             [dataset[key]].flat().some((value) => value === filters[key]),
-        ) && search_words.every((word) => dataset.search_text.includes(word)),
+        ) && matches_query(dataset.search_text),
     ),
   )
   const has_filters = $derived(Object.values(filters).some(Boolean))
@@ -240,7 +241,7 @@
       ? col.id === `Structures`
         ? `Structure count not reported; see ${row.key} details for coverage.`
         : `Unique material count not reported; structures may include multiple frames of the same material.`
-      : Number(val).toLocaleString()}
+      : format_num(Number(val), `,`)}
     >{val == null ? `n/a` : format_num(Number(val), `.3~s`)}</span
   >
 {/snippet}

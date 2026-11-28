@@ -1,8 +1,8 @@
 {
   "asset_prefix": "kappa-parity-phonondb-v1",
   "base": {
-    "asset": "kappa-parity-phonondb-v1-base-a49691d860851be1.json.gz",
-    "sha256": "280a766bc4bcb55db17368ffccf0d7ef00d725328bbc4eb17bdb5eb2c795b666"
+    "asset": "kappa-parity-phonondb-v1-base-0eecda164dc2c63e.json.gz",
+    "sha256": "aa387bfe3bd091a231e751b6673813b3fa36ec60f92d650c02b9a0681c9c17b9"
   },
   "local_asset_base_url": "/kappa-parity/assets",
   "model_assets": {
@@ -74,8 +74,8 @@
     },
     "dpa-4.1-air-oam": {
       "parity": {
-        "asset": "kappa-parity-phonondb-v1-model-dpa-4.1-air-oam-8ecc8ff65b64d0b7.json.gz",
-        "sha256": "db3ae266d0a94418d574c1469af2af85418d3ddd2029051c545b6a08ef49da78"
+        "asset": "kappa-parity-phonondb-v1-model-dpa-4.1-air-oam-b213fa3f0b0e536c.json.gz",
+        "sha256": "d5cd38ecfa5ce058b7d92015585823dcfa70c185f7678e1822b558c8b3772c7e"
       }
     },
     "dpa-4.1-max-oam": {
@@ -92,8 +92,8 @@
     },
     "dpa-4.1c-air-oam": {
       "parity": {
-        "asset": "kappa-parity-phonondb-v1-model-dpa-4.1c-air-oam-542ad426f3999ba1.json.gz",
-        "sha256": "4b955a498a03cdfebe0e915406add3b1741d13e378797e716a942f8b049bc66e"
+        "asset": "kappa-parity-phonondb-v1-model-dpa-4.1c-air-oam-b020a3981526c88b.json.gz",
+        "sha256": "f8eb40f3e93df0f2406bc673f56265d28fd42e55df73df71bb0ff4d4fceaa1aa"
       }
     },
     "eqnorm-mptrj": {
@@ -316,6 +316,16 @@
       "parity": {
         "asset": "kappa-parity-phonondb-v1-model-mattersim-v1-5m-fd3d79cebcfaefd1.json.gz",
         "sha256": "e1ba6edf242bde02df195299b4af317d5cdfab9766a66dc45a58d80418b0a544"
+      }
+    },
+    "mena-lam-6": {
+      "modes": {
+        "asset": "kappa-parity-phonondb-v1-modes-mena-lam-6-649be8af6eb9e23b.json.gz",
+        "sha256": "bce265686ff2c5cc3ae7457e26244402f52e498692aeb8a08b7d3142df577f4f"
+      },
+      "parity": {
+        "asset": "kappa-parity-phonondb-v1-model-mena-lam-6-4c4f9c0c18b5e709.json.gz",
+        "sha256": "f3ef0f835b2b69e3ae02a17984b2241a2ff28e7a43f8f762f2a571bb8c86a72c"
       }
     },
     "nequip-mp-l-0.1": {

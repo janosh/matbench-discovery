@@ -18,15 +18,13 @@ from datetime import UTC, datetime
 from typing import IO, TYPE_CHECKING, Any, Literal
 from urllib.parse import quote
 
-import numpy as np
 import pandas as pd
 from filelock import FileLock
-from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, atomic_output_path, file_digest
+from matbench_discovery import ROOT, atomic_output_path, file_digest, json_ready
 from matbench_discovery.ase_relax import canonical_filter_name, canonical_optimizer_name
-from matbench_discovery.enums import DataFiles, Model
+from matbench_discovery.enums import DataFiles, Key, Model
 from matbench_discovery.hpc import (
     LOAD_CHARGED,
     check_resume_labels,
@@ -1121,23 +1119,6 @@ def dry_run_settings(settings: KappaSettings) -> KappaSettings:
         max_steps=min(settings.max_steps, 2),
         save_forces=settings.harmonic_only,
     )
-
-
-def json_ready(value: object) -> object:
-    """Recursively convert scientific Python values to strict JSON data."""
-    if isinstance(value, Mapping):
-        return {str(key): json_ready(item) for key, item in value.items()}
-    if isinstance(value, np.ndarray):
-        return json_ready(value.tolist())  # ty: ignore[no-matching-overload]
-    if isinstance(value, np.generic):
-        return json_ready(value.item())
-    if isinstance(value, tuple | list):
-        return [json_ready(item) for item in value]
-    if isinstance(value, float) and not math.isfinite(value):
-        return None
-    if isinstance(value, str | int | float | bool) or value is None:
-        return value
-    raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
 
 
 def atomic_write_json(path: str, data: object) -> None:

@@ -16,8 +16,8 @@ from matbench_discovery.enums import (
     ArchitectureType,
     DataFiles,
     Files,
+    Key,
     LabelEnum,
-    MbdKey,
     Model,
     Open,
     Task,
@@ -28,7 +28,7 @@ from matbench_discovery.remote import figshare
 from tests.utils import make_mock_response, patch_model_metadata
 
 
-@pytest.mark.parametrize("enum_cls", [ArchitectureType, MbdKey, Open, Task, TestSubset])
+@pytest.mark.parametrize("enum_cls", [ArchitectureType, Key, Open, Task, TestSubset])
 def test_label_enum_values_and_labels(enum_cls: type[LabelEnum]) -> None:
     """Every labeled-enum member has a non-empty, unique string value and label."""
     values = [member.value for member in enum_cls]
@@ -52,9 +52,9 @@ E_FORM_DFT_LABEL = (
 @pytest.mark.parametrize(
     ("member", "value", "label"),
     [
-        (MbdKey.e_form_dft, "e_form_per_atom_mp2020_corrected", E_FORM_DFT_LABEL),
+        (Key.e_form_dft, "e_form_per_atom_mp2020_corrected", E_FORM_DFT_LABEL),
         (
-            MbdKey.each_true,
+            Key.each_true,
             "e_above_hull_mp2020_corrected_ppd_mp",
             "E<sub>MP hull dist</sub>",
         ),

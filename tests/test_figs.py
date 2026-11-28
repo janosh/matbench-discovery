@@ -74,10 +74,18 @@ def test_histogram_bins_raw_values() -> None:
 def test_sankey_flow_canonicalization() -> None:
     """Sankey flow data drops unused nodes and sorts links deterministically."""
     flow_data = {
-        "labels": ["A", "B", "X", "C"],
-        "source_indices": [1, 0],
-        "target_indices": [3, 3],
-        "value": [4.0, 3.0],
+        "nodes": [
+            {
+                "id": idx,
+                "label": label,
+                "metadata": {"column": "src" if idx < 2 else "tgt"},
+            }
+            for idx, label in enumerate(["A", "B", "X", "C"])
+        ],
+        "links": [
+            {"source": 1, "target": 3, "value": 4.0},
+            {"source": 0, "target": 3, "value": 3.0},
+        ],
     }
     assert payload_numerics.sankey_payload_from_flow(flow_data) == {
         "labels": ["A", "B", "C"],

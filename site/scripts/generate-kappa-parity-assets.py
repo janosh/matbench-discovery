@@ -38,10 +38,9 @@ from asset_helpers import (
 )
 from moyopy.interface import MoyoAdapter
 from pymatgen.core import Structure
-from pymatviz.enums import Key
 
 from matbench_discovery import ROOT
-from matbench_discovery.enums import DataFiles, MbdKey
+from matbench_discovery.enums import DataFiles, Key
 from matbench_discovery.metrics.phonons import (
     calculate_kappa_avg,
     mode_weights_for_freqs,
@@ -70,7 +69,7 @@ DOS_DENSITY_DECIMALS: Final = 4
 MODES_DECIMALS: Final = 4
 Q_POINT_DECIMALS: Final = 10
 
-KAPPA_TOT_AVG: Final = str(MbdKey.kappa_tot_avg)
+KAPPA_TOT_AVG: Final = str(Key.kappa_tot_avg)
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
@@ -115,7 +114,7 @@ def row_scalar_kappa(row: pd.Series) -> float | None:
     avg = row.get(KAPPA_TOT_AVG)
     if avg is not None and (scalar := scalar_from_avg(avg)) is not None:
         return scalar
-    rta = row.get(str(MbdKey.kappa_tot_rta))
+    rta = row.get(str(Key.kappa_tot_rta))
     return scalar_from_rta(rta) if rta is not None else None
 
 

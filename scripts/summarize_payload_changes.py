@@ -7,6 +7,8 @@ import os
 import subprocess
 from typing import TypeGuard
 
+from matbench_discovery.figs import canonical_json
+
 
 def _is_object(value: object) -> TypeGuard[dict[str, object]]:
     """Return whether a value is a JSON object."""
@@ -16,11 +18,6 @@ def _is_object(value: object) -> TypeGuard[dict[str, object]]:
 def _is_number(value: object) -> TypeGuard[int | float]:
     """Return whether a value is a JSON number rather than a Boolean."""
     return isinstance(value, (int, float)) and not isinstance(value, bool)
-
-
-def canonical_json(value: object) -> str:
-    """Return compact deterministic JSON for exact value comparisons."""
-    return json.dumps(value, allow_nan=False, separators=(",", ":"), sort_keys=True)
 
 
 def _git_output(*args: str, cwd: str | None = None) -> str:

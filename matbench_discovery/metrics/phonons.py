@@ -22,11 +22,12 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from pymatviz.enums import Key
+from scipy.constants import hbar
+from scipy.constants import k as k_boltzmann
 from scipy.stats import wasserstein_distance
 
 from matbench_discovery.data import file_ref_name, make_file_ref, merge_file_ref
-from matbench_discovery.enums import DataFiles, MbdKey, Model
+from matbench_discovery.enums import DataFiles, Key, Model
 from matbench_discovery.hpc import with_cost_block
 
 KAPPA_ERROR_MAX = 2.0
@@ -59,8 +60,6 @@ SRME_CENSORED = "srme_censored"
 #    margin keeps the flag to clear failures.
 DIFFUSON_FLOOR_FRACTION = 0.5
 KAPPA_TEMPERATURE = 300.0  # K, temperature of the kappa-103 conductivities
-_K_B = 1.380649e-23  # J/K
-_HBAR = 1.054571817e-34  # J s
 
 
 def diffuson_kappa_min(
@@ -101,10 +100,10 @@ def diffuson_kappa_min(
     mode_weights = mode_weights.reshape(freqs.shape)
     mode_weights = mode_weights / mode_weights[:, 0].sum()  # normalize over q-points
     omega = 2 * np.pi * 1e12 * np.clip(freqs, 0, None)  # rad/s
-    x_val = _HBAR * omega / (_K_B * temperature)
+    x_val = hbar * omega / (k_boltzmann * temperature)
     with np.errstate(over="ignore", divide="ignore", invalid="ignore"):
-        heat_cap = _K_B * x_val**2 * np.exp(x_val) / np.expm1(x_val) ** 2
-    heat_cap = np.where(x_val > 1e-8, np.nan_to_num(heat_cap), _K_B)
+        heat_cap = k_boltzmann * x_val**2 * np.exp(x_val) / np.expm1(x_val) ** 2
+    heat_cap = np.where(x_val > 1e-8, np.nan_to_num(heat_cap), k_boltzmann)
     heat_cap[omega == 0] = 0  # acoustic modes at Gamma and imaginary modes
     density_m3 = atom_density * 1e30
     spacing = density_m3 ** (-1 / 3)
@@ -183,22 +182,20 @@ def calc_kappa_metrics_from_dfs(
         - DFT_kappa_tot_avg: Reference DFT conductivity values
     """
     df_pred = df_pred.copy()
-    df_pred[MbdKey.kappa_tot_avg] = df_pred[MbdKey.kappa_tot_rta].map(
-        calculate_kappa_avg
-    )
+    df_pred[Key.kappa_tot_avg] = df_pred[Key.kappa_tot_rta].map(calculate_kappa_avg)
 
-    true_kappa = df_true.loc[df_pred.index, MbdKey.kappa_tot_avg]
+    true_kappa = df_true.loc[df_pred.index, Key.kappa_tot_avg]
     df_pred[Key.srd] = [
         _symmetric_relative_difference(predicted, reference)
         for predicted, reference in zip(
-            df_pred[MbdKey.kappa_tot_avg], true_kappa, strict=True
+            df_pred[Key.kappa_tot_avg], true_kappa, strict=True
         )
     ]
     df_pred[Key.sre] = df_pred[Key.srd].abs()
     srme, srme_censored = calc_kappa_srme_dataframes(df_pred, df_true)
     df_pred[Key.srme] = srme
     df_pred[SRME_CENSORED] = srme_censored
-    df_pred[MbdKey.true_kappa_tot_avg] = true_kappa
+    df_pred[Key.true_kappa_tot_avg] = true_kappa
 
     return df_pred
 
@@ -277,34 +274,19 @@ def weighted_quantiles(
             non-finite/negative/zero-sum, or quantile levels are outside [0, 1].
     """
     values = np.ravel(np.asarray(values, dtype=float))
-    weights = (
-        np.ones_like(values)
-        if weights is None
-        else np.ravel(np.asarray(weights, dtype=float))
-    )
-    quantile_levels = np.ravel(np.asarray(quantile_levels, dtype=float))
-    if len(values) != len(weights):
-        raise ValueError(f"{len(values)=} != {len(weights)=}")
-    if np.any(~np.isfinite(quantile_levels)) or np.any(
-        (quantile_levels < 0) | (quantile_levels > 1)
-    ):
-        raise ValueError("quantile_levels must be finite values in [0, 1]")
-    finite_mask = np.isfinite(values)
-    values, weights = values[finite_mask], weights[finite_mask]
-    if len(values) == 0:
+    if weights is not None:
+        weights = np.ravel(np.asarray(weights, dtype=float))
+        if len(values) != len(weights):
+            raise ValueError(f"{len(values)=} != {len(weights)=}")
+    finite_mask = np.isfinite(values)  # drops +-inf too, unlike np.nanquantile
+    if not finite_mask.any():
         raise ValueError("no finite values to compute quantiles from")
-    if np.any(~np.isfinite(weights)) or np.any(weights < 0):
-        raise ValueError("weights must be finite non-negative values")
-    weight_sum = weights.sum()
-    if weight_sum <= 0:
-        raise ValueError("weights must sum to a positive value")
-    positive_weight_mask = weights > 0
-    values, weights = values[positive_weight_mask], weights[positive_weight_mask]
-    order = np.argsort(values)
-    values, weights = values[order], weights[order]
-    cdf = np.cumsum(weights) / weight_sum
-    idx = np.searchsorted(cdf, quantile_levels, side="left")
-    return values[np.minimum(idx, len(values) - 1)]
+    return np.quantile(
+        values[finite_mask],
+        np.ravel(np.asarray(quantile_levels, dtype=float)),
+        weights=None if weights is None else weights[finite_mask],
+        method="inverted_cdf",
+    )
 
 
 def mode_weights_for_freqs(
@@ -393,11 +375,11 @@ def calculate_kappa_avg(kappa: np.ndarray) -> np.ndarray | float:
 
 def _mode_kappa_values(kappas: pd.Series) -> np.ndarray | None:
     """Return finite mode conductivities from the best available representation."""
-    for mode_key in (MbdKey.mode_kappa_tot_avg, MbdKey.mode_kappa_tot_rta):
+    for mode_key in (Key.mode_kappa_tot_avg, Key.mode_kappa_tot_rta):
         if mode_key not in kappas.index:
             continue
         mode_kappa = kappas[mode_key]
-        if mode_key == MbdKey.mode_kappa_tot_rta:
+        if mode_key == Key.mode_kappa_tot_rta:
             mode_kappa = calculate_kappa_avg(mode_kappa)
         if (mode_values := _finite_array(mode_kappa)) is not None:
             return mode_values
@@ -435,7 +417,7 @@ def calc_kappa_srme_dataframes(
         # Validate the reference before any prediction-failure short-circuit. Keep
         # this outside the try so InvalidKappaReferenceError is not swallowed by the
         # broader ValueError handler.
-        _reference_kappa(row_true[MbdKey.kappa_tot_avg])
+        _reference_kappa(row_true[Key.kappa_tot_avg])
         try:
             result = np.ravel(calc_kappa_srme(row_pred, row_true, nan_on_invalid=True))
         except InvalidKappaReferenceError:
@@ -493,7 +475,7 @@ def calc_kappa_srme(
         - 2 indicates complete disagreement or, by default, invalid results
         Invalid results are NaN instead when nan_on_invalid is True.
     """
-    true_totals = _finite_array(kappas_true[MbdKey.kappa_tot_avg], nonnegative=True)
+    true_totals = _finite_array(kappas_true[Key.kappa_tot_avg], nonnegative=True)
     if true_totals is None:
         raise InvalidKappaReferenceError(
             "Reference kappa totals must be finite and non-negative"
@@ -511,7 +493,7 @@ def calc_kappa_srme(
         return failure
 
     predicted_totals = _finite_array(
-        kappas_pred.get(MbdKey.kappa_tot_avg), nonnegative=True
+        kappas_pred.get(Key.kappa_tot_avg), nonnegative=True
     )
     mode_weights = _finite_array(kappas_pred.get(Key.mode_weights), nonnegative=True)
     if (
